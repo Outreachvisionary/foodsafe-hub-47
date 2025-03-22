@@ -11,6 +11,7 @@ import ComplaintManagement from "./pages/ComplaintManagement";
 import Traceability from "./pages/Traceability";
 import InternalAudits from "./pages/InternalAudits";
 import HaccpModule from "./pages/HaccpModule";
+import SupplierManagement from "./pages/SupplierManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/traceability" element={<Traceability />} />
           <Route path="/audits" element={<InternalAudits />} />
           <Route path="/haccp" element={<HaccpModule />} />
+          <Route path="/suppliers" element={<SupplierManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
