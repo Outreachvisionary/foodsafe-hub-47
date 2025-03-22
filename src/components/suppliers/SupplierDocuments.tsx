@@ -82,8 +82,8 @@ const sampleDocuments = [
 const SupplierDocuments: React.FC = () => {
   const [documents, setDocuments] = useState(sampleDocuments);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
   // Filter documents based on search query and selected filters
   const filteredDocuments = documents.filter(doc => {
@@ -92,8 +92,8 @@ const SupplierDocuments: React.FC = () => {
       doc.supplier.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
       
-    const matchesType = selectedType ? doc.type === selectedType : true;
-    const matchesStatus = selectedStatus ? doc.status === selectedStatus : true;
+    const matchesType = selectedType === 'all' ? true : doc.type === selectedType;
+    const matchesStatus = selectedStatus === 'all' ? true : doc.status === selectedStatus;
     
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -164,7 +164,7 @@ const SupplierDocuments: React.FC = () => {
                 <SelectValue placeholder="Document Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Certification">Certification</SelectItem>
                 <SelectItem value="Audit">Audit</SelectItem>
                 <SelectItem value="Food Safety Plan">Food Safety Plan</SelectItem>
@@ -178,7 +178,7 @@ const SupplierDocuments: React.FC = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="Valid">Valid</SelectItem>
                 <SelectItem value="Expiring Soon">Expiring Soon</SelectItem>
                 <SelectItem value="Expired">Expired</SelectItem>
