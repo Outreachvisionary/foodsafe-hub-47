@@ -3,6 +3,11 @@ import React from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
+import SQFDashboard from '@/components/dashboard/standards/SQFDashboard';
+import ISO22000Dashboard from '@/components/dashboard/standards/ISO22000Dashboard';
+import FSSC22000Dashboard from '@/components/dashboard/standards/FSSC22000Dashboard';
+import HACCPDashboard from '@/components/dashboard/standards/HACCPDashboard';
+import BRCGS2Dashboard from '@/components/dashboard/standards/BRCGS2Dashboard';
 
 const Dashboard = () => {
   return (
@@ -28,33 +33,23 @@ const Dashboard = () => {
           </TabsContent>
           
           <TabsContent value="sqf">
-            <div className="h-64 flex items-center justify-center text-lg text-gray-400">
-              SQF Dashboard Content (Coming Soon)
-            </div>
+            <SQFDashboard />
           </TabsContent>
           
           <TabsContent value="iso22000">
-            <div className="h-64 flex items-center justify-center text-lg text-gray-400">
-              ISO 22000 Dashboard Content (Coming Soon)
-            </div>
+            <ISO22000Dashboard />
           </TabsContent>
           
           <TabsContent value="fssc22000">
-            <div className="h-64 flex items-center justify-center text-lg text-gray-400">
-              FSSC 22000 Dashboard Content (Coming Soon)
-            </div>
+            <FSSC22000Dashboard />
           </TabsContent>
           
           <TabsContent value="haccp">
-            <div className="h-64 flex items-center justify-center text-lg text-gray-400">
-              HACCP Dashboard Content (Coming Soon)
-            </div>
+            <HACCPDashboard />
           </TabsContent>
           
           <TabsContent value="brcgs2">
-            <div className="h-64 flex items-center justify-center text-lg text-gray-400">
-              BRC GS2 Dashboard Content (Coming Soon)
-            </div>
+            <BRCGS2Dashboard />
           </TabsContent>
         </Tabs>
       </main>
