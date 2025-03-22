@@ -1,7 +1,7 @@
 
 import React from 'react';
 import StandardCard from './StandardCard';
-import { Shield, FileCheck, ClipboardCheck, LineChart, Award } from 'lucide-react';
+import { Shield, FileCheck, ClipboardCheck, LineChart, Award, ShieldAlert } from 'lucide-react';
 
 const standardsData = [
   {
@@ -50,10 +50,14 @@ const StandardsSection = () => {
           <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
             Choose from multiple global food safety standards, all managed through a single unified platform.
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="/audits" className="text-fsms-blue hover:text-fsms-indigo font-medium inline-flex items-center gap-1 transition-colors">
               <ClipboardCheck className="h-4 w-4" />
-              <span>View our new Internal Audits & Inspections Module</span>
+              <span>View our Internal Audits & Inspections Module</span>
+            </a>
+            <a href="/haccp" className="text-fsms-blue hover:text-fsms-indigo font-medium inline-flex items-center gap-1 transition-colors">
+              <ShieldAlert className="h-4 w-4" />
+              <span>Explore our new HACCP & Risk Assessment Module</span>
             </a>
           </div>
         </div>
