@@ -8,11 +8,12 @@ type TestimonialProps = {
   role: string;
   company: string;
   className?: string;
+  style?: React.CSSProperties; // Add style prop to the type definition
 };
 
-const Testimonial = ({ quote, author, role, company, className }: TestimonialProps) => {
+const Testimonial = ({ quote, author, role, company, className, style }: TestimonialProps) => {
   return (
-    <div className={cn("bg-white rounded-xl p-8 shadow-sm border border-gray-100", className)}>
+    <div className={cn("bg-white rounded-xl p-8 shadow-sm border border-gray-100", className)} style={style}>
       <div className="flex items-center mb-4">
         {[...Array(5)].map((_, i) => (
           <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
