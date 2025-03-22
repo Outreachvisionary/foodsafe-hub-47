@@ -258,8 +258,8 @@ const InternalAudits = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedStandard, setSelectedStandard] = useState('SQF');
   const [showRequirements, setShowRequirements] = useState(false);
-  const [filterStandard, setFilterStandard] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStandard, setFilterStandard] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [selectedAudit, setSelectedAudit] = useState(null);
   const [isAuditDetailsOpen, setIsAuditDetailsOpen] = useState(false);
 
@@ -285,8 +285,8 @@ const InternalAudits = () => {
 
   const filteredAudits = mockAudits.filter(audit => {
     const query = searchQuery.toLowerCase();
-    const standardMatch = filterStandard ? audit.standard === filterStandard : true;
-    const statusMatch = filterStatus ? audit.status === filterStatus : true;
+    const standardMatch = filterStandard === 'all' ? true : audit.standard === filterStandard;
+    const statusMatch = filterStatus === 'all' ? true : audit.status === filterStatus;
     
     return (
       (audit.title.toLowerCase().includes(query) ||
@@ -379,7 +379,7 @@ const InternalAudits = () => {
                 <SelectValue placeholder="All Standards" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Standards</SelectItem>
+                <SelectItem value="all">All Standards</SelectItem>
                 {Object.keys(templateOptions).map(standard => (
                   <SelectItem key={standard} value={standard}>{standard}</SelectItem>
                 ))}
@@ -391,7 +391,7 @@ const InternalAudits = () => {
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="Scheduled">Scheduled</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
@@ -839,7 +839,7 @@ const InternalAudits = () => {
                         <SelectValue placeholder="Select a standard" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Standards</SelectItem>
+                        <SelectItem value="all">All Standards</SelectItem>
                         {Object.keys(templateOptions).map(standard => (
                           <SelectItem key={standard} value={standard}>{standard}</SelectItem>
                         ))}
