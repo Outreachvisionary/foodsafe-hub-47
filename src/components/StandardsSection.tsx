@@ -50,6 +50,12 @@ const StandardsSection = () => {
           <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
             Choose from multiple global food safety standards, all managed through a single unified platform.
           </p>
+          <div className="mt-6">
+            <a href="/audits" className="text-fsms-blue hover:text-fsms-indigo font-medium inline-flex items-center gap-1 transition-colors">
+              <ClipboardCheck className="h-4 w-4" />
+              <span>View our new Internal Audits & Inspections Module</span>
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

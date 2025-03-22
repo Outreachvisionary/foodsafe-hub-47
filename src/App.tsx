@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Standards from "./pages/Standards";
 import ComplaintManagement from "./pages/ComplaintManagement";
 import Traceability from "./pages/Traceability";
+import InternalAudits from "./pages/InternalAudits";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/standards/:standardId" element={<Standards />} />
           <Route path="/complaints" element={<ComplaintManagement />} />
           <Route path="/traceability" element={<Traceability />} />
+          <Route path="/audits" element={<InternalAudits />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
