@@ -140,6 +140,7 @@ const InternalAudits = () => {
       template: '',
       scheduledDate: '',
       assignedTo: '',
+      notes: '', // Added notes field to match FormField usage below
     }
   });
 
