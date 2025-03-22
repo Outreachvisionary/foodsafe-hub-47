@@ -1,17 +1,24 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from '@/components/ui/badge';
 import { useForm } from 'react-hook-form';
-import { FileCheck, CalendarClock, ListChecks, ShieldCheck, Camera, Check, Download, FilePlus, Filter, ClipboardList, FileText, Search, PlusCircle, Calendar } from 'lucide-react';
+import { 
+  FileCheck, CalendarClock, ListChecks, ShieldCheck, Camera, Check, 
+  Download, FilePlus, Filter, ClipboardList, FileText, Search, 
+  PlusCircle, Calendar, AlertTriangle, Info, Clock, RefreshCw
+} from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
+import AuditDetailsDialog from '@/components/audits/AuditDetailsDialog';
 
-// Mock data for audits
 const mockAudits = [
   {
     id: 'A001',
@@ -63,46 +70,136 @@ const mockAudits = [
     assignedTo: 'Robert Kim',
     findings: 0,
   },
+  {
+    id: 'A006',
+    title: 'SQF Mock Recall Exercise',
+    standard: 'SQF',
+    status: 'Due Soon',
+    scheduledDate: '2023-07-30',
+    completedDate: null,
+    assignedTo: 'Unassigned',
+    findings: 0,
+    recurrence: 'Every 6 months',
+    lastCompleted: '2023-01-30',
+  },
+  {
+    id: 'A007',
+    title: 'Food Defense Assessment',
+    standard: 'SQF',
+    status: 'Scheduled',
+    scheduledDate: '2023-08-15',
+    completedDate: null,
+    assignedTo: 'John Doe',
+    findings: 0,
+    recurrence: 'Annual',
+    lastCompleted: '2022-08-10',
+  },
+  {
+    id: 'A008',
+    title: 'Environmental Monitoring Verification',
+    standard: 'FSSC 22000',
+    status: 'Due Soon',
+    scheduledDate: '2023-07-05',
+    completedDate: null,
+    assignedTo: 'Unassigned',
+    findings: 0,
+    recurrence: 'Quarterly',
+    lastCompleted: '2023-04-05',
+  }
 ];
 
-// Template options for each standard
 const templateOptions = {
   'SQF': [
     'SQF Food Safety Audit',
     'SQF Food Quality Audit',
     'SQF System Elements',
     'SQF GMP Audit',
+    'SQF Mock Recall Exercise',
+    'SQF Food Defense Assessment',
+    'SQF Crisis Management Drill',
   ],
   'ISO 22000': [
     'ISO 22000 Internal Audit',
     'ISO 22000 Management Review',
     'ISO 22000 Verification Activities',
+    'ISO 22000 Risk Assessment',
+    'ISO 22000 PRP Evaluation',
   ],
   'FSSC 22000': [
     'FSSC 22000 System Audit',
     'FSSC 22000 PRP Audit',
     'FSSC 22000 HACCP Plan Review',
+    'FSSC 22000 Environmental Monitoring',
+    'FSSC 22000 Food Fraud Mitigation',
+    'FSSC 22000 Food Defense Plan Review',
   ],
   'HACCP': [
     'HACCP Plan Verification',
     'CCP Monitoring Audit',
     'Prerequisite Program Audit',
+    'HACCP Team Meeting',
+    'Validation of Critical Limits',
   ],
   'BRC GS2': [
     'BRC Senior Management Commitment',
     'BRC HACCP Plan Audit',
     'BRC Site Standards Audit',
     'BRC Product Control Audit',
+    'BRC Allergen Management Assessment',
+    'BRC Foreign Material Control Audit',
   ],
   'GMP': [
     'Personnel Practices',
     'Facility and Equipment',
     'Sanitation',
     'Pest Control Inspection',
+    'Operational Controls',
   ]
 };
 
-// Checklist categories for each template
+const recommendedRecurrence = {
+  'SQF Mock Recall Exercise': 'Every 6 months',
+  'SQF Crisis Management Drill': 'Annual',
+  'SQF Food Defense Assessment': 'Annual',
+  'ISO 22000 Management Review': 'Annual',
+  'FSSC 22000 Environmental Monitoring': 'Quarterly',
+  'BRC Allergen Management Assessment': 'Quarterly',
+  'HACCP Plan Verification': 'Annual',
+};
+
+const standardRequirements = {
+  'SQF': [
+    'Annual internal audits covering all SQF System elements',
+    'Mock recall exercises every 6 months',
+    'Food defense assessments annually',
+    'Crisis management drills annually',
+  ],
+  'ISO 22000': [
+    'Internal audits covering all ISO 22000 elements at planned intervals',
+    'Management review meetings at planned intervals',
+    'Verification of control measures',
+    'Regular update of hazard analysis',
+  ],
+  'FSSC 22000': [
+    'Internal audits covering all FSSC 22000 requirements',
+    'Environmental monitoring program verification',
+    'Food fraud vulnerability assessment annually',
+    'Food defense assessment annually',
+  ],
+  'HACCP': [
+    'Verification of HACCP plan at least annually',
+    'Validation of critical limits',
+    'Review of corrective actions',
+    'Review of verification records',
+  ],
+  'BRC GS2': [
+    'Internal audits covering all BRC requirements',
+    'Supplier approval and performance monitoring',
+    'Traceability exercises at least annually',
+    'Documented root cause analysis for non-conformities',
+  ]
+};
+
 const checklistCategories = {
   'SQF Food Safety Audit': [
     'Management Commitment',
@@ -123,15 +220,48 @@ const checklistCategories = {
     'Corrective Actions',
     'Verification Procedures',
     'Record-Keeping'
-  ]
+  ],
+  'SQF Mock Recall Exercise': [
+    'Traceability System Effectiveness',
+    'Communication Protocols',
+    'Product Recovery Procedures',
+    'Record Keeping',
+    'Time to Complete Recall',
+    'Percentage of Product Recovered',
+    'Root Cause Analysis'
+  ],
+  'BRC Allergen Management Assessment': [
+    'Allergen Risk Assessment',
+    'Allergen Controls',
+    'Cleaning Validation',
+    'Staff Training',
+    'Labeling Controls',
+    'Supplier Management',
+    'Allergen Testing Program'
+  ],
+  'FSSC 22000 Environmental Monitoring': [
+    'Sampling Plan',
+    'Testing Methods',
+    'Corrective Actions',
+    'Trend Analysis',
+    'Zone Classification',
+    'Pathogen Controls',
+    'Verification Activities'
+  ],
 };
 
 const InternalAudits = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedStandard, setSelectedStandard] = useState('SQF');
+  const [showRequirements, setShowRequirements] = useState(false);
+  const [filterStandard, setFilterStandard] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [selectedAudit, setSelectedAudit] = useState(null);
+  const [isAuditDetailsOpen, setIsAuditDetailsOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -140,22 +270,35 @@ const InternalAudits = () => {
       template: '',
       scheduledDate: '',
       assignedTo: '',
-      notes: '', // Added notes field to match FormField usage below
+      notes: '',
+      recurrence: 'One-time',
     }
   });
 
+  const watchedTemplate = form.watch('template');
+  
+  useEffect(() => {
+    if (watchedTemplate && recommendedRecurrence[watchedTemplate]) {
+      form.setValue('recurrence', recommendedRecurrence[watchedTemplate]);
+    }
+  }, [watchedTemplate, form]);
+
   const filteredAudits = mockAudits.filter(audit => {
     const query = searchQuery.toLowerCase();
+    const standardMatch = filterStandard ? audit.standard === filterStandard : true;
+    const statusMatch = filterStatus ? audit.status === filterStatus : true;
+    
     return (
-      audit.title.toLowerCase().includes(query) ||
-      audit.standard.toLowerCase().includes(query) ||
-      audit.status.toLowerCase().includes(query) ||
-      audit.assignedTo.toLowerCase().includes(query)
+      (audit.title.toLowerCase().includes(query) ||
+       audit.standard.toLowerCase().includes(query) ||
+       audit.status.toLowerCase().includes(query) ||
+       (audit.assignedTo && audit.assignedTo.toLowerCase().includes(query))) &&
+      standardMatch && statusMatch
     );
   });
 
   const upcomingAudits = filteredAudits.filter(audit => 
-    audit.status === 'Scheduled' || audit.status === 'In Progress'
+    audit.status === 'Scheduled' || audit.status === 'In Progress' || audit.status === 'Due Soon'
   );
   
   const completedAudits = filteredAudits.filter(audit => 
@@ -164,19 +307,36 @@ const InternalAudits = () => {
 
   const onSubmit = (data) => {
     console.log('Form submitted:', data);
+    
+    toast({
+      title: "Audit Scheduled",
+      description: `${data.title} has been scheduled for ${data.scheduledDate}`,
+    });
+    
     setIsNewAuditDialogOpen(false);
     form.reset();
   };
 
-  const handleStandardChange = (e) => {
-    const standard = e.target.value;
-    setSelectedStandard(standard);
-    form.setValue('standard', standard);
+  const handleStandardChange = (value) => {
+    setSelectedStandard(value);
+    form.setValue('standard', value);
     form.setValue('template', '');
   };
 
   const getTemplateOptions = () => {
     return templateOptions[selectedStandard] || [];
+  };
+
+  const handleAutoSchedule = () => {
+    toast({
+      title: "Audits Auto-Scheduled",
+      description: "Required audits have been automatically scheduled based on FSMS requirements",
+    });
+  };
+
+  const handleViewAuditDetails = (audit) => {
+    setSelectedAudit(audit);
+    setIsAuditDetailsOpen(true);
   };
 
   const getStatusColor = (status) => {
@@ -187,6 +347,8 @@ const InternalAudits = () => {
         return 'text-blue-600 bg-blue-100';
       case 'Scheduled':
         return 'text-amber-600 bg-amber-100';
+      case 'Due Soon':
+        return 'text-red-600 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -211,11 +373,49 @@ const InternalAudits = () => {
             />
           </div>
           
-          <div className="flex space-x-3">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <span>Filter</span>
-            </Button>
+          <div className="flex flex-wrap gap-3">
+            <Select value={filterStandard} onValueChange={setFilterStandard}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Standards" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Standards</SelectItem>
+                {Object.keys(templateOptions).map(standard => (
+                  <SelectItem key={standard} value={standard}>{standard}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="Scheduled">Scheduled</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+                <SelectItem value="Due Soon">Due Soon</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={handleAutoSchedule}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Auto-Schedule</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Automatically schedule required audits based on FSMS requirements</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             <Dialog open={isNewAuditDialogOpen} onOpenChange={setIsNewAuditDialogOpen}>
               <DialogTrigger asChild>
@@ -248,18 +448,34 @@ const InternalAudits = () => {
                     />
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <FormItem>
-                        <FormLabel>Standard</FormLabel>
-                        <select 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          value={selectedStandard}
-                          onChange={handleStandardChange}
-                        >
-                          {Object.keys(templateOptions).map(standard => (
-                            <option key={standard} value={standard}>{standard}</option>
-                          ))}
-                        </select>
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="standard"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Standard</FormLabel>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                handleStandardChange(value);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a standard" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.keys(templateOptions).map(standard => (
+                                  <SelectItem key={standard} value={standard}>{standard}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       <FormField
                         control={form.control}
@@ -267,17 +483,21 @@ const InternalAudits = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Audit Template</FormLabel>
-                            <FormControl>
-                              <select 
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
-                                {...field}
-                              >
-                                <option value="">Select a template</option>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a template" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
                                 {getTemplateOptions().map(template => (
-                                  <option key={template} value={template}>{template}</option>
+                                  <SelectItem key={template} value={template}>{template}</SelectItem>
                                 ))}
-                              </select>
-                            </FormControl>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -319,6 +539,42 @@ const InternalAudits = () => {
                     
                     <FormField
                       control={form.control}
+                      name="recurrence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recurrence</FormLabel>
+                          <Select 
+                            value={field.value} 
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select recurrence" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="One-time">One-time</SelectItem>
+                              <SelectItem value="Every 6 months">Every 6 months</SelectItem>
+                              <SelectItem value="Quarterly">Quarterly</SelectItem>
+                              <SelectItem value="Monthly">Monthly</SelectItem>
+                              <SelectItem value="Annual">Annual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            {watchedTemplate && recommendedRecurrence[watchedTemplate] && (
+                              <span className="text-amber-600 flex items-center gap-1">
+                                <Info className="h-3 w-3" />
+                                {watchedTemplate} is typically {recommendedRecurrence[watchedTemplate].toLowerCase()}
+                              </span>
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
                       name="notes"
                       render={({ field }) => (
                         <FormItem>
@@ -347,6 +603,53 @@ const InternalAudits = () => {
             </Dialog>
           </div>
         </div>
+        
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <span>FSMS Standard Requirements</span>
+                </CardTitle>
+                <CardDescription>
+                  Key audit and inspection requirements by food safety standard
+                </CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowRequirements(!showRequirements)}
+              >
+                {showRequirements ? 'Hide' : 'Show'} Requirements
+              </Button>
+            </div>
+          </CardHeader>
+          
+          {showRequirements && (
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.keys(standardRequirements).map((standard) => (
+                  <Card key={standard} className="border border-gray-200">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">{standard}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ul className="text-sm space-y-1">
+                        {standardRequirements[standard].map((requirement, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 text-fsms-blue mt-0.5 flex-shrink-0" />
+                            <span>{requirement}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
         
         <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
@@ -382,6 +685,7 @@ const InternalAudits = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Scheduled Date</TableHead>
                       <TableHead>Assigned To</TableHead>
+                      <TableHead>Recurrence</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -403,13 +707,30 @@ const InternalAudits = () => {
                             </span>
                           </TableCell>
                           <TableCell>{audit.scheduledDate}</TableCell>
-                          <TableCell>{audit.assignedTo}</TableCell>
+                          <TableCell>{audit.assignedTo || 'Unassigned'}</TableCell>
+                          <TableCell>
+                            {audit.recurrence ? (
+                              <span className="text-xs text-gray-500">{audit.recurrence}</span>
+                            ) : (
+                              <span className="text-xs text-gray-500">One-time</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="icon" title="Start Audit">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                title="Start Audit"
+                                onClick={() => handleViewAuditDetails(audit)}
+                              >
                                 <ListChecks className="h-4 w-4" />
                               </Button>
-                              <Button variant="outline" size="icon" title="View Details">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                title="View Details"
+                                onClick={() => handleViewAuditDetails(audit)}
+                              >
                                 <FileText className="h-4 w-4" />
                               </Button>
                             </div>
@@ -418,7 +739,7 @@ const InternalAudits = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                           No upcoming audits found
                         </TableCell>
                       </TableRow>
@@ -471,7 +792,12 @@ const InternalAudits = () => {
                           <TableCell>{audit.assignedTo}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="icon" title="View Report">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                title="View Report"
+                                onClick={() => handleViewAuditDetails(audit)}
+                              >
                                 <FileText className="h-4 w-4" />
                               </Button>
                               <Button variant="outline" size="icon" title="Download Report">
@@ -505,16 +831,20 @@ const InternalAudits = () => {
               <CardContent>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                   <div className="flex space-x-3">
-                    <select 
-                      className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    <Select 
                       value={selectedStandard}
-                      onChange={(e) => setSelectedStandard(e.target.value)}
+                      onValueChange={setSelectedStandard}
                     >
-                      <option value="">All Standards</option>
-                      {Object.keys(templateOptions).map(standard => (
-                        <option key={standard} value={standard}>{standard}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a standard" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Standards</SelectItem>
+                        {Object.keys(templateOptions).map(standard => (
+                          <SelectItem key={standard} value={standard}>{standard}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <Button className="flex items-center gap-2">
@@ -531,7 +861,14 @@ const InternalAudits = () => {
                           <ClipboardList className="h-5 w-5 text-fsms-blue" />
                           {template}
                         </CardTitle>
-                        <CardDescription className="text-xs">{selectedStandard}</CardDescription>
+                        <CardDescription className="text-xs flex items-center gap-1">
+                          {selectedStandard}
+                          {recommendedRecurrence[template] && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              {recommendedRecurrence[template]}
+                            </Badge>
+                          )}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="text-sm text-gray-500 mb-3">
@@ -558,6 +895,14 @@ const InternalAudits = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      {selectedAudit && (
+        <AuditDetailsDialog 
+          audit={selectedAudit}
+          isOpen={isAuditDetailsOpen}
+          onClose={() => setIsAuditDetailsOpen(false)}
+        />
+      )}
     </div>
   );
 };
