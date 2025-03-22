@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Standards from "./pages/Standards";
+import ComplaintManagement from "./pages/ComplaintManagement";
+import Traceability from "./pages/Traceability";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +22,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/standards" element={<Standards />} />
+          <Route path="/standards/:standardId" element={<Standards />} />
+          <Route path="/complaints" element={<ComplaintManagement />} />
+          <Route path="/traceability" element={<Traceability />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
