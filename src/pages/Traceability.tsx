@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -404,12 +403,14 @@ const Traceability = () => {
                 </ChartContainer>
               </div>
               <div className="mt-2">
-                <ChartLegendContent
-                  payload={[
-                    { value: 'Mock Recalls', color: chartConfig.mock.color, dataKey: 'mock' },
-                    { value: 'Actual Recalls', color: chartConfig.actual.color, dataKey: 'actual' }
-                  ]}
-                />
+                <ChartContainer config={chartConfig}>
+                  <ChartLegendContent
+                    payload={[
+                      { value: 'Mock Recalls', color: chartConfig.mock.color, dataKey: 'mock' },
+                      { value: 'Actual Recalls', color: chartConfig.actual.color, dataKey: 'actual' }
+                    ]}
+                  />
+                </ChartContainer>
               </div>
             </CardContent>
           </Card>
