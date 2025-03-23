@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, CheckCircle, FileText, BarChart2, Shield, ClipboardCheck, Smartphone, Flask, Factory, FileSearch } from 'lucide-react';
+import { ArrowRight, CheckCircle, FileText, BarChart2, Shield, ClipboardCheck, Smartphone, TestTube, Factory, FileSearch } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import SQFDashboard from '@/components/dashboard/standards/SQFDashboard';
@@ -233,7 +233,7 @@ const Dashboard = () => {
               <CardHeader className="pb-2">
                 <div className="flex items-start space-x-2">
                   <div className="bg-blue-100 p-2 rounded">
-                    <Flask className="h-5 w-5 text-blue-600" />
+                    <TestTube className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Laboratory Analysis Workflows</CardTitle>
