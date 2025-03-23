@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuditTraining } from '@/hooks/useAuditTraining';
-import { AlertTriangle, BookOpen, CheckCircle2, Clock } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, Clock, Thermometer, AlertCircle, FileText, Users, Bug } from 'lucide-react';
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -21,6 +21,29 @@ const TrainingModule = () => {
   
   // Filter only non-completed training from audits
   const auditTrainingTasks = trainings.filter(t => t.status !== 'completed');
+  
+  // Count critical and high priority tasks
+  const criticalTasks = auditTrainingTasks.filter(t => t.priority === 'critical').length;
+  const highPriorityTasks = auditTrainingTasks.filter(t => t.priority === 'high').length;
+  
+  const getCategoryIcon = (category?: string) => {
+    switch (category) {
+      case 'temperature-control':
+        return <Thermometer className="h-5 w-5 text-blue-600" />;
+      case 'allergen-control':
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
+      case 'hygiene-monitoring':
+        return <Users className="h-5 w-5 text-green-600" />;
+      case 'documentation':
+        return <FileText className="h-5 w-5 text-yellow-600" />;
+      case 'sanitization':
+        return <AlertTriangle className="h-5 w-5 text-purple-600" />;
+      case 'pest-control':
+        return <Bug className="h-5 w-5 text-orange-600" />;
+      default:
+        return <BookOpen className="h-5 w-5 text-blue-600" />;
+    }
+  };
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -32,6 +55,21 @@ const TrainingModule = () => {
         return 'bg-green-100 text-green-800';
       case 'overdue':
         return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -51,6 +89,7 @@ const TrainingModule = () => {
             <AlertTitle className="text-amber-800">Audit-Related Training</AlertTitle>
             <AlertDescription className="text-amber-700">
               There {auditTrainingTasks.length === 1 ? 'is' : 'are'} {auditTrainingTasks.length} training task{auditTrainingTasks.length !== 1 ? 's' : ''} assigned from audit findings.
+              {criticalTasks > 0 && ` ${criticalTasks} ${criticalTasks === 1 ? 'task requires' : 'tasks require'} immediate attention.`}
             </AlertDescription>
           </Alert>
         )}
@@ -72,10 +111,16 @@ const TrainingModule = () => {
                   <div key={task.id} className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0">
                     <div>
                       <div className="flex items-center gap-2">
+                        {getCategoryIcon(task.category)}
                         <h4 className="font-medium">{task.courseTitle}</h4>
                         <Badge className={getStatusColor(task.status)}>
                           {task.status}
                         </Badge>
+                        {task.priority && (
+                          <Badge className={getPriorityColor(task.priority)}>
+                            {task.priority}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-gray-500">From Audit #{task.auditId}</p>
                       <div className="flex items-center gap-1 mt-1 text-sm">
@@ -85,7 +130,7 @@ const TrainingModule = () => {
                         </span>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex space-x-2">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -93,6 +138,14 @@ const TrainingModule = () => {
                       >
                         View Details
                       </Button>
+                      {task.status === 'assigned' && (
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                        >
+                          Start Training
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
