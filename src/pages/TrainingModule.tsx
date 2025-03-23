@@ -6,9 +6,8 @@ import TrainingDashboard from '@/components/training/TrainingDashboard';
 import TrainingRecords from '@/components/training/TrainingRecords';
 import TrainingPlans from '@/components/training/TrainingPlans';
 import CourseLibrary from '@/components/training/CourseLibrary';
-import CompetencyAssessments from '@/components/training/competency/CompetencyAssessments';
+import CompetencyAssessments from '@/components/training/CompetencyAssessments';
 import ReportsAnalytics from '@/components/training/ReportsAnalytics';
-import CertificationGate from '@/components/training/certification/CertificationGate';
 
 const TrainingModule = () => {
   return (
@@ -50,12 +49,7 @@ const TrainingModule = () => {
           </TabsContent>
           
           <TabsContent value="reports">
-            <CertificationGate 
-              certificationType="quality-management" 
-              requiredFor="Reports & Analytics"
-            >
-              <ReportsAnalytics />
-            </CertificationGate>
+            <ReportsAnalytics />
           </TabsContent>
         </Tabs>
       </main>
