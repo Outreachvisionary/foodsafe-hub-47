@@ -18,8 +18,8 @@ import {
   FileSearch
 } from 'lucide-react';
 
-const BRCGS2Dashboard: React.FC = () => {
-  // Sample data for BRC GS2 KPIs
+const BRCDashboard: React.FC = () => {
+  // Sample data for BRC KPIs
   const kpiData = {
     overallCompliance: 81,
     seniorManagement: 88,
@@ -85,7 +85,7 @@ const BRCGS2Dashboard: React.FC = () => {
               <Award className="h-4 w-4 text-purple-500 mr-2" />
               Overall Compliance
             </CardTitle>
-            <CardDescription>BRC GS2 requirements</CardDescription>
+            <CardDescription>BRC requirements</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-fsms-dark mb-2">{kpiData.overallCompliance}%</div>
@@ -194,4 +194,4 @@ const BRCGS2Dashboard: React.FC = () => {
   );
 };
 
-export default BRCGS2Dashboard;
+export default BRCDashboard;

@@ -35,13 +35,17 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/standards" element={<Standards />} />
           <Route path="/standards/:standardId" element={<Standards />} />
-          <Route path="/complaints" element={<AuthenticatedRoute element={<ComplaintManagement />} />} />
-          <Route path="/traceability" element={<AuthenticatedRoute element={<Traceability />} />} />
+          <Route path="/complaints" element={<ComplaintManagement />} />
+          <Route path="/traceability" element={<Traceability />} />
           <Route path="/audits" element={<AuthenticatedRoute element={<InternalAudits />} />} />
           <Route path="/haccp" element={<AuthenticatedRoute element={<HaccpModule />} />} />
           <Route path="/suppliers" element={<AuthenticatedRoute element={<SupplierManagement />} />} />
           <Route path="/training" element={<AuthenticatedRoute element={<TrainingModule />} />} />
           <Route path="/capa" element={<AuthenticatedRoute element={<CAPA />} />} />
+          <Route path="/documents" element={<AuthenticatedRoute element={<NotFound />} />} />
+          <Route path="/reports" element={<AuthenticatedRoute element={<NotFound />} />} />
+          <Route path="/profile" element={<AuthenticatedRoute element={<NotFound />} />} />
+          <Route path="/settings" element={<AuthenticatedRoute element={<NotFound />} />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
