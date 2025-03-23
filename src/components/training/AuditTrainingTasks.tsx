@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Clock, BookOpen } from 'lucide-react';
 import CategoryIcon from './CategoryIcon';
 import HazardTypeIcons from './HazardTypeIcons';
-import { FoodHazardType } from '@/hooks/useAuditTraining';
+import { FoodHazardType, FoodSafetyCategory } from '@/hooks/useAuditTraining';
 
 interface AuditTrainingTask {
   id: string;
@@ -15,7 +15,7 @@ interface AuditTrainingTask {
   status: string;
   dueDate: string;
   priority?: string;
-  category?: string;
+  category?: FoodSafetyCategory; // Update the type here to match the expected type
   hazardTypes?: FoodHazardType[];
   notes?: string;
 }
