@@ -25,7 +25,8 @@ import {
   FileBarChart,
   AlertTriangle,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Thermometer
 } from 'lucide-react';
 import { 
   ChartContainer,
@@ -42,17 +43,49 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { toast } from 'sonner';
+import { BatchTrace, RecallEvent, isRecallNeeded } from '@/types/traceability';
+import BatchDetailsDialog from '@/components/traceability/BatchDetailsDialog';
 
-// Mock data for traceability
-const mockBatches = [
+const mockBatches: BatchTrace[] = [
   {
     id: 'BAT-2023-001',
     product: 'Organic Granola',
     date: '2023-10-15',
     quantity: '500 kg',
     status: 'Released',
-    suppliers: ['Organic Oats Co.', 'Natural Sweeteners Inc.'],
+    suppliers: [
+      { id: 'SUP-001', name: 'Organic Oats Co.', auditScore: 95, certificates: ['Organic', 'Allergen-Free'] },
+      { id: 'SUP-002', name: 'Natural Sweeteners Inc.', auditScore: 92 }
+    ],
     location: 'Warehouse A',
+    haccpChecks: [
+      {
+        id: 'CCP-001-1',
+        ccpId: 'CCP-TEMP-001',
+        name: 'Roasting Temperature',
+        target: 165,
+        actual: 168,
+        unit: '°F',
+        timestamp: '2023-10-15T08:30:00Z',
+        passed: true,
+        auditor: 'John Wilson',
+        auditId: 'A-2023-112',
+        hazardType: 'biological',
+      },
+      {
+        id: 'CCP-001-2',
+        ccpId: 'CCP-METAL-001',
+        name: 'Metal Detection',
+        target: 'No metal',
+        actual: 'Passed',
+        unit: '',
+        timestamp: '2023-10-15T09:45:00Z',
+        passed: true,
+        auditor: 'Maria Chen',
+        auditId: 'A-2023-113',
+        hazardType: 'physical',
+      }
+    ]
   },
   {
     id: 'BAT-2023-002',
@@ -60,8 +93,40 @@ const mockBatches = [
     date: '2023-10-12',
     quantity: '350 kg',
     status: 'On Hold',
-    suppliers: ['Protein Plus Inc.', 'Chocolate Suppliers Ltd.'],
+    suppliers: [
+      { id: 'SUP-003', name: 'Protein Plus Inc.', auditScore: 88, certificates: ['ISO 22000'] },
+      { id: 'SUP-004', name: 'Chocolate Suppliers Ltd.', auditScore: 75 }
+    ],
     location: 'Production Line 2',
+    haccpChecks: [
+      {
+        id: 'CCP-002-1',
+        ccpId: 'CCP-ALLER-001',
+        name: 'Allergen Control',
+        target: 'Segregated',
+        actual: 'Cross-contamination detected',
+        unit: '',
+        timestamp: '2023-10-12T14:22:00Z',
+        passed: false,
+        auditor: 'Sarah Johnson',
+        auditId: 'A-2023-108',
+        hazardType: 'chemical',
+        notes: 'Traces of peanuts detected in non-peanut line'
+      },
+      {
+        id: 'CCP-002-2',
+        ccpId: 'CCP-TEMP-002',
+        name: 'Cooling Temperature',
+        target: 40,
+        actual: 38,
+        unit: '°F',
+        timestamp: '2023-10-12T16:05:00Z',
+        passed: true,
+        auditor: 'David Kim',
+        auditId: 'A-2023-109',
+        hazardType: 'biological',
+      }
+    ]
   },
   {
     id: 'BAT-2023-003',
@@ -69,8 +134,39 @@ const mockBatches = [
     date: '2023-10-10',
     quantity: '1000 L',
     status: 'Released',
-    suppliers: ['Fresh Fruit Farm', 'Sugar Solutions'],
+    suppliers: [
+      { id: 'SUP-005', name: 'Fresh Fruit Farm', auditScore: 91, certificates: ['Global GAP', 'Organic'] },
+      { id: 'SUP-006', name: 'Sugar Solutions', auditScore: 89 }
+    ],
     location: 'Warehouse B',
+    haccpChecks: [
+      {
+        id: 'CCP-003-1',
+        ccpId: 'CCP-PAST-001',
+        name: 'Pasteurization',
+        target: 72,
+        actual: 73.2,
+        unit: '°C',
+        timestamp: '2023-10-10T11:15:00Z',
+        passed: true,
+        auditor: 'Michael Brown',
+        auditId: 'A-2023-104',
+        hazardType: 'biological',
+      },
+      {
+        id: 'CCP-003-2',
+        ccpId: 'CCP-PH-001',
+        name: 'pH Control',
+        target: 3.8,
+        actual: 3.9,
+        unit: 'pH',
+        timestamp: '2023-10-10T12:30:00Z',
+        passed: true,
+        auditor: 'Lisa Garcia',
+        auditId: 'A-2023-105',
+        hazardType: 'chemical',
+      }
+    ]
   },
   {
     id: 'BAT-2023-004',
@@ -78,8 +174,39 @@ const mockBatches = [
     date: '2023-10-08',
     quantity: '250 kg',
     status: 'Released',
-    suppliers: ['Nut Farms Co.', 'Packaging Supplies Inc.'],
+    suppliers: [
+      { id: 'SUP-007', name: 'Nut Farms Co.', auditScore: 94, certificates: ['Allergen Control', 'ISO 22000'] },
+      { id: 'SUP-008', name: 'Packaging Supplies Inc.', auditScore: 90 }
+    ],
     location: 'Warehouse A',
+    haccpChecks: [
+      {
+        id: 'CCP-004-1',
+        ccpId: 'CCP-ROAST-001',
+        name: 'Roasting Temperature',
+        target: 280,
+        actual: 282,
+        unit: '°F',
+        timestamp: '2023-10-08T09:30:00Z',
+        passed: true,
+        auditor: 'Robert Lee',
+        auditId: 'A-2023-101',
+        hazardType: 'biological',
+      },
+      {
+        id: 'CCP-004-2',
+        ccpId: 'CCP-METAL-002',
+        name: 'Metal Detection',
+        target: 'No metal',
+        actual: 'Passed',
+        unit: '',
+        timestamp: '2023-10-08T10:45:00Z',
+        passed: true,
+        auditor: 'Emma Davis',
+        auditId: 'A-2023-102',
+        hazardType: 'physical',
+      }
+    ]
   },
   {
     id: 'BAT-2023-005',
@@ -87,8 +214,41 @@ const mockBatches = [
     date: '2023-10-05',
     quantity: '750 L',
     status: 'Recalled',
-    suppliers: ['Caffeine Extract Inc.', 'Flavor Systems Ltd.'],
+    suppliers: [
+      { id: 'SUP-009', name: 'Caffeine Extract Inc.', auditScore: 78, certificates: ['ISO 9001'] },
+      { id: 'SUP-010', name: 'Flavor Systems Ltd.', auditScore: 82 }
+    ],
     location: 'External Warehouse',
+    haccpChecks: [
+      {
+        id: 'CCP-005-1',
+        ccpId: 'CCP-FILT-001',
+        name: 'Filtration Check',
+        target: 'Sterile',
+        actual: 'Failed',
+        unit: '',
+        timestamp: '2023-10-05T13:45:00Z',
+        passed: false,
+        auditor: 'Thomas White',
+        auditId: 'A-2023-098',
+        hazardType: 'biological',
+        notes: 'Microbial contamination detected post-filtration'
+      },
+      {
+        id: 'CCP-005-2',
+        ccpId: 'CCP-INGR-001',
+        name: 'Caffeine Level',
+        target: 200,
+        actual: 235,
+        unit: 'mg/L',
+        timestamp: '2023-10-05T14:30:00Z',
+        passed: false,
+        auditor: 'Jennifer Black',
+        auditId: 'A-2023-099',
+        hazardType: 'chemical',
+        notes: 'Caffeine concentration exceeds legal limits'
+      }
+    ]
   },
 ];
 
@@ -155,7 +315,45 @@ const mockRecallData = [
   },
 ];
 
-// Status badge component
+const mockRecallEvents: RecallEvent[] = [
+  {
+    id: 'REC-2023-001',
+    date: '2023-10-05',
+    type: 'Actual',
+    product: 'Energy Drink',
+    reason: 'Allergen not declared',
+    timeToComplete: '3.2 hours',
+    recoveryRate: '97%',
+  },
+  {
+    id: 'REC-2023-002',
+    date: '2023-09-15',
+    type: 'Mock',
+    product: 'Protein Bars',
+    reason: 'Quarterly test',
+    timeToComplete: '2.5 hours',
+    recoveryRate: '99%',
+  },
+  {
+    id: 'REC-2023-003',
+    date: '2023-07-22',
+    type: 'Actual',
+    product: 'Fruit Juice',
+    reason: 'Foreign material',
+    timeToComplete: '2.8 hours',
+    recoveryRate: '95%',
+  },
+  {
+    id: 'REC-2023-004',
+    date: '2023-06-10',
+    type: 'Mock',
+    product: 'Mixed Nuts',
+    reason: 'Quarterly test',
+    timeToComplete: '1.9 hours',
+    recoveryRate: '100%',
+  },
+];
+
 const StatusBadge = ({ status }: { status: string }) => {
   let color;
   
@@ -183,7 +381,6 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// Mock Recall Dialog Component
 const MockRecallDialog = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -348,12 +545,12 @@ const MockRecallDialog = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-// Main Traceability Component
 const Traceability = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<BatchTrace | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
-  // Filter batches based on search term
   const filteredBatches = mockBatches.filter(batch => 
     batch.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     batch.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -370,6 +567,31 @@ const Traceability = () => {
       label: "Actual Recalls",
       color: "#f87171", // red-400
     }
+  };
+
+  const batchesWithCCPFailures = filteredBatches.filter(batch => 
+    batch.haccpChecks.some(check => !check.passed)
+  ).length;
+
+  const batchesWithSupplierIssues = filteredBatches.filter(batch => 
+    batch.suppliers.some(supplier => supplier.auditScore !== undefined && supplier.auditScore < 80)
+  ).length;
+  
+  const handleViewDetails = (batch: BatchTrace) => {
+    setSelectedBatch(batch);
+    setIsDetailsOpen(true);
+  };
+
+  const handleInitiateRecall = () => {
+    if (selectedBatch) {
+      toast.success(`Recall initiated for batch ${selectedBatch.id}`);
+      setIsDetailsOpen(false);
+    }
+  };
+
+  const handleViewCCP = (ccpId: string) => {
+    toast.info(`Viewing CCP details for ${ccpId}`);
+    // In a real implementation, this would navigate to or open the HACCP module with the specific CCP
   };
   
   return (
@@ -426,6 +648,28 @@ const Traceability = () => {
             <CardContent className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium flex items-center gap-1">
+                    <Thermometer className="h-4 w-4 text-amber-500" />
+                    HACCP Compliance
+                  </span>
+                  <span className="text-sm font-bold text-amber-600">
+                    {Math.round((1 - batchesWithCCPFailures / filteredBatches.length) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-amber-500 h-2 rounded-full" 
+                    style={{ width: `${(1 - batchesWithCCPFailures / filteredBatches.length) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Target: 100%</span>
+                  <span>{batchesWithCCPFailures} batches with CCP failures</span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium">Average Trace Time</span>
                   <span className="text-sm font-bold text-fsms-blue">2.3 hours</span>
                 </div>
@@ -440,20 +684,6 @@ const Traceability = () => {
               
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium">Trace Completion Rate</span>
-                  <span className="text-sm font-bold text-green-600">98%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '98%' }}></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Target: 95%</span>
-                  <span>3% above target</span>
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium">Supplier Traceability</span>
                   <span className="text-sm font-bold text-yellow-600">92%</span>
                 </div>
@@ -462,7 +692,7 @@ const Traceability = () => {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Target: 100%</span>
-                  <span>8% below target</span>
+                  <span>{batchesWithSupplierIssues} suppliers below threshold</span>
                 </div>
               </div>
             </CardContent>
@@ -554,6 +784,11 @@ const Traceability = () => {
                 <CardTitle>Product Batches</CardTitle>
                 <CardDescription>
                   Showing {filteredBatches.length} batches
+                  {batchesWithCCPFailures > 0 && (
+                    <span className="ml-2 text-red-600">
+                      ({batchesWithCCPFailures} with HACCP issues)
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -565,28 +800,51 @@ const Traceability = () => {
                       <TableHead>Date</TableHead>
                       <TableHead className="hidden md:table-cell">Quantity</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Location</TableHead>
+                      <TableHead className="hidden md:table-cell">HACCP Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBatches.map(batch => (
-                      <TableRow key={batch.id}>
-                        <TableCell className="font-medium">{batch.id}</TableCell>
-                        <TableCell>{batch.product}</TableCell>
-                        <TableCell>{batch.date}</TableCell>
-                        <TableCell className="hidden md:table-cell">{batch.quantity}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={batch.status} />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{batch.location}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredBatches.map(batch => {
+                      const hasFailedCCPs = batch.haccpChecks.some(check => !check.passed);
+                      const hasSupplierIssues = batch.suppliers.some(s => s.auditScore !== undefined && s.auditScore < 80);
+                      
+                      return (
+                        <TableRow key={batch.id}>
+                          <TableCell className="font-medium">{batch.id}</TableCell>
+                          <TableCell>{batch.product}</TableCell>
+                          <TableCell>{batch.date}</TableCell>
+                          <TableCell className="hidden md:table-cell">{batch.quantity}</TableCell>
+                          <TableCell>
+                            <StatusBadge status={batch.status} />
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {hasFailedCCPs ? (
+                              <Badge className="bg-red-100 text-red-800 border-red-200">
+                                CCP Failure
+                              </Badge>
+                            ) : hasSupplierIssues ? (
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                                Supplier Issue
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                                Compliant
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewDetails(batch)}
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -638,80 +896,42 @@ const Traceability = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell>2023-10-05</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                          Actual
-                        </Badge>
-                      </TableCell>
-                      <TableCell>Energy Drink</TableCell>
-                      <TableCell className="hidden md:table-cell">Allergen not declared</TableCell>
-                      <TableCell>3.2 hours</TableCell>
-                      <TableCell className="hidden md:table-cell">97%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>2023-09-15</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                          Mock
-                        </Badge>
-                      </TableCell>
-                      <TableCell>Protein Bars</TableCell>
-                      <TableCell className="hidden md:table-cell">Quarterly test</TableCell>
-                      <TableCell>2.5 hours</TableCell>
-                      <TableCell className="hidden md:table-cell">99%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>2023-07-22</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                          Actual
-                        </Badge>
-                      </TableCell>
-                      <TableCell>Fruit Juice</TableCell>
-                      <TableCell className="hidden md:table-cell">Foreign material</TableCell>
-                      <TableCell>2.8 hours</TableCell>
-                      <TableCell className="hidden md:table-cell">95%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>2023-06-10</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                          Mock
-                        </Badge>
-                      </TableCell>
-                      <TableCell>Mixed Nuts</TableCell>
-                      <TableCell className="hidden md:table-cell">Quarterly test</TableCell>
-                      <TableCell>1.9 hours</TableCell>
-                      <TableCell className="hidden md:table-cell">100%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    {mockRecallEvents.map(recall => (
+                      <TableRow key={recall.id}>
+                        <TableCell>{recall.date}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={recall.type === 'Actual' ? 
+                            "bg-red-100 text-red-800 border-red-200" : 
+                            "bg-blue-100 text-blue-800 border-blue-200"
+                          }>
+                            {recall.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{recall.product}</TableCell>
+                        <TableCell className="hidden md:table-cell">{recall.reason}</TableCell>
+                        <TableCell>{recall.timeToComplete}</TableCell>
+                        <TableCell className="hidden md:table-cell">{recall.recoveryRate}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+        
+        <BatchDetailsDialog
+          batch={selectedBatch}
+          open={isDetailsOpen}
+          onOpenChange={setIsDetailsOpen}
+          onRecallInitiate={handleInitiateRecall}
+          onViewCCP={handleViewCCP}
+        />
       </main>
     </div>
   );
