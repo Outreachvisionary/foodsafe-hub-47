@@ -7,7 +7,7 @@ import SQFDashboard from '@/components/dashboard/standards/SQFDashboard';
 import ISO22000Dashboard from '@/components/dashboard/standards/ISO22000Dashboard';
 import FSSC22000Dashboard from '@/components/dashboard/standards/FSSC22000Dashboard';
 import HACCPDashboard from '@/components/dashboard/standards/HACCPDashboard';
-import BRCDashboard from '@/components/dashboard/standards/BRCGS2Dashboard';
+import BRCDashboard from '@/components/dashboard/standards/BRCDashboard';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 

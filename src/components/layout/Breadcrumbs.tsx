@@ -23,7 +23,7 @@ const Breadcrumbs: React.FC = () => {
     'sqf': 'SQF',
     'iso22000': 'ISO 22000',
     'fssc22000': 'FSSC 22000',
-    'haccp': 'HACCP',
+    // Removed duplicate 'haccp' entry
     'brcgs2': 'BRC',
     'brc': 'BRC',
     'profile': 'Profile',
