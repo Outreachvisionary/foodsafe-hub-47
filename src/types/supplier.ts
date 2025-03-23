@@ -34,6 +34,7 @@ export interface SupplierDocument {
   expiryDate: string;
   status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Pending Review';
   fileName: string;
+  supplier: string; // Added the supplier property
   standard?: 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP';
 }
 

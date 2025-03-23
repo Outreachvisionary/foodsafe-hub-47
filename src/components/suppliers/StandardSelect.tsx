@@ -25,17 +25,19 @@ const StandardSelect: React.FC<StandardSelectProps> = ({
   triggerClassName,
 }) => {
   return (
-    <Select value={value} onValueChange={onValueChange} className={className}>
-      <SelectTrigger className={triggerClassName}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {includeAll && <SelectItem value="all">All Standards</SelectItem>}
-        {standards.map((standard) => (
-          <SelectItem key={standard} value={standard}>{standard}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={className}>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className={triggerClassName}>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {includeAll && <SelectItem value="all">All Standards</SelectItem>}
+          {standards.map((standard) => (
+            <SelectItem key={standard} value={standard}>{standard}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -132,12 +131,10 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
   const [selectedDocStandard, setSelectedDocStandard] = useState<string>(standard);
   const [isUploading, setIsUploading] = useState(false);
   
-  // Update the selected standard when the prop changes
   React.useEffect(() => {
     setSelectedDocStandard(standard);
   }, [standard]);
   
-  // Filter documents based on search query and selected filters
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -237,13 +234,11 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
 
   const handleUploadClick = () => {
     setIsUploading(true);
-    // Simulate document upload process
     setTimeout(() => {
       setIsUploading(false);
     }, 1500);
   };
 
-  // Count documents by status
   const validCount = documents.filter(doc => doc.status === 'Valid').length;
   const expiringCount = documents.filter(doc => doc.status === 'Expiring Soon').length;
   const expiredCount = documents.filter(doc => doc.status === 'Expired').length;
