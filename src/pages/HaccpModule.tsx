@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
 const HaccpModule = () => {
   const [activeTab, setActiveTab] = useState('plans');
@@ -29,7 +29,9 @@ const HaccpModule = () => {
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="plans" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Breadcrumbs />
+        
+        <Tabs defaultValue="plans" value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
           <TabsList className="mb-8">
             <TabsTrigger value="plans" className="flex items-center gap-2">
               <ListChecks className="h-4 w-4" />

@@ -32,11 +32,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/standards" element={<Standards />} />
-          <Route path="/standards/:standardId" element={<Standards />} />
-          <Route path="/complaints" element={<ComplaintManagement />} />
-          <Route path="/traceability" element={<Traceability />} />
+          <Route path="/dashboard" element={<AuthenticatedRoute element={<Dashboard />} />} />
+          <Route path="/standards" element={<AuthenticatedRoute element={<Standards />} />} />
+          <Route path="/standards/:standardId" element={<AuthenticatedRoute element={<Standards />} />} />
+          <Route path="/complaints" element={<AuthenticatedRoute element={<ComplaintManagement />} />} />
+          <Route path="/traceability" element={<AuthenticatedRoute element={<Traceability />} />} />
           <Route path="/audits" element={<AuthenticatedRoute element={<InternalAudits />} />} />
           <Route path="/haccp" element={<AuthenticatedRoute element={<HaccpModule />} />} />
           <Route path="/suppliers" element={<AuthenticatedRoute element={<SupplierManagement />} />} />

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -12,7 +12,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
-  SidebarInset
+  SidebarInset,
+  SidebarTrigger
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -40,7 +41,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="bg-gray-50">
-          {children}
+          <div className="flex flex-col min-h-screen">
+            {children}
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>
@@ -82,11 +85,12 @@ const AppSidebar = () => {
 
   return (
     <Sidebar>
-      <SidebarHeader className="flex items-center justify-center py-4">
-        <Link to="/dashboard" className="flex items-center space-x-2 font-bold text-xl">
+      <SidebarHeader className="flex items-center justify-between py-4 px-4">
+        <Link to="/dashboard" className="flex items-center font-bold text-xl">
           <span className="text-fsms-blue">Food</span>
           <span className="text-gray-800">Compli</span>
         </Link>
+        <SidebarTrigger />
       </SidebarHeader>
       
       <SidebarContent>
