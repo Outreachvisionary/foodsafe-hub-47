@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuditTraining } from '@/hooks/useAuditTraining';
 import { AlertTriangle, BookOpen, CheckCircle2, Clock, Thermometer, AlertCircle, FileText, Users, Bug, Banana, TestTube2, Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -54,11 +55,48 @@ const TrainingModule = () => {
     
     return (
       <div className="flex space-x-1">
-        {hazardTypes.includes('biological') && <TestTube2 className="h-4 w-4 text-green-600" title="Biological" />}
-        {hazardTypes.includes('chemical') && <AlertTriangle className="h-4 w-4 text-orange-600" title="Chemical" />}
-        {hazardTypes.includes('physical') && <Sparkles className="h-4 w-4 text-blue-600" title="Physical" />}
-        {hazardTypes.includes('allergen') && <Banana className="h-4 w-4 text-yellow-600" title="Allergen" />}
-        {hazardTypes.includes('radiological') && <AlertTriangle className="h-4 w-4 text-purple-600" title="Radiological" />}
+        <TooltipProvider>
+          {hazardTypes.includes('biological') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><TestTube2 className="h-4 w-4 text-green-600" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Biological</TooltipContent>
+            </Tooltip>
+          )}
+          {hazardTypes.includes('chemical') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><AlertTriangle className="h-4 w-4 text-orange-600" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Chemical</TooltipContent>
+            </Tooltip>
+          )}
+          {hazardTypes.includes('physical') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><Sparkles className="h-4 w-4 text-blue-600" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Physical</TooltipContent>
+            </Tooltip>
+          )}
+          {hazardTypes.includes('allergen') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><Banana className="h-4 w-4 text-yellow-600" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Allergen</TooltipContent>
+            </Tooltip>
+          )}
+          {hazardTypes.includes('radiological') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><AlertTriangle className="h-4 w-4 text-purple-600" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Radiological</TooltipContent>
+            </Tooltip>
+          )}
+        </TooltipProvider>
       </div>
     );
   };
