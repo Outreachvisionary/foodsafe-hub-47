@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -7,7 +6,7 @@ import {
   AlertTriangle, 
   CheckCircle, 
   Clock, 
-  ClipboardList, The
+  ClipboardList,
   LineChart, 
   PieChart, 
   Shield, 
