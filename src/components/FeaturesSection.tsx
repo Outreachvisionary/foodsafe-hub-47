@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, FileCheck, Clipboard, BarChart3, ClipboardCheck, AlertTriangle, Users, Clock } from 'lucide-react';
+import { Shield, FileCheck, Clipboard, BarChart3, ClipboardCheck, AlertTriangle, Users, Clock, ClipboardList } from 'lucide-react';
 
 const features = [
   {
@@ -21,6 +21,12 @@ const features = [
     description: "Evaluate and monitor supplier performance with integrated risk assessment tools.",
     icon: <Users className="h-10 w-10 text-white group-hover:scale-110 transition-transform" />,
     color: "from-purple-500 to-purple-600"
+  },
+  {
+    title: "CAPA Management",
+    description: "Track corrective and preventive actions across all modules with automated workflows and effectiveness monitoring.",
+    icon: <ClipboardList className="h-10 w-10 text-white group-hover:scale-110 transition-transform" />,
+    color: "from-red-500 to-red-600"
   },
   {
     title: "Compliance Reporting",

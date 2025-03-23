@@ -13,6 +13,7 @@ import InternalAudits from "./pages/InternalAudits";
 import HaccpModule from "./pages/HaccpModule";
 import SupplierManagement from "./pages/SupplierManagement";
 import TrainingModule from "./pages/TrainingModule";
+import CAPA from "./pages/CAPA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/haccp" element={<HaccpModule />} />
           <Route path="/suppliers" element={<SupplierManagement />} />
           <Route path="/training" element={<TrainingModule />} />
+          <Route path="/capa" element={<CAPA />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
