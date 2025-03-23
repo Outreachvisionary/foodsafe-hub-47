@@ -14,6 +14,31 @@ export interface CCPCheck {
   auditId?: string;
   hazardType: FoodHazardType;
   notes?: string;
+  criticality?: 'CRITICAL' | 'MAJOR' | 'MINOR';
+}
+
+export interface BatchIngredient {
+  id: string;
+  name: string;
+  lotNumber: string;
+  nonConformanceLevel?: 'CLASS_I' | 'CLASS_II' | 'CLASS_III';
+  allergens?: string[];
+}
+
+export interface BatchSupplier {
+  id: string;
+  name: string;
+  auditScore?: number;
+  certificates?: string[];
+  ingredients?: BatchIngredient[];
+}
+
+export interface DistributionNode {
+  id: string;
+  facilityId: string;
+  date: string;
+  location: string;
+  contact: string;
 }
 
 export interface BatchTrace {
@@ -22,14 +47,12 @@ export interface BatchTrace {
   date: string;
   quantity: string;
   status: 'Released' | 'On Hold' | 'Recalled' | 'In Production';
-  suppliers: Array<{
-    id: string;
-    name: string;
-    auditScore?: number;
-    certificates?: string[];
-  }>;
+  suppliers: BatchSupplier[];
   location: string;
   haccpChecks: CCPCheck[];
+  distribution?: DistributionNode[];
+  lotNumber?: string;
+  productId?: string;
 }
 
 export interface RecallEvent {
@@ -42,6 +65,64 @@ export interface RecallEvent {
   recoveryRate: string;
 }
 
-export const isRecallNeeded = (batch: BatchTrace): boolean => 
-  batch.haccpChecks.some(check => !check.passed) ||
-  batch.suppliers.some(s => s.auditScore !== undefined && s.auditScore < 80);
+export interface FDA204Report {
+  sections: Array<{
+    title: string;
+    data: any;
+  }>;
+  batchId: string;
+  generatedDate: string;
+  regulatoryContact: string;
+}
+
+// Enhanced recall evaluation with FSMA 204 compliance logic
+export const isRecallNeeded = (batch: BatchTrace): boolean => {
+  // Check for CCP failures, focusing on critical control points
+  const ccpFailure = batch.haccpChecks.some(check => 
+    !check.passed && (check.criticality === 'CRITICAL' || !check.criticality)
+  );
+  
+  // Check for supplier issues, including both audit scores and ingredient non-conformances
+  const supplierRisk = batch.suppliers.some(supplier => 
+    (supplier.auditScore !== undefined && supplier.auditScore < 80) ||
+    (supplier.ingredients?.some(ingredient => 
+      ingredient.nonConformanceLevel === 'CLASS_I'
+    ))
+  );
+  
+  // If either condition is met, a recall is needed
+  return ccpFailure || supplierRisk;
+};
+
+// New function to generate FSMA 204-compliant reports
+export const generateFDA204Report = (batch: BatchTrace): FDA204Report => {
+  return {
+    batchId: batch.id,
+    generatedDate: new Date().toISOString(),
+    regulatoryContact: 'regulatory@company.com',
+    sections: [
+      {
+        title: 'Critical Tracking Events',
+        data: batch.distribution?.map(node => ({
+          timestamp: node.date,
+          location: node.location,
+          facilityId: node.facilityId,
+          contact: node.contact
+        })) || []
+      },
+      {
+        title: 'Key Data Elements',
+        data: {
+          LOT: batch.lotNumber || batch.id,
+          PRODUCT: batch.product,
+          QUANTITY: batch.quantity,
+          DATE: batch.date,
+          CCP_FAILURES: batch.haccpChecks.filter(check => !check.passed),
+          SUPPLIER_ISSUES: batch.suppliers.filter(supplier => 
+            supplier.auditScore !== undefined && supplier.auditScore < 80
+          )
+        }
+      }
+    ]
+  };
+};

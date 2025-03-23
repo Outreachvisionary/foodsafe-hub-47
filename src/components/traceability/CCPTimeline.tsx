@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle, Clock, User } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, User, AlertTriangle, Thermometer } from 'lucide-react';
 import { CCPCheck } from '@/types/traceability';
 import HazardTypeIcons from '../training/HazardTypeIcons';
 
@@ -16,6 +16,22 @@ const CCPNode: React.FC<{
   check: CCPCheck;
   onClick: () => void;
 }> = ({ check, onClick }) => {
+  // Determine the appropriate icon based on hazard type and criticality
+  const getHazardIcon = () => {
+    if (check.criticality === 'CRITICAL') {
+      return <AlertTriangle className="h-4 w-4 text-red-600" />;
+    }
+    
+    switch (check.hazardType) {
+      case 'biological':
+        return <Thermometer className="h-4 w-4 text-amber-600" />;
+      case 'physical':
+      case 'chemical':
+      default:
+        return null;
+    }
+  };
+  
   return (
     <div 
       className={`relative p-4 border rounded-lg ${
@@ -30,6 +46,11 @@ const CCPNode: React.FC<{
             <AlertCircle className="h-4 w-4 text-red-600" />
           }
           {check.name}
+          {check.criticality === 'CRITICAL' && (
+            <Badge className="bg-red-100 text-red-800 border-red-200 ml-1">
+              Critical
+            </Badge>
+          )}
         </h4>
         <Badge className={check.passed ? 
           'bg-green-100 text-green-800 border-green-200' : 
@@ -58,6 +79,7 @@ const CCPNode: React.FC<{
       </div>
       <div className="flex items-center gap-1 mt-1">
         <HazardTypeIcons hazardTypes={[check.hazardType]} />
+        {getHazardIcon()}
       </div>
       {check.notes && (
         <p className="text-xs italic mt-1">{check.notes}</p>
@@ -77,6 +99,7 @@ const CCPTimeline: React.FC<CCPTimelineProps> = ({
   );
   
   const hasFailedChecks = checks.some(check => !check.passed);
+  const hasCriticalFailures = checks.some(check => !check.passed && check.criticality === 'CRITICAL');
 
   return (
     <div className="space-y-4">
@@ -87,8 +110,9 @@ const CCPTimeline: React.FC<CCPTimelineProps> = ({
             variant="destructive"
             size="sm"
             onClick={onRecallInitiate}
+            className={hasCriticalFailures ? 'animate-pulse' : ''}
           >
-            Initiate Recall
+            {hasCriticalFailures ? 'Initiate FSMA 204 Recall' : 'Initiate Recall'}
           </Button>
         )}
       </div>
