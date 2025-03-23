@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,19 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/components/ui/use-toast";
-import { Calendar, Users, BookOpen, AlertTriangle, Thermometer, AlertCircle, FileText, Utensils, Bug } from 'lucide-react';
-import { useAuditTraining, FoodSafetyCategory, FOOD_SAFETY_TRAINING_MAP } from '@/hooks/useAuditTraining';
+import { Calendar, Users, BookOpen, AlertTriangle, Thermometer, AlertCircle, FileText, Utensils, Bug, Banana, Flame, TestTube2, Sparkles } from 'lucide-react';
+import { useAuditTraining, FoodSafetyCategory, FOOD_SAFETY_TRAINING_MAP, FoodHazardType } from '@/hooks/useAuditTraining';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 interface TrainingIntegrationProps {
   findingId: string;
   findingDescription: string;
   severity: string;
+  equipmentId?: string;
+  locationId?: string;
 }
 
 export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
   findingId,
   findingDescription,
-  severity
+  severity,
+  equipmentId,
+  locationId
 }) => {
   const { toast } = useToast();
   const [trainingCourse, setTrainingCourse] = useState('');
@@ -27,11 +32,18 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
   const [assignees, setAssignees] = useState<string[]>([]);
   const [category, setCategory] = useState<FoodSafetyCategory>('general');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
-  const [selectedHazards, setSelectedHazards] = useState<string[]>([]);
+  const [selectedHazards, setSelectedHazards] = useState<FoodHazardType[]>([]);
+  const [notes, setNotes] = useState('');
+  const [showHACCPFields, setShowHACCPFields] = useState(false);
 
-  const { getRecommendedTraining, getDeadlineByPriority, assignTraining } = useAuditTraining();
+  const { 
+    getRecommendedTraining, 
+    getDeadlineByPriority, 
+    assignTraining, 
+    getCoursesForHazards,
+    isCriticalControlPoint 
+  } = useAuditTraining();
 
-  // Detect likely category based on finding description
   useEffect(() => {
     const lowerDesc = findingDescription.toLowerCase();
     if (lowerDesc.includes('temperature') || lowerDesc.includes('cold') || lowerDesc.includes('hot')) {
@@ -52,9 +64,9 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
       setCategory('traceability');
     }
 
-    // Set priority based on severity
     if (severity === 'critical') {
       setPriority('critical');
+      setShowHACCPFields(true);
     } else if (severity === 'major') {
       setPriority('high');
     } else if (severity === 'minor') {
@@ -64,15 +76,14 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
     }
   }, [findingDescription, severity]);
 
-  // Set recommended due date based on priority
   useEffect(() => {
     setDueDate(getDeadlineByPriority(priority));
   }, [priority, getDeadlineByPriority]);
 
-  // Get recommended courses for selected category
-  const recommendedCourses = getRecommendedTraining(category);
+  const recommendedCourses = selectedHazards.length > 0 
+    ? getCoursesForHazards(selectedHazards)
+    : getRecommendedTraining(category);
 
-  // Mock employees
   const employees = [
     { id: 'emp1', name: 'John Doe', department: 'Production' },
     { id: 'emp2', name: 'Jane Smith', department: 'Quality' },
@@ -100,6 +111,21 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
     }
   };
 
+  const getHazardIcon = (hazard: FoodHazardType) => {
+    switch (hazard) {
+      case 'biological':
+        return <TestTube2 className="h-4 w-4 text-green-600" />;
+      case 'chemical':
+        return <Flame className="h-4 w-4 text-orange-600" />;
+      case 'physical':
+        return <Sparkles className="h-4 w-4 text-blue-600" />;
+      case 'allergen':
+        return <Banana className="h-4 w-4 text-yellow-600" />;
+      case 'radiological':
+        return <AlertTriangle className="h-4 w-4 text-purple-600" />;
+    }
+  };
+
   const handleAssignTraining = () => {
     if (!trainingCourse || !dueDate || assignees.length === 0) {
       toast({
@@ -110,7 +136,6 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
       return;
     }
 
-    // In a real application, this would call an API to assign training
     console.log('Assigning training:', {
       findingId,
       trainingCourse,
@@ -118,7 +143,10 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
       assignees,
       category,
       priority,
-      hazards: selectedHazards
+      hazards: selectedHazards,
+      equipmentId,
+      locationId,
+      notes
     });
 
     assignTraining({
@@ -128,7 +156,11 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
       assignedTo: assignees,
       dueDate,
       category,
-      priority
+      priority,
+      hazardTypes: selectedHazards,
+      equipmentId,
+      locationId,
+      notes
     });
 
     toast({
@@ -136,12 +168,14 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
       description: `${trainingCourse} has been assigned to ${assignees.length} employee(s)`,
     });
 
-    // Reset form
     setTrainingCourse('');
     setDueDate(getDeadlineByPriority(priority));
     setAssignees([]);
     setSelectedHazards([]);
+    setNotes('');
   };
+
+  const isCCP = isCriticalControlPoint({ category, priority });
 
   return (
     <Card className="mt-4">
@@ -149,6 +183,9 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
         <CardTitle className="text-base flex items-center gap-2">
           {getCategoryIcon(category)}
           Assign Remedial Training
+          {isCCP && (
+            <Badge className="bg-red-100 text-red-800 ml-2">CCP</Badge>
+          )}
         </CardTitle>
         <CardDescription>
           Create training assignments based on this audit finding
@@ -162,7 +199,7 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
               <span>Suggested category: <strong>{category.replace('-', ' ')}</strong></span>
             </div>
             
-            <label className="text-sm font-medium mb-1 block">Finding Category</label>
+            <Label className="text-sm font-medium mb-1 block">Finding Category</Label>
             <Select value={category} onValueChange={(value) => setCategory(value as FoodSafetyCategory)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
@@ -178,34 +215,35 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Hazard Type</label>
+            <Label className="text-sm font-medium mb-1 block">Hazard Type</Label>
             <div className="space-y-2 mt-1">
-              {['Biological', 'Chemical', 'Physical', 'Allergen'].map((hazard) => (
+              {['biological', 'chemical', 'physical', 'allergen', 'radiological'].map((hazard) => (
                 <div key={hazard} className="flex items-center space-x-2">
                   <Checkbox 
                     id={`hazard-${hazard}`} 
-                    checked={selectedHazards.includes(hazard)}
+                    checked={selectedHazards.includes(hazard as FoodHazardType)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setSelectedHazards([...selectedHazards, hazard]);
+                        setSelectedHazards([...selectedHazards, hazard as FoodHazardType]);
                       } else {
                         setSelectedHazards(selectedHazards.filter(h => h !== hazard));
                       }
                     }}
                   />
-                  <label
+                  <Label
                     htmlFor={`hazard-${hazard}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1"
                   >
-                    {hazard}
-                  </label>
+                    {getHazardIcon(hazard as FoodHazardType)}
+                    {hazard.charAt(0).toUpperCase() + hazard.slice(1)}
+                  </Label>
                 </div>
               ))}
             </div>
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Training Course</label>
+            <Label className="text-sm font-medium mb-1 block">Training Course</Label>
             <Select value={trainingCourse} onValueChange={setTrainingCourse}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a course" />
@@ -230,7 +268,7 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Priority</label>
+            <Label className="text-sm font-medium mb-1 block">Priority</Label>
             <Select value={priority} onValueChange={(value) => setPriority(value as 'low' | 'medium' | 'high' | 'critical')}>
               <SelectTrigger>
                 <SelectValue placeholder="Select priority" />
@@ -245,7 +283,7 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Due Date</label>
+            <Label className="text-sm font-medium mb-1 block">Due Date</Label>
             <div className="relative">
               <Input 
                 type="date" 
@@ -258,7 +296,7 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Assign To</label>
+            <Label className="text-sm font-medium mb-1 block">Assign To</Label>
             <Select>
               <SelectTrigger>
                 <SelectValue placeholder="Select employees" />
@@ -290,11 +328,56 @@ export const TrainingIntegration: React.FC<TrainingIntegrationProps> = ({
             )}
           </div>
 
+          {(showHACCPFields || priority === 'critical' || isCCP) && (
+            <div className="bg-red-50 p-3 rounded-md border border-red-100">
+              <h4 className="text-sm font-medium text-red-800 mb-2 flex items-center gap-1">
+                <AlertTriangle className="h-4 w-4" />
+                HACCP Control Point Training
+              </h4>
+              <p className="text-xs text-red-700 mb-2">
+                This finding affects a Critical Control Point. Immediate training is required.
+              </p>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Corrective Action per HACCP Plan</Label>
+                <Textarea 
+                  placeholder="Describe the required corrective action according to HACCP plan..."
+                  className="text-sm"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+
+          {category === 'allergen-control' && (
+            <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100">
+              <h4 className="text-sm font-medium text-yellow-800 mb-2 flex items-center gap-1">
+                <Banana className="h-4 w-4" />
+                Allergen Training Requirements
+              </h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="allergen-cleanup" />
+                  <Label htmlFor="allergen-cleanup" className="text-xs">
+                    Equipment cleanup verification required
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="allergen-testing" />
+                  <Label htmlFor="allergen-testing" className="text-xs">
+                    ATP/allergen testing required post-training
+                  </Label>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
-            <label className="text-sm font-medium mb-1 block">Additional Notes</label>
+            <Label className="text-sm font-medium mb-1 block">Additional Notes</Label>
             <Textarea 
               placeholder="Enter any additional information or instructions..."
               className="h-24"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
           

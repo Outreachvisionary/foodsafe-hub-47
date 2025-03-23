@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuditTraining } from '@/hooks/useAuditTraining';
-import { AlertTriangle, BookOpen, CheckCircle2, Clock, Thermometer, AlertCircle, FileText, Users, Bug } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, Clock, Thermometer, AlertCircle, FileText, Users, Bug, Banana, TestTube2, Sparkles } from 'lucide-react';
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -31,18 +31,36 @@ const TrainingModule = () => {
       case 'temperature-control':
         return <Thermometer className="h-5 w-5 text-blue-600" />;
       case 'allergen-control':
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
+        return <Banana className="h-5 w-5 text-yellow-600" />;
       case 'hygiene-monitoring':
         return <Users className="h-5 w-5 text-green-600" />;
       case 'documentation':
-        return <FileText className="h-5 w-5 text-yellow-600" />;
+        return <FileText className="h-5 w-5 text-amber-600" />;
       case 'sanitization':
         return <AlertTriangle className="h-5 w-5 text-purple-600" />;
       case 'pest-control':
         return <Bug className="h-5 w-5 text-orange-600" />;
+      case 'foreign-material':
+        return <Sparkles className="h-5 w-5 text-indigo-600" />;
+      case 'traceability':
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
       default:
         return <BookOpen className="h-5 w-5 text-blue-600" />;
     }
+  };
+  
+  const getHazardIcons = (hazardTypes?: string[]) => {
+    if (!hazardTypes || hazardTypes.length === 0) return null;
+    
+    return (
+      <div className="flex space-x-1">
+        {hazardTypes.includes('biological') && <TestTube2 className="h-4 w-4 text-green-600" title="Biological" />}
+        {hazardTypes.includes('chemical') && <AlertTriangle className="h-4 w-4 text-orange-600" title="Chemical" />}
+        {hazardTypes.includes('physical') && <Sparkles className="h-4 w-4 text-blue-600" title="Physical" />}
+        {hazardTypes.includes('allergen') && <Banana className="h-4 w-4 text-yellow-600" title="Allergen" />}
+        {hazardTypes.includes('radiological') && <AlertTriangle className="h-4 w-4 text-purple-600" title="Radiological" />}
+      </div>
+    );
   };
   
   const getStatusColor = (status: string) => {
@@ -129,6 +147,15 @@ const TrainingModule = () => {
                           Due: {task.dueDate}
                         </span>
                       </div>
+                      {task.hazardTypes && task.hazardTypes.length > 0 && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500">Hazards:</span>
+                          {getHazardIcons(task.hazardTypes)}
+                        </div>
+                      )}
+                      {task.notes && (
+                        <p className="text-xs text-gray-600 mt-1 italic">{task.notes}</p>
+                      )}
                     </div>
                     <div className="flex space-x-2">
                       <Button 

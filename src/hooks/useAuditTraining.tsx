@@ -1,18 +1,6 @@
 
 import { useState, useEffect } from 'react';
 
-interface AuditRelatedTraining {
-  id: string;
-  auditId: string;
-  findingId: string;
-  courseTitle: string;
-  assignedTo: string[];
-  dueDate: string;
-  status: 'assigned' | 'in-progress' | 'completed' | 'overdue';
-  category?: FoodSafetyCategory;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-}
-
 // Food safety specific categories
 export type FoodSafetyCategory = 
   | 'temperature-control' 
@@ -25,17 +13,41 @@ export type FoodSafetyCategory =
   | 'traceability'
   | 'general';
 
+// Food safety hazard types for HACCP compliance
+export type FoodHazardType = 
+  | 'biological' 
+  | 'chemical' 
+  | 'physical' 
+  | 'allergen'
+  | 'radiological';
+
+interface AuditRelatedTraining {
+  id: string;
+  auditId: string;
+  findingId: string;
+  courseTitle: string;
+  assignedTo: string[];
+  dueDate: string;
+  status: 'assigned' | 'in-progress' | 'completed' | 'overdue';
+  category?: FoodSafetyCategory;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  hazardTypes?: FoodHazardType[];
+  equipmentId?: string;
+  locationId?: string;
+  notes?: string;
+}
+
 // Map food safety categories to recommended training courses
 export const FOOD_SAFETY_TRAINING_MAP: Record<FoodSafetyCategory, string[]> = {
-  'temperature-control': ['Cold Chain Management', 'Thermometer Calibration'],
-  'allergen-control': ['Allergen Management', 'Cross-Contamination Prevention'],
-  'hygiene-monitoring': ['GMP Basics', 'Personal Hygiene Standards'],
-  'documentation': ['Record Keeping Compliance', 'Documentation Best Practices'],
-  'sanitization': ['Sanitation Procedures', 'Chemical Safety'],
-  'pest-control': ['Integrated Pest Management', 'Pest Prevention Strategies'],
-  'foreign-material': ['Foreign Material Prevention', 'Metal Detection Systems'],
-  'traceability': ['Product Traceability', 'Lot Coding Systems'],
-  'general': ['Food Safety Refresher', 'HACCP Principles']
+  'temperature-control': ['Cold Chain Management', 'Thermometer Calibration', 'Temperature Monitoring Procedures'],
+  'allergen-control': ['Allergen Management', 'Cross-Contamination Prevention', 'Allergen Cleanup Protocols'],
+  'hygiene-monitoring': ['GMP Basics', 'Personal Hygiene Standards', 'Handwashing Protocols'],
+  'documentation': ['Record Keeping Compliance', 'Documentation Best Practices', 'HACCP Records Management'],
+  'sanitization': ['Sanitation Procedures', 'Chemical Safety', 'Clean-in-Place (CIP) Validation'],
+  'pest-control': ['Integrated Pest Management', 'Pest Prevention Strategies', 'Pest Monitoring Systems'],
+  'foreign-material': ['Foreign Material Prevention', 'Metal Detection Systems', 'Glass & Brittle Plastic Control'],
+  'traceability': ['Product Traceability', 'Lot Coding Systems', 'Mock Recall Procedures'],
+  'general': ['Food Safety Refresher', 'HACCP Principles', 'Food Safety Modernization Act (FSMA) Overview']
 };
 
 // This would normally be fetched from an API
@@ -134,9 +146,10 @@ export const useAuditTraining = (auditId?: string, findingId?: string, category?
     return FOOD_SAFETY_TRAINING_MAP[findingCategory] || FOOD_SAFETY_TRAINING_MAP.general;
   };
 
-  const assignTraining = (training: Omit<AuditRelatedTraining, 'id' | 'status'>) => {
+  // Assign training based on audit finding
+  const assignTraining = (trainingData: Omit<AuditRelatedTraining, 'id' | 'status'>) => {
     const newTraining: AuditRelatedTraining = {
-      ...training,
+      ...trainingData,
       id: `train${Math.floor(Math.random() * 1000)}`,
       status: 'assigned'
     };
@@ -145,7 +158,7 @@ export const useAuditTraining = (auditId?: string, findingId?: string, category?
     return newTraining;
   };
 
-  // Generate a deadline date based on priority
+  // Generate a deadline date based on priority - compliant with food safety requirements
   const getDeadlineByPriority = (priority: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
     const today = new Date();
     switch (priority) {
@@ -164,12 +177,49 @@ export const useAuditTraining = (auditId?: string, findingId?: string, category?
     }
   };
 
+  // New method: Get relevant courses based on hazard types
+  const getCoursesForHazards = (hazardTypes: FoodHazardType[]) => {
+    const recommendedCourses: string[] = [];
+    
+    if (hazardTypes.includes('biological')) {
+      recommendedCourses.push('Microbiological Controls', 'Pathogen Testing');
+    }
+    
+    if (hazardTypes.includes('chemical')) {
+      recommendedCourses.push('Chemical Handling', 'Sanitation Chemical Safety');
+    }
+    
+    if (hazardTypes.includes('physical')) {
+      recommendedCourses.push('Foreign Object Detection', 'Glass & Hard Plastic Control');
+    }
+    
+    if (hazardTypes.includes('allergen')) {
+      recommendedCourses.push('Allergen Management', 'Cross-Contact Prevention');
+    }
+    
+    if (hazardTypes.includes('radiological')) {
+      recommendedCourses.push('Radiological Hazard Control');
+    }
+    
+    return recommendedCourses.length > 0 ? recommendedCourses : ['HACCP Principles'];
+  };
+
+  // New method: Check if a finding requires CCP training
+  const isCriticalControlPoint = (finding: { category: FoodSafetyCategory, priority?: string }) => {
+    // Categories that are typically CCPs in food safety
+    const ccpCategories: FoodSafetyCategory[] = ['temperature-control', 'foreign-material', 'allergen-control'];
+    
+    return ccpCategories.includes(finding.category) || finding.priority === 'critical';
+  };
+
   return {
     trainings,
     loading,
     error,
     assignTraining,
     getRecommendedTraining,
-    getDeadlineByPriority
+    getDeadlineByPriority,
+    getCoursesForHazards,
+    isCriticalControlPoint
   };
 };
