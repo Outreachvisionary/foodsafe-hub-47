@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +17,7 @@ import CAPAList from '@/components/capa/CAPAList';
 import CAPAEffectiveness from '@/components/capa/CAPAEffectiveness';
 import CAPAReports from '@/components/capa/CAPAReports';
 import { useToast } from '@/components/ui/use-toast';
+import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 
 const CAPA = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -30,12 +30,12 @@ const CAPA = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  const handleNewCAPA = () => {
+  const handleCAPACreated = (capaData: any) => {
     toast({
-      title: "New CAPA",
-      description: "CAPA creation form opened"
+      title: "CAPA Created",
+      description: `New CAPA "${capaData.title}" has been created`
     });
-    // This would eventually open a dialog or navigate to a creation form
+    // In a real app, we would refresh the data from the API here
   };
 
   const resetFilters = () => {
@@ -133,13 +133,7 @@ const CAPA = () => {
             </Button>
           </div>
           
-          <Button 
-            onClick={handleNewCAPA}
-            className="whitespace-nowrap"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New CAPA
-          </Button>
+          <CreateCAPADialog onCAPACreated={handleCAPACreated} />
         </div>
         
         <Tabs 
