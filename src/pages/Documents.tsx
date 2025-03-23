@@ -11,7 +11,7 @@ import {
   FileText, 
   ClipboardCheck, 
   CalendarX, 
-  FileTemplate, 
+  FilePlus, 
   Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,7 @@ const Documents = () => {
               <span>Expiring Documents</span>
             </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center gap-2">
-              <FileTemplate className="h-4 w-4" />
+              <FilePlus className="h-4 w-4" />
               <span>Templates</span>
             </TabsTrigger>
           </TabsList>
