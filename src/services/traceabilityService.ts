@@ -1,13 +1,26 @@
 
-import { BatchTrace, FDA204Report, generateFDA204Report, isRecallNeeded } from '@/types/traceability';
+import { BatchTrace, BatchIngredient, FDA204Report, generateFDA204Report, isRecallNeeded } from '@/types/traceability';
+import { validateFSMA204Compliance } from '@/services/fsma204ValidationService';
 import { toast } from 'sonner';
 
 // Evaluate if a batch needs to be recalled and generate appropriate documentation
 export const evaluateRecallNeed = (batch: BatchTrace) => {
   if (isRecallNeeded(batch)) {
     const report = generateFDA204Report(batch);
+    
+    // Validate the batch against FSMA 204 requirements
+    const validationResult = validateFSMA204Compliance(batch);
+    
+    // If there are compliance issues, warn about them
+    if (!validationResult.passed) {
+      const criticalIssues = validationResult.failedChecks.filter(c => c.impact === 'Critical').length;
+      if (criticalIssues > 0) {
+        toast.warning(`Recall documentation has ${criticalIssues} critical FSMA 204 compliance issues`);
+      }
+    }
+    
     triggerRecallAlerts(batch, report);
-    return { needsRecall: true, report };
+    return { needsRecall: true, report, validationResult };
   }
   return { needsRecall: false };
 };
@@ -40,4 +53,15 @@ export const getComplaintTrend = (productId: string | undefined): number => {
   };
   
   return mockTrends[productId] || Math.floor(Math.random() * 20);
+};
+
+// Evaluate if an ingredient needs to be recalled based on nonconformance level
+export const evaluateIngredientRisk = (ingredient: BatchIngredient) => {
+  if (ingredient.nonConformanceLevel === 'CLASS_I') {
+    return { riskLevel: 'High', requiresRecall: true };
+  } else if (ingredient.nonConformanceLevel === 'CLASS_II') {
+    return { riskLevel: 'Medium', requiresRecall: false };
+  } else {
+    return { riskLevel: 'Low', requiresRecall: false };
+  }
 };
