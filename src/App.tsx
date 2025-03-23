@@ -15,8 +15,14 @@ import SupplierManagement from "./pages/SupplierManagement";
 import TrainingModule from "./pages/TrainingModule";
 import CAPA from "./pages/CAPA";
 import NotFound from "./pages/NotFound";
+import SidebarLayout from "./components/layout/SidebarLayout";
 
 const queryClient = new QueryClient();
+
+// Helper component to wrap authenticated pages with the sidebar layout
+const AuthenticatedRoute = ({ element }: { element: React.ReactNode }) => (
+  <SidebarLayout>{element}</SidebarLayout>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -29,13 +35,13 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/standards" element={<Standards />} />
           <Route path="/standards/:standardId" element={<Standards />} />
-          <Route path="/complaints" element={<ComplaintManagement />} />
-          <Route path="/traceability" element={<Traceability />} />
-          <Route path="/audits" element={<InternalAudits />} />
-          <Route path="/haccp" element={<HaccpModule />} />
-          <Route path="/suppliers" element={<SupplierManagement />} />
-          <Route path="/training" element={<TrainingModule />} />
-          <Route path="/capa" element={<CAPA />} />
+          <Route path="/complaints" element={<AuthenticatedRoute element={<ComplaintManagement />} />} />
+          <Route path="/traceability" element={<AuthenticatedRoute element={<Traceability />} />} />
+          <Route path="/audits" element={<AuthenticatedRoute element={<InternalAudits />} />} />
+          <Route path="/haccp" element={<AuthenticatedRoute element={<HaccpModule />} />} />
+          <Route path="/suppliers" element={<AuthenticatedRoute element={<SupplierManagement />} />} />
+          <Route path="/training" element={<AuthenticatedRoute element={<TrainingModule />} />} />
+          <Route path="/capa" element={<AuthenticatedRoute element={<CAPA />} />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

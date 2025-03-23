@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +20,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { toast } from 'sonner';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
 // Mock data for demo purposes
 const mockFindings = [
@@ -87,7 +87,9 @@ const CAPA = () => {
         subtitle="Manage corrective and preventive actions across all compliance modules"
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <Breadcrumbs />
+        
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
           <div className="flex-1 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <div className="relative flex-1">
