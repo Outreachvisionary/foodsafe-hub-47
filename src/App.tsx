@@ -14,6 +14,7 @@ import HaccpModule from "./pages/HaccpModule";
 import SupplierManagement from "./pages/SupplierManagement";
 import TrainingModule from "./pages/TrainingModule";
 import CAPA from "./pages/CAPA";
+import Documents from "./pages/Documents";
 import NotFound from "./pages/NotFound";
 import SidebarLayout from "./components/layout/SidebarLayout";
 
@@ -42,7 +43,7 @@ const App = () => (
           <Route path="/suppliers" element={<AuthenticatedRoute element={<SupplierManagement />} />} />
           <Route path="/training" element={<AuthenticatedRoute element={<TrainingModule />} />} />
           <Route path="/capa" element={<AuthenticatedRoute element={<CAPA />} />} />
-          <Route path="/documents" element={<AuthenticatedRoute element={<NotFound />} />} />
+          <Route path="/documents" element={<AuthenticatedRoute element={<Documents />} />} />
           <Route path="/reports" element={<AuthenticatedRoute element={<NotFound />} />} />
           <Route path="/profile" element={<AuthenticatedRoute element={<NotFound />} />} />
           <Route path="/settings" element={<AuthenticatedRoute element={<NotFound />} />} />
