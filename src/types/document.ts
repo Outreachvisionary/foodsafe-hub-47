@@ -46,6 +46,8 @@ export interface Document {
   linkedItemId?: string;
   tags?: string[];
   approvers?: string[];
+  pendingSince?: string; // When document entered Pending Approval status
+  customNotificationDays?: number[]; // Days before expiry to send notifications
 }
 
 export interface DocumentVersion {
@@ -68,4 +70,41 @@ export interface Folder {
   createdAt: string;
   updatedAt: string;
   documentCount: number;
+}
+
+export interface ApprovalRule {
+  id: string;
+  category: DocumentCategory;
+  requiredApprovers: ApproverRole[];
+  escalationThresholdDays: number;
+  escalationTargets: ApproverRole[];
+}
+
+export type ApproverRole = 
+  | 'QA Manager'
+  | 'Department Head'
+  | 'Compliance Officer'
+  | 'CEO'
+  | 'External Auditor';
+
+export interface DocumentActivity {
+  id: string;
+  documentId: string;
+  action: 'created' | 'edited' | 'approved' | 'rejected' | 'published' | 'archived';
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  comments?: string;
+}
+
+export interface DocumentNotification {
+  id: string;
+  documentId: string;
+  documentTitle: string;
+  type: 'approval_request' | 'approval_overdue' | 'expiry_reminder' | 'approval_complete';
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+  targetUserIds: string[];
 }

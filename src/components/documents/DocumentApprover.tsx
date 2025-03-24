@@ -11,9 +11,12 @@ import {
   Clock, 
   User, 
   MessageSquare, 
-  FileText 
+  FileText,
+  Users
 } from 'lucide-react';
 import { Document, DocumentStatus } from '@/types/document';
+import { documentWorkflowService } from '@/services/documentWorkflowService';
+import DocumentApprovalRequirements from './DocumentApprovalRequirements';
 
 interface DocumentApproverProps {
   document: Document | null;
@@ -71,6 +74,9 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
     return <div>No document selected for approval</div>;
   }
 
+  const isOverdue = documentWorkflowService.isApprovalOverdue(document);
+  const requiredApprovers = documentWorkflowService.getRequiredApprovers(document.category);
+
   return (
     <Card className="mt-6 animate-fade-in">
       <CardHeader className="pb-2">
@@ -81,17 +87,41 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
       </CardHeader>
       <CardContent>
         <div className="mb-4 space-y-4">
-          <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-md border border-yellow-200">
+          <div className={`flex justify-between items-center p-4 rounded-md border ${
+            isOverdue ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'
+          }`}>
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
+              {isOverdue ? (
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              ) : (
+                <Clock className="h-5 w-5 text-yellow-600" />
+              )}
               <div>
-                <h4 className="font-medium">Awaiting Your Approval</h4>
-                <p className="text-sm text-gray-600">You need to approve or reject this document</p>
+                <h4 className="font-medium">
+                  {isOverdue ? 'Approval Overdue' : 'Awaiting Your Approval'}
+                </h4>
+                <p className="text-sm text-gray-600">
+                  {isOverdue 
+                    ? 'This document has exceeded the approval deadline'
+                    : 'You need to approve or reject this document'
+                  }
+                </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-              Pending Approval
+            <Badge variant="outline" className={`
+              ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}
+            `}>
+              {isOverdue ? 'Overdue' : 'Pending Approval'}
             </Badge>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-200">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">
+                Required approvers for {document.category}: {requiredApprovers.join(', ')}
+              </span>
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -153,6 +183,8 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
             </div>
           </div>
         </div>
+        
+        <DocumentApprovalRequirements document={document} />
       </CardContent>
     </Card>
   );
