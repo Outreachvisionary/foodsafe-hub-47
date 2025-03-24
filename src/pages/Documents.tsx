@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -26,7 +25,6 @@ const DocumentsContent = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
-    // Update active tab based on location state
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
     }
@@ -41,12 +39,8 @@ const DocumentsContent = () => {
     setActiveTab('approvals');
   };
 
-  // Function to handle the document workflow from upload to approval
   const handleDocumentWorkflow = () => {
     setIsUploadOpen(true);
-    // After upload is complete, the document context will be updated
-    // Then user will be directed to the document editor
-    // The remaining flow is handled in the document context and respective components
   };
 
   return (
@@ -69,7 +63,7 @@ const DocumentsContent = () => {
             />
             <Button onClick={handleDocumentWorkflow} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              <span>Upload New Document</span>
+              <span>Create New Document</span>
             </Button>
           </div>
         </div>

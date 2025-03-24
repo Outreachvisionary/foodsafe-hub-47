@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DocumentCategory, ModuleReference } from '@/types/document';
+import { DocumentCategory, ModuleReference, DocumentStatus } from '@/types/document';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, FileUp, Upload, X, Trash2 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useDocuments } from '@/contexts/DocumentContext';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [applySameMetadata, setApplySameMetadata] = useState(true);
   const { toast } = useToast();
+  const { addDocument, setSelectedDocument } = useDocuments();
 
   const resetForm = () => {
     setTitle('');
@@ -102,10 +104,34 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       return;
     }
     
-    // This would typically make an API call to upload the document(s)
+    // Create a new document with the "Draft" status (explicitly using DocumentStatus type)
+    const newDocument = {
+      id: `doc-${Math.random().toString(36).substring(2, 11)}`,
+      title: title || selectedFiles[0].name,
+      description: description,
+      fileName: selectedFiles[0].name,
+      fileSize: selectedFiles[0].size,
+      fileType: selectedFiles[0].type,
+      category: category,
+      status: 'Draft' as DocumentStatus,
+      version: 1,
+      createdBy: "Current User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      expiryDate: date ? date.toISOString() : undefined,
+      linkedModule: linkedModule,
+      tags: [],
+    };
+    
+    // Add the document to the context
+    addDocument(newDocument);
+    
+    // Set this as the selected document for editing
+    setSelectedDocument(newDocument);
+    
     toast({
-      title: "Documents uploaded",
-      description: `${selectedFiles.length} document(s) have been uploaded successfully.`,
+      title: "Document created",
+      description: `New document "${newDocument.title}" has been created and is now ready for editing.`,
     });
     
     handleClose();
@@ -130,9 +156,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Upload Documents</DialogTitle>
+            <DialogTitle>Create New Document</DialogTitle>
             <DialogDescription>
-              Upload one or more documents to the repository. Fill in the required details below.
+              Create a new document to add to the repository. Fill in the required details below.
             </DialogDescription>
           </DialogHeader>
           
@@ -140,7 +166,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="file" className="text-right">
-                  Document Files
+                  Document File
                 </Label>
                 <div
                   className={cn(
@@ -157,18 +183,17 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                     type="file"
                     className="hidden"
                     onChange={handleFileChange}
-                    multiple
                   />
                   
                   <div className="flex flex-col items-center">
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                    <p className="font-medium">Drag & drop your files here or click to browse</p>
+                    <p className="font-medium">Drag & drop your file here or click to browse</p>
                     <p className="text-sm text-gray-500 mt-1">
                       Support for PDF, DOC, DOCX, XLS, XLSX, CSV, TXT, JPG, PNG
                     </p>
                     {selectedFiles.length > 0 && (
                       <Badge variant="secondary" className="mt-2">
-                        {selectedFiles.length} file(s) selected • {formatFileSize(getTotalFileSize())}
+                        File selected • {formatFileSize(getTotalFileSize())}
                       </Badge>
                     )}
                   </div>
@@ -178,14 +203,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               {selectedFiles.length > 0 && (
                 <div className="grid gap-2 bg-gray-50 p-3 rounded-md">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium">Selected Files</h3>
+                    <h3 className="font-medium">Selected File</h3>
                     <Button 
                       type="button" 
                       variant="outline" 
                       size="sm"
                       onClick={() => setSelectedFiles([])}
                     >
-                      Clear All
+                      Clear
                     </Button>
                   </div>
                   
@@ -214,46 +239,30 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 </div>
               )}
               
-              {selectedFiles.length > 1 && (
-                <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded-md">
-                  <input
-                    type="checkbox"
-                    id="apply-same-metadata"
-                    checked={applySameMetadata}
-                    onChange={(e) => setApplySameMetadata(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <Label htmlFor="apply-same-metadata" className="text-sm cursor-pointer">
-                    Apply the same metadata to all selected documents
-                  </Label>
-                </div>
-              )}
-              
               <div className="grid gap-2">
-                <Label htmlFor="title">Document Title{selectedFiles.length > 1 && applySameMetadata && " (will be applied to all files)"}</Label>
+                <Label htmlFor="title">Document Title</Label>
                 <Input 
                   id="title" 
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)} 
-                  required={applySameMetadata || selectedFiles.length <= 1}
-                  placeholder={selectedFiles.length > 1 && !applySameMetadata ? "Each file will use its filename as title" : "Enter document title"}
+                  placeholder="Enter document title"
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="description">Description{selectedFiles.length > 1 && applySameMetadata && " (will be applied to all files)"}</Label>
+                <Label htmlFor="description">Description</Label>
                 <Textarea 
                   id="description" 
                   value={description} 
                   onChange={(e) => setDescription(e.target.value)} 
                   rows={3} 
-                  placeholder={selectedFiles.length > 1 && !applySameMetadata ? "Each file will have its own description" : "Enter description"}
+                  placeholder="Enter description"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="category">Category{selectedFiles.length > 1 && " (for all files)"}</Label>
+                  <Label htmlFor="category">Category</Label>
                   <Select value={category} onValueChange={(value) => setCategory(value as DocumentCategory)}>
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Select category" />
@@ -274,7 +283,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="linkedModule">Link to Module{selectedFiles.length > 1 && applySameMetadata && " (for all files)"}</Label>
+                  <Label htmlFor="linkedModule">Link to Module</Label>
                   <Select value={linkedModule} onValueChange={(value) => setLinkedModule(value as ModuleReference)}>
                     <SelectTrigger id="linkedModule">
                       <SelectValue placeholder="Select module" />
@@ -293,7 +302,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="expiryDate">Expiry Date (if applicable){selectedFiles.length > 1 && applySameMetadata && " (for all files)"}</Label>
+                <Label htmlFor="expiryDate">Expiry Date (if applicable)</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -325,7 +334,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={selectedFiles.length === 0 || !category}>
-              Upload {selectedFiles.length > 0 ? `${selectedFiles.length} Document${selectedFiles.length > 1 ? 's' : ''}` : 'Documents'}
+              Create Document
             </Button>
           </DialogFooter>
         </form>
