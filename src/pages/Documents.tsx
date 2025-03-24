@@ -41,6 +41,14 @@ const DocumentsContent = () => {
     setActiveTab('approvals');
   };
 
+  // Function to handle the document workflow from upload to approval
+  const handleDocumentWorkflow = () => {
+    setIsUploadOpen(true);
+    // After upload is complete, the document context will be updated
+    // Then user will be directed to the document editor
+    // The remaining flow is handled in the document context and respective components
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 
@@ -59,9 +67,9 @@ const DocumentsContent = () => {
               onMarkAsRead={markNotificationAsRead}
               onClearAll={clearAllNotifications}
             />
-            <Button onClick={() => setIsUploadOpen(true)} className="flex items-center gap-2">
+            <Button onClick={handleDocumentWorkflow} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              <span>Upload Documents</span>
+              <span>Upload New Document</span>
             </Button>
           </div>
         </div>
