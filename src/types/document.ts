@@ -48,7 +48,22 @@ export interface Document {
   approvers?: string[];
   pendingSince?: string; // When document entered Pending Approval status
   customNotificationDays?: number[]; // Days before expiry to send notifications
+  rejectionReason?: string; // Reason for rejection if document was rejected
+  lastAction?: DocumentAction; // Track the last action performed
+  isLocked?: boolean; // To prevent editing while in approval process
+  lastReviewDate?: string; // When the document was last reviewed
+  nextReviewDate?: string; // When the document should be reviewed next
 }
+
+export type DocumentAction = 
+  | 'created'
+  | 'updated'
+  | 'submitted_for_approval'
+  | 'approved'
+  | 'rejected'
+  | 'published'
+  | 'archived'
+  | 'expired';
 
 export interface DocumentVersion {
   id: string;
@@ -90,7 +105,7 @@ export type ApproverRole =
 export interface DocumentActivity {
   id: string;
   documentId: string;
-  action: 'created' | 'edited' | 'approved' | 'rejected' | 'published' | 'archived';
+  action: DocumentAction;
   timestamp: string;
   userId: string;
   userName: string;
@@ -102,9 +117,20 @@ export interface DocumentNotification {
   id: string;
   documentId: string;
   documentTitle: string;
-  type: 'approval_request' | 'approval_overdue' | 'expiry_reminder' | 'approval_complete';
+  type: 'approval_request' | 'approval_overdue' | 'expiry_reminder' | 'approval_complete' | 'document_rejected';
   message: string;
   createdAt: string;
   isRead: boolean;
   targetUserIds: string[];
+}
+
+// Document Dashboard Overview Stats
+export interface DocumentStats {
+  totalDocuments: number;
+  pendingApproval: number;
+  expiringSoon: number;
+  expired: number;
+  published: number;
+  archived: number;
+  byCategory: Record<DocumentCategory, number>;
 }

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
@@ -9,117 +10,34 @@ import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
 import DocumentTemplates from '@/components/documents/DocumentTemplates';
 import DocumentEditor from '@/components/documents/DocumentEditor';
 import DocumentNotificationCenter from '@/components/documents/DocumentNotificationCenter';
-import { documentWorkflowService } from '@/services/documentWorkflowService';
-import { 
-  FileText, 
-  ClipboardCheck, 
-  CalendarX, 
-  FilePlus, 
-  Upload,
-  Edit
-} from 'lucide-react';
+import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
-import { Document, DocumentNotification } from '@/types/document';
+import { DocumentProvider, useDocuments } from '@/contexts/DocumentContext';
 
-// Sample document for editing demo
-const sampleDocument: Document = {
-  id: "sample-1",
-  title: "Raw Material Receiving SOP",
-  fileName: "raw_material_receiving_sop_v3.pdf",
-  fileSize: 2456000,
-  fileType: "application/pdf",
-  category: "SOP",
-  status: "Draft",
-  version: 3,
-  createdBy: "John Doe",
-  createdAt: "2023-04-15T10:30:00Z",
-  updatedAt: "2023-06-20T14:15:00Z",
-  expiryDate: "2024-06-20T14:15:00Z",
-  linkedModule: "haccp",
-  tags: ['receiving', 'materials', 'procedures'],
-  pendingSince: "2023-06-21T10:00:00Z", // For demo purposes
-  description: "## 1. Purpose\n\nThis Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.\n\n## 2. Scope\n\nThis procedure applies to all incoming raw materials at all facilities.\n\n## 3. Responsibilities\n\n- **Receiving Personnel**: Inspect and document incoming materials\n- **QA Manager**: Verify compliance with specifications\n- **Operations Manager**: Ensure proper storage\n\n## 4. Procedure\n\n### 4.1 Pre-Receiving Activities\n\n1. Review purchase orders\n2. Prepare receiving area\n3. Verify calibration of measuring equipment\n\n### 4.2 Receiving Inspection\n\n1. Inspect delivery vehicle for cleanliness\n2. Check temperature of refrigerated/frozen items\n3. Verify packaging integrity\n4. Check for pest activity\n\n### 4.3 Documentation\n\n1. Complete receiving log with date, time, supplier\n2. Record lot numbers and quantities\n3. Document any non-conformances\n\n## 5. Records\n\n- Receiving logs\n- Non-conformance reports\n- Supplier certificates of analysis\n\n## 6. References\n\n- FDA Food Safety Modernization Act (FSMA)\n- Company Food Safety Plan\n- HACCP Plan"
-};
-
-// Sample documents for workflow demo
-const sampleDocuments: Document[] = [
-  {
-    ...sampleDocument,
-    id: "sample-1",
-    status: "Pending Approval",
-    pendingSince: "2023-03-10T09:45:00Z", // Overdue for escalation
-  },
-  {
-    id: "sample-2",
-    title: "Allergen Control Program",
-    fileName: "allergen_control_program_v2.docx",
-    fileSize: 1245000,
-    fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    category: "Policy",
-    status: "Published",
-    version: 2,
-    createdBy: "Jane Smith",
-    createdAt: "2023-03-10T09:45:00Z",
-    updatedAt: "2023-05-22T11:30:00Z",
-    expiryDate: "2023-04-22T11:30:00Z", // Expired
-    linkedModule: "haccp",
-    tags: ['allergen', 'control', 'food safety']
-  },
-  {
-    id: "sample-3",
-    title: "Supplier Quality Audit Checklist",
-    fileName: "supplier_quality_audit_checklist_v1.xlsx",
-    fileSize: 985000,
-    fileType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    category: "Form",
-    status: "Approved",
-    version: 1,
-    createdBy: "Sarah Johnson",
-    createdAt: "2023-05-05T13:20:00Z",
-    updatedAt: "2023-05-05T13:20:00Z",
-    expiryDate: "2023-05-10T13:20:00Z", // About to expire
-    linkedModule: "suppliers",
-    tags: ['supplier', 'audit', 'checklist'],
-    customNotificationDays: [5, 10, 15]
-  }
-];
-
-const Documents = () => {
-  const [activeTab, setActiveTab] = useState('repository');
+const DocumentsContent = () => {
+  const location = useLocation();
+  const { documents, notifications, selectedDocument, setSelectedDocument, submitForApproval, updateDocument, markNotificationAsRead, clearAllNotifications } = useDocuments();
+  const [activeTab, setActiveTab] = useState<string>(
+    location.state?.activeTab || 'repository'
+  );
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [currentDocument, setCurrentDocument] = useState<Document | null>(sampleDocument);
-  const [notifications, setNotifications] = useState<DocumentNotification[]>([]);
 
   useEffect(() => {
-    // Generate workflow notifications for demo purposes
-    const generatedNotifications = documentWorkflowService.generateNotifications(sampleDocuments);
-    setNotifications(generatedNotifications);
-  }, []);
+    // Update active tab based on location state
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   const handleSaveDocument = (updatedDoc: Document) => {
-    // In a real app, this would save the document to the backend
-    setCurrentDocument(updatedDoc);
-    console.log('Document saved:', updatedDoc);
+    updateDocument(updatedDoc);
   };
 
   const handleSubmitForReview = (doc: Document) => {
-    // In a real app, this would submit the document for review
-    const docWithWorkflow = documentWorkflowService.submitForApproval(doc);
-    setCurrentDocument(docWithWorkflow);
-    console.log('Document submitted for review:', docWithWorkflow);
+    submitForApproval(doc);
     setActiveTab('approvals');
-  };
-
-  const handleMarkNotificationAsRead = (id: string) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id ? { ...notification, isRead: true } : notification
-    ));
-  };
-
-  const handleClearAllNotifications = () => {
-    setNotifications([]);
   };
 
   return (
@@ -137,8 +55,8 @@ const Documents = () => {
           <div className="flex items-center gap-3">
             <DocumentNotificationCenter 
               notifications={notifications}
-              onMarkAsRead={handleMarkNotificationAsRead}
-              onClearAll={handleClearAllNotifications}
+              onMarkAsRead={markNotificationAsRead}
+              onClearAll={clearAllNotifications}
             />
             <Button onClick={() => setIsUploadOpen(true)} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
@@ -156,9 +74,9 @@ const Documents = () => {
             <TabsTrigger value="approvals" className="flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" />
               <span>Approval Workflow</span>
-              {notifications.filter(n => n.type === 'approval_overdue').length > 0 && (
+              {notifications.filter(n => n.type === 'approval_overdue' || n.type === 'approval_request').length > 0 && (
                 <Badge variant="destructive" className="ml-1">
-                  {notifications.filter(n => n.type === 'approval_overdue').length}
+                  {notifications.filter(n => n.type === 'approval_overdue' || n.type === 'approval_request').length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -199,7 +117,7 @@ const Documents = () => {
           
           <TabsContent value="edit">
             <DocumentEditor 
-              document={currentDocument} 
+              document={selectedDocument} 
               onSave={handleSaveDocument}
               onSubmitForReview={handleSubmitForReview}
             />
@@ -214,5 +132,11 @@ const Documents = () => {
     </div>
   );
 };
+
+const Documents = () => (
+  <DocumentProvider>
+    <DocumentsContent />
+  </DocumentProvider>
+);
 
 export default Documents;
