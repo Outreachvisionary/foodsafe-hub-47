@@ -19,6 +19,7 @@ import {
   Edit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Document, DocumentNotification } from '@/types/document';
 
@@ -156,7 +157,7 @@ const Documents = () => {
               <ClipboardCheck className="h-4 w-4" />
               <span>Approval Workflow</span>
               {notifications.filter(n => n.type === 'approval_overdue').length > 0 && (
-                <Badge className="ml-1 bg-red-500 text-white hover:bg-red-600">
+                <Badge variant="destructive" className="ml-1">
                   {notifications.filter(n => n.type === 'approval_overdue').length}
                 </Badge>
               )}
@@ -165,7 +166,7 @@ const Documents = () => {
               <CalendarX className="h-4 w-4" />
               <span>Expiring Documents</span>
               {notifications.filter(n => n.type === 'expiry_reminder').length > 0 && (
-                <Badge className="ml-1 bg-amber-500 text-white hover:bg-amber-600">
+                <Badge variant="destructive" className="ml-1">
                   {notifications.filter(n => n.type === 'expiry_reminder').length}
                 </Badge>
               )}
