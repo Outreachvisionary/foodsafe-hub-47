@@ -1,22 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FolderIcon, FileText, Download, CheckCircle2, Clock, AlertTriangle, Tag, Edit, Eye, Trash2 } from 'lucide-react';
+import { Search, FolderIcon, FileText, Download, CheckCircle2, Clock, AlertTriangle, Tag, Edit, Eye, Trash2, Upload } from 'lucide-react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Document, DocumentCategory } from '@/types/document';
 import { documentWorkflowService } from '@/services/documentWorkflowService';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
+import { useToast } from '@/hooks/use-toast';
+import UploadDocumentDialog from './UploadDocumentDialog';
 
 const DocumentRepository: React.FC = () => {
   const { documents, deleteDocument, setSelectedDocument } = useDocuments();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -25,6 +28,10 @@ const DocumentRepository: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [docToPreview, setDocToPreview] = useState<Document | null>(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, document: null as Document | null });
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [activeDragFolder, setActiveDragFolder] = useState<string | null>(null);
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   
   // Get all unique categories from documents
   const categories = Array.from(new Set(documents.map(doc => doc.category)));
@@ -45,6 +52,50 @@ const DocumentRepository: React.FC = () => {
       
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const handleFolderDragOver = (e: React.DragEvent<HTMLDivElement>, category: string) => {
+    e.preventDefault();
+    setActiveDragFolder(category);
+  };
+
+  const handleFolderDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setActiveDragFolder(null);
+  };
+
+  const handleFolderDrop = (e: React.DragEvent<HTMLDivElement>, category: DocumentCategory) => {
+    e.preventDefault();
+    setActiveDragFolder(null);
+    
+    // This would typically interact with your document service to move documents
+    // For demo, we'll just show a toast notification
+    toast({
+      title: "Documents moved",
+      description: `Selected documents moved to ${category} folder.`,
+    });
+    
+    setSelectedDocuments([]);
+    setIsMultiSelectMode(false);
+  };
+
+  const handleDocumentSelect = (doc: Document, e: React.MouseEvent) => {
+    if (!isMultiSelectMode) return;
+    
+    e.preventDefault();
+    
+    if (selectedDocuments.some(d => d.id === doc.id)) {
+      setSelectedDocuments(selectedDocuments.filter(d => d.id === doc.id));
+    } else {
+      setSelectedDocuments([...selectedDocuments, doc]);
+    }
+  };
+
+  const toggleMultiSelectMode = () => {
+    if (isMultiSelectMode) {
+      setSelectedDocuments([]);
+    }
+    setIsMultiSelectMode(!isMultiSelectMode);
+  };
 
   const handleOpenDeleteDialog = (doc: Document) => {
     setDeleteDialog({ open: true, document: doc });
@@ -130,9 +181,18 @@ const DocumentRepository: React.FC = () => {
                 Central storage for all compliance documentation
               </CardDescription>
             </div>
-            <Button onClick={() => navigate('/documents', { state: { activeTab: 'edit' } })}>
-              Upload New Document
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant={isMultiSelectMode ? "secondary" : "outline"} 
+                onClick={toggleMultiSelectMode}
+              >
+                {isMultiSelectMode ? "Cancel Selection" : "Select Multiple"}
+              </Button>
+              <Button onClick={() => setIsUploadOpen(true)} className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                <span>Upload Documents</span>
+              </Button>
+            </div>
           </CardHeader>
           
           <CardContent>
@@ -177,10 +237,25 @@ const DocumentRepository: React.FC = () => {
               </div>
             </div>
             
+            {isMultiSelectMode && selectedDocuments.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-md flex justify-between items-center">
+                <span>{selectedDocuments.length} document(s) selected</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setSelectedDocuments([])}>
+                    Clear Selection
+                  </Button>
+                  <Button size="sm">
+                    Move to Folder
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {isMultiSelectMode && <TableHead className="w-[30px]">Select</TableHead>}
                     <TableHead>Document</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Status</TableHead>
@@ -192,7 +267,21 @@ const DocumentRepository: React.FC = () => {
                 <TableBody>
                   {filteredDocuments.length > 0 ? (
                     filteredDocuments.map((doc) => (
-                      <TableRow key={doc.id}>
+                      <TableRow 
+                        key={doc.id} 
+                        className={selectedDocuments.some(d => d.id === doc.id) ? "bg-blue-50" : ""}
+                        onClick={(e) => handleDocumentSelect(doc, e)}
+                      >
+                        {isMultiSelectMode && (
+                          <TableCell>
+                            <input 
+                              type="checkbox" 
+                              checked={selectedDocuments.some(d => d.id === doc.id)}
+                              onChange={() => {}} 
+                              className="rounded"
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">
                           <div className="flex items-center">
                             <FileText className="h-4 w-4 text-blue-500 mr-2" />
@@ -219,7 +308,8 @@ const DocumentRepository: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDocToPreview(doc);
                                 setShowPreview(true);
                               }}
@@ -230,7 +320,10 @@ const DocumentRepository: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon"
-                              onClick={() => handleEditDocument(doc)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditDocument(doc);
+                              }}
                               title="Edit Document"
                             >
                               <Edit className="h-4 w-4" />
@@ -238,6 +331,7 @@ const DocumentRepository: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              onClick={(e) => e.stopPropagation()}
                               title="Download Document"
                             >
                               <Download className="h-4 w-4" />
@@ -245,7 +339,10 @@ const DocumentRepository: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon"
-                              onClick={() => handleOpenDeleteDialog(doc)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDeleteDialog(doc);
+                              }}
                               className="text-red-500 hover:text-red-600 hover:bg-red-50"
                               title="Delete Document"
                             >
@@ -257,7 +354,7 @@ const DocumentRepository: React.FC = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <TableCell colSpan={isMultiSelectMode ? 7 : 6} className="text-center py-10 text-muted-foreground">
                         No documents found matching your criteria
                       </TableCell>
                     </TableRow>
@@ -280,8 +377,11 @@ const DocumentRepository: React.FC = () => {
                     key={category} 
                     className={`flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
                       filterCategory === category ? 'bg-gray-100' : ''
-                    }`}
+                    } ${activeDragFolder === category ? 'bg-blue-100 border-2 border-blue-300' : ''}`}
                     onClick={() => setFilterCategory(category)}
+                    onDragOver={(e) => handleFolderDragOver(e, category)}
+                    onDragLeave={handleFolderDragLeave}
+                    onDrop={(e) => handleFolderDrop(e, category as DocumentCategory)}
                   >
                     <div className="flex items-center">
                       <Tag className="h-4 w-4 mr-2 text-blue-500" />
@@ -297,10 +397,20 @@ const DocumentRepository: React.FC = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Folders</CardTitle>
+              <CardDescription className="text-xs italic">
+                Drag and drop documents to categorize
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100">
+                <div 
+                  className={`flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                    activeDragFolder === 'SOP' ? 'bg-blue-100 border-2 border-blue-300' : ''
+                  }`}
+                  onDragOver={(e) => handleFolderDragOver(e, 'SOP')}
+                  onDragLeave={handleFolderDragLeave}
+                  onDrop={(e) => handleFolderDrop(e, 'SOP')}
+                >
                   <div className="flex items-center">
                     <FolderIcon className="h-4 w-4 mr-2 text-amber-500" />
                     <span>SOPs</span>
@@ -309,7 +419,15 @@ const DocumentRepository: React.FC = () => {
                     {documents.filter(doc => doc.category === 'SOP').length}
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100">
+                
+                <div 
+                  className={`flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                    activeDragFolder === 'HACCP Plan' ? 'bg-blue-100 border-2 border-blue-300' : ''
+                  }`}
+                  onDragOver={(e) => handleFolderDragOver(e, 'HACCP Plan')}
+                  onDragLeave={handleFolderDragLeave}
+                  onDrop={(e) => handleFolderDrop(e, 'HACCP Plan')}
+                >
                   <div className="flex items-center">
                     <FolderIcon className="h-4 w-4 mr-2 text-amber-500" />
                     <span>HACCP Plans</span>
@@ -318,7 +436,15 @@ const DocumentRepository: React.FC = () => {
                     {documents.filter(doc => doc.category === 'HACCP Plan').length}
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100">
+                
+                <div 
+                  className={`flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                    activeDragFolder === 'Certificate' ? 'bg-blue-100 border-2 border-blue-300' : ''
+                  }`}
+                  onDragOver={(e) => handleFolderDragOver(e, 'Certificate')}
+                  onDragLeave={handleFolderDragLeave}
+                  onDrop={(e) => handleFolderDrop(e, 'Certificate')}
+                >
                   <div className="flex items-center">
                     <FolderIcon className="h-4 w-4 mr-2 text-amber-500" />
                     <span>Certificates</span>
@@ -327,7 +453,15 @@ const DocumentRepository: React.FC = () => {
                     {documents.filter(doc => doc.category === 'Certificate').length}
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100">
+                
+                <div 
+                  className={`flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                    activeDragFolder === 'Audit Report' ? 'bg-blue-100 border-2 border-blue-300' : ''
+                  }`}
+                  onDragOver={(e) => handleFolderDragOver(e, 'Audit Report')}
+                  onDragLeave={handleFolderDragLeave}
+                  onDrop={(e) => handleFolderDrop(e, 'Audit Report')}
+                >
                   <div className="flex items-center">
                     <FolderIcon className="h-4 w-4 mr-2 text-amber-500" />
                     <span>Audit Reports</span>
@@ -368,6 +502,12 @@ const DocumentRepository: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Upload document dialog */}
+      <UploadDocumentDialog 
+        open={isUploadOpen} 
+        onOpenChange={setIsUploadOpen} 
+      />
     </div>
   );
 };

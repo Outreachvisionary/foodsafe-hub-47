@@ -61,7 +61,7 @@ const DocumentsContent = () => {
             />
             <Button onClick={() => setIsUploadOpen(true)} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              <span>Upload Document</span>
+              <span>Upload Documents</span>
             </Button>
           </div>
         </div>
