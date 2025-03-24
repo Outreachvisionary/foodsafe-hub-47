@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { DocumentProvider, useDocuments } from '@/contexts/DocumentContext';
+import { Document as DocumentType } from '@/types/document';
 
 const DocumentsContent = () => {
   const location = useLocation();
@@ -31,11 +32,11 @@ const DocumentsContent = () => {
     }
   }, [location.state]);
 
-  const handleSaveDocument = (updatedDoc: Document) => {
+  const handleSaveDocument = (updatedDoc: DocumentType) => {
     updateDocument(updatedDoc);
   };
 
-  const handleSubmitForReview = (doc: Document) => {
+  const handleSubmitForReview = (doc: DocumentType) => {
     submitForApproval(doc);
     setActiveTab('approvals');
   };

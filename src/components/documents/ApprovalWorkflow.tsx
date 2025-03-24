@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,7 +77,8 @@ const ApprovalWorkflow: React.FC = () => {
     if (daysPending >= 7) {
       return <Badge variant="destructive" className="ml-2">Overdue</Badge>;
     } else if (daysPending >= 3) {
-      return <Badge variant="warning" className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">High Priority</Badge>;
+      // Changed from "warning" to "outline" with custom amber colors
+      return <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">High Priority</Badge>;
     }
     return null;
   };
