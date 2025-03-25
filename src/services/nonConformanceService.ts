@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   NonConformance, 
@@ -6,7 +7,9 @@ import {
   NCNotification,
   NCStats,
   NCFilter,
-  NCStatus
+  NCStatus,
+  NCItemCategory,
+  NCReasonCategory
 } from '@/types/non-conformance';
 
 

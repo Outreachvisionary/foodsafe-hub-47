@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -28,18 +29,26 @@ interface CreateCAPADialogProps {
     date: string;
     severity: string;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
   onCAPACreated,
   trigger,
   initialData,
-  sourceData
+  sourceData,
+  open,
+  onOpenChange
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [capaData, setCAPAData] = useState<any>(initialData || {});
   const { toast } = useToast();
+
+  // Handle controlled or uncontrolled state
+  const isOpen = open !== undefined ? open : dialogOpen;
+  const setIsOpen = onOpenChange || setDialogOpen;
 
   const handleSubmit = (data: any) => {
     console.log('New CAPA data:', data);
@@ -68,7 +77,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     
     if (activeTab === "workflow") {
       // If on the last tab, close the dialog
-      setOpen(false);
+      setIsOpen(false);
     } else {
       // Otherwise move to the next tab
       if (activeTab === "details") setActiveTab("rootcause");
@@ -84,27 +93,21 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   };
 
   const handleCancel = () => {
-    setOpen(false);
+    setIsOpen(false);
     setCAPAData({});
     setActiveTab("details");
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      setOpen(newOpen);
+    <Dialog open={isOpen} onOpenChange={(newOpen) => {
+      setIsOpen(newOpen);
       if (!newOpen) {
         setCAPAData({});
         setActiveTab("details");
       }
     }}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="whitespace-nowrap">
-            <Plus className="h-4 w-4 mr-2" />
-            New CAPA
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      
       <DialogContent className="sm:max-w-[1000px]">
         <DialogHeader>
           <DialogTitle>{sourceData ? 'Create CAPA from Issue' : 'Create New CAPA'}</DialogTitle>
@@ -193,7 +196,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                 if (onCAPACreated) {
                   onCAPACreated(capaData);
                 }
-                setOpen(false);
+                setIsOpen(false);
                 setCAPAData({});
                 setActiveTab("details");
               }}>

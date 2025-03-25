@@ -11,7 +11,7 @@ import { NCAttachment } from '@/types/non-conformance';
 
 interface NCAttachmentUploaderProps {
   nonConformanceId: string;
-  onSuccess?: () => void;  // Make onSuccess optional
+  onSuccess?: () => void;  // Made this optional
 }
 
 const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({ 
