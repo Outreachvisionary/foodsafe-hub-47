@@ -16,7 +16,7 @@ export const updateNCStatus = async (
     nc_id: id,
     new_status: newStatus,
     user_id: userId,
-    comment: comments || '', // Fix: Use empty string instead of null/undefined
+    comment: comments || '', // Fix: Explicitly convert to string to match RPC parameter type
     prev_status: currentStatus
   });
 
@@ -49,7 +49,7 @@ export const updateNCStatus = async (
     await createNCActivity({
       non_conformance_id: id,
       action: `Status changed from ${currentStatus} to ${newStatus}`,
-      comments,
+      comments: comments || '', // Ensure we pass a string here too
       performed_by: userId,
       previous_status: currentStatus,
       new_status: newStatus
