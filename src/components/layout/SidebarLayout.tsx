@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -14,7 +14,8 @@ import {
   SidebarSeparator,
   SidebarInset,
   SidebarTrigger,
-  SidebarRail
+  SidebarRail,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -30,9 +31,7 @@ import {
   Shield,
   AlertTriangle,
   Gauge,
-  AlertOctagon,
-  ChevronLeft,
-  ChevronRight
+  AlertOctagon
 } from 'lucide-react';
 
 interface SidebarLayoutProps {
@@ -174,14 +173,5 @@ const AppSidebar = () => {
     </Sidebar>
   );
 };
-
-// Import useSidebar hook
-function useSidebar() {
-  const context = React.useContext(React.createContext<any>(null));
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
-  }
-  return context;
-}
 
 export default SidebarLayout;
