@@ -52,7 +52,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
-            preferences: profile?.preferences as UserProfile['preferences'] || {}
+            preferences: profile?.preferences ? 
+              (typeof profile.preferences === 'object' ? profile.preferences : {}) : {}
           });
         }
       } catch (error) {
@@ -82,7 +83,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
-            preferences: profile?.preferences as UserProfile['preferences'] || {}
+            preferences: profile?.preferences ? 
+              (typeof profile.preferences === 'object' ? profile.preferences : {}) : {}
           });
         } else {
           setUser(null);
