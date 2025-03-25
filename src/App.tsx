@@ -21,7 +21,7 @@ import { UserProvider } from './contexts/UserContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from './components/ui/toaster';
-import { DocumentContextWrapper } from './contexts/DocumentContextWrapper';
+import { DocumentProvider } from './contexts/DocumentContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 const router = createBrowserRouter([
@@ -47,10 +47,10 @@ function App() {
         <UserProvider>
           <ConfigProvider>
             <NotificationProvider>
-              <DocumentContextWrapper>
+              <DocumentProvider>
                 <RouterProvider router={router} />
                 <Toaster />
-              </DocumentContextWrapper>
+              </DocumentProvider>
             </NotificationProvider>
           </ConfigProvider>
         </UserProvider>
