@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,13 +11,31 @@ import ReportDashboard from '@/components/reports/ReportDashboard';
 import ReportBuilder from '@/components/reports/ReportBuilder';
 import PrebuiltReports from '@/components/reports/PrebuiltReports';
 import ScheduledReports from '@/components/reports/ScheduledReports';
+import ModuleIntegration from '@/components/reports/ModuleIntegration';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { ReportProvider } from '@/contexts/ReportContext';
 
-const Reports = () => {
+const ReportsContent = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+  
+  useEffect(() => {
+    if (user?.preferences?.dashboardLayout) {
+      console.log(`Loading user's preferred dashboard layout: ${user.preferences.dashboardLayout}`);
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('activeTab');
+    if (tabParam && ['dashboard', 'prebuilt', 'builder', 'scheduled', 'integration'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [user]);
   
   const handleExportReport = () => {
     toast({
@@ -28,7 +45,6 @@ const Reports = () => {
   };
 
   const navigateToModuleReports = (module: string) => {
-    // Navigate to appropriate module report
     const moduleRoutes: Record<string, string> = {
       'documents': '/documents?activeTab=reports',
       'capa': '/capa?activeTab=reports',
@@ -95,6 +111,10 @@ const Reports = () => {
               <Calendar className="h-4 w-4" />
               <span>Scheduled Reports</span>
             </TabsTrigger>
+            <TabsTrigger value="integration" className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              <span>Module Integration</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard">
@@ -112,9 +132,21 @@ const Reports = () => {
           <TabsContent value="scheduled">
             <ScheduledReports />
           </TabsContent>
+          
+          <TabsContent value="integration">
+            <ModuleIntegration onNavigateToModule={navigateToModuleReports} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
+  );
+};
+
+const Reports = () => {
+  return (
+    <ReportProvider>
+      <ReportsContent />
+    </ReportProvider>
   );
 };
 

@@ -1,10 +1,10 @@
 
 import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { UserProvider } from "./contexts/UserContext";
-import { ConfigProvider } from "./contexts/ConfigContext";
-import { NotificationProvider } from "./contexts/NotificationContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { UserProvider } from "@/contexts/UserContext";
+import { ConfigProvider } from "@/contexts/ConfigContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";

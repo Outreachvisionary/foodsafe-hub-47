@@ -1,361 +1,271 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle, 
+  CardFooter 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
 import { 
   FileText, 
+  Download, 
+  ExternalLink, 
+  Calendar, 
   ClipboardCheck, 
   AlertTriangle, 
-  Users,
-  Calendar,
-  Download,
+  Users, 
+  ArrowRight, 
   BarChart,
-  Clock,
-  Bookmark,
-  Activity,
-  Star,
-  Search
+  FileBarChart
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface PrebuiltReportsProps {
   dateRange: string;
   onNavigateToModule: (module: string) => void;
 }
 
-const PrebuiltReports: React.FC<PrebuiltReportsProps> = ({ 
-  dateRange,
-  onNavigateToModule
-}) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
+const PrebuiltReports: React.FC<PrebuiltReportsProps> = ({ dateRange, onNavigateToModule }) => {
+  const [activeCategory, setActiveCategory] = useState('documents');
   const { toast } = useToast();
   
-  const handleGenerateReport = (reportType: string) => {
+  const handleDownload = (format: string, reportName: string) => {
     toast({
-      title: `Generating ${reportType} Report`,
-      description: "Your report is being generated. It will be available for download shortly."
+      title: "Report Download Started",
+      description: `Your ${reportName} report is being generated as a ${format.toUpperCase()} file.`
     });
   };
   
-  // Filter reports based on search query and category
-  const filterReports = (reports: any[]) => {
-    return reports.filter(report => {
-      const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          report.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
-      
-      return matchesSearch && matchesCategory;
-    });
-  };
-  
-  // Sample report definitions
+  const reportCategories = [
+    { id: 'documents', name: 'Documents', icon: <FileText className="h-4 w-4" />, count: 8 },
+    { id: 'audits', name: 'Audits', icon: <ClipboardCheck className="h-4 w-4" />, count: 6 },
+    { id: 'capa', name: 'CAPA', icon: <AlertTriangle className="h-4 w-4" />, count: 5 },
+    { id: 'training', name: 'Training', icon: <Users className="h-4 w-4" />, count: 7 },
+    { id: 'haccp', name: 'HACCP', icon: <FileBarChart className="h-4 w-4" />, count: 4 }
+  ];
+
   const documentReports = [
     {
-      id: 'doc-1',
-      title: 'Document Expiry Summary',
-      description: 'Overview of documents expiring in the next 30, 60, and 90 days',
-      category: 'documents',
-      icon: <Calendar className="h-5 w-5 text-amber-500" />,
-      popular: true
+      id: 'doc-exp',
+      name: 'Expiring Documents',
+      description: 'List of documents expiring in the next 30, 60, and 90 days',
+      formats: ['pdf', 'excel', 'csv'],
+      updated: '2 days ago',
+      category: 'Compliance',
+      insights: 'Currently 12 documents expiring within 30 days'
     },
     {
-      id: 'doc-2',
-      title: 'Approval Workflow Analysis',
-      description: 'Analysis of document approval times and bottlenecks',
-      category: 'documents',
-      icon: <Clock className="h-5 w-5 text-blue-500" />,
-      popular: false
+      id: 'doc-approval',
+      name: 'Approval Status Overview',
+      description: 'Summary of all documents by approval status with aging analysis',
+      formats: ['pdf', 'excel'],
+      updated: '1 day ago',
+      category: 'Performance',
+      insights: '5 documents pending approval for over 7 days'
     },
     {
-      id: 'doc-3',
-      title: 'Document Compliance Status',
-      description: 'Summary of document statuses and compliance metrics',
-      category: 'documents',
-      icon: <FileText className="h-5 w-5 text-green-500" />,
-      popular: true
+      id: 'doc-category',
+      name: 'Document Category Distribution',
+      description: 'Analysis of document repository by category and status',
+      formats: ['pdf', 'excel'],
+      updated: '3 days ago',
+      category: 'Analysis',
+      insights: 'Most documents (34%) are SOPs, followed by Work Instructions (27%)'
     }
   ];
   
   const auditReports = [
     {
-      id: 'audit-1',
-      title: 'Audit Findings Summary',
-      description: 'Summary of audit findings by severity and category',
-      category: 'audits',
-      icon: <ClipboardCheck className="h-5 w-5 text-blue-500" />,
-      popular: true
+      id: 'audit-findings',
+      name: 'Audit Findings',
+      description: 'Summary of audit findings by category, severity, and department',
+      formats: ['pdf', 'excel', 'csv'],
+      updated: '1 week ago',
+      category: 'Compliance',
+      insights: '15 open critical findings require immediate action'
     },
     {
-      id: 'audit-2',
-      title: 'Non-Conformance Trends',
-      description: 'Trend analysis of non-conformances over time',
-      category: 'audits',
-      icon: <BarChart className="h-5 w-5 text-purple-500" />,
-      popular: true
-    },
-    {
-      id: 'audit-3',
-      title: 'Audit Schedule Compliance',
-      description: 'Report on audit completion rates against schedule',
-      category: 'audits',
-      icon: <Calendar className="h-5 w-5 text-green-500" />,
-      popular: false
+      id: 'audit-schedule',
+      name: 'Audit Schedule Compliance',
+      description: 'Analysis of planned vs completed audits with compliance rates',
+      formats: ['pdf', 'excel'],
+      updated: '2 days ago',
+      category: 'Performance',
+      insights: 'Audit completion rate is 82% for the current quarter'
     }
   ];
   
   const capaReports = [
     {
-      id: 'capa-1',
-      title: 'CAPA Status Summary',
-      description: 'Summary of CAPAs by status, priority, and age',
-      category: 'capa',
-      icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-      popular: true
+      id: 'capa-status',
+      name: 'CAPA Status Summary',
+      description: 'Overview of all CAPAs by status, priority, and age',
+      formats: ['pdf', 'excel', 'csv'],
+      updated: '3 days ago',
+      category: 'Compliance',
+      insights: '8 high-priority CAPAs are currently overdue'
     },
     {
-      id: 'capa-2',
-      title: 'CAPA Effectiveness Report',
+      id: 'capa-effectiveness',
+      name: 'CAPA Effectiveness',
       description: 'Analysis of CAPA effectiveness and recurrence rates',
-      category: 'capa',
-      icon: <Activity className="h-5 w-5 text-green-500" />,
-      popular: false
-    },
-    {
-      id: 'capa-3',
-      title: 'Root Cause Analysis Trends',
-      description: 'Trends in root causes identified across CAPAs',
-      category: 'capa',
-      icon: <Search className="h-5 w-5 text-blue-500" />,
-      popular: true
+      formats: ['pdf', 'excel'],
+      updated: '1 week ago',
+      category: 'Analysis',
+      insights: '92% effectiveness rate for completed CAPAs'
     }
   ];
   
   const trainingReports = [
     {
-      id: 'training-1',
-      title: 'Training Compliance Summary',
-      description: 'Overview of training compliance by department and role',
-      category: 'training',
-      icon: <Users className="h-5 w-5 text-blue-500" />,
-      popular: true
+      id: 'training-compliance',
+      name: 'Training Compliance',
+      description: 'Employee training compliance by department and training type',
+      formats: ['pdf', 'excel', 'csv'],
+      updated: '2 days ago',
+      category: 'Compliance',
+      insights: 'Overall training compliance rate is 87%'
     },
     {
-      id: 'training-2',
-      title: 'Certification Expiry Report',
-      description: 'Report on employee certifications expiring in next 90 days',
-      category: 'training',
-      icon: <Calendar className="h-5 w-5 text-red-500" />,
-      popular: true
-    },
-    {
-      id: 'training-3',
-      title: 'Training Effectiveness Analysis',
-      description: 'Analysis of training effectiveness based on assessments',
-      category: 'training',
-      icon: <Star className="h-5 w-5 text-amber-500" />,
-      popular: false
+      id: 'cert-expiry',
+      name: 'Certification Expiry',
+      description: 'List of employees with expiring certifications in next 90 days',
+      formats: ['pdf', 'excel'],
+      updated: '3 days ago',
+      category: 'Planning',
+      insights: '15 employee certifications expiring next month'
     }
   ];
   
-  // Combine all reports
-  const allReports = [
-    ...documentReports, 
-    ...auditReports,
-    ...capaReports,
-    ...trainingReports
+  const haccpReports = [
+    {
+      id: 'ccp-monitoring',
+      name: 'CCP Monitoring Summary',
+      description: 'Analysis of CCP monitoring data with deviation tracking',
+      formats: ['pdf', 'excel', 'csv'],
+      updated: '1 day ago',
+      category: 'Compliance',
+      insights: '3 CCPs recorded deviations in the past week'
+    },
+    {
+      id: 'verification-activities',
+      name: 'Verification Activities',
+      description: 'Summary of HACCP verification activities and findings',
+      formats: ['pdf', 'excel'],
+      updated: '1 week ago',
+      category: 'Analysis',
+      insights: 'All verification activities completed on schedule'
+    }
   ];
   
-  // Filter reports based on current filters
-  const filteredReports = filterReports(allReports);
-  const popularReports = filteredReports.filter(report => report.popular);
+  const getReportsForActiveCategory = () => {
+    switch (activeCategory) {
+      case 'documents':
+        return documentReports;
+      case 'audits':
+        return auditReports;
+      case 'capa':
+        return capaReports;
+      case 'training':
+        return trainingReports;
+      case 'haccp':
+        return haccpReports;
+      default:
+        return [];
+    }
+  };
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search reports..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="documents">Documents</SelectItem>
-              <SelectItem value="audits">Audits</SelectItem>
-              <SelectItem value="capa">CAPA</SelectItem>
-              <SelectItem value="training">Training</SelectItem>
-              <SelectItem value="complaints">Complaints</SelectItem>
-              <SelectItem value="haccp">HACCP</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Prebuilt Reports</h3>
+        <Button variant="outline" onClick={() => onNavigateToModule(activeCategory)}>
+          View in {activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Module
+          <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
       </div>
       
-      {popularReports.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Popular Reports</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {popularReports.map((report) => (
-              <ReportCard 
-                key={report.id}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                onGenerate={() => handleGenerateReport(report.title)}
-                onNavigate={() => onNavigateToModule(report.category)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      <Tabs defaultValue="documents">
-        <TabsList className="mb-4">
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Documents</span>
-          </TabsTrigger>
-          <TabsTrigger value="audits" className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" />
-            <span>Audits</span>
-          </TabsTrigger>
-          <TabsTrigger value="capa" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>CAPA</span>
-          </TabsTrigger>
-          <TabsTrigger value="training" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span>Training</span>
-          </TabsTrigger>
+      <Tabs defaultValue="documents" value={activeCategory} onValueChange={setActiveCategory}>
+        <TabsList>
+          {reportCategories.map((category) => (
+            <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
+              {category.icon}
+              <span>{category.name}</span>
+              <Badge variant="secondary" className="ml-1">{category.count}</Badge>
+            </TabsTrigger>
+          ))}
         </TabsList>
         
-        <TabsContent value="documents">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filterReports(documentReports).map((report) => (
-              <ReportCard 
-                key={report.id}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                onGenerate={() => handleGenerateReport(report.title)}
-                onNavigate={() => onNavigateToModule('documents')}
-              />
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="audits">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filterReports(auditReports).map((report) => (
-              <ReportCard 
-                key={report.id}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                onGenerate={() => handleGenerateReport(report.title)}
-                onNavigate={() => onNavigateToModule('audits')}
-              />
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="capa">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filterReports(capaReports).map((report) => (
-              <ReportCard 
-                key={report.id}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                onGenerate={() => handleGenerateReport(report.title)}
-                onNavigate={() => onNavigateToModule('capa')}
-              />
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="training">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filterReports(trainingReports).map((report) => (
-              <ReportCard 
-                key={report.id}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                onGenerate={() => handleGenerateReport(report.title)}
-                onNavigate={() => onNavigateToModule('training')}
-              />
+        <TabsContent value={activeCategory} className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getReportsForActiveCategory().map((report) => (
+              <Card key={report.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{report.name}</CardTitle>
+                    <Badge variant="outline">{report.category}</Badge>
+                  </div>
+                  <CardDescription>{report.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm bg-amber-50 border border-amber-100 rounded-md p-3 mb-3">
+                    <div className="font-medium text-amber-800 mb-1">Key Insight:</div>
+                    <div className="text-amber-700">{report.insights}</div>
+                  </div>
+                  <div className="text-xs text-gray-500">Last updated: {report.updated}</div>
+                </CardContent>
+                <CardFooter className="bg-gray-50 border-t flex justify-between">
+                  <div className="flex items-center space-x-1">
+                    {report.formats.map((format) => (
+                      <Button 
+                        key={format} 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDownload(format, report.name)}
+                        className="text-xs"
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        {format.toUpperCase()}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Details
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-};
-
-interface ReportCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  onGenerate: () => void;
-  onNavigate: () => void;
-}
-
-const ReportCard: React.FC<ReportCardProps> = ({ 
-  title, 
-  description, 
-  icon,
-  onGenerate,
-  onNavigate
-}) => {
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-base flex items-center">
-              {icon}
-              <span className="ml-2">{title}</span>
-            </CardTitle>
-            <CardDescription>
-              {description}
-            </CardDescription>
+      
+      <Card className="bg-gray-50 border-dashed border-2">
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <BarChart className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            <h3 className="text-lg font-medium mb-1">Need a custom report?</h3>
+            <p className="text-gray-500 mb-4">Use our report builder to create tailored reports for your specific needs.</p>
+            <Button onClick={() => toast({
+              title: "Coming Soon",
+              description: "The custom report builder will be available in the next release."
+            })}>
+              Create Custom Report
+            </Button>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onNavigate}
-          >
-            View Details
-          </Button>
-          <Button 
-            size="sm"
-            onClick={onGenerate}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Generate
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
