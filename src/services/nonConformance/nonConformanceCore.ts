@@ -1,6 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { NonConformance, NCFilter } from '@/types/non-conformance';
+import { createNCNotification } from './notificationService';
+import { createNCActivity } from './activityService';
 
 // Non-Conformance CRUD operations
 export const fetchNonConformances = async (filters?: NCFilter): Promise<NonConformance[]> => {
@@ -74,9 +76,16 @@ export const fetchNonConformanceById = async (id: string): Promise<NonConformanc
 };
 
 export const createNonConformance = async (nonConformance: Omit<NonConformance, 'id'>): Promise<NonConformance> => {
+  // Calculate quantity on hold if status is 'On Hold'
+  const quantity_on_hold = nonConformance.status === 'On Hold' ? nonConformance.quantity || 0 : 0;
+  
+  // Include quantity_on_hold in the insert
   const { data, error } = await supabase
     .from('non_conformances')
-    .insert(nonConformance)
+    .insert({
+      ...nonConformance,
+      quantity_on_hold
+    })
     .select()
     .single();
   
@@ -85,10 +94,46 @@ export const createNonConformance = async (nonConformance: Omit<NonConformance, 
     throw error;
   }
   
+  // Create notification for new non-conformance
+  if (nonConformance.assigned_to) {
+    await createNCNotification({
+      non_conformance_id: data.id,
+      message: `New non-conformance item "${data.title}" has been assigned to you`,
+      notification_type: 'assignment',
+      target_users: [nonConformance.assigned_to]
+    });
+  }
+  
+  // Record activity
+  await createNCActivity({
+    non_conformance_id: data.id,
+    action: 'Non-conformance created',
+    performed_by: nonConformance.created_by
+  });
+  
   return data as NonConformance;
 };
 
 export const updateNonConformance = async (id: string, updates: Partial<NonConformance>): Promise<NonConformance> => {
+  // If status is changing to 'On Hold', update quantity_on_hold
+  if (updates.status === 'On Hold') {
+    // Get current record to check quantity
+    const { data: currentNC } = await supabase
+      .from('non_conformances')
+      .select('quantity')
+      .eq('id', id)
+      .single();
+    
+    if (currentNC) {
+      // Use existing or updated quantity
+      const quantity = updates.quantity !== undefined ? updates.quantity : currentNC.quantity;
+      updates.quantity_on_hold = quantity;
+    }
+  } else if (updates.status === 'Released' || updates.status === 'Disposed') {
+    // If releasing or disposing, set quantity_on_hold to 0
+    updates.quantity_on_hold = 0;
+  }
+  
   const { data, error } = await supabase
     .from('non_conformances')
     .update({
@@ -118,3 +163,6 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Export the workflow service through this file too for easier access
+export * from './workflowService';

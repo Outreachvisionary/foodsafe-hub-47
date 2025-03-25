@@ -7,3 +7,4 @@ export * from './activityService';
 export * from './notificationService';
 export * from './statsService';
 export * from './integrationService';
+export * from './workflowService';

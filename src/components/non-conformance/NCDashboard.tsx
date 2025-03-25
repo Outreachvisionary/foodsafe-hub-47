@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { fetchNCStats } from '@/services/nonConformance';
 import { NCStats } from '@/types/non-conformance';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { AlertTriangle, PackageCheck, PackageX, Ban, Clock } from 'lucide-react';
+import { AlertTriangle, PackageCheck, PackageX, Ban, Clock, Clipboard, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -115,6 +115,30 @@ const NCDashboard: React.FC = () => {
         <CardContent>
           <div className="text-2xl font-bold">{stats.byStatus['Released'] || 0}</div>
           <p className="text-xs text-gray-500">Items released after review</p>
+        </CardContent>
+      </Card>
+
+      {/* Quantity On Hold Card */}
+      <Card className="bg-amber-50 border-amber-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Quantity On Hold</CardTitle>
+          <Clipboard className="h-4 w-4 text-amber-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalQuantityOnHold || 0}</div>
+          <p className="text-xs text-gray-500">Total quantity of items on hold</p>
+        </CardContent>
+      </Card>
+
+      {/* Escalations Card */}
+      <Card className="bg-red-50 border-red-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Escalations</CardTitle>
+          <Bell className="h-4 w-4 text-red-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">0</div>
+          <p className="text-xs text-gray-500">Items requiring immediate attention</p>
         </CardContent>
       </Card>
 

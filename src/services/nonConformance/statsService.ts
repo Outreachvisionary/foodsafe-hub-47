@@ -3,79 +3,123 @@ import { supabase } from '@/integrations/supabase/client';
 import { NCStats, NonConformance } from '@/types/non-conformance';
 
 export const fetchNCStats = async (): Promise<NCStats> => {
-  // Get total count
-  const { count: total, error: countError } = await supabase
-    .from('non_conformances')
-    .select('*', { count: 'exact', head: true });
-  
-  if (countError) {
-    console.error('Error fetching non-conformance count:', countError);
-    throw countError;
+  try {
+    // Get all non-conformances with counts by status, category, and reason
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('status, item_category, reason_category, quantity, quantity_on_hold')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching non-conformance stats:', error);
+      throw error;
+    }
+    
+    // Get total count
+    const total = data.length;
+    
+    // Count by status
+    const byStatus = {
+      'On Hold': 0,
+      'Under Review': 0,
+      'Released': 0,
+      'Disposed': 0
+    };
+    
+    // Count by category
+    const byCategory = {
+      'Processing Equipment': 0,
+      'Product Storage Tanks': 0,
+      'Finished Products': 0,
+      'Raw Products': 0,
+      'Packaging Materials': 0,
+      'Other': 0
+    };
+    
+    // Count by reason
+    const byReason = {
+      'Contamination': 0,
+      'Quality Issues': 0,
+      'Regulatory Non-Compliance': 0,
+      'Equipment Malfunction': 0,
+      'Documentation Error': 0,
+      'Process Deviation': 0,
+      'Other': 0
+    };
+    
+    // Total quantity on hold
+    let totalQuantityOnHold = 0;
+    
+    // Process data
+    data.forEach(item => {
+      // Count by status
+      byStatus[item.status as keyof typeof byStatus]++;
+      
+      // Count by category
+      byCategory[item.item_category as keyof typeof byCategory]++;
+      
+      // Count by reason
+      byReason[item.reason_category as keyof typeof byReason]++;
+      
+      // Sum quantity on hold
+      if (item.status === 'On Hold' && item.quantity_on_hold) {
+        totalQuantityOnHold += item.quantity_on_hold;
+      } else if (item.status === 'On Hold' && item.quantity) {
+        // If quantity_on_hold is not specified, use the full quantity
+        totalQuantityOnHold += item.quantity;
+      }
+    });
+    
+    // Get recent items
+    const { data: recentItems, error: recentError } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (recentError) {
+      console.error('Error fetching recent non-conformance items:', recentError);
+      throw recentError;
+    }
+    
+    return {
+      total,
+      byStatus,
+      byCategory,
+      byReason,
+      totalQuantityOnHold,
+      recentItems: recentItems as NonConformance[]
+    };
+  } catch (error) {
+    console.error('Error in fetchNCStats:', error);
+    // Return empty stats in case of error
+    return {
+      total: 0,
+      byStatus: {
+        'On Hold': 0,
+        'Under Review': 0,
+        'Released': 0,
+        'Disposed': 0
+      },
+      byCategory: {
+        'Processing Equipment': 0,
+        'Product Storage Tanks': 0,
+        'Finished Products': 0,
+        'Raw Products': 0,
+        'Packaging Materials': 0,
+        'Other': 0
+      },
+      byReason: {
+        'Contamination': 0,
+        'Quality Issues': 0,
+        'Regulatory Non-Compliance': 0,
+        'Equipment Malfunction': 0,
+        'Documentation Error': 0,
+        'Process Deviation': 0,
+        'Other': 0
+      },
+      totalQuantityOnHold: 0,
+      recentItems: []
+    };
   }
-  
-  // Get status distribution
-  const { data: statusData, error: statusError } = await supabase
-    .from('non_conformances')
-    .select('status');
-  
-  if (statusError) {
-    console.error('Error fetching status counts:', statusError);
-    throw statusError;
-  }
-  
-  // Get category distribution
-  const { data: categoryData, error: categoryError } = await supabase
-    .from('non_conformances')
-    .select('item_category');
-  
-  if (categoryError) {
-    console.error('Error fetching category counts:', categoryError);
-    throw categoryError;
-  }
-  
-  // Get reason distribution
-  const { data: reasonData, error: reasonError } = await supabase
-    .from('non_conformances')
-    .select('reason_category');
-  
-  if (reasonError) {
-    console.error('Error fetching reason counts:', reasonError);
-    throw reasonError;
-  }
-  
-  // Get recent items
-  const { data: recentItems, error: recentError } = await supabase
-    .from('non_conformances')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5);
-  
-  if (recentError) {
-    console.error('Error fetching recent items:', recentError);
-    throw recentError;
-  }
-  
-  // Process the data
-  const byStatus: Record<string, number> = {};
-  statusData?.forEach(item => {
-    byStatus[item.status] = (byStatus[item.status] || 0) + 1;
-  });
-  
-  const byCategory: Record<string, number> = {};
-  categoryData?.forEach(item => {
-    byCategory[item.item_category] = (byCategory[item.item_category] || 0) + 1;
-  });
-  
-  const byReason: Record<string, number> = {};
-  reasonData?.forEach(item => {
-    byReason[item.reason_category] = (byReason[item.reason_category] || 0) + 1;
-  });
-  
-  return {
-    total: total || 0,
-    byStatus: byStatus as Record<any, number>,
-    byCategory: byCategory as Record<any, number>,
-    byReason: byReason as Record<any, number>,
-    recentItems: recentItems as NonConformance[]
-  };
 };
