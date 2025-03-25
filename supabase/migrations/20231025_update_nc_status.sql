@@ -14,7 +14,7 @@ BEGIN
   -- Update the non-conformance record
   UPDATE public.non_conformances
   SET 
-    status = new_status::nc_status,
+    status = new_status,
     updated_at = NOW(),
     review_date = CASE WHEN new_status = 'Under Review' THEN NOW() ELSE review_date END,
     resolution_date = CASE WHEN new_status IN ('Released', 'Disposed') THEN NOW() ELSE resolution_date END
@@ -34,8 +34,8 @@ BEGIN
     'Status changed from ' || prev_status || ' to ' || new_status,
     comment,
     user_id,
-    prev_status::nc_status,
-    new_status::nc_status
+    prev_status,
+    new_status
   );
   
   -- Create a notification

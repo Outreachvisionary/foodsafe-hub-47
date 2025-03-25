@@ -74,13 +74,13 @@ export const updateNCStatus = async (
   userId: string, 
   comment: string
 ): Promise<void> => {
-  // Using .rpc with explicitly typed parameters to fix type error
+  // Fix: Use an object for parameters and properly cast types
   const { error } = await supabase.rpc('update_nc_status', {
     nc_id: ncId,
-    new_status: newStatus as any, // Type cast to resolve type error
+    new_status: newStatus,
     user_id: userId,
     comment: comment,
-    prev_status: prevStatus as any // Type cast to resolve type error
+    prev_status: prevStatus
   });
   
   if (error) {
@@ -166,21 +166,17 @@ export const createNCActivity = async (activity: {
   performed_by: string;
   previous_status?: NCStatus;
   new_status?: NCStatus;
-}) => {
-  // Create a new activity object with type assertions
-  const activityToInsert = {
-    non_conformance_id: activity.non_conformance_id,
-    action: activity.action,
-    comments: activity.comments,
-    performed_by: activity.performed_by,
-    // Using any to bypass TypeScript's type checking
-    previous_status: activity.previous_status as any,
-    new_status: activity.new_status as any
-  };
-
+}): Promise<NCActivity> => {
   const { data, error } = await supabase
     .from('nc_activities')
-    .insert(activityToInsert)
+    .insert({
+      non_conformance_id: activity.non_conformance_id,
+      action: activity.action,
+      comments: activity.comments,
+      performed_by: activity.performed_by,
+      previous_status: activity.previous_status,
+      new_status: activity.new_status
+    })
     .select()
     .single();
   
@@ -189,7 +185,7 @@ export const createNCActivity = async (activity: {
     throw error;
   }
   
-  return data;
+  return data as NCActivity;
 };
 
 // Upload NC Attachment
@@ -235,7 +231,7 @@ export const uploadNCAttachment = async (
   return data as NCAttachment;
 };
 
-// Fetch NC Stats - Add this export which was missing
+// Fetch NC Stats
 export const fetchNCStats = async (): Promise<NCStats> => {
   // Get all non-conformances
   const { data: nonConformances, error } = await supabase
