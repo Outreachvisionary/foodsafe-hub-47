@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,12 +23,13 @@ import { Document } from '@/types/supabase';
 import { formatDistanceToNow } from 'date-fns';
 
 const DocumentRepository: React.FC = () => {
-  const { documents, folders, loading, selectedFolder, setSelectedFolder } = useDocuments();
+  const { documents, folders, loading, selectedFolder, setSelectedFolder, appDocuments } = useDocuments();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
+  // Use appDocuments which have the correct type for the existing UI components
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,7 +129,9 @@ const DocumentRepository: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">Category</Badge>
+                    <Badge variant="secondary">
+                      {doc.category_id ? 'Category' : 'Uncategorized'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {doc.status}
@@ -161,7 +165,21 @@ const DocumentRepository: React.FC = () => {
 
       {/* Document preview dialog */}
       <DocumentPreviewDialog 
-        document={selectedDocument} 
+        document={selectedDocument ? {
+          id: selectedDocument.id,
+          title: selectedDocument.title,
+          description: selectedDocument.description,
+          fileName: selectedDocument.file_name,
+          fileSize: selectedDocument.file_size,
+          fileType: selectedDocument.file_type,
+          category: selectedDocument.category_id ? "Other" : "Other",
+          status: selectedDocument.status,
+          version: selectedDocument.version,
+          createdBy: selectedDocument.created_by,
+          createdAt: selectedDocument.created_at,
+          updatedAt: selectedDocument.updated_at,
+          expiryDate: selectedDocument.expiry_date,
+        } : null} 
         open={isPreviewOpen} 
         onOpenChange={setIsPreviewOpen} 
       />

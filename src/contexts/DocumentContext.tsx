@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Document, DocumentStatus } from '@/types/supabase';
+import { Document as AppDocument } from '@/types/document';
 import { 
   fetchDocuments, 
   fetchFolders, 
@@ -8,14 +9,20 @@ import {
   createDocument,
   updateDocument,
   deleteDocument,
-  addDocumentActivity
+  addDocumentActivity,
+  fetchAppDocuments,
+  fetchAppFolders,
+  createAppDocument,
+  updateAppDocument
 } from '@/services/supabaseService';
 import { useNotifications } from './NotificationContext';
+import { supabaseToAppDocument, appToSupabaseDocument } from '@/utils/documentTypeConverter';
 
 interface DocumentContextType {
   documents: Document[];
+  appDocuments: AppDocument[];
   categories: { id: string; name: string }[];
-  folders: { id: string; name: string; document_count: number }[];
+  folders: { id: string; name: string; parent_id?: string; document_count: number; path: string }[];
   loading: boolean;
   selectedFolder: string | null;
   setSelectedFolder: (id: string | null) => void;
@@ -25,10 +32,22 @@ interface DocumentContextType {
   rejectDocument: (doc: Document, reason: string) => Promise<void>;
   deleteDocumentById: (id: string) => Promise<void>;
   refreshDocuments: () => Promise<void>;
+  // App document specific functions (using the app's document type)
+  addAppDocument: (doc: Partial<AppDocument>) => Promise<AppDocument | null>;
+  updateAppDocument: (doc: AppDocument) => Promise<AppDocument | null>;
+  // Functions used by the UI
+  selectedDocument: AppDocument | null;
+  setSelectedDocument: (doc: AppDocument | null) => void;
+  submitForApproval: (doc: AppDocument) => Promise<void>;
+  updateDocument: (doc: AppDocument) => Promise<void>;
+  notifications: any[];
+  markNotificationAsRead: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType>({
   documents: [],
+  appDocuments: [],
   categories: [],
   folders: [],
   loading: true,
@@ -40,16 +59,30 @@ const DocumentContext = createContext<DocumentContextType>({
   rejectDocument: async () => {},
   deleteDocumentById: async () => {},
   refreshDocuments: async () => {},
+  // App document specific functions
+  addAppDocument: async () => null,
+  updateAppDocument: async () => null,
+  // UI functions
+  selectedDocument: null,
+  setSelectedDocument: () => {},
+  submitForApproval: async () => {},
+  updateDocument: async () => {},
+  notifications: [],
+  markNotificationAsRead: async () => {},
+  clearAllNotifications: async () => {},
 });
 
 export const useDocuments = () => useContext(DocumentContext);
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [appDocuments, setAppDocuments] = useState<AppDocument[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-  const [folders, setFolders] = useState<{ id: string; name: string; document_count: number }[]>([]);
+  const [folders, setFolders] = useState<{ id: string; name: string; parent_id?: string; document_count: number; path: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<AppDocument | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const { addNotification } = useNotifications();
 
   const loadData = useCallback(async () => {
@@ -62,8 +95,27 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       ]);
       
       setDocuments(docsData);
+      setAppDocuments(docsData.map(doc => supabaseToAppDocument(doc)));
       setFolders(foldersData);
       setCategories(categoriesData);
+      
+      // Simulate some notifications for the UI
+      setNotifications([
+        {
+          id: "1",
+          type: "approval_request",
+          document_title: "Allergen Control Program",
+          message: "Document is awaiting your approval",
+          is_read: false
+        },
+        {
+          id: "2",
+          type: "expiry_reminder",
+          document_title: "Food Safety Certificate ISO 22000",
+          message: "Document will expire in 30 days",
+          is_read: false
+        }
+      ]);
     } catch (error) {
       console.error("Error loading document data:", error);
     } finally {
@@ -87,13 +139,14 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         await addDocumentActivity({
           document_id: newDoc.id,
           action: 'Created',
-          user_id: 'current-user', // Replace with actual user ID when auth is implemented
+          user_id: 'current-user', 
           user_name: newDoc.created_by,
           user_role: 'Document Owner',
           timestamp: new Date().toISOString(),
         });
         
         setDocuments(prev => [newDoc, ...prev]);
+        setAppDocuments(prev => [supabaseToAppDocument(newDoc), ...prev]);
         
         // Update folder document count
         if (newDoc.folder_id) {
@@ -115,6 +168,12 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
+  const addAppDocument = async (doc: Partial<AppDocument>): Promise<AppDocument | null> => {
+    const supaDoc = appToSupabaseDocument(doc as AppDocument);
+    const result = await addDocument(supaDoc as Partial<Document>);
+    return result ? supabaseToAppDocument(result) : null;
+  };
+
   const updateDocumentStatus = async (doc: Document, newStatus: DocumentStatus) => {
     try {
       const updatedDoc = await updateDocument(doc.id, { 
@@ -127,14 +186,18 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         await addDocumentActivity({
           document_id: doc.id,
           action: `Status changed to ${newStatus}`,
-          user_id: 'current-user', // Replace with actual user ID when auth is implemented
-          user_name: 'Current User', // Replace with actual username when auth is implemented
+          user_id: 'current-user',
+          user_name: 'Current User',
           user_role: 'Document Manager',
           timestamp: new Date().toISOString(),
         });
         
         setDocuments(prev => 
           prev.map(d => d.id === doc.id ? updatedDoc : d)
+        );
+        
+        setAppDocuments(prev =>
+          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
         );
         
         addNotification({
@@ -163,8 +226,8 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         await addDocumentActivity({
           document_id: doc.id,
           action: 'Approved',
-          user_id: 'current-user', // Replace with actual user ID when auth is implemented
-          user_name: 'Current User', // Replace with actual username when auth is implemented
+          user_id: 'current-user',
+          user_name: 'Current User',
           user_role: 'Approver',
           timestamp: new Date().toISOString(),
           comments: comment || 'Document approved'
@@ -172,6 +235,10 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         
         setDocuments(prev => 
           prev.map(d => d.id === doc.id ? updatedDoc : d)
+        );
+        
+        setAppDocuments(prev =>
+          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
         );
         
         addNotification({
@@ -201,8 +268,8 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         await addDocumentActivity({
           document_id: doc.id,
           action: 'Rejected',
-          user_id: 'current-user', // Replace with actual user ID when auth is implemented
-          user_name: 'Current User', // Replace with actual username when auth is implemented
+          user_id: 'current-user',
+          user_name: 'Current User',
           user_role: 'Approver',
           timestamp: new Date().toISOString(),
           comments: reason || 'Document rejected'
@@ -210,6 +277,10 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         
         setDocuments(prev => 
           prev.map(d => d.id === doc.id ? updatedDoc : d)
+        );
+        
+        setAppDocuments(prev =>
+          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
         );
         
         addNotification({
@@ -234,6 +305,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         const docToDelete = documents.find(d => d.id === id);
         
         setDocuments(prev => prev.filter(d => d.id !== id));
+        setAppDocuments(prev => prev.filter(d => d.id !== id));
         
         // Update folder document count
         if (docToDelete?.folder_id) {
@@ -260,10 +332,36 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // UI and application specific functions
+  const submitForApproval = async (doc: AppDocument) => {
+    const supaDoc = documents.find(d => d.id === doc.id);
+    if (supaDoc) {
+      await updateDocumentStatus(supaDoc, 'Pending Approval');
+    }
+  };
+
+  const updateDocument = async (doc: AppDocument) => {
+    const result = await updateAppDocument(doc);
+    if (result) {
+      setAppDocuments(prev => prev.map(d => d.id === doc.id ? result : d));
+    }
+  };
+
+  const markNotificationAsRead = async (id: string) => {
+    // Simulate marking notification as read
+    setNotifications(prev => prev.map(n => n.id === id ? {...n, is_read: true} : n));
+  };
+
+  const clearAllNotifications = async () => {
+    // Simulate clearing all notifications
+    setNotifications([]);
+  };
+
   return (
     <DocumentContext.Provider
       value={{
         documents,
+        appDocuments,
         categories,
         folders,
         loading,
@@ -274,7 +372,18 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         approveDocument,
         rejectDocument,
         deleteDocumentById,
-        refreshDocuments
+        refreshDocuments,
+        // App document specific functions
+        addAppDocument,
+        updateAppDocument,
+        // UI Functions
+        selectedDocument,
+        setSelectedDocument,
+        submitForApproval,
+        updateDocument,
+        notifications,
+        markNotificationAsRead,
+        clearAllNotifications
       }}
     >
       {children}

@@ -8,6 +8,13 @@ import {
   DocumentNotification,
   DocumentVersion
 } from "@/types/supabase";
+import { 
+  Document as AppDocument,
+  Folder as AppFolder,
+  DocumentCategory as AppDocumentCategory,
+  DocumentActivity as AppDocumentActivity
+} from "@/types/document";
+import { supabaseToAppDocument, appToSupabaseDocument, supabaseToAppFolder } from "@/utils/documentTypeConverter";
 
 // Folders
 export const fetchFolders = async (): Promise<Folder[]> => {
@@ -70,9 +77,16 @@ export const fetchDocumentsByFolder = async (folderId: string): Promise<Document
 };
 
 export const createDocument = async (document: Partial<Document>): Promise<Document | null> => {
+  // Ensure required properties are present
+  if (!document.title || !document.file_name || !document.file_size || 
+      !document.file_type || !document.created_by) {
+    console.error('Missing required document properties');
+    return null;
+  }
+  
   const { data, error } = await supabase
     .from('documents')
-    .insert([document])
+    .insert(document)
     .select()
     .single();
     
@@ -116,9 +130,15 @@ export const deleteDocument = async (id: string): Promise<boolean> => {
 
 // Document Activities
 export const addDocumentActivity = async (activity: Partial<DocumentActivity>): Promise<DocumentActivity | null> => {
+  // Ensure required properties are present
+  if (!activity.action || !activity.user_id || !activity.user_name || !activity.user_role) {
+    console.error('Missing required activity properties');
+    return null;
+  }
+  
   const { data, error } = await supabase
     .from('document_activities')
-    .insert([activity])
+    .insert(activity)
     .select()
     .single();
     
@@ -176,9 +196,15 @@ export const markNotificationAsRead = async (id: string): Promise<boolean> => {
 
 // Document Versions
 export const addDocumentVersion = async (version: Partial<DocumentVersion>): Promise<DocumentVersion | null> => {
+  // Ensure required properties are present
+  if (!version.version || !version.file_name || !version.file_size || !version.created_by) {
+    console.error('Missing required version properties');
+    return null;
+  }
+  
   const { data, error } = await supabase
     .from('document_versions')
-    .insert([version])
+    .insert(version)
     .select()
     .single();
     
@@ -203,4 +229,32 @@ export const fetchDocumentVersions = async (documentId: string): Promise<Documen
   }
   
   return data || [];
+};
+
+// Application-specific wrapper functions that handle type conversion
+export const fetchAppDocuments = async (): Promise<AppDocument[]> => {
+  const documents = await fetchDocuments();
+  return documents.map(doc => supabaseToAppDocument(doc));
+};
+
+export const fetchAppDocumentsByFolder = async (folderId: string): Promise<AppDocument[]> => {
+  const documents = await fetchDocumentsByFolder(folderId);
+  return documents.map(doc => supabaseToAppDocument(doc));
+};
+
+export const createAppDocument = async (document: Partial<AppDocument>): Promise<AppDocument | null> => {
+  const supaDoc = appToSupabaseDocument(document as AppDocument);
+  const result = await createDocument(supaDoc as Document);
+  return result ? supabaseToAppDocument(result) : null;
+};
+
+export const updateAppDocument = async (id: string, updates: Partial<AppDocument>): Promise<AppDocument | null> => {
+  const supaUpdates = appToSupabaseDocument(updates as AppDocument);
+  const result = await updateDocument(id, supaUpdates as Partial<Document>);
+  return result ? supabaseToAppDocument(result) : null;
+};
+
+export const fetchAppFolders = async (): Promise<AppFolder[]> => {
+  const folders = await fetchFolders();
+  return folders.map(folder => supabaseToAppFolder(folder));
 };
