@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Document, DocumentVersion } from '@/types/document';
 import { CalendarClock, Download, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import enhancedDocumentService from '@/services/documentService';
 
 interface DocumentVersionHistoryProps {
   document: Document;
@@ -79,13 +80,15 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
 
   const handleDownloadVersion = async (version: DocumentVersion) => {
     try {
-      // For this example, we'll just generate a mock download URL
-      // In a real app, you would fetch the actual file from storage
-      const mockDownloadUrl = `#download-${version.id}`;
+      // Get actual download URL from storage
+      const storagePath = version.storage_path || `${document.id}/${version.file_name}_v${version.version_number}`;
+      
+      // Get the download URL from storage
+      const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
       
       // Create a temporary anchor element to trigger download
       const link = window.document.createElement('a');
-      link.href = mockDownloadUrl;
+      link.href = downloadUrl;
       link.download = version.file_name;
       window.document.body.appendChild(link);
       link.click();

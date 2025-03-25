@@ -481,7 +481,7 @@ export const fetchWorkflowInstance = async (documentId: string): Promise<Documen
 // Utility functions for working with document storage
 export const getDocumentStoragePath = (document: Document, version?: number): string => {
   const versionSuffix = version ? `_v${version}` : '';
-  return `documents/${document.id}/${document.file_name}${versionSuffix}`;
+  return `${document.id}/${document.file_name}${versionSuffix}`;
 };
 
 export const uploadDocumentToStorage = async (file: File, document: Document, version?: number): Promise<string> => {
@@ -500,7 +500,12 @@ export const uploadDocumentToStorage = async (file: File, document: Document, ve
       throw error;
     }
     
-    return data.path;
+    // Get the public URL for the uploaded file
+    const { data: publicUrlData } = supabase.storage
+      .from('documents')
+      .getPublicUrl(storagePath);
+    
+    return publicUrlData.publicUrl;
   } catch (error) {
     console.error('Error in document upload process:', error);
     throw error;
@@ -509,6 +514,13 @@ export const uploadDocumentToStorage = async (file: File, document: Document, ve
 
 export const getDocumentDownloadUrl = async (storagePath: string): Promise<string> => {
   try {
+    // Check if the storagePath is already a full URL
+    if (storagePath.startsWith('http')) {
+      // For a public URL, we can just return it directly
+      return storagePath;
+    }
+    
+    // Otherwise, create a signed URL for private files
     const { data, error } = await supabase.storage
       .from('documents')
       .createSignedUrl(storagePath, 60 * 60); // 1 hour expiry

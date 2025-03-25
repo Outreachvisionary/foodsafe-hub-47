@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { NonConformance, NCStatus, NCActivity, NCStats, NCAttachment } from '@/types/non-conformance';
 
@@ -97,7 +96,6 @@ const nonConformanceService = {
     }
   },
   
-  // Activities
   async fetchNCActivities(ncId: string): Promise<NCActivity[]> {
     const { data, error } = await supabase
       .from('nc_activities')
@@ -135,7 +133,6 @@ const nonConformanceService = {
     return data as NCActivity;
   },
   
-  // Status update function
   async updateNCStatus(
     id: string, 
     newStatus: NCStatus, 
@@ -173,7 +170,6 @@ const nonConformanceService = {
     await this.createNCActivity(activity);
   },
   
-  // Quantity update function
   async updateNCQuantity(
     id: string,
     newQuantity: number,
@@ -207,12 +203,12 @@ const nonConformanceService = {
     await this.createNCActivity(activity);
   },
   
-  // Attachments
   async fetchNCAttachments(ncId: string): Promise<NCAttachment[]> {
     const { data, error } = await supabase
       .from('nc_attachments')
       .select('*')
-      .eq('non_conformance_id', ncId);
+      .eq('non_conformance_id', ncId)
+      .order('uploaded_at', { ascending: false });
     
     if (error) {
       console.error(`Error fetching attachments for non-conformance ${ncId}:`, error);
@@ -228,46 +224,105 @@ const nonConformanceService = {
     description: string, 
     userId: string
   ): Promise<NCAttachment> {
-    // In a real implementation, you would upload the file to storage first
-    // For this example, we'll just create a record without actual file upload
-    const attachment = {
-      non_conformance_id: ncId,
-      file_name: file.name,
-      file_type: file.type,
-      file_size: file.size,
-      file_path: `/attachments/${ncId}/${file.name}`, // Add the required file_path field
-      description,
-      uploaded_by: userId,
-      uploaded_at: new Date().toISOString()
-    };
-    
-    const { data, error } = await supabase
-      .from('nc_attachments')
-      .insert(attachment)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error uploading non-conformance attachment:', error);
+    try {
+      // 1. Upload the file to Supabase Storage
+      const filePath = `${ncId}/${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('nc_attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        console.error('Error uploading file to storage:', uploadError);
+        throw uploadError;
+      }
+      
+      // 2. Get the public URL for the file
+      const { data: publicUrlData } = supabase.storage
+        .from('nc_attachments')
+        .getPublicUrl(filePath);
+      
+      const fileUrl = publicUrlData.publicUrl;
+      
+      // 3. Create a record in the database
+      const attachment = {
+        non_conformance_id: ncId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        file_path: fileUrl, // Use the public URL as the file path
+        description,
+        uploaded_by: userId,
+        uploaded_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('nc_attachments')
+        .insert(attachment)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating attachment record:', error);
+        throw error;
+      }
+      
+      return data as NCAttachment;
+    } catch (error) {
+      console.error('Error in attachment upload process:', error);
       throw error;
     }
-    
-    return data as NCAttachment;
   },
   
   async deleteNCAttachment(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('nc_attachments')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error(`Error deleting non-conformance attachment with ID ${id}:`, error);
+    try {
+      // 1. Get the attachment details first to get the file path
+      const { data: attachment, error: fetchError } = await supabase
+        .from('nc_attachments')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error(`Error fetching attachment with ID ${id}:`, fetchError);
+        throw fetchError;
+      }
+      
+      // 2. Delete from storage if we have a file path
+      if (attachment) {
+        // Extract the storage path from the public URL
+        const url = new URL(attachment.file_path);
+        const pathParts = url.pathname.split('/');
+        const storagePath = pathParts.slice(pathParts.indexOf('nc_attachments') + 1).join('/');
+        
+        const { error: storageError } = await supabase.storage
+          .from('nc_attachments')
+          .remove([storagePath]);
+        
+        if (storageError) {
+          console.error('Error deleting file from storage:', storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+      
+      // 3. Delete the record from the database
+      const { error } = await supabase
+        .from('nc_attachments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error(`Error deleting attachment record with ID ${id}:`, error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in attachment deletion process:', error);
       throw error;
     }
   },
   
-  // Statistics
   async fetchNCStats(): Promise<NCStats> {
     const { data: nonConformances, error } = await supabase
       .from('non_conformances')
@@ -308,7 +363,6 @@ const nonConformanceService = {
     };
   },
   
-  // Integration-related functions
   async getDocumentsRelatedToNC(ncId: string): Promise<any[]> {
     // This would be implemented when the document integration is ready
     // For now, return mock data
@@ -370,7 +424,6 @@ const nonConformanceService = {
 
 export default nonConformanceService;
 
-// Re-export individual functions for direct import
 export const {
   fetchNonConformances,
   fetchNonConformanceById,

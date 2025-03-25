@@ -107,10 +107,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
       if (isNewVersion && existingDocument) {
         // Upload new version for existing document
-        const storagePath = `documents/${existingDocument.id}/${file.name}_v${existingDocument.version + 1}`;
+        const documentId = existingDocument.id;
+        const storagePath = `${documentId}/${file.name}_v${existingDocument.version + 1}`;
         
         // Upload file to storage
-        await enhancedDocumentService.uploadToStorage(file, existingDocument, existingDocument.version + 1);
+        const fileUrl = await enhancedDocumentService.uploadToStorage(file, existingDocument, existingDocument.version + 1);
         
         // Create new version record
         const versionDetails = {
@@ -132,10 +133,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       } else {
         // Create new document
         const documentId = uuidv4();
-        const storagePath = `documents/${documentId}/${file.name}`;
         
         // Upload file to storage
-        await enhancedDocumentService.uploadToStorage(file, {
+        const fileUrl = await enhancedDocumentService.uploadToStorage(file, {
           id: documentId,
           title: formData.title,
           file_name: file.name
@@ -165,12 +165,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         // Create initial version record
         const versionDetails = {
           file_name: file.name,
-          file_path: storagePath,
+          file_path: `${documentId}/${file.name}`,
           file_size: file.size,
           file_type: file.type,
           created_by: 'Current User', // In a real app, this would be the current user
           change_summary: 'Initial version',
-          storage_path: storagePath
+          storage_path: `${documentId}/${file.name}`
         };
         
         await enhancedDocumentService.createVersion(newDocument, versionDetails);

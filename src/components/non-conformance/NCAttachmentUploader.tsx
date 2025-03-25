@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { fetchNCAttachments, uploadNCAttachment } from '@/services/nonConformanceService';
-import { Paperclip, Upload, X, FileText } from 'lucide-react';
+import { Paperclip, Upload, X, FileText, Download } from 'lucide-react';
 import { NCAttachment } from '@/types/non-conformance';
 
 interface NCAttachmentUploaderProps {
   nonConformanceId: string;
-  onSuccess?: () => void;  // Made this optional
+  onSuccess?: () => void;
 }
 
 const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({ 
@@ -111,6 +111,33 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
     }
   };
 
+  const handleDownload = async (attachment: NCAttachment) => {
+    try {
+      // Simply use the file_path which should now be a full URL
+      const downloadUrl = attachment.file_path;
+      
+      // Create an anchor element and trigger download
+      const link = window.document.createElement('a');
+      link.href = downloadUrl;
+      link.download = attachment.file_name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      
+      toast({
+        title: "Download started",
+        description: `Downloading ${attachment.file_name}`,
+      });
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      toast({
+        title: "Download failed",
+        description: "Could not download the attachment",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -200,6 +227,14 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
                     <p className="text-xs text-gray-500 truncate">{attachment.description}</p>
                   )}
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(attachment)}
+                  className="text-gray-500 mr-2"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
                 <span className="text-xs text-gray-500">
                   {new Date(attachment.uploaded_at || '').toLocaleDateString()}
                 </span>

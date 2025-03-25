@@ -47,7 +47,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       // For images, we can directly use them
       // For other files, we'd need specialized handling
       
-      const storagePath = enhancedDocumentService.getStoragePath(document);
+      // Get the storage path or use the document ID and filename
+      const storagePath = document.id && document.file_name ? 
+        `${document.id}/${document.file_name}` : 
+        enhancedDocumentService.getStoragePath(document);
+      
+      // Get the download URL from storage
       const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
       
       setPreviewUrl(downloadUrl);
@@ -75,7 +80,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     if (!document) return;
     
     try {
-      const storagePath = enhancedDocumentService.getStoragePath(document);
+      // Get the storage path or use the document ID and filename
+      const storagePath = document.id && document.file_name ? 
+        `${document.id}/${document.file_name}` : 
+        enhancedDocumentService.getStoragePath(document);
+      
+      // Get the download URL from storage
       const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
       
       // Create an anchor element and trigger download
