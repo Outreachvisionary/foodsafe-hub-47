@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +23,7 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     {
       id: 'version-1',
       document_id: document.id,
+      version: 1, // Added required version property
       version_number: 1,
       file_name: document.file_name,
       file_size: document.file_size,
@@ -34,6 +36,7 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     {
       id: 'version-2',
       document_id: document.id,
+      version: 2, // Added required version property
       version_number: 2,
       file_name: document.file_name,
       file_size: document.file_size,
@@ -46,6 +49,7 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     {
       id: 'version-3',
       document_id: document.id,
+      version: 3, // Added required version property
       version_number: 3,
       file_name: document.file_name,
       file_size: document.file_size,

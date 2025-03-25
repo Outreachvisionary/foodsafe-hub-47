@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { NonConformance, NCStatus, NCActivity, NCStats, NCAttachment } from '@/types/non-conformance';
 
@@ -15,6 +14,7 @@ function ensureValidStatus(status: string): NCStatus {
   return 'On Hold';
 }
 
+// Export the service object with all functions
 const nonConformanceService = {
   async fetchNonConformances(): Promise<NonConformance[]> {
     const { data, error } = await supabase
@@ -134,6 +134,78 @@ const nonConformanceService = {
     return data as NCActivity;
   },
   
+  // Status update function
+  async updateNCStatus(
+    id: string, 
+    newStatus: NCStatus, 
+    previousStatus: NCStatus, 
+    userId: string, 
+    comments?: string
+  ): Promise<void> {
+    // Update the non-conformance status
+    const { error: updateError } = await supabase
+      .from('non_conformances')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+        ...(newStatus === 'Under Review' ? { review_date: new Date().toISOString() } : {}),
+        ...(newStatus === 'Released' || newStatus === 'Disposed' ? { resolution_date: new Date().toISOString() } : {})
+      })
+      .eq('id', id);
+    
+    if (updateError) {
+      console.error(`Error updating non-conformance status:`, updateError);
+      throw updateError;
+    }
+    
+    // Create an activity record for the status change
+    const activity = {
+      non_conformance_id: id,
+      action: `Status changed from ${previousStatus} to ${newStatus}`,
+      performed_by: userId,
+      performed_at: new Date().toISOString(),
+      previous_status: previousStatus,
+      new_status: newStatus,
+      comments
+    };
+    
+    await this.createNCActivity(activity);
+  },
+  
+  // Quantity update function
+  async updateNCQuantity(
+    id: string,
+    newQuantity: number,
+    previousQuantity: number,
+    userId: string,
+    comments?: string
+  ): Promise<void> {
+    // Update the non-conformance quantity
+    const { error: updateError } = await supabase
+      .from('non_conformances')
+      .update({
+        quantity_on_hold: newQuantity,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (updateError) {
+      console.error(`Error updating non-conformance quantity:`, updateError);
+      throw updateError;
+    }
+    
+    // Create an activity record for the quantity change
+    const activity = {
+      non_conformance_id: id,
+      action: `Quantity on hold changed from ${previousQuantity} to ${newQuantity}`,
+      performed_by: userId,
+      performed_at: new Date().toISOString(),
+      comments
+    };
+    
+    await this.createNCActivity(activity);
+  },
+  
   // Attachments
   async fetchNCAttachments(ncId: string): Promise<NCAttachment[]> {
     const { data, error } = await supabase
@@ -149,7 +221,24 @@ const nonConformanceService = {
     return data as NCAttachment[];
   },
   
-  async uploadNCAttachment(attachment: Omit<NCAttachment, 'id'>): Promise<NCAttachment> {
+  async uploadNCAttachment(
+    ncId: string, 
+    file: File, 
+    description: string, 
+    userId: string
+  ): Promise<NCAttachment> {
+    // In a real implementation, you would upload the file to storage first
+    // For this example, we'll just create a record without actual file upload
+    const attachment = {
+      non_conformance_id: ncId,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+      description,
+      uploaded_by: userId,
+      uploaded_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
       .from('nc_attachments')
       .insert(attachment)
@@ -215,7 +304,86 @@ const nonConformanceService = {
       byReason,
       recentItems
     };
+  },
+  
+  // Integration-related functions
+  async getDocumentsRelatedToNC(ncId: string): Promise<any[]> {
+    // This would be implemented when the document integration is ready
+    // For now, return mock data
+    return [
+      {
+        id: 'doc-rel-1',
+        target_id: 'doc-1',
+        documents: {
+          title: 'SOP for Handling Non-Conformance',
+          category: 'SOP',
+          created_at: new Date().toISOString()
+        }
+      },
+      {
+        id: 'doc-rel-2',
+        target_id: 'doc-2',
+        documents: {
+          title: 'Quality Control Checklist',
+          category: 'Form',
+          created_at: new Date().toISOString()
+        }
+      }
+    ];
+  },
+  
+  async getTrainingRelatedToNC(ncId: string): Promise<any[]> {
+    // This would be implemented when the training integration is ready
+    // For now, return mock data
+    return [
+      {
+        id: 'train-rel-1',
+        target_id: 'train-1',
+        training_sessions: {
+          title: 'Quality Control Training',
+          training_type: 'Mandatory',
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      }
+    ];
+  },
+  
+  async getAuditsRelatedToNC(ncId: string): Promise<any[]> {
+    // This would be implemented when the audits integration is ready
+    // For now, return mock data
+    return [
+      {
+        id: 'audit-rel-1',
+        target_id: 'audit-1',
+        audits: {
+          title: 'Quarterly Quality Audit',
+          audit_type: 'Internal',
+          status: 'Scheduled',
+          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      }
+    ];
   }
 };
 
 export default nonConformanceService;
+
+// Re-export individual functions for direct import
+export const {
+  fetchNonConformances,
+  fetchNonConformanceById,
+  createNonConformance,
+  updateNonConformance,
+  deleteNonConformance,
+  fetchNCActivities,
+  createNCActivity,
+  updateNCStatus,
+  updateNCQuantity,
+  fetchNCAttachments,
+  uploadNCAttachment,
+  deleteNCAttachment,
+  fetchNCStats,
+  getDocumentsRelatedToNC,
+  getTrainingRelatedToNC,
+  getAuditsRelatedToNC
+} = nonConformanceService;
