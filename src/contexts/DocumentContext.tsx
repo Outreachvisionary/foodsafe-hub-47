@@ -1,371 +1,315 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Document, DocumentNotification, DocumentActivity, DocumentStats } from '@/types/document';
+import { documentWorkflowService } from '@/services/documentWorkflowService';
+import { toast } from 'sonner';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Document as SupabaseDocument, DocumentStatus } from '@/types/supabase';
-import { Document as AppDocument, DocumentStatus as AppDocumentStatus } from '@/types/document';
-import { 
-  fetchDocuments, 
-  fetchFolders, 
-  fetchCategories,
-  createDocument,
-  updateDocument,
-  deleteDocument,
-  addDocumentActivity,
-  fetchAppDocuments,
-  fetchAppFolders,
-  createAppDocument,
-  updateAppDocument as updateAppDocumentService
-} from '@/services/supabaseService';
-import { useNotifications } from './NotificationContext';
-import { supabaseToAppDocument, appToSupabaseDocument } from '@/utils/documentTypeConverter';
+// Sample documents for initial state
+const initialDocuments: Document[] = [
+  {
+    id: "doc-1",
+    title: "Raw Material Receiving SOP",
+    fileName: "raw_material_receiving_sop_v3.pdf",
+    fileSize: 2456000,
+    fileType: "application/pdf",
+    category: "SOP",
+    status: "Draft",
+    version: 3,
+    createdBy: "John Doe",
+    createdAt: "2023-04-15T10:30:00Z",
+    updatedAt: "2023-06-20T14:15:00Z",
+    expiryDate: "2024-06-20T14:15:00Z",
+    linkedModule: "haccp",
+    tags: ['receiving', 'materials', 'procedures'],
+    description: "## 1. Purpose\n\nThis Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.\n\n## 2. Scope\n\nThis procedure applies to all incoming raw materials at all facilities.\n\n## 3. Responsibilities\n\n- **Receiving Personnel**: Inspect and document incoming materials\n- **QA Manager**: Verify compliance with specifications\n- **Operations Manager**: Ensure proper storage\n\n## 4. Procedure\n\n### 4.1 Pre-Receiving Activities\n\n1. Review purchase orders\n2. Prepare receiving area\n3. Verify calibration of measuring equipment\n\n### 4.2 Receiving Inspection\n\n1. Inspect delivery vehicle for cleanliness\n2. Check temperature of refrigerated/frozen items\n3. Verify packaging integrity\n4. Check for pest activity\n\n### 4.3 Documentation\n\n1. Complete receiving log with date, time, supplier\n2. Record lot numbers and quantities\n3. Document any non-conformances\n\n## 5. Records\n\n- Receiving logs\n- Non-conformance reports\n- Supplier certificates of analysis\n\n## 6. References\n\n- FDA Food Safety Modernization Act (FSMA)\n- Company Food Safety Plan\n- HACCP Plan"
+  },
+  {
+    id: "doc-2",
+    title: "Allergen Control Program",
+    fileName: "allergen_control_program_v2.docx",
+    fileSize: 1245000,
+    fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    category: "Policy",
+    status: "Pending Approval",
+    version: 2,
+    createdBy: "Jane Smith",
+    createdAt: "2023-03-10T09:45:00Z",
+    updatedAt: "2023-05-22T11:30:00Z",
+    expiryDate: "2024-05-22T11:30:00Z",
+    linkedModule: "haccp",
+    tags: ['allergen', 'control', 'food safety'],
+    pendingSince: "2023-05-22T11:30:00Z",
+    isLocked: true
+  },
+  {
+    id: "doc-3",
+    title: "Supplier Quality Audit Checklist",
+    fileName: "supplier_quality_audit_checklist_v1.xlsx",
+    fileSize: 985000,
+    fileType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    category: "Form",
+    status: "Approved",
+    version: 1,
+    createdBy: "Sarah Johnson",
+    createdAt: "2023-05-05T13:20:00Z",
+    updatedAt: "2023-05-05T13:20:00Z",
+    expiryDate: "2024-01-05T13:20:00Z",
+    linkedModule: "suppliers",
+    tags: ['supplier', 'audit', 'checklist'],
+    customNotificationDays: [30, 60, 90]
+  },
+  {
+    id: "doc-4",
+    title: "HACCP Plan for Production Line A",
+    fileName: "haccp_plan_line_a_v2.pdf",
+    fileSize: 3567000,
+    fileType: "application/pdf",
+    category: "HACCP Plan",
+    status: "Published",
+    version: 2,
+    createdBy: "Michael Brown",
+    createdAt: "2022-11-20T08:15:00Z",
+    updatedAt: "2023-01-15T16:40:00Z",
+    expiryDate: "2024-01-15T16:40:00Z",
+    linkedModule: "haccp",
+    tags: ['haccp', 'production', 'food safety']
+  },
+  {
+    id: "doc-5",
+    title: "Annual BRC Audit Report",
+    fileName: "brc_audit_report_2023.pdf",
+    fileSize: 4215000,
+    fileType: "application/pdf",
+    category: "Audit Report",
+    status: "Published",
+    version: 1,
+    createdBy: "External Auditor",
+    createdAt: "2023-02-28T11:00:00Z",
+    updatedAt: "2023-02-28T11:00:00Z",
+    expiryDate: "2023-10-15T00:00:00Z", // About to expire
+    linkedModule: "audits",
+    tags: ['audit', 'BRC', 'compliance']
+  },
+  {
+    id: "doc-6",
+    title: "Food Safety Certificate ISO 22000",
+    fileName: "iso_22000_certificate.pdf",
+    fileSize: 1125000,
+    fileType: "application/pdf",
+    category: "Certificate",
+    status: "Published",
+    version: 1,
+    createdBy: "Certification Body",
+    createdAt: "2022-08-10T09:30:00Z",
+    updatedAt: "2022-08-10T09:30:00Z",
+    expiryDate: "2023-08-10T09:30:00Z", // Expired
+    linkedModule: "none",
+    tags: ['certificate', 'ISO 22000', 'food safety']
+  }
+];
 
 interface DocumentContextType {
-  documents: SupabaseDocument[];
-  appDocuments: AppDocument[];
-  categories: { id: string; name: string }[];
-  folders: { id: string; name: string; parent_id?: string; document_count: number; path: string }[];
-  loading: boolean;
-  selectedFolder: string | null;
-  setSelectedFolder: (id: string | null) => void;
-  addDocument: (doc: Partial<SupabaseDocument>) => Promise<SupabaseDocument | null>;
-  updateDocumentStatus: (doc: SupabaseDocument, newStatus: DocumentStatus) => Promise<void>;
-  approveDocument: (doc: SupabaseDocument, comment: string) => Promise<void>;
-  rejectDocument: (doc: SupabaseDocument, reason: string) => Promise<void>;
-  deleteDocumentById: (id: string) => Promise<void>;
-  refreshDocuments: () => Promise<void>;
-  // App document specific functions (using the app's document type)
-  addAppDocument: (doc: Partial<AppDocument>) => Promise<AppDocument | null>;
-  updateAppDocument: (doc: AppDocument) => Promise<AppDocument | null>;
-  // Functions used by the UI
-  selectedDocument: AppDocument | null;
-  setSelectedDocument: (doc: AppDocument | null) => void;
-  submitForApproval: (doc: AppDocument) => Promise<void>;
-  updateDocument: (doc: AppDocument) => Promise<AppDocument | null>;
-  notifications: any[];
-  markNotificationAsRead: (id: string) => Promise<void>;
-  clearAllNotifications: () => Promise<void>;
+  documents: Document[];
+  selectedDocument: Document | null;
+  notifications: DocumentNotification[];
+  activities: DocumentActivity[];
+  stats: DocumentStats;
+  setSelectedDocument: (doc: Document | null) => void;
+  addDocument: (doc: Document) => void;
+  updateDocument: (doc: Document) => void;
+  deleteDocument: (id: string) => void;
+  submitForApproval: (doc: Document) => void;
+  approveDocument: (doc: Document, comment?: string) => void;
+  rejectDocument: (doc: Document, reason: string) => void;
+  publishDocument: (doc: Document) => void;
+  archiveDocument: (doc: Document) => void;
+  markNotificationAsRead: (id: string) => void;
+  clearAllNotifications: () => void;
+  refreshDocumentStats: () => void;
 }
 
-const DocumentContext = createContext<DocumentContextType>({
-  documents: [],
-  appDocuments: [],
-  categories: [],
-  folders: [],
-  loading: true,
-  selectedFolder: null,
-  setSelectedFolder: () => {},
-  addDocument: async () => null,
-  updateDocumentStatus: async () => {},
-  approveDocument: async () => {},
-  rejectDocument: async () => {},
-  deleteDocumentById: async () => {},
-  refreshDocuments: async () => {},
-  // App document specific functions
-  addAppDocument: async () => null,
-  updateAppDocument: async () => null,
-  // UI functions
-  selectedDocument: null,
-  setSelectedDocument: () => {},
-  submitForApproval: async () => {},
-  updateDocument: async () => null,
-  notifications: [],
-  markNotificationAsRead: async () => {},
-  clearAllNotifications: async () => {},
-});
+const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
-export const useDocuments = () => useContext(DocumentContext);
+export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [notifications, setNotifications] = useState<DocumentNotification[]>([]);
+  const [activities, setActivities] = useState<DocumentActivity[]>([]);
+  const [stats, setStats] = useState<DocumentStats>({
+    totalDocuments: 0,
+    pendingApproval: 0,
+    expiringSoon: 0,
+    expired: 0,
+    published: 0,
+    archived: 0,
+    byCategory: {} as Record<string, number>
+  });
 
-export const DocumentProvider = ({ children }: { children: ReactNode }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [appDocuments, setAppDocuments] = useState<AppDocument[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-  const [folders, setFolders] = useState<{ id: string; name: string; parent_id?: string; document_count: number; path: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [selectedDocument, setSelectedDocument] = useState<AppDocument | null>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const { addNotification } = useNotifications();
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [docsData, foldersData, categoriesData] = await Promise.all([
-        fetchDocuments(),
-        fetchFolders(),
-        fetchCategories()
-      ]);
-      
-      setDocuments(docsData);
-      setAppDocuments(docsData.map(doc => supabaseToAppDocument(doc)));
-      setFolders(foldersData);
-      setCategories(categoriesData);
-      
-      // Simulate some notifications for the UI
-      setNotifications([
-        {
-          id: "1",
-          type: "approval_request",
-          document_title: "Allergen Control Program",
-          message: "Document is awaiting your approval",
-          is_read: false
-        },
-        {
-          id: "2",
-          type: "expiry_reminder",
-          document_title: "Food Safety Certificate ISO 22000",
-          message: "Document will expire in 30 days",
-          is_read: false
-        }
-      ]);
-    } catch (error) {
-      console.error("Error loading document data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Initialize notifications and stats
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const refreshDocuments = async () => {
-    await loadData();
-  };
-
-  const addDocument = async (doc: Partial<SupabaseDocument>): Promise<SupabaseDocument | null> => {
-    try {
-      const newDoc = await createDocument(doc);
-      
-      if (newDoc) {
-        await addDocumentActivity({
-          document_id: newDoc.id,
-          action: 'Created',
-          user_id: 'current-user', 
-          user_name: newDoc.created_by,
-          user_role: 'Document Owner',
-          timestamp: new Date().toISOString(),
-        });
-        
-        setDocuments(prev => [newDoc, ...prev]);
-        setAppDocuments(prev => [supabaseToAppDocument(newDoc), ...prev]);
-        
-        // Update folder document count
-        if (newDoc.folder_id) {
-          setFolders(prev => 
-            prev.map(folder => 
-              folder.id === newDoc.folder_id 
-                ? { ...folder, document_count: folder.document_count + 1 } 
-                : folder
-            )
-          );
-        }
-        
-        return newDoc;
-      }
-    } catch (error) {
-      console.error("Error adding document:", error);
+    // Update document status based on expiry dates
+    const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
+    if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
+      setDocuments(updatedDocs);
     }
     
-    return null;
-  };
-
-  const addAppDocument = async (doc: Partial<AppDocument>): Promise<AppDocument | null> => {
-    try {
-      const supaDoc = appToSupabaseDocument(doc as AppDocument);
-      const result = await addDocument(supaDoc as Partial<SupabaseDocument>);
-      return result ? supabaseToAppDocument(result) : null;
-    } catch (error) {
-      console.error("Error adding app document:", error);
-      return null;
-    }
-  };
-
-  const updateDocumentStatus = async (doc: SupabaseDocument, newStatus: DocumentStatus) => {
-    try {
-      const updatedDoc = await updateDocument(doc.id, { 
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-        pending_since: newStatus === 'Pending Approval' ? new Date().toISOString() : null
+    // Generate notifications
+    const generatedNotifications = documentWorkflowService.generateNotifications(updatedDocs);
+    setNotifications(generatedNotifications);
+    
+    // Calculate stats
+    refreshDocumentStats();
+    
+    // Set up interval to check for expired documents and refresh notifications
+    const interval = setInterval(() => {
+      const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
+      if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
+        setDocuments(updatedDocs);
+      }
+      
+      const freshNotifications = documentWorkflowService.generateNotifications(updatedDocs);
+      setNotifications(previousNotifications => {
+        // Keep read status of existing notifications
+        const existingNotificationMap = new Map(
+          previousNotifications.map(n => [n.id, n.isRead])
+        );
+        
+        return freshNotifications.map(n => ({
+          ...n,
+          isRead: existingNotificationMap.get(n.id) || false
+        }));
       });
       
-      if (updatedDoc) {
-        await addDocumentActivity({
-          document_id: doc.id,
-          action: `Status changed to ${newStatus}`,
-          user_id: 'current-user',
-          user_name: 'Current User',
-          user_role: 'Document Manager',
-          timestamp: new Date().toISOString(),
-        });
-        
-        setDocuments(prev => 
-          prev.map(d => d.id === doc.id ? updatedDoc : d)
-        );
-        
-        setAppDocuments(prev =>
-          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
-        );
-        
-        addNotification({
-          id: Date.now().toString(),
-          type: 'info',
-          title: 'Document Status Updated',
-          message: `"${doc.title}" status changed to ${newStatus}`,
-          read: false,
-          timestamp: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error("Error updating document status:", error);
+      refreshDocumentStats();
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const refreshDocumentStats = () => {
+    const calculatedStats = documentWorkflowService.getDocumentStats(documents);
+    setStats(calculatedStats);
+  };
+
+  const addDocument = (doc: Document) => {
+    setDocuments(prev => [...prev, doc]);
+    toast.success('Document added successfully');
+    refreshDocumentStats();
+  };
+
+  const updateDocument = (doc: Document) => {
+    setDocuments(prev => 
+      prev.map(d => d.id === doc.id ? doc : d)
+    );
+    
+    // If the updated document is currently selected, update the selection
+    if (selectedDocument && selectedDocument.id === doc.id) {
+      setSelectedDocument(doc);
     }
+    
+    toast.success('Document updated successfully');
+    refreshDocumentStats();
   };
 
-  const approveDocument = async (doc: SupabaseDocument, comment: string) => {
-    try {
-      const updatedDoc = await updateDocument(doc.id, { 
-        status: 'Approved',
-        updated_at: new Date().toISOString(),
-        last_action: 'Approved'
-      });
-      
-      if (updatedDoc) {
-        await addDocumentActivity({
-          document_id: doc.id,
-          action: 'Approved',
-          user_id: 'current-user',
-          user_name: 'Current User',
-          user_role: 'Approver',
-          timestamp: new Date().toISOString(),
-          comments: comment || 'Document approved'
-        });
-        
-        setDocuments(prev => 
-          prev.map(d => d.id === doc.id ? updatedDoc : d)
-        );
-        
-        setAppDocuments(prev =>
-          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
-        );
-        
-        addNotification({
-          id: Date.now().toString(),
-          type: 'success',
-          title: 'Document Approved',
-          message: `"${doc.title}" has been approved`,
-          read: false,
-          timestamp: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error("Error approving document:", error);
+  const deleteDocument = (id: string) => {
+    setDocuments(prev => prev.filter(d => d.id !== id));
+    
+    // If the deleted document is currently selected, clear the selection
+    if (selectedDocument && selectedDocument.id === id) {
+      setSelectedDocument(null);
     }
+    
+    toast.success('Document deleted successfully');
+    refreshDocumentStats();
   };
 
-  const rejectDocument = async (doc: SupabaseDocument, reason: string) => {
-    try {
-      const updatedDoc = await updateDocument(doc.id, { 
-        status: 'Draft',
-        updated_at: new Date().toISOString(),
-        last_action: 'Rejected',
-        rejection_reason: reason
-      });
-      
-      if (updatedDoc) {
-        await addDocumentActivity({
-          document_id: doc.id,
-          action: 'Rejected',
-          user_id: 'current-user',
-          user_name: 'Current User',
-          user_role: 'Approver',
-          timestamp: new Date().toISOString(),
-          comments: reason || 'Document rejected'
-        });
-        
-        setDocuments(prev => 
-          prev.map(d => d.id === doc.id ? updatedDoc : d)
-        );
-        
-        setAppDocuments(prev =>
-          prev.map(d => d.id === doc.id ? supabaseToAppDocument(updatedDoc) : d)
-        );
-        
-        addNotification({
-          id: Date.now().toString(),
-          type: 'error',
-          title: 'Document Rejected',
-          message: `"${doc.title}" was rejected: ${reason}`,
-          read: false,
-          timestamp: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error("Error rejecting document:", error);
+  const submitForApproval = (doc: Document) => {
+    const updatedDoc = documentWorkflowService.submitForApproval(doc);
+    updateDocument(updatedDoc);
+    
+    // Add approval request notification
+    const newNotification: DocumentNotification = {
+      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+      documentId: doc.id,
+      documentTitle: doc.title,
+      type: 'approval_request',
+      message: `New approval request for "${doc.title}"`,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      targetUserIds: []
+    };
+    
+    setNotifications(prev => [...prev, newNotification]);
+    toast.success('Document submitted for approval');
+  };
+
+  const approveDocument = (doc: Document, comment?: string) => {
+    const updatedDoc = documentWorkflowService.approveDocument(doc, comment);
+    updateDocument(updatedDoc);
+    
+    // Add approval complete notification
+    const newNotification: DocumentNotification = {
+      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+      documentId: doc.id,
+      documentTitle: doc.title,
+      type: 'approval_complete',
+      message: `"${doc.title}" has been approved`,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      targetUserIds: []
+    };
+    
+    setNotifications(prev => [...prev, newNotification]);
+    toast.success('Document approved successfully');
+  };
+
+  const rejectDocument = (doc: Document, reason: string) => {
+    const updatedDoc = documentWorkflowService.rejectDocument(doc, reason);
+    updateDocument(updatedDoc);
+    
+    // Add rejection notification
+    const newNotification: DocumentNotification = {
+      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+      documentId: doc.id,
+      documentTitle: doc.title,
+      type: 'document_rejected',
+      message: `"${doc.title}" was rejected: ${reason}`,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      targetUserIds: []
+    };
+    
+    setNotifications(prev => [...prev, newNotification]);
+    toast.error('Document rejected');
+  };
+
+  const publishDocument = (doc: Document) => {
+    if (doc.status !== 'Approved') {
+      toast.error('Document must be approved before publishing');
+      return;
     }
+    
+    const updatedDoc = documentWorkflowService.publishDocument(doc);
+    updateDocument(updatedDoc);
+    toast.success('Document published successfully');
   };
 
-  const deleteDocumentById = async (id: string) => {
-    try {
-      const success = await deleteDocument(id);
-      
-      if (success) {
-        const docToDelete = documents.find(d => d.id === id);
-        
-        setDocuments(prev => prev.filter(d => d.id !== id));
-        setAppDocuments(prev => prev.filter(d => d.id !== id));
-        
-        // Update folder document count
-        if (docToDelete?.folder_id) {
-          setFolders(prev => 
-            prev.map(folder => 
-              folder.id === docToDelete.folder_id 
-                ? { ...folder, document_count: Math.max(0, folder.document_count - 1) } 
-                : folder
-            )
-          );
-        }
-        
-        addNotification({
-          id: Date.now().toString(),
-          type: 'info',
-          title: 'Document Deleted',
-          message: `Document has been deleted`,
-          read: false,
-          timestamp: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting document:", error);
-    }
+  const archiveDocument = (doc: Document) => {
+    const updatedDoc = documentWorkflowService.archiveDocument(doc);
+    updateDocument(updatedDoc);
+    toast.success('Document archived successfully');
   };
 
-  // UI and application specific functions
-  const submitForApproval = async (doc: AppDocument) => {
-    const supaDoc = documents.find(d => d.id === doc.id);
-    if (supaDoc) {
-      await updateDocumentStatus(supaDoc, 'Pending Approval');
-    }
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id 
+          ? { ...notification, isRead: true } 
+          : notification
+      )
+    );
   };
 
-  const updateAppDocument = async (doc: AppDocument): Promise<AppDocument | null> => {
-    try {
-      const supaDoc = appToSupabaseDocument(doc);
-      const result = await updateAppDocumentService(doc.id, doc);
-      if (result) {
-        setAppDocuments(prev => prev.map(d => d.id === doc.id ? result : d));
-      }
-      return result;
-    } catch (error) {
-      console.error("Error updating app document:", error);
-      return null;
-    }
-  };
-
-  const markNotificationAsRead = async (id: string) => {
-    // Simulate marking notification as read
-    setNotifications(prev => prev.map(n => n.id === id ? {...n, is_read: true} : n));
-  };
-
-  const clearAllNotifications = async () => {
-    // Simulate clearing all notifications
+  const clearAllNotifications = () => {
     setNotifications([]);
   };
 
@@ -373,32 +317,33 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     <DocumentContext.Provider
       value={{
         documents,
-        appDocuments,
-        categories,
-        folders,
-        loading,
-        selectedFolder,
-        setSelectedFolder,
+        selectedDocument,
+        notifications,
+        activities,
+        stats,
+        setSelectedDocument,
         addDocument,
-        updateDocumentStatus,
+        updateDocument,
+        deleteDocument,
+        submitForApproval,
         approveDocument,
         rejectDocument,
-        deleteDocumentById,
-        refreshDocuments,
-        // App document specific functions
-        addAppDocument,
-        updateAppDocument,
-        // UI Functions
-        selectedDocument,
-        setSelectedDocument,
-        submitForApproval,
-        updateDocument: updateAppDocument,
-        notifications,
+        publishDocument,
+        archiveDocument,
         markNotificationAsRead,
-        clearAllNotifications
+        clearAllNotifications,
+        refreshDocumentStats
       }}
     >
       {children}
     </DocumentContext.Provider>
   );
+};
+
+export const useDocuments = () => {
+  const context = useContext(DocumentContext);
+  if (context === undefined) {
+    throw new Error('useDocuments must be used within a DocumentProvider');
+  }
+  return context;
 };

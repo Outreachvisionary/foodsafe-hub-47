@@ -1,7 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { fetchNotifications, markNotificationAsRead } from '@/services/supabaseService';
-import { DocumentNotification } from '@/types/supabase';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 type NotificationType = 'info' | 'warning' | 'error' | 'success';
 
@@ -37,34 +35,32 @@ const NotificationContext = createContext<NotificationContextType>({
 export const useNotifications = () => useContext(NotificationContext);
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  // Convert Supabase notification to app notification format
-  const mapDbNotificationToAppNotification = (dbNotification: DocumentNotification): Notification => {
-    return {
-      id: dbNotification.id,
-      type: dbNotification.type as NotificationType,
-      title: dbNotification.document_title,
-      message: dbNotification.message,
-      read: dbNotification.is_read,
-      timestamp: new Date(dbNotification.created_at),
-    };
-  };
-
-  // Load notifications from Supabase
-  const loadNotifications = useCallback(async () => {
-    try {
-      const dbNotifications = await fetchNotifications();
-      const appNotifications = dbNotifications.map(mapDbNotificationToAppNotification);
-      setNotifications(appNotifications);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: '1',
+      type: 'warning',
+      title: 'Document Expiring',
+      message: 'Quality Manual will expire in 5 days',
+      read: false,
+      timestamp: new Date(Date.now() - 1000 * 60 * 30),
+    },
+    {
+      id: '2',
+      type: 'info',
+      title: 'Audit Scheduled',
+      message: 'Internal audit scheduled for next Tuesday',
+      read: false,
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    },
+    {
+      id: '3',
+      type: 'success',
+      title: 'Document Approved',
+      message: 'HACCP Plan approved by Management',
+      read: true,
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    },
+  ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -72,38 +68,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(prev => [notification, ...prev]);
   }, []);
 
-  const markAsRead = useCallback(async (id: string) => {
-    try {
-      const success = await markNotificationAsRead(id);
-      if (success) {
-        setNotifications(prev => 
-          prev.map(notification => 
-            notification.id === id ? { ...notification, read: true } : notification
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id ? { ...notification, read: true } : notification
+      )
+    );
   }, []);
 
-  const markAllAsRead = useCallback(async () => {
-    try {
-      // For each unread notification, mark it as read
-      const unreadNotificationIds = notifications
-        .filter(notification => !notification.read)
-        .map(notification => notification.id);
-      
-      // Update all unread notifications in parallel
-      await Promise.all(unreadNotificationIds.map(id => markNotificationAsRead(id)));
-      
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, read: true }))
-      );
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  }, [notifications]);
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, read: true }))
+    );
+  }, []);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));

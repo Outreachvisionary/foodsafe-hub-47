@@ -1,85 +1,43 @@
 
 import React from 'react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Folder, Home } from 'lucide-react';
+import { FolderOpen, Home } from 'lucide-react';
 
-export interface DocumentBreadcrumbProps {
-  folders: { id: string; name: string; parent_id?: string; document_count: number; path: string }[];
-  selectedFolder: string | null;
-  onFolderClick: (id: string | null) => void;
+interface DocumentBreadcrumbProps {
+  path: string;
+  onNavigate: (path: string) => void;
 }
 
-const DocumentBreadcrumb: React.FC<DocumentBreadcrumbProps> = ({ 
-  folders,
-  selectedFolder, 
-  onFolderClick 
-}) => {
-  if (!selectedFolder) {
-    return (
-      <Breadcrumb className="mb-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink className="flex items-center">
-              <Home className="h-4 w-4 mr-2" />
-              All Documents
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
-  }
-
-  // Find the current folder
-  const currentFolder = folders.find(folder => folder.id === selectedFolder);
-  if (!currentFolder) return null;
+const DocumentBreadcrumb: React.FC<DocumentBreadcrumbProps> = ({ path, onNavigate }) => {
+  const parts = path.split('/').filter(Boolean);
   
-  // Build the breadcrumb path
-  const buildPath = (folder: typeof currentFolder) => {
-    const path = [folder];
-    let currentParent = folder?.parent_id;
-    
-    while (currentParent) {
-      const parentFolder = folders.find(f => f.id === currentParent);
-      if (parentFolder) {
-        path.unshift(parentFolder);
-        currentParent = parentFolder.parent_id;
-      } else {
-        break;
-      }
-    }
-    
-    return path;
-  };
-  
-  const path = currentFolder ? buildPath(currentFolder) : [];
-
   return (
     <Breadcrumb className="mb-4">
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink 
-            className="flex items-center cursor-pointer" 
-            onClick={() => onFolderClick(null)}
-          >
-            <Home className="h-4 w-4 mr-2" />
-            All Documents
+          <BreadcrumbLink onClick={() => onNavigate('/')} className="flex items-center gap-1">
+            <Home className="h-4 w-4" />
+            <span>Root</span>
           </BreadcrumbLink>
         </BreadcrumbItem>
         
-        {path.map((folder, index) => (
-          <React.Fragment key={folder.id}>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink 
-                className={`flex items-center ${index === path.length - 1 ? 'font-semibold' : 'cursor-pointer'}`}
-                onClick={() => index !== path.length - 1 && onFolderClick(folder.id)}
-              >
-                <Folder className="h-4 w-4 mr-2" />
-                {folder.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </React.Fragment>
-        ))}
+        {parts.map((part, index) => {
+          const currentPath = '/' + parts.slice(0, index + 1).join('/');
+          return (
+            <React.Fragment key={index}>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  onClick={() => onNavigate(currentPath)}
+                  className="flex items-center gap-1"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span>{part}</span>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </React.Fragment>
+          );
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );
