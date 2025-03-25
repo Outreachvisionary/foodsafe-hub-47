@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { NonConformance } from '@/types/non-conformance';
+import { NonConformance, NCStatus } from '@/types/non-conformance';
 import { createNCActivity } from './activityService';
 
 // Update non-conformance status with activity tracking
 export const updateNCStatus = async (
   id: string, 
-  newStatus: NonConformance['status'], 
-  currentStatus: NonConformance['status'],
+  newStatus: NCStatus, 
+  currentStatus: NCStatus,
   userId: string,
   comments?: string
 ): Promise<NonConformance> => {
