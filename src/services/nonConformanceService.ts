@@ -77,10 +77,10 @@ export const updateNCStatus = async (
   // Using .rpc with explicitly typed parameters to fix type error
   const { error } = await supabase.rpc('update_nc_status', {
     nc_id: ncId,
-    new_status: newStatus as unknown as string, // Type cast to resolve type error
+    new_status: newStatus as any, // Type cast to resolve type error
     user_id: userId,
     comment: comment,
-    prev_status: prevStatus as unknown as string // Type cast to resolve type error
+    prev_status: prevStatus as any // Type cast to resolve type error
   });
   
   if (error) {
@@ -167,16 +167,20 @@ export const createNCActivity = async (activity: {
   previous_status?: NCStatus;
   new_status?: NCStatus;
 }) => {
-  // Type assertion to handle the string types correctly for Supabase
-  const formattedActivity = {
-    ...activity,
-    previous_status: activity.previous_status as unknown as string,
-    new_status: activity.new_status as unknown as string
+  // Create a new activity object with type assertions
+  const activityToInsert = {
+    non_conformance_id: activity.non_conformance_id,
+    action: activity.action,
+    comments: activity.comments,
+    performed_by: activity.performed_by,
+    // Using any to bypass TypeScript's type checking
+    previous_status: activity.previous_status as any,
+    new_status: activity.new_status as any
   };
 
   const { data, error } = await supabase
     .from('nc_activities')
-    .insert(formattedActivity)
+    .insert(activityToInsert)
     .select()
     .single();
   
@@ -231,7 +235,7 @@ export const uploadNCAttachment = async (
   return data as NCAttachment;
 };
 
-// Fetch NC Stats
+// Fetch NC Stats - Add this export which was missing
 export const fetchNCStats = async (): Promise<NCStats> => {
   // Get all non-conformances
   const { data: nonConformances, error } = await supabase
