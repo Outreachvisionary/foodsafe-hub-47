@@ -363,8 +363,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Get counts by status
   const { data: statusData, error: statusError } = await supabase
     .from('non_conformances')
-    .select('status, count')
-    .select('status, count(*)')
+    .select('status')
     .order('status');
   
   if (statusError) {
@@ -375,7 +374,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Get counts by category
   const { data: categoryData, error: categoryError } = await supabase
     .from('non_conformances')
-    .select('item_category, count(*)')
+    .select('item_category')
     .order('item_category');
   
   if (categoryError) {
@@ -386,7 +385,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Get counts by reason
   const { data: reasonData, error: reasonError } = await supabase
     .from('non_conformances')
-    .select('reason_category, count(*)')
+    .select('reason_category')
     .order('reason_category');
   
   if (reasonError) {
@@ -409,17 +408,17 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Process the data
   const byStatus: Record<string, number> = {};
   statusData.forEach(item => {
-    byStatus[item.status] = parseInt(item.count);
+    byStatus[item.status] = (byStatus[item.status] || 0) + 1;
   });
   
   const byCategory: Record<string, number> = {};
   categoryData.forEach(item => {
-    byCategory[item.item_category] = parseInt(item.count);
+    byCategory[item.item_category] = (byCategory[item.item_category] || 0) + 1;
   });
   
   const byReason: Record<string, number> = {};
   reasonData.forEach(item => {
-    byReason[item.reason_category] = parseInt(item.count);
+    byReason[item.reason_category] = (byReason[item.reason_category] || 0) + 1;
   });
   
   return {
