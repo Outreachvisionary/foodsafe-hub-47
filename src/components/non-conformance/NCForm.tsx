@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -6,7 +7,7 @@ import {
   createNonConformance, 
   updateNonConformance, 
   fetchNonConformanceById 
-} from '@/services/nonConformance';
+} from '@/services/nonConformanceService';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

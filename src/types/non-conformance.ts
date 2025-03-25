@@ -44,8 +44,6 @@ export interface NonConformance {
   department?: string;
   priority?: string;
   risk_level?: string;
-  quantity?: number;
-  quantity_on_hold?: number;
   tags?: string[];
 }
 
@@ -87,7 +85,6 @@ export interface NCStats {
   byStatus: Record<NCStatus, number>;
   byCategory: Record<NCItemCategory, number>;
   byReason: Record<NCReasonCategory, number>;
-  totalQuantityOnHold: number;
   recentItems: NonConformance[];
 }
 
