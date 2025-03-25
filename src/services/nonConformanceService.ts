@@ -77,10 +77,10 @@ export const updateNCStatus = async (
   // Using .rpc with explicitly typed parameters to fix type error
   const { error } = await supabase.rpc('update_nc_status', {
     nc_id: ncId,
-    new_status: newStatus as any, // Type assertion to bypass strict type checking
+    new_status: newStatus as unknown as string, // Type cast to resolve type error
     user_id: userId,
     comment: comment,
-    prev_status: prevStatus as any // Type assertion to bypass strict type checking
+    prev_status: prevStatus as unknown as string // Type cast to resolve type error
   });
   
   if (error) {
@@ -158,7 +158,7 @@ export const fetchNCAttachments = async (nonConformanceId: string) => {
   return data;
 };
 
-// Create NC Activity with proper type annotation
+// Create NC Activity with proper type handling
 export const createNCActivity = async (activity: {
   non_conformance_id: string;
   action: string;
@@ -170,8 +170,8 @@ export const createNCActivity = async (activity: {
   // Type assertion to handle the string types correctly for Supabase
   const formattedActivity = {
     ...activity,
-    previous_status: activity.previous_status as any,
-    new_status: activity.new_status as any
+    previous_status: activity.previous_status as unknown as string,
+    new_status: activity.new_status as unknown as string
   };
 
   const { data, error } = await supabase
