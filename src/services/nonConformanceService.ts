@@ -9,6 +9,7 @@ import {
   NCStatus
 } from '@/types/non-conformance';
 
+
 // Non-Conformance CRUD operations
 export const fetchNonConformances = async (filters?: NCFilter): Promise<NonConformance[]> => {
   let query = supabase
@@ -147,6 +148,7 @@ export const updateNCStatus = async (
   }
 
   if (!data) {
+    // Manually update status and record activity if RPC function fails
     const { data: ncData, error: ncError } = await supabase
       .from('non_conformances')
       .update({
@@ -186,6 +188,7 @@ export const updateNCStatus = async (
   return data as NonConformance;
 };
 
+
 // Attachments
 export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
   const { data, error } = await supabase
@@ -200,6 +203,7 @@ export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAt
   
   return data as NCAttachment[];
 };
+
 
 export const uploadNCAttachment = async (
   nonConformanceId: string,
@@ -276,6 +280,7 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
   
   return data as NCActivity[];
 };
+
 
 export const createNCActivity = async (activity: Omit<NCActivity, 'id'>): Promise<NCActivity> => {
   const { data, error } = await supabase
@@ -429,6 +434,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   };
 };
 
+
 // CAPA Integration
 export const linkNCToCapa = async (nonConformanceId: string, capaId: string): Promise<void> => {
   const { error: ncError } = await supabase
@@ -458,6 +464,7 @@ export const linkNCToCapa = async (nonConformanceId: string, capaId: string): Pr
   }
 };
 
+
 // Module Integration - Training
 export const getTrainingRelatedToNC = async (nonConformanceId: string): Promise<any[]> => {
   const { data, error } = await supabase
@@ -477,6 +484,7 @@ export const getTrainingRelatedToNC = async (nonConformanceId: string): Promise<
   
   return data;
 };
+
 
 // Module Integration - Documents
 export const getDocumentsRelatedToNC = async (nonConformanceId: string): Promise<any[]> => {
