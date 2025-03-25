@@ -1,335 +1,296 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   BarChart, 
-  FileText, 
-  Users, 
-  ClipboardCheck, 
-  AlertTriangle, 
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Info
+  PieChart, 
+  LineChart, 
+  Calendar, 
+  Download, 
+  Filter, 
+  Clock, 
+  AlertTriangle
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { 
+  BarChart as RechartsBarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  LineChart as RechartsLineChart,
+  Line
+} from 'recharts';
 
 interface ReportDashboardProps {
   dateRange: string;
 }
 
 const ReportDashboard: React.FC<ReportDashboardProps> = ({ dateRange }) => {
-  // Sample document data
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Sample data for charts
   const documentStatusData = [
-    { name: 'Approved', value: 65, color: '#10b981' },
-    { name: 'Pending Approval', value: 15, color: '#3b82f6' },
-    { name: 'Draft', value: 10, color: '#9ca3af' },
-    { name: 'Expired', value: 5, color: '#ef4444' },
-    { name: 'Archived', value: 5, color: '#6b7280' },
+    { name: 'Active', value: 65 },
+    { name: 'Pending Approval', value: 15 },
+    { name: 'In Draft', value: 10 },
+    { name: 'Expired', value: 5 },
+    { name: 'Obsolete', value: 5 },
   ];
   
-  // Sample audit data
   const auditFindingsData = [
-    { name: 'Food Safety', critical: 2, major: 4, minor: 8 },
-    { name: 'GMP', critical: 1, major: 3, minor: 5 },
-    { name: 'Sanitation', critical: 0, major: 6, minor: 7 },
-    { name: 'HACCP', critical: 3, major: 2, minor: 4 },
-    { name: 'Quality', critical: 0, major: 5, minor: 9 },
+    { name: 'Jan', nonConformities: 5, observations: 8 },
+    { name: 'Feb', nonConformities: 3, observations: 6 },
+    { name: 'Mar', nonConformities: 4, observations: 7 },
+    { name: 'Apr', nonConformities: 2, observations: 5 },
+    { name: 'May', nonConformities: 1, observations: 4 },
+    { name: 'Jun', nonConformities: 0, observations: 3 },
   ];
   
-  // Sample CAPA data
-  const capaStatusData = [
-    { status: 'Open', count: 12, color: '#ef4444' },
-    { status: 'In Progress', count: 18, color: '#3b82f6' },
-    { status: 'Closed', count: 15, color: '#10b981' },
-    { status: 'Verified', count: 5, color: '#6b7280' },
-  ];
-  
-  // Sample training data
   const trainingComplianceData = [
-    { name: 'Production', compliance: 82 },
-    { name: 'Quality', compliance: 90 },
-    { name: 'Maintenance', compliance: 76 },
-    { name: 'R&D', compliance: 85 },
-    { name: 'Logistics', compliance: 79 }
+    { name: 'QA Team', compliance: 94 },
+    { name: 'Production', compliance: 83 },
+    { name: 'Warehouse', compliance: 78 },
+    { name: 'Maintenance', compliance: 88 },
+    { name: 'Management', compliance: 96 },
   ];
   
-  // Metrics
-  const metrics = [
-    { 
-      name: 'Document Compliance',
-      value: '92%',
-      change: '+3%',
-      trending: 'up',
-      info: '% of documents that are current and approved'
-    },
-    { 
-      name: 'Audit Completion',
-      value: '88%',
-      change: '+5%',
-      trending: 'up',
-      info: '% of scheduled audits completed on time'
-    },
-    { 
-      name: 'CAPA Closure Rate',
-      value: '76%',
-      change: '-2%',
-      trending: 'down',
-      info: '% of CAPAs closed within target date'
-    },
-    { 
-      name: 'Training Compliance',
-      value: '85%',
-      change: '+4%',
-      trending: 'up',
-      info: '% of required training completed'
-    },
-    { 
-      name: 'HACCP Compliance',
-      value: '98%',
-      change: '+1%',
-      trending: 'up',
-      info: '% of CCP monitoring performed as scheduled'
-    },
-    { 
-      name: 'Complaint Resolution',
-      value: '79%',
-      change: '+6%',
-      trending: 'up',
-      info: '% of complaints resolved within SLA'
-    },
+  const capaStatusData = [
+    { name: 'Open', value: 12 },
+    { name: 'In Progress', value: 18 },
+    { name: 'Pending Verification', value: 5 },
+    { name: 'Closed', value: 45 },
   ];
+  
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A374DB'];
+  
+  const downloadDashboard = () => {
+    console.log('Downloading dashboard...');
+  };
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {metrics.map((metric, index) => (
-          <MetricCard
-            key={index}
-            name={metric.name}
-            value={metric.value}
-            change={metric.change}
-            trending={metric.trending as 'up' | 'down'}
-            info={metric.info}
-          />
-        ))}
+      <div className="flex justify-between items-center">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              <span>Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <PieChart className="h-4 w-4" />
+              <span>Documents</span>
+            </TabsTrigger>
+            <TabsTrigger value="audits" className="flex items-center gap-2">
+              <LineChart className="h-4 w-4" />
+              <span>Audits</span>
+            </TabsTrigger>
+            <TabsTrigger value="training" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              <span>Training</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="h-5 w-5 text-blue-500 mr-2" />
-              Document Status Overview
-            </CardTitle>
-            <CardDescription>
-              Document distribution by current status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RePieChart width={400} height={300}>
-                  <Pie
-                    data={documentStatusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {documentStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </RePieChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Documents expiring this month:</span>
-                <Badge variant="destructive">12</Badge>
+      <TabsContent value="overview" className="mt-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Document Status</CardTitle>
+              <CardDescription>Current status of all documents</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={documentStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {documentStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Documents pending approval:</span>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700">15</Badge>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Audit Findings</CardTitle>
+              <CardDescription>Recent 6 months</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={auditFindingsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="nonConformities" fill="#FF8042" name="Non-Conformities" />
+                    <Bar dataKey="observations" fill="#0088FE" name="Observations" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ClipboardCheck className="h-5 w-5 text-blue-500 mr-2" />
-              Audit Findings
-            </CardTitle>
-            <CardDescription>
-              Non-conformities by category and severity
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ReBarChart
-                  width={500}
-                  height={300}
-                  data={auditFindingsData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="critical" name="Critical" fill="#ef4444" />
-                  <Bar dataKey="major" name="Major" fill="#f59e0b" />
-                  <Bar dataKey="minor" name="Minor" fill="#3b82f6" />
-                </ReBarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total open findings:</span>
-                <Badge variant="destructive">24</Badge>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">CAPA Status</CardTitle>
+              <CardDescription>Current status of all CAPAs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={capaStatusData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {capaStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Average days to close:</span>
-                <Badge variant="outline">14.5 days</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-blue-500 mr-2" />
-              CAPA Status
-            </CardTitle>
-            <CardDescription>
-              Corrective and preventive actions by status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {capaStatusData.map((item, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>{item.status}</span>
-                    <span className="font-medium">{item.count} ({Math.round(item.count / capaStatusData.reduce((sum, i) => sum + i.count, 0) * 100)}%)</span>
-                  </div>
-                  <Progress value={item.count / capaStatusData.reduce((sum, i) => sum + i.count, 0) * 100} className="h-2" indicatorClassName={`bg-[${item.color}]`} />
-                </div>
-              ))}
-              
-              <div className="pt-4 mt-4 border-t">
-                <div className="text-sm font-medium mb-2">Key CAPA Metrics</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="text-sm text-gray-500">Average Time to Close</div>
-                    <div className="text-xl font-bold">18.5 days</div>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="text-sm text-gray-500">Overdue CAPAs</div>
-                    <div className="text-xl font-bold text-red-500">7</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="h-5 w-5 text-blue-500 mr-2" />
-              Training Compliance
-            </CardTitle>
-            <CardDescription>
-              Training completion rates by department
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <ReBarChart
-                  width={500}
-                  height={300}
-                  data={trainingComplianceData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="compliance" name="Compliance %" fill="#3b82f6" />
-                </ReBarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="pt-4 mt-4 border-t">
-              <div className="text-sm font-medium mb-2">Upcoming Certifications</div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">PCQI Certification Renewals</span>
-                  <Badge className="bg-amber-50 text-amber-700">8 due this month</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">HACCP Training</span>
-                  <Badge className="bg-amber-50 text-amber-700">12 due next month</Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-interface MetricCardProps {
-  name: string;
-  value: string;
-  change: string;
-  trending: 'up' | 'down';
-  info: string;
-}
-
-const MetricCard: React.FC<MetricCardProps> = ({ name, value, change, trending, info }) => {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
-          {name}
-          <Button variant="ghost" className="h-6 w-6 p-0" asChild>
-            <div title={info}>
-              <Info className="h-4 w-4 text-gray-400" />
-            </div>
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <div className={`text-xs flex items-center ${trending === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-          {trending === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-          <span>{change} from previous period</span>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Department Training Compliance</CardTitle>
+              <CardDescription>Current compliance rates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {trainingComplianceData.map((dept) => (
+                  <div key={dept.name} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{dept.name}</span>
+                      <span className="font-medium">{dept.compliance}%</span>
+                    </div>
+                    <Progress value={dept.compliance} className="h-2" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Upcoming Compliance Deadlines</CardTitle>
+              <CardDescription>Next 30 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-4 w-4 text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Food Safety Management Review</p>
+                    <p className="text-sm text-gray-500">Due in 5 days - Annual Review</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-4 w-4 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Supplier Audit: Global Ingredients</p>
+                    <p className="text-sm text-gray-500">Due in 12 days - High Risk Supplier</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">HACCP Plan Verification</p>
+                    <p className="text-sm text-gray-500">Due in 18 days - Quarterly Requirement</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-4 w-4 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">ISO 22000 Internal Audit</p>
+                    <p className="text-sm text-gray-500">Due in 24 days - Process Area</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="documents" className="mt-0">
+        <div className="grid grid-cols-1 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Overview</CardTitle>
+              <CardDescription>Document analytics for {dateRange}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Document-specific analytics will be displayed here.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="audits" className="mt-0">
+        <div className="grid grid-cols-1 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Audit Overview</CardTitle>
+              <CardDescription>Audit analytics for {dateRange}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Audit-specific analytics will be displayed here.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="training" className="mt-0">
+        <div className="grid grid-cols-1 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Training Overview</CardTitle>
+              <CardDescription>Training analytics for {dateRange}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Training-specific analytics will be displayed here.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+    </div>
   );
 };
 

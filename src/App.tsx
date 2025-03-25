@@ -1,3 +1,4 @@
+
 import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -9,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import SupplierManagement from "./pages/SupplierManagement";
 import CAPA from "./pages/CAPA";
-import TrainingModule from "./pages/Training";
+import TrainingModule from "./pages/TrainingModule"; // Fixed import path
 import InternalAudits from "./pages/InternalAudits";
 import HaccpModule from "./pages/HaccpModule";
 import Traceability from "./pages/Traceability";
