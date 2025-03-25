@@ -132,7 +132,13 @@ const DocumentsContent = () => {
       <UploadDocumentDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen}
-        folders={folders} 
+        folders={folders.map(folder => ({
+          id: folder.id,
+          name: folder.name,
+          document_count: folder.document_count,
+          parent_id: folder.parent_id,
+          path: folder.path
+        }))} 
       />
     </div>
   );

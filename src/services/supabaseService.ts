@@ -253,12 +253,16 @@ export const fetchAppDocumentsByFolder = async (folderId: string): Promise<AppDo
 };
 
 export const createAppDocument = async (document: Partial<AppDocument>): Promise<AppDocument | null> => {
+  if (!document) return null;
+  
   const supaDoc = appToSupabaseDocument(document as AppDocument);
   const result = await createDocument(supaDoc as Partial<Document>);
   return result ? supabaseToAppDocument(result) : null;
 };
 
 export const updateAppDocument = async (id: string, updates: Partial<AppDocument>): Promise<AppDocument | null> => {
+  if (!updates) return null;
+  
   const supaUpdates = appToSupabaseDocument(updates as AppDocument);
   const result = await updateDocument(id, supaUpdates as Partial<Document>);
   return result ? supabaseToAppDocument(result) : null;
@@ -275,6 +279,8 @@ export const fetchAppDocumentActivities = async (documentId: string): Promise<Ap
 };
 
 export const addAppDocumentActivity = async (activity: Partial<AppDocumentActivity>): Promise<AppDocumentActivity | null> => {
+  if (!activity) return null;
+  
   const supaActivity = appToSupabaseDocumentActivity(activity as AppDocumentActivity);
   const result = await addDocumentActivity(supaActivity as Partial<DocumentActivity>);
   return result ? supabaseToAppDocumentActivity(result) : null;
@@ -286,6 +292,8 @@ export const fetchAppDocumentVersions = async (documentId: string): Promise<AppD
 };
 
 export const addAppDocumentVersion = async (version: Partial<AppDocumentVersion>): Promise<AppDocumentVersion | null> => {
+  if (!version) return null;
+  
   const supaVersion = appToSupabaseDocumentVersion(version as AppDocumentVersion);
   const result = await addDocumentVersion(supaVersion as Partial<DocumentVersion>);
   return result ? supabaseToAppDocumentVersion(result) : null;

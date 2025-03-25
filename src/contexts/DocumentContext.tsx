@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Document, DocumentStatus } from '@/types/supabase';
+import { Document as SupabaseDocument, DocumentStatus } from '@/types/supabase';
 import { Document as AppDocument, DocumentStatus as AppDocumentStatus } from '@/types/document';
 import { 
   fetchDocuments, 
@@ -13,23 +13,23 @@ import {
   fetchAppDocuments,
   fetchAppFolders,
   createAppDocument,
-  updateAppDocument
+  updateAppDocument as updateAppDocumentService
 } from '@/services/supabaseService';
 import { useNotifications } from './NotificationContext';
 import { supabaseToAppDocument, appToSupabaseDocument } from '@/utils/documentTypeConverter';
 
 interface DocumentContextType {
-  documents: Document[];
+  documents: SupabaseDocument[];
   appDocuments: AppDocument[];
   categories: { id: string; name: string }[];
   folders: { id: string; name: string; parent_id?: string; document_count: number; path: string }[];
   loading: boolean;
   selectedFolder: string | null;
   setSelectedFolder: (id: string | null) => void;
-  addDocument: (doc: Partial<Document>) => Promise<Document | null>;
-  updateDocumentStatus: (doc: Document, newStatus: DocumentStatus) => Promise<void>;
-  approveDocument: (doc: Document, comment: string) => Promise<void>;
-  rejectDocument: (doc: Document, reason: string) => Promise<void>;
+  addDocument: (doc: Partial<SupabaseDocument>) => Promise<SupabaseDocument | null>;
+  updateDocumentStatus: (doc: SupabaseDocument, newStatus: DocumentStatus) => Promise<void>;
+  approveDocument: (doc: SupabaseDocument, comment: string) => Promise<void>;
+  rejectDocument: (doc: SupabaseDocument, reason: string) => Promise<void>;
   deleteDocumentById: (id: string) => Promise<void>;
   refreshDocuments: () => Promise<void>;
   // App document specific functions (using the app's document type)
@@ -39,7 +39,7 @@ interface DocumentContextType {
   selectedDocument: AppDocument | null;
   setSelectedDocument: (doc: AppDocument | null) => void;
   submitForApproval: (doc: AppDocument) => Promise<void>;
-  updateDocument: (doc: AppDocument) => Promise<void>;
+  updateDocument: (doc: AppDocument) => Promise<AppDocument | null>;
   notifications: any[];
   markNotificationAsRead: (id: string) => Promise<void>;
   clearAllNotifications: () => Promise<void>;
@@ -66,7 +66,7 @@ const DocumentContext = createContext<DocumentContextType>({
   selectedDocument: null,
   setSelectedDocument: () => {},
   submitForApproval: async () => {},
-  updateDocument: async () => {},
+  updateDocument: async () => null,
   notifications: [],
   markNotificationAsRead: async () => {},
   clearAllNotifications: async () => {},
@@ -131,7 +131,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     await loadData();
   };
 
-  const addDocument = async (doc: Partial<Document>): Promise<Document | null> => {
+  const addDocument = async (doc: Partial<SupabaseDocument>): Promise<SupabaseDocument | null> => {
     try {
       const newDoc = await createDocument(doc);
       
@@ -169,12 +169,17 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addAppDocument = async (doc: Partial<AppDocument>): Promise<AppDocument | null> => {
-    const supaDoc = appToSupabaseDocument(doc as AppDocument);
-    const result = await addDocument(supaDoc as Partial<Document>);
-    return result ? supabaseToAppDocument(result) : null;
+    try {
+      const supaDoc = appToSupabaseDocument(doc as AppDocument);
+      const result = await addDocument(supaDoc as Partial<SupabaseDocument>);
+      return result ? supabaseToAppDocument(result) : null;
+    } catch (error) {
+      console.error("Error adding app document:", error);
+      return null;
+    }
   };
 
-  const updateDocumentStatus = async (doc: Document, newStatus: DocumentStatus) => {
+  const updateDocumentStatus = async (doc: SupabaseDocument, newStatus: DocumentStatus) => {
     try {
       const updatedDoc = await updateDocument(doc.id, { 
         status: newStatus,
@@ -214,7 +219,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const approveDocument = async (doc: Document, comment: string) => {
+  const approveDocument = async (doc: SupabaseDocument, comment: string) => {
     try {
       const updatedDoc = await updateDocument(doc.id, { 
         status: 'Approved',
@@ -255,7 +260,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const rejectDocument = async (doc: Document, reason: string) => {
+  const rejectDocument = async (doc: SupabaseDocument, reason: string) => {
     try {
       const updatedDoc = await updateDocument(doc.id, { 
         status: 'Draft',
@@ -340,11 +345,17 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateDocument = async (doc: AppDocument) => {
-    const supaDoc = appToSupabaseDocument(doc);
-    const result = await updateAppDocument(doc.id, doc);
-    if (result) {
-      setAppDocuments(prev => prev.map(d => d.id === doc.id ? result : d));
+  const updateAppDocument = async (doc: AppDocument): Promise<AppDocument | null> => {
+    try {
+      const supaDoc = appToSupabaseDocument(doc);
+      const result = await updateAppDocumentService(doc.id, doc);
+      if (result) {
+        setAppDocuments(prev => prev.map(d => d.id === doc.id ? result : d));
+      }
+      return result;
+    } catch (error) {
+      console.error("Error updating app document:", error);
+      return null;
     }
   };
 
@@ -381,7 +392,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         selectedDocument,
         setSelectedDocument,
         submitForApproval,
-        updateDocument,
+        updateDocument: updateAppDocument,
         notifications,
         markNotificationAsRead,
         clearAllNotifications
