@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCActivity, NCAttachment } from '@/types/non-conformance';
 import { 
   fetchNonConformanceById, 
   fetchNCActivities, 
-  fetchNCAttachments,
-  updateNCStatus,
-  createNCActivity,
-  linkNCToCapa
-} from '@/services/nonConformanceService';
+  fetchNCAttachments
+} from '@/services/nonConformance';
+import { updateNCStatus } from '@/services/nonConformance/statusService';
+import { createNCActivity } from '@/services/nonConformance/activityService';
+import { linkNCToCapa } from '@/services/nonConformance/integrationService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 

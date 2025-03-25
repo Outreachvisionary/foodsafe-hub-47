@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { uploadNCAttachment } from '@/services/nonConformanceService';
+import { uploadNCAttachment } from '@/services/nonConformance';
 import { Paperclip, Upload, X } from 'lucide-react';
 
 interface NCAttachmentUploaderProps {
