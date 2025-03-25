@@ -7,7 +7,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     // Get all non-conformances with counts by status, category, and reason
     const { data, error } = await supabase
       .from('non_conformances')
-      .select('status, item_category, reason_category, quantity, quantity_on_hold')
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (error) {

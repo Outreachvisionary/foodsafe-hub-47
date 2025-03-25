@@ -16,7 +16,7 @@ export const updateNCStatus = async (
     nc_id: id,
     new_status: newStatus,
     user_id: userId,
-    comment: comments || '', // Fix: Explicitly convert to string to match RPC parameter type
+    comment: comments || '', // Provide default empty string to avoid type issues
     prev_status: currentStatus
   });
 
