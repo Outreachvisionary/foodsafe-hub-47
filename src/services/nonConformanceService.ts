@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   NonConformance, 
@@ -139,7 +138,7 @@ export const updateNCStatus = async (
     nc_id: id,
     new_status: newStatus,
     user_id: userId,
-    comment: comments || null,
+    comment: comments || '',
     prev_status: currentStatus
   });
 
@@ -365,7 +364,8 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   const { data: statusData, error: statusError } = await supabase
     .from('non_conformances')
     .select('status, count')
-    .group('status');
+    .select('status, count(*)')
+    .order('status');
   
   if (statusError) {
     console.error('Error fetching status counts:', statusError);
@@ -375,8 +375,8 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Get counts by category
   const { data: categoryData, error: categoryError } = await supabase
     .from('non_conformances')
-    .select('item_category, count')
-    .group('item_category');
+    .select('item_category, count(*)')
+    .order('item_category');
   
   if (categoryError) {
     console.error('Error fetching category counts:', categoryError);
@@ -386,8 +386,8 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   // Get counts by reason
   const { data: reasonData, error: reasonError } = await supabase
     .from('non_conformances')
-    .select('reason_category, count')
-    .group('reason_category');
+    .select('reason_category, count(*)')
+    .order('reason_category');
   
   if (reasonError) {
     console.error('Error fetching reason counts:', reasonError);
