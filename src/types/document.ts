@@ -1,3 +1,4 @@
+
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
@@ -5,7 +6,7 @@ export interface DocumentVersion {
   id: string;
   document_id: string;
   version_number?: number;
-  version?: number; // For database compatibility
+  version: number; // This is required by the database
   file_name: string;
   file_path?: string;
   file_size: number;

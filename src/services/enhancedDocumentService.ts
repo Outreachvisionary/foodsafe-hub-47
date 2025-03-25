@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentWorkflow, DocumentActivity } from '@/types/document';
+import { Document, DocumentVersion, DocumentWorkflow, DocumentWorkflowStep, DocumentActivity } from '@/types/document';
+import { Json } from '@/integrations/supabase/types';
 
 // Base document service for Supabase operations
 const enhancedDocumentService = {
@@ -99,9 +100,19 @@ const enhancedDocumentService = {
   
   // Create a new document version
   async createDocumentVersion(version: Omit<DocumentVersion, 'id'>): Promise<DocumentVersion> {
+    // Ensure version is defined and properly typed
+    const versionData = {
+      document_id: version.document_id,
+      file_name: version.file_name,
+      file_size: version.file_size,
+      created_by: version.created_by,
+      change_notes: version.change_notes || version.change_summary,
+      version: version.version || 1 // Ensure version is always provided
+    };
+    
     const { data, error } = await supabase
       .from('document_versions')
-      .insert(version)
+      .insert(versionData)
       .select()
       .single();
     
@@ -118,8 +129,8 @@ const enhancedDocumentService = {
     const { data, error } = await supabase
       .from('document_activities')
       .select('*')
-      .eq('documentId', documentId)
-      .order('performedAt', { ascending: false });
+      .eq('document_id', documentId)
+      .order('timestamp', { ascending: false });
     
     if (error) {
       console.error(`Error fetching activities for document ${documentId}:`, error);
@@ -156,18 +167,34 @@ const enhancedDocumentService = {
       throw error;
     }
     
-    return data as DocumentWorkflow[];
+    // Convert the JSON steps to our typed DocumentWorkflowStep[]
+    return data.map(workflow => ({
+      ...workflow,
+      steps: workflow.steps as unknown as DocumentWorkflowStep[]
+    })) as DocumentWorkflow[];
   },
   
   // Create or update a document workflow
   async saveDocumentWorkflow(workflow: Partial<DocumentWorkflow>): Promise<DocumentWorkflow> {
     const { id, ...workflowData } = workflow;
     
+    // Convert DocumentWorkflowStep[] to Json for database storage
+    const dbWorkflowData = {
+      ...workflowData,
+      steps: workflowData.steps ? JSON.stringify(workflowData.steps) : undefined
+    };
+    
     if (id) {
       // Update existing workflow
       const { data, error } = await supabase
         .from('document_workflows')
-        .update(workflowData)
+        .update({
+          name: dbWorkflowData.name,
+          description: dbWorkflowData.description,
+          steps: dbWorkflowData.steps as unknown as Json,
+          updated_at: new Date().toISOString(),
+          created_by: dbWorkflowData.created_by || 'system'
+        })
         .eq('id', id)
         .select()
         .single();
@@ -177,12 +204,20 @@ const enhancedDocumentService = {
         throw error;
       }
       
-      return data as DocumentWorkflow;
+      return {
+        ...data,
+        steps: data.steps as unknown as DocumentWorkflowStep[]
+      } as DocumentWorkflow;
     } else {
       // Create new workflow
       const { data, error } = await supabase
         .from('document_workflows')
-        .insert(workflowData)
+        .insert({
+          name: dbWorkflowData.name || 'New Workflow',
+          description: dbWorkflowData.description || '',
+          steps: dbWorkflowData.steps as unknown as Json,
+          created_by: dbWorkflowData.created_by || 'system'
+        })
         .select()
         .single();
       
@@ -191,7 +226,10 @@ const enhancedDocumentService = {
         throw error;
       }
       
-      return data as DocumentWorkflow;
+      return {
+        ...data,
+        steps: data.steps as unknown as DocumentWorkflowStep[]
+      } as DocumentWorkflow;
     }
   },
 
