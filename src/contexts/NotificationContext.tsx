@@ -15,7 +15,7 @@ interface Notification {
 type NotificationContextType = {
   notifications: Notification[];
   unreadCount: number;
-  addNotification: (type: NotificationType, title: string, message: string) => void;
+  addNotification: (notification: Notification) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
@@ -64,17 +64,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const addNotification = useCallback((type: NotificationType, title: string, message: string) => {
-    const newNotification: Notification = {
-      id: Date.now().toString(),
-      type,
-      title,
-      message,
-      read: false,
-      timestamp: new Date(),
-    };
-    
-    setNotifications(prev => [newNotification, ...prev]);
+  const addNotification = useCallback((notification: Notification) => {
+    setNotifications(prev => [notification, ...prev]);
   }, []);
 
   const markAsRead = useCallback((id: string) => {

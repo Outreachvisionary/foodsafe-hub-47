@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -52,15 +51,12 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   
-  // Load sample data for demonstration
   useEffect(() => {
     const loadSampleData = async () => {
       setIsLoading(true);
       try {
-        // Mock API call to load report data
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Sample reports
         setReports([
           {
             id: 'rep-1',
@@ -103,7 +99,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
           }
         ]);
         
-        // Sample schedules
         setSchedules([
           {
             id: 'sched-1',
@@ -135,7 +130,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
           }
         ]);
         
-        // Sample executions
         setExecutions([
           {
             id: 'exe-1',
@@ -170,7 +164,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
           }
         ]);
         
-        // Metrics
         setMetrics({
           totalReports: 12,
           activeSchedules: 4,
@@ -199,10 +192,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     loadSampleData();
   }, [toast]);
   
-  const generateReport = async (reportId: string, format: string) => {
+  const generateReport = async (reportId: string, format: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to generate report
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const reportToGenerate = reports.find(r => r.id === reportId);
@@ -210,15 +202,14 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Report not found');
       }
       
-      // Create a new execution
       const newExecution: ReportExecution = {
         id: `exe-${Date.now()}`,
         reportId,
         executedAt: new Date().toISOString(),
-        executedBy: 'user-123', // Would come from auth context in a real app
+        executedBy: 'user-123',
         status: 'success',
         fileUrl: `/reports/${reportToGenerate.title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.${format}`,
-        duration: Math.random() * 5 + 1 // Random duration between 1-6 seconds
+        duration: Math.random() * 5 + 1
       };
       
       setExecutions(prev => [newExecution, ...prev]);
@@ -228,7 +219,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         description: `${reportToGenerate.title} has been generated successfully in ${format.toUpperCase()} format.`
       });
       
-      return newExecution;
     } catch (error) {
       console.error('Error generating report:', error);
       toast({
@@ -241,10 +231,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const scheduleReport = async (reportId: string, scheduleData: Omit<ReportSchedule, 'id' | 'reportId'>) => {
+  const scheduleReport = async (reportId: string, scheduleData: Omit<ReportSchedule, 'id' | 'reportId'>): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to schedule report
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const reportToSchedule = reports.find(r => r.id === reportId);
@@ -252,12 +241,11 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Report not found');
       }
       
-      // Create a new schedule
       const newSchedule: ReportSchedule = {
         id: `sched-${Date.now()}`,
         reportId,
         ...scheduleData,
-        nextRunAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString() // Next day by default
+        nextRunAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
       };
       
       setSchedules(prev => [...prev, newSchedule]);
@@ -271,7 +259,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         description: `${reportToSchedule.title} has been scheduled successfully.`
       });
       
-      // Add notification
       addNotification({
         id: `notif-${Date.now()}`,
         type: 'info',
@@ -281,7 +268,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         timestamp: new Date()
       });
       
-      return newSchedule;
     } catch (error) {
       console.error('Error scheduling report:', error);
       toast({
@@ -294,10 +280,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const deleteSchedule = async (scheduleId: string) => {
+  const deleteSchedule = async (scheduleId: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to delete schedule
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const scheduleToDelete = schedules.find(s => s.id === scheduleId);
@@ -330,10 +315,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const toggleScheduleStatus = async (scheduleId: string, active: boolean) => {
+  const toggleScheduleStatus = async (scheduleId: string, active: boolean): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to toggle schedule status
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setSchedules(prev => prev.map(s => {
@@ -366,10 +350,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const runScheduleNow = async (scheduleId: string) => {
+  const runScheduleNow = async (scheduleId: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to run schedule immediately
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const scheduleToRun = schedules.find(s => s.id === scheduleId);
@@ -382,29 +365,26 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Report not found');
       }
       
-      // Create a new execution
       const newExecution: ReportExecution = {
         id: `exe-${Date.now()}`,
         reportId: scheduleToRun.reportId,
         scheduleId,
         executedAt: new Date().toISOString(),
-        executedBy: 'user-123', // Would come from auth context in a real app
+        executedBy: 'user-123',
         status: 'success',
         fileUrl: `/reports/${reportToGenerate.title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.${scheduleToRun.format}`,
-        duration: Math.random() * 5 + 1, // Random duration between 1-6 seconds
+        duration: Math.random() * 5 + 1,
         recipients: scheduleToRun.recipients
       };
       
       setExecutions(prev => [newExecution, ...prev]);
       
-      // Update last run time
       setSchedules(prev => prev.map(s => {
         if (s.id === scheduleId) {
           return { 
             ...s, 
             lastRunAt: new Date().toISOString(),
-            // Next run time would be calculated based on frequency in a real app
-            nextRunAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString() // Just adding 7 days for demo
+            nextRunAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
           };
         }
         return s;
@@ -415,7 +395,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         description: `${reportToGenerate.title} has been generated successfully.`
       });
       
-      // Add notification to recipients
       if (scheduleToRun.recipients && scheduleToRun.recipients.length > 0) {
         addNotification({
           id: `notif-${Date.now()}`,
@@ -427,7 +406,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         });
       }
       
-      return newExecution;
     } catch (error) {
       console.error('Error running schedule:', error);
       toast({
@@ -440,10 +418,9 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const shareReport = async (reportId: string, emails: string[]) => {
+  const shareReport = async (reportId: string, emails: string[]): Promise<void> => {
     setIsLoading(true);
     try {
-      // Mock API call to share report
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const reportToShare = reports.find(r => r.id === reportId);
@@ -456,7 +433,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
         description: `${reportToShare.title} has been shared with ${emails.length} recipient(s).`
       });
       
-      // Add notification
       addNotification({
         id: `notif-${Date.now()}`,
         type: 'info',
