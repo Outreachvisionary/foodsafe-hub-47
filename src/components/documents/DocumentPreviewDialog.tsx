@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -63,7 +62,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
   const [accessControlOpen, setAccessControlOpen] = useState<boolean>(false);
   
-  // Update local document state when the prop changes
   useEffect(() => {
     setCurrentDocument(document);
     if (document?.id) {
@@ -89,7 +87,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   };
   
   const handleApproveDocument = (doc: Document, comment: string) => {
-    // In a real app, this would send the approval to the backend
     setCurrentDocument(doc);
     if (onDocumentUpdate) {
       onDocumentUpdate(doc);
@@ -101,7 +98,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   };
   
   const handleRejectDocument = (doc: Document, comment: string) => {
-    // In a real app, this would send the rejection to the backend
     setCurrentDocument(doc);
     if (onDocumentUpdate) {
       onDocumentUpdate(doc);
@@ -113,8 +109,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   };
   
   const handleSaveDocument = (updatedDoc: Document) => {
-    // In a real app, this would save the document to the backend
-    console.log('Saving document:', updatedDoc);
     setCurrentDocument(updatedDoc);
     if (onDocumentUpdate) {
       onDocumentUpdate(updatedDoc);
@@ -162,17 +156,14 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     if (!currentDocument) return;
     
     try {
-      // For this example, we'll just generate a mock download URL
-      // In a real app, you would fetch the actual file from storage
       const mockDownloadUrl = `#download-${currentDocument.id}`;
       
-      // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = mockDownloadUrl;
       link.download = currentDocument.file_name;
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       
       toast({
         title: t('documents.downloadStarted'),
@@ -193,7 +184,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     
     try {
       setIsCheckingOut(true);
-      // For demo purposes use a static user ID - in a real app, use the current user's ID
       const updatedDoc = await enhancedDocumentService.checkout(currentDocument.id, 'current-user-id');
       setCurrentDocument(updatedDoc);
       if (onDocumentUpdate) {
@@ -220,7 +210,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     
     try {
       setIsCheckingIn(true);
-      // For demo purposes use a static user ID - in a real app, use the current user's ID
       let versionDetails = null;
       
       if (createNewVersion) {
@@ -270,7 +259,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
 
   if (!document || !currentDocument) return null;
 
-  // Calculate days until expiry if document has an expiry date
   let daysUntilExpiry: number | null = null;
   if (currentDocument.expiry_date) {
     const expiryDate = new Date(currentDocument.expiry_date);

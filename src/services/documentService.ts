@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentPreview, DocumentAccess, DocumentWorkflow, DocumentWorkflowInstance } from '@/types/document';
 import { toast } from 'sonner';
@@ -21,18 +20,16 @@ export const fetchDocumentVersions = async (documentId: string): Promise<Documen
 
 export const createDocumentVersion = async (document: Document, versionDetails: Partial<DocumentVersion>): Promise<DocumentVersion> => {
   try {
-    // Create the document version
+    // Create the document version - ensure fields match the database schema
     const { data, error } = await supabase
       .from('document_versions')
       .insert({
         document_id: document.id,
         file_name: versionDetails.file_name || document.file_name,
-        file_path: versionDetails.file_path || '',
         file_size: versionDetails.file_size || document.file_size,
-        file_type: versionDetails.file_type || document.file_type,
         created_by: versionDetails.created_by || document.created_by,
-        change_summary: versionDetails.change_summary || '',
-        storage_path: versionDetails.storage_path || ''
+        change_notes: versionDetails.change_summary || '',
+        version: versionDetails.version_number || document.version
       })
       .select()
       .single();

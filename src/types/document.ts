@@ -1,22 +1,20 @@
-
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
 export interface DocumentVersion {
   id: string;
   document_id: string;
-  version_number: number;
+  version_number?: number;
+  version?: number; // For database compatibility
   file_name: string;
-  file_path: string;
+  file_path?: string;
   file_size: number;
-  file_type: string;
+  file_type?: string;
   created_by: string;
   created_at?: string;
   change_summary?: string;
-  storage_path: string;
-  // Add compatibility fields for existing code
-  version?: number;
-  change_notes?: string;
+  change_notes?: string; // For database compatibility
+  storage_path?: string;
 }
 
 export interface DocumentActivity {
