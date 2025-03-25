@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,75 +12,102 @@ import { Document } from '@/types/database';
 import { DocumentVersion } from '@/types/document';
 import DocumentEditor from './DocumentEditor';
 import DocumentApprover from './DocumentApprover';
+import DocumentVersionHistory from './DocumentVersionHistory';
 import DocumentVersionCompare from './DocumentVersionCompare';
 import DocumentExpirySettings from './DocumentExpirySettings';
+import DocumentAccessControl from './DocumentAccessControl';
 import { documentWorkflowService } from '@/services/documentWorkflowService';
+import enhancedDocumentService from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { FileText, History, CheckCircle, AlertCircle, Clock, Calendar } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  FileText, 
+  History, 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Calendar, 
+  Download, 
+  Lock, 
+  Unlock, 
+  Shield, 
+  Users
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   document: Document | null;
+  onDocumentUpdate?: (updatedDoc: Document) => void;
 }
 
 const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   open,
   onOpenChange,
-  document
+  document,
+  onDocumentUpdate
 }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('view');
   const [expirySettingsOpen, setExpirySettingsOpen] = useState<boolean>(false);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(document);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
+  const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
+  const [accessControlOpen, setAccessControlOpen] = useState<boolean>(false);
   
   // Update local document state when the prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentDocument(document);
+    if (document?.id) {
+      loadVersions(document.id);
+    }
   }, [document]);
   
-  // Mock document versions for demo
-  const mockVersions: DocumentVersion[] = [
-    {
-      id: 'v1',
-      document_id: document?.id || '',
-      version: document ? document.version - 1 : 1,
-      file_name: document?.file_name.replace(`v${document?.version}`, `v${document ? document.version - 1 : 1}`) || '',
-      file_size: document?.file_size || 0,
-      created_by: 'Jane Smith',
-      created_at: '2023-05-15T10:30:00Z',
-      change_notes: 'Initial version'
-    },
-    {
-      id: 'v2',
-      document_id: document?.id || '',
-      version: document?.version || 2,
-      file_name: document?.file_name || '',
-      file_size: document?.file_size || 0,
-      created_by: document?.created_by || '',
-      created_at: document?.updated_at || '',
-      change_notes: 'Updated with latest requirements'
+  const loadVersions = async (documentId: string) => {
+    try {
+      setIsLoading(true);
+      const fetchedVersions = await enhancedDocumentService.fetchVersions(documentId);
+      setVersions(fetchedVersions);
+    } catch (error) {
+      console.error('Error loading document versions:', error);
+      toast({
+        title: t('common.error'),
+        description: t('documents.errorLoadingVersions'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
   
   const handleApproveDocument = (doc: Document, comment: string) => {
     // In a real app, this would send the approval to the backend
     setCurrentDocument(doc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(doc);
+    }
     toast({
-      title: "Document approved",
-      description: `Document "${doc.title}" has been approved.`,
+      title: t('documents.documentApproved'),
+      description: t('documents.documentApprovedDesc', { title: doc.title }),
     });
   };
   
   const handleRejectDocument = (doc: Document, comment: string) => {
     // In a real app, this would send the rejection to the backend
     setCurrentDocument(doc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(doc);
+    }
     toast({
-      title: "Document rejected",
-      description: `Document "${doc.title}" has been rejected with feedback.`,
+      title: t('documents.documentRejected'),
+      description: t('documents.documentRejectedDesc', { title: doc.title }),
     });
   };
   
@@ -88,9 +115,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     // In a real app, this would save the document to the backend
     console.log('Saving document:', updatedDoc);
     setCurrentDocument(updatedDoc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(updatedDoc);
+    }
     toast({
-      title: "Document saved",
-      description: "Your changes have been saved successfully.",
+      title: t('documents.documentSaved'),
+      description: t('documents.documentSavedDesc'),
     });
   };
 
@@ -99,15 +129,142 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     
     const updatedDoc = documentWorkflowService.submitForApproval(currentDocument);
     setCurrentDocument(updatedDoc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(updatedDoc);
+    }
     
     toast({
-      title: "Document submitted for review",
-      description: "The document has been submitted for approval.",
+      title: t('documents.documentSubmitted'),
+      description: t('documents.documentSubmittedDesc'),
     });
   };
 
   const handleUpdateExpirySettings = (updatedDoc: Document) => {
     setCurrentDocument(updatedDoc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(updatedDoc);
+    }
+  };
+
+  const handleRevertVersion = (updatedDoc: Document, version: DocumentVersion) => {
+    setCurrentDocument(updatedDoc);
+    if (onDocumentUpdate) {
+      onDocumentUpdate(updatedDoc);
+    }
+    toast({
+      title: t('documents.versionReverted'),
+      description: t('documents.versionRevertedDesc', { version: version.version_number }),
+    });
+  };
+
+  const handleDownload = async () => {
+    if (!currentDocument) return;
+    
+    try {
+      // For this example, we'll just generate a mock download URL
+      // In a real app, you would fetch the actual file from storage
+      const mockDownloadUrl = `#download-${currentDocument.id}`;
+      
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = mockDownloadUrl;
+      link.download = currentDocument.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: t('documents.downloadStarted'),
+        description: t('documents.fileDownloading', { fileName: currentDocument.file_name }),
+      });
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast({
+        title: t('common.error'),
+        description: t('documents.errorDownloadingDocument'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!currentDocument) return;
+    
+    try {
+      setIsCheckingOut(true);
+      // For demo purposes use a static user ID - in a real app, use the current user's ID
+      const updatedDoc = await enhancedDocumentService.checkout(currentDocument.id, 'current-user-id');
+      setCurrentDocument(updatedDoc);
+      if (onDocumentUpdate) {
+        onDocumentUpdate(updatedDoc);
+      }
+      toast({
+        title: t('documents.documentCheckedOut'),
+        description: t('documents.documentCheckedOutDesc'),
+      });
+    } catch (error) {
+      console.error('Error checking out document:', error);
+      toast({
+        title: t('common.error'),
+        description: error.message || t('documents.errorCheckingOutDocument'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  const handleCheckin = async (createNewVersion = false) => {
+    if (!currentDocument) return;
+    
+    try {
+      setIsCheckingIn(true);
+      // For demo purposes use a static user ID - in a real app, use the current user's ID
+      let versionDetails = null;
+      
+      if (createNewVersion) {
+        versionDetails = {
+          file_name: currentDocument.file_name,
+          file_size: currentDocument.file_size,
+          file_type: currentDocument.file_type,
+          created_by: 'current-user',
+          change_summary: 'Updated document during check-in',
+          storage_path: `documents/${currentDocument.id}/${currentDocument.file_name}`
+        };
+      }
+      
+      const updatedDoc = await enhancedDocumentService.checkin(
+        currentDocument.id, 
+        'current-user-id',
+        createNewVersion,
+        versionDetails
+      );
+      
+      setCurrentDocument(updatedDoc);
+      if (onDocumentUpdate) {
+        onDocumentUpdate(updatedDoc);
+      }
+      
+      if (createNewVersion) {
+        loadVersions(currentDocument.id);
+      }
+      
+      toast({
+        title: t('documents.documentCheckedIn'),
+        description: createNewVersion 
+          ? t('documents.documentCheckedInWithNewVersion') 
+          : t('documents.documentCheckedInDesc'),
+      });
+    } catch (error) {
+      console.error('Error checking in document:', error);
+      toast({
+        title: t('common.error'),
+        description: error.message || t('documents.errorCheckingInDocument'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCheckingIn(false);
+    }
   };
 
   if (!document || !currentDocument) return null;
@@ -121,6 +278,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     daysUntilExpiry = Math.floor((expiryDate.getTime() - currentDate.getTime()) / millisecondsPerDay);
   }
 
+  const isCheckedOut = Boolean(currentDocument.checkout_user_id);
+  const isCheckedOutByCurrentUser = currentDocument.checkout_user_id === 'current-user-id';
+  const isReadOnly = currentDocument.status === 'Pending Approval' || 
+                    currentDocument.status === 'Published' ||
+                    (isCheckedOut && !isCheckedOutByCurrentUser);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,18 +296,40 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
                   {currentDocument.title}
                 </DialogTitle>
                 <DialogDescription>
-                  {currentDocument.file_name} • Version {currentDocument.version}
+                  {currentDocument.file_name} • {t('documents.version')} {currentDocument.version}
                 </DialogDescription>
               </div>
-              <Badge 
-                variant={
-                  currentDocument.status === 'Published' ? 'default' : 
-                  currentDocument.status === 'Pending Approval' ? 'outline' : 
-                  'secondary'
-                }
-              >
-                {currentDocument.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {isCheckedOut && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="bg-amber-100 text-amber-800 flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          {isCheckedOutByCurrentUser ? t('documents.checkedOutByYou') : t('documents.checkedOut')}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isCheckedOutByCurrentUser 
+                          ? t('documents.youCheckedOutDocument') 
+                          : t('documents.documentCheckedOutBy', { user: currentDocument.checkout_user_id })}
+                        {currentDocument.checkout_timestamp && (
+                          <> {t('documents.since')} {new Date(currentDocument.checkout_timestamp).toLocaleString()}</>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                <Badge 
+                  variant={
+                    currentDocument.status === 'Published' ? 'default' : 
+                    currentDocument.status === 'Pending Approval' ? 'outline' : 
+                    'secondary'
+                  }
+                >
+                  {currentDocument.status}
+                </Badge>
+              </div>
             </div>
           </DialogHeader>
           
@@ -152,11 +337,15 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
             <TabsList className="mb-2">
               <TabsTrigger value="view" className="flex items-center gap-1">
                 <FileText className="h-4 w-4" />
-                <span>View & Edit</span>
+                <span>{t('documents.viewAndEdit')}</span>
               </TabsTrigger>
-              <TabsTrigger value="compare" className="flex items-center gap-1">
+              <TabsTrigger value="versions" className="flex items-center gap-1">
                 <History className="h-4 w-4" />
-                <span>Version Compare</span>
+                <span>{t('documents.versionHistory')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="access" className="flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                <span>{t('documents.accessControl')}</span>
               </TabsTrigger>
             </TabsList>
             
@@ -165,7 +354,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
                 <DocumentEditor 
                   document={currentDocument} 
                   onSave={handleSaveDocument}
-                  readOnly={currentDocument.status === 'Pending Approval' || currentDocument.status === 'Published'} 
+                  readOnly={isReadOnly} 
                 />
                 
                 {currentDocument.status === 'Pending Approval' && (
@@ -178,17 +367,40 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
               </div>
             </TabsContent>
             
-            <TabsContent value="compare" className="flex-grow overflow-auto p-1">
-              <DocumentVersionCompare
-                oldVersion={mockVersions[0]}
-                newVersion={mockVersions[1]}
+            <TabsContent value="versions" className="flex-grow overflow-auto p-1">
+              <DocumentVersionHistory 
+                document={currentDocument} 
+                onRevertVersion={handleRevertVersion} 
               />
+            </TabsContent>
+            
+            <TabsContent value="access" className="flex-grow overflow-auto p-1">
+              <Card className="mt-6">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <Users className="mr-2 h-5 w-5 text-muted-foreground" />
+                    {t('documents.documentAccess')}
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAccessControlOpen(true)}
+                  >
+                    {t('documents.manageAccess')}
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="py-8 text-center text-muted-foreground">
+                    {t('documents.accessControlDescription')}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
           
           <DialogFooter className="mt-4 flex justify-between items-center border-t pt-4">
             <div className="flex items-center text-sm text-gray-500 gap-4">
-              <span>Last updated: {currentDocument.updated_at ? new Date(currentDocument.updated_at).toLocaleDateString() : 'Unknown'}</span>
+              <span>{t('documents.lastUpdated')}: {currentDocument.updated_at ? new Date(currentDocument.updated_at).toLocaleDateString() : t('common.unknown')}</span>
               
               {daysUntilExpiry !== null && (
                 <div className={`flex items-center gap-1 ${
@@ -197,8 +409,8 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
                   <Clock className="h-4 w-4" />
                   <span>
                     {daysUntilExpiry <= 0 
-                      ? 'Expired' 
-                      : `Expires in ${daysUntilExpiry} days`
+                      ? t('documents.expired') 
+                      : t('documents.expiresInDays', { days: daysUntilExpiry })
                     }
                   </span>
                 </div>
@@ -211,16 +423,61 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
                 className="flex items-center gap-1"
               >
                 <Calendar className="h-4 w-4" />
-                Expiry Settings
+                {t('documents.expirySettings')}
               </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleDownload}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                {t('documents.download')}
+              </Button>
+              
+              {isCheckedOut ? (
+                isCheckedOutByCurrentUser && (
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleCheckin(false)}
+                      disabled={isCheckingIn}
+                      className="flex items-center gap-1"
+                    >
+                      <Unlock className="h-4 w-4" />
+                      {isCheckingIn ? t('common.processing') : t('documents.checkin')}
+                    </Button>
+                    
+                    <Button 
+                      variant="default" 
+                      onClick={() => handleCheckin(true)}
+                      disabled={isCheckingIn}
+                      className="flex items-center gap-1"
+                    >
+                      <Unlock className="h-4 w-4" />
+                      {isCheckingIn ? t('common.processing') : t('documents.checkinWithNewVersion')}
+                    </Button>
+                  </div>
+                )
+              ) : (
+                <Button 
+                  variant="default" 
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                  className="flex items-center gap-1"
+                >
+                  <Lock className="h-4 w-4" />
+                  {isCheckingOut ? t('common.processing') : t('documents.checkout')}
+                </Button>
+              )}
               
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
+                {t('common.close')}
               </Button>
               
-              {currentDocument.status === 'Draft' && (
+              {currentDocument.status === 'Draft' && !isCheckedOut && (
                 <Button onClick={handleSubmitForReview}>
-                  Submit for Review
+                  {t('documents.submitForReview')}
                 </Button>
               )}
             </div>
@@ -229,12 +486,20 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       </Dialog>
       
       {currentDocument && (
-        <DocumentExpirySettings 
-          document={currentDocument}
-          open={expirySettingsOpen}
-          onOpenChange={setExpirySettingsOpen}
-          onUpdate={handleUpdateExpirySettings}
-        />
+        <>
+          <DocumentExpirySettings 
+            document={currentDocument}
+            open={expirySettingsOpen}
+            onOpenChange={setExpirySettingsOpen}
+            onUpdate={handleUpdateExpirySettings}
+          />
+          
+          <DocumentAccessControl
+            documentId={currentDocument.id}
+            open={accessControlOpen}
+            onOpenChange={setAccessControlOpen}
+          />
+        </>
       )}
     </>
   );

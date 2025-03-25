@@ -292,6 +292,54 @@ export type Database = {
         }
         Relationships: []
       }
+      document_access: {
+        Row: {
+          document_id: string
+          folder_id: string | null
+          granted_at: string | null
+          granted_by: string
+          id: string
+          permission_level: string
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          document_id: string
+          folder_id?: string | null
+          granted_at?: string | null
+          granted_by: string
+          id?: string
+          permission_level: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          document_id?: string
+          folder_id?: string | null
+          granted_at?: string | null
+          granted_by?: string
+          id?: string
+          permission_level?: string
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_access_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_activities: {
         Row: {
           action: string
@@ -329,6 +377,51 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_previews: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          document_id: string
+          id: string
+          preview_type: string
+          thumbnail_path: string | null
+          version_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          document_id: string
+          id?: string
+          preview_type: string
+          thumbnail_path?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          preview_type?: string
+          thumbnail_path?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_previews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_previews_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -374,12 +467,93 @@ export type Database = {
           },
         ]
       }
+      document_workflow_instances: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          current_step: number
+          document_id: string
+          id: string
+          status: string
+          updated_at: string | null
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          current_step?: number
+          document_id: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          current_step?: number
+          document_id?: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_workflow_instances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_workflow_instances_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "document_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_workflows: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          steps: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          steps: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          steps?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           approvers: string[] | null
           category: Database["public"]["Enums"]["document_category"]
+          checkout_timestamp: string | null
+          checkout_user_id: string | null
           created_at: string | null
           created_by: string
+          current_version_id: string | null
           custom_notification_days: number[] | null
           description: string | null
           expiry_date: string | null
@@ -389,6 +563,7 @@ export type Database = {
           folder_id: string | null
           id: string
           is_locked: boolean | null
+          is_template: boolean | null
           last_action: string | null
           last_review_date: string | null
           linked_item_id: string | null
@@ -401,12 +576,16 @@ export type Database = {
           title: string
           updated_at: string | null
           version: number
+          workflow_status: string | null
         }
         Insert: {
           approvers?: string[] | null
           category: Database["public"]["Enums"]["document_category"]
+          checkout_timestamp?: string | null
+          checkout_user_id?: string | null
           created_at?: string | null
           created_by: string
+          current_version_id?: string | null
           custom_notification_days?: number[] | null
           description?: string | null
           expiry_date?: string | null
@@ -416,6 +595,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_locked?: boolean | null
+          is_template?: boolean | null
           last_action?: string | null
           last_review_date?: string | null
           linked_item_id?: string | null
@@ -428,12 +608,16 @@ export type Database = {
           title: string
           updated_at?: string | null
           version?: number
+          workflow_status?: string | null
         }
         Update: {
           approvers?: string[] | null
           category?: Database["public"]["Enums"]["document_category"]
+          checkout_timestamp?: string | null
+          checkout_user_id?: string | null
           created_at?: string | null
           created_by?: string
+          current_version_id?: string | null
           custom_notification_days?: number[] | null
           description?: string | null
           expiry_date?: string | null
@@ -443,6 +627,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_locked?: boolean | null
+          is_template?: boolean | null
           last_action?: string | null
           last_review_date?: string | null
           linked_item_id?: string | null
@@ -455,8 +640,16 @@ export type Database = {
           title?: string
           updated_at?: string | null
           version?: number
+          workflow_status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_folder_id_fkey"
             columns: ["folder_id"]

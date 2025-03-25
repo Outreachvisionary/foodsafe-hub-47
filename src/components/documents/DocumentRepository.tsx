@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,10 +34,8 @@ const DocumentRepository: React.FC = () => {
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   
-  // Get all unique categories from documents
   const categories = Array.from(new Set(documents.map(doc => doc.category)));
 
-  // Filter documents based on search query, category, and status
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,8 +66,6 @@ const DocumentRepository: React.FC = () => {
     e.preventDefault();
     setActiveDragFolder(null);
     
-    // This would typically interact with your document service to move documents
-    // For demo, we'll just show a toast notification
     toast({
       title: "Documents moved",
       description: `Selected documents moved to ${category} folder.`,
@@ -271,7 +266,10 @@ const DocumentRepository: React.FC = () => {
                     filteredDocuments.map((doc) => (
                       <TableRow 
                         key={doc.id} 
-                        className={selectedDocuments.some(d => d.id === doc.id) ? "bg-blue-50" : ""}
+                        className={`
+                          ${selectedDocuments.some(d => d.id === doc.id) ? "bg-blue-50" : ""}
+                          ${doc.is_locked ? "bg-amber-50/30" : ""}
+                        `}
                         onClick={(e) => handleDocumentSelect(doc, e)}
                       >
                         {isMultiSelectMode && (
@@ -288,7 +286,17 @@ const DocumentRepository: React.FC = () => {
                           <div className="flex items-center">
                             <FileText className="h-4 w-4 text-blue-500 mr-2" />
                             <div>
-                              <div>{doc.title}</div>
+                              <div className="flex items-center">
+                                {doc.title}
+                                {doc.checkout_user_id && (
+                                  <Badge variant="outline" className="ml-2 text-xs bg-amber-50 border-amber-200 text-amber-700">
+                                    <Lock className="h-3 w-3 mr-1" />
+                                    {doc.checkout_user_id === 'current-user-id' 
+                                      ? t('documents.checkedOutByYou') 
+                                      : t('documents.checkedOut')}
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="text-xs text-muted-foreground">{doc.file_name}</div>
                             </div>
                           </div>
@@ -327,6 +335,7 @@ const DocumentRepository: React.FC = () => {
                                 handleEditDocument(doc);
                               }}
                               title={t('buttons.edit')}
+                              disabled={doc.is_locked && doc.checkout_user_id !== 'current-user-id'}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -478,14 +487,18 @@ const DocumentRepository: React.FC = () => {
         </div>
       </div>
 
-      {/* Document preview dialog */}
       <DocumentPreviewDialog 
         document={docToPreview} 
         open={showPreview} 
         onOpenChange={setShowPreview} 
+        onDocumentUpdate={(updatedDoc) => {
+          const updatedDocs = documents.map(d => 
+            d.id === updatedDoc.id ? updatedDoc : d
+          );
+          console.log('Document updated:', updatedDoc);
+        }}
       />
 
-      {/* Delete confirmation dialog */}
       <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
         <DialogContent>
           <DialogHeader>
@@ -505,7 +518,6 @@ const DocumentRepository: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Upload document dialog */}
       <UploadDocumentDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen} 

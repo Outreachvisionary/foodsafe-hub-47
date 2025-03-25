@@ -5,12 +5,15 @@ export type { Document, DocumentCategory, DocumentStatus, Folder } from './datab
 export interface DocumentVersion {
   id: string;
   document_id: string;
-  version: number;
+  version_number: number;
   file_name: string;
+  file_path: string;
   file_size: number;
+  file_type: string;
   created_by: string;
   created_at?: string;
-  change_notes?: string;
+  change_summary?: string;
+  storage_path: string;
 }
 
 export interface DocumentActivity {
@@ -22,6 +25,58 @@ export interface DocumentActivity {
   user_name: string;
   user_role: string;
   comments?: string;
+}
+
+export interface DocumentPreview {
+  id: string;
+  document_id: string;
+  version_id?: string;
+  preview_type: string;
+  content?: string;
+  thumbnail_path?: string;
+  created_at?: string;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id?: string;
+  folder_id?: string;
+  user_id?: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at?: string;
+}
+
+export interface DocumentWorkflow {
+  id: string;
+  name: string;
+  description?: string;
+  steps: DocumentWorkflowStep[];
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description?: string;
+  approvers: string[];
+  required_approvals: number;
+  deadline_days?: number;
+  is_final: boolean;
+}
+
+export interface DocumentWorkflowInstance {
+  id: string;
+  document_id: string;
+  workflow_id: string;
+  current_step: number;
+  status: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type ModuleReference = 'none' | 'haccp' | 'training' | 'audits' | 'suppliers' | 'capa' | 'traceability';
@@ -71,7 +126,10 @@ export type DocumentAction =
   | 'approve'
   | 'reject'
   | 'publish'
-  | 'archive';
+  | 'archive'
+  | 'checkout'
+  | 'checkin'
+  | 'revert_version';
 
 // Translation related types
 export interface Translation {
