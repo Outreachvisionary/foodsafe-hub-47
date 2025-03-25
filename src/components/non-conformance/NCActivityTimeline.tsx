@@ -1,13 +1,41 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NCActivity } from '@/types/non-conformance';
 import { AlertTriangle, CheckCircle, Clock, Trash2, MessageSquare, User } from 'lucide-react';
+import { fetchNCActivities } from '@/services/nonConformanceService';
 
 interface NCActivityTimelineProps {
-  activities: NCActivity[];
+  nonConformanceId: string;
 }
 
-const NCActivityTimeline: React.FC<NCActivityTimelineProps> = ({ activities }) => {
+const NCActivityTimeline: React.FC<NCActivityTimelineProps> = ({ nonConformanceId }) => {
+  const [activities, setActivities] = useState<NCActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        setLoading(true);
+        const activitiesData = await fetchNCActivities(nonConformanceId);
+        setActivities(activitiesData);
+      } catch (error) {
+        console.error('Error loading activities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadActivities();
+  }, [nonConformanceId]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   if (!activities || activities.length === 0) {
     return (
       <div className="text-center p-6">
