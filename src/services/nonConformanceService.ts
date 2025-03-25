@@ -15,7 +15,6 @@ export const fetchNonConformances = async (filters?: NCFilter): Promise<NonConfo
     .from('non_conformances')
     .select('*');
   
-  // Apply filters if provided
   if (filters) {
     if (filters.status && filters.status.length > 0) {
       query = query.in('status', filters.status);
@@ -127,19 +126,18 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
 };
 
 // Update non-conformance status with activity tracking
-export const updateNCStatus = async (
+export const update_nc_status = async (
   id: string, 
   newStatus: NCStatus, 
   currentStatus: NCStatus,
   userId: string,
   comments?: string
 ): Promise<NonConformance> => {
-  // Start a transaction
   const { data, error } = await supabase.rpc('update_nc_status', {
     nc_id: id,
     new_status: newStatus,
     user_id: userId,
-    comment: comments || '', // Fix: Use empty string instead of null/undefined
+    comment: comments || '',
     prev_status: currentStatus
   });
 
@@ -148,9 +146,7 @@ export const updateNCStatus = async (
     throw error;
   }
 
-  // If no RPC function exists yet, we'll do it manually with multiple queries
   if (!data) {
-    // First update the non-conformance status
     const { data: ncData, error: ncError } = await supabase
       .from('non_conformances')
       .update({
@@ -168,7 +164,6 @@ export const updateNCStatus = async (
       throw ncError;
     }
     
-    // Then record the activity
     const { error: activityError } = await supabase
       .from('nc_activities')
       .insert({
@@ -191,7 +186,6 @@ export const updateNCStatus = async (
   return data as NonConformance;
 };
 
-// For compatibility, also export as updateNCStatus
 export const updateNCStatus = update_nc_status;
 
 // Attachments
@@ -215,10 +209,8 @@ export const uploadNCAttachment = async (
   description: string,
   userId: string
 ): Promise<NCAttachment> => {
-  // Generate unique path for the file
   const filePath = `non-conformance/${nonConformanceId}/${Date.now()}_${file.name}`;
   
-  // Upload file to storage
   const { error: uploadError } = await supabase.storage
     .from('attachments')
     .upload(filePath, file);
@@ -228,7 +220,6 @@ export const uploadNCAttachment = async (
     throw uploadError;
   }
   
-  // Create database record for the attachment
   const { data, error } = await supabase
     .from('nc_attachments')
     .insert({
@@ -252,7 +243,6 @@ export const uploadNCAttachment = async (
 };
 
 export const deleteNCAttachment = async (id: string, filePath: string): Promise<void> => {
-  // Delete file from storage
   const { error: storageError } = await supabase.storage
     .from('attachments')
     .remove([filePath]);
@@ -262,7 +252,6 @@ export const deleteNCAttachment = async (id: string, filePath: string): Promise<
     throw storageError;
   }
   
-  // Delete record from database
   const { error } = await supabase
     .from('nc_attachments')
     .delete()
@@ -290,7 +279,6 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
   return data as NCActivity[];
 };
 
-// Create a log entry that's not related to status change
 export const createNCActivity = async (activity: Omit<NCActivity, 'id'>): Promise<NCActivity> => {
   const { data, error } = await supabase
     .from('nc_activities')
@@ -354,7 +342,6 @@ export const markNCNotificationAsRead = async (id: string): Promise<void> => {
 
 // Statistics and Dashboard Data
 export const fetchNCStats = async (): Promise<NCStats> => {
-  // Get total count
   const { count: total, error: countError } = await supabase
     .from('non_conformances')
     .select('*', { count: 'exact', head: true });
@@ -364,7 +351,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     throw countError;
   }
   
-  // Get counts by status
   const { data: statusData, error: statusError } = await supabase
     .from('non_conformances')
     .select('status')
@@ -375,7 +361,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     throw statusError;
   }
   
-  // Get counts by category
   const { data: categoryData, error: categoryError } = await supabase
     .from('non_conformances')
     .select('item_category')
@@ -386,7 +371,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     throw categoryError;
   }
   
-  // Get counts by reason
   const { data: reasonData, error: reasonError } = await supabase
     .from('non_conformances')
     .select('reason_category')
@@ -397,7 +381,20 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     throw reasonError;
   }
   
-  // Get recent items
+  const { data: quantityData, error: quantityError } = await supabase
+    .from('non_conformances')
+    .select('quantity_on_hold')
+    .eq('status', 'On Hold');
+  
+  if (quantityError) {
+    console.error('Error fetching quantity on hold:', quantityError);
+    throw quantityError;
+  }
+  
+  const totalQuantityOnHold = quantityData?.reduce((sum, item) => {
+    return sum + (item.quantity_on_hold || 0);
+  }, 0) || 0;
+  
   const { data: recentItems, error: recentError } = await supabase
     .from('non_conformances')
     .select('*')
@@ -409,7 +406,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
     throw recentError;
   }
   
-  // Process the data
   const byStatus: Record<string, number> = {};
   statusData.forEach(item => {
     byStatus[item.status] = (byStatus[item.status] || 0) + 1;
@@ -427,6 +423,7 @@ export const fetchNCStats = async (): Promise<NCStats> => {
   
   return {
     total: total || 0,
+    totalQuantityOnHold,
     byStatus: byStatus as Record<any, number>,
     byCategory: byCategory as Record<any, number>,
     byReason: byReason as Record<any, number>,
@@ -436,7 +433,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
 
 // CAPA Integration
 export const linkNCToCapa = async (nonConformanceId: string, capaId: string): Promise<void> => {
-  // Update the non-conformance with the CAPA ID
   const { error: ncError } = await supabase
     .from('non_conformances')
     .update({ capa_id: capaId })
@@ -447,7 +443,6 @@ export const linkNCToCapa = async (nonConformanceId: string, capaId: string): Pr
     throw ncError;
   }
   
-  // Create a relationship in the module_relationships table
   const { error: relError } = await supabase
     .from('module_relationships')
     .insert({
@@ -456,7 +451,7 @@ export const linkNCToCapa = async (nonConformanceId: string, capaId: string): Pr
       target_id: capaId,
       target_type: 'capa',
       relationship_type: 'capa_generated_from',
-      created_by: 'system' // This should be the user ID in a real app
+      created_by: 'system'
     });
   
   if (relError) {
@@ -523,4 +518,45 @@ export const getAuditsRelatedToNC = async (nonConformanceId: string): Promise<an
   }
   
   return data;
+};
+
+// Function to update item quantity
+export const updateNCQuantity = async (
+  id: string,
+  quantity: number,
+  quantityOnHold: number,
+  units: string,
+  userId: string
+): Promise<NonConformance> => {
+  const { data, error } = await supabase
+    .from('non_conformances')
+    .update({
+      quantity,
+      quantity_on_hold: quantityOnHold,
+      units,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error(`Error updating non-conformance quantity:`, error);
+    throw error;
+  }
+  
+  const { error: activityError } = await supabase
+    .from('nc_activities')
+    .insert({
+      non_conformance_id: id,
+      action: `Updated quantity: ${quantity} ${units}, with ${quantityOnHold} ${units} on hold`,
+      performed_by: userId
+    });
+  
+  if (activityError) {
+    console.error(`Error recording non-conformance activity:`, activityError);
+    throw activityError;
+  }
+  
+  return data as NonConformance;
 };

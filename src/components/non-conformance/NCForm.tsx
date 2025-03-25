@@ -56,6 +56,9 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
       status: 'On Hold',
       created_by: 'current-user', // This should be the actual user ID in a real app
       reported_date: new Date().toISOString(),
+      quantity: 0,
+      quantity_on_hold: 0,
+      units: ''
     }
   });
 
@@ -275,6 +278,76 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                     </FormControl>
                     <FormDescription>
                       Identifier for the item if applicable
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Total Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter total quantity"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Total quantity of affected items
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="quantity_on_hold"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity On Hold</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter quantity on hold"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Quantity of items currently on hold
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="units"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Units</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., kg, liters, pieces"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Unit of measurement for quantities
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

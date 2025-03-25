@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCFilter, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, Clock, CheckCircle, Trash2, Plus, Filter, Search, X } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle, Trash2, Plus, Filter, Search, X, Package } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -106,7 +105,15 @@ const NCList: React.FC = () => {
     }
   };
 
-  // Check if any filters are active
+  const formatQuantity = (item: NonConformance) => {
+    if (item.quantity_on_hold && item.units) {
+      return `${item.quantity_on_hold} ${item.units}`;
+    } else if (item.quantity_on_hold) {
+      return `${item.quantity_on_hold}`;
+    }
+    return '-';
+  };
+
   const hasActiveFilters = Boolean(
     (filters.status && filters.status.length > 0) ||
     (filters.item_category && filters.item_category.length > 0) ||
@@ -138,7 +145,6 @@ const NCList: React.FC = () => {
           </form>
           
           <div className="flex items-center space-x-2">
-            {/* Status Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -174,7 +180,6 @@ const NCList: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* Category Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -217,7 +222,6 @@ const NCList: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* Reason Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -261,7 +265,6 @@ const NCList: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* Clear Filters */}
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="h-4 w-4 mr-2" />
@@ -298,6 +301,7 @@ const NCList: React.FC = () => {
                   <TableHead>Item</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Reason</TableHead>
+                  <TableHead>Qty On Hold</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Reported Date</TableHead>
                   <TableHead className="text-right">Action</TableHead>
@@ -310,6 +314,16 @@ const NCList: React.FC = () => {
                     <TableCell>{item.item_name}</TableCell>
                     <TableCell>{item.item_category}</TableCell>
                     <TableCell>{item.reason_category}</TableCell>
+                    <TableCell>
+                      {item.status === 'On Hold' && item.quantity_on_hold ? (
+                        <div className="flex items-center">
+                          <Package className="h-3 w-3 text-orange-500 mr-1" />
+                          {formatQuantity(item)}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{new Date(item.reported_date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">

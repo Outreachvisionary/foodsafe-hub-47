@@ -1,251 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { NonConformance, NCActivity, NCAttachment } from '@/types/non-conformance';
-import { 
-  fetchNonConformanceById, 
-  fetchNCActivities, 
-  fetchNCAttachments,
-  update_nc_status,
-  createNCActivity,
-  linkNCToCapa
-} from '@/services/nonConformanceService';
+
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { 
-  AlertTriangle, 
-  ArrowLeft, 
-  Clock, 
-  CheckCircle, 
-  Trash2, 
-  FileText,
-  User,
-  Calendar,
-  Tag,
-  ListChecks,
-  MessageSquare,
-  Paperclip,
-  Building,
-  MapPin,
-  AlertCircle
-} from 'lucide-react';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import NCAttachmentUploader from './NCAttachmentUploader';
+import { fetchNonConformanceById, updateNCStatus, updateNCQuantity } from '@/services/nonConformanceService';
+import { useState, useEffect } from 'react';
+import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCActivityTimeline from './NCActivityTimeline';
+import NCAttachmentUploader from './NCAttachmentUploader';
 import NCIntegrationsList from './NCIntegrationsList';
+import NCQuickActions from './NCQuickActions';
 
 interface NCDetailsProps {
   id: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   const [nonConformance, setNonConformance] = useState<NonConformance | null>(null);
-  const [activities, setActivities] = useState<NCActivity[]>([]);
-  const [attachments, setAttachments] = useState<NCAttachment[]>([]);
-  const [statusComment, setStatusComment] = useState('');
-  const [capaId, setCapaId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [capaDialogOpen, setCapaDialogOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<NonConformance['status'] | null>(null);
-  const [activityComment, setActivityComment] = useState('');
+  const [changingStatus, setChangingStatus] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadNonConformance = async () => {
       try {
         setLoading(true);
         const ncData = await fetchNonConformanceById(id);
         setNonConformance(ncData);
-        
-        const activitiesData = await fetchNCActivities(id);
-        setActivities(activitiesData);
-        
-        const attachmentsData = await fetchNCAttachments(id);
-        setAttachments(attachmentsData);
       } catch (error) {
-        console.error('Error loading non-conformance details:', error);
+        console.error('Error loading non-conformance:', error);
         toast({
-          title: 'Failed to load details',
+          title: 'Failed to load data',
           description: 'There was an error loading the non-conformance details.',
           variant: 'destructive',
         });
-        onClose(); // Navigate back on error
+        
+        if (onClose) {
+          onClose();
+        } else {
+          navigate('/non-conformance');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [id, onClose, toast]);
+    loadNonConformance();
+  }, [id, navigate, onClose, toast]);
 
-  const handleStatusChange = async () => {
-    if (!nonConformance || !selectedStatus) return;
+  const handleStatusChange = async (newStatus: NCStatus) => {
+    if (!nonConformance) return;
     
     try {
-      const currentStatus = nonConformance.status;
-      const updatedNC = await update_nc_status(
-        id, 
-        selectedStatus, 
-        currentStatus,
+      setChangingStatus(true);
+      
+      await updateNCStatus(
+        id,
+        newStatus,
+        nonConformance.status,
         'current-user', // This should be the actual user ID in a real app
-        statusComment
+        `Status changed to ${newStatus}`
       );
       
-      setNonConformance(updatedNC);
-      
-      // Refresh activities
-      const activitiesData = await fetchNCActivities(id);
-      setActivities(activitiesData);
+      // Update local state
+      setNonConformance({
+        ...nonConformance,
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+        ...(newStatus === 'Under Review' ? { review_date: new Date().toISOString() } : {}),
+        ...(newStatus === 'Released' || newStatus === 'Disposed' ? { resolution_date: new Date().toISOString() } : {})
+      });
       
       toast({
         title: 'Status updated',
-        description: `Status changed from ${currentStatus} to ${selectedStatus}`,
+        description: `Status has been changed to ${newStatus}`,
       });
-      
-      setStatusDialogOpen(false);
-      setStatusComment('');
     } catch (error) {
       console.error('Error updating status:', error);
       toast({
-        title: 'Failed to update status',
-        description: 'There was an error updating the non-conformance status.',
+        title: 'Status update failed',
+        description: 'There was an error updating the status.',
         variant: 'destructive',
       });
+    } finally {
+      setChangingStatus(false);
     }
   };
 
-  const handleAddActivity = async () => {
-    if (!activityComment.trim()) {
-      toast({
-        title: 'Comment required',
-        description: 'Please enter a comment to add an activity.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      await createNCActivity({
-        non_conformance_id: id,
-        action: 'Comment added',
-        comments: activityComment,
-        performed_by: 'current-user', // This should be the actual user ID in a real app
-      });
-      
-      // Refresh activities
-      const activitiesData = await fetchNCActivities(id);
-      setActivities(activitiesData);
-      
-      toast({
-        title: 'Comment added',
-        description: 'Your comment has been added to the activity log.',
-      });
-      
-      setActivityComment('');
-    } catch (error) {
-      console.error('Error adding activity:', error);
-      toast({
-        title: 'Failed to add comment',
-        description: 'There was an error adding your comment.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleLinkCapa = async () => {
-    if (!capaId.trim()) {
-      toast({
-        title: 'CAPA ID required',
-        description: 'Please enter a CAPA ID to link.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      await linkNCToCapa(id, capaId);
-      
-      // Refresh non-conformance data
-      const ncData = await fetchNonConformanceById(id);
-      setNonConformance(ncData);
-      
-      toast({
-        title: 'CAPA linked',
-        description: 'The CAPA has been linked to this non-conformance.',
-      });
-      
-      setCapaDialogOpen(false);
-      setCapaId('');
-    } catch (error) {
-      console.error('Error linking CAPA:', error);
-      toast({
-        title: 'Failed to link CAPA',
-        description: 'There was an error linking the CAPA to this non-conformance.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getStatusBadge = (status: NonConformance['status']) => {
-    switch (status) {
-      case 'On Hold':
-        return (
-          <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1 text-sm px-3 py-1">
-            <AlertTriangle className="h-4 w-4" />
-            On Hold
-          </Badge>
-        );
-      case 'Under Review':
-        return (
-          <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1 text-sm px-3 py-1">
-            <Clock className="h-4 w-4" />
-            Under Review
-          </Badge>
-        );
-      case 'Released':
-        return (
-          <Badge className="bg-green-100 text-green-800 flex items-center gap-1 text-sm px-3 py-1">
-            <CheckCircle className="h-4 w-4" />
-            Released
-          </Badge>
-        );
-      case 'Disposed':
-        return (
-          <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1 text-sm px-3 py-1">
-            <Trash2 className="h-4 w-4" />
-            Disposed
-          </Badge>
-        );
-    }
+  const handleGenerateCapa = () => {
+    // This would be implemented when the CAPA integration is ready
+    toast({
+      title: 'CAPA Integration',
+      description: 'CAPA generation functionality will be implemented soon.',
+    });
   };
 
   if (loading) {
@@ -259,391 +111,260 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   if (!nonConformance) {
     return (
       <div className="text-center p-10">
-        <h3 className="text-lg font-medium">Item not found</h3>
+        <h3 className="text-lg font-medium">Non-conformance not found</h3>
         <p className="text-gray-500 mt-2">
-          The non-conformance item you're looking for doesn't exist.
+          The non-conformance item you are looking for does not exist or has been removed.
         </p>
-        <Button onClick={onClose} className="mt-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button onClick={() => onClose ? onClose() : navigate('/non-conformance')} className="mt-4">
           Go Back
         </Button>
       </div>
     );
   }
 
+  const getStatusClass = () => {
+    switch (nonConformance.status) {
+      case 'On Hold':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'Under Review':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Released':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Disposed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onClose}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to List
-        </Button>
-        <div className="flex items-center gap-2">
-          {getStatusBadge(nonConformance.status)}
+        <div className="flex items-center space-x-2">
           <Button 
-            variant="outline"
-            onClick={() => navigate(`/non-conformance/edit/${id}`)}
+            variant="ghost" 
+            onClick={() => onClose ? onClose() : navigate('/non-conformance')}
           >
-            Edit
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Change Status</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Change Non-Conformance Status</DialogTitle>
-                <DialogDescription>
-                  Update the status of this non-conformance item.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {(['On Hold', 'Under Review', 'Released', 'Disposed'] as NonConformance['status'][]).map((status) => (
-                    <Button
-                      key={status}
-                      variant={selectedStatus === status ? 'default' : 'outline'}
-                      className={selectedStatus === status ? '' : 'border-2'}
-                      onClick={() => setSelectedStatus(status)}
-                    >
-                      {status === 'On Hold' && <AlertTriangle className="h-4 w-4 mr-2" />}
-                      {status === 'Under Review' && <Clock className="h-4 w-4 mr-2" />}
-                      {status === 'Released' && <CheckCircle className="h-4 w-4 mr-2" />}
-                      {status === 'Disposed' && <Trash2 className="h-4 w-4 mr-2" />}
-                      {status}
-                    </Button>
-                  ))}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="status-comments">Comments</Label>
-                  <Textarea
-                    id="status-comments"
-                    placeholder="Add comments about this status change..."
-                    value={statusComment}
-                    onChange={(e) => setStatusComment(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleStatusChange} disabled={!selectedStatus}>
-                  Update Status
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <h2 className="text-2xl font-bold">{nonConformance.title}</h2>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className={`px-3 py-1 rounded-full border ${getStatusClass()}`}>
+            {nonConformance.status}
+          </div>
+          <NCQuickActions 
+            id={id}
+            currentStatus={nonConformance.status}
+            onStatusChange={handleStatusChange}
+            onGenerateCapa={handleGenerateCapa}
+          />
         </div>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-xl">{nonConformance.title}</CardTitle>
-            <CardDescription>
-              Reported on {new Date(nonConformance.reported_date).toLocaleDateString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-500" />
-                Description
-              </h3>
-              <p className="mt-1 text-gray-700">
-                {nonConformance.description || 'No description provided.'}
-              </p>
-            </div>
-            
-            <Separator />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-gray-500" />
-                  Item Name
-                </h3>
-                <p className="mt-1 text-gray-700">{nonConformance.item_name}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <ListChecks className="h-4 w-4 text-gray-500" />
-                  Item Category
-                </h3>
-                <p className="mt-1 text-gray-700">{nonConformance.item_category}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-gray-500" />
-                  Reason
-                </h3>
-                <p className="mt-1 text-gray-700">{nonConformance.reason_category}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-gray-500" />
-                  Reason Details
-                </h3>
-                <p className="mt-1 text-gray-700">
-                  {nonConformance.reason_details || 'No details provided.'}
-                </p>
-              </div>
-              
-              {nonConformance.location && (
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Item Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    Location
-                  </h3>
-                  <p className="mt-1 text-gray-700">{nonConformance.location}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Item Name</h3>
+                  <p>{nonConformance.item_name}</p>
                 </div>
-              )}
-              
-              {nonConformance.department && (
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <Building className="h-4 w-4 text-gray-500" />
-                    Department
-                  </h3>
-                  <p className="mt-1 text-gray-700">{nonConformance.department}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Item ID</h3>
+                  <p>{nonConformance.item_id || 'N/A'}</p>
                 </div>
-              )}
-            </div>
-            
-            <Separator />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  Created By
-                </h3>
-                <p className="mt-1 text-gray-700">{nonConformance.created_by}</p>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Category</h3>
+                  <p>{nonConformance.item_category}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Reason</h3>
+                  <p>{nonConformance.reason_category}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Total Quantity</h3>
+                  <p>{nonConformance.quantity ? `${nonConformance.quantity} ${nonConformance.units || ''}` : 'N/A'}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Quantity On Hold</h3>
+                  <p>{nonConformance.quantity_on_hold ? `${nonConformance.quantity_on_hold} ${nonConformance.units || ''}` : 'N/A'}</p>
+                </div>
               </div>
               
               <div>
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  Reported Date
-                </h3>
-                <p className="mt-1 text-gray-700">
-                  {new Date(nonConformance.reported_date).toLocaleDateString()}
-                </p>
+                <h3 className="text-sm font-medium text-gray-500">Description</h3>
+                <p className="mt-1">{nonConformance.description || 'No description provided.'}</p>
               </div>
               
-              {nonConformance.assigned_to && (
-                <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    Assigned To
-                  </h3>
-                  <p className="mt-1 text-gray-700">{nonConformance.assigned_to}</p>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Reason Details</h3>
+                <p className="mt-1">{nonConformance.reason_details || 'No reason details provided.'}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-6">
+            <Tabs defaultValue="activity">
+              <TabsList>
+                <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
+                <TabsTrigger value="attachments">Attachments</TabsTrigger>
+                <TabsTrigger value="integrations">Related Items</TabsTrigger>
+              </TabsList>
+              <TabsContent value="activity" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <NCActivityTimeline nonConformanceId={id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="attachments" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <NCAttachmentUploader nonConformanceId={id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="integrations" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <NCIntegrationsList nonConformanceId={id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+        
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Status Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Current Status</h3>
+                <div className={`mt-1 px-3 py-1 rounded-full border inline-block ${getStatusClass()}`}>
+                  {nonConformance.status}
                 </div>
-              )}
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Reported Date</h3>
+                <p>{formatDate(nonConformance.reported_date)}</p>
+              </div>
               
               {nonConformance.review_date && (
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    Review Date
-                  </h3>
-                  <p className="mt-1 text-gray-700">
-                    {new Date(nonConformance.review_date).toLocaleDateString()}
-                  </p>
+                  <h3 className="text-sm font-medium text-gray-500">Review Date</h3>
+                  <p>{formatDate(nonConformance.review_date)}</p>
                 </div>
               )}
               
               {nonConformance.resolution_date && (
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    Resolution Date
-                  </h3>
-                  <p className="mt-1 text-gray-700">
-                    {new Date(nonConformance.resolution_date).toLocaleDateString()}
-                  </p>
+                  <h3 className="text-sm font-medium text-gray-500">Resolution Date</h3>
+                  <p>{formatDate(nonConformance.resolution_date)}</p>
                 </div>
               )}
-            </div>
-            
-            {nonConformance.resolution_details && (
-              <>
-                <Separator />
+              
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-medium text-gray-500">Assigned To</h3>
+                <p>{nonConformance.assigned_to || 'Not assigned'}</p>
+              </div>
+              
+              {nonConformance.reviewer && (
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    Resolution Details
-                  </h3>
-                  <p className="mt-1 text-gray-700">{nonConformance.resolution_details}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Reviewer</h3>
+                  <p>{nonConformance.reviewer}</p>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" onClick={() => setStatusDialogOpen(true)}>
-                Change Status
-              </Button>
+              )}
               
-              <Dialog open={capaDialogOpen} onOpenChange={setCapaDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Link to CAPA
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Link to CAPA</DialogTitle>
-                    <DialogDescription>
-                      Link this non-conformance to a Corrective Action/Preventive Action.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="capa-id">CAPA ID</Label>
-                      <Input
-                        id="capa-id"
-                        placeholder="Enter CAPA ID"
-                        value={capaId}
-                        onChange={(e) => setCapaId(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setCapaDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleLinkCapa}>
-                      Link CAPA
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Created By</h3>
+                <p>{nonConformance.created_by}</p>
+              </div>
               
-              <Button variant="outline" className="w-full" onClick={() => navigate(`/non-conformance/edit/${id}`)}>
-                Edit Details
-              </Button>
+              {nonConformance.location && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Location</h3>
+                  <p>{nonConformance.location}</p>
+                </div>
+              )}
+              
+              {nonConformance.department && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Department</h3>
+                  <p>{nonConformance.department}</p>
+                </div>
+              )}
+              
+              {nonConformance.priority && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Priority</h3>
+                  <p>{nonConformance.priority}</p>
+                </div>
+              )}
+              
+              {nonConformance.risk_level && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Risk Level</h3>
+                  <p>{nonConformance.risk_level}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
           
-          {nonConformance.capa_id && (
+          <div className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Linked CAPA</CardTitle>
+                <CardTitle>Actions</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Button
-                  variant="link"
-                  onClick={() => navigate(`/capa/${nonConformance.capa_id}`)}
-                  className="p-0"
+              <CardContent className="space-y-4">
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate(`/non-conformance/${id}/edit`)}
                 >
-                  View CAPA #{nonConformance.capa_id.slice(0, 8)}
+                  Edit
                 </Button>
+                
+                {nonConformance.capa_id ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => navigate(`/capa/${nonConformance.capa_id}`)}
+                  >
+                    View CAPA
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={handleGenerateCapa}
+                  >
+                    Generate CAPA
+                  </Button>
+                )}
               </CardContent>
             </Card>
-          )}
+          </div>
         </div>
       </div>
-
-      <Tabs defaultValue="activities" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="activities">Activity Log</TabsTrigger>
-          <TabsTrigger value="attachments">Attachments</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-        </TabsList>
-        <TabsContent value="activities" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity Log</CardTitle>
-              <CardDescription>
-                View the history of activities for this non-conformance item.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NCActivityTimeline activities={activities} />
-              
-              <div className="mt-6 space-y-2">
-                <Label htmlFor="activity-comment">Add Comment</Label>
-                <Textarea
-                  id="activity-comment"
-                  placeholder="Add a comment to the activity log..."
-                  value={activityComment}
-                  onChange={(e) => setActivityComment(e.target.value)}
-                  className="min-h-[100px]"
-                />
-                <Button onClick={handleAddActivity} className="mt-2">
-                  Add Comment
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="attachments" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Attachments</CardTitle>
-              <CardDescription>
-                Manage documents, images, and other files related to this non-conformance.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NCAttachmentUploader 
-                nonConformanceId={id} 
-                onSuccess={() => {
-                  // Refresh attachments list after upload
-                  fetchNCAttachments(id).then(data => setAttachments(data));
-                }} 
-              />
-              
-              <div className="mt-6">
-                {attachments.length === 0 ? (
-                  <div className="text-center p-6 border border-dashed rounded-md">
-                    <Paperclip className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">No attachments yet</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Upload documents, images, or other files related to this non-conformance.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {attachments.map(attachment => (
-                      <div key={attachment.id} className="flex items-center justify-between p-3 border rounded-md">
-                        <div className="flex items-center">
-                          <Paperclip className="h-4 w-4 text-gray-500 mr-2" />
-                          <div>
-                            <p className="font-medium text-sm">{attachment.file_name}</p>
-                            <p className="text-xs text-gray-500">
-                              {Math.round(attachment.file_size / 1024)} KB · 
-                              Uploaded by {attachment.uploaded_by} · 
-                              {attachment.uploaded_at && new Date(attachment.uploaded_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="integrations" className="mt-6">
-          <NCIntegrationsList nonConformanceId={id} />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

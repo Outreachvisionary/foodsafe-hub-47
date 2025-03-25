@@ -45,6 +45,9 @@ export interface NonConformance {
   priority?: string;
   risk_level?: string;
   tags?: string[];
+  quantity?: number;
+  quantity_on_hold?: number;
+  units?: string;
 }
 
 export interface NCAttachment {
@@ -82,6 +85,7 @@ export interface NCNotification {
 
 export interface NCStats {
   total: number;
+  totalQuantityOnHold?: number;
   byStatus: Record<NCStatus, number>;
   byCategory: Record<NCItemCategory, number>;
   byReason: Record<NCReasonCategory, number>;
