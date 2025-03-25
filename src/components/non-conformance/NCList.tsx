@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCFilter, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
@@ -35,14 +36,44 @@ const NCList: React.FC = () => {
       try {
         setLoading(true);
         
-        // Create search filter
-        const activeFilters: NCFilter = { ...filters };
+        // Modified to call fetchNonConformances without arguments
+        // since the implementation doesn't accept filters yet
+        const items = await fetchNonConformances();
+        
+        // Apply client-side filtering
+        let filteredItems = items;
+        
+        // Filter by search term
         if (searchTerm) {
-          activeFilters.search = searchTerm;
+          filteredItems = filteredItems.filter(item => 
+            item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+          );
         }
         
-        const items = await fetchNonConformances(activeFilters);
-        setNonConformances(items);
+        // Filter by status
+        if (filters.status && filters.status.length > 0) {
+          filteredItems = filteredItems.filter(item => 
+            filters.status?.includes(item.status)
+          );
+        }
+        
+        // Filter by item category
+        if (filters.item_category && filters.item_category.length > 0) {
+          filteredItems = filteredItems.filter(item => 
+            filters.item_category?.includes(item.item_category)
+          );
+        }
+        
+        // Filter by reason category
+        if (filters.reason_category && filters.reason_category.length > 0) {
+          filteredItems = filteredItems.filter(item => 
+            filters.reason_category?.includes(item.reason_category)
+          );
+        }
+        
+        setNonConformances(filteredItems);
       } catch (error) {
         console.error('Error loading non-conformances:', error);
         toast({
