@@ -9,6 +9,12 @@ interface UserProfile {
   avatar_url?: string;
   role?: string;
   department?: string;
+  preferences?: {
+    dashboardLayout?: string;
+    theme?: string;
+    notificationsEnabled?: boolean;
+    [key: string]: any;
+  };
 }
 
 interface UserContextType {
@@ -45,7 +51,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: profile?.full_name,
             avatar_url: profile?.avatar_url,
             role: profile?.role,
-            department: profile?.department
+            department: profile?.department,
+            preferences: profile?.preferences || {}
           });
         }
       } catch (error) {
@@ -74,7 +81,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: profile?.full_name,
             avatar_url: profile?.avatar_url,
             role: profile?.role,
-            department: profile?.department
+            department: profile?.department,
+            preferences: profile?.preferences || {}
           });
         } else {
           setUser(null);

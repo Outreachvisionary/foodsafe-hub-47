@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Download, FileText, BarChart, PieChart, TrendingUp, BarChart2, Filter, Share2 } from 'lucide-react';
@@ -13,7 +12,6 @@ import PrebuiltReports from '@/components/reports/PrebuiltReports';
 import ScheduledReports from '@/components/reports/ScheduledReports';
 import ModuleIntegration from '@/components/reports/ModuleIntegration';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUser } from '@/contexts/UserContext';
 import { ReportProvider } from '@/contexts/ReportContext';
 
@@ -22,7 +20,6 @@ const ReportsContent = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const { user } = useUser();
   
   useEffect(() => {
