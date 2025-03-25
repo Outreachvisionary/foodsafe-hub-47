@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,22 +9,24 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Document } from '@/types/document';
+import { Document as AppDocument } from '@/types/document';
+import { Document as SupabaseDocument } from '@/types/supabase';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentApprover from './DocumentApprover';
 import { AlertCircle, CheckCircle2, Clock, Search, FileText, Users, CalendarClock, ClipboardCheck } from 'lucide-react';
+import { supabaseToAppDocument, appToSupabaseDocument } from '@/utils/documentTypeConverter';
 
 const ApprovalWorkflow: React.FC = () => {
-  const { documents, approveDocument, rejectDocument } = useDocuments();
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const { documents, appDocuments, approveDocument, rejectDocument } = useDocuments();
+  const [selectedDocument, setSelectedDocument] = useState<AppDocument | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [rejectionDialog, setRejectionDialog] = useState({ open: false, document: null as Document | null, reason: '' });
+  const [rejectionDialog, setRejectionDialog] = useState({ open: false, document: null as AppDocument | null, reason: '' });
   const [filterStatus, setFilterStatus] = useState<string>('pending');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter documents based on status and search query
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = appDocuments.filter(doc => {
     const matchesStatus = 
       (filterStatus === 'pending' && doc.status === 'Pending Approval') ||
       (filterStatus === 'approved' && doc.status === 'Approved') ||
@@ -39,7 +41,7 @@ const ApprovalWorkflow: React.FC = () => {
   });
 
   // Documents pending approval
-  const pendingDocuments = documents.filter(doc => doc.status === 'Pending Approval');
+  const pendingDocuments = appDocuments.filter(doc => doc.status === 'Pending Approval');
   
   // Count by category for pending documents
   const categoryCount: Record<string, number> = {};
@@ -50,22 +52,28 @@ const ApprovalWorkflow: React.FC = () => {
     categoryCount[doc.category]++;
   });
 
-  const handleApprove = (doc: Document, comment: string) => {
-    approveDocument(doc, comment);
+  const handleApprove = (doc: AppDocument, comment: string) => {
+    const supaDoc = documents.find(d => d.id === doc.id);
+    if (supaDoc) {
+      approveDocument(supaDoc, comment);
+    }
     setSelectedDocument(null);
   };
 
-  const handleReject = (doc: Document, reason: string) => {
-    rejectDocument(doc, reason);
+  const handleReject = (doc: AppDocument, reason: string) => {
+    const supaDoc = documents.find(d => d.id === doc.id);
+    if (supaDoc) {
+      rejectDocument(supaDoc, reason);
+    }
     setSelectedDocument(null);
     setRejectionDialog({ open: false, document: null, reason: '' });
   };
 
-  const handleOpenRejectDialog = (doc: Document) => {
+  const handleOpenRejectDialog = (doc: AppDocument) => {
     setRejectionDialog({ open: true, document: doc, reason: '' });
   };
 
-  const getPriorityBadge = (doc: Document) => {
+  const getPriorityBadge = (doc: AppDocument) => {
     // Check how long the document has been pending
     if (!doc.pendingSince) return null;
     
@@ -279,7 +287,7 @@ const ApprovalWorkflow: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-medium">Approved Today</h3>
                     <p className="text-3xl font-bold mt-2">
-                      {documents.filter(doc => {
+                      {appDocuments.filter(doc => {
                         if (doc.status !== 'Approved') return false;
                         const updatedDate = new Date(doc.updatedAt);
                         const today = new Date();
@@ -339,7 +347,7 @@ const ApprovalWorkflow: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {documents
+                {appDocuments
                   .filter(doc => doc.status === 'Approved' || doc.status === 'Published')
                   .slice(0, 5)
                   .map((doc) => (
@@ -364,7 +372,7 @@ const ApprovalWorkflow: React.FC = () => {
                     </div>
                   ))}
                 
-                {documents.filter(doc => doc.status === 'Approved' || doc.status === 'Published').length === 0 && (
+                {appDocuments.filter(doc => doc.status === 'Approved' || doc.status === 'Published').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No approval history available
                   </div>

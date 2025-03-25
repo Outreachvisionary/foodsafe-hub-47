@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -18,7 +19,7 @@ import { Document as DocumentType } from '@/types/document';
 
 const DocumentsContent = () => {
   const location = useLocation();
-  const { documents, notifications, selectedDocument, setSelectedDocument, submitForApproval, updateDocument, markNotificationAsRead, clearAllNotifications } = useDocuments();
+  const { documents, appDocuments, folders, notifications, selectedDocument, setSelectedDocument, submitForApproval, updateDocument, markNotificationAsRead, clearAllNotifications } = useDocuments();
   const [activeTab, setActiveTab] = useState<string>(
     location.state?.activeTab || 'repository'
   );
@@ -130,7 +131,8 @@ const DocumentsContent = () => {
       
       <UploadDocumentDialog 
         open={isUploadOpen} 
-        onOpenChange={setIsUploadOpen} 
+        onOpenChange={setIsUploadOpen}
+        folders={folders} 
       />
     </div>
   );

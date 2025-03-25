@@ -6,15 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Document } from '@/types/document';
+import { Document as AppDocument } from '@/types/document';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentExpirySettings from './DocumentExpirySettings';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import { CalendarClock, Search, AlertTriangle, Filter, Clock, ExternalLink, Calendar, RotateCcw } from 'lucide-react';
 
 const ExpiredDocuments: React.FC = () => {
-  const { documents, updateDocument } = useDocuments();
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const { appDocuments, updateDocument } = useDocuments();
+  const [selectedDocument, setSelectedDocument] = useState<AppDocument | null>(null);
   const [showExpirySettings, setShowExpirySettings] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,10 +22,10 @@ const ExpiredDocuments: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   // Get all unique categories from documents
-  const categories = Array.from(new Set(documents.map(doc => doc.category)));
+  const categories = Array.from(new Set(appDocuments.map(doc => doc.category)));
 
   // Filter documents based on search query, status, and category
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = appDocuments.filter(doc => {
     const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
     const isExpiringSoon = doc.expiryDate && !isExpired && 
       (new Date(doc.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 30;
@@ -46,11 +46,11 @@ const ExpiredDocuments: React.FC = () => {
     return matchesSearch && matchesStatus && matchesCategory && (isExpired || isExpiringSoon);
   });
 
-  const expiredCount = documents.filter(doc => 
+  const expiredCount = appDocuments.filter(doc => 
     doc.expiryDate && new Date(doc.expiryDate) < new Date()
   ).length;
 
-  const expiringSoonCount = documents.filter(doc => {
+  const expiringSoonCount = appDocuments.filter(doc => {
     if (!doc.expiryDate) return false;
     const expiryDate = new Date(doc.expiryDate);
     const now = new Date();
@@ -58,7 +58,7 @@ const ExpiredDocuments: React.FC = () => {
     return daysToExpiry > 0 && daysToExpiry <= 30;
   }).length;
 
-  const handleExpiryUpdate = (updatedDoc: Document) => {
+  const handleExpiryUpdate = (updatedDoc: AppDocument) => {
     updateDocument(updatedDoc);
     setShowExpirySettings(false);
   };
@@ -77,7 +77,7 @@ const ExpiredDocuments: React.FC = () => {
     }
   };
 
-  const renewDocument = (doc: Document) => {
+  const renewDocument = (doc: AppDocument) => {
     // Set new expiry date to 1 year from current date
     const newExpiryDate = new Date();
     newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);

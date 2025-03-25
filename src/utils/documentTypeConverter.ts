@@ -95,3 +95,67 @@ export const appToSupabaseFolder = (folder: AppFolder): Partial<SupabaseFolder> 
     document_count: folder.documentCount,
   };
 };
+
+/**
+ * Converts a Supabase document activity to an application document activity
+ */
+export const supabaseToAppDocumentActivity = (activity: DocumentActivity): AppDocumentActivity => {
+  return {
+    id: activity.id,
+    documentId: activity.document_id || "",
+    action: activity.action as DocumentAction,
+    timestamp: activity.timestamp,
+    userId: activity.user_id,
+    userName: activity.user_name,
+    userRole: activity.user_role,
+    comments: activity.comments,
+  };
+};
+
+/**
+ * Converts an application document activity to a Supabase document activity
+ */
+export const appToSupabaseDocumentActivity = (activity: AppDocumentActivity): Partial<DocumentActivity> => {
+  return {
+    id: activity.id,
+    document_id: activity.documentId,
+    action: activity.action,
+    timestamp: activity.timestamp,
+    user_id: activity.userId,
+    user_name: activity.userName,
+    user_role: activity.userRole,
+    comments: activity.comments,
+  };
+};
+
+/**
+ * Converts a Supabase document version to an application document version
+ */
+export const supabaseToAppDocumentVersion = (version: DocumentVersion): AppDocumentVersion => {
+  return {
+    id: version.id,
+    documentId: version.document_id || "",
+    version: version.version,
+    fileName: version.file_name,
+    fileSize: version.file_size,
+    createdBy: version.created_by,
+    createdAt: version.created_at,
+    changeNotes: version.change_notes,
+  };
+};
+
+/**
+ * Converts an application document version to a Supabase document version
+ */
+export const appToSupabaseDocumentVersion = (version: AppDocumentVersion): Partial<DocumentVersion> => {
+  return {
+    id: version.id,
+    document_id: version.documentId,
+    version: version.version,
+    file_name: version.fileName,
+    file_size: version.fileSize,
+    created_by: version.createdBy,
+    created_at: version.createdAt,
+    change_notes: version.changeNotes,
+  };
+};

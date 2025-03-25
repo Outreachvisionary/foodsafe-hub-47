@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Document, DocumentStatus } from '@/types/supabase';
-import { Document as AppDocument } from '@/types/document';
+import { Document as AppDocument, DocumentStatus as AppDocumentStatus } from '@/types/document';
 import { 
   fetchDocuments, 
   fetchFolders, 
@@ -341,7 +341,8 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateDocument = async (doc: AppDocument) => {
-    const result = await updateAppDocument(doc);
+    const supaDoc = appToSupabaseDocument(doc);
+    const result = await updateAppDocument(doc.id, doc);
     if (result) {
       setAppDocuments(prev => prev.map(d => d.id === doc.id ? result : d));
     }

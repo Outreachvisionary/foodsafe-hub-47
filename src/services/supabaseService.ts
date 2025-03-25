@@ -12,9 +12,19 @@ import {
   Document as AppDocument,
   Folder as AppFolder,
   DocumentCategory as AppDocumentCategory,
-  DocumentActivity as AppDocumentActivity
+  DocumentActivity as AppDocumentActivity,
+  DocumentVersion as AppDocumentVersion
 } from "@/types/document";
-import { supabaseToAppDocument, appToSupabaseDocument, supabaseToAppFolder } from "@/utils/documentTypeConverter";
+import { 
+  supabaseToAppDocument, 
+  appToSupabaseDocument, 
+  supabaseToAppFolder, 
+  appToSupabaseFolder,
+  supabaseToAppDocumentActivity,
+  appToSupabaseDocumentActivity,
+  supabaseToAppDocumentVersion,
+  appToSupabaseDocumentVersion
+} from "@/utils/documentTypeConverter";
 
 // Folders
 export const fetchFolders = async (): Promise<Folder[]> => {
@@ -86,7 +96,7 @@ export const createDocument = async (document: Partial<Document>): Promise<Docum
   
   const { data, error } = await supabase
     .from('documents')
-    .insert(document)
+    .insert([document])
     .select()
     .single();
     
@@ -138,7 +148,7 @@ export const addDocumentActivity = async (activity: Partial<DocumentActivity>): 
   
   const { data, error } = await supabase
     .from('document_activities')
-    .insert(activity)
+    .insert([activity])
     .select()
     .single();
     
@@ -204,7 +214,7 @@ export const addDocumentVersion = async (version: Partial<DocumentVersion>): Pro
   
   const { data, error } = await supabase
     .from('document_versions')
-    .insert(version)
+    .insert([version])
     .select()
     .single();
     
@@ -244,7 +254,7 @@ export const fetchAppDocumentsByFolder = async (folderId: string): Promise<AppDo
 
 export const createAppDocument = async (document: Partial<AppDocument>): Promise<AppDocument | null> => {
   const supaDoc = appToSupabaseDocument(document as AppDocument);
-  const result = await createDocument(supaDoc as Document);
+  const result = await createDocument(supaDoc as Partial<Document>);
   return result ? supabaseToAppDocument(result) : null;
 };
 
@@ -257,4 +267,26 @@ export const updateAppDocument = async (id: string, updates: Partial<AppDocument
 export const fetchAppFolders = async (): Promise<AppFolder[]> => {
   const folders = await fetchFolders();
   return folders.map(folder => supabaseToAppFolder(folder));
+};
+
+export const fetchAppDocumentActivities = async (documentId: string): Promise<AppDocumentActivity[]> => {
+  const activities = await fetchDocumentActivities(documentId);
+  return activities.map(activity => supabaseToAppDocumentActivity(activity));
+};
+
+export const addAppDocumentActivity = async (activity: Partial<AppDocumentActivity>): Promise<AppDocumentActivity | null> => {
+  const supaActivity = appToSupabaseDocumentActivity(activity as AppDocumentActivity);
+  const result = await addDocumentActivity(supaActivity as Partial<DocumentActivity>);
+  return result ? supabaseToAppDocumentActivity(result) : null;
+};
+
+export const fetchAppDocumentVersions = async (documentId: string): Promise<AppDocumentVersion[]> => {
+  const versions = await fetchDocumentVersions(documentId);
+  return versions.map(version => supabaseToAppDocumentVersion(version));
+};
+
+export const addAppDocumentVersion = async (version: Partial<AppDocumentVersion>): Promise<AppDocumentVersion | null> => {
+  const supaVersion = appToSupabaseDocumentVersion(version as AppDocumentVersion);
+  const result = await addDocumentVersion(supaVersion as Partial<DocumentVersion>);
+  return result ? supabaseToAppDocumentVersion(result) : null;
 };
