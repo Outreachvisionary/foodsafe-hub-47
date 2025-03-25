@@ -1,6 +1,6 @@
 
 // Re-export our database types to maintain compatibility
-export { Document, DocumentCategory, DocumentStatus, Folder } from './database';
+export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
 export interface DocumentVersion {
   id: string;
@@ -25,3 +25,48 @@ export interface DocumentActivity {
 }
 
 export type ModuleReference = 'none' | 'haccp' | 'training' | 'audits' | 'suppliers' | 'capa' | 'traceability';
+
+// Add missing types that were referenced in other components
+export interface DocumentNotification {
+  id: string;
+  documentId: string;
+  documentTitle: string;
+  type: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+  targetUserIds: string[];
+}
+
+export interface DocumentStats {
+  totalDocuments: number;
+  pendingApproval: number;
+  expiringSoon: number;
+  expired: number;
+  published: number;
+  archived: number;
+  byCategory: Record<string, number>;
+}
+
+export interface ApprovalRule {
+  id: string;
+  name: string;
+  requiredApprovers: number;
+  roles: string[];
+}
+
+export interface ApproverRole {
+  id: string;
+  name: string;
+  canApprove: string[];
+}
+
+export type DocumentAction = 
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'submit_for_approval'
+  | 'approve'
+  | 'reject'
+  | 'publish'
+  | 'archive';

@@ -8,7 +8,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Document, DocumentVersion } from '@/types/document';
+import { Document } from '@/types/database';
+import { DocumentVersion } from '@/types/document';
 import DocumentEditor from './DocumentEditor';
 import DocumentApprover from './DocumentApprover';
 import DocumentVersionCompare from './DocumentVersionCompare';
@@ -45,23 +46,23 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   const mockVersions: DocumentVersion[] = [
     {
       id: 'v1',
-      documentId: document?.id || '',
+      document_id: document?.id || '',
       version: document ? document.version - 1 : 1,
-      fileName: document?.fileName.replace(`v${document?.version}`, `v${document ? document.version - 1 : 1}`) || '',
-      fileSize: document?.fileSize || 0,
-      createdBy: 'Jane Smith',
-      createdAt: '2023-05-15T10:30:00Z',
-      changeNotes: 'Initial version'
+      file_name: document?.file_name.replace(`v${document?.version}`, `v${document ? document.version - 1 : 1}`) || '',
+      file_size: document?.file_size || 0,
+      created_by: 'Jane Smith',
+      created_at: '2023-05-15T10:30:00Z',
+      change_notes: 'Initial version'
     },
     {
       id: 'v2',
-      documentId: document?.id || '',
+      document_id: document?.id || '',
       version: document?.version || 2,
-      fileName: document?.fileName || '',
-      fileSize: document?.fileSize || 0,
-      createdBy: document?.createdBy || '',
-      createdAt: document?.updatedAt || '',
-      changeNotes: 'Updated with latest requirements'
+      file_name: document?.file_name || '',
+      file_size: document?.file_size || 0,
+      created_by: document?.created_by || '',
+      created_at: document?.updated_at || '',
+      change_notes: 'Updated with latest requirements'
     }
   ];
   
@@ -113,8 +114,8 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
 
   // Calculate days until expiry if document has an expiry date
   let daysUntilExpiry: number | null = null;
-  if (currentDocument.expiryDate) {
-    const expiryDate = new Date(currentDocument.expiryDate);
+  if (currentDocument.expiry_date) {
+    const expiryDate = new Date(currentDocument.expiry_date);
     const currentDate = new Date();
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     daysUntilExpiry = Math.floor((expiryDate.getTime() - currentDate.getTime()) / millisecondsPerDay);
@@ -132,7 +133,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
                   {currentDocument.title}
                 </DialogTitle>
                 <DialogDescription>
-                  {currentDocument.fileName} • Version {currentDocument.version}
+                  {currentDocument.file_name} • Version {currentDocument.version}
                 </DialogDescription>
               </div>
               <Badge 
@@ -187,7 +188,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
           
           <DialogFooter className="mt-4 flex justify-between items-center border-t pt-4">
             <div className="flex items-center text-sm text-gray-500 gap-4">
-              <span>Last updated: {new Date(currentDocument.updatedAt).toLocaleDateString()}</span>
+              <span>Last updated: {currentDocument.updated_at ? new Date(currentDocument.updated_at).toLocaleDateString() : 'Unknown'}</span>
               
               {daysUntilExpiry !== null && (
                 <div className={`flex items-center gap-1 ${

@@ -1,294 +1,254 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, ArrowRight, Plus, Minus, RefreshCw } from 'lucide-react';
 import { DocumentVersion } from '@/types/document';
-import { Separator } from '@/components/ui/separator';
+import { History, Clock, User, FileText, ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface DocumentVersionCompareProps {
   oldVersion: DocumentVersion;
   newVersion: DocumentVersion;
 }
 
-const DocumentVersionCompare: React.FC<DocumentVersionCompareProps> = ({ 
-  oldVersion, 
-  newVersion 
+const DocumentVersionCompare: React.FC<DocumentVersionCompareProps> = ({
+  oldVersion,
+  newVersion
 }) => {
-  const [compareView, setCompareView] = useState<'inline' | 'side-by-side'>('inline');
-
-  // Mock document content for demo purposes
-  const oldContent = `
+  // Sample content for visualization - in a real app, you'd fetch this from the API
+  const oldContent = `# Standard Operating Procedure
 ## 1. Purpose
-This Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.
+This document outlines the standard operating procedures for raw material receiving.
 
 ## 2. Scope
-This procedure applies to all incoming raw materials at all facilities.
+This procedure applies to all incoming raw materials at the facility.
 
 ## 3. Responsibilities
-- **Receiving Personnel**: Inspect and document incoming materials
-- **QA Manager**: Verify compliance with specifications
-- **Operations Manager**: Ensure proper storage
+- Receiving Personnel: Primary responsibility for implementation
+- QA Manager: Oversight and verification
 
 ## 4. Procedure
-### 4.1 Pre-Receiving Activities
-1. Review purchase orders
-2. Prepare receiving area
-3. Check temperature monitoring equipment
+1. Check delivery vehicle condition
+2. Verify shipping documents
+3. Inspect product packaging
+4. Check temperature (if applicable)
+5. Complete receiving log`;
 
-### 4.2 Receiving Inspection
-1. Inspect delivery vehicle for cleanliness
-2. Check temperature of refrigerated/frozen items
-3. Verify packaging integrity
-4. Check for pest activity
-  `;
-
-  const newContent = `
+  const newContent = `# Standard Operating Procedure
 ## 1. Purpose
-This Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.
+This document outlines the standard operating procedures for raw material receiving.
 
 ## 2. Scope
-This procedure applies to all incoming raw materials at all facilities.
+This procedure applies to all incoming raw materials at all company facilities.
 
 ## 3. Responsibilities
-- **Receiving Personnel**: Inspect and document incoming materials
-- **QA Manager**: Verify compliance with specifications
-- **Operations Manager**: Ensure proper storage
-- **Food Safety Manager**: Verify critical control points
+- Receiving Personnel: Primary responsibility for implementation
+- QA Manager: Oversight and verification
+- Operations Manager: Resource allocation
 
 ## 4. Procedure
-### 4.1 Pre-Receiving Activities
-1. Review purchase orders
-2. Prepare receiving area
-3. Verify calibration of measuring equipment
+1. Check delivery vehicle condition and cleanliness
+2. Verify shipping documents match purchase order
+3. Inspect product packaging for damage
+4. Check temperature (if applicable) using calibrated thermometer
+5. Complete electronic receiving log
+6. Apply lot tracking label`;
 
-### 4.2 Receiving Inspection
-1. Inspect delivery vehicle for cleanliness
-2. Check temperature of refrigerated/frozen items
-3. Verify packaging integrity
-4. Check for pest activity
-5. Verify supplier documentation
-  `;
-
-  // Mock function to generate line-by-line diff
-  const generateDiff = () => {
-    // This would be replaced with a real diff algorithm in production
-    return [
-      { type: 'unchanged', content: '## 1. Purpose' },
-      { type: 'unchanged', content: 'This Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.' },
-      { type: 'unchanged', content: '' },
-      { type: 'unchanged', content: '## 2. Scope' },
-      { type: 'unchanged', content: 'This procedure applies to all incoming raw materials at all facilities.' },
-      { type: 'unchanged', content: '' },
-      { type: 'unchanged', content: '## 3. Responsibilities' },
-      { type: 'unchanged', content: '- **Receiving Personnel**: Inspect and document incoming materials' },
-      { type: 'unchanged', content: '- **QA Manager**: Verify compliance with specifications' },
-      { type: 'unchanged', content: '- **Operations Manager**: Ensure proper storage' },
-      { type: 'added', content: '- **Food Safety Manager**: Verify critical control points' },
-      { type: 'unchanged', content: '' },
-      { type: 'unchanged', content: '## 4. Procedure' },
-      { type: 'unchanged', content: '### 4.1 Pre-Receiving Activities' },
-      { type: 'unchanged', content: '1. Review purchase orders' },
-      { type: 'unchanged', content: '2. Prepare receiving area' },
-      { type: 'removed', content: '3. Check temperature monitoring equipment' },
-      { type: 'added', content: '3. Verify calibration of measuring equipment' },
-      { type: 'unchanged', content: '' },
-      { type: 'unchanged', content: '### 4.2 Receiving Inspection' },
-      { type: 'unchanged', content: '1. Inspect delivery vehicle for cleanliness' },
-      { type: 'unchanged', content: '2. Check temperature of refrigerated/frozen items' },
-      { type: 'unchanged', content: '3. Verify packaging integrity' },
-      { type: 'unchanged', content: '4. Check for pest activity' },
-      { type: 'added', content: '5. Verify supplier documentation' },
-    ];
-  };
-
-  const diffItems = generateDiff();
-
-  // Timeline data for approval history
-  const approvalTimeline = [
-    {
-      version: 1,
-      date: '2023-04-15',
-      approver: 'John Doe',
-      status: 'Approved',
-      notes: 'Initial version'
-    },
-    {
-      version: 2,
-      date: '2023-09-20',
-      approver: 'Jane Smith',
-      status: 'Approved',
-      notes: 'Updated with regulatory changes'
-    },
-    {
-      version: newVersion.version,
-      date: new Date(newVersion.createdAt).toLocaleDateString(),
-      approver: newVersion.createdBy,
-      status: 'Pending Approval',
-      notes: newVersion.changeNotes || 'No change notes provided'
+  // Find differences
+  const lines1 = oldContent.split('\n');
+  const lines2 = newContent.split('\n');
+  
+  const diffLines = [];
+  const maxLines = Math.max(lines1.length, lines2.length);
+  
+  for (let i = 0; i < maxLines; i++) {
+    const left = lines1[i] || '';
+    const right = lines2[i] || '';
+    
+    if (left === right) {
+      diffLines.push({
+        line: i + 1,
+        left,
+        right,
+        status: 'unchanged'
+      });
+    } else {
+      diffLines.push({
+        line: i + 1,
+        left,
+        right,
+        status: left && right ? 'modified' : left ? 'removed' : 'added'
+      });
     }
-  ];
+  }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Version Comparison</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant={compareView === 'inline' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setCompareView('inline')}
-              className="text-xs"
-            >
-              Inline View
-            </Button>
-            <Button 
-              variant={compareView === 'side-by-side' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setCompareView('side-by-side')}
-              className="text-xs"
-            >
-              Side by Side
-            </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-bold flex items-center">
+            <History className="mr-2 h-5 w-5" />
+            Version Comparison
+          </h2>
+          <p className="text-muted-foreground">
+            Compare changes between document versions
+          </p>
+        </div>
+        <Button variant="outline" size="sm">Download Diff Report</Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Version {oldVersion.version}
+            </CardTitle>
+            <div className="text-sm text-muted-foreground flex flex-col gap-1 mt-1">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{new Date(oldVersion.created_at || '').toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                <span>By: {oldVersion.created_by}</span>
+              </div>
+              {oldVersion.change_notes && (
+                <div className="mt-1">
+                  <Badge variant="outline" className="font-normal">
+                    {oldVersion.change_notes}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Version {newVersion.version} (Current)
+            </CardTitle>
+            <div className="text-sm text-muted-foreground flex flex-col gap-1 mt-1">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{new Date(newVersion.created_at || '').toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                <span>By: {newVersion.created_by}</span>
+              </div>
+              {newVersion.change_notes && (
+                <div className="mt-1">
+                  <Badge variant="outline" className="font-normal">
+                    {newVersion.change_notes}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Changes Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[60px]">Line</TableHead>
+                <TableHead className="w-[80px]">Status</TableHead>
+                <TableHead>Content</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {diffLines.filter(diff => diff.status !== 'unchanged').map((diff, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-mono text-xs">{diff.line}</TableCell>
+                  <TableCell>
+                    {diff.status === 'added' ? (
+                      <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
+                        <ArrowRight className="h-3 w-3" />
+                        Added
+                      </Badge>
+                    ) : diff.status === 'removed' ? (
+                      <Badge variant="outline" className="bg-red-100 text-red-800 flex items-center gap-1">
+                        <ArrowLeft className="h-3 w-3" />
+                        Removed
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">Modified</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      {diff.status === 'modified' && (
+                        <>
+                          <div className="text-sm font-mono line-through text-red-500">{diff.left}</div>
+                          <div className="text-sm font-mono text-green-600">{diff.right}</div>
+                        </>
+                      )}
+                      {diff.status === 'added' && (
+                        <div className="text-sm font-mono text-green-600">{diff.right}</div>
+                      )}
+                      {diff.status === 'removed' && (
+                        <div className="text-sm font-mono line-through text-red-500">{diff.left}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <div className="border rounded-md p-4">
+        <h3 className="font-medium mb-4">Document Content Comparison</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="border rounded overflow-auto bg-gray-50 p-4 font-mono text-sm whitespace-pre-wrap h-[400px]">
+            {lines1.map((line, i) => {
+              const diff = diffLines[i];
+              return (
+                <div 
+                  key={i} 
+                  className={
+                    diff.status === 'unchanged' ? 'text-gray-800' : 
+                    diff.status === 'removed' ? 'bg-red-100 text-red-800' : 
+                    diff.status === 'modified' ? 'bg-amber-100 text-amber-800' : 
+                    ''
+                  }
+                >
+                  {line}
+                </div>
+              );
+            })}
+          </div>
+          <div className="border rounded overflow-auto bg-gray-50 p-4 font-mono text-sm whitespace-pre-wrap h-[400px]">
+            {lines2.map((line, i) => {
+              const diff = diffLines[i];
+              return (
+                <div 
+                  key={i} 
+                  className={
+                    diff.status === 'unchanged' ? 'text-gray-800' : 
+                    diff.status === 'added' ? 'bg-green-100 text-green-800' : 
+                    diff.status === 'modified' ? 'bg-amber-100 text-amber-800' : 
+                    ''
+                  }
+                >
+                  {line}
+                </div>
+              );
+            })}
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="changes">
-          <TabsList className="mb-4">
-            <TabsTrigger value="changes" className="flex items-center gap-1">
-              <RefreshCw className="h-4 w-4" />
-              <span>Changes</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              <span>Approval History</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="changes">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <FileText className="h-6 w-6 text-blue-500" />
-                </div>
-                <Badge variant="outline">Version {oldVersion.version}</Badge>
-                <div className="text-sm text-gray-500 mt-1">
-                  {new Date(oldVersion.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-              
-              <ArrowRight className="h-6 w-6 text-gray-400" />
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <FileText className="h-6 w-6 text-green-500" />
-                </div>
-                <Badge>Version {newVersion.version}</Badge>
-                <div className="text-sm text-gray-500 mt-1">
-                  {new Date(newVersion.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-            
-            {compareView === 'inline' ? (
-              <div className="border rounded-md overflow-hidden">
-                <div className="bg-gray-50 p-2 border-b text-sm font-medium">
-                  Changes between versions
-                </div>
-                <div className="p-2 font-mono text-sm whitespace-pre-line">
-                  {diffItems.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className={`p-1 ${
-                        item.type === 'added' 
-                          ? 'bg-green-50 border-l-2 border-green-400 text-green-800' 
-                          : item.type === 'removed' 
-                            ? 'bg-red-50 border-l-2 border-red-400 text-red-800 line-through'
-                            : ''
-                      }`}
-                    >
-                      {item.type === 'added' && (
-                        <Plus className="h-4 w-4 inline-block mr-2 text-green-600" />
-                      )}
-                      {item.type === 'removed' && (
-                        <Minus className="h-4 w-4 inline-block mr-2 text-red-600" />
-                      )}
-                      {item.content}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border rounded-md overflow-hidden">
-                  <div className="bg-gray-50 p-2 border-b text-sm font-medium flex justify-between">
-                    <span>Version {oldVersion.version}</span>
-                    <Badge variant="outline" className="text-xs">Old</Badge>
-                  </div>
-                  <pre className="p-4 text-sm whitespace-pre-line overflow-auto max-h-[400px]">
-                    {oldContent}
-                  </pre>
-                </div>
-                
-                <div className="border rounded-md overflow-hidden">
-                  <div className="bg-gray-50 p-2 border-b text-sm font-medium flex justify-between">
-                    <span>Version {newVersion.version}</span>
-                    <Badge className="text-xs">New</Badge>
-                  </div>
-                  <pre className="p-4 text-sm whitespace-pre-line overflow-auto max-h-[400px]">
-                    {newContent}
-                  </pre>
-                </div>
-              </div>
-            )}
-            
-            <div className="mt-4 text-sm text-gray-500">
-              <p>Change notes: {newVersion.changeNotes || 'No change notes provided'}</p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="history">
-            <div className="border rounded-md overflow-hidden">
-              <div className="bg-gray-50 p-2 border-b text-sm font-medium">
-                Approval Timeline
-              </div>
-              <div className="p-4 space-y-4">
-                {approvalTimeline.map((item, index) => (
-                  <div key={index} className="relative pl-6 pb-4">
-                    {index !== approvalTimeline.length - 1 && (
-                      <div className="absolute top-2 left-2 bg-gray-300 w-px h-full"></div>
-                    )}
-                    <div className={`absolute top-1 left-0 rounded-full w-4 h-4 flex items-center justify-center ${
-                      item.status === 'Approved' ? 'bg-green-100 border border-green-500' : 'bg-yellow-100 border border-yellow-500'
-                    }`}>
-                      <div className={`w-2 h-2 rounded-full ${
-                        item.status === 'Approved' ? 'bg-green-500' : 'bg-yellow-500'
-                      }`}></div>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center">
-                        <span className="font-medium">Version {item.version}</span>
-                        <Badge className="ml-2" variant={item.status === 'Approved' ? 'default' : 'outline'}>
-                          {item.status}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        {item.date} - {item.approver}
-                      </div>
-                      <p className="text-sm mt-1">{item.notes}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

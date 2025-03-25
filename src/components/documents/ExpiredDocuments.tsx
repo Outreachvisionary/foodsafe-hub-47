@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Document } from '@/types/document';
+import { Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentExpirySettings from './DocumentExpirySettings';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
@@ -26,9 +25,9 @@ const ExpiredDocuments: React.FC = () => {
 
   // Filter documents based on search query, status, and category
   const filteredDocuments = documents.filter(doc => {
-    const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
-    const isExpiringSoon = doc.expiryDate && !isExpired && 
-      (new Date(doc.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 30;
+    const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date();
+    const isExpiringSoon = doc.expiry_date && !isExpired && 
+      (new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 30;
     
     const matchesStatus = 
       (filterStatus === 'expired' && isExpired) ||
@@ -47,12 +46,12 @@ const ExpiredDocuments: React.FC = () => {
   });
 
   const expiredCount = documents.filter(doc => 
-    doc.expiryDate && new Date(doc.expiryDate) < new Date()
+    doc.expiry_date && new Date(doc.expiry_date) < new Date()
   ).length;
 
   const expiringSoonCount = documents.filter(doc => {
-    if (!doc.expiryDate) return false;
-    const expiryDate = new Date(doc.expiryDate);
+    if (!doc.expiry_date) return false;
+    const expiryDate = new Date(doc.expiry_date);
     const now = new Date();
     const daysToExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return daysToExpiry > 0 && daysToExpiry <= 30;
@@ -84,9 +83,9 @@ const ExpiredDocuments: React.FC = () => {
     
     const updatedDoc = {
       ...doc,
-      expiryDate: newExpiryDate.toISOString(),
+      expiry_date: newExpiryDate.toISOString(),
       status: doc.status === 'Expired' ? 'Published' : doc.status,
-      updatedAt: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
     
     updateDocument(updatedDoc);
@@ -195,7 +194,7 @@ const ExpiredDocuments: React.FC = () => {
             <TableBody>
               {filteredDocuments.length > 0 ? (
                 filteredDocuments.map((doc) => {
-                  const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
+                  const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date();
                   
                   return (
                     <TableRow key={doc.id}>
@@ -208,11 +207,11 @@ const ExpiredDocuments: React.FC = () => {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className={isExpired ? 'text-red-600 font-medium' : ''}>
-                            {doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : 'N/A'}
+                            {doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'N/A'}
                           </span>
-                          {doc.expiryDate && (
+                          {doc.expiry_date && (
                             <span className={`text-xs ${isExpired ? 'text-red-500' : 'text-amber-500'}`}>
-                              {calculateDaysToExpiry(doc.expiryDate)}
+                              {calculateDaysToExpiry(doc.expiry_date)}
                             </span>
                           )}
                         </div>

@@ -1,6 +1,6 @@
 
 // Re-export our database types to maintain compatibility
-export { TrainingStatus, TrainingSession, TrainingRecord } from './database';
+export type { TrainingStatus, TrainingSession, TrainingRecord } from './database';
 
 export interface EmployeeRole {
   id: string;
@@ -41,3 +41,52 @@ export interface TrainingPlan {
 }
 
 export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+// Add missing types referenced elsewhere
+export interface DepartmentTrainingStats {
+  departmentName: string;
+  totalEmployees: number;
+  completedTrainings: number;
+  pendingTrainings: number;
+  compliancePercentage: number;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;
+  requiredFor: string[];
+}
+
+export interface AutoAssignRule {
+  id: string;
+  name: string;
+  triggerType: string;
+  targetRoles: string[];
+  targetDepartments: string[];
+  coursesToAssign: string[];
+  priority: string;
+}
+
+export interface TrainingAutomationConfig {
+  enabled: boolean;
+  rules: AutoAssignRule[];
+  documentChangesTrigger: boolean;
+  newEmployeeTrigger: boolean;
+  roleCangeTrigger: boolean;
+}
+
+export interface DocumentControlIntegration {
+  linkToDocuments: boolean;
+  autoAssignOnDocumentChange: boolean;
+  documentCategories: string[];
+}

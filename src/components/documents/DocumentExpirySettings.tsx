@@ -1,17 +1,14 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { Document } from '@/types/document';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
+import { Document } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
-import { documentWorkflowService, defaultExpiryNotificationDays } from '@/services/documentWorkflowService';
+import { CalendarRange, AlertCircle, Calendar, Bell, Trash } from 'lucide-react';
 
 interface DocumentExpirySettingsProps {
   document: Document;
@@ -27,43 +24,19 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
   onUpdate
 }) => {
   const { toast } = useToast();
-  const [expiryDate, setExpiryDate] = useState<Date | undefined>(
-    document.expiryDate ? new Date(document.expiryDate) : undefined
+  const [expiryDate, setExpiryDate] = useState<string>(
+    document.expiry_date ? new Date(document.expiry_date).toISOString().split('T')[0] : ''
+  );
+  const [customNotifications, setCustomNotifications] = useState<boolean>(
+    document.custom_notification_days ? document.custom_notification_days.length > 0 : false
   );
   const [notificationDays, setNotificationDays] = useState<number[]>(
-    document.customNotificationDays || defaultExpiryNotificationDays
+    document.custom_notification_days || [30, 60, 90]
   );
-  const [newNotificationDay, setNewNotificationDay] = useState<string>('');
-
-  const handleAddNotificationDay = () => {
-    const days = parseInt(newNotificationDay);
-    if (isNaN(days) || days <= 0) {
-      toast({
-        title: "Invalid input",
-        description: "Please enter a positive number of days",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (notificationDays.includes(days)) {
-      toast({
-        title: "Duplicate entry",
-        description: "This notification period already exists",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setNotificationDays([...notificationDays, days].sort((a, b) => b - a));
-    setNewNotificationDay('');
-  };
-
-  const handleRemoveNotificationDay = (day: number) => {
-    setNotificationDays(notificationDays.filter(d => d !== day));
-  };
+  const [currentDay, setCurrentDay] = useState<number>(30);
 
   const handleSave = () => {
+    // Validate expiry date
     if (!expiryDate) {
       toast({
         title: "Expiry date required",
@@ -72,88 +45,186 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
       });
       return;
     }
-
-    const updatedDocument = {
+    
+    const updatedDoc = {
       ...document,
-      expiryDate: expiryDate.toISOString(),
-      customNotificationDays: notificationDays,
-      updatedAt: new Date().toISOString()
+      expiry_date: expiryDate ? new Date(expiryDate).toISOString() : undefined,
+      custom_notification_days: customNotifications ? notificationDays : [],
+      updated_at: new Date().toISOString()
     };
 
-    onUpdate(updatedDocument);
+    onUpdate(updatedDoc);
+    
     toast({
-      title: "Settings updated",
+      title: "Expiry settings saved",
       description: "Document expiry settings have been updated successfully",
     });
-    onOpenChange(false);
   };
+
+  const handleRemoveNotification = (day: number) => {
+    setNotificationDays(notificationDays.filter(d => d !== day));
+  };
+
+  const handleAddNotification = () => {
+    if (!notificationDays.includes(currentDay)) {
+      setNotificationDays([...notificationDays, currentDay].sort((a, b) => a - b));
+    }
+  };
+
+  // Calculate days until expiry
+  const calculateDaysUntilExpiry = () => {
+    if (!expiryDate) return null;
+    
+    const expiry = new Date(expiryDate);
+    const now = new Date();
+    
+    const millisecondsDiff = expiry.getTime() - now.getTime();
+    const daysDiff = Math.ceil(millisecondsDiff / (1000 * 60 * 60 * 24));
+    
+    return daysDiff;
+  };
+
+  const daysUntilExpiry = calculateDaysUntilExpiry();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Document Expiry Settings</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarRange className="h-5 w-5" />
+            Document Expiry Settings
+          </DialogTitle>
+          <DialogDescription>
+            Set expiry date and configure notification reminders
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="expiry-date">Expiry Date</Label>
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`w-full justify-start text-left font-normal ${!expiryDate && "text-muted-foreground"}`}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryDate ? format(expiryDate, "PPP") : "Select expiry date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={expiryDate}
-                    onSelect={setExpiryDate}
-                    initialFocus
-                    disabled={(date) => date < new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
+        <div className="grid gap-6 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="document-title">Document</Label>
+            <div className="p-2 border rounded-md bg-gray-50">
+              <p className="font-medium">{document.title}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {document.file_name} • Version {document.version}
+              </p>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label>Notification Periods (Days before expiry)</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {notificationDays.map(day => (
-                <Badge key={day} variant="secondary" className="flex items-center gap-1">
-                  {day} days
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 p-0 text-muted-foreground"
-                    onClick={() => handleRemoveNotificationDay(day)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="expiry-date">Expiry Date</Label>
             <div className="flex gap-2">
-              <Input
-                placeholder="Days before expiry"
-                value={newNotificationDay}
-                onChange={(e) => setNewNotificationDay(e.target.value)}
-                type="number"
-                min="1"
-              />
-              <Button onClick={handleAddNotificationDay} size="icon">
-                <Plus className="h-4 w-4" />
+              <div className="relative flex-grow">
+                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  id="expiry-date"
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button
+                variant="outline"
+                className="flex-shrink-0"
+                onClick={() => {
+                  // Set to 1 year from today
+                  const date = new Date();
+                  date.setFullYear(date.getFullYear() + 1);
+                  setExpiryDate(date.toISOString().split('T')[0]);
+                }}
+              >
+                + 1 Year
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Add custom notification periods for when to receive reminders before document expiry.
-            </p>
+            
+            {daysUntilExpiry !== null && (
+              <div className={`flex items-center gap-2 text-sm mt-1 ${
+                daysUntilExpiry < 0 ? 'text-red-600' : 
+                daysUntilExpiry < 30 ? 'text-amber-600' : 
+                'text-green-600'
+              }`}>
+                {daysUntilExpiry < 0 ? (
+                  <>
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Expired {Math.abs(daysUntilExpiry)} days ago</span>
+                  </>
+                ) : daysUntilExpiry === 0 ? (
+                  <>
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Expires today</span>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="h-4 w-4" />
+                    <span>Expires in {daysUntilExpiry} days</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="custom-notifications"
+                checked={customNotifications}
+                onCheckedChange={(checked) => setCustomNotifications(!!checked)}
+              />
+              <Label htmlFor="custom-notifications" className="cursor-pointer">
+                Enable custom notification schedule
+              </Label>
+            </div>
+            
+            {customNotifications && (
+              <div className="space-y-4 border-l-2 pl-4 border-gray-200">
+                <div className="space-y-2">
+                  <Label>Current Notifications</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {notificationDays.length > 0 ? (
+                      notificationDays.map(day => (
+                        <div key={day} className="flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                          <Bell className="h-3 w-3 mr-1" />
+                          <span className="text-sm">{day} days</span>
+                          <button
+                            onClick={() => handleRemoveNotification(day)}
+                            className="ml-2 text-blue-400 hover:text-blue-700"
+                          >
+                            <Trash className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No custom notifications configured</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label>Add notification reminder</Label>
+                      <span className="text-sm font-medium">{currentDay} days before expiry</span>
+                    </div>
+                    <Slider
+                      value={[currentDay]}
+                      min={1}
+                      max={180}
+                      step={1}
+                      onValueChange={(value) => setCurrentDay(value[0])}
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleAddNotification}
+                    disabled={notificationDays.includes(currentDay)}
+                    className="w-full"
+                  >
+                    Add {currentDay}-day Reminder
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Document } from '@/types/document';
+import { Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentApprover from './DocumentApprover';
@@ -67,9 +66,9 @@ const ApprovalWorkflow: React.FC = () => {
 
   const getPriorityBadge = (doc: Document) => {
     // Check how long the document has been pending
-    if (!doc.pendingSince) return null;
+    if (!doc.pending_since) return null;
     
-    const pendingDate = new Date(doc.pendingSince);
+    const pendingDate = new Date(doc.pending_since);
     const currentDate = new Date();
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const daysPending = Math.floor((currentDate.getTime() - pendingDate.getTime()) / millisecondsPerDay);
@@ -189,7 +188,7 @@ const ApprovalWorkflow: React.FC = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            {doc.pendingSince ? new Date(doc.pendingSince).toLocaleDateString() : '-'}
+                            {doc.pending_since ? new Date(doc.pending_since).toLocaleDateString() : '-'}
                           </TableCell>
                           <TableCell>
                             QA Manager, Compliance Officer
@@ -257,8 +256,8 @@ const ApprovalWorkflow: React.FC = () => {
                     <h3 className="text-lg font-medium">Overdue</h3>
                     <p className="text-3xl font-bold mt-2">
                       {pendingDocuments.filter(doc => {
-                        if (!doc.pendingSince) return false;
-                        const pendingDate = new Date(doc.pendingSince);
+                        if (!doc.pending_since) return false;
+                        const pendingDate = new Date(doc.pending_since);
                         const currentDate = new Date();
                         const millisecondsPerDay = 24 * 60 * 60 * 1000;
                         const daysPending = Math.floor((currentDate.getTime() - pendingDate.getTime()) / millisecondsPerDay);
@@ -281,7 +280,7 @@ const ApprovalWorkflow: React.FC = () => {
                     <p className="text-3xl font-bold mt-2">
                       {documents.filter(doc => {
                         if (doc.status !== 'Approved') return false;
-                        const updatedDate = new Date(doc.updatedAt);
+                        const updatedDate = new Date(doc.updated_at || '');
                         const today = new Date();
                         return updatedDate.toDateString() === today.toDateString();
                       }).length}
@@ -350,7 +349,7 @@ const ApprovalWorkflow: React.FC = () => {
                       <div>
                         <h4 className="font-medium">{doc.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Approved on {new Date(doc.updatedAt).toLocaleDateString()}
+                          Approved on {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : 'Unknown date'}
                         </p>
                         <div className="flex mt-1">
                           <Badge variant="outline" className="mr-2 bg-gray-100">

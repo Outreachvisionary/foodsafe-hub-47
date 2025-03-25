@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import {
   FileText, 
   CheckCircle
 } from 'lucide-react';
-import { Document, DocumentStatus } from '@/types/document';
+import { Document, DocumentStatus } from '@/types/database';
 
 interface DocumentEditorProps {
   document: Document | null;
@@ -42,7 +41,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   useEffect(() => {
     if (document) {
       setTitle(document.title);
-      // In a real implementation, content would be fetched from the API
       setContent(document.description || 'Sample document content. This would be the full text of the document.');
     }
   }, [document]);
@@ -54,7 +52,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       ...document,
       title,
       description: content,
-      updatedAt: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
     
     onSave?.(updatedDoc);
@@ -73,7 +71,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       title,
       description: content,
       status: 'Pending Approval' as DocumentStatus,
-      updatedAt: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
     
     onSubmitForReview?.(docForReview);
@@ -192,7 +190,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
               </div>
             </div>
             
-            {/* Comment input */}
             <div className="flex gap-2">
               <Textarea
                 value={comment}
@@ -212,7 +209,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
                     <h4 className="font-medium">Version 3 (Current)</h4>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <Clock className="h-3 w-3" />
-                      <span>Updated {new Date(document.updatedAt).toLocaleDateString()}</span>
+                      <span>Updated {document.updated_at ? new Date(document.updated_at).toLocaleDateString() : 'Unknown'}</span>
                     </div>
                   </div>
                   <Badge>Current</Badge>
@@ -267,11 +264,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       <CardFooter className="flex justify-between text-sm text-gray-500 pt-2 border-t">
         <div className="flex items-center gap-1">
           <User className="h-3 w-3" />
-          <span>Last edited by: {document.createdBy}</span>
+          <span>Last edited by: {document.created_by}</span>
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          <span>Last updated: {new Date(document.updatedAt).toLocaleString()}</span>
+          <span>Last updated: {document.updated_at ? new Date(document.updated_at).toLocaleString() : 'Unknown'}</span>
         </div>
       </CardFooter>
     </Card>
