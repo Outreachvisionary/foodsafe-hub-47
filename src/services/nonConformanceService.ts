@@ -1,312 +1,221 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { NCActivity, NonConformance, NCStatus, NCFilter, NCStats, NCAttachment } from '@/types/non-conformance';
+import { NonConformance, NCStatus, NCActivity, NCStats, NCAttachment } from '@/types/non-conformance';
 
-// Fetch Non-Conformance items
-export const fetchNonConformances = async (): Promise<NonConformance[]> => {
-  const { data, error } = await supabase
-    .from('non_conformances')
-    .select('*')
-    .order('created_at', { ascending: false });
+// Create a function to handle type safety for NC status
+function ensureValidStatus(status: string): NCStatus {
+  const validStatuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed'];
   
-  if (error) {
-    console.error('Error fetching non-conformances:', error);
-    throw error;
+  if (validStatuses.includes(status as NCStatus)) {
+    return status as NCStatus;
   }
   
-  return data as NonConformance[];
-};
+  // Default to 'On Hold' if an invalid status is provided
+  console.warn(`Invalid status "${status}" provided, defaulting to "On Hold"`);
+  return 'On Hold';
+}
 
-// Fetch a single Non-Conformance by ID
-export const fetchNonConformanceById = async (id: string): Promise<NonConformance> => {
-  const { data, error } = await supabase
-    .from('non_conformances')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) {
-    console.error(`Error fetching non-conformance with ID ${id}:`, error);
-    throw error;
-  }
-  
-  return data as NonConformance;
-};
-
-// Create a new Non-Conformance
-export const createNonConformance = async (nonConformance: Omit<NonConformance, 'id'>): Promise<NonConformance> => {
-  const { data, error } = await supabase
-    .from('non_conformances')
-    .insert(nonConformance)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating non-conformance:', error);
-    throw error;
-  }
-  
-  return data as NonConformance;
-};
-
-// Update a Non-Conformance
-export const updateNonConformance = async (id: string, updates: Partial<NonConformance>): Promise<NonConformance> => {
-  const { data, error } = await supabase
-    .from('non_conformances')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error(`Error updating non-conformance with ID ${id}:`, error);
-    throw error;
-  }
-  
-  return data as NonConformance;
-};
-
-// Update Non-Conformance status with RPC function
-export const updateNCStatus = async (
-  ncId: string, 
-  newStatus: NCStatus, 
-  prevStatus: NCStatus,
-  userId: string, 
-  comment: string
-): Promise<void> => {
-  // Fix: Use an object for parameters and properly cast types
-  const { error } = await supabase.rpc('update_nc_status', {
-    nc_id: ncId,
-    new_status: newStatus,
-    user_id: userId,
-    comment: comment,
-    prev_status: prevStatus
-  });
-  
-  if (error) {
-    console.error('Error updating NC status:', error);
-    throw error;
-  }
-};
-
-// Update Non-Conformance quantity
-export const updateNCQuantity = async (
-  ncId: string,
-  quantity: number,
-  quantityOnHold: number
-): Promise<NonConformance> => {
-  const { data, error } = await supabase
-    .from('non_conformances')
-    .update({
-      quantity: quantity,
-      quantity_on_hold: quantityOnHold,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', ncId)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error updating NC quantity:', error);
-    throw error;
-  }
-  
-  return data as NonConformance;
-};
-
-// Delete a Non-Conformance
-export const deleteNonConformance = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('non_conformances')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error(`Error deleting non-conformance with ID ${id}:`, error);
-    throw error;
-  }
-};
-
-// Fetch NC Activities
-export const fetchNCActivities = async (nonConformanceId: string): Promise<NCActivity[]> => {
-  const { data, error } = await supabase
-    .from('nc_activities')
-    .select('*')
-    .eq('non_conformance_id', nonConformanceId)
-    .order('performed_at', { ascending: false });
-  
-  if (error) {
-    console.error(`Error fetching activities for NC ${nonConformanceId}:`, error);
-    throw error;
-  }
-  
-  return data as NCActivity[];
-};
-
-// Fetch NC Attachments
-export const fetchNCAttachments = async (nonConformanceId: string) => {
-  const { data, error } = await supabase
-    .from('nc_attachments')
-    .select('*')
-    .eq('non_conformance_id', nonConformanceId);
-  
-  if (error) {
-    console.error(`Error fetching attachments for NC ${nonConformanceId}:`, error);
-    throw error;
-  }
-  
-  return data;
-};
-
-// Create NC Activity with proper type handling
-export const createNCActivity = async (activity: {
-  non_conformance_id: string;
-  action: string;
-  comments?: string;
-  performed_by: string;
-  previous_status?: NCStatus;
-  new_status?: NCStatus;
-}): Promise<NCActivity> => {
-  const { data, error } = await supabase
-    .from('nc_activities')
-    .insert({
-      non_conformance_id: activity.non_conformance_id,
-      action: activity.action,
-      comments: activity.comments,
-      performed_by: activity.performed_by,
-      previous_status: activity.previous_status,
-      new_status: activity.new_status
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating NC activity:', error);
-    throw error;
-  }
-  
-  return data as NCActivity;
-};
-
-// Upload NC Attachment
-export const uploadNCAttachment = async (
-  nonConformanceId: string,
-  file: File,
-  description: string,
-  uploadedBy: string
-): Promise<NCAttachment> => {
-  // First upload the file to Supabase Storage
-  const filePath = `nc-attachments/${nonConformanceId}/${Date.now()}_${file.name}`;
-  const { error: uploadError } = await supabase.storage
-    .from('attachments')
-    .upload(filePath, file);
-  
-  if (uploadError) {
-    console.error('Error uploading file:', uploadError);
-    throw uploadError;
-  }
-  
-  // Then create a record in the nc_attachments table
-  const attachment = {
-    non_conformance_id: nonConformanceId,
-    file_name: file.name,
-    file_type: file.type,
-    file_size: file.size,
-    file_path: filePath,
-    description: description,
-    uploaded_by: uploadedBy
-  };
-  
-  const { data, error } = await supabase
-    .from('nc_attachments')
-    .insert(attachment)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating attachment record:', error);
-    throw error;
-  }
-  
-  return data as NCAttachment;
-};
-
-// Fetch NC Stats
-export const fetchNCStats = async (): Promise<NCStats> => {
-  // Get all non-conformances
-  const { data: nonConformances, error } = await supabase
-    .from('non_conformances')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching NC stats:', error);
-    throw error;
-  }
-  
-  // Calculate stats
-  const stats: NCStats = {
-    total: nonConformances.length,
-    totalQuantityOnHold: nonConformances.reduce(
-      (sum, nc) => sum + (nc.quantity_on_hold || 0), 
-      0
-    ),
-    byStatus: {
-      'On Hold': 0,
-      'Under Review': 0,
-      'Released': 0,
-      'Disposed': 0
-    },
-    byCategory: {
-      'Processing Equipment': 0,
-      'Product Storage Tanks': 0,
-      'Finished Products': 0,
-      'Raw Products': 0,
-      'Packaging Materials': 0,
-      'Other': 0
-    },
-    byReason: {
-      'Contamination': 0,
-      'Quality Issues': 0,
-      'Regulatory Non-Compliance': 0,
-      'Equipment Malfunction': 0,
-      'Documentation Error': 0,
-      'Process Deviation': 0,
-      'Other': 0
-    },
-    recentItems: nonConformances.slice(0, 5) as NonConformance[]
-  };
-  
-  // Populate the counts
-  nonConformances.forEach(nc => {
-    if (nc.status && stats.byStatus[nc.status as NCStatus] !== undefined) {
-      stats.byStatus[nc.status as NCStatus]++;
+const nonConformanceService = {
+  async fetchNonConformances(): Promise<NonConformance[]> {
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('reported_date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching non-conformances:', error);
+      throw error;
     }
     
-    if (nc.item_category && stats.byCategory[nc.item_category] !== undefined) {
-      stats.byCategory[nc.item_category]++;
+    return data as NonConformance[];
+  },
+  
+  async fetchNonConformanceById(id: string): Promise<NonConformance> {
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error(`Error fetching non-conformance with ID ${id}:`, error);
+      throw error;
     }
     
-    if (nc.reason_category && stats.byReason[nc.reason_category] !== undefined) {
-      stats.byReason[nc.reason_category]++;
-    }
-  });
+    return data as NonConformance;
+  },
   
-  return stats;
+  async createNonConformance(nc: Omit<NonConformance, 'id'>): Promise<NonConformance> {
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .insert({
+        ...nc,
+        status: ensureValidStatus(nc.status) // Ensure status is valid
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating non-conformance:', error);
+      throw error;
+    }
+    
+    return data as NonConformance;
+  },
+  
+  async updateNonConformance(id: string, updates: Partial<NonConformance>): Promise<NonConformance> {
+    // If status is being updated, ensure it's valid
+    if (updates.status) {
+      updates.status = ensureValidStatus(updates.status);
+    }
+    
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error(`Error updating non-conformance with ID ${id}:`, error);
+      throw error;
+    }
+    
+    return data as NonConformance;
+  },
+  
+  async deleteNonConformance(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('non_conformances')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`Error deleting non-conformance with ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Activities
+  async fetchNCActivities(ncId: string): Promise<NCActivity[]> {
+    const { data, error } = await supabase
+      .from('nc_activities')
+      .select('*')
+      .eq('non_conformance_id', ncId)
+      .order('performed_at', { ascending: false });
+    
+    if (error) {
+      console.error(`Error fetching activities for non-conformance ${ncId}:`, error);
+      throw error;
+    }
+    
+    return data as NCActivity[];
+  },
+  
+  async createNCActivity(activity: Omit<NCActivity, 'id'>): Promise<NCActivity> {
+    // Ensure status values are valid if present
+    const sanitizedActivity = {
+      ...activity,
+      previous_status: activity.previous_status ? ensureValidStatus(activity.previous_status) : undefined,
+      new_status: activity.new_status ? ensureValidStatus(activity.new_status) : undefined
+    };
+    
+    const { data, error } = await supabase
+      .from('nc_activities')
+      .insert(sanitizedActivity)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating non-conformance activity:', error);
+      throw error;
+    }
+    
+    return data as NCActivity;
+  },
+  
+  // Attachments
+  async fetchNCAttachments(ncId: string): Promise<NCAttachment[]> {
+    const { data, error } = await supabase
+      .from('nc_attachments')
+      .select('*')
+      .eq('non_conformance_id', ncId);
+    
+    if (error) {
+      console.error(`Error fetching attachments for non-conformance ${ncId}:`, error);
+      throw error;
+    }
+    
+    return data as NCAttachment[];
+  },
+  
+  async uploadNCAttachment(attachment: Omit<NCAttachment, 'id'>): Promise<NCAttachment> {
+    const { data, error } = await supabase
+      .from('nc_attachments')
+      .insert(attachment)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error uploading non-conformance attachment:', error);
+      throw error;
+    }
+    
+    return data as NCAttachment;
+  },
+  
+  async deleteNCAttachment(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('nc_attachments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`Error deleting non-conformance attachment with ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Statistics
+  async fetchNCStats(): Promise<NCStats> {
+    const { data: nonConformances, error } = await supabase
+      .from('non_conformances')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching non-conformance statistics:', error);
+      throw error;
+    }
+    
+    const recentItems = nonConformances
+      .sort((a, b) => new Date(b.reported_date).getTime() - new Date(a.reported_date).getTime())
+      .slice(0, 5) as NonConformance[];
+    
+    const byStatus = nonConformances.reduce((acc: Record<NCStatus, number>, nc) => {
+      const status = ensureValidStatus(nc.status);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<NCStatus, number>);
+    
+    const byCategory = nonConformances.reduce((acc: Record<string, number>, nc) => {
+      acc[nc.item_category] = (acc[nc.item_category] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const byReason = nonConformances.reduce((acc: Record<string, number>, nc) => {
+      acc[nc.reason_category] = (acc[nc.reason_category] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return {
+      total: nonConformances.length,
+      totalQuantityOnHold: nonConformances.reduce((sum, nc) => sum + (nc.quantity_on_hold || 0), 0),
+      byStatus,
+      byCategory,
+      byReason,
+      recentItems
+    };
+  }
 };
 
-// Functions for related documents, training, and audits
-export const getDocumentsRelatedToNC = async (nonConformanceId: string) => {
-  // This would be a real implementation with actual queries in production
-  return [];
-};
-
-export const getTrainingRelatedToNC = async (nonConformanceId: string) => {
-  // This would be a real implementation with actual queries in production
-  return [];
-};
-
-export const getAuditsRelatedToNC = async (nonConformanceId: string) => {
-  // This would be a real implementation with actual queries in production
-  return [];
-};
+export default nonConformanceService;

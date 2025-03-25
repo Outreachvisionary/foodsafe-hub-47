@@ -2,6 +2,8 @@
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
+import { Json } from '@/integrations/supabase/types';
+
 export interface DocumentVersion {
   id: string;
   document_id: string;
@@ -81,7 +83,7 @@ export interface DocumentWorkflowInstance {
   updated_at?: string;
 }
 
-export type ModuleReference = 'none' | 'haccp' | 'training' | 'audits' | 'suppliers' | 'capa' | 'traceability';
+export type ModuleReference = 'none' | 'haccp' | 'training' | 'audits' | 'suppliers' | 'capa' | 'traceability' | 'non-conformance';
 
 // Add missing types that were referenced in other components
 export interface DocumentNotification {
@@ -157,4 +159,35 @@ declare module './database' {
     current_version_id?: string;
     workflow_status?: string;
   }
+}
+
+// Type guard to check if a value is a DocumentWorkflowStep[]
+export function isDocumentWorkflowSteps(value: any): value is DocumentWorkflowStep[] {
+  return Array.isArray(value) && 
+    value.every(item => 
+      typeof item === 'object' && 
+      'id' in item && 
+      'name' in item && 
+      'approvers' in item && 
+      'required_approvals' in item && 
+      'is_final' in item
+    );
+}
+
+// Helper function to convert Json to DocumentWorkflowStep[]
+export function parseWorkflowSteps(steps: Json): DocumentWorkflowStep[] {
+  if (typeof steps === 'string') {
+    try {
+      return JSON.parse(steps) as DocumentWorkflowStep[];
+    } catch (e) {
+      console.error('Error parsing workflow steps:', e);
+      return [];
+    }
+  }
+  
+  if (Array.isArray(steps)) {
+    return steps as unknown as DocumentWorkflowStep[];
+  }
+  
+  return [];
 }

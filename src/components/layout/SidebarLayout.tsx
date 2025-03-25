@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -13,7 +13,8 @@ import {
   SidebarMenuButton,
   SidebarSeparator,
   SidebarInset,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarRail
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -28,7 +29,10 @@ import {
   User,
   Shield,
   AlertTriangle,
-  Gauge
+  Gauge,
+  AlertOctagon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface SidebarLayoutProps {
@@ -37,9 +41,10 @@ interface SidebarLayoutProps {
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
+        <SidebarRail />
         <SidebarInset className="bg-gray-50">
           <div className="flex flex-col min-h-screen">
             {children}
@@ -52,6 +57,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
 const AppSidebar = () => {
   const location = useLocation();
+  const { state: sidebarState, toggleSidebar } = useSidebar();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -60,12 +66,13 @@ const AppSidebar = () => {
   const modules = [
     { name: "Dashboard", path: "/dashboard", icon: Gauge, tooltip: "View performance dashboards and metrics" },
     { name: "Documents", path: "/documents", icon: FileText, tooltip: "Manage and control documents" },
-    { name: "Audits", path: "/audits", icon: ClipboardCheck, tooltip: "Schedule and manage internal and external audits" },
-    { name: "Complaints", path: "/complaints", icon: MessageSquare, tooltip: "Track and resolve customer complaints" },
+    { name: "Audits", path: "/internal-audits", icon: ClipboardCheck, tooltip: "Schedule and manage internal and external audits" },
+    { name: "Complaints", path: "/complaint-management", icon: MessageSquare, tooltip: "Track and resolve customer complaints" },
     { name: "Traceability", path: "/traceability", icon: GitBranch, tooltip: "Manage product traceability and recalls" },
-    { name: "Suppliers", path: "/suppliers", icon: Users, tooltip: "Manage supplier compliance and certifications" },
+    { name: "Suppliers", path: "/supplier-management", icon: Users, tooltip: "Manage supplier compliance and certifications" },
     { name: "Training", path: "/training", icon: GraduationCap, tooltip: "Track employee training and competencies" },
     { name: "CAPA", path: "/capa", icon: AlertTriangle, tooltip: "Manage corrective and preventive actions" },
+    { name: "Non-Conformance", path: "/non-conformance", icon: AlertOctagon, tooltip: "Manage non-conforming products and processes" },
     { name: "HACCP", path: "/haccp", icon: Shield, tooltip: "Manage HACCP plans and critical control points" },
     { name: "Reports", path: "/reports", icon: BarChart2, tooltip: "Generate compliance reports" }
   ];
@@ -167,5 +174,14 @@ const AppSidebar = () => {
     </Sidebar>
   );
 };
+
+// Import useSidebar hook
+function useSidebar() {
+  const context = React.useContext(React.createContext<any>(null));
+  if (!context) {
+    throw new Error("useSidebar must be used within a SidebarProvider");
+  }
+  return context;
+}
 
 export default SidebarLayout;

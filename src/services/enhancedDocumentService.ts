@@ -1,6 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentWorkflow, DocumentWorkflowStep, DocumentActivity } from '@/types/document';
+import { 
+  Document, 
+  DocumentVersion, 
+  DocumentWorkflow, 
+  DocumentWorkflowStep, 
+  DocumentActivity,
+  parseWorkflowSteps
+} from '@/types/document';
 import { Json } from '@/integrations/supabase/types';
 
 // Base document service for Supabase operations
@@ -105,9 +112,10 @@ const enhancedDocumentService = {
       document_id: version.document_id,
       file_name: version.file_name,
       file_size: version.file_size,
+      file_type: version.file_type,
       created_by: version.created_by,
       change_notes: version.change_notes || version.change_summary,
-      version: version.version || 1 // Ensure version is always provided
+      version: version.version ?? 1 // Ensure version is always provided
     };
     
     const { data, error } = await supabase
@@ -170,7 +178,7 @@ const enhancedDocumentService = {
     // Convert the JSON steps to our typed DocumentWorkflowStep[]
     return data.map(workflow => ({
       ...workflow,
-      steps: workflow.steps as unknown as DocumentWorkflowStep[]
+      steps: parseWorkflowSteps(workflow.steps)
     })) as DocumentWorkflow[];
   },
   
@@ -206,7 +214,7 @@ const enhancedDocumentService = {
       
       return {
         ...data,
-        steps: data.steps as unknown as DocumentWorkflowStep[]
+        steps: parseWorkflowSteps(data.steps)
       } as DocumentWorkflow;
     } else {
       // Create new workflow
@@ -228,7 +236,7 @@ const enhancedDocumentService = {
       
       return {
         ...data,
-        steps: data.steps as unknown as DocumentWorkflowStep[]
+        steps: parseWorkflowSteps(data.steps)
       } as DocumentWorkflow;
     }
   },
