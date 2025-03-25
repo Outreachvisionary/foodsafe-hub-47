@@ -16,7 +16,7 @@ export const fetchDocumentVersions = async (documentId: string): Promise<Documen
     throw error;
   }
   
-  return data as DocumentVersion[];
+  return data as unknown as DocumentVersion[];
 };
 
 export const createDocumentVersion = async (document: Document, versionDetails: Partial<DocumentVersion>): Promise<DocumentVersion> => {
@@ -48,7 +48,7 @@ export const createDocumentVersion = async (document: Document, versionDetails: 
       .update({ current_version_id: data.id })
       .eq('id', document.id);
       
-    return data as DocumentVersion;
+    return data as unknown as DocumentVersion;
   } catch (error) {
     console.error('Error in version creation process:', error);
     throw error;
@@ -107,9 +107,14 @@ export const fetchDocumentPreview = async (documentId: string, previewType = 'th
 };
 
 export const createDocumentPreview = async (preview: Partial<DocumentPreview>): Promise<DocumentPreview> => {
+  // Make sure required fields are present
+  if (!preview.document_id || !preview.preview_type) {
+    throw new Error('Missing required fields for document preview');
+  }
+
   const { data, error } = await supabase
     .from('document_previews')
-    .insert(preview)
+    .insert(preview as any)
     .select()
     .single();
   
@@ -137,9 +142,14 @@ export const fetchDocumentAccess = async (documentId: string): Promise<DocumentA
 };
 
 export const grantDocumentAccess = async (access: Partial<DocumentAccess>): Promise<DocumentAccess> => {
+  // Make sure required fields are present
+  if (!access.document_id || !access.permission_level || !access.granted_by) {
+    throw new Error('Missing required fields for document access');
+  }
+
   const { data, error } = await supabase
     .from('document_access')
-    .insert(access)
+    .insert(access as any)
     .select()
     .single();
   
@@ -292,6 +302,11 @@ export const fetchWorkflows = async (): Promise<DocumentWorkflow[]> => {
 };
 
 export const createWorkflow = async (workflow: Partial<DocumentWorkflow>): Promise<DocumentWorkflow> => {
+  // Make sure required fields are present
+  if (!workflow.name || !workflow.steps || !workflow.created_by) {
+    throw new Error('Missing required fields for document workflow');
+  }
+
   // Ensure steps is a JSON string
   const workflowToInsert = {
     ...workflow,
@@ -300,7 +315,7 @@ export const createWorkflow = async (workflow: Partial<DocumentWorkflow>): Promi
   
   const { data, error } = await supabase
     .from('document_workflows')
-    .insert(workflowToInsert)
+    .insert(workflowToInsert as any)
     .select()
     .single();
   
@@ -339,7 +354,7 @@ export const startWorkflow = async (documentId: string, workflowId: string, user
   await supabase
     .from('documents')
     .update({
-      status: 'Pending Approval',
+      status: 'Pending Approval' as any,
       workflow_status: 'in_progress'
     })
     .eq('id', documentId);
@@ -424,7 +439,7 @@ export const advanceWorkflow = async (
     await supabase
       .from('documents')
       .update({
-        status: documentStatus,
+        status: documentStatus as any,
         workflow_status: newStatus,
         rejection_reason: approved ? null : comments
       })

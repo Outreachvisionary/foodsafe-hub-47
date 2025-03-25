@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FolderIcon, FileText, Download, CheckCircle2, Clock, AlertTriangle, Tag, Edit, Eye, Trash2, Upload } from 'lucide-react';
+import { Search, FolderIcon, FileText, Download, CheckCircle2, Clock, AlertTriangle, Tag, Edit, Eye, Trash2, Upload, Lock } from 'lucide-react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Document, DocumentCategory } from '@/types/document';
 import { documentWorkflowService } from '@/services/documentWorkflowService';

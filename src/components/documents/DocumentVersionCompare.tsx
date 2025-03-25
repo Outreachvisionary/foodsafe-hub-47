@@ -103,7 +103,7 @@ This procedure applies to all incoming raw materials at all company facilities.
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Version {oldVersion.version}
+              Version {oldVersion.version_number}
             </CardTitle>
             <div className="text-sm text-muted-foreground flex flex-col gap-1 mt-1">
               <div className="flex items-center gap-1">
@@ -114,10 +114,10 @@ This procedure applies to all incoming raw materials at all company facilities.
                 <User className="h-3 w-3" />
                 <span>By: {oldVersion.created_by}</span>
               </div>
-              {oldVersion.change_notes && (
+              {(oldVersion.change_summary || oldVersion.change_notes) && (
                 <div className="mt-1">
                   <Badge variant="outline" className="font-normal">
-                    {oldVersion.change_notes}
+                    {oldVersion.change_summary || oldVersion.change_notes}
                   </Badge>
                 </div>
               )}
@@ -129,7 +129,7 @@ This procedure applies to all incoming raw materials at all company facilities.
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Version {newVersion.version} (Current)
+              Version {newVersion.version_number} (Current)
             </CardTitle>
             <div className="text-sm text-muted-foreground flex flex-col gap-1 mt-1">
               <div className="flex items-center gap-1">
@@ -140,10 +140,10 @@ This procedure applies to all incoming raw materials at all company facilities.
                 <User className="h-3 w-3" />
                 <span>By: {newVersion.created_by}</span>
               </div>
-              {newVersion.change_notes && (
+              {(newVersion.change_summary || newVersion.change_notes) && (
                 <div className="mt-1">
                   <Badge variant="outline" className="font-normal">
-                    {newVersion.change_notes}
+                    {newVersion.change_summary || newVersion.change_notes}
                   </Badge>
                 </div>
               )}

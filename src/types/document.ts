@@ -14,6 +14,9 @@ export interface DocumentVersion {
   created_at?: string;
   change_summary?: string;
   storage_path: string;
+  // Add compatibility fields for existing code
+  version?: number;
+  change_notes?: string;
 }
 
 export interface DocumentActivity {
@@ -145,4 +148,14 @@ export interface TranslationNamespace {
   id: string;
   name: string;
   description?: string;
+}
+
+// Extend the Document type from database.ts with additional properties
+declare module './database' {
+  interface Document {
+    checkout_user_id?: string;
+    checkout_timestamp?: string;
+    current_version_id?: string;
+    workflow_status?: string;
+  }
 }
