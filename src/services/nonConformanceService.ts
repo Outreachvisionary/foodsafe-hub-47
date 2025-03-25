@@ -127,7 +127,7 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
 };
 
 // Update non-conformance status with activity tracking
-export const update_nc_status = async (
+export const updateNCStatus = async (
   id: string, 
   newStatus: NCStatus, 
   currentStatus: NCStatus,
