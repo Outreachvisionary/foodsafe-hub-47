@@ -1,9 +1,56 @@
 
 import { Document, DocumentStatus } from '@/types/database';
-import { DocumentActivity, DocumentNotification, ApproverRole, DocumentStats, DocumentAction } from '@/types/document';
+import { DocumentActivity, DocumentNotification, ApproverRole, DocumentStats, DocumentAction, ApprovalRule } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 
 class DocumentWorkflowService {
+  // Get required approvers for a document category
+  getRequiredApprovers(category: string): string[] {
+    // This would typically come from a database in a real implementation
+    switch(category) {
+      case 'SOP':
+        return ['Quality Manager', 'Operations Director'];
+      case 'Policy':
+        return ['Compliance Officer', 'CEO'];
+      case 'HACCP Plan':
+        return ['Food Safety Manager', 'Quality Manager', 'Operations Director'];
+      case 'Audit Report':
+        return ['Quality Manager', 'Department Head'];
+      default:
+        return ['Quality Manager'];
+    }
+  }
+
+  // Get approval rule for a document category
+  getApprovalRule(category: string): ApprovalRule {
+    // This would typically come from a database in a real implementation
+    return {
+      id: `rule-${category}`,
+      name: `${category} Approval Rule`,
+      requiredApprovers: this.getRequiredApprovers(category),
+      roles: this.getRequiredApprovers(category),
+      escalationThresholdDays: 7,
+      escalationTargets: ['Quality Director', 'CEO']
+    };
+  }
+
+  // Check if a document approval is overdue
+  isApprovalOverdue(document: Document): boolean {
+    if (document.status !== 'Pending Approval' || !document.pending_since) {
+      return false;
+    }
+    
+    const pendingDate = new Date(document.pending_since);
+    const currentDate = new Date();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const daysPending = Math.floor(
+      (currentDate.getTime() - pendingDate.getTime()) / millisecondsPerDay
+    );
+    
+    // Consider overdue if pending for more than 7 days
+    return daysPending >= 7;
+  }
+
   // Update document status based on expiry dates
   updateDocumentStatusBasedOnExpiry(documents: Document[]): Document[] {
     const currentDate = new Date();

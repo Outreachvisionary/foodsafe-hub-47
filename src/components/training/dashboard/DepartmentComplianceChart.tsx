@@ -75,45 +75,46 @@ const DepartmentComplianceChart: React.FC = () => {
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <UsersRound className="h-5 w-5 text-blue-500 mr-2" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UsersRound className="h-5 w-5 text-blue-500" />
           Department Compliance
         </CardTitle>
-        <CardDescription>Training completion by department</CardDescription>
+        <CardDescription>
+          Training compliance by department
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={departmentData}
-              margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="department" 
                 tick={{ fontSize: 12 }}
-                tickLine={false}
+                interval={0}
               />
               <YAxis 
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 12 }}
+                label={{ 
+                  value: 'Compliance %', 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { textAnchor: 'middle' }
+                }}
                 domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="compliance" name="Compliance" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="compliance" fill="#4f46e5">
                 {departmentData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getBarColor(entry.compliance)} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
-        <div className="mt-2 text-sm text-center text-muted-foreground">
-          Target: 90% compliance across all departments
         </div>
       </CardContent>
     </Card>

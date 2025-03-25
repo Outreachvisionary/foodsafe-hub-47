@@ -44,11 +44,16 @@ export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 // Add missing types referenced elsewhere
 export interface DepartmentTrainingStats {
-  departmentName: string;
-  totalEmployees: number;
-  completedTrainings: number;
-  pendingTrainings: number;
-  compliancePercentage: number;
+  department: string;
+  departmentName?: string;
+  totalEmployees?: number;
+  completedTrainings?: number;
+  pendingTrainings?: number;
+  compliancePercentage?: number;
+  compliance: number;
+  completedCount: number;
+  overdueCount: number;
+  employeeCount: number;
 }
 
 export interface Employee {
@@ -57,6 +62,18 @@ export interface Employee {
   role: string;
   department: string;
   email: string;
+  hireDate?: string;
+  competencyAssessments?: Array<{
+    assessmentDate: string;
+    score: number;
+  }>;
+  certifications?: Array<{
+    id: string;
+    name: string;
+    expiryDate: string;
+    requiresRecertification: boolean;
+    recertificationInterval?: number;
+  }>;
 }
 
 export interface Course {
@@ -75,18 +92,44 @@ export interface AutoAssignRule {
   targetDepartments: string[];
   coursesToAssign: string[];
   priority: string;
+  type?: string;
+  conditions?: Array<{
+    key: string;
+    operator: string;
+    value: string | number;
+  }>;
 }
 
 export interface TrainingAutomationConfig {
   enabled: boolean;
   rules: AutoAssignRule[];
-  documentChangesTrigger: boolean;
-  newEmployeeTrigger: boolean;
-  roleCangeTrigger: boolean;
+  documentChangesTrigger?: boolean;
+  newEmployeeTrigger?: boolean;
+  roleCangeTrigger?: boolean;
+  triggerEvents?: {
+    newHire: boolean;
+    roleChange: boolean;
+    documentUpdate: boolean;
+    competencyFailure: boolean;
+    certificationExpiry: boolean;
+  };
+  notificationSettings?: {
+    emailEnabled: boolean;
+    inAppEnabled: boolean;
+    reminderDays: number[];
+    escalationThreshold: number;
+    escalationTargets: string[];
+  };
 }
 
 export interface DocumentControlIntegration {
   linkToDocuments: boolean;
   autoAssignOnDocumentChange: boolean;
   documentCategories: string[];
+  trainingRequired?: boolean;
+  affectedRoles?: string[];
+  linkedCourseIds?: string[];
+  documentType?: string;
+  documentId?: string;
+  trainingDeadlineDays?: number;
 }

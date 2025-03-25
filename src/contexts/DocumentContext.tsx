@@ -8,101 +8,101 @@ const initialDocuments: Document[] = [
   {
     id: "doc-1",
     title: "Raw Material Receiving SOP",
-    fileName: "raw_material_receiving_sop_v3.pdf",
-    fileSize: 2456000,
-    fileType: "application/pdf",
+    file_name: "raw_material_receiving_sop_v3.pdf",
+    file_size: 2456000,
+    file_type: "application/pdf",
     category: "SOP",
     status: "Draft",
     version: 3,
-    createdBy: "John Doe",
-    createdAt: "2023-04-15T10:30:00Z",
-    updatedAt: "2023-06-20T14:15:00Z",
-    expiryDate: "2024-06-20T14:15:00Z",
-    linkedModule: "haccp",
+    created_by: "John Doe",
+    created_at: "2023-04-15T10:30:00Z",
+    updated_at: "2023-06-20T14:15:00Z",
+    expiry_date: "2024-06-20T14:15:00Z",
+    linked_module: "haccp",
     tags: ['receiving', 'materials', 'procedures'],
     description: "## 1. Purpose\n\nThis Standard Operating Procedure (SOP) establishes guidelines for receiving raw materials to ensure compliance with food safety standards.\n\n## 2. Scope\n\nThis procedure applies to all incoming raw materials at all facilities.\n\n## 3. Responsibilities\n\n- **Receiving Personnel**: Inspect and document incoming materials\n- **QA Manager**: Verify compliance with specifications\n- **Operations Manager**: Ensure proper storage\n\n## 4. Procedure\n\n### 4.1 Pre-Receiving Activities\n\n1. Review purchase orders\n2. Prepare receiving area\n3. Verify calibration of measuring equipment\n\n### 4.2 Receiving Inspection\n\n1. Inspect delivery vehicle for cleanliness\n2. Check temperature of refrigerated/frozen items\n3. Verify packaging integrity\n4. Check for pest activity\n\n### 4.3 Documentation\n\n1. Complete receiving log with date, time, supplier\n2. Record lot numbers and quantities\n3. Document any non-conformances\n\n## 5. Records\n\n- Receiving logs\n- Non-conformance reports\n- Supplier certificates of analysis\n\n## 6. References\n\n- FDA Food Safety Modernization Act (FSMA)\n- Company Food Safety Plan\n- HACCP Plan"
   },
   {
     id: "doc-2",
     title: "Allergen Control Program",
-    fileName: "allergen_control_program_v2.docx",
-    fileSize: 1245000,
-    fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    file_name: "allergen_control_program_v2.docx",
+    file_size: 1245000,
+    file_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     category: "Policy",
     status: "Pending Approval",
     version: 2,
-    createdBy: "Jane Smith",
-    createdAt: "2023-03-10T09:45:00Z",
-    updatedAt: "2023-05-22T11:30:00Z",
-    expiryDate: "2024-05-22T11:30:00Z",
-    linkedModule: "haccp",
+    created_by: "Jane Smith",
+    created_at: "2023-03-10T09:45:00Z",
+    updated_at: "2023-05-22T11:30:00Z",
+    expiry_date: "2024-05-22T11:30:00Z",
+    linked_module: "haccp",
     tags: ['allergen', 'control', 'food safety'],
-    pendingSince: "2023-05-22T11:30:00Z",
-    isLocked: true
+    pending_since: "2023-05-22T11:30:00Z",
+    is_locked: true
   },
   {
     id: "doc-3",
     title: "Supplier Quality Audit Checklist",
-    fileName: "supplier_quality_audit_checklist_v1.xlsx",
-    fileSize: 985000,
-    fileType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    file_name: "supplier_quality_audit_checklist_v1.xlsx",
+    file_size: 985000,
+    file_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     category: "Form",
     status: "Approved",
     version: 1,
-    createdBy: "Sarah Johnson",
-    createdAt: "2023-05-05T13:20:00Z",
-    updatedAt: "2023-05-05T13:20:00Z",
-    expiryDate: "2024-01-05T13:20:00Z",
-    linkedModule: "suppliers",
+    created_by: "Sarah Johnson",
+    created_at: "2023-05-05T13:20:00Z",
+    updated_at: "2023-05-05T13:20:00Z",
+    expiry_date: "2024-01-05T13:20:00Z",
+    linked_module: "suppliers",
     tags: ['supplier', 'audit', 'checklist'],
-    customNotificationDays: [30, 60, 90]
+    custom_notification_days: [30, 60, 90]
   },
   {
     id: "doc-4",
     title: "HACCP Plan for Production Line A",
-    fileName: "haccp_plan_line_a_v2.pdf",
-    fileSize: 3567000,
-    fileType: "application/pdf",
+    file_name: "haccp_plan_line_a_v2.pdf",
+    file_size: 3567000,
+    file_type: "application/pdf",
     category: "HACCP Plan",
     status: "Published",
     version: 2,
-    createdBy: "Michael Brown",
-    createdAt: "2022-11-20T08:15:00Z",
-    updatedAt: "2023-01-15T16:40:00Z",
-    expiryDate: "2024-01-15T16:40:00Z",
-    linkedModule: "haccp",
+    created_by: "Michael Brown",
+    created_at: "2022-11-20T08:15:00Z",
+    updated_at: "2023-01-15T16:40:00Z",
+    expiry_date: "2024-01-15T16:40:00Z",
+    linked_module: "haccp",
     tags: ['haccp', 'production', 'food safety']
   },
   {
     id: "doc-5",
     title: "Annual BRC Audit Report",
-    fileName: "brc_audit_report_2023.pdf",
-    fileSize: 4215000,
-    fileType: "application/pdf",
+    file_name: "brc_audit_report_2023.pdf",
+    file_size: 4215000,
+    file_type: "application/pdf",
     category: "Audit Report",
     status: "Published",
     version: 1,
-    createdBy: "External Auditor",
-    createdAt: "2023-02-28T11:00:00Z",
-    updatedAt: "2023-02-28T11:00:00Z",
-    expiryDate: "2023-10-15T00:00:00Z", // About to expire
-    linkedModule: "audits",
+    created_by: "External Auditor",
+    created_at: "2023-02-28T11:00:00Z",
+    updated_at: "2023-02-28T11:00:00Z",
+    expiry_date: "2023-10-15T00:00:00Z", // About to expire
+    linked_module: "audits",
     tags: ['audit', 'BRC', 'compliance']
   },
   {
     id: "doc-6",
     title: "Food Safety Certificate ISO 22000",
-    fileName: "iso_22000_certificate.pdf",
-    fileSize: 1125000,
-    fileType: "application/pdf",
+    file_name: "iso_22000_certificate.pdf",
+    file_size: 1125000,
+    file_type: "application/pdf",
     category: "Certificate",
     status: "Published",
     version: 1,
-    createdBy: "Certification Body",
-    createdAt: "2022-08-10T09:30:00Z",
-    updatedAt: "2022-08-10T09:30:00Z",
-    expiryDate: "2023-08-10T09:30:00Z", // Expired
-    linkedModule: "none",
+    created_by: "Certification Body",
+    created_at: "2022-08-10T09:30:00Z",
+    updated_at: "2022-08-10T09:30:00Z",
+    expiry_date: "2023-08-10T09:30:00Z", // Expired
+    linked_module: "none",
     tags: ['certificate', 'ISO 22000', 'food safety']
   }
 ];
@@ -144,22 +144,17 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     byCategory: {} as Record<string, number>
   });
 
-  // Initialize notifications and stats
   useEffect(() => {
-    // Update document status based on expiry dates
     const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
     if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
       setDocuments(updatedDocs);
     }
     
-    // Generate notifications
     const generatedNotifications = documentWorkflowService.generateNotifications(updatedDocs);
     setNotifications(generatedNotifications);
     
-    // Calculate stats
     refreshDocumentStats();
     
-    // Set up interval to check for expired documents and refresh notifications
     const interval = setInterval(() => {
       const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
       if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
@@ -168,7 +163,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       const freshNotifications = documentWorkflowService.generateNotifications(updatedDocs);
       setNotifications(previousNotifications => {
-        // Keep read status of existing notifications
         const existingNotificationMap = new Map(
           previousNotifications.map(n => [n.id, n.isRead])
         );
@@ -180,7 +174,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
       
       refreshDocumentStats();
-    }, 60000); // Check every minute
+    }, 60000);
     
     return () => clearInterval(interval);
   }, []);
@@ -201,7 +195,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       prev.map(d => d.id === doc.id ? doc : d)
     );
     
-    // If the updated document is currently selected, update the selection
     if (selectedDocument && selectedDocument.id === doc.id) {
       setSelectedDocument(doc);
     }
@@ -213,7 +206,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const deleteDocument = (id: string) => {
     setDocuments(prev => prev.filter(d => d.id !== id));
     
-    // If the deleted document is currently selected, clear the selection
     if (selectedDocument && selectedDocument.id === id) {
       setSelectedDocument(null);
     }
@@ -226,7 +218,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const updatedDoc = documentWorkflowService.submitForApproval(doc);
     updateDocument(updatedDoc);
     
-    // Add approval request notification
     const newNotification: DocumentNotification = {
       id: `notification-${Math.random().toString(36).substring(2, 11)}`,
       documentId: doc.id,
@@ -246,7 +237,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const updatedDoc = documentWorkflowService.approveDocument(doc, comment);
     updateDocument(updatedDoc);
     
-    // Add approval complete notification
     const newNotification: DocumentNotification = {
       id: `notification-${Math.random().toString(36).substring(2, 11)}`,
       documentId: doc.id,
@@ -266,7 +256,6 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const updatedDoc = documentWorkflowService.rejectDocument(doc, reason);
     updateDocument(updatedDoc);
     
-    // Add rejection notification
     const newNotification: DocumentNotification = {
       id: `notification-${Math.random().toString(36).substring(2, 11)}`,
       documentId: doc.id,

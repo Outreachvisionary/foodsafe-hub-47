@@ -26,14 +26,12 @@ export const trainingAutomationService = {
     // Mock response - would normally come from API
     return employees.map(employee => ({
       id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      employeeId: employee.id,
-      courseId: trainingPlan.courses[0],
-      courseName: 'Auto-assigned Course',
-      assignedDate: new Date().toISOString(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+      session_id: `session-${Math.random().toString(36).substr(2, 9)}`,
+      employee_id: employee.id,
+      employee_name: employee.name,
       status: 'Not Started',
-      autoAssigned: true,
-      autoAssignReason: 'Compliance Requirement'
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
     }));
   },
   
@@ -49,6 +47,8 @@ export const trainingAutomationService = {
     
     // Check each rule
     return rules.some(rule => {
+      if (!rule.type || !rule.conditions) return false;
+      
       switch (rule.type) {
         case 'Role':
           return rule.conditions.every(condition => {
@@ -69,6 +69,7 @@ export const trainingAutomationService = {
         case 'NewHire':
           return rule.conditions.every(condition => {
             if (condition.key === 'hireDate' && condition.operator === '>') {
+              if (!employee.hireDate) return false;
               const hireDate = new Date(employee.hireDate);
               const compareDate = new Date(condition.value as string);
               return hireDate > compareDate;
@@ -79,11 +80,10 @@ export const trainingAutomationService = {
         case 'CompetencyScore':
           return rule.conditions.every(condition => {
             if (condition.key === 'competencyScore' && condition.operator === '<') {
-              const assessments = employee.competencyAssessments;
-              if (!assessments || assessments.length === 0) return false;
+              if (!employee.competencyAssessments || employee.competencyAssessments.length === 0) return false;
               
               // Find the most recent assessment
-              const latestAssessment = assessments.sort(
+              const latestAssessment = employee.competencyAssessments.sort(
                 (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
               )[0];
               
@@ -110,21 +110,18 @@ export const trainingAutomationService = {
     
     // Filter employees based on affected roles
     const targetEmployees = employees.filter(
-      employee => document.affectedRoles.includes(employee.role)
+      employee => document.affectedRoles?.includes(employee.role)
     );
     
     // Create training records for each employee
     return targetEmployees.map(employee => ({
       id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      employeeId: employee.id,
-      courseId: document.linkedCourseIds[0],
-      courseName: `Training for ${document.documentType} ${document.documentId}`,
-      assignedDate: new Date().toISOString(),
-      dueDate: new Date(Date.now() + document.trainingDeadlineDays * 24 * 60 * 60 * 1000).toISOString(),
+      session_id: `session-${Math.random().toString(36).substr(2, 9)}`,
+      employee_id: employee.id,
+      employee_name: employee.name,
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + (document.trainingDeadlineDays || 14) * 24 * 60 * 60 * 1000).toISOString(),
       status: 'Not Started',
-      autoAssigned: true,
-      autoAssignReason: 'Document Update',
-      linkedDocuments: [document.documentId]
     }));
   },
   
@@ -141,6 +138,8 @@ export const trainingAutomationService = {
     const trainingRecords: TrainingRecord[] = [];
     
     employees.forEach(employee => {
+      if (!employee.certifications) return;
+      
       employee.certifications.forEach(cert => {
         const expiryDate = new Date(cert.expiryDate);
         
@@ -148,16 +147,12 @@ export const trainingAutomationService = {
         if (expiryDate <= expiryThreshold && cert.requiresRecertification) {
           trainingRecords.push({
             id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-            employeeId: employee.id,
-            courseId: 'RECERT-' + cert.id,
-            courseName: `Recertification: ${cert.name}`,
-            assignedDate: new Date().toISOString(),
-            dueDate: new Date(expiryDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days before expiry
+            session_id: `recert-session-${cert.id}`,
+            employee_id: employee.id,
+            employee_name: employee.name,
+            assigned_date: new Date().toISOString(),
+            due_date: new Date(expiryDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days before expiry
             status: 'Not Started',
-            autoAssigned: true,
-            autoAssignReason: 'Compliance Requirement',
-            isRecurring: true,
-            recurringInterval: cert.recertificationInterval || 12, // Default to annual if not specified
           });
         }
       });
@@ -172,6 +167,7 @@ export const trainingAutomationService = {
   createRemediationTraining: (
     failedAssessments: { 
       employeeId: string;
+      employeeName: string;
       courseId?: string;
       score: number;
       assessmentDate: string;
@@ -179,15 +175,12 @@ export const trainingAutomationService = {
   ): TrainingRecord[] => {
     return failedAssessments.map(assessment => ({
       id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      employeeId: assessment.employeeId,
-      courseId: assessment.courseId || 'REMEDIATION-GENERAL',
-      courseName: `Remediation Training for Failed Assessment`,
-      assignedDate: new Date().toISOString(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+      session_id: `remed-session-${Math.random().toString(36).substr(2, 9)}`,
+      employee_id: assessment.employeeId,
+      employee_name: assessment.employeeName,
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
       status: 'Not Started',
-      autoAssigned: true,
-      autoAssignReason: 'Remediation',
-      linkedDocuments: []
     }));
   },
   
@@ -198,20 +191,10 @@ export const trainingAutomationService = {
     // Mock configuration - would normally come from API/database
     return {
       enabled: true,
-      triggerEvents: {
-        newHire: true,
-        roleChange: true,
-        documentUpdate: true,
-        competencyFailure: true,
-        certificationExpiry: true
-      },
-      notificationSettings: {
-        emailEnabled: true,
-        inAppEnabled: true,
-        reminderDays: [1, 7, 14], // Remind 1, 7, and 14 days before due
-        escalationThreshold: 7, // Escalate after 7 days overdue
-        escalationTargets: ['Supervisor', 'Manager']
-      }
+      rules: [],
+      documentChangesTrigger: true,
+      newEmployeeTrigger: true,
+      roleCangeTrigger: true,
     };
   },
   

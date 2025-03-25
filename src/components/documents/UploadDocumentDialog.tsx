@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -86,11 +85,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
     try {
       setUploading(true);
 
-      // In a real implementation, you'd upload the file to a storage service
-      // and then save the metadata to your database
-      
       // Create new document with database property names
-      const newDocument: Omit<Document, 'id'> = {
+      const newDocument: Document = {
+        id: uuidv4(),
         title: formData.title,
         description: formData.description,
         file_name: file.name,

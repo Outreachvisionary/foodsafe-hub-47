@@ -51,8 +51,10 @@ export interface DocumentStats {
 export interface ApprovalRule {
   id: string;
   name: string;
-  requiredApprovers: number;
+  requiredApprovers: string[];
   roles: string[];
+  escalationThresholdDays: number;
+  escalationTargets: string[];
 }
 
 export interface ApproverRole {
