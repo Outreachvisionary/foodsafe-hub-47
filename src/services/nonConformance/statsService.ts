@@ -62,9 +62,9 @@ export const fetchNCStats = async (): Promise<NCStats> => {
       byReason[item.reason_category as keyof typeof byReason]++;
       
       // Sum quantity on hold
-      if (item.status === 'On Hold' && item.quantity_on_hold) {
+      if (item.status === 'On Hold' && item.quantity_on_hold !== undefined) {
         totalQuantityOnHold += item.quantity_on_hold;
-      } else if (item.status === 'On Hold' && item.quantity) {
+      } else if (item.status === 'On Hold' && item.quantity !== undefined) {
         // If quantity_on_hold is not specified, use the full quantity
         totalQuantityOnHold += item.quantity;
       }
