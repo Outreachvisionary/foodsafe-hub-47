@@ -126,7 +126,7 @@ export const updateNonConformance = async (id: string, updates: Partial<NonConfo
     
     if (currentNC) {
       // Use existing or updated quantity
-      const quantity = updates.quantity !== undefined ? updates.quantity : (currentNC.quantity || 0);
+      const quantity = updates.quantity !== undefined ? Number(updates.quantity) : Number(currentNC.quantity || 0);
       updates.quantity_on_hold = quantity;
     }
   } else if (updates.status === 'Released' || updates.status === 'Disposed') {

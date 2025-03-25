@@ -924,6 +924,8 @@ export type Database = {
           item_name: string
           location: string | null
           priority: string | null
+          quantity: number | null
+          quantity_on_hold: number | null
           reason_category: Database["public"]["Enums"]["nc_reason_category"]
           reason_details: string | null
           reported_date: string
@@ -950,6 +952,8 @@ export type Database = {
           item_name: string
           location?: string | null
           priority?: string | null
+          quantity?: number | null
+          quantity_on_hold?: number | null
           reason_category: Database["public"]["Enums"]["nc_reason_category"]
           reason_details?: string | null
           reported_date?: string
@@ -976,6 +980,8 @@ export type Database = {
           item_name?: string
           location?: string | null
           priority?: string | null
+          quantity?: number | null
+          quantity_on_hold?: number | null
           reason_category?: Database["public"]["Enums"]["nc_reason_category"]
           reason_details?: string | null
           reported_date?: string
