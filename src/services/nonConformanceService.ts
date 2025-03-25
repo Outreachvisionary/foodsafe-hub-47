@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   NonConformance, 
@@ -138,7 +139,7 @@ export const updateNCStatus = async (
     nc_id: id,
     new_status: newStatus,
     user_id: userId,
-    comment: comments || '',
+    comment: comments || '', // Fix: Use empty string instead of null/undefined
     prev_status: currentStatus
   });
 
