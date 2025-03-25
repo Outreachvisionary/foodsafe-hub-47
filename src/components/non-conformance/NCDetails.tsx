@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCActivity, NCAttachment } from '@/types/non-conformance';
@@ -6,7 +5,7 @@ import {
   fetchNonConformanceById, 
   fetchNCActivities, 
   fetchNCAttachments,
-  updateNCStatus,
+  update_nc_status,
   createNCActivity,
   linkNCToCapa
 } from '@/services/nonConformanceService';
@@ -113,7 +112,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
     
     try {
       const currentStatus = nonConformance.status;
-      const updatedNC = await updateNCStatus(
+      const updatedNC = await update_nc_status(
         id, 
         selectedStatus, 
         currentStatus,

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   NonConformance, 
@@ -6,7 +5,8 @@ import {
   NCActivity, 
   NCNotification,
   NCStats,
-  NCFilter
+  NCFilter,
+  NCStatus
 } from '@/types/non-conformance';
 
 // Non-Conformance CRUD operations
@@ -129,8 +129,8 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
 // Update non-conformance status with activity tracking
 export const update_nc_status = async (
   id: string, 
-  newStatus: NonConformance['status'], 
-  currentStatus: NonConformance['status'],
+  newStatus: NCStatus, 
+  currentStatus: NCStatus,
   userId: string,
   comments?: string
 ): Promise<NonConformance> => {
@@ -190,6 +190,9 @@ export const update_nc_status = async (
   
   return data as NonConformance;
 };
+
+// For compatibility, also export as updateNCStatus
+export const updateNCStatus = update_nc_status;
 
 // Attachments
 export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
