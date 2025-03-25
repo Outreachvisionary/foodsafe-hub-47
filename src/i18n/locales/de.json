@@ -1,0 +1,74 @@
+
+{
+  "common": {
+    "language": "Sprache",
+    "english": "Englisch",
+    "spanish": "Spanisch",
+    "french": "Französisch",
+    "german": "Deutsch",
+    "arabic": "Arabisch"
+  },
+  "navigation": {
+    "home": "Startseite",
+    "dashboard": "Dashboard",
+    "documents": "Dokumente",
+    "training": "Schulung",
+    "audits": "Interne Audits",
+    "capa": "CAPA",
+    "suppliers": "Lieferantenmanagement",
+    "complaints": "Beschwerdemanagement",
+    "traceability": "Rückverfolgbarkeit",
+    "haccp": "HACCP",
+    "reports": "Berichte und Analysen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcomeMessage": "Willkommen auf Ihrer Compliance-Plattform",
+    "overviewTitle": "Compliance-Übersicht",
+    "recentActivities": "Aktuelle Aktivitäten",
+    "upcomingAudits": "Anstehende Audits",
+    "openIssues": "Offene Probleme",
+    "documentStatus": "Dokumentenstatus"
+  },
+  "documents": {
+    "title": "Dokumentenmanagement",
+    "subtitle": "Zentrales Repository für alle Compliance-Dokumentationen",
+    "repository": "Dokumentenrepository",
+    "approvals": "Genehmigungsworkflow",
+    "expired": "Ablaufende Dokumente",
+    "templates": "Vorlagen",
+    "editor": "Dokumenteneditor",
+    "uploadButton": "Dokument hochladen",
+    "createNew": "Neues Dokument erstellen",
+    "search": "Dokumente durchsuchen...",
+    "category": "Kategorie",
+    "status": "Status",
+    "version": "Version",
+    "actions": "Aktionen",
+    "lastUpdated": "Zuletzt aktualisiert"
+  },
+  "status": {
+    "draft": "Entwurf",
+    "pendingApproval": "Warten auf Genehmigung",
+    "approved": "Genehmigt",
+    "published": "Veröffentlicht",
+    "archived": "Archiviert",
+    "expired": "Abgelaufen"
+  },
+  "buttons": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "view": "Ansehen",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "submit": "Einreichen"
+  },
+  "notifications": {
+    "success": "Erfolg",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "info": "Information"
+  }
+}

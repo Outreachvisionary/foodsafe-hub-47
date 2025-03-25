@@ -1,0 +1,74 @@
+
+{
+  "common": {
+    "language": "Langue",
+    "english": "Anglais",
+    "spanish": "Espagnol",
+    "french": "Français",
+    "german": "Allemand",
+    "arabic": "Arabe"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "dashboard": "Tableau de Bord",
+    "documents": "Documents",
+    "training": "Formation",
+    "audits": "Audits Internes",
+    "capa": "CAPA",
+    "suppliers": "Gestion des Fournisseurs",
+    "complaints": "Gestion des Réclamations",
+    "traceability": "Traçabilité",
+    "haccp": "HACCP",
+    "reports": "Rapports et Analyses"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "welcomeMessage": "Bienvenue sur votre plateforme de conformité",
+    "overviewTitle": "Aperçu de la Conformité",
+    "recentActivities": "Activités Récentes",
+    "upcomingAudits": "Audits à Venir",
+    "openIssues": "Problèmes Ouverts",
+    "documentStatus": "État des Documents"
+  },
+  "documents": {
+    "title": "Gestion des Documents",
+    "subtitle": "Référentiel centralisé pour toute la documentation de conformité",
+    "repository": "Dépôt de Documents",
+    "approvals": "Flux d'Approbation",
+    "expired": "Documents Expirants",
+    "templates": "Modèles",
+    "editor": "Éditeur de Documents",
+    "uploadButton": "Télécharger un Document",
+    "createNew": "Créer un Nouveau Document",
+    "search": "Rechercher des documents...",
+    "category": "Catégorie",
+    "status": "Statut",
+    "version": "Version",
+    "actions": "Actions",
+    "lastUpdated": "Dernière Mise à Jour"
+  },
+  "status": {
+    "draft": "Brouillon",
+    "pendingApproval": "En Attente d'Approbation",
+    "approved": "Approuvé",
+    "published": "Publié",
+    "archived": "Archivé",
+    "expired": "Expiré"
+  },
+  "buttons": {
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Éditer",
+    "view": "Voir",
+    "download": "Télécharger",
+    "upload": "Uploader",
+    "submit": "Soumettre"
+  },
+  "notifications": {
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "info": "Information"
+  }
+}

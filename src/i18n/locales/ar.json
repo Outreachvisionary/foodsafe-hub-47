@@ -1,0 +1,74 @@
+
+{
+  "common": {
+    "language": "اللغة",
+    "english": "الإنجليزية",
+    "spanish": "الإسبانية",
+    "french": "الفرنسية",
+    "german": "الألمانية",
+    "arabic": "العربية"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "documents": "المستندات",
+    "training": "التدريب",
+    "audits": "التدقيق الداخلي",
+    "capa": "الإجراءات التصحيحية والوقائية",
+    "suppliers": "إدارة الموردين",
+    "complaints": "إدارة الشكاوى",
+    "traceability": "التتبع",
+    "haccp": "نظام تحليل المخاطر",
+    "reports": "التقارير والتحليلات"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcomeMessage": "مرحبًا بك في منصة الامتثال الخاصة بك",
+    "overviewTitle": "نظرة عامة على الامتثال",
+    "recentActivities": "الأنشطة الأخيرة",
+    "upcomingAudits": "عمليات التدقيق القادمة",
+    "openIssues": "المشكلات المفتوحة",
+    "documentStatus": "حالة المستندات"
+  },
+  "documents": {
+    "title": "إدارة المستندات",
+    "subtitle": "مستودع مركزي لجميع وثائق الامتثال",
+    "repository": "مستودع المستندات",
+    "approvals": "سير عمل الموافقة",
+    "expired": "المستندات المنتهية",
+    "templates": "القوالب",
+    "editor": "محرر المستندات",
+    "uploadButton": "تحميل مستند",
+    "createNew": "إنشاء مستند جديد",
+    "search": "البحث في المستندات...",
+    "category": "الفئة",
+    "status": "الحالة",
+    "version": "الإصدار",
+    "actions": "الإجراءات",
+    "lastUpdated": "آخر تحديث"
+  },
+  "status": {
+    "draft": "مسودة",
+    "pendingApproval": "في انتظار الموافقة",
+    "approved": "تمت الموافقة",
+    "published": "منشور",
+    "archived": "مؤرشف",
+    "expired": "منتهي الصلاحية"
+  },
+  "buttons": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "view": "عرض",
+    "download": "تنزيل",
+    "upload": "تحميل",
+    "submit": "إرسال"
+  },
+  "notifications": {
+    "success": "نجاح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات"
+  }
+}

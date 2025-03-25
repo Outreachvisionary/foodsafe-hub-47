@@ -1,0 +1,74 @@
+
+{
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "french": "French",
+    "german": "German",
+    "arabic": "Arabic"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "training": "Training",
+    "audits": "Internal Audits",
+    "capa": "CAPA",
+    "suppliers": "Supplier Management",
+    "complaints": "Complaint Management",
+    "traceability": "Traceability",
+    "haccp": "HACCP",
+    "reports": "Reports & Analytics"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcomeMessage": "Welcome to your compliance platform",
+    "overviewTitle": "Compliance Overview",
+    "recentActivities": "Recent Activities",
+    "upcomingAudits": "Upcoming Audits",
+    "openIssues": "Open Issues",
+    "documentStatus": "Document Status"
+  },
+  "documents": {
+    "title": "Document Management",
+    "subtitle": "Centralized repository for all compliance documentation",
+    "repository": "Document Repository",
+    "approvals": "Approval Workflow",
+    "expired": "Expiring Documents",
+    "templates": "Templates",
+    "editor": "Document Editor",
+    "uploadButton": "Upload Document",
+    "createNew": "Create New Document",
+    "search": "Search documents...",
+    "category": "Category",
+    "status": "Status",
+    "version": "Version",
+    "actions": "Actions",
+    "lastUpdated": "Last Updated"
+  },
+  "status": {
+    "draft": "Draft",
+    "pendingApproval": "Pending Approval",
+    "approved": "Approved",
+    "published": "Published",
+    "archived": "Archived",
+    "expired": "Expired"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "submit": "Submit"
+  },
+  "notifications": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

@@ -72,3 +72,19 @@ export type DocumentAction =
   | 'reject'
   | 'publish'
   | 'archive';
+
+// Translation related types
+export interface Translation {
+  id: string;
+  key: string;
+  language: string;
+  value: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TranslationNamespace {
+  id: string;
+  name: string;
+  description?: string;
+}

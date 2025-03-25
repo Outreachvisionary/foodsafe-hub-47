@@ -15,11 +15,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import { useToast } from '@/hooks/use-toast';
 import UploadDocumentDialog from './UploadDocumentDialog';
+import { useTranslation } from 'react-i18next';
 
 const DocumentRepository: React.FC = () => {
   const { documents, deleteDocument, setSelectedDocument } = useDocuments();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -118,40 +120,40 @@ const DocumentRepository: React.FC = () => {
       case 'Draft':
         return (
           <Badge variant="outline" className="bg-gray-100 text-gray-800">
-            Draft
+            {t('status.draft')}
           </Badge>
         );
       case 'Pending Approval':
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            Pending Approval
+            {t('status.pendingApproval')}
           </Badge>
         );
       case 'Approved':
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3" />
-            Approved
+            {t('status.approved')}
           </Badge>
         );
       case 'Published':
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800">
-            Published
+            {t('status.published')}
           </Badge>
         );
       case 'Archived':
         return (
           <Badge variant="outline" className="bg-purple-100 text-purple-800">
-            Archived
+            {t('status.archived')}
           </Badge>
         );
       case 'Expired':
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
-            Expired
+            {t('status.expired')}
           </Badge>
         );
       default:
@@ -176,9 +178,9 @@ const DocumentRepository: React.FC = () => {
         <Card className="col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle>Document Repository</CardTitle>
+              <CardTitle>{t('documents.repository')}</CardTitle>
               <CardDescription>
-                Central storage for all compliance documentation
+                {t('documents.subtitle')}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -186,11 +188,11 @@ const DocumentRepository: React.FC = () => {
                 variant={isMultiSelectMode ? "secondary" : "outline"} 
                 onClick={toggleMultiSelectMode}
               >
-                {isMultiSelectMode ? "Cancel Selection" : "Select Multiple"}
+                {isMultiSelectMode ? t('buttons.cancelSelection') : t('buttons.selectMultiple')}
               </Button>
               <Button onClick={() => setIsUploadOpen(true)} className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                <span>Upload Documents</span>
+                <span>{t('documents.uploadButton')}</span>
               </Button>
             </div>
           </CardHeader>
@@ -201,7 +203,7 @@ const DocumentRepository: React.FC = () => {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
-                  placeholder="Search documents..."
+                  placeholder={t('documents.search')}
                   className="pl-8"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -210,10 +212,10 @@ const DocumentRepository: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
                   <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Filter by category" />
+                    <SelectValue placeholder={t('documents.category')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">{t('common.allCategories')}</SelectItem>
                     {categories.map(category => (
                       <SelectItem key={category} value={category}>{category}</SelectItem>
                     ))}
@@ -222,16 +224,16 @@ const DocumentRepository: React.FC = () => {
                 
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder={t('documents.status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Pending Approval">Pending Approval</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Published">Published</SelectItem>
-                    <SelectItem value="Archived">Archived</SelectItem>
-                    <SelectItem value="Expired">Expired</SelectItem>
+                    <SelectItem value="all">{t('common.allStatuses')}</SelectItem>
+                    <SelectItem value="Draft">{t('status.draft')}</SelectItem>
+                    <SelectItem value="Pending Approval">{t('status.pendingApproval')}</SelectItem>
+                    <SelectItem value="Approved">{t('status.approved')}</SelectItem>
+                    <SelectItem value="Published">{t('status.published')}</SelectItem>
+                    <SelectItem value="Archived">{t('status.archived')}</SelectItem>
+                    <SelectItem value="Expired">{t('status.expired')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -255,13 +257,13 @@ const DocumentRepository: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {isMultiSelectMode && <TableHead className="w-[30px]">Select</TableHead>}
-                    <TableHead>Document</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Actions</TableHead>
+                    {isMultiSelectMode && <TableHead className="w-[30px]">{t('common.select')}</TableHead>}
+                    <TableHead>{t('documents.document')}</TableHead>
+                    <TableHead>{t('documents.category')}</TableHead>
+                    <TableHead>{t('documents.status')}</TableHead>
+                    <TableHead>{t('documents.lastUpdated')}</TableHead>
+                    <TableHead>{t('documents.version')}</TableHead>
+                    <TableHead>{t('documents.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -313,7 +315,7 @@ const DocumentRepository: React.FC = () => {
                                 setDocToPreview(doc);
                                 setShowPreview(true);
                               }}
-                              title="View Document"
+                              title={t('buttons.view')}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -324,7 +326,7 @@ const DocumentRepository: React.FC = () => {
                                 e.stopPropagation();
                                 handleEditDocument(doc);
                               }}
-                              title="Edit Document"
+                              title={t('buttons.edit')}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -332,7 +334,7 @@ const DocumentRepository: React.FC = () => {
                               variant="ghost" 
                               size="icon"
                               onClick={(e) => e.stopPropagation()}
-                              title="Download Document"
+                              title={t('buttons.download')}
                             >
                               <Download className="h-4 w-4" />
                             </Button>
@@ -344,7 +346,7 @@ const DocumentRepository: React.FC = () => {
                                 handleOpenDeleteDialog(doc);
                               }}
                               className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              title="Delete Document"
+                              title={t('buttons.delete')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -355,7 +357,7 @@ const DocumentRepository: React.FC = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={isMultiSelectMode ? 7 : 6} className="text-center py-10 text-muted-foreground">
-                        No documents found matching your criteria
+                        {t('documents.noDocumentsFound')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -487,17 +489,17 @@ const DocumentRepository: React.FC = () => {
       <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
+            <DialogTitle>{t('documents.deleteDocument')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.document?.title}"? This action cannot be undone.
+              {t('documents.deleteConfirmation', { title: deleteDialog.document?.title })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, document: null })}>
-              Cancel
+              {t('buttons.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {t('buttons.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -4,10 +4,13 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Search, Menu, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '@/components/LanguageSelector';
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,25 +41,25 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-gray-700 hover:text-fsms-blue transition-colors">
-              Home
+              {t('navigation.home')}
             </Link>
             <Link to="/standards" className="text-gray-700 hover:text-fsms-blue transition-colors">
-              Standards
+              {t('navigation.standards')}
             </Link>
             <Link to="/features" className="text-gray-700 hover:text-fsms-blue transition-colors">
-              Features
+              {t('navigation.features')}
             </Link>
             <Link to="/pricing" className="text-gray-700 hover:text-fsms-blue transition-colors">
-              Pricing
+              {t('navigation.pricing')}
             </Link>
             <Link to="/about" className="text-gray-700 hover:text-fsms-blue transition-colors">
-              About
+              {t('navigation.about')}
             </Link>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder={t('common.search')}
                 className="pl-10 pr-4 py-2 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-fsms-blue/20 focus:border-fsms-blue w-48 transition-all"
               />
             </div>
@@ -76,13 +79,14 @@ const Navigation = () => {
             </Button>
           </div>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Auth Buttons and Language Selector */}
           <div className="hidden md:flex items-center space-x-4">
+            <LanguageSelector />
             <Button variant="ghost">
-              Log in
+              {t('common.login')}
             </Button>
             <Button className="bg-fsms-blue hover:bg-fsms-blue/90 text-white">
-              Get Started
+              {t('common.getStarted')}
             </Button>
           </div>
         </div>
@@ -96,42 +100,43 @@ const Navigation = () => {
                 className="text-gray-700 py-2 hover:text-fsms-blue transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {t('navigation.home')}
               </Link>
               <Link 
                 to="/standards" 
                 className="text-gray-700 py-2 hover:text-fsms-blue transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Standards
+                {t('navigation.standards')}
               </Link>
               <Link 
                 to="/features" 
                 className="text-gray-700 py-2 hover:text-fsms-blue transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Features
+                {t('navigation.features')}
               </Link>
               <Link 
                 to="/pricing" 
                 className="text-gray-700 py-2 hover:text-fsms-blue transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Pricing
+                {t('navigation.pricing')}
               </Link>
               <Link 
                 to="/about" 
                 className="text-gray-700 py-2 hover:text-fsms-blue transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                About
+                {t('navigation.about')}
               </Link>
               <div className="pt-3 space-y-3">
+                <LanguageSelector />
                 <Button variant="outline" className="w-full">
-                  Log in
+                  {t('common.login')}
                 </Button>
                 <Button className="w-full bg-fsms-blue hover:bg-fsms-blue/90 text-white">
-                  Get Started
+                  {t('common.getStarted')}
                 </Button>
               </div>
             </div>

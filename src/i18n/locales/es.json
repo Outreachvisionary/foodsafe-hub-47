@@ -1,0 +1,74 @@
+
+{
+  "common": {
+    "language": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "french": "Francés",
+    "german": "Alemán",
+    "arabic": "Árabe"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "documents": "Documentos",
+    "training": "Capacitación",
+    "audits": "Auditorías Internas",
+    "capa": "CAPA",
+    "suppliers": "Gestión de Proveedores",
+    "complaints": "Gestión de Quejas",
+    "traceability": "Trazabilidad",
+    "haccp": "HACCP",
+    "reports": "Informes y Análisis"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "welcomeMessage": "Bienvenido a su plataforma de cumplimiento",
+    "overviewTitle": "Resumen de Cumplimiento",
+    "recentActivities": "Actividades Recientes",
+    "upcomingAudits": "Próximas Auditorías",
+    "openIssues": "Problemas Abiertos",
+    "documentStatus": "Estado de Documentos"
+  },
+  "documents": {
+    "title": "Gestión de Documentos",
+    "subtitle": "Repositorio centralizado para toda la documentación de cumplimiento",
+    "repository": "Repositorio de Documentos",
+    "approvals": "Flujo de Aprobación",
+    "expired": "Documentos a Vencer",
+    "templates": "Plantillas",
+    "editor": "Editor de Documentos",
+    "uploadButton": "Subir Documento",
+    "createNew": "Crear Nuevo Documento",
+    "search": "Buscar documentos...",
+    "category": "Categoría",
+    "status": "Estado",
+    "version": "Versión",
+    "actions": "Acciones",
+    "lastUpdated": "Última Actualización"
+  },
+  "status": {
+    "draft": "Borrador",
+    "pendingApproval": "Pendiente de Aprobación",
+    "approved": "Aprobado",
+    "published": "Publicado",
+    "archived": "Archivado",
+    "expired": "Vencido"
+  },
+  "buttons": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "download": "Descargar",
+    "upload": "Subir",
+    "submit": "Enviar"
+  },
+  "notifications": {
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información"
+  }
+}
