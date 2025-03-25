@@ -41,7 +41,7 @@ const DocumentRepository: React.FC = () => {
     const matchesSearch = 
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
       
     const matchesCategory = 
@@ -287,7 +287,7 @@ const DocumentRepository: React.FC = () => {
                             <FileText className="h-4 w-4 text-blue-500 mr-2" />
                             <div>
                               <div>{doc.title}</div>
-                              <div className="text-xs text-muted-foreground">{doc.fileName}</div>
+                              <div className="text-xs text-muted-foreground">{doc.file_name}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -300,7 +300,7 @@ const DocumentRepository: React.FC = () => {
                           {getStatusBadge(doc)}
                         </TableCell>
                         <TableCell>
-                          {new Date(doc.updatedAt).toLocaleDateString()}
+                          {new Date(doc.updated_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>v{doc.version}</TableCell>
                         <TableCell>
