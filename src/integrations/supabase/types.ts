@@ -787,6 +787,210 @@ export type Database = {
         }
         Relationships: []
       }
+      nc_activities: {
+        Row: {
+          action: string
+          comments: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["nc_status"] | null
+          non_conformance_id: string
+          performed_at: string | null
+          performed_by: string
+          previous_status: Database["public"]["Enums"]["nc_status"] | null
+        }
+        Insert: {
+          action: string
+          comments?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["nc_status"] | null
+          non_conformance_id: string
+          performed_at?: string | null
+          performed_by: string
+          previous_status?: Database["public"]["Enums"]["nc_status"] | null
+        }
+        Update: {
+          action?: string
+          comments?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["nc_status"] | null
+          non_conformance_id?: string
+          performed_at?: string | null
+          performed_by?: string
+          previous_status?: Database["public"]["Enums"]["nc_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_activities_non_conformance_id_fkey"
+            columns: ["non_conformance_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nc_attachments: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          non_conformance_id: string
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          non_conformance_id: string
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          non_conformance_id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_attachments_non_conformance_id_fkey"
+            columns: ["non_conformance_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nc_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          non_conformance_id: string
+          notification_type: string
+          target_users: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          non_conformance_id: string
+          notification_type: string
+          target_users?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          non_conformance_id?: string
+          notification_type?: string
+          target_users?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_notifications_non_conformance_id_fkey"
+            columns: ["non_conformance_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      non_conformances: {
+        Row: {
+          assigned_to: string | null
+          capa_id: string | null
+          created_at: string | null
+          created_by: string
+          department: string | null
+          description: string | null
+          id: string
+          item_category: Database["public"]["Enums"]["nc_item_category"]
+          item_id: string | null
+          item_name: string
+          location: string | null
+          priority: string | null
+          reason_category: Database["public"]["Enums"]["nc_reason_category"]
+          reason_details: string | null
+          reported_date: string
+          resolution_date: string | null
+          resolution_details: string | null
+          review_date: string | null
+          reviewer: string | null
+          risk_level: string | null
+          status: Database["public"]["Enums"]["nc_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          capa_id?: string | null
+          created_at?: string | null
+          created_by: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          item_category: Database["public"]["Enums"]["nc_item_category"]
+          item_id?: string | null
+          item_name: string
+          location?: string | null
+          priority?: string | null
+          reason_category: Database["public"]["Enums"]["nc_reason_category"]
+          reason_details?: string | null
+          reported_date?: string
+          resolution_date?: string | null
+          resolution_details?: string | null
+          review_date?: string | null
+          reviewer?: string | null
+          risk_level?: string | null
+          status?: Database["public"]["Enums"]["nc_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          capa_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          item_category?: Database["public"]["Enums"]["nc_item_category"]
+          item_id?: string | null
+          item_name?: string
+          location?: string | null
+          priority?: string | null
+          reason_category?: Database["public"]["Enums"]["nc_reason_category"]
+          reason_details?: string | null
+          reported_date?: string
+          resolution_date?: string | null
+          resolution_details?: string | null
+          review_date?: string | null
+          reviewer?: string | null
+          risk_level?: string | null
+          status?: Database["public"]["Enums"]["nc_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       training_records: {
         Row: {
           assigned_date: string | null
@@ -962,6 +1166,22 @@ export type Database = {
         | "Expired"
       finding_severity: "Critical" | "Major" | "Minor" | "Observation"
       finding_status: "Open" | "In Progress" | "Closed" | "Verified"
+      nc_item_category:
+        | "Processing Equipment"
+        | "Product Storage Tanks"
+        | "Finished Products"
+        | "Raw Products"
+        | "Packaging Materials"
+        | "Other"
+      nc_reason_category:
+        | "Contamination"
+        | "Quality Issues"
+        | "Regulatory Non-Compliance"
+        | "Equipment Malfunction"
+        | "Documentation Error"
+        | "Process Deviation"
+        | "Other"
+      nc_status: "On Hold" | "Under Review" | "Released" | "Disposed"
       training_status:
         | "Not Started"
         | "In Progress"

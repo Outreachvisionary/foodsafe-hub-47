@@ -1,62 +1,56 @@
-
 import React from 'react';
-import './App.css';
-import './i18n/i18n'; // Import i18n configuration
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+
+// Main pages
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
-import InternalAudits from './pages/InternalAudits';
-import CAPA from './pages/CAPA';
-import SupplierManagement from './pages/SupplierManagement';
-import ComplaintManagement from './pages/ComplaintManagement';
-import Traceability from './pages/Traceability';
 import HaccpModule from './pages/HaccpModule';
 import TrainingModule from './pages/TrainingModule';
+import InternalAudits from './pages/InternalAudits';
+import SupplierManagement from './pages/SupplierManagement';
+import Traceability from './pages/Traceability';
+import CAPA from './pages/CAPA';
+import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
 import Standards from './pages/Standards';
 import NotFound from './pages/NotFound';
-import { AuthProvider } from './contexts/AuthContext';
-import { UserProvider } from './contexts/UserContext';
-import { ConfigProvider } from './contexts/ConfigContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import { Toaster } from './components/ui/toaster';
-import { DocumentProvider } from './contexts/DocumentContext';
-import { LanguageProvider } from './contexts/LanguageContext';
 
-const router = createBrowserRouter([
-  { path: '/', element: <Index /> },
-  { path: '/dashboard', element: <Dashboard /> },
-  { path: '/documents', element: <Documents /> },
-  { path: '/internal-audits', element: <InternalAudits /> },
-  { path: '/capa', element: <CAPA /> },
-  { path: '/supplier-management', element: <SupplierManagement /> },
-  { path: '/complaint-management', element: <ComplaintManagement /> },
-  { path: '/traceability', element: <Traceability /> },
-  { path: '/haccp', element: <HaccpModule /> },
-  { path: '/training', element: <TrainingModule /> },
-  { path: '/reports', element: <Reports /> },
-  { path: '/standards', element: <Standards /> },
-  { path: '*', element: <NotFound /> },
-]);
+// Non-Conformance Module
+import NonConformanceModule from './pages/NonConformance';
+import NonConformanceFormPage from './pages/NonConformanceForm';
 
-function App() {
+const App = () => {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <UserProvider>
-          <ConfigProvider>
-            <NotificationProvider>
-              <DocumentProvider>
-                <RouterProvider router={router} />
-                <Toaster />
-              </DocumentProvider>
-            </NotificationProvider>
-          </ConfigProvider>
-        </UserProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <div className="app">
+      <Toaster />
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/documents/*" element={<Documents />} />
+          <Route path="/haccp" element={<HaccpModule />} />
+          <Route path="/training" element={<TrainingModule />} />
+          <Route path="/internal-audits" element={<InternalAudits />} />
+          <Route path="/supplier-management" element={<SupplierManagement />} />
+          <Route path="/traceability" element={<Traceability />} />
+          <Route path="/capa" element={<CAPA />} />
+          <Route path="/complaint-management" element={<ComplaintManagement />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/standards" element={<Standards />} />
+          
+          {/* Non-Conformance Module Routes */}
+          <Route path="/non-conformance" element={<NonConformanceModule />} />
+          <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+          <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
+          <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </div>
   );
-}
+};
 
 export default App;
