@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { NonConformance, NCStatus, NCActivity, NCStats, NCAttachment } from '@/types/non-conformance';
 
@@ -234,6 +235,7 @@ const nonConformanceService = {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
+      file_path: `/attachments/${ncId}/${file.name}`, // Add the required file_path field
       description,
       uploaded_by: userId,
       uploaded_at: new Date().toISOString()

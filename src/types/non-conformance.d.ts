@@ -67,7 +67,7 @@ export interface NCAttachment {
   id: string;
   non_conformance_id: string;
   file_name: string;
-  file_path?: string;
+  file_path: string; // Ensuring this field is required
   file_size: number;
   file_type: string;
   description?: string;
