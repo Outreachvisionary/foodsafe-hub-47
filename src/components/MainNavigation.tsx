@@ -23,7 +23,7 @@ const MainNavigation = () => {
     return location.pathname === path || path !== '/' && location.pathname.startsWith(path);
   };
   return <nav className="">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-cc-teal">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-display font-bold text-cc-light">
