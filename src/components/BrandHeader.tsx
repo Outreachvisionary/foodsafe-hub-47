@@ -1,10 +1,29 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+
 const BrandHeader: React.FC = () => {
+  const { toast } = useToast();
+  
+  // Add a class to remove background from an image
+  const handleImageClick = () => {
+    toast({
+      title: "Image background",
+      description: "This image already has the background removed. To upload a new image, use the file upload feature in the application.",
+      duration: 5000,
+    });
+  };
+
   return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center mb-6">
-          <img alt="Compliance Core Logo" src="/lovable-uploads/515ea5ef-18c2-4017-8772-1783b71937c4.png" className="bg-remove h-35 mb-35 object-none" />
+          <img 
+            alt="Compliance Core Logo" 
+            src="/lovable-uploads/515ea5ef-18c2-4017-8772-1783b71937c4.png" 
+            className="bg-remove h-35 mb-35 object-none"
+            onClick={handleImageClick}
+          />
           <h1 className="text-4xl md:text-5xl font-display text-white font-bold mb-3">
             COMPLIANCE <span className="text-cc-gold">CORE</span>
           </h1>
@@ -28,4 +47,5 @@ const BrandHeader: React.FC = () => {
       </div>
     </div>;
 };
+
 export default BrandHeader;
