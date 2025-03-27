@@ -1,25 +1,17 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-
 const ROISection = () => {
-  const metrics = [
-    {
-      value: "83%",
-      label: "reduction in audit preparation time"
-    },
-    {
-      value: "67%",
-      label: "fewer compliance incidents"
-    },
-    {
-      value: "100%",
-      label: "digital documentation"
-    }
-  ];
-
-  return (
-    <section className="py-16 md:py-24 bg-cc-ivory relative overflow-hidden">
+  const metrics = [{
+    value: "83%",
+    label: "reduction in audit preparation time"
+  }, {
+    value: "67%",
+    label: "fewer compliance incidents"
+  }, {
+    value: "100%",
+    label: "digital documentation"
+  }];
+  return <section className="py-16 md:py-24 bg-cc-ivory relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 z-0 opacity-5">
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-cc-purple"></div>
@@ -39,23 +31,25 @@ const ROISection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {metrics.map((metric, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-              className="bg-cc-white p-8 rounded-lg shadow-md text-center"
-            >
-              <div className="text-4xl md:text-5xl font-bold font-display text-cc-purple mb-2">
+          {metrics.map((metric, index) => <motion.div key={index} initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.5,
+          delay: index * 0.2
+        }} className="bg-cc-white p-8 rounded-lg shadow-md text-center">
+              <div className="text-4xl md:text-5xl font-bold font-display text-cc-darkTeal mb-2">
                 {metric.value}
               </div>
               <p className="text-cc-charcoal/80 font-sans">
                 {metric.label}
               </p>
-            </motion.div>
-          ))}
+            </motion.div>)}
         </div>
         
         <div className="mt-12 text-center">
@@ -67,8 +61,6 @@ const ROISection = () => {
           </p>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default ROISection;
