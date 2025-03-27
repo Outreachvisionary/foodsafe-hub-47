@@ -14,7 +14,7 @@ const ConversionTracker: React.FC<ConversionTrackerProps> = ({ action }) => {
     // like Google Analytics, Mixpanel, or your own backend
     const trackEvent = () => {
       // Example of tracking event to analytics
-      if (typeof window !== 'undefined' && window.gtag) {
+      if (typeof window !== 'undefined' && 'gtag' in window) {
         window.gtag('event', action, {
           event_category: 'conversion',
           event_label: 'landing_page',
