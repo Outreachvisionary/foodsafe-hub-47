@@ -3,11 +3,11 @@ import React, { useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
-import TrustArchitecture from '@/components/TrustArchitecture';
-import PainSolutionFeatureGrid from '@/components/PainSolutionFeatureGrid';
-import IndustrySocialProof from '@/components/IndustrySocialProof';
-import IndustryUseCases from '@/components/IndustryUseCases';
-import ComplianceConversionFloor from '@/components/ComplianceConversionFloor';
+import TrustIndicators from '@/components/TrustIndicators';
+import KeyFeatures from '@/components/KeyFeatures';
+import TestimonialSection from '@/components/TestimonialSection';
+import PlatformPreview from '@/components/PlatformPreview';
+import CallToAction from '@/components/CallToAction';
 import ConversionTracker from '@/components/ConversionTracker';
 
 const Index = () => {
@@ -17,20 +17,20 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       <Navigation />
       
       <Hero />
       
-      <TrustArchitecture />
+      <TrustIndicators />
       
-      <PainSolutionFeatureGrid />
+      <KeyFeatures />
       
-      <IndustrySocialProof />
+      <TestimonialSection />
       
-      <IndustryUseCases />
+      <PlatformPreview />
       
-      <ComplianceConversionFloor />
+      <CallToAction />
       
       <Footer />
       
