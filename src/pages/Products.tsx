@@ -105,7 +105,7 @@ const Products = () => {
                 </Link>
                 
                 <Link to="/resources/white-paper">
-                  <Button variant="outline" className="border-cc-purple text-cc-purple hover:bg-cc-purple/5 px-6 py-2.5 text-lg font-sans" size="lg">
+                  <Button variant="outline" size="lg" className="border-cc-teal text-cc-gold hover: bg-cc-teal/5 px-6 py-2.5 text-lg font-sans">
                     Download white paper
                   </Button>
                 </Link>
