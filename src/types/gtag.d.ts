@@ -1,5 +1,5 @@
 
-interface GtagWindow extends Window {
+interface Window {
   gtag: (
     command: 'event',
     action: string,
@@ -10,8 +10,4 @@ interface GtagWindow extends Window {
       [key: string]: any;
     }
   ) => void;
-}
-
-declare global {
-  interface Window extends GtagWindow {}
 }
