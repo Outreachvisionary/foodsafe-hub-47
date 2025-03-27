@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,14 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
-import { Building2, Plus, Users, Globe, Mail, Phone } from 'lucide-react';
+import { Building2, Plus, Trash2, Users, Factory, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Organization } from '@/types/organization';
-import { Facility } from '@/types/facility';
+import { Organization as OrganizationType } from '@/types/organization';
+import { Facility as FacilityType } from '@/types/facility';
 import { fetchOrganizations, fetchFacilities } from '@/utils/supabaseHelpers';
 
 interface Organization {
@@ -41,6 +52,7 @@ const OrganizationManagement: React.FC = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFacilityDialogOpen, setCreateFacilityDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -87,11 +99,23 @@ const OrganizationManagement: React.FC = () => {
       
       const organizationsData = await fetchOrganizations();
       
-      setOrganizations(organizationsData);
+      // Convert to local Organization type
+      const mappedOrgs = organizationsData.map((org): Organization => ({
+        id: org.id,
+        name: org.name,
+        description: org.description || null,
+        contact_email: org.contact_email || null,
+        contact_phone: org.contact_phone || null,
+        logo_url: org.logo_url || null,
+        status: org.status,
+        created_at: org.created_at || new Date().toISOString()
+      }));
       
-      if (organizationsData.length === 1) {
-        setSelectedOrganization(organizationsData[0]);
-        fetchOrganizationFacilities(organizationsData[0].id);
+      setOrganizations(mappedOrgs);
+      
+      if (mappedOrgs.length === 1) {
+        setSelectedOrganization(mappedOrgs[0]);
+        fetchOrganizationFacilities(mappedOrgs[0].id);
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -111,7 +135,18 @@ const OrganizationManagement: React.FC = () => {
       
       const facilitiesData = await fetchFacilities(orgId);
       
-      setFacilities(facilitiesData);
+      // Convert to local Facility type
+      const mappedFacilities = facilitiesData.map((facility): Facility => ({
+        id: facility.id,
+        name: facility.name,
+        description: facility.description || null,
+        address: facility.address || null,
+        facility_type: facility.facility_type || null,
+        status: facility.status,
+        created_at: facility.created_at || new Date().toISOString()
+      }));
+      
+      setFacilities(mappedFacilities);
     } catch (error) {
       console.error('Error fetching facilities:', error);
       toast({
@@ -128,16 +163,17 @@ const OrganizationManagement: React.FC = () => {
     try {
       setSubmitting(true);
       
-      const newOrganization: Partial<Organization> = {
-        name: newOrgName,
-        description: newOrgDescription,
-        contact_email: newOrgEmail,
-        contact_phone: newOrgPhone,
-        status: 'active'
-      };
-      
       const { data, error } = await supabase
-        .rpc('create_organization', newOrganization);
+        .from('organizations')
+        .insert({
+          name: newOrgName,
+          description: newOrgDescription || null,
+          contact_email: newOrgEmail || null,
+          contact_phone: newOrgPhone || null,
+          status: 'active'
+        })
+        .select('*')
+        .single();
       
       if (error) throw error;
       
@@ -177,17 +213,18 @@ const OrganizationManagement: React.FC = () => {
         return;
       }
       
-      const newFacility: Partial<Facility> = {
-        name: newFacilityName,
-        description: newFacilityDescription,
-        address: newFacilityAddress,
-        facility_type: newFacilityType,
-        organization_id: selectedOrganization.id,
-        status: 'active'
-      };
-      
       const { data, error } = await supabase
-        .rpc('create_facility', newFacility);
+        .from('facilities')
+        .insert({
+          name: newFacilityName,
+          description: newFacilityDescription || null,
+          address: newFacilityAddress || null,
+          facility_type: newFacilityType || null,
+          organization_id: selectedOrganization.id,
+          status: 'active'
+        })
+        .select('*')
+        .single();
       
       if (error) throw error;
       

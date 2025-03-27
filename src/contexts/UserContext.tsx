@@ -1,21 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  avatar_url?: string;
-  role?: string;
-  department?: string;
-  preferences?: {
-    dashboardLayout?: string;
-    theme?: string;
-    notificationsEnabled?: boolean;
-    [key: string]: any;
-  };
-}
+import { UserProfile } from '@/types/user';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -23,6 +9,7 @@ interface UserContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updateUser: (updates: Partial<UserProfile>) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -52,6 +39,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
+            organization_id: profile?.organization_id,
+            assigned_facility_ids: profile?.assigned_facility_ids,
+            preferred_language: profile?.preferred_language,
             preferences: profile?.preferences ? 
               (typeof profile.preferences === 'object' ? profile.preferences : {}) : {}
           });
@@ -83,6 +73,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
+            organization_id: profile?.organization_id,
+            assigned_facility_ids: profile?.assigned_facility_ids,
+            preferred_language: profile?.preferred_language,
             preferences: profile?.preferences ? 
               (typeof profile.preferences === 'object' ? profile.preferences : {}) : {}
           });
@@ -136,12 +129,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add a direct user update function for client-side updates
+  const updateUser = (updates: Partial<UserProfile>) => {
+    if (user) {
+      setUser({ ...user, ...updates });
+    }
+  };
+
   const value = {
     user,
     loading,
     signIn,
     signOut,
-    updateProfile
+    updateProfile,
+    updateUser
   };
 
   return (

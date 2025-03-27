@@ -23,5 +23,14 @@ export interface FacilityStandard {
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
+  
+  // Join data from regulatory_standards
+  standard_name?: string;
+  standard_code?: string;
+  standard_description?: string;
+  standard_version?: string;
+  standard_authority?: string;
+  
+  // Legacy support
   regulatory_standards?: RegulatoryStandard;
 }

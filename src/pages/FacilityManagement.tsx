@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -11,19 +12,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { Building2, Plus, Trash2, Edit, Users, Factory, Shield, Info } from 'lucide-react';
-import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import FacilitySelector from '@/components/facilities/FacilitySelector';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Facility } from '@/types/facility';
-import { RegulatoryStandard, FacilityStandard } from '@/types/regulatory';
+import { Facility as FacilityType } from '@/types/facility';
+import { RegulatoryStandard as RegulatoryStandardType, FacilityStandard as FacilityStandardType } from '@/types/regulatory';
 import { 
   fetchFacilities, 
   fetchRegulatoryStandards, 
   fetchFacilityStandards 
 } from '@/utils/supabaseHelpers';
 
-interface Facility {
+interface FacilityState {
   id: string;
   name: string;
   description: string | null;
@@ -35,44 +33,28 @@ interface Facility {
   created_at: string;
 }
 
-interface FacilityStandard {
-  id: string;
-  facility_id: string;
-  standard_id: string;
-  compliance_status: string;
-  certification_date: string | null;
-  expiry_date: string | null;
-  notes: string | null;
-  regulatory_standards: {
-    id: string;
-    name: string;
-    code: string;
-    version: string | null;
-  }
-}
-
-interface RegulatoryStandard {
-  id: string;
+interface FacilityFormData {
   name: string;
-  code: string;
-  description: string | null;
-  version: string | null;
-  authority: string | null;
+  description: string;
+  address: string;
+  facilityType: string;
+  status: string;
 }
 
 const FacilityManagement: React.FC = () => {
-  const [facility, setFacility] = useState<Facility | null>(null);
-  const [standards, setStandards] = useState<RegulatoryStandard[]>([]);
-  const [facilityStandards, setFacilityStandards] = useState<FacilityStandard[]>([]);
+  const [facility, setFacility] = useState<FacilityState | null>(null);
+  const [standards, setStandards] = useState<RegulatoryStandardType[]>([]);
+  const [facilityStandards, setFacilityStandards] = useState<FacilityStandardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FacilityFormData>({
     name: '',
     description: '',
     address: '',
     facilityType: '',
     status: 'active'
   });
+  
   const { toast } = useToast();
   const { user } = useUser();
   const { id } = useParams<{ id: string }>();
@@ -91,17 +73,29 @@ const FacilityManagement: React.FC = () => {
       setLoading(true);
       
       const facilities = await fetchFacilities();
-      const facility = facilities.find(f => f.id === facilityId);
+      const facilityData = facilities.find(f => f.id === facilityId);
       
-      if (!facility) throw new Error('Facility not found');
+      if (!facilityData) throw new Error('Facility not found');
       
-      setFacility(facility);
+      const facilityState: FacilityState = {
+        id: facilityData.id,
+        name: facilityData.name,
+        description: facilityData.description || null,
+        address: facilityData.address || null,
+        facility_type: facilityData.facility_type || null,
+        organization_id: facilityData.organization_id,
+        status: facilityData.status,
+        metadata: facilityData.metadata || null,
+        created_at: facilityData.created_at || new Date().toISOString()
+      };
+      
+      setFacility(facilityState);
       setFormData({
-        name: facility.name,
-        description: facility.description || '',
-        address: facility.address || '',
-        facilityType: facility.facility_type || '',
-        status: facility.status
+        name: facilityState.name,
+        description: facilityState.description || '',
+        address: facilityState.address || '',
+        facilityType: facilityState.facility_type || '',
+        status: facilityState.status
       });
     } catch (error) {
       console.error('Error fetching facility:', error);
@@ -117,8 +111,8 @@ const FacilityManagement: React.FC = () => {
 
   const fetchStandards = async () => {
     try {
-      const standards = await fetchRegulatoryStandards();
-      setStandards(standards);
+      const standardsData = await fetchRegulatoryStandards();
+      setStandards(standardsData);
     } catch (error) {
       console.error('Error fetching standards:', error);
       toast({
@@ -350,9 +344,9 @@ const FacilityManagement: React.FC = () => {
                       {facilityStandards.map((standard) => (
                         <TableRow key={standard.id}>
                           <TableCell className="font-medium">
-                            {standard.regulatory_standards.name} ({standard.regulatory_standards.code})
+                            {standard.standard_name} ({standard.standard_code})
                           </TableCell>
-                          <TableCell>{standard.regulatory_standards.version || 'Latest'}</TableCell>
+                          <TableCell>{standard.standard_version || 'Latest'}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               standard.compliance_status === 'compliant' ? 'bg-green-100 text-green-800' : 
