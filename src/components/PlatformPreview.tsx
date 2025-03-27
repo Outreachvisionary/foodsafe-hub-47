@@ -76,7 +76,7 @@ const PlatformPreview = () => {
               delay: 0.2
             }} className="md:w-1/3">
                   <div className="bg-cc-white p-6 rounded-lg shadow-md">
-                    <div className="w-12 h-12 bg-cc-purple/10 rounded-lg flex items-center justify-center mb-4 text-cc-purple">
+                    <div className="w-12 h-12 bg-cc-gold10 rounded-lg flex items-center justify-center mb-4 text-cc-gold">
                       <module.icon className="h-6 w-6" />
                     </div>
                     
