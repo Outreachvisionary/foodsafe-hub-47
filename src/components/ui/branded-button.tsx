@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button, ButtonProps } from '@/components/ui/button';
 
-interface BrandedButtonProps extends Omit<ButtonProps, 'size'> {
+interface BrandedButtonProps extends Omit<ButtonProps, 'size' | 'variant'> {
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
 }
@@ -29,10 +29,15 @@ const BrandedButton = React.forwardRef<HTMLButtonElement, BrandedButtonProps>(
                       size === 'sm' ? 'sm' : 
                       'default';
     
+    // Map our custom variant to a base Button variant that's compatible
+    // We'll use the classes for styling and set a base variant
+    const buttonVariant = variant === 'outline' ? 'outline' : 'default';
+    
     return (
       <Button
         ref={ref}
         size={buttonSize}
+        variant={buttonVariant}
         className={cn(
           baseClasses,
           variantClasses[variant],
