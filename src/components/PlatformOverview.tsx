@@ -38,7 +38,7 @@ const PlatformOverview = () => {
         }} transition={{
           duration: 0.5,
           delay: index * 0.1
-        }} className="relative pl-6 cc-border-left bg-brand-teal">
+        }} className="relative pl-6 cc-border-left bg-brand-teal rounded">
               <h3 className="text-xl font-display mb-3 font-extrabold text-cc-light">
                 {feature.title}
               </h3>
