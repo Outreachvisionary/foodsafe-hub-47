@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,8 @@ import {
   Activity,
   Building2,
   Building,
-  Beaker, // Changed from Flask to Beaker which is available in lucide-react
+  Beaker,
+  HardDrive, // Changed from HardHat to HardDrive which is available in lucide-react
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -66,12 +68,12 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
     { name: t('sidebar.standards'), href: '/standards', icon: ClipboardCheck, color: 'text-purple-500' },
     { name: t('sidebar.organizations'), href: '/organizations', icon: Building, color: 'text-indigo-600' },
     { name: t('sidebar.facilities'), href: '/facilities', icon: Building2, color: 'text-teal-500' },
-    { name: t('sidebar.audits'), href: '/audits', icon: HardHat, color: 'text-yellow-600' },
+    { name: t('sidebar.audits'), href: '/audits', icon: HardDrive, color: 'text-yellow-600' }, // Changed from HardHat to HardDrive
     { name: t('sidebar.nonConformance'), href: '/non-conformance', icon: AlertTriangle, color: 'text-red-500' },
     { name: t('sidebar.capa'), href: '/capa', icon: RefreshCw, color: 'text-orange-500' },
     { name: t('sidebar.suppliers'), href: '/suppliers', icon: Truck, color: 'text-pink-500' },
     { name: t('sidebar.training'), href: '/training', icon: GraduationCap, color: 'text-indigo-500' },
-    { name: t('sidebar.haccp'), href: '/haccp', icon: Beaker, color: 'text-teal-500' }, // Changed from Flask to Beaker
+    { name: t('sidebar.haccp'), href: '/haccp', icon: Beaker, color: 'text-teal-500' },
     { name: t('sidebar.traceability'), href: '/traceability', icon: Activity, color: 'text-cyan-500' },
   ];
 
