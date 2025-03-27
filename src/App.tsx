@@ -20,6 +20,7 @@ import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
 import Solutions from './pages/Solutions';
 import Products from './pages/Products';
+import Organizations from './pages/Organizations';
 
 // Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
@@ -77,6 +78,7 @@ const App = () => {
         
         {/* Organization & Facility Management Routes */}
         <Route path="/organization" element={<OrganizationManagement />} />
+        <Route path="/organizations" element={<Organizations />} />
         <Route path="/facilities" element={<FacilitiesList />} />
         <Route path="/facilities/:id" element={<FacilityManagement />} />
         <Route path="/facilities/new" element={<FacilityManagement />} />
