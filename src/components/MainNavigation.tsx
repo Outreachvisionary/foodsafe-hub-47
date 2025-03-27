@@ -62,7 +62,7 @@ const MainNavigation = () => {
                   Industries <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-white">
+              <DropdownMenuContent className="bg-cc-tagline">
                 <DropdownMenuItem>
                   <Link to="/industries/processed-foods" className="w-full font-sans">Processed Foods</Link>
                 </DropdownMenuItem>
