@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 const BrandHeader: React.FC = () => {
-  return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center">
+  return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center object-scale-down">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center mb-6">
           <img alt="Compliance Core Logo" src="/lovable-uploads/14e3f24c-4110-4b3b-ad1e-a5044444e66b.png" className="h-32 mb-4 object-scale-down" />
