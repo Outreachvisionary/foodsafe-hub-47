@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Menu, X } from 'lucide-react';
-
 const MainNavigation = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -22,13 +19,10 @@ const MainNavigation = () => {
   useEffect(() => {
     setIsNavOpen(false);
   }, [location.pathname]);
-  
   const isActiveLink = (path: string) => {
     return location.pathname === path || path !== '/' && location.pathname.startsWith(path);
   };
-  
-  return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 
+  return <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 
       ${scrolled ? 'bg-cc-teal shadow-md py-2' : 'bg-cc-teal bg-opacity-90 py-4'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
@@ -46,7 +40,7 @@ const MainNavigation = () => {
                   Platform <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-white">
+              <DropdownMenuContent className="bg-cc-tagline">
                 <DropdownMenuItem>
                   <Link to="/platform/audit-management" className="w-full font-sans">Audit Management</Link>
                 </DropdownMenuItem>
@@ -151,8 +145,7 @@ const MainNavigation = () => {
       </div>
       
       {/* Mobile Menu */}
-      {isNavOpen && (
-        <div className="fixed inset-0 bg-cc-teal bg-opacity-98 z-40 pt-16 md:hidden">
+      {isNavOpen && <div className="fixed inset-0 bg-cc-teal bg-opacity-98 z-40 pt-16 md:hidden">
           <div className="p-4 space-y-4 overflow-y-auto h-full">
             <div className="py-2 border-b border-cc-gold/30">
               <div className="text-lg font-display font-medium mb-1 text-cc-gold">Platform</div>
@@ -234,10 +227,7 @@ const MainNavigation = () => {
               </Link>
             </div>
           </div>
-        </div>
-      )}
-    </nav>
-  );
+        </div>}
+    </nav>;
 };
-
 export default MainNavigation;
