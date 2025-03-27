@@ -106,7 +106,7 @@ const MainNavigation = () => {
                   Integrations <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-white">
+              <DropdownMenuContent className="bg-cc-tagline">
                 <DropdownMenuItem>
                   <Link to="/integrations/erp" className="w-full font-sans">ERP Systems</Link>
                 </DropdownMenuItem>
