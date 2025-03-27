@@ -104,6 +104,34 @@
 [dir="rtl"] .ml-3 { margin-right: 0.75rem; margin-left: 0; }
 [dir="rtl"] .ml-4 { margin-right: 1rem; margin-left: 0; }
 
+/* Custom spacing utilities */
+.spacing-sm { gap: 0.5rem; }
+.spacing-md { gap: 1rem; }
+.spacing-lg { gap: 1.5rem; }
+.spacing-xl { gap: 2rem; }
+
+/* Custom group styles */
+.content-group {
+  @apply p-4 rounded-lg border border-border bg-card mb-4;
+}
+
+.content-group-title {
+  @apply text-base font-medium mb-3;
+}
+
+/* Custom layout helpers */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.grid-responsive {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
 @layer base {
   * {
     @apply border-border;
