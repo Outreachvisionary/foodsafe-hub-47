@@ -58,7 +58,7 @@ const CoreFeatures = () => {
                 {feature.description}
               </p>
               
-              <Link to={feature.link} className="inline-flex items-center text-cc-purple hover:text-cc-purple/80 font-sans font-medium group">
+              <Link to={feature.link} className="inline-flex items-center text-cc-teal hover:text-cc-teal/80 font-sans font-medium group">
                 Learn more
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
