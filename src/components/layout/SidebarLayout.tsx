@@ -62,19 +62,20 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
     setCollapsed(!collapsed);
   };
 
+  // Updated sidebar links with direct label names, not using t() function for these static labels
   const sidebarLinks: SidebarLink[] = [
-    { name: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-500' },
-    { name: t('sidebar.documents'), href: '/documents', icon: FileText, color: 'text-green-500' },
-    { name: t('sidebar.standards'), href: '/standards', icon: ClipboardCheck, color: 'text-purple-500' },
-    { name: t('sidebar.organizations'), href: '/organizations', icon: Building, color: 'text-indigo-600' },
-    { name: t('sidebar.facilities'), href: '/facilities', icon: Building2, color: 'text-teal-500' },
-    { name: t('sidebar.audits'), href: '/audits', icon: HardDrive, color: 'text-yellow-600' }, // Changed from HardHat to HardDrive
-    { name: t('sidebar.nonConformance'), href: '/non-conformance', icon: AlertTriangle, color: 'text-red-500' },
-    { name: t('sidebar.capa'), href: '/capa', icon: RefreshCw, color: 'text-orange-500' },
-    { name: t('sidebar.suppliers'), href: '/suppliers', icon: Truck, color: 'text-pink-500' },
-    { name: t('sidebar.training'), href: '/training', icon: GraduationCap, color: 'text-indigo-500' },
-    { name: t('sidebar.haccp'), href: '/haccp', icon: Beaker, color: 'text-teal-500' },
-    { name: t('sidebar.traceability'), href: '/traceability', icon: Activity, color: 'text-cyan-500' },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-500' },
+    { name: 'Documents', href: '/documents', icon: FileText, color: 'text-green-500' },
+    { name: 'Standards', href: '/standards', icon: ClipboardCheck, color: 'text-purple-500' },
+    { name: 'Organizations', href: '/organizations', icon: Building, color: 'text-indigo-600' },
+    { name: 'Facilities', href: '/facilities', icon: Building2, color: 'text-teal-500' },
+    { name: 'Audits', href: '/audits', icon: HardDrive, color: 'text-yellow-600' }, // Changed from HardHat to HardDrive
+    { name: 'Non-Conformance', href: '/non-conformance', icon: AlertTriangle, color: 'text-red-500' },
+    { name: 'CAPA', href: '/capa', icon: RefreshCw, color: 'text-orange-500' },
+    { name: 'Suppliers', href: '/suppliers', icon: Truck, color: 'text-pink-500' },
+    { name: 'Training', href: '/training', icon: GraduationCap, color: 'text-indigo-500' },
+    { name: 'HACCP', href: '/haccp', icon: Beaker, color: 'text-teal-500' },
+    { name: 'Traceability', href: '/traceability', icon: Activity, color: 'text-cyan-500' },
   ];
 
   const isActiveLink = (href: string) => {
@@ -171,7 +172,7 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Top Bar */}
         <header className="bg-background border-b border-border p-4 flex justify-between items-center">
           <div className="text-xl font-semibold">
-            {sidebarLinks.find(link => isActiveLink(link.href))?.name || t('common.dashboard')}
+            {sidebarLinks.find(link => isActiveLink(link.href))?.name || 'Dashboard'}
           </div>
           <div className="flex items-center space-x-2">
             {user?.preferred_language && (
