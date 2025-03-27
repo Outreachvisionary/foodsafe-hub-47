@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -16,6 +15,13 @@ import OrganizationSelector from '@/components/organizations/OrganizationSelecto
 import FacilitySelector from '@/components/facilities/FacilitySelector';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Facility } from '@/types/facility';
+import { RegulatoryStandard, FacilityStandard } from '@/types/regulatory';
+import { 
+  fetchFacilities, 
+  fetchRegulatoryStandards, 
+  fetchFacilityStandards 
+} from '@/utils/supabaseHelpers';
 
 interface Facility {
   id: string;
@@ -75,7 +81,7 @@ const FacilityManagement: React.FC = () => {
   useEffect(() => {
     if (id) {
       fetchFacility(id);
-      fetchFacilityStandards(id);
+      fetchFacilityStandardsData(id);
     }
     fetchStandards();
   }, [id]);
@@ -83,21 +89,19 @@ const FacilityManagement: React.FC = () => {
   const fetchFacility = async (facilityId: string) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('facilities')
-        .select('*')
-        .eq('id', facilityId)
-        .single();
       
-      if (error) throw error;
+      const facilities = await fetchFacilities();
+      const facility = facilities.find(f => f.id === facilityId);
       
-      setFacility(data as Facility);
+      if (!facility) throw new Error('Facility not found');
+      
+      setFacility(facility);
       setFormData({
-        name: data.name,
-        description: data.description || '',
-        address: data.address || '',
-        facilityType: data.facility_type || '',
-        status: data.status
+        name: facility.name,
+        description: facility.description || '',
+        address: facility.address || '',
+        facilityType: facility.facility_type || '',
+        status: facility.status
       });
     } catch (error) {
       console.error('Error fetching facility:', error);
@@ -113,14 +117,8 @@ const FacilityManagement: React.FC = () => {
 
   const fetchStandards = async () => {
     try {
-      const { data, error } = await supabase
-        .from('regulatory_standards')
-        .select('*')
-        .eq('status', 'active');
-      
-      if (error) throw error;
-      
-      setStandards(data as RegulatoryStandard[]);
+      const standards = await fetchRegulatoryStandards();
+      setStandards(standards);
     } catch (error) {
       console.error('Error fetching standards:', error);
       toast({
@@ -131,24 +129,10 @@ const FacilityManagement: React.FC = () => {
     }
   };
 
-  const fetchFacilityStandards = async (facilityId: string) => {
+  const fetchFacilityStandardsData = async (facilityId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('facility_standards')
-        .select(`
-          *,
-          regulatory_standards (
-            id,
-            name,
-            code,
-            version
-          )
-        `)
-        .eq('facility_id', facilityId);
-      
-      if (error) throw error;
-      
-      setFacilityStandards(data as FacilityStandard[]);
+      const facilityStandardsData = await fetchFacilityStandards(facilityId);
+      setFacilityStandards(facilityStandardsData);
     } catch (error) {
       console.error('Error fetching facility standards:', error);
       toast({

@@ -1,18 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
-import { Building2, Plus, Trash2, Edit, Users, Factory } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Building2, Plus, Users, Globe, Mail, Phone } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Organization } from '@/types/organization';
+import { Facility } from '@/types/facility';
+import { fetchOrganizations, fetchFacilities } from '@/utils/supabaseHelpers';
 
 interface Organization {
   id: string;
@@ -38,7 +39,7 @@ interface Facility {
 const OrganizationManagement: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFacilityDialogOpen, setCreateFacilityDialogOpen] = useState(false);
@@ -54,45 +55,43 @@ const OrganizationManagement: React.FC = () => {
     address: '',
     facilityType: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingFacility, setIsCreatingFacility] = useState(false);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgDescription, setNewOrgDescription] = useState('');
+  const [newOrgEmail, setNewOrgEmail] = useState('');
+  const [newOrgPhone, setNewOrgPhone] = useState('');
+  const [newFacilityName, setNewFacilityName] = useState('');
+  const [newFacilityDescription, setNewFacilityDescription] = useState('');
+  const [newFacilityAddress, setNewFacilityAddress] = useState('');
+  const [newFacilityType, setNewFacilityType] = useState('');
   const { toast } = useToast();
   const { user } = useUser();
 
   useEffect(() => {
     if (user) {
-      fetchOrganizations();
+      fetchOrganizationData();
     }
   }, [user]);
 
   useEffect(() => {
-    if (selectedOrg) {
-      fetchFacilities(selectedOrg.id);
+    if (selectedOrganization) {
+      fetchOrganizationFacilities(selectedOrganization.id);
     }
-  }, [selectedOrg]);
+  }, [selectedOrganization]);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizationData = async () => {
     try {
       setLoading(true);
       
-      // Query depends on user role
-      let query = supabase
-        .from('organizations')
-        .select('*')
-        .order('name');
+      const organizationsData = await fetchOrganizations();
       
-      // Regular users can only see their own organization
-      if (user && !user.role?.includes('admin')) {
-        query = query.eq('id', user.organization_id);
-      }
+      setOrganizations(organizationsData);
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setOrganizations(data as Organization[]);
-      
-      // Set the first organization as selected
-      if (data.length > 0) {
-        setSelectedOrg(data[0]);
+      if (organizationsData.length === 1) {
+        setSelectedOrganization(organizationsData[0]);
+        fetchOrganizationFacilities(organizationsData[0].id);
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -106,17 +105,13 @@ const OrganizationManagement: React.FC = () => {
     }
   };
 
-  const fetchFacilities = async (organizationId: string) => {
+  const fetchOrganizationFacilities = async (orgId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('facilities')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .order('name');
+      setFacilitiesLoading(true);
       
-      if (error) throw error;
+      const facilitiesData = await fetchFacilities(orgId);
       
-      setFacilities(data as Facility[]);
+      setFacilities(facilitiesData);
     } catch (error) {
       console.error('Error fetching facilities:', error);
       toast({
@@ -124,37 +119,39 @@ const OrganizationManagement: React.FC = () => {
         description: 'Failed to load facilities',
         variant: 'destructive',
       });
+    } finally {
+      setFacilitiesLoading(false);
     }
   };
 
   const handleCreateOrganization = async () => {
     try {
+      setSubmitting(true);
+      
+      const newOrganization: Partial<Organization> = {
+        name: newOrgName,
+        description: newOrgDescription,
+        contact_email: newOrgEmail,
+        contact_phone: newOrgPhone,
+        status: 'active'
+      };
+      
       const { data, error } = await supabase
-        .from('organizations')
-        .insert({
-          name: formData.name,
-          description: formData.description || null,
-          contact_email: formData.contactEmail || null,
-          contact_phone: formData.contactPhone || null
-        })
-        .select();
+        .rpc('create_organization', newOrganization);
       
       if (error) throw error;
       
       toast({
-        title: 'Organization Created',
-        description: 'The organization was created successfully'
+        title: 'Success',
+        description: 'Organization created successfully!'
       });
       
-      setFormData({
-        name: '',
-        description: '',
-        contactEmail: '',
-        contactPhone: ''
-      });
-      
-      setCreateDialogOpen(false);
-      fetchOrganizations();
+      setIsCreating(false);
+      setNewOrgName('');
+      setNewOrgDescription('');
+      setNewOrgEmail('');
+      setNewOrgPhone('');
+      fetchOrganizationData();
     } catch (error) {
       console.error('Error creating organization:', error);
       toast({
@@ -162,40 +159,49 @@ const OrganizationManagement: React.FC = () => {
         description: 'Failed to create organization',
         variant: 'destructive',
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCreateFacility = async () => {
-    if (!selectedOrg) return;
-    
     try {
+      setSubmitting(true);
+      
+      if (!selectedOrganization) {
+        toast({
+          title: 'Error',
+          description: 'Please select an organization first',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      const newFacility: Partial<Facility> = {
+        name: newFacilityName,
+        description: newFacilityDescription,
+        address: newFacilityAddress,
+        facility_type: newFacilityType,
+        organization_id: selectedOrganization.id,
+        status: 'active'
+      };
+      
       const { data, error } = await supabase
-        .from('facilities')
-        .insert({
-          name: facilityFormData.name,
-          description: facilityFormData.description || null,
-          address: facilityFormData.address || null,
-          facility_type: facilityFormData.facilityType || null,
-          organization_id: selectedOrg.id
-        })
-        .select();
+        .rpc('create_facility', newFacility);
       
       if (error) throw error;
       
       toast({
-        title: 'Facility Created',
-        description: 'The facility was created successfully'
+        title: 'Success',
+        description: 'Facility created successfully!'
       });
       
-      setFacilityFormData({
-        name: '',
-        description: '',
-        address: '',
-        facilityType: ''
-      });
-      
-      setCreateFacilityDialogOpen(false);
-      fetchFacilities(selectedOrg.id);
+      setIsCreatingFacility(false);
+      setNewFacilityName('');
+      setNewFacilityDescription('');
+      setNewFacilityAddress('');
+      setNewFacilityType('');
+      fetchOrganizationFacilities(selectedOrganization.id);
     } catch (error) {
       console.error('Error creating facility:', error);
       toast({
@@ -203,11 +209,13 @@ const OrganizationManagement: React.FC = () => {
         description: 'Failed to create facility',
         variant: 'destructive',
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleSelectOrganization = (org: Organization) => {
-    setSelectedOrg(org);
+    setSelectedOrganization(org);
   };
 
   return (
@@ -244,7 +252,7 @@ const OrganizationManagement: React.FC = () => {
                 
                 <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
-                  <Input 
+                  <Textarea 
                     id="description" 
                     value={formData.description} 
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -300,7 +308,7 @@ const OrganizationManagement: React.FC = () => {
                   {organizations.map((org) => (
                     <li key={org.id}>
                       <Button 
-                        variant={selectedOrg?.id === org.id ? "default" : "ghost"} 
+                        variant={selectedOrganization?.id === org.id ? "default" : "ghost"} 
                         className="w-full justify-start"
                         onClick={() => handleSelectOrganization(org)}
                       >
@@ -315,7 +323,7 @@ const OrganizationManagement: React.FC = () => {
           </Card>
           
           <div className="md:col-span-3">
-            {selectedOrg ? (
+            {selectedOrganization ? (
               <Tabs defaultValue="details">
                 <TabsList>
                   <TabsTrigger value="details">Organization Details</TabsTrigger>
@@ -326,14 +334,14 @@ const OrganizationManagement: React.FC = () => {
                 <TabsContent value="details">
                   <Card>
                     <CardHeader>
-                      <CardTitle>{selectedOrg.name}</CardTitle>
+                      <CardTitle>{selectedOrganization.name}</CardTitle>
                       <CardDescription>Organization information and settings</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
                           <Label>Description</Label>
-                          <p className="text-muted-foreground">{selectedOrg.description || 'No description provided'}</p>
+                          <p className="text-muted-foreground">{selectedOrganization.description || 'No description provided'}</p>
                         </div>
                         
                         <Separator />
@@ -343,11 +351,11 @@ const OrganizationManagement: React.FC = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                             <div>
                               <Label className="text-sm">Email</Label>
-                              <p className="text-muted-foreground">{selectedOrg.contact_email || 'Not specified'}</p>
+                              <p className="text-muted-foreground">{selectedOrganization.contact_email || 'Not specified'}</p>
                             </div>
                             <div>
                               <Label className="text-sm">Phone</Label>
-                              <p className="text-muted-foreground">{selectedOrg.contact_phone || 'Not specified'}</p>
+                              <p className="text-muted-foreground">{selectedOrganization.contact_phone || 'Not specified'}</p>
                             </div>
                           </div>
                         </div>
@@ -370,7 +378,7 @@ const OrganizationManagement: React.FC = () => {
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
                         <CardTitle>Facilities</CardTitle>
-                        <CardDescription>Manage facilities for {selectedOrg.name}</CardDescription>
+                        <CardDescription>Manage facilities for {selectedOrganization.name}</CardDescription>
                       </div>
                       
                       <Dialog open={createFacilityDialogOpen} onOpenChange={setCreateFacilityDialogOpen}>
@@ -384,7 +392,7 @@ const OrganizationManagement: React.FC = () => {
                           <DialogHeader>
                             <DialogTitle>Add Facility</DialogTitle>
                             <DialogDescription>
-                              Add a new facility to {selectedOrg.name}.
+                              Add a new facility to {selectedOrganization.name}.
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -493,7 +501,7 @@ const OrganizationManagement: React.FC = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle>Users</CardTitle>
-                      <CardDescription>Manage users for {selectedOrg.name}</CardDescription>
+                      <CardDescription>Manage users for {selectedOrganization.name}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="text-center py-6">

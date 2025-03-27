@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Link, useNavigate } from 'react-router-dom';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
+import { Facility } from '@/types/facility';
+import { fetchFacilities } from '@/utils/supabaseHelpers';
 
 interface Facility {
   id: string;
@@ -36,51 +37,15 @@ const FacilitiesList: React.FC = () => {
   const { user } = useUser();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      if (user.organization_id) {
-        setSelectedOrgId(user.organization_id);
-      }
-      fetchFacilities();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (facilities.length > 0) {
-      filterFacilities();
-    }
-  }, [facilities, searchQuery, selectedOrgId]);
-
-  const fetchFacilities = async () => {
+  const fetchFacilitiesData = async () => {
     try {
       setLoading(true);
       
-      let query = supabase
-        .from('facilities')
-        .select(`
-          *,
-          organizations (
-            name
-          )
-        `)
-        .eq('status', 'active');
+      // Use the helper function with organization filter if needed
+      const facilitiesData = await fetchFacilities(user?.organization_id);
       
-      // If the user has restricted access, only show their assigned facilities
-      if (user && user.assigned_facility_ids && user.assigned_facility_ids.length > 0 && !user.role?.includes('admin')) {
-        query = query.in('id', user.assigned_facility_ids);
-      }
-      
-      // If organization is selected, filter by it
-      if (user?.organization_id && !user.role?.includes('admin')) {
-        query = query.eq('organization_id', user.organization_id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setFacilities(data as Facility[]);
-      setFilteredFacilities(data as Facility[]);
+      setFacilities(facilitiesData);
+      setFilteredFacilities(facilitiesData);
     } catch (error) {
       console.error('Error fetching facilities:', error);
       toast({
@@ -92,6 +57,21 @@ const FacilitiesList: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      if (user.organization_id) {
+        setSelectedOrgId(user.organization_id);
+      }
+      fetchFacilitiesData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (facilities.length > 0) {
+      filterFacilities();
+    }
+  }, [facilities, searchQuery, selectedOrgId]);
 
   const filterFacilities = () => {
     let result = [...facilities];

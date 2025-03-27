@@ -1,4 +1,3 @@
-
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
@@ -18,6 +17,8 @@ export interface DocumentVersion {
   change_summary?: string;
   change_notes?: string; // For database compatibility
   storage_path?: string;
+  organization_id?: string;
+  facility_id?: string;
 }
 
 export interface DocumentActivity {
@@ -158,6 +159,9 @@ declare module './database' {
     checkout_timestamp?: string;
     current_version_id?: string;
     workflow_status?: string;
+    organization_id?: string;
+    facility_id?: string;
+    metadata?: Record<string, any>;
   }
 }
 

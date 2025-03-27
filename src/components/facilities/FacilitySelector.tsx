@@ -5,13 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
-
-interface Facility {
-  id: string;
-  name: string;
-  facility_type: string | null;
-  status: string;
-}
+import { Facility } from '@/types/facility';
 
 interface FacilitySelectorProps {
   organizationId?: string | null;
@@ -44,21 +38,15 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
     try {
       setLoading(true);
       
-      let query = supabase
-        .from('facilities')
-        .select('id, name, facility_type, status')
-        .eq('organization_id', orgId)
-        .eq('status', 'active');
-      
-      // If the user has assigned facilities, only show those
-      if (user && user.assigned_facility_ids && user.assigned_facility_ids.length > 0 && !user.role?.includes('admin')) {
-        query = query.in('id', user.assigned_facility_ids);
-      }
-      
-      const { data, error } = await query;
+      // Use rpc call to get facilities
+      const { data, error } = await supabase
+        .rpc('get_facilities_by_organization', {
+          org_id: orgId
+        });
       
       if (error) throw error;
       
+      // Type assertion to help TypeScript understand the data structure
       setFacilities(data as Facility[]);
     } catch (error) {
       console.error('Error fetching facilities:', error);
