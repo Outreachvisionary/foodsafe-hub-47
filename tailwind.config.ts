@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -70,11 +69,16 @@ export default {
 					dark: '#1D2144',
 					'card-hover': 'rgba(255, 255, 255, 0.05)',
 					'glass': 'rgba(255, 255, 255, 0.15)'
+				},
+				brand: {
+					teal: '#0A9396',
+					white: '#FFFFFF',
+					lightGray: '#F8F9FA',
+					darkGray: '#333333'
 				}
 			},
 			fontFamily: {
-				sans: ['Roboto', 'Inter', 'system-ui', 'sans-serif'],
-				playfair: ['Playfair Display', 'serif'],
+				sans: ['Inter', 'system-ui', 'sans-serif'],
 				display: ['SF Pro Display', 'Inter', 'system-ui', 'sans-serif']
 			},
 			borderRadius: {

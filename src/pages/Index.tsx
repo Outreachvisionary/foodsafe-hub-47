@@ -1,14 +1,14 @@
 
 import React, { useEffect } from 'react';
-import Navigation from '@/components/Navigation';
-import Hero from '@/components/Hero';
-import Footer from '@/components/Footer';
-import TrustIndicators from '@/components/TrustIndicators';
-import FeatureHighlights from '@/components/FeatureHighlights';
-import UseCaseSection from '@/components/UseCaseSection';
-import PlatformPreview from '@/components/PlatformPreview';
-import BeforeAfterComparison from '@/components/BeforeAfterComparison';
-import CallToAction from '@/components/CallToAction';
+import MainNavigation from '@/components/MainNavigation';
+import HeroSection from '@/components/HeroSection';
+import FooterSection from '@/components/FooterSection';
+import VisualShowcase from '@/components/VisualShowcase';
+import KeyFeatures from '@/components/KeyFeatures';
+import PlatformFunctionality from '@/components/PlatformFunctionality';
+import ValueProposition from '@/components/ValueProposition';
+import Testimonials from '@/components/Testimonials';
+import CallToActionSection from '@/components/CallToActionSection';
 import ConversionTracker from '@/components/ConversionTracker';
 
 const Index = () => {
@@ -19,23 +19,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
+      <MainNavigation />
       
-      <Hero />
+      <HeroSection />
       
-      <TrustIndicators />
+      <VisualShowcase />
       
-      <FeatureHighlights />
+      <KeyFeatures />
       
-      <UseCaseSection />
+      <PlatformFunctionality />
       
-      <PlatformPreview />
+      <ValueProposition />
       
-      <BeforeAfterComparison />
+      <Testimonials />
       
-      <CallToAction />
+      <CallToActionSection />
       
-      <Footer />
+      <FooterSection />
       
       {/* Conversion Tracking */}
       <ConversionTracker action="landing_page_view" />
