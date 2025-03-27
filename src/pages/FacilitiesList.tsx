@@ -1,53 +1,49 @@
+
 import React, { useState, useEffect } from 'react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/contexts/UserContext';
-import { Factory, Plus, Building2, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Link, useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Building2, PlusCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/contexts/UserContext';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import { Facility } from '@/types/facility';
 import { fetchFacilities } from '@/utils/supabaseHelpers';
+import { Facility } from '@/types/facility';
 
-interface Facility {
-  id: string;
-  name: string;
-  description: string | null;
-  address: string | null;
-  facility_type: string | null;
-  organization_id: string;
-  status: string;
-  created_at: string;
-  organizations?: {
-    name: string;
-  }
-}
-
-const FacilitiesList: React.FC = () => {
+const FacilitiesList = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState('all-facilities');
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useUser();
-  const navigate = useNavigate();
+  
+  // Filter to current organization by default
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(
+    user?.organization_id
+  );
 
-  const fetchFacilitiesData = async () => {
+  useEffect(() => {
+    if (user) {
+      loadFacilities();
+    }
+  }, [user, selectedOrganizationId, selectedTab]);
+
+  const loadFacilities = async () => {
     try {
       setLoading(true);
       
-      // Use the helper function with organization filter if needed
-      const facilitiesData = await fetchFacilities(user?.organization_id);
+      const onlyAssigned = selectedTab === 'my-facilities';
+      const facilitiesData = await fetchFacilities(
+        selectedOrganizationId,
+        onlyAssigned
+      );
       
       setFacilities(facilitiesData);
-      setFilteredFacilities(facilitiesData);
     } catch (error) {
-      console.error('Error fetching facilities:', error);
+      console.error('Error loading facilities:', error);
       toast({
         title: 'Error',
         description: 'Failed to load facilities',
@@ -58,168 +54,131 @@ const FacilitiesList: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      if (user.organization_id) {
-        setSelectedOrgId(user.organization_id);
-      }
-      fetchFacilitiesData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (facilities.length > 0) {
-      filterFacilities();
-    }
-  }, [facilities, searchQuery, selectedOrgId]);
-
-  const filterFacilities = () => {
-    let result = [...facilities];
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(facility => 
-        facility.name.toLowerCase().includes(query) ||
-        (facility.description && facility.description.toLowerCase().includes(query)) ||
-        (facility.address && facility.address.toLowerCase().includes(query)) ||
-        (facility.facility_type && facility.facility_type.toLowerCase().includes(query))
-      );
-    }
-    
-    // Filter by organization
-    if (selectedOrgId) {
-      result = result.filter(facility => facility.organization_id === selectedOrgId);
-    }
-    
-    setFilteredFacilities(result);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
   const handleOrganizationChange = (orgId: string) => {
-    setSelectedOrgId(orgId);
-  };
-
-  const handleCreateFacility = () => {
-    navigate('/facilities/new');
-  };
-
-  const viewFacility = (id: string) => {
-    navigate(`/facilities/${id}`);
+    setSelectedOrganizationId(orgId);
   };
 
   return (
-    <SidebarLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
+    <div className="p-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Facilities</h1>
-          
-          <Button onClick={handleCreateFacility}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Facility
+          <Button onClick={() => navigate('/facilities/new')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Facility
           </Button>
         </div>
-        
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Filter Facilities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search facilities..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="pl-8"
-                />
-              </div>
-              
-              {user?.role?.includes('admin') && (
-                <div className="w-full md:w-64">
-                  <OrganizationSelector />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>All Facilities</CardTitle>
+            <CardTitle>Facilities Management</CardTitle>
             <CardDescription>
-              Showing {filteredFacilities.length} of {facilities.length} facilities
+              View and manage all facilities in your organization
             </CardDescription>
+            
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Organization</label>
+                  <OrganizationSelector 
+                    value={selectedOrganizationId}
+                    onChange={handleOrganizationChange}
+                  />
+                </div>
+              </div>
+            </div>
           </CardHeader>
+          
           <CardContent>
-            {loading ? (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground">Loading facilities...</p>
-              </div>
-            ) : filteredFacilities.length === 0 ? (
-              <div className="text-center py-6">
-                <Factory className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                <p className="mt-2 text-muted-foreground">No facilities found.</p>
-                <Button variant="outline" className="mt-4" onClick={handleCreateFacility}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add your first facility
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Address</TableHead>
-                    {user?.role?.includes('admin') && (
-                      <TableHead>Organization</TableHead>
-                    )}
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFacilities.map((facility) => (
-                    <TableRow key={facility.id} className="cursor-pointer" onClick={() => viewFacility(facility.id)}>
-                      <TableCell className="font-medium">{facility.name}</TableCell>
-                      <TableCell>{facility.facility_type || 'Not specified'}</TableCell>
-                      <TableCell>{facility.address || 'Not specified'}</TableCell>
-                      {user?.role?.includes('admin') && (
-                        <TableCell className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
-                          {facility.organizations?.name || 'Unknown'}
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          facility.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {facility.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={(e) => {
-                          e.stopPropagation();
-                          viewFacility(facility.id);
-                        }}>
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <Tabs defaultValue="all-facilities" value={selectedTab} onValueChange={setSelectedTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="all-facilities">All Facilities</TabsTrigger>
+                {user?.assigned_facility_ids && user.assigned_facility_ids.length > 0 && (
+                  <TabsTrigger value="my-facilities">My Facilities</TabsTrigger>
+                )}
+              </TabsList>
+              
+              <TabsContent value="all-facilities">
+                {renderFacilitiesTable()}
+              </TabsContent>
+              
+              <TabsContent value="my-facilities">
+                {renderFacilitiesTable()}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
-    </SidebarLayout>
+    </div>
   );
+
+  function renderFacilitiesTable() {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (facilities.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium">No facilities found</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            Get started by adding your first facility
+          </p>
+          <Button className="mt-4" onClick={() => navigate('/facilities/new')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Facility
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {facilities.map((facility) => (
+              <TableRow key={facility.id}>
+                <TableCell className="font-medium">{facility.name}</TableCell>
+                <TableCell>{facility.facility_type || 'N/A'}</TableCell>
+                <TableCell>{facility.address || 'N/A'}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    facility.status === 'active' ? 'bg-green-100 text-green-800' : 
+                    facility.status === 'inactive' ? 'bg-gray-100 text-gray-800' : 
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {facility.status}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate(`/facilities/${facility.id}`)}
+                  >
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 };
 
 export default FacilitiesList;

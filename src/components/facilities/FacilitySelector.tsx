@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
 import { Facility } from '@/types/facility';
+import { fetchFacilities } from '@/utils/supabaseHelpers';
 
 interface FacilitySelectorProps {
   organizationId?: string | null;
@@ -30,24 +30,15 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
 
   useEffect(() => {
     if (activeOrgId) {
-      fetchFacilities(activeOrgId);
+      loadFacilities(activeOrgId);
     }
   }, [activeOrgId, user]);
 
-  const fetchFacilities = async (orgId: string) => {
+  const loadFacilities = async (orgId: string) => {
     try {
       setLoading(true);
-      
-      // Use rpc call to get facilities
-      const { data, error } = await supabase
-        .rpc('get_facilities_by_organization', {
-          org_id: orgId
-        });
-      
-      if (error) throw error;
-      
-      // Type assertion to help TypeScript understand the data structure
-      setFacilities(data as Facility[]);
+      const facilitiesData = await fetchFacilities(orgId);
+      setFacilities(facilitiesData);
     } catch (error) {
       console.error('Error fetching facilities:', error);
       toast({

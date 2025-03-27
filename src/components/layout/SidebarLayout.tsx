@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from 'next-themes'
 import { useUser } from '@/contexts/UserContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoonIcon, SunIcon, Menu, Settings, User, HelpCircle, Exit, Languages } from 'lucide-react';
+import { MoonIcon, SunIcon, Menu, Settings, User, HelpCircle, LogOut, Languages } from 'lucide-react';
 
 interface SidebarContextProps {
   sidebarOpen: boolean;
@@ -34,14 +34,12 @@ interface SidebarContextProps {
   closeSidebar: () => void;
 }
 
-// Create the context with a default value
 const SidebarContext = createContext<SidebarContextProps>({
   sidebarOpen: false,
   toggleSidebar: () => {},
   closeSidebar: () => {},
 });
 
-// Custom hook to use the sidebar context
 export const useSidebar = () => {
   const context = useContext(SidebarContext);
   if (!context) {
@@ -50,7 +48,6 @@ export const useSidebar = () => {
   return context;
 };
 
-// Provider component to wrap the application
 export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -181,7 +178,7 @@ const Header = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
-                <Exit className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -239,7 +236,6 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     }
   }, [user, navigate]);
   
-  // For language settings, add a safe fallback
   const getLanguageSetting = () => {
     if (user?.preferences?.language) {
       return user.preferences.language;

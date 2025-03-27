@@ -6,43 +6,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Loader2 } from 'lucide-react';
 import { Organization } from '@/types/organization';
+import { fetchOrganizations } from '@/utils/supabaseHelpers';
 
-const OrganizationSelector: React.FC = () => {
+interface OrganizationSelectorProps {
+  value?: string | null;
+  onChange?: (organizationId: string) => void;
+  disabled?: boolean;
+}
+
+const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
+  value,
+  onChange,
+  disabled = false
+}) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { user, updateProfile } = useUser();
+  const { user, updateUser } = useUser();
 
   useEffect(() => {
-    if (user) {
-      fetchOrganizations();
-      if (user.organization_id) {
-        setSelectedOrg(user.organization_id);
-      }
-    }
+    loadOrganizations();
   }, [user]);
 
-  const fetchOrganizations = async () => {
+  const loadOrganizations = async () => {
     try {
       setLoading(true);
-      
-      // Use rpc call to get organizations
-      const { data, error } = await supabase
-        .rpc('get_user_organizations');
-      
-      if (error) throw error;
-      
-      // Type assertion for TypeScript
-      setOrganizations(data as Organization[]);
-      
-      // If user doesn't have an organization set yet but there's only one available, select it
-      if (data.length === 1 && !selectedOrg) {
-        setSelectedOrg(data[0].id);
-        if (user) {
-          await updateProfile({ organization_id: data[0].id } as any);
-        }
-      }
+      const organizationsData = await fetchOrganizations();
+      setOrganizations(organizationsData || []);
     } catch (error) {
       console.error('Error fetching organizations:', error);
       toast({
@@ -55,18 +45,33 @@ const OrganizationSelector: React.FC = () => {
     }
   };
 
-  const handleOrganizationChange = async (value: string) => {
-    setSelectedOrg(value);
-    if (user) {
+  const handleOrganizationChange = async (organizationId: string) => {
+    if (onChange) {
+      onChange(organizationId);
+    }
+
+    // Update the user's organization_id in their profile if they're changing it
+    if (user && organizationId !== user.organization_id) {
       try {
-        await updateProfile({ organization_id: value } as any);
+        const { error } = await supabase
+          .from('profiles')
+          .update({ organization_id: organizationId })
+          .eq('id', user.id);
+
+        if (error) throw error;
+
+        // Update local user state
+        if (updateUser) {
+          updateUser({
+            ...user,
+            organization_id: organizationId
+          });
+        }
+
         toast({
-          title: 'Organization Updated',
-          description: 'Your active organization has been changed',
+          title: 'Success',
+          description: 'Organization updated',
         });
-        
-        // Reload the page to update all data based on new organization
-        window.location.reload();
       } catch (error) {
         console.error('Error updating organization:', error);
         toast({
@@ -80,39 +85,37 @@ const OrganizationSelector: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-4">
+      <div className="flex justify-center items-center h-10">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (organizations.length === 0) {
-    return null;
-  }
-
-  if (organizations.length === 1) {
     return (
-      <div className="px-3 py-2 text-sm font-medium">
-        {organizations[0].name}
+      <div className="text-sm text-muted-foreground py-2">
+        No organizations available
       </div>
     );
   }
 
   return (
-    <div className="px-3 py-2">
-      <Select value={selectedOrg || undefined} onValueChange={handleOrganizationChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select Organization" />
-        </SelectTrigger>
-        <SelectContent>
-          {organizations.map((org) => (
-            <SelectItem key={org.id} value={org.id}>
-              {org.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select 
+      value={value || user?.organization_id || undefined} 
+      onValueChange={handleOrganizationChange}
+      disabled={disabled || organizations.length === 0}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select Organization" />
+      </SelectTrigger>
+      <SelectContent>
+        {organizations.map((org) => (
+          <SelectItem key={org.id} value={org.id}>
+            {org.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

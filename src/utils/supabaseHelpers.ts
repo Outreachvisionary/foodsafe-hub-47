@@ -7,20 +7,15 @@ import { RegulatoryStandard, FacilityStandard } from '@/types/regulatory';
 // Function to fetch facilities with proper type handling
 export async function fetchFacilities(organizationId?: string, onlyAssigned: boolean = false) {
   try {
-    let query = supabase
-      .from('temp_facilities') // This is a temporary view or function call
-      .select('*')
-      .eq('status', 'active');
-    
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
-    }
-    
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .rpc('get_facilities', {
+        p_organization_id: organizationId || null,
+        p_only_assigned: onlyAssigned
+      });
     
     if (error) throw error;
     
-    return data as unknown as Facility[];
+    return data as Facility[];
   } catch (error) {
     console.error('Error fetching facilities:', error);
     throw error;
@@ -31,13 +26,11 @@ export async function fetchFacilities(organizationId?: string, onlyAssigned: boo
 export async function fetchOrganizations() {
   try {
     const { data, error } = await supabase
-      .from('temp_organizations') // This is a temporary view or function call
-      .select('*')
-      .eq('status', 'active');
+      .rpc('get_organizations');
     
     if (error) throw error;
     
-    return data as unknown as Organization[];
+    return data as Organization[];
   } catch (error) {
     console.error('Error fetching organizations:', error);
     throw error;
@@ -48,13 +41,11 @@ export async function fetchOrganizations() {
 export async function fetchRegulatoryStandards() {
   try {
     const { data, error } = await supabase
-      .from('temp_regulatory_standards') // This is a temporary view or function call
-      .select('*')
-      .eq('status', 'active');
+      .rpc('get_regulatory_standards');
     
     if (error) throw error;
     
-    return data as unknown as RegulatoryStandard[];
+    return data as RegulatoryStandard[];
   } catch (error) {
     console.error('Error fetching regulatory standards:', error);
     throw error;
@@ -65,16 +56,13 @@ export async function fetchRegulatoryStandards() {
 export async function fetchFacilityStandards(facilityId: string) {
   try {
     const { data, error } = await supabase
-      .from('temp_facility_standards') // This is a temporary view or function call
-      .select(`
-        *,
-        regulatory_standards:temp_regulatory_standards(*)
-      `)
-      .eq('facility_id', facilityId);
+      .rpc('get_facility_standards', {
+        p_facility_id: facilityId
+      });
     
     if (error) throw error;
     
-    return data as unknown as FacilityStandard[];
+    return data as FacilityStandard[];
   } catch (error) {
     console.error('Error fetching facility standards:', error);
     throw error;

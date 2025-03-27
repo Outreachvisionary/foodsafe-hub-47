@@ -1,103 +1,91 @@
 
--- Function to get facilities by organization with proper filtering for user permissions
-CREATE OR REPLACE FUNCTION public.get_facilities_by_organization(org_id UUID DEFAULT NULL)
-RETURNS SETOF public.facilities
+-- Function to get organizations with proper filtering
+CREATE OR REPLACE FUNCTION get_organizations()
+RETURNS SETOF organizations
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  user_id UUID := auth.uid();
-  user_role TEXT;
-  user_org_id UUID;
-  user_assigned_facilities UUID[];
 BEGIN
-  -- Get user information
-  SELECT 
-    role, 
-    organization_id, 
-    assigned_facility_ids 
-  INTO 
-    user_role, 
-    user_org_id, 
-    user_assigned_facilities
-  FROM 
-    public.profiles 
-  WHERE 
-    id = user_id;
-  
-  -- If organization ID is not provided, use the user's organization
-  IF org_id IS NULL THEN
-    org_id := user_org_id;
-  END IF;
-  
-  -- Return all facilities for the organization if user is admin
-  IF user_role = 'system_admin' OR user_role = 'org_admin' THEN
-    RETURN QUERY 
-      SELECT * FROM public.facilities
-      WHERE organization_id = org_id AND status = 'active';
-  ELSE
-    -- Return only facilities the user is assigned to
-    RETURN QUERY 
-      SELECT * FROM public.facilities
-      WHERE 
-        organization_id = org_id 
-        AND status = 'active'
-        AND id = ANY(user_assigned_facilities);
-  END IF;
+  RETURN QUERY
+  SELECT * FROM organizations
+  WHERE status = 'active'
+  ORDER BY name;
 END;
 $$;
 
--- Function to get organizations the user has access to
-CREATE OR REPLACE FUNCTION public.get_user_organizations()
-RETURNS SETOF public.organizations
+-- Function to get facilities with proper filtering based on organization and user permissions
+CREATE OR REPLACE FUNCTION get_facilities(
+  p_organization_id UUID DEFAULT NULL,
+  p_only_assigned BOOLEAN DEFAULT FALSE
+)
+RETURNS SETOF facilities
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  user_id UUID := auth.uid();
-  user_role TEXT;
-  user_org_id UUID;
+  v_user_id UUID;
+  v_user_org_id UUID;
+  v_is_admin BOOLEAN;
 BEGIN
-  -- Get user information
-  SELECT 
-    role, 
-    organization_id
-  INTO 
-    user_role, 
-    user_org_id
-  FROM 
-    public.profiles 
-  WHERE 
-    id = user_id;
+  -- Get the current user ID
+  v_user_id := auth.uid();
   
-  -- Return all organizations if user is system admin
-  IF user_role = 'system_admin' THEN
-    RETURN QUERY 
-      SELECT * FROM public.organizations
-      WHERE status = 'active';
-  ELSE
-    -- Return only the user's organization
-    RETURN QUERY 
-      SELECT * FROM public.organizations
-      WHERE 
-        id = user_org_id 
-        AND status = 'active';
-  END IF;
+  -- Get user's organization ID and check if admin
+  SELECT 
+    organization_id,
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = v_user_id AND r.name IN ('system_admin', 'org_admin')
+    )
+  INTO v_user_org_id, v_is_admin
+  FROM profiles
+  WHERE id = v_user_id;
+  
+  -- Filter query based on parameters and permissions
+  RETURN QUERY
+  SELECT f.*
+  FROM facilities f
+  WHERE f.status = 'active'
+  AND (
+    -- Filter by specific organization if provided
+    (p_organization_id IS NOT NULL AND f.organization_id = p_organization_id)
+    -- Or use user's organization if no org ID provided
+    OR (p_organization_id IS NULL AND v_user_org_id IS NOT NULL AND f.organization_id = v_user_org_id)
+    -- Or return all if system admin
+    OR (p_organization_id IS NULL AND v_is_admin)
+  )
+  -- Filter to only user's assigned facilities if requested
+  AND (
+    NOT p_only_assigned
+    OR (
+      p_only_assigned AND EXISTS (
+        SELECT 1 FROM profiles p
+        WHERE p.id = v_user_id
+        AND f.id = ANY(p.assigned_facility_ids)
+      )
+    )
+  )
+  ORDER BY f.name;
 END;
 $$;
 
 -- Function to get regulatory standards
-CREATE OR REPLACE FUNCTION public.get_regulatory_standards()
-RETURNS SETOF public.regulatory_standards
-LANGUAGE sql
+CREATE OR REPLACE FUNCTION get_regulatory_standards()
+RETURNS SETOF regulatory_standards
+LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-  SELECT * FROM public.regulatory_standards
-  WHERE status = 'active';
+BEGIN
+  RETURN QUERY
+  SELECT * FROM regulatory_standards
+  WHERE status = 'active'
+  ORDER BY name;
+END;
 $$;
 
--- Function to get facility standards with regulatory standard info
-CREATE OR REPLACE FUNCTION public.get_facility_standards(facility_id UUID)
+-- Function to get facility standards with their related regulatory standard info
+CREATE OR REPLACE FUNCTION get_facility_standards(p_facility_id UUID)
 RETURNS TABLE (
   id UUID,
   facility_id UUID,
@@ -110,11 +98,15 @@ RETURNS TABLE (
   updated_at TIMESTAMP WITH TIME ZONE,
   standard_name TEXT,
   standard_code TEXT,
-  standard_version TEXT
+  standard_description TEXT,
+  standard_version TEXT,
+  standard_authority TEXT
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+BEGIN
+  RETURN QUERY
   SELECT 
     fs.id,
     fs.facility_id,
@@ -125,99 +117,32 @@ AS $$
     fs.notes,
     fs.created_at,
     fs.updated_at,
-    rs.name as standard_name,
-    rs.code as standard_code,
-    rs.version as standard_version
-  FROM 
-    public.facility_standards fs
-    JOIN public.regulatory_standards rs ON fs.standard_id = rs.id
-  WHERE 
-    fs.facility_id = $1;
-$$;
-
--- Organization management helper functions
-CREATE OR REPLACE FUNCTION public.create_organization(
-  name TEXT,
-  description TEXT DEFAULT NULL,
-  contact_email TEXT DEFAULT NULL,
-  contact_phone TEXT DEFAULT NULL,
-  status TEXT DEFAULT 'active'
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  new_id UUID;
-BEGIN
-  INSERT INTO public.organizations(
-    name, 
-    description, 
-    contact_email, 
-    contact_phone, 
-    status
-  )
-  VALUES (
-    name, 
-    description, 
-    contact_email, 
-    contact_phone, 
-    status
-  )
-  RETURNING id INTO new_id;
-  
-  RETURN new_id;
+    rs.name AS standard_name,
+    rs.code AS standard_code,
+    rs.description AS standard_description,
+    rs.version AS standard_version,
+    rs.authority AS standard_authority
+  FROM facility_standards fs
+  JOIN regulatory_standards rs ON fs.standard_id = rs.id
+  WHERE fs.facility_id = p_facility_id
+  ORDER BY rs.name;
 END;
 $$;
 
--- Facility management helper functions
-CREATE OR REPLACE FUNCTION public.create_facility(
-  name TEXT,
-  description TEXT DEFAULT NULL,
-  address TEXT DEFAULT NULL,
-  facility_type TEXT DEFAULT NULL,
-  organization_id UUID,
-  status TEXT DEFAULT 'active'
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  new_id UUID;
-BEGIN
-  INSERT INTO public.facilities(
-    name, 
-    description, 
-    address, 
-    facility_type, 
-    organization_id,
-    status
-  )
-  VALUES (
-    name, 
-    description, 
-    address, 
-    facility_type, 
-    organization_id,
-    status
-  )
-  RETURNING id INTO new_id;
-  
-  RETURN new_id;
-END;
-$$;
+-- Add temp views for use during development
+-- These can be replaced with proper tables later
+CREATE OR REPLACE VIEW temp_organizations AS
+SELECT * FROM organizations;
 
--- Create temporary views for development purposes
--- These would normally be replaced by real tables and proper RLS policies
-CREATE OR REPLACE VIEW public.temp_facilities AS 
-SELECT * FROM public.facilities;
+CREATE OR REPLACE VIEW temp_facilities AS
+SELECT * FROM facilities;
 
-CREATE OR REPLACE VIEW public.temp_organizations AS 
-SELECT * FROM public.organizations;
+CREATE OR REPLACE VIEW temp_regulatory_standards AS
+SELECT * FROM regulatory_standards;
 
-CREATE OR REPLACE VIEW public.temp_regulatory_standards AS 
-SELECT * FROM public.regulatory_standards;
-
-CREATE OR REPLACE VIEW public.temp_facility_standards AS 
-SELECT * FROM public.facility_standards;
+CREATE OR REPLACE VIEW temp_facility_standards AS
+SELECT 
+  fs.*,
+  rs.* AS regulatory_standards
+FROM facility_standards fs
+JOIN regulatory_standards rs ON fs.standard_id = rs.id;

@@ -10,9 +10,10 @@ export interface UserProfile {
     dashboardLayout?: string;
     theme?: string;
     notificationsEnabled?: boolean;
+    language?: string;
     [key: string]: any;
   };
-  // New additions for multi-facility support
+  // Multi-facility support fields
   organization_id?: string;
   assigned_facility_ids?: string[];
   preferred_language?: string;
