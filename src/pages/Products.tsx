@@ -98,14 +98,14 @@ const Products = () => {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/demo">
-                  <Button className="bg-cc-purple hover:bg-cc-purple/90 text-white px-6 py-2.5 text-lg group font-sans" size="lg">
+                  <Button size="lg" className="bg-cc-purple hover:bg-cc-teal text-white px-6 py-2.5 text-lg group font-sans">
                     Request a demo
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 
                 <Link to="/resources/white-paper">
-                  <Button variant="outline" size="lg" className="border-cc-teal text-cc-gold hover: bg-cc-teal/5 px-6 py-2.5 text-lg font-sans">
+                  <Button variant="outline" size="lg" className="border-cc-teal text-cc-white hover:bg-cc-teal px-6 py-2.5 text-lg font-sans">
                     Download white paper
                   </Button>
                 </Link>
