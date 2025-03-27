@@ -4,8 +4,39 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Search, Shield, FileCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleDemoLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'demo@example.com',
+        password: 'demopassword123'
+      });
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="relative pt-20 pb-24 md:pt-32 md:pb-40 overflow-hidden">
       {/* Background Elements */}
@@ -63,26 +94,24 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Link to="/dashboard">
+          <Link to="/auth">
             <Button 
-              className="bg-fsms-blue hover:bg-fsms-blue/90 text-white px-8 py-6 text-lg"
+              className="bg-fsms-blue hover:bg-fsms-blue/90 text-white px-8 py-6 text-lg w-full sm:w-auto"
               size="lg"
             >
-              View Dashboard
+              Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
           
-          <Link to="/standards">
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="px-8 py-6 text-lg"
-            >
-              <Search className="mr-2 h-5 w-5" />
-              Explore Standards
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            size="lg"
+            className="px-8 py-6 text-lg w-full sm:w-auto"
+            onClick={handleDemoLogin}
+          >
+            Try Demo
+          </Button>
         </motion.div>
         
         <motion.div 

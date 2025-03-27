@@ -42,12 +42,12 @@ const CTASection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link to="/dashboard">
+            <Link to="/auth?mode=register">
               <Button 
                 size="lg" 
                 className="bg-white text-fsms-blue hover:bg-white/90 px-8 py-6 text-lg"
               >
-                Explore Dashboard
+                Get Started Today
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>

@@ -17,6 +17,7 @@ import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
 import Standards from './pages/Standards';
 import NotFound from './pages/NotFound';
+import Auth from './pages/Auth';
 
 // Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
@@ -33,6 +34,7 @@ const App = () => {
       <Toaster />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/documents/*" element={<Documents />} />
         <Route path="/haccp" element={<HaccpModule />} />
