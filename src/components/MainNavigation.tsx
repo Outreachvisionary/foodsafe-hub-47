@@ -27,7 +27,7 @@ const MainNavigation = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-display font-bold text-cc-light">
-              Compliance<span className="text-cc-gold bg-cc-darkTeal px-1 rounded">Core</span>
+              Compliance<span className="px-1 rounded font-bold text-cc-gold">Core</span>
             </Link>
           </div>
           
