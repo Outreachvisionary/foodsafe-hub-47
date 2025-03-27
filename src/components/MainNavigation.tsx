@@ -84,7 +84,7 @@ const MainNavigation = () => {
                   Resources <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-white">
+              <DropdownMenuContent className="bg-cc-tagline">
                 <DropdownMenuItem>
                   <Link to="/resources/guides" className="w-full font-sans">Guides</Link>
                 </DropdownMenuItem>
