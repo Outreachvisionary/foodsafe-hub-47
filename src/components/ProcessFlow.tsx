@@ -46,7 +46,7 @@ const ProcessFlow = () => {
           }} transition={{
             duration: 0.5,
             delay: index * 0.2
-          }} className="flex flex-col items-center text-center">
+          }} className="flex flex- items-center text-center">
                 <div className="w-16 h-16 bg-cc-white rounded-full flex items-center justify-center mb-6 shadow-md border-2 border-cc-green">
                   <step.icon className="h-7 w-7 text-cc-gold" />
                 </div>
