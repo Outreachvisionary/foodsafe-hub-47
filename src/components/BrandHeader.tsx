@@ -1,36 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-
 const BrandHeader: React.FC = () => {
-  return (
-    <div className="bg-cc-teal py-8 px-4 md:px-8 text-center">
+  return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center mb-6">
-          {/* SVG logo can be placed directly here */}
-          <div className="h-16 mb-4 w-auto">
-            {/* Option 1: If SVG is uploaded as a file */}
-            {/* <img src="/path/to/your/logo.svg" alt="Compliance Core Logo" className="h-full w-auto" /> */}
-            
-            {/* Option 2: Inline SVG for better control */}
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 240 80" 
-              className="h-full w-auto"
-              aria-labelledby="compliance-core-logo-title"
-            >
-              <title id="compliance-core-logo-title">Compliance Core Logo</title>
-              {/* Example SVG content - replace with your actual SVG paths */}
-              <path 
-                d="M40,20 L200,20 L200,60 L40,60 Z" 
-                fill="#C6A256" /* This uses the gold color from your theme */
-                stroke="#FFFFFF"
-                strokeWidth="2"
-              />
-              {/* Additional SVG paths would go here */}
-            </svg>
-          </div>
-          
+          <img alt="Compliance Core Logo" src="/lovable-uploads/515ea5ef-18c2-4017-8772-1783b71937c4.png" className="bg-remove h-35 mb-35 object-none" />
           <h1 className="text-4xl md:text-5xl font-display text-white font-bold mb-3">
             COMPLIANCE <span className="text-cc-gold">CORE</span>
           </h1>
@@ -52,8 +26,6 @@ const BrandHeader: React.FC = () => {
           </Link>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default BrandHeader;
