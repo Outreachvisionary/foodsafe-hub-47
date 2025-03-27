@@ -91,7 +91,7 @@ const Products = () => {
               
               <div className="space-y-3 mb-8">
                 {content.features.map((feature, index) => <div key={index} className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-cc-purple mr-2 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-cc-gold/90 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="text-cc-charcoal/80 font-sans">{feature}</span>
                   </div>)}
               </div>
