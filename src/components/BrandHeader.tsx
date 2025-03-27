@@ -4,7 +4,7 @@ const BrandHeader: React.FC = () => {
   return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center object-scale-down">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col items-center justify-center mb-6">
-          <img alt="Compliance Core Logo" src="/lovable-uploads/14e3f24c-4110-4b3b-ad1e-a5044444e66b.png" className="h-32 mb-4 object-scale-down" />
+          <img src="/lovable-uploads/98c6dceb-0bcf-4c01-a92f-ce4f884cdcff.png" alt="Compliance Core Logo" className="h-32 mb-4" />
           <h1 className="text-4xl md:text-5xl font-display text-white font-bold mb-3">
             COMPLIANCE <span className="text-cc-gold">CORE</span>
           </h1>
