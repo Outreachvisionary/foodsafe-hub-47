@@ -44,7 +44,7 @@ const TestimonialSection = () => {
         }} transition={{
           duration: 0.5,
           delay: index * 0.2
-        }} className="bg-cc-white p-6 rounded-lg shadow-md border-l-4 border-cc-darkTeal">
+        }} className="bg-cc-white p-6 rounded-lg shadow-md border-l-4 border-cc-teal">
               <div className="mb-4 text-cc-purple">
                 <Quote className="h-8 w-8 transform rotate-180" />
               </div>

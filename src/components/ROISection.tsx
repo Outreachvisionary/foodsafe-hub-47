@@ -56,7 +56,7 @@ const ROISection = () => {
           <p className="text-lg text-cc-charcoal/90 max-w-2xl mx-auto font-sans italic">
             "Compliance Core has transformed how we manage food safety across our manufacturing network. What used to take weeks now takes hours."
           </p>
-          <p className="mt-4 font-display font-medium text-cc-purple">
+          <p className="mt-4 font-display font-medium text-cc-tagline">
             — Operations Director, Leading Food Manufacturer
           </p>
         </div>
