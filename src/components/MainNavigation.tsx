@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { ChevronDown, Menu, X } from 'lucide-react';
 const MainNavigation = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +22,11 @@ const MainNavigation = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsNavOpen(false);
+  }, [location.pathname]);
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 
@@ -41,7 +47,7 @@ const MainNavigation = () => {
                   Products <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-white">
                 <DropdownMenuItem>
                   <Link to="/products/audit-management" className="w-full">Audit Management</Link>
                 </DropdownMenuItem>
@@ -60,7 +66,7 @@ const MainNavigation = () => {
                   Solutions <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-white">
                 <DropdownMenuItem>
                   <Link to="/solutions/processed-foods" className="w-full">Processed Foods</Link>
                 </DropdownMenuItem>
@@ -79,7 +85,7 @@ const MainNavigation = () => {
                   Resources <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-white">
                 <DropdownMenuItem>
                   <Link to="/resources/guides" className="w-full">Guides</Link>
                 </DropdownMenuItem>
@@ -98,7 +104,7 @@ const MainNavigation = () => {
                   Integrations <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-white">
                 <DropdownMenuItem>
                   <Link to="/integrations/erp" className="w-full">ERP Systems</Link>
                 </DropdownMenuItem>
@@ -117,7 +123,7 @@ const MainNavigation = () => {
                   Company <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-white">
                 <DropdownMenuItem>
                   <Link to="/company/about" className="w-full">About</Link>
                 </DropdownMenuItem>
@@ -154,28 +160,77 @@ const MainNavigation = () => {
       {/* Mobile Menu */}
       {isNavOpen && (
         <div className="fixed inset-0 bg-white z-40 pt-16 md:hidden">
-          <div className="p-4 space-y-4">
-            <Link to="/products" className="block py-2 text-lg font-medium" onClick={() => setIsNavOpen(false)}>
-              Products
-            </Link>
-            <Link to="/solutions" className="block py-2 text-lg font-medium" onClick={() => setIsNavOpen(false)}>
-              Solutions
-            </Link>
-            <Link to="/resources" className="block py-2 text-lg font-medium" onClick={() => setIsNavOpen(false)}>
-              Resources
-            </Link>
-            <Link to="/integrations" className="block py-2 text-lg font-medium" onClick={() => setIsNavOpen(false)}>
-              Integrations
-            </Link>
-            <Link to="/company" className="block py-2 text-lg font-medium" onClick={() => setIsNavOpen(false)}>
-              Company
-            </Link>
+          <div className="p-4 space-y-4 overflow-y-auto h-full">
+            <div className="py-2 border-b">
+              <div className="text-lg font-medium mb-1">Products</div>
+              <Link to="/products/audit-management" className="block py-2">
+                Audit Management
+              </Link>
+              <Link to="/products/document-control" className="block py-2">
+                Document Control
+              </Link>
+              <Link to="/products/supplier-compliance" className="block py-2">
+                Supplier Compliance
+              </Link>
+            </div>
             
-            <div className="pt-4 mt-4 border-t">
-              <Link to="/login" onClick={() => setIsNavOpen(false)}>
+            <div className="py-2 border-b">
+              <div className="text-lg font-medium mb-1">Solutions</div>
+              <Link to="/solutions/processed-foods" className="block py-2">
+                Processed Foods
+              </Link>
+              <Link to="/solutions/dairy" className="block py-2">
+                Dairy
+              </Link>
+              <Link to="/solutions/meat-processing" className="block py-2">
+                Meat Processing
+              </Link>
+            </div>
+            
+            <div className="py-2 border-b">
+              <div className="text-lg font-medium mb-1">Resources</div>
+              <Link to="/resources/guides" className="block py-2">
+                Guides
+              </Link>
+              <Link to="/resources/blog" className="block py-2">
+                Blog
+              </Link>
+              <Link to="/resources/webinars" className="block py-2">
+                Webinars
+              </Link>
+            </div>
+            
+            <div className="py-2 border-b">
+              <div className="text-lg font-medium mb-1">Integrations</div>
+              <Link to="/integrations/erp" className="block py-2">
+                ERP Systems
+              </Link>
+              <Link to="/integrations/lab-systems" className="block py-2">
+                Lab Systems
+              </Link>
+              <Link to="/integrations/sensors" className="block py-2">
+                Sensor Networks
+              </Link>
+            </div>
+            
+            <div className="py-2 border-b">
+              <div className="text-lg font-medium mb-1">Company</div>
+              <Link to="/company/about" className="block py-2">
+                About
+              </Link>
+              <Link to="/company/careers" className="block py-2">
+                Careers
+              </Link>
+              <Link to="/company/contact" className="block py-2">
+                Contact
+              </Link>
+            </div>
+            
+            <div className="pt-4 mt-4">
+              <Link to="/login">
                 <Button variant="outline" className="w-full mb-2">Login</Button>
               </Link>
-              <Link to="/demo" onClick={() => setIsNavOpen(false)}>
+              <Link to="/demo">
                 <Button className="w-full bg-brand-teal hover:bg-brand-teal/90 text-white">Book a free demo</Button>
               </Link>
             </div>
