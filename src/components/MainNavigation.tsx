@@ -32,7 +32,7 @@ const MainNavigation = () => {
           </div>
           
           {/* Desktop Nav */}
-          <div className="hidden md:flex md:items-center md:space-x-8 hover:bg-cc-gold/90">
+          <div className="hidden md:flex md:items-center md:space-x-8">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={`font-display text-cc-light hover:text-cc-gold -ml-4 ${isActiveLink('/platform') ? 'cc-underline font-medium' : ''}`}>
