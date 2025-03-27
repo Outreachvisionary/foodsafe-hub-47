@@ -22,6 +22,11 @@ import NotFound from './pages/NotFound';
 import NonConformanceModule from './pages/NonConformance';
 import NonConformanceFormPage from './pages/NonConformanceForm';
 
+// Organization & Facility Management
+import OrganizationManagement from './pages/OrganizationManagement';
+import FacilitiesList from './pages/FacilitiesList';
+import FacilityManagement from './pages/FacilityManagement';
+
 const App = () => {
   return (
     <div className="app">
@@ -45,6 +50,12 @@ const App = () => {
         <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
         <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
         <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+        
+        {/* Organization & Facility Management Routes */}
+        <Route path="/organization" element={<OrganizationManagement />} />
+        <Route path="/facilities" element={<FacilitiesList />} />
+        <Route path="/facilities/:id" element={<FacilityManagement />} />
+        <Route path="/facilities/new" element={<FacilityManagement />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

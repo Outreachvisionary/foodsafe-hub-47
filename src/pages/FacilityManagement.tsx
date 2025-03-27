@@ -1,0 +1,439 @@
+
+import React, { useState, useEffect } from 'react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
+import { useUser } from '@/contexts/UserContext';
+import { Building2, Plus, Trash2, Edit, Users, Factory, Shield, Info } from 'lucide-react';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
+import FacilitySelector from '@/components/facilities/FacilitySelector';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useParams, useNavigate } from 'react-router-dom';
+
+interface Facility {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  facility_type: string | null;
+  organization_id: string;
+  status: string;
+  metadata: Record<string, any> | null;
+  created_at: string;
+}
+
+interface FacilityStandard {
+  id: string;
+  facility_id: string;
+  standard_id: string;
+  compliance_status: string;
+  certification_date: string | null;
+  expiry_date: string | null;
+  notes: string | null;
+  regulatory_standards: {
+    id: string;
+    name: string;
+    code: string;
+    version: string | null;
+  }
+}
+
+interface RegulatoryStandard {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  version: string | null;
+  authority: string | null;
+}
+
+const FacilityManagement: React.FC = () => {
+  const [facility, setFacility] = useState<Facility | null>(null);
+  const [standards, setStandards] = useState<RegulatoryStandard[]>([]);
+  const [facilityStandards, setFacilityStandards] = useState<FacilityStandard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    address: '',
+    facilityType: '',
+    status: 'active'
+  });
+  const { toast } = useToast();
+  const { user } = useUser();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (id) {
+      fetchFacility(id);
+      fetchFacilityStandards(id);
+    }
+    fetchStandards();
+  }, [id]);
+
+  const fetchFacility = async (facilityId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('facilities')
+        .select('*')
+        .eq('id', facilityId)
+        .single();
+      
+      if (error) throw error;
+      
+      setFacility(data as Facility);
+      setFormData({
+        name: data.name,
+        description: data.description || '',
+        address: data.address || '',
+        facilityType: data.facility_type || '',
+        status: data.status
+      });
+    } catch (error) {
+      console.error('Error fetching facility:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load facility details',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStandards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('regulatory_standards')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      
+      setStandards(data as RegulatoryStandard[]);
+    } catch (error) {
+      console.error('Error fetching standards:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load standards',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const fetchFacilityStandards = async (facilityId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('facility_standards')
+        .select(`
+          *,
+          regulatory_standards (
+            id,
+            name,
+            code,
+            version
+          )
+        `)
+        .eq('facility_id', facilityId);
+      
+      if (error) throw error;
+      
+      setFacilityStandards(data as FacilityStandard[]);
+    } catch (error) {
+      console.error('Error fetching facility standards:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load facility standards',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSaveFacility = async () => {
+    if (!facility) return;
+    
+    try {
+      const { error } = await supabase
+        .from('facilities')
+        .update({
+          name: formData.name,
+          description: formData.description || null,
+          address: formData.address || null,
+          facility_type: formData.facilityType || null,
+          status: formData.status
+        })
+        .eq('id', facility.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Facility Updated',
+        description: 'The facility was updated successfully'
+      });
+      
+      setIsEditing(false);
+      fetchFacility(facility.id);
+    } catch (error) {
+      console.error('Error updating facility:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update facility',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const backToFacilitiesList = () => {
+    navigate('/facilities');
+  };
+
+  const renderFacilityDetails = () => {
+    if (isEditing) {
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Facility Name</Label>
+            <Input 
+              id="name" 
+              value={formData.name} 
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea 
+              id="description" 
+              value={formData.description} 
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Textarea 
+              id="address" 
+              value={formData.address} 
+              onChange={(e) => setFormData({...formData, address: e.target.value})}
+              rows={2}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="facilityType">Facility Type</Label>
+            <Input 
+              id="facilityType" 
+              value={formData.facilityType} 
+              onChange={(e) => setFormData({...formData, facilityType: e.target.value})}
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+            <Button onClick={handleSaveFacility}>Save Changes</Button>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label>Description</Label>
+          <p className="text-sm text-muted-foreground mt-1">{facility?.description || 'No description provided'}</p>
+        </div>
+        
+        <Separator />
+        
+        <div>
+          <Label>Facility Details</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+              <Label className="text-xs">Address</Label>
+              <p className="text-sm text-muted-foreground">{facility?.address || 'Not specified'}</p>
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <p className="text-sm text-muted-foreground">{facility?.facility_type || 'Not specified'}</p>
+            </div>
+          </div>
+        </div>
+        
+        <Separator />
+        
+        <div className="flex justify-end">
+          <Button onClick={() => setIsEditing(true)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Facility
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading && !facility) {
+    return (
+      <SidebarLayout>
+        <div className="container mx-auto py-6">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Loading facility details...</p>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
+  return (
+    <SidebarLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={backToFacilitiesList}>
+              Back to Facilities
+            </Button>
+            <h1 className="text-3xl font-bold">{facility?.name}</h1>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              facility?.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {facility?.status}
+            </span>
+          </div>
+        </div>
+        
+        <Tabs defaultValue="details">
+          <TabsList>
+            <TabsTrigger value="details">Facility Details</TabsTrigger>
+            <TabsTrigger value="standards">Compliance Standards</TabsTrigger>
+            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details">
+            <Card>
+              <CardHeader>
+                <CardTitle>Facility Information</CardTitle>
+                <CardDescription>
+                  View and manage details for this facility
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderFacilityDetails()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="standards">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Compliance Standards</CardTitle>
+                  <CardDescription>Manage standards and certifications for this facility</CardDescription>
+                </div>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Standard
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {facilityStandards.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Shield className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                    <p className="mt-2 text-muted-foreground">No compliance standards associated with this facility.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Standard</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Certificate Expiry</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {facilityStandards.map((standard) => (
+                        <TableRow key={standard.id}>
+                          <TableCell className="font-medium">
+                            {standard.regulatory_standards.name} ({standard.regulatory_standards.code})
+                          </TableCell>
+                          <TableCell>{standard.regulatory_standards.version || 'Latest'}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              standard.compliance_status === 'compliant' ? 'bg-green-100 text-green-800' : 
+                              standard.compliance_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {standard.compliance_status}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {standard.expiry_date ? 
+                              new Date(standard.expiry_date).toLocaleDateString() : 
+                              'Not certified'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>Users & Permissions</CardTitle>
+                <CardDescription>Manage users and access permissions for this facility</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-6">
+                  <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                  <p className="mt-2 text-muted-foreground">User management will be implemented soon.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="equipment">
+            <Card>
+              <CardHeader>
+                <CardTitle>Equipment</CardTitle>
+                <CardDescription>Manage equipment associated with this facility</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-6">
+                  <Factory className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                  <p className="mt-2 text-muted-foreground">Equipment management will be implemented soon.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </SidebarLayout>
+  );
+};
+
+export default FacilityManagement;

@@ -31,8 +31,13 @@ import {
   Shield,
   AlertTriangle,
   Gauge,
-  AlertOctagon
+  AlertOctagon,
+  Building2,
+  Factory,
+  Globe
 } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -57,6 +62,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 const AppSidebar = () => {
   const location = useLocation();
   const { state: sidebarState, toggleSidebar } = useSidebar();
+  const { user } = useUser();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -86,6 +92,8 @@ const AppSidebar = () => {
 
   const settings = [
     { name: "Profile", path: "/profile", icon: User, tooltip: "Manage your profile" },
+    { name: "Organization", path: "/organization", icon: Building2, tooltip: "Organization settings" },
+    { name: "Facilities", path: "/facilities", icon: Factory, tooltip: "Manage facilities" },
     { name: "Settings", path: "/settings", icon: Settings, tooltip: "System settings" },
   ];
 
@@ -100,6 +108,16 @@ const AppSidebar = () => {
       </SidebarHeader>
       
       <SidebarContent>
+        {/* Organization Selector */}
+        <SidebarGroup>
+          <SidebarGroupLabel>ORGANIZATION</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <OrganizationSelector />
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarSeparator />
+        
         <SidebarGroup>
           <SidebarGroupLabel>MODULES</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -167,6 +185,20 @@ const AppSidebar = () => {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarSeparator />
+        
+        <SidebarGroup>
+          <SidebarGroupLabel>LANGUAGE</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-3 py-2">
+              <Link to="/language-settings" className="flex items-center text-sm hover:text-primary">
+                <Globe className="h-4 w-4 mr-2" />
+                <span>{user?.preferred_language ? user.preferred_language.toUpperCase() : 'EN'}</span>
+              </Link>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

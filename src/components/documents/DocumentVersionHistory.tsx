@@ -32,7 +32,9 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
       created_by: 'John Doe',
       created_at: '2023-01-01T12:00:00Z',
       change_summary: 'Initial version',
-      storage_path: '/path/to/version-1'
+      storage_path: '/path/to/version-1',
+      organization_id: document.organization_id,
+      facility_id: document.facility_id
     },
     {
       id: 'version-2',
@@ -45,7 +47,9 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
       created_by: 'Jane Smith',
       created_at: '2023-02-15T14:30:00Z',
       change_summary: 'Updated content and formatting',
-      storage_path: '/path/to/version-2'
+      storage_path: '/path/to/version-2',
+      organization_id: document.organization_id,
+      facility_id: document.facility_id
     },
     {
       id: 'version-3',
@@ -58,7 +62,9 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
       created_by: 'John Doe',
       created_at: '2023-03-22T16:45:00Z',
       change_summary: 'Added new section on safety guidelines',
-      storage_path: '/path/to/version-3'
+      storage_path: '/path/to/version-3',
+      organization_id: document.organization_id,
+      facility_id: document.facility_id
     }
   ];
 
