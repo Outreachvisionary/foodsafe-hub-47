@@ -39,6 +39,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
+            // Set these properties if they exist in the profile
             organization_id: profile?.organization_id,
             assigned_facility_ids: profile?.assigned_facility_ids,
             preferred_language: profile?.preferred_language,
@@ -73,6 +74,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar_url: profile?.avatar_url,
             role: profile?.role,
             department: profile?.department,
+            // Set these properties if they exist in the profile
             organization_id: profile?.organization_id,
             assigned_facility_ids: profile?.assigned_facility_ids,
             preferred_language: profile?.preferred_language,

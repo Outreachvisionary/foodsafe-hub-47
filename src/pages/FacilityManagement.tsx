@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -20,6 +19,15 @@ import {
   fetchRegulatoryStandards, 
   fetchFacilityStandards 
 } from '@/utils/supabaseHelpers';
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 
 interface FacilityState {
   id: string;

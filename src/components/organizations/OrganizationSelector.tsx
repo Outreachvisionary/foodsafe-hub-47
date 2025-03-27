@@ -1,119 +1,91 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
-import { Loader2 } from 'lucide-react';
-import { Organization } from '@/types/organization';
 import { fetchOrganizations } from '@/utils/supabaseHelpers';
+import { Organization } from '@/types/organization';
 
 interface OrganizationSelectorProps {
-  value?: string | null;
-  onChange?: (organizationId: string) => void;
-  disabled?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
-const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
-  value,
-  onChange,
-  disabled = false
-}) => {
+const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ value, onChange }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [selectedOrg, setSelectedOrg] = useState<string | undefined>(value);
   const { user, updateUser } = useUser();
 
   useEffect(() => {
     loadOrganizations();
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    // If value prop changes, update internal state
+    if (value !== undefined) {
+      setSelectedOrg(value);
+    }
+  }, [value]);
+
+  // Set initial selection to user's organization_id if available and no value is provided
+  useEffect(() => {
+    if (selectedOrg === undefined && user?.organization_id) {
+      setSelectedOrg(user.organization_id);
+    }
+  }, [user, selectedOrg]);
 
   const loadOrganizations = async () => {
     try {
       setLoading(true);
-      const organizationsData = await fetchOrganizations();
-      setOrganizations(organizationsData || []);
+      const orgsData = await fetchOrganizations();
+      setOrganizations(orgsData);
     } catch (error) {
-      console.error('Error fetching organizations:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load organizations',
-        variant: 'destructive',
-      });
+      console.error('Error loading organizations:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOrganizationChange = async (organizationId: string) => {
-    if (onChange) {
-      onChange(organizationId);
+  const handleOrganizationChange = (orgId: string) => {
+    setSelectedOrg(orgId);
+    
+    // Update user context if this is the user's selected organization
+    if (user) {
+      // Using explicit Partial<UserProfile> with only organization_id
+      updateUser({ organization_id: orgId });
     }
-
-    // Update the user's organization_id in their profile if they're changing it
-    if (user && organizationId !== user.organization_id) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ organization_id: organizationId })
-          .eq('id', user.id);
-
-        if (error) throw error;
-
-        // Update local user state
-        if (updateUser) {
-          updateUser({
-            ...user,
-            organization_id: organizationId
-          });
-        }
-
-        toast({
-          title: 'Success',
-          description: 'Organization updated',
-        });
-      } catch (error) {
-        console.error('Error updating organization:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to update organization',
-          variant: 'destructive',
-        });
-      }
+    
+    // Call onChange prop if provided
+    if (onChange) {
+      onChange(orgId);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-10">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (organizations.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground py-2">
-        No organizations available
-      </div>
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue placeholder="Loading organizations..." />
+        </SelectTrigger>
+      </Select>
     );
   }
 
   return (
-    <Select 
-      value={value || user?.organization_id || undefined} 
-      onValueChange={handleOrganizationChange}
-      disabled={disabled || organizations.length === 0}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select Organization" />
+    <Select value={selectedOrg} onValueChange={handleOrganizationChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select an organization" />
       </SelectTrigger>
       <SelectContent>
-        {organizations.map((org) => (
-          <SelectItem key={org.id} value={org.id}>
-            {org.name}
-          </SelectItem>
-        ))}
+        {organizations.length === 0 ? (
+          <SelectItem value="none" disabled>No organizations available</SelectItem>
+        ) : (
+          organizations.map((org) => (
+            <SelectItem key={org.id} value={org.id}>
+              {org.name}
+            </SelectItem>
+          ))
+        )}
       </SelectContent>
     </Select>
   );

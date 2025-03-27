@@ -13,7 +13,7 @@ export interface UserProfile {
     language?: string;
     [key: string]: any;
   };
-  // Multi-facility support fields
+  // Add the missing fields that are causing errors
   organization_id?: string;
   assigned_facility_ids?: string[];
   preferred_language?: string;

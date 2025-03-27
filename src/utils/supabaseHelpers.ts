@@ -7,6 +7,7 @@ import { RegulatoryStandard, FacilityStandard } from '@/types/regulatory';
 // Function to fetch facilities with proper type handling
 export async function fetchFacilities(organizationId?: string, onlyAssigned: boolean = false) {
   try {
+    // Call the RPC function with correct parameters
     const { data, error } = await supabase
       .rpc('get_facilities', {
         p_organization_id: organizationId || null,
@@ -25,6 +26,7 @@ export async function fetchFacilities(organizationId?: string, onlyAssigned: boo
 // Function to fetch organizations with proper type handling
 export async function fetchOrganizations() {
   try {
+    // Call the RPC function
     const { data, error } = await supabase
       .rpc('get_organizations');
     
@@ -40,6 +42,7 @@ export async function fetchOrganizations() {
 // Function to fetch regulatory standards
 export async function fetchRegulatoryStandards() {
   try {
+    // Call the RPC function
     const { data, error } = await supabase
       .rpc('get_regulatory_standards');
     
@@ -55,6 +58,7 @@ export async function fetchRegulatoryStandards() {
 // Function to fetch facility standards
 export async function fetchFacilityStandards(facilityId: string) {
   try {
+    // Call the RPC function with correct parameter
     const { data, error } = await supabase
       .rpc('get_facility_standards', {
         p_facility_id: facilityId
