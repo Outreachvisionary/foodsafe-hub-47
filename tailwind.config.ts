@@ -1,4 +1,3 @@
-
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
@@ -60,6 +59,14 @@ const config: Config = {
           light: '#F8F7F2',  // Light color for contrast
           white: '#FFFFFF',
           tagline: '#B49355', // Lighter gold for the tagline
+          ivory: '#F8F7F2',   // Off-white for backgrounds
+          charcoal: '#333333', // Dark text color for contrast
+          purple: '#6E59A5',  // Purple accent for UI elements
+          text: {
+            light: '#F8F7F2',  // Light text for dark backgrounds
+            dark: '#333333',   // Dark text for light backgrounds
+            gold: '#C6A256',   // Gold text for accents
+          }
         },
         brand: {
           teal: '#1D3E40',

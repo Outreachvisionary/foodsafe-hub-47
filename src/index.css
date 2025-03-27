@@ -18,13 +18,13 @@
     --popover-foreground: 0 0% 100%;
  
     --primary: 39 44% 55%;      /* Gold */
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 194 35% 18%;  /* Dark teal for contrast on gold */
  
     --secondary: 194 32% 22%;   /* Slightly lighter teal */
-    --secondary-foreground: 39 44% 55%;
+    --secondary-foreground: 0 0% 98%;  /* Light text on secondary */
  
     --muted: 193 35% 25%;
-    --muted-foreground: 39 44% 55%;
+    --muted-foreground: 0 0% 85%;  /* Lighter color for better contrast */
  
     --accent: 39 44% 55%;       /* Gold accent */
     --accent-foreground: 194 35% 18%;
@@ -56,7 +56,7 @@
     --secondary-foreground: 0 0% 98%;
  
     --muted: 194 35% 15%;
-    --muted-foreground: 39 44% 55%;
+    --muted-foreground: 0 0% 85%;
  
     --accent: 39 44% 55%;
     --accent-foreground: 194 35% 18%;

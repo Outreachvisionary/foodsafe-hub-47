@@ -25,13 +25,15 @@ const BrandedButton = React.forwardRef<HTMLButtonElement, BrandedButtonProps>(
     };
     
     // Convert our custom size to base Button size
-    const buttonSize = size === 'lg' ? 'lg' : 
-                      size === 'sm' ? 'sm' : 
-                      'default';
+    const buttonSize = 
+      size === 'lg' ? 'lg' : 
+      size === 'sm' ? 'sm' : 
+      'default';
     
-    // Map our custom variant to a base Button variant that's compatible
-    // We'll use the classes for styling and set a base variant
-    const buttonVariant = variant === 'outline' ? 'outline' : 'default';
+    // Map our custom variant to a base Button variant
+    const buttonVariant = 
+      variant === 'outline' ? 'outline' : 
+      'default';
     
     return (
       <Button
