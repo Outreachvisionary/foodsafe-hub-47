@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -49,11 +48,19 @@ const App = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/standards" element={<Standards />} />
         
-        {/* Solutions Routes */}
+        {/* Platform Routes */}
+        <Route path="/platform/:moduleType" element={<Products />} />
+        <Route path="/platform" element={<Products />} />
+        
+        {/* Industries Routes */}
+        <Route path="/industries/:industryType" element={<Solutions />} />
+        <Route path="/industries" element={<Solutions />} />
+        
+        {/* Legacy Solution Routes - keeping for backward compatibility */}
         <Route path="/solutions/:solutionType" element={<Solutions />} />
         <Route path="/solutions" element={<Solutions />} />
         
-        {/* Products Routes */}
+        {/* Legacy Product Routes - keeping for backward compatibility */}
         <Route path="/products/:productType" element={<Products />} />
         <Route path="/products" element={<Products />} />
         
@@ -73,6 +80,17 @@ const App = () => {
         <Route path="/login" element={<Auth />} />
         <Route path="/register" element={<Auth />} />
         <Route path="/demo" element={<Auth />} />
+
+        {/* Resource Routes */}
+        <Route path="/resources/:resourceType" element={<NotFound />} />
+        <Route path="/resources" element={<NotFound />} />
+        
+        {/* About Route */}
+        <Route path="/about" element={<NotFound />} />
+        
+        {/* Integration Routes */}
+        <Route path="/integrations/:integrationType" element={<NotFound />} />
+        <Route path="/integrations" element={<NotFound />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
