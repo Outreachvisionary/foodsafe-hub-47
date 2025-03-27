@@ -28,7 +28,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
           
           {/* Content */}
           <main className="flex-1 p-6">
-            <Breadcrumbs className="mb-6" />
+            <Breadcrumbs />
             {children}
           </main>
         </div>

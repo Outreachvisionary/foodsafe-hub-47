@@ -14,28 +14,28 @@ const PlatformPreview = () => {
       name: 'Audit Management',
       icon: ClipboardCheck,
       description: 'Streamline audit preparation with intelligent checklists and automated evidence collection.',
-      image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
+      image: 'https://images.unsplash.com/photo-1564069114553-7215e1ff1890?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
     },
     {
       id: 'document',
       name: 'Document Control',
       icon: FileText,
       description: 'Centralize all compliance documentation with version control and approval workflows.',
-      image: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
+      image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
     },
     {
       id: 'risk',
       name: 'Risk Assessment',
       icon: Activity,
       description: 'Identify and mitigate food safety risks with AI-powered analysis and monitoring.',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
+      image: 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
     },
     {
       id: 'dashboard',
       name: 'Reporting Dashboard',
       icon: BarChart2,
       description: 'Access real-time compliance metrics and generate comprehensive reports.',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
+      image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
     }
   ];
 

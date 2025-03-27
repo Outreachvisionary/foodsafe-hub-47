@@ -7,6 +7,10 @@ import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import AppLayout from '@/components/layout/AppLayout';
 
+interface NCListProps {
+  onSelectItem: (selectedId: string) => void;
+}
+
 const NonConformanceModule = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,7 +51,7 @@ const NonConformanceModule = () => {
       {id && viewingDetails ? (
         <NCDetails id={id} />
       ) : (
-        <NCList onSelectItem={(selectedId) => {
+        <NCList onSelectItem={(selectedId: string) => {
           navigate(`/non-conformance/${selectedId}`);
           setViewingDetails(true);
         }} />
