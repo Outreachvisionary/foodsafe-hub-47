@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -14,7 +15,7 @@ import Traceability from './pages/Traceability';
 import CAPA from './pages/CAPA';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
-import Standards from './pages/Standards';
+import StandardsPage from './pages/StandardsPage';
 import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
 import Solutions from './pages/Solutions';
@@ -46,7 +47,11 @@ const App = () => {
         <Route path="/capa" element={<CAPA />} />
         <Route path="/complaint-management" element={<ComplaintManagement />} />
         <Route path="/reports" element={<Reports />} />
-        <Route path="/standards" element={<Standards />} />
+        
+        {/* Enhanced Standards Routes */}
+        <Route path="/standards" element={<StandardsPage />} />
+        <Route path="/standards/:standardId" element={<StandardsPage />} />
+        <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
         
         {/* Platform Routes */}
         <Route path="/platform/:moduleType" element={<Products />} />
