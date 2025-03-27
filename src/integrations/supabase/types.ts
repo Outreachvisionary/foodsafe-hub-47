@@ -659,6 +659,107 @@ export type Database = {
           },
         ]
       }
+      facilities: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          location_data: Json | null
+          name: string
+          organization_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location_data?: Json | null
+          name: string
+          organization_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location_data?: Json | null
+          name?: string
+          organization_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facilities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_standards: {
+        Row: {
+          certification_date: string | null
+          compliance_status: string | null
+          created_at: string | null
+          expiry_date: string | null
+          facility_id: string | null
+          id: string
+          notes: string | null
+          standard_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          certification_date?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          facility_id?: string | null
+          id?: string
+          notes?: string | null
+          standard_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          certification_date?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          facility_id?: string | null
+          id?: string
+          notes?: string | null
+          standard_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_standards_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_standards_standard_id_fkey"
+            columns: ["standard_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_standards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           created_at: string | null
@@ -997,36 +1098,128 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          assigned_facility_ids: string[] | null
           avatar_url: string | null
           created_at: string | null
           department: string | null
           full_name: string | null
           id: string
+          organization_id: string | null
           preferences: Json | null
+          preferred_language: string | null
           role: string | null
           updated_at: string | null
         }
         Insert: {
+          assigned_facility_ids?: string[] | null
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
           full_name?: string | null
           id: string
+          organization_id?: string | null
           preferences?: Json | null
+          preferred_language?: string | null
           role?: string | null
           updated_at?: string | null
         }
         Update: {
+          assigned_facility_ids?: string[] | null
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
           full_name?: string | null
           id?: string
+          organization_id?: string | null
           preferences?: Json | null
+          preferred_language?: string | null
           role?: string | null
           updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_standards: {
+        Row: {
+          authority: string | null
+          code: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          authority?: string | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          authority?: string | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
         }
         Relationships: []
       }
@@ -1157,7 +1350,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_facilities: {
+        Args: {
+          p_organization_id?: string
+          p_only_assigned?: boolean
+        }
+        Returns: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          location_data: Json | null
+          name: string
+          organization_id: string | null
+          status: string | null
+          updated_at: string | null
+        }[]
+      }
+      get_facility_standards: {
+        Args: {
+          p_facility_id: string
+        }
+        Returns: {
+          id: string
+          facility_id: string
+          standard_id: string
+          compliance_status: string
+          certification_date: string
+          expiry_date: string
+          notes: string
+          created_at: string
+          updated_at: string
+          standard_name: string
+          standard_code: string
+          standard_description: string
+          standard_version: string
+          standard_authority: string
+        }[]
+      }
+      get_organizations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
+        }[]
+      }
+      get_regulatory_standards: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          authority: string | null
+          code: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+          version: string | null
+        }[]
+      }
     }
     Enums: {
       audit_status:
