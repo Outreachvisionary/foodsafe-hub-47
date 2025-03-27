@@ -28,7 +28,7 @@ const MainNavigation = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-display font-bold text-cc-charcoal">
-              Compliance<span className="text-cc-purple">Core</span>
+              Compliance<span className="text-cc-purple bg-cc-tagline">Core</span>
             </Link>
           </div>
           
@@ -40,12 +40,12 @@ const MainNavigation = () => {
                   Platform <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-gold">
+              <DropdownMenuContent className="bg-cc-white">
                 <DropdownMenuItem>
                   <Link to="/platform/audit-management" className="w-full">Audit Management</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link to="/platform/document-control" className="w-full">Document Control</Link>
+                  <Link to="/platform/document-control" className="w-full bg-cc-tagline">Document Control</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Link to="/platform/risk-assessment" className="w-full">Risk Assessment</Link>
