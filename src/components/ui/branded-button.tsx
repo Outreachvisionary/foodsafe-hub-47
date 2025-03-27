@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button, ButtonProps } from '@/components/ui/button';
 
-interface BrandedButtonProps extends ButtonProps {
+interface BrandedButtonProps extends Omit<ButtonProps, 'size'> {
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
 }
@@ -24,9 +24,15 @@ const BrandedButton = React.forwardRef<HTMLButtonElement, BrandedButtonProps>(
       lg: "text-base px-8 py-3"
     };
     
+    // Convert our custom size to base Button size
+    const buttonSize = size === 'lg' ? 'lg' : 
+                      size === 'sm' ? 'sm' : 
+                      'default';
+    
     return (
       <Button
         ref={ref}
+        size={buttonSize}
         className={cn(
           baseClasses,
           variantClasses[variant],
