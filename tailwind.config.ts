@@ -1,3 +1,4 @@
+
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
@@ -53,13 +54,15 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
         cc: {
-          purple: '#5B3A94',
-          ivory: '#F8F7F2',
-          charcoal: '#333940',
+          teal: '#1D3E40',  // Dark teal from the image background
+          darkTeal: '#1A3538', // Darker variation
+          gold: '#C6A256',   // Gold accent from the image
+          light: '#F8F7F2',  // Light color for contrast
           white: '#FFFFFF',
+          tagline: '#B49355', // Lighter gold for the tagline
         },
         brand: {
-          teal: '#0A9396',
+          teal: '#1D3E40',
           lightGray: '#F8F9FA',
           darkGray: '#333333',
         },
@@ -103,8 +106,8 @@ const config: Config = {
         'slide-up': 'slide-up 0.4s ease-out',
       },
       fontFamily: {
-        sans: ['Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Space Grotesk', 'Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Eurostile', 'Outfit', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
       },
     },
   },
