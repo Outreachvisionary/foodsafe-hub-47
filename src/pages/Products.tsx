@@ -150,7 +150,7 @@ const Products = () => {
           }} transition={{
             duration: 0.5
           }} className="bg-cc-white p-6 rounded-lg shadow-md">
-              <div className="w-12 h-12 bg-cc-purple/10 rounded-lg flex items-center justify-center mb-4 text-cc-purple">
+              <div className="w-12 h-12 bg-cc-gold/20 rounded-lg flex items-center justify-center mb-4 text-cc-gold">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
