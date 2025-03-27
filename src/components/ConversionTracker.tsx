@@ -15,7 +15,7 @@ const ConversionTracker: React.FC<ConversionTrackerProps> = ({ action }) => {
     const trackEvent = () => {
       // Example of tracking event to analytics
       if (typeof window !== 'undefined' && 'gtag' in window) {
-        window.gtag('event', action, {
+        (window as Window & typeof globalThis & { gtag: any }).gtag('event', action, {
           event_category: 'conversion',
           event_label: 'landing_page',
           value: 1

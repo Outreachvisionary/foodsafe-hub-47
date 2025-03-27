@@ -24,7 +24,7 @@ const TrustIndicators = () => {
           className="text-center mb-16"
         >
           <h2 className="font-playfair text-3xl font-bold text-[#1A2B3C]">
-            Trusted by Fortune 500 Food Companies
+            Trusted by Industry Leaders
           </h2>
         </motion.div>
 

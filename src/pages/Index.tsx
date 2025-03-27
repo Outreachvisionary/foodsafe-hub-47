@@ -4,9 +4,10 @@ import Navigation from '@/components/Navigation';
 import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
 import TrustIndicators from '@/components/TrustIndicators';
-import KeyFeatures from '@/components/KeyFeatures';
-import TestimonialSection from '@/components/TestimonialSection';
+import FeatureHighlights from '@/components/FeatureHighlights';
+import UseCaseSection from '@/components/UseCaseSection';
 import PlatformPreview from '@/components/PlatformPreview';
+import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import CallToAction from '@/components/CallToAction';
 import ConversionTracker from '@/components/ConversionTracker';
 
@@ -24,11 +25,13 @@ const Index = () => {
       
       <TrustIndicators />
       
-      <KeyFeatures />
+      <FeatureHighlights />
       
-      <TestimonialSection />
+      <UseCaseSection />
       
       <PlatformPreview />
+      
+      <BeforeAfterComparison />
       
       <CallToAction />
       

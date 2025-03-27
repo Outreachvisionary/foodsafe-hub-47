@@ -25,7 +25,7 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            Elevate Food Safety Compliance for Industry Leaders
+            Unify Compliance and Operations for Food Manufacturing Excellence
           </motion.h1>
           
           <motion.p 
@@ -34,21 +34,30 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            AI-Powered FSMA, HACCP, and GMP Management for America's Top Food Manufacturers
+            Streamline standards like HACCP, FSMS, ISO 22000, and FDA compliance with AI-powered tools.
           </motion.p>
           
           <motion.div 
-            className="mt-10"
+            className="mt-10 flex flex-col sm:flex-row justify-center gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
           >
             <Link to="/contact">
               <Button 
-                className="bg-[#1A2B3C] hover:bg-[#1A2B3C]/90 text-white border-2 border-[#D4AF37] px-8 py-6 text-lg rounded-md"
+                className="bg-[#2E8B57] hover:bg-[#2E8B57]/90 text-white px-8 py-6 text-lg w-full sm:w-auto"
                 size="lg"
               >
-                Request Executive Demo
+                Book a Free Demo
+              </Button>
+            </Link>
+            <Link to="/about">
+              <Button 
+                variant="outline" 
+                className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
+                size="lg"
+              >
+                Learn More
               </Button>
             </Link>
           </motion.div>
