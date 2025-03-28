@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,17 +6,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Calendar, Check, ClipboardList, Plus } from 'lucide-react';
+import { Calendar, Check, ClipboardList, Plus, AlertTriangle, FileText } from 'lucide-react';
 import CAPAAuditIntegration from './CAPAAuditIntegration';
 import { createCAPA } from '@/services/capaService';
 import { useUser } from '@/contexts/UserContext';
+import { CAPASource, SourceReference } from '@/types/capa';
+
+interface SourceDataType {
+  title?: string;
+  description?: string;
+  source?: CAPASource;
+  sourceId?: string;
+  priority?: string;
+  sourceReference?: SourceReference;
+}
 
 interface CreateCAPADialogProps {
   onCAPACreated?: (data: any) => void;
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  sourceData?: any;
+  sourceData?: SourceDataType;
 }
 
 const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
@@ -31,15 +40,24 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // CAPA form state
   const [title, setTitle] = useState(sourceData?.title || '');
   const [description, setDescription] = useState(sourceData?.description || '');
-  const [source, setSource] = useState<string>(sourceData?.source || 'audit');
+  const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
   const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
   const [auditFinding, setAuditFinding] = useState<any>(null);
+  
+  useEffect(() => {
+    if (sourceData) {
+      setTitle(sourceData.title || '');
+      setDescription(sourceData.description || '');
+      setSource(sourceData.source || 'audit');
+      setPriority(sourceData.priority || 'medium');
+      setSourceId(sourceData.sourceId || '');
+    }
+  }, [sourceData]);
   
   const resetForm = () => {
     setTitle('');
@@ -72,11 +90,23 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Create new CAPA
+      let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
+      
+      if (auditFinding && !sourceReference) {
+        sourceReference = {
+          id: auditFinding.id,
+          type: 'audit',
+          title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
+          description: auditFinding.description,
+          date: auditFinding.created_at,
+          status: auditFinding.status
+        };
+      }
+      
       const newCAPA = await createCAPA({
         title,
         description,
-        source: source as any,
+        source,
         sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
         priority: priority as any,
         status: 'open',
@@ -86,17 +116,16 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         rootCause: '',
         correctiveAction: '',
         preventiveAction: '',
+        sourceReference,
         fsma204Compliant: false
       });
       
       toast.success('CAPA created successfully');
       
-      // Notify parent component
       if (onCAPACreated) {
         onCAPACreated(newCAPA);
       }
       
-      // Close dialog and reset form
       handleClose();
     } catch (error) {
       console.error('Error creating CAPA:', error);
@@ -110,13 +139,12 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setAuditFinding(finding);
     setTitle(finding.description);
     setDescription(`Finding from audit ${finding.auditId}: ${finding.description}`);
-    setPriority(finding.severity === 'critical' ? 'critical' : 
-                finding.severity === 'major' ? 'high' : 
-                finding.severity === 'minor' ? 'medium' : 'low');
+    setPriority(finding.severity === 'Critical' ? 'critical' : 
+                finding.severity === 'Major' ? 'high' : 
+                finding.severity === 'Minor' ? 'medium' : 'low');
     setSourceId(finding.id);
   };
 
-  // Use the controlled open state if provided, otherwise use the internal state
   const dialogOpen = open !== undefined ? open : isOpen;
   const setDialogOpen = onOpenChange || setIsOpen;
   
@@ -138,6 +166,27 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
+        {sourceData && sourceData.sourceReference && (
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
+            <div className="flex items-start">
+              <FileText className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-700">
+                  Creating CAPA from {sourceData.sourceReference.type}
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  {sourceData.sourceReference.title}
+                </p>
+                {sourceData.sourceReference.date && (
+                  <p className="text-xs text-blue-500 mt-1">
+                    Reported on {new Date(sourceData.sourceReference.date).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
@@ -153,7 +202,11 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
-              <Select value={source} onValueChange={setSource}>
+              <Select 
+                value={source} 
+                onValueChange={(value) => setSource(value as CAPASource)}
+                disabled={!!sourceData?.source}
+              >
                 <SelectTrigger id="source">
                   <SelectValue placeholder="Select source" />
                 </SelectTrigger>
@@ -163,6 +216,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                   <SelectItem value="supplier">Supplier</SelectItem>
                   <SelectItem value="complaint">Complaint</SelectItem>
                   <SelectItem value="traceability">Traceability</SelectItem>
+                  <SelectItem value="nonconformance">Non-Conformance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -222,7 +276,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
             </div>
           </div>
           
-          {source === 'audit' && (
+          {source === 'audit' && !sourceData?.source && (
             <div className="space-y-2">
               <Label htmlFor="auditFinding">Link to Audit Finding</Label>
               <CAPAAuditIntegration onFindingSelected={handleFindingSelected} />
