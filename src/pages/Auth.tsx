@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
@@ -50,9 +51,7 @@ const registerSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    user
-  } = useUser();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'register'>("login");
 
@@ -70,9 +69,14 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      // Get the return URL from the query string or default to dashboard
+      const params = new URLSearchParams(location.search);
+      const returnUrl = params.get('returnUrl') || '/dashboard';
+      
+      console.log('User is authenticated, redirecting to:', returnUrl);
+      navigate(returnUrl);
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.search]);
 
   // Login form
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -98,24 +102,31 @@ const Auth = () => {
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
     try {
       setIsLoading(true);
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login with:', values.email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password
       });
+
       if (error) {
+        console.error('Login error:', error.message);
         toast({
           title: "Login failed",
           description: error.message,
           variant: "destructive"
         });
       } else {
+        console.log('Login successful, user:', data.user);
         toast({
           title: "Login successful",
           description: "Welcome back!"
         });
-        navigate('/dashboard');
+        
+        // Get return URL from the query string or use default
+        const params = new URLSearchParams(location.search);
+        const returnUrl = params.get('returnUrl') || '/dashboard';
+        navigate(returnUrl);
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -133,9 +144,9 @@ const Auth = () => {
   const onRegister = async (values: z.infer<typeof registerSchema>) => {
     try {
       setIsLoading(true);
-      const {
-        error
-      } = await supabase.auth.signUp({
+      console.log('Attempting registration with:', values.email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -144,18 +155,32 @@ const Auth = () => {
           }
         }
       });
+
       if (error) {
+        console.error('Registration error:', error.message);
         toast({
           title: "Registration failed",
           description: error.message,
           variant: "destructive"
         });
-      } else {
-        toast({
-          title: "Registration successful",
-          description: "Please check your email for a confirmation link"
-        });
-        setActiveTab('login');
+      } else if (data.user) {
+        console.log('Registration successful, user:', data.user);
+        
+        if (data.session) {
+          // User is already confirmed and has a session
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created and you are now logged in!"
+          });
+          navigate('/dashboard');
+        } else {
+          // User needs to confirm their email
+          toast({
+            title: "Registration successful",
+            description: "Please check your email for a confirmation link"
+          });
+          setActiveTab('login');
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -168,10 +193,12 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
-  return <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center ">Compliance Core</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Compliance Core</CardTitle>
           <CardDescription className="text-center">
             Food safety compliance management platform
           </CardDescription>
@@ -186,24 +213,24 @@ const Auth = () => {
             <TabsContent value="login">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="your@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
-                  <FormField control={loginForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
+                  <FormField control={loginForm.control} name="email" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="your@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
+                  <FormField control={loginForm.control} name="password" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
@@ -219,42 +246,42 @@ const Auth = () => {
             <TabsContent value="register">
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                  <FormField control={registerForm.control} name="full_name" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Jane Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
-                  <FormField control={registerForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="your@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
-                  <FormField control={registerForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
-                  <FormField control={registerForm.control} name="confirm_password" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
+                  <FormField control={registerForm.control} name="full_name" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jane Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
+                  <FormField control={registerForm.control} name="email" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="your@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
+                  <FormField control={registerForm.control} name="password" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
+                  <FormField control={registerForm.control} name="confirm_password" render={({ field }) => 
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  } />
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
@@ -269,6 +296,8 @@ const Auth = () => {
           </Button>
         </CardFooter>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;
