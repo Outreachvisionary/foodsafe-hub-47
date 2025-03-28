@@ -18,8 +18,6 @@ import Reports from './pages/Reports';
 import Standards from './pages/Standards';
 import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
-import Solutions from './pages/Solutions';
-import Products from './pages/Products';
 
 // Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
@@ -49,14 +47,6 @@ const App = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/standards" element={<Standards />} />
         
-        {/* Solutions Routes */}
-        <Route path="/solutions/:solutionType" element={<Solutions />} />
-        <Route path="/solutions" element={<Solutions />} />
-        
-        {/* Products Routes */}
-        <Route path="/products/:productType" element={<Products />} />
-        <Route path="/products" element={<Products />} />
-        
         {/* Non-Conformance Module Routes */}
         <Route path="/non-conformance" element={<NonConformanceModule />} />
         <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
@@ -68,11 +58,6 @@ const App = () => {
         <Route path="/facilities" element={<FacilitiesList />} />
         <Route path="/facilities/:id" element={<FacilityManagement />} />
         <Route path="/facilities/new" element={<FacilityManagement />} />
-        
-        {/* Auth Routes */}
-        <Route path="/login" element={<Auth />} />
-        <Route path="/register" element={<Auth />} />
-        <Route path="/demo" element={<Auth />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

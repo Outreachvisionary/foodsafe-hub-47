@@ -1,44 +1,54 @@
 
-import React, { useEffect } from 'react';
-import MainNavigation from '@/components/MainNavigation';
-import HeroSection from '@/components/HeroSection';
-import FooterSection from '@/components/FooterSection';
-import VisualShowcase from '@/components/VisualShowcase';
-import KeyFeatures from '@/components/KeyFeatures';
-import PlatformFunctionality from '@/components/PlatformFunctionality';
-import ValueProposition from '@/components/ValueProposition';
-import Testimonials from '@/components/Testimonials';
-import CallToActionSection from '@/components/CallToActionSection';
-import ConversionTracker from '@/components/ConversionTracker';
+import React from 'react';
+import Navigation from '@/components/Navigation';
+import Hero from '@/components/Hero';
+import StandardsSection from '@/components/StandardsSection';
+import BenefitsSection from '@/components/BenefitsSection';
+import TestimonialsSection from '@/components/TestimonialsSection';
+import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import FeaturesSection from '@/components/FeaturesSection';
+import ComplianceMetricsSection from '@/components/ComplianceMetricsSection';
+import CTASection from '@/components/CTASection';
 
 const Index = () => {
-  useEffect(() => {
-    // Scroll to top when page loads
-    window.scrollTo(0, 0);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white">
-      <MainNavigation />
+    <div className="min-h-screen">
+      <Navigation />
       
-      <HeroSection />
+      <Hero />
       
-      <VisualShowcase />
+      <ComplianceMetricsSection />
       
-      <KeyFeatures />
+      <StandardsSection />
       
-      <PlatformFunctionality />
+      <FeaturesSection />
       
-      <ValueProposition />
+      <BenefitsSection />
       
-      <Testimonials />
+      <CTASection />
       
-      <CallToActionSection />
+      <TestimonialsSection />
       
-      <FooterSection />
+      <div className="bg-fsms-lightBlue py-12 text-center">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to improve your CAPA management?</h2>
+          <p className="text-lg mb-8 max-w-2xl mx-auto">
+            Our new CAPA module helps you streamline corrective and preventive actions, 
+            improve audit outcomes, and ensure FSMA 204 compliance.
+          </p>
+          <Link to="/capa">
+            <Button className="bg-fsms-blue hover:bg-fsms-blue/90" size="lg">
+              Explore CAPA Module
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
       
-      {/* Conversion Tracking */}
-      <ConversionTracker action="landing_page_view" />
+      <Footer />
     </div>
   );
 };

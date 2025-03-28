@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom';
 
 const CTASection = () => {
   return (
-    <section className="py-24 bg-fsms-blue text-white text-center">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="section-padding bg-fsms-blue text-white text-center">
+      <div className="page-container">
         <motion.div 
           className="max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
@@ -23,7 +23,7 @@ const CTASection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Get FDA-Ready in 14 Days
+            Ready to Simplify Your Food Safety Compliance?
           </motion.h2>
           <motion.p 
             className="text-xl text-white/80 mb-8"
@@ -32,8 +32,7 @@ const CTASection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Join hundreds of food businesses that have streamlined their compliance 
-            process with our platform. Start your risk-free trial today.
+            Join thousands of food businesses that have streamlined their compliance process with FoodSafeHub.
           </motion.p>
           
           <motion.div
@@ -46,19 +45,10 @@ const CTASection = () => {
             <Link to="/auth?mode=register">
               <Button 
                 size="lg" 
-                className="bg-[#4CAF50] hover:bg-[#4CAF50]/90 text-white px-8 py-6 text-lg w-full sm:w-auto"
+                className="bg-white text-fsms-blue hover:bg-white/90 px-8 py-6 text-lg"
               >
-                Start Free Trial
+                Get Started Today
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/standards">
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
-              >
-                Explore Platform
               </Button>
             </Link>
           </motion.div>
@@ -72,25 +62,25 @@ const CTASection = () => {
           >
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <Shield className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">90-Day Guarantee</h3>
+              <h3 className="text-xl font-semibold mb-2">FSMA Compliant</h3>
               <p className="text-white/80 text-sm">
-                If you don't see improved compliance in 90 days, we'll extend your subscription for free.
+                Stay ahead of regulatory requirements with built-in FSMA 204 traceability tools.
               </p>
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <FileText className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Free Migration</h3>
+              <h3 className="text-xl font-semibold mb-2">Easy Documentation</h3>
               <p className="text-white/80 text-sm">
-                Our team will help migrate your existing documentation and set up your compliance system.
+                Generate audit-ready documentation with our automated report builders.
               </p>
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <Clipboard className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Expert Support</h3>
+              <h3 className="text-xl font-semibold mb-2">Mock Recalls</h3>
               <p className="text-white/80 text-sm">
-                Get unlimited access to our team of food safety consultants during your implementation.
+                Test your recall readiness with simulated scenarios and real-time tracking.
               </p>
             </div>
           </motion.div>
