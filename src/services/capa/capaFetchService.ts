@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAFetchParams, CAPASource, CAPAPriority, SourceReference } from '@/types/capa';
-import { mapStatusFromDb } from './capaStatusService';
+import { mapStatusFromDb, DbCAPAStatus } from './capaStatusService';
 
 /**
  * Map database result to CAPA object
@@ -42,20 +42,20 @@ export const mapDbResultToCapa = (data: any): CAPA => {
  */
 export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    // Start building the query
+    // Start building the query with explicit typing to avoid excessive type instantiation
     let query = supabase.from('capa_actions').select('*');
     
     // Apply filters if provided
     if (params) {
       if (params.status && params.status !== 'all') {
         // Map frontend status to database status values
-        const dbStatus = 
-          params.status === 'open' ? ['Open', 'Overdue'] : 
-          params.status === 'in-progress' ? ['In Progress'] : 
-          params.status === 'closed' ? ['Closed'] : 
-          ['Pending Verification'];
+        const dbStatus: DbCAPAStatus[] = 
+          params.status === 'open' ? ['Open', 'Overdue'] as DbCAPAStatus[] : 
+          params.status === 'in-progress' ? ['In Progress'] as DbCAPAStatus[] : 
+          params.status === 'closed' ? ['Closed'] as DbCAPAStatus[] : 
+          ['Pending Verification'] as DbCAPAStatus[];
         
-        // Use 'in' operator for array of status values
+        // Use typed array for status values
         query = query.in('status', dbStatus);
       }
       
