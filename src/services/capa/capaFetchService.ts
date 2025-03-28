@@ -42,22 +42,21 @@ export const mapDbResultToCapa = (data: any): CAPA => {
  */
 export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    let query = supabase
-      .from('capa_actions')
-      .select('*');
+    // Start building the query
+    let query = supabase.from('capa_actions').select('*');
     
     // Apply filters if provided
     if (params) {
       if (params.status && params.status !== 'all') {
-        // Map frontend status to database status
+        // Map frontend status to database status values
         const dbStatus = 
           params.status === 'open' ? ['Open', 'Overdue'] : 
           params.status === 'in-progress' ? ['In Progress'] : 
           params.status === 'closed' ? ['Closed'] : 
           ['Pending Verification'];
         
-        // Use a type assertion for the array
-        query = query.in('status', dbStatus as any);
+        // Use 'in' operator for array of status values
+        query = query.in('status', dbStatus);
       }
       
       // Apply other filters
@@ -190,7 +189,7 @@ async function getSourceReference(sourceType: string, sourceId: string): Promise
         
         return {
           id: data.id,
-          type: 'complaint',
+          type: 'complaint' as CAPASource,
           title: data.title,
           description: data.description,
           date: data.reported_date,
@@ -210,7 +209,7 @@ async function getSourceReference(sourceType: string, sourceId: string): Promise
         
         return {
           id: data.id,
-          type: 'audit',
+          type: 'audit' as CAPASource,
           title: `Audit Finding: ${data.description.substring(0, 50)}...`,
           description: data.description,
           date: data.created_at,
@@ -230,7 +229,7 @@ async function getSourceReference(sourceType: string, sourceId: string): Promise
         
         return {
           id: data.id,
-          type: 'nonconformance',
+          type: 'nonconformance' as CAPASource,
           title: data.title,
           description: data.description,
           date: data.reported_date,
