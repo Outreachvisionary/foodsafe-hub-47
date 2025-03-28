@@ -67,8 +67,8 @@ const HeroSection = () => {
             <div className="relative">
               <div className="absolute -left-4 -top-4 w-24 h-24 bg-cc-purple/10 rounded-lg z-0"></div>
               <img 
-                src="https://images.unsplash.com/photo-1607000975631-e5908573fee4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="Food safety professional monitoring compliance dashboard"
+                src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Food production professional reviewing data"
                 className="rounded-lg shadow-xl relative z-10"
               />
               <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-cc-purple/10 rounded-lg z-0"></div>

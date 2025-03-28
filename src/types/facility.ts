@@ -10,7 +10,4 @@ export interface Facility {
   created_at?: string;
   updated_at?: string;
   metadata?: Record<string, any>;
-  contact_email?: string | null;
-  contact_phone?: string | null;
-  location_data?: Record<string, any> | null;
 }

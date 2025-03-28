@@ -22,41 +22,30 @@ import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { Building2, Plus, Trash2, Users, Factory, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Organization } from '@/types/organization';
-import { Facility } from '@/types/facility';
+import { Organization as OrganizationType } from '@/types/organization';
+import { Facility as FacilityType } from '@/types/facility';
 import { fetchOrganizations, fetchFacilities } from '@/utils/supabaseHelpers';
-import OrganizationTypeSelector, { OrganizationType } from '@/components/organizations/OrganizationTypeSelector';
-import { useForm } from 'react-hook-form';
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 
-// Form validation schema
-const organizationFormSchema = z.object({
-  name: z.string().min(2, "Organization name must be at least 2 characters"),
-  description: z.string().optional(),
-  contact_email: z.string().email("Invalid email address").optional().or(z.literal('')),
-  contact_phone: z.string().optional(),
-  org_type: z.string().optional(),
-});
+interface Organization {
+  id: string;
+  name: string;
+  description: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  logo_url: string | null;
+  status: string;
+  created_at: string;
+}
 
-const facilityFormSchema = z.object({
-  name: z.string().min(2, "Facility name must be at least 2 characters"),
-  description: z.string().optional(),
-  address: z.string().optional(),
-  facility_type: z.string().optional(),
-});
-
-type OrganizationFormValues = z.infer<typeof organizationFormSchema>;
-type FacilityFormValues = z.infer<typeof facilityFormSchema>;
+interface Facility {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  facility_type: string | null;
+  status: string;
+  created_at: string;
+}
 
 const OrganizationManagement: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -66,32 +55,31 @@ const OrganizationManagement: React.FC = () => {
   const [facilitiesLoading, setFacilitiesLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFacilityDialogOpen, setCreateFacilityDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    contactEmail: '',
+    contactPhone: ''
+  });
+  const [facilityFormData, setFacilityFormData] = useState({
+    name: '',
+    description: '',
+    address: '',
+    facilityType: ''
+  });
   const [submitting, setSubmitting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingFacility, setIsCreatingFacility] = useState(false);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgDescription, setNewOrgDescription] = useState('');
+  const [newOrgEmail, setNewOrgEmail] = useState('');
+  const [newOrgPhone, setNewOrgPhone] = useState('');
+  const [newFacilityName, setNewFacilityName] = useState('');
+  const [newFacilityDescription, setNewFacilityDescription] = useState('');
+  const [newFacilityAddress, setNewFacilityAddress] = useState('');
+  const [newFacilityType, setNewFacilityType] = useState('');
   const { toast } = useToast();
   const { user } = useUser();
-
-  // Initialize React Hook Form for organization
-  const orgForm = useForm<OrganizationFormValues>({
-    resolver: zodResolver(organizationFormSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      contact_email: '',
-      contact_phone: '',
-      org_type: undefined,
-    }
-  });
-
-  // Initialize React Hook Form for facility
-  const facilityForm = useForm<FacilityFormValues>({
-    resolver: zodResolver(facilityFormSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      address: '',
-      facility_type: '',
-    }
-  });
 
   useEffect(() => {
     if (user) {
@@ -120,8 +108,7 @@ const OrganizationManagement: React.FC = () => {
         contact_phone: org.contact_phone || null,
         logo_url: org.logo_url || null,
         status: org.status,
-        created_at: org.created_at || new Date().toISOString(),
-        org_type: org.org_type || null
+        created_at: org.created_at || new Date().toISOString()
       }));
       
       setOrganizations(mappedOrgs);
@@ -156,8 +143,7 @@ const OrganizationManagement: React.FC = () => {
         address: facility.address || null,
         facility_type: facility.facility_type || null,
         status: facility.status,
-        created_at: facility.created_at || new Date().toISOString(),
-        organization_id: facility.organization_id
+        created_at: facility.created_at || new Date().toISOString()
       }));
       
       setFacilities(mappedFacilities);
@@ -173,18 +159,17 @@ const OrganizationManagement: React.FC = () => {
     }
   };
 
-  const handleCreateOrganization = async (values: OrganizationFormValues) => {
+  const handleCreateOrganization = async () => {
     try {
       setSubmitting(true);
       
       const { data, error } = await supabase
         .from('organizations')
         .insert({
-          name: values.name,
-          description: values.description || null,
-          contact_email: values.contact_email || null,
-          contact_phone: values.contact_phone || null,
-          org_type: values.org_type || null,
+          name: newOrgName,
+          description: newOrgDescription || null,
+          contact_email: newOrgEmail || null,
+          contact_phone: newOrgPhone || null,
           status: 'active'
         })
         .select('*')
@@ -197,8 +182,11 @@ const OrganizationManagement: React.FC = () => {
         description: 'Organization created successfully!'
       });
       
-      setCreateDialogOpen(false);
-      orgForm.reset();
+      setIsCreating(false);
+      setNewOrgName('');
+      setNewOrgDescription('');
+      setNewOrgEmail('');
+      setNewOrgPhone('');
       fetchOrganizationData();
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -212,7 +200,7 @@ const OrganizationManagement: React.FC = () => {
     }
   };
 
-  const handleCreateFacility = async (values: FacilityFormValues) => {
+  const handleCreateFacility = async () => {
     try {
       setSubmitting(true);
       
@@ -228,10 +216,10 @@ const OrganizationManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('facilities')
         .insert({
-          name: values.name,
-          description: values.description || null,
-          address: values.address || null,
-          facility_type: values.facility_type || null,
+          name: newFacilityName,
+          description: newFacilityDescription || null,
+          address: newFacilityAddress || null,
+          facility_type: newFacilityType || null,
           organization_id: selectedOrganization.id,
           status: 'active'
         })
@@ -245,8 +233,11 @@ const OrganizationManagement: React.FC = () => {
         description: 'Facility created successfully!'
       });
       
-      setCreateFacilityDialogOpen(false);
-      facilityForm.reset();
+      setIsCreatingFacility(false);
+      setNewFacilityName('');
+      setNewFacilityDescription('');
+      setNewFacilityAddress('');
+      setNewFacilityType('');
       fetchOrganizationFacilities(selectedOrganization.id);
     } catch (error) {
       console.error('Error creating facility:', error);
@@ -277,7 +268,7 @@ const OrganizationManagement: React.FC = () => {
                 New Organization
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create Organization</DialogTitle>
                 <DialogDescription>
@@ -285,104 +276,58 @@ const OrganizationManagement: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              <Form {...orgForm}>
-                <form onSubmit={orgForm.handleSubmit(handleCreateOrganization)} className="space-y-4 py-2">
-                  <FormField
-                    control={orgForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ABC Foods Inc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Organization Name</Label>
+                  <Input 
+                    id="name" 
+                    value={formData.name} 
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="ABC Foods Inc."
                   />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Organic food producer"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea 
+                    id="description" 
+                    value={formData.description} 
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Organic food producer"
                   />
-
-                  <FormField
-                    control={orgForm.control}
-                    name="org_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Type</FormLabel>
-                        <FormControl>
-                          <OrganizationTypeSelector 
-                            value={field.value} 
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input 
+                    id="contactEmail" 
+                    type="email"
+                    value={formData.contactEmail} 
+                    onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
+                    placeholder="contact@abcfoods.com"
                   />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="contact_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="email"
-                            placeholder="contact@abcfoods.com"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="contactPhone">Contact Phone</Label>
+                  <Input 
+                    id="contactPhone" 
+                    value={formData.contactPhone} 
+                    onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                    placeholder="+1 (555) 123-4567"
                   />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="contact_phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="+1 (555) 123-4567"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <DialogFooter className="pt-4">
-                    <Button variant="outline" type="button" onClick={() => setCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting ? 'Creating...' : 'Create'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+                <Button 
+                  onClick={handleCreateOrganization}
+                  disabled={!formData.name}
+                >
+                  Create
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -394,25 +339,7 @@ const OrganizationManagement: React.FC = () => {
             </CardHeader>
             <CardContent>
               {organizations.length === 0 ? (
-                loading ? (
-                  <div className="text-center p-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading organizations...</p>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Building2 className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                    <p className="mt-2 text-muted-foreground">No organizations found.</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4" 
-                      onClick={() => setCreateDialogOpen(true)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create your first organization
-                    </Button>
-                  </div>
-                )
+                <p className="text-muted-foreground">No organizations found.</p>
               ) : (
                 <ul className="space-y-2">
                   {organizations.map((org) => (
@@ -452,11 +379,6 @@ const OrganizationManagement: React.FC = () => {
                         <div>
                           <Label>Description</Label>
                           <p className="text-muted-foreground">{selectedOrganization.description || 'No description provided'}</p>
-                        </div>
-                        
-                        <div>
-                          <Label>Organization Type</Label>
-                          <p className="text-muted-foreground">{selectedOrganization.org_type || 'Not specified'}</p>
                         </div>
                         
                         <Separator />
@@ -503,7 +425,7 @@ const OrganizationManagement: React.FC = () => {
                             Add Facility
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
+                        <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Add Facility</DialogTitle>
                             <DialogDescription>
@@ -511,96 +433,62 @@ const OrganizationManagement: React.FC = () => {
                             </DialogDescription>
                           </DialogHeader>
                           
-                          <Form {...facilityForm}>
-                            <form onSubmit={facilityForm.handleSubmit(handleCreateFacility)} className="space-y-4 py-2">
-                              <FormField
-                                control={facilityForm.control}
-                                name="name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Facility Name</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Production Plant 1" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="facilityName">Facility Name</Label>
+                              <Input 
+                                id="facilityName" 
+                                value={facilityFormData.name} 
+                                onChange={(e) => setFacilityFormData({...facilityFormData, name: e.target.value})}
+                                placeholder="Production Plant 1"
                               />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="description"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Description</FormLabel>
-                                    <FormControl>
-                                      <Textarea 
-                                        placeholder="Main production facility"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
+                            </div>
+                            
+                            <div className="grid gap-2">
+                              <Label htmlFor="facilityDescription">Description</Label>
+                              <Input 
+                                id="facilityDescription" 
+                                value={facilityFormData.description} 
+                                onChange={(e) => setFacilityFormData({...facilityFormData, description: e.target.value})}
+                                placeholder="Main production facility"
                               />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="address"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Address</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="123 Production Road, Industry City"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
+                            </div>
+                            
+                            <div className="grid gap-2">
+                              <Label htmlFor="facilityAddress">Address</Label>
+                              <Input 
+                                id="facilityAddress" 
+                                value={facilityFormData.address} 
+                                onChange={(e) => setFacilityFormData({...facilityFormData, address: e.target.value})}
+                                placeholder="123 Production Road, Industry City"
                               />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="facility_type"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Facility Type</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="Production"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
+                            </div>
+                            
+                            <div className="grid gap-2">
+                              <Label htmlFor="facilityType">Facility Type</Label>
+                              <Input 
+                                id="facilityType" 
+                                value={facilityFormData.facilityType} 
+                                onChange={(e) => setFacilityFormData({...facilityFormData, facilityType: e.target.value})}
+                                placeholder="Production"
                               />
-                              
-                              <DialogFooter className="pt-4">
-                                <Button variant="outline" type="button" onClick={() => setCreateFacilityDialogOpen(false)}>
-                                  Cancel
-                                </Button>
-                                <Button type="submit" disabled={submitting}>
-                                  {submitting ? 'Adding...' : 'Add Facility'}
-                                </Button>
-                              </DialogFooter>
-                            </form>
-                          </Form>
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setCreateFacilityDialogOpen(false)}>Cancel</Button>
+                            <Button 
+                              onClick={handleCreateFacility}
+                              disabled={!facilityFormData.name}
+                            >
+                              Add Facility
+                            </Button>
+                          </DialogFooter>
                         </DialogContent>
                       </Dialog>
                     </CardHeader>
                     <CardContent>
-                      {facilitiesLoading ? (
-                        <div className="text-center p-4">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                          <p className="mt-2 text-sm text-muted-foreground">Loading facilities...</p>
-                        </div>
-                      ) : facilities.length === 0 ? (
+                      {facilities.length === 0 ? (
                         <div className="text-center py-6">
                           <Factory className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
                           <p className="mt-2 text-muted-foreground">No facilities found. Add your first facility.</p>
@@ -666,7 +554,7 @@ const OrganizationManagement: React.FC = () => {
                 <CardContent className="text-center py-12">
                   <Building2 className="h-16 w-16 mx-auto text-muted-foreground opacity-50" />
                   <p className="mt-4 text-lg text-muted-foreground">Select an organization to view details</p>
-                  {organizations.length === 0 && !loading && (
+                  {organizations.length === 0 && (
                     <Button variant="outline" className="mt-4" onClick={() => setCreateDialogOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create your first organization

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCFilter, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
@@ -18,11 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 
-interface NCListProps {
-  onSelectItem?: (selectedId: string) => void;
-}
-
-const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
+const NCList: React.FC = () => {
   const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,10 +36,14 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
       try {
         setLoading(true);
         
+        // Modified to call fetchNonConformances without arguments
+        // since the implementation doesn't accept filters yet
         const items = await fetchNonConformances();
         
+        // Apply client-side filtering
         let filteredItems = items;
         
+        // Filter by search term
         if (searchTerm) {
           filteredItems = filteredItems.filter(item => 
             item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,18 +52,21 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
           );
         }
         
+        // Filter by status
         if (filters.status && filters.status.length > 0) {
           filteredItems = filteredItems.filter(item => 
             filters.status?.includes(item.status)
           );
         }
         
+        // Filter by item category
         if (filters.item_category && filters.item_category.length > 0) {
           filteredItems = filteredItems.filter(item => 
             filters.item_category?.includes(item.item_category)
           );
         }
         
+        // Filter by reason category
         if (filters.reason_category && filters.reason_category.length > 0) {
           filteredItems = filteredItems.filter(item => 
             filters.reason_category?.includes(item.reason_category)
@@ -87,6 +91,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Search is already triggered in the useEffect
   };
 
   const clearFilters = () => {
@@ -146,14 +151,6 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     (filters.reason_category && filters.reason_category.length > 0) ||
     searchTerm
   );
-
-  const handleItemClick = (itemId: string) => {
-    if (onSelectItem) {
-      onSelectItem(itemId);
-    } else {
-      navigate(`/non-conformance/${itemId}`);
-    }
-  };
 
   return (
     <Card>
@@ -343,11 +340,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               </TableHeader>
               <TableBody>
                 {nonConformances.map((item) => (
-                  <TableRow 
-                    key={item.id} 
-                    className="cursor-pointer hover:bg-gray-50" 
-                    onClick={() => handleItemClick(item.id)}
-                  >
+                  <TableRow key={item.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/non-conformance/${item.id}`)}>
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell>{item.item_name}</TableCell>
                     <TableCell>{item.item_category}</TableCell>
@@ -367,7 +360,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={(e) => {
                         e.stopPropagation();
-                        handleItemClick(item.id);
+                        navigate(`/non-conformance/${item.id}`);
                       }}>
                         View
                       </Button>

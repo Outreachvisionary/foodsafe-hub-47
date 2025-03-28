@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,66 +28,59 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority, ComplaintSource } from '@/types/complaint';
-import ComplaintDetails from '@/components/complaints/ComplaintDetails';
 
 // Mock data for complaints
-const mockComplaints: Complaint[] = [
+const mockComplaints = [
   {
-    id: '1',
-    title: 'Foreign object in packaged product',
-    date: new Date().toISOString(),
+    id: 'C-2023-001',
+    date: '2023-10-15',
     category: 'Food Safety',
-    description: 'Customer reported finding small plastic pieces in packaged food product.',
+    description: 'Foreign object found in packaged product',
     source: 'Consumer',
     status: 'In Progress',
     priority: 'High',
-    assignedTo: 'John Smith'
+    assignedTo: 'Sarah Johnson',
   },
   {
-    id: '2',
-    title: 'Product texture inconsistency',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    id: 'C-2023-002',
+    date: '2023-10-10',
     category: 'Quality',
-    description: 'Internal QA detected inconsistent texture across recent production batch.',
+    description: 'Product color variation from standard',
     source: 'Internal QA',
     status: 'Resolved',
     priority: 'Medium',
-    assignedTo: 'Emily Johnson'
+    assignedTo: 'Michael Chen',
   },
   {
-    id: '3', 
-    title: 'Missing allergen warning on label',
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    id: 'C-2023-003',
+    date: '2023-09-28',
     category: 'Regulatory',
-    description: 'Retailer identified missing allergen warning on product label.',
+    description: 'Allergen not declared on label',
     source: 'Retailer',
     status: 'Under Investigation',
     priority: 'Critical',
-    assignedTo: 'Michael Chen'
+    assignedTo: 'Emily Williams',
   },
   {
-    id: '4',
-    title: 'Pathogen detection in batch sample',
-    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    id: 'C-2023-004',
+    date: '2023-09-25',
     category: 'Food Safety',
-    description: 'Laboratory testing found potential contamination in product sample.',
+    description: 'Potential pathogen contamination reported',
     source: 'Laboratory Test',
     status: 'In Progress',
     priority: 'Critical',
-    assignedTo: 'Sarah Wilson'
+    assignedTo: 'David Rodriguez',
   },
   {
-    id: '5',
-    title: 'Product color variation',
-    date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    id: 'C-2023-005',
+    date: '2023-09-20',
     category: 'Quality',
-    description: 'Consumer reported unusual color variation in product.',
+    description: 'Product texture inconsistency',
     source: 'Consumer',
     status: 'Resolved',
     priority: 'Low',
-    assignedTo: 'David Martinez'
-  }
+    assignedTo: 'Sarah Johnson',
+  },
 ];
 
 // Status badge component
@@ -297,7 +291,6 @@ const NewComplaintForm = ({ onSubmitSuccess }: { onSubmitSuccess: () => void }) 
 const ComplaintManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewComplaintDialogOpen, setIsNewComplaintDialogOpen] = useState(false);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   
   // Filter complaints based on search term
   const filteredComplaints = mockComplaints.filter(complaint => 
@@ -306,28 +299,6 @@ const ComplaintManagement = () => {
     complaint.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     complaint.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
-  const handleViewComplaint = (complaint: Complaint) => {
-    setSelectedComplaint(complaint);
-  };
-  
-  if (selectedComplaint) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader 
-          title="Complaint Details" 
-          subtitle="View and manage detailed complaint information" 
-        />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <ComplaintDetails 
-            complaint={selectedComplaint} 
-            onBack={() => setSelectedComplaint(null)} 
-          />
-        </main>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -409,7 +380,7 @@ const ComplaintManagement = () => {
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{complaint.date}</TableCell>
                           <TableCell>{complaint.category}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
@@ -422,11 +393,7 @@ const ComplaintManagement = () => {
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewComplaint(complaint)}
-                            >
+                            <Button variant="ghost" size="sm">
                               View <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -465,7 +432,7 @@ const ComplaintManagement = () => {
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{complaint.date}</TableCell>
                           <TableCell>{complaint.category}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
@@ -475,11 +442,7 @@ const ComplaintManagement = () => {
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewComplaint(complaint)}
-                            >
+                            <Button variant="ghost" size="sm">
                               View <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -517,7 +480,7 @@ const ComplaintManagement = () => {
                     {filteredComplaints.map(complaint => (
                       <TableRow key={complaint.id}>
                         <TableCell className="font-medium">{complaint.id}</TableCell>
-                        <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{complaint.date}</TableCell>
                         <TableCell>{complaint.category}</TableCell>
                         <TableCell className="hidden md:table-cell max-w-xs truncate">
                           {complaint.description}
@@ -530,11 +493,7 @@ const ComplaintManagement = () => {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewComplaint(complaint)}
-                          >
+                          <Button variant="ghost" size="sm">
                             View <ChevronDown className="ml-1 h-4 w-4" />
                           </Button>
                         </TableCell>
