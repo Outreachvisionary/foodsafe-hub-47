@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { CAPA, CAPAEffectivenessMetrics } from '@/types/capa';
 import { fetchCAPAById, updateCAPA } from '@/services/capaService';
@@ -97,6 +97,12 @@ const CAPADetailsPage = () => {
       });
     }
   };
+  
+  const navigateToSource = () => {
+    if (!capa || !capa.sourceReference || !capa.sourceReference.url) return;
+    
+    navigate(capa.sourceReference.url);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -110,7 +116,7 @@ const CAPADetailsPage = () => {
           <Breadcrumbs />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex justify-between">
           <Button 
             variant="outline" 
             onClick={handleClose}
@@ -119,6 +125,19 @@ const CAPADetailsPage = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to CAPA List
           </Button>
+          
+          {capa?.sourceReference && capa.sourceReference.url && (
+            <Button 
+              variant="outline"
+              onClick={navigateToSource}
+              className="flex items-center gap-1"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View {capa.sourceReference.type === 'complaint' ? 'Complaint' : 
+                     capa.sourceReference.type === 'audit' ? 'Audit Finding' : 
+                     capa.source.charAt(0).toUpperCase() + capa.source.slice(1)}
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -132,6 +151,39 @@ const CAPADetailsPage = () => {
           </Card>
         ) : capa ? (
           <div className="space-y-8">
+            {capa.sourceReference && (
+              <Card className="bg-blue-50 border-blue-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-blue-800">
+                        This CAPA was created from a {capa.sourceReference.type}
+                      </h3>
+                      <p className="text-sm text-blue-600 mt-1">
+                        {capa.sourceReference.title}
+                      </p>
+                      {capa.sourceReference.date && (
+                        <p className="text-xs text-blue-500 mt-1">
+                          Reported on {new Date(capa.sourceReference.date).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    {capa.sourceReference.url && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={navigateToSource}
+                        className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100"
+                      >
+                        View Source
+                        <ExternalLink className="ml-1 h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <CAPADetails
               capa={capa}
               onClose={handleClose}
