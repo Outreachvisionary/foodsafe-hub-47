@@ -25,7 +25,8 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: '#2A3B5A',
+          dark: '#1F2B42',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -41,7 +42,8 @@ const config: Config = {
           foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
+          DEFAULT: '#D4A95C',
+          light: '#BF9850',
           foreground: 'hsl(var(--accent-foreground))',
         },
         popover: {
@@ -52,21 +54,43 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        cc: {
-          purple: '#5B3A94',
-          ivory: '#F8F7F2',
-          charcoal: '#333940',
+        neutral: {
+          light: '#F6F8FA',
           white: '#FFFFFF',
+          dark: '#2C2C2C',
+        },
+        semantic: {
+          purple: '#7C68B1',
+        },
+        cc: {
+          teal: '#2A3B5A',
+          darkTeal: '#1F2B42',
+          gold: '#D4A95C',
+          light: '#F6F8FA',
+          white: '#FFFFFF',
+          tagline: '#BF9850',
+          ivory: '#F6F8FA',
+          charcoal: '#2C2C2C',
+          purple: '#7C68B1',
+          text: {
+            light: '#F6F8FA',
+            dark: '#2C2C2C',
+            gold: '#D4A95C',
+          }
         },
         brand: {
-          teal: '#0A9396',
-          lightGray: '#F8F9FA',
-          darkGray: '#333333',
+          teal: '#2A3B5A',
+          lightGray: '#F6F8FA',
+          darkGray: '#2C2C2C',
         },
         fsms: {
           blue: '#0078D4',
           dark: '#333333',
         },
+      },
+      fontFamily: {
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        display: ['Satoshi', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -101,10 +125,6 @@ const config: Config = {
         'fade-in': 'fade-in 0.5s ease-out',
         'slide-in': 'slide-in 0.6s ease-out',
         'slide-up': 'slide-up 0.4s ease-out',
-      },
-      fontFamily: {
-        sans: ['Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

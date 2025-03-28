@@ -17,8 +17,8 @@ const VisualDemo = () => {
             <div className="relative">
               <div className="absolute -left-3 -top-3 w-24 h-24 bg-cc-purple/10 rounded-lg z-0"></div>
               <img 
-                src="https://images.unsplash.com/photo-1581092335878-2d9ff86ca2bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="Food manufacturing facility"
+                src="https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Food quality control and inspection in processing facility"
                 className="rounded-lg shadow-lg relative z-10"
               />
             </div>
@@ -35,7 +35,7 @@ const VisualDemo = () => {
               <div className="relative shadow-xl rounded-lg overflow-hidden border-2 border-cc-purple/20">
                 <img 
                   src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                  alt="Compliance Core dashboard"
+                  alt="Compliance Core dashboard with real-time monitoring"
                   className="w-full"
                 />
                 
