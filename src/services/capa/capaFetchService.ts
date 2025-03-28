@@ -1,13 +1,41 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAFilters, SourceReference } from '@/types/capa';
+import { CAPA, CAPAFetchParams, CAPASource, CAPAPriority, SourceReference } from '@/types/capa';
 import { mapStatusFromDb } from './capaStatusService';
 
-export interface CAPAFetchParams extends Partial<CAPAFilters> {
-  sourceId?: string;
-  limit?: number;
-  offset?: number;
-}
+/**
+ * Map database result to CAPA object
+ */
+export const mapDbResultToCapa = (data: any): CAPA => {
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    source: data.source as CAPASource,
+    sourceId: data.source_id,
+    priority: data.priority as CAPAPriority,
+    status: mapStatusFromDb(data.status),
+    assignedTo: data.assigned_to,
+    department: data.department || '',
+    dueDate: data.due_date,
+    createdDate: data.created_at,
+    lastUpdated: data.updated_at,
+    completedDate: data.completion_date,
+    rootCause: data.root_cause || '',
+    correctiveAction: data.corrective_action || '',
+    preventiveAction: data.preventive_action || '',
+    verificationMethod: data.verification_method || undefined,
+    verificationDate: data.verification_date,
+    verifiedBy: data.assigned_to,
+    effectivenessRating: data.effectiveness_verified ? 'Effective' : undefined,
+    effectivenessScore: data.effectiveness_criteria 
+      ? (typeof data.effectiveness_criteria === 'string' 
+          ? JSON.parse(data.effectiveness_criteria).score || 0
+          : data.effectiveness_criteria.score || 0)
+      : undefined,
+    fsma204Compliant: false
+  };
+};
 
 /**
  * Fetch CAPAs with optional filtering
@@ -21,7 +49,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     // Apply filters if provided
     if (params) {
       if (params.status && params.status !== 'all') {
-        const statusFilter = params.status === 'open' 
+        const dbStatus = params.status === 'open' 
           ? ['Open', 'Overdue'] 
           : params.status === 'in-progress' 
             ? ['In Progress'] 
@@ -29,7 +57,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
               ? ['Closed'] 
               : ['Pending Verification'];
         
-        query = query.in('status', statusFilter);
+        query = query.in('status', dbStatus as any);
       }
       
       if (params.priority && params.priority !== 'all') {
@@ -83,13 +111,15 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         query = query.eq('department', params.department);
       }
       
-      // Apply pagination if specified
-      if (params.limit) {
-        query = query.limit(params.limit);
+      // Search by title or description if searchQuery is provided
+      if (params.searchQuery) {
+        const searchTerm = `%${params.searchQuery}%`;
+        query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
       }
       
-      if (params.offset) {
-        query = query.offset(params.offset);
+      // Apply pagination if specified - used with limit() instead of direct operator
+      if (params.limit) {
+        query = query.limit(params.limit);
       }
     }
     
@@ -102,34 +132,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     }
     
     // Map the database results to the CAPA interface
-    return data.map(item => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      source: item.source,
-      sourceId: item.source_id,
-      priority: item.priority,
-      status: mapStatusFromDb(item.status),
-      assignedTo: item.assigned_to,
-      department: item.department || '',
-      dueDate: item.due_date,
-      createdDate: item.created_at,
-      lastUpdated: item.updated_at,
-      completedDate: item.completion_date,
-      rootCause: item.root_cause || '',
-      correctiveAction: item.corrective_action || '',
-      preventiveAction: item.preventive_action || '',
-      verificationMethod: item.verification_method,
-      verificationDate: item.verification_date,
-      verifiedBy: item.assigned_to,
-      effectivenessRating: item.effectiveness_verified ? 'Effective' : undefined,
-      effectivenessScore: item.effectiveness_criteria 
-        ? typeof item.effectiveness_criteria === 'string'
-          ? JSON.parse(item.effectiveness_criteria).score
-          : item.effectiveness_criteria.score
-        : undefined,
-      fsma204Compliant: false
-    }));
+    return data.map(item => mapDbResultToCapa(item));
     
   } catch (err) {
     console.error('Error in fetchCAPAs function:', err);
@@ -156,36 +159,10 @@ export const fetchCAPAById = async (capaId: string): Promise<CAPA> => {
     // Get source reference data if available
     const sourceReference = await getSourceReference(data.source, data.source_id);
     
-    // Map the database result to the CAPA interface
-    return {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      source: data.source,
-      sourceId: data.source_id,
-      priority: data.priority,
-      status: mapStatusFromDb(data.status),
-      assignedTo: data.assigned_to,
-      department: data.department || '',
-      dueDate: data.due_date,
-      createdDate: data.created_at,
-      lastUpdated: data.updated_at,
-      completedDate: data.completion_date,
-      rootCause: data.root_cause || '',
-      correctiveAction: data.corrective_action || '',
-      preventiveAction: data.preventive_action || '',
-      verificationMethod: data.verification_method,
-      verificationDate: data.verification_date,
-      verifiedBy: data.assigned_to,
-      effectivenessRating: data.effectiveness_verified ? 'Effective' : undefined,
-      effectivenessScore: data.effectiveness_criteria 
-        ? typeof data.effectiveness_criteria === 'string'
-          ? JSON.parse(data.effectiveness_criteria).score
-          : data.effectiveness_criteria.score
-        : undefined,
-      sourceReference,
-      fsma204Compliant: false
-    };
+    // Map the database result to the CAPA interface and include the source reference
+    const capa = mapDbResultToCapa(data);
+    capa.sourceReference = sourceReference;
+    return capa;
     
   } catch (err) {
     console.error('Error in fetchCAPAById function:', err);
@@ -238,6 +215,26 @@ async function getSourceReference(sourceType: string, sourceId: string): Promise
           date: data.created_at,
           status: data.status,
           url: `/internal-audits/${data.audit_id}`
+        };
+      }
+      
+      case 'nonconformance': {
+        const { data, error } = await supabase
+          .from('non_conformances')
+          .select('id, title, description, reported_date, status')
+          .eq('id', sourceId)
+          .single();
+        
+        if (error || !data) return undefined;
+        
+        return {
+          id: data.id,
+          type: 'nonconformance',
+          title: data.title,
+          description: data.description,
+          date: data.reported_date,
+          status: data.status,
+          url: `/non-conformance/${data.id}`
         };
       }
       

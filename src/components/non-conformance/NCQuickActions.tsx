@@ -39,6 +39,7 @@ import {
 import { toast } from 'sonner';
 import CreateCAPADialog from '../capa/CreateCAPADialog';
 import { NCStatus } from '@/types/non-conformance';
+import { CAPASource } from '@/types/capa';
 
 interface NCQuickActionsProps {
   id: string;
@@ -88,7 +89,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     id: id,
     title: "Non-conformance issue requiring corrective action",
     description: "This non-conformance was identified and requires a CAPA to prevent recurrence",
-    source: "complaint",
+    source: 'nonconformance' as CAPASource,
     sourceId: id,
     date: new Date().toISOString().split('T')[0],
     severity: "major"

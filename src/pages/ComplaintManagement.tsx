@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,55 +33,60 @@ import ComplaintDetails from '@/components/complaints/ComplaintDetails';
 // Mock data for complaints
 const mockComplaints: Complaint[] = [
   {
-    id: 'C-2023-001',
-    date: '2023-10-15',
+    id: '1',
+    title: 'Foreign object in packaged product',
+    date: new Date().toISOString(),
     category: 'Food Safety',
-    description: 'Foreign object found in packaged product',
+    description: 'Customer reported finding small plastic pieces in packaged food product.',
     source: 'Consumer',
     status: 'In Progress',
     priority: 'High',
-    assignedTo: 'Sarah Johnson',
+    assignedTo: 'John Smith'
   },
   {
-    id: 'C-2023-002',
-    date: '2023-10-10',
+    id: '2',
+    title: 'Product texture inconsistency',
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     category: 'Quality',
-    description: 'Product color variation from standard',
+    description: 'Internal QA detected inconsistent texture across recent production batch.',
     source: 'Internal QA',
     status: 'Resolved',
     priority: 'Medium',
-    assignedTo: 'Michael Chen',
+    assignedTo: 'Emily Johnson'
   },
   {
-    id: 'C-2023-003',
-    date: '2023-09-28',
+    id: '3', 
+    title: 'Missing allergen warning on label',
+    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     category: 'Regulatory',
-    description: 'Allergen not declared on label',
+    description: 'Retailer identified missing allergen warning on product label.',
     source: 'Retailer',
     status: 'Under Investigation',
     priority: 'Critical',
-    assignedTo: 'Emily Williams',
+    assignedTo: 'Michael Chen'
   },
   {
-    id: 'C-2023-004',
-    date: '2023-09-25',
+    id: '4',
+    title: 'Pathogen detection in batch sample',
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     category: 'Food Safety',
-    description: 'Potential pathogen contamination reported',
+    description: 'Laboratory testing found potential contamination in product sample.',
     source: 'Laboratory Test',
     status: 'In Progress',
     priority: 'Critical',
-    assignedTo: 'David Rodriguez',
+    assignedTo: 'Sarah Wilson'
   },
   {
-    id: 'C-2023-005',
-    date: '2023-09-20',
+    id: '5',
+    title: 'Product color variation',
+    date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     category: 'Quality',
-    description: 'Product texture inconsistency',
+    description: 'Consumer reported unusual color variation in product.',
     source: 'Consumer',
     status: 'Resolved',
     priority: 'Low',
-    assignedTo: 'Sarah Johnson',
-  },
+    assignedTo: 'David Martinez'
+  }
 ];
 
 // Status badge component

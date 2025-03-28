@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Calendar, Check, ClipboardList, Plus, AlertTriangle, FileText } from 'l
 import CAPAAuditIntegration from './CAPAAuditIntegration';
 import { createCAPA } from '@/services/capaService';
 import { useUser } from '@/contexts/UserContext';
-import { CAPASource } from '@/types/capa';
+import { CAPASource, SourceReference } from '@/types/capa';
 
 interface SourceDataType {
   title?: string;
@@ -19,14 +18,7 @@ interface SourceDataType {
   source?: CAPASource;
   sourceId?: string;
   priority?: string;
-  sourceReference?: {
-    id: string;
-    type: string;
-    title: string;
-    description?: string;
-    date?: string;
-    status?: string;
-  };
+  sourceReference?: SourceReference;
 }
 
 interface CreateCAPADialogProps {
@@ -51,7 +43,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   // CAPA form state
   const [title, setTitle] = useState(sourceData?.title || '');
   const [description, setDescription] = useState(sourceData?.description || '');
-  const [source, setSource] = useState<string>(sourceData?.source || 'audit');
+  const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
   const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
@@ -101,21 +93,24 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     
     try {
       // Create source reference if we have the data
-      const sourceReference = sourceData?.sourceReference || 
-                             (auditFinding ? {
-                               id: auditFinding.id,
-                               type: 'audit',
-                               title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
-                               description: auditFinding.description,
-                               date: auditFinding.created_at,
-                               status: auditFinding.status
-                             } : undefined);
+      let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
+      
+      if (auditFinding && !sourceReference) {
+        sourceReference = {
+          id: auditFinding.id,
+          type: 'audit',
+          title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
+          description: auditFinding.description,
+          date: auditFinding.created_at,
+          status: auditFinding.status
+        };
+      }
       
       // Create new CAPA
       const newCAPA = await createCAPA({
         title,
         description,
-        source: source as any,
+        source,
         sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
         priority: priority as any,
         status: 'open',

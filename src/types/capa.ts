@@ -5,7 +5,7 @@ export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified';
 
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
 
-export type CAPASource = 'audit' | 'haccp' | 'supplier' | 'complaint' | 'traceability';
+export type CAPASource = 'audit' | 'haccp' | 'supplier' | 'complaint' | 'traceability' | 'nonconformance';
 
 export type CAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective';
 
@@ -55,6 +55,13 @@ export interface CAPAFilters {
   dueDate: string;
   department?: string;
   assignedTo?: string;
+}
+
+export interface CAPAFetchParams extends Partial<CAPAFilters> {
+  sourceId?: string;
+  limit?: number;
+  offset?: number;
+  searchQuery?: string; // Add searchQuery parameter
 }
 
 export interface CAPAEffectivenessMetrics {

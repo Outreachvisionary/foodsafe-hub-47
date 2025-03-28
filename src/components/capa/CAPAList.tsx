@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,8 +29,11 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
       setLoading(true);
       try {
         const data = await fetchCAPAs({
-          ...filters,
-          searchQuery
+          status: filters?.status !== 'all' ? filters?.status : undefined,
+          priority: filters?.priority !== 'all' ? filters?.priority : undefined,
+          source: filters?.source !== 'all' ? filters?.source : undefined,
+          dueDate: filters?.dueDate !== 'all' ? filters?.dueDate : undefined,
+          searchQuery: searchQuery || undefined
         });
         setCapas(data);
       } catch (error) {
