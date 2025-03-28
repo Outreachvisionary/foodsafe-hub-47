@@ -1,6 +1,6 @@
 
 // Export all CAPA services from this central file
-import { fetchCAPAs, fetchCAPAById } from './capa/capaFetchService';
+import { fetchCAPAs, fetchCAPAById, mapDbResultToCapa } from './capa/capaFetchService';
 import { createCAPA, updateCAPA, deleteCAPA } from './capa/capaUpdateService';
 import { 
   getCAPAStats, 
@@ -37,5 +37,6 @@ export {
   getEffectivenessMetrics,
   getPotentialCAPAs,
   logCAPAActivity,
-  getCAPAActivities
+  getCAPAActivities,
+  mapDbResultToCapa
 };
