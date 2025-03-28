@@ -1,120 +1,73 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardCheck, FileText, Activity, BarChart2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 
 const PlatformPreview = () => {
-  const [activeTab, setActiveTab] = useState('audit');
-  
-  const modules = [
-    {
-      id: 'audit',
-      name: 'Audit Management',
-      icon: ClipboardCheck,
-      description: 'Streamline audit preparation with intelligent checklists and automated evidence collection.',
-      image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
-    },
-    {
-      id: 'document',
-      name: 'Document Control',
-      icon: FileText,
-      description: 'Centralize all compliance documentation with version control and approval workflows.',
-      image: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
-    },
-    {
-      id: 'risk',
-      name: 'Risk Assessment',
-      icon: Activity,
-      description: 'Identify and mitigate food safety risks with AI-powered analysis and monitoring.',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
-    },
-    {
-      id: 'dashboard',
-      name: 'Reporting Dashboard',
-      icon: BarChart2,
-      description: 'Access real-time compliance metrics and generate comprehensive reports.',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
-    }
-  ];
-
   return (
-    <section className="py-16 md:py-24 bg-cc-ivory">
+    <section className="py-20 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold font-display text-cc-charcoal mb-4">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <span className="inline-block px-3 py-1 text-sm font-medium rounded-full bg-[#1A2B3C]/10 text-[#1A2B3C] mb-4">
             Platform Preview
+          </span>
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold text-[#1A2B3C]">
+            Command Center for Food Safety Excellence
           </h2>
-          <p className="text-xl text-cc-charcoal/80 max-w-3xl mx-auto font-sans">
-            Explore the key modules of Compliance Core that streamline food safety management.
+          <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
+            Comprehensive visibility across all your facilities and compliance requirements
           </p>
-        </div>
-        
-        <Tabs defaultValue="audit" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="bg-cc-white border border-cc-purple/20">
-              {modules.map((module) => (
-                <TabsTrigger 
-                  key={module.id} 
-                  value={module.id}
-                  className={`flex items-center gap-2 px-4 py-2 ${
-                    activeTab === module.id ? 'bg-cc-purple text-white' : 'text-cc-charcoal'
-                  }`}
-                >
-                  <module.icon className="h-4 w-4" />
-                  <span className="hidden md:inline">{module.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="relative"
+        >
+          <Card className="overflow-hidden shadow-xl border-0 rounded-xl">
+            <div className="bg-[#1A2B3C] p-2 flex items-center">
+              <div className="flex space-x-2 ml-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <div className="text-white text-sm mx-auto pr-12">FoodSafe Executive Dashboard</div>
+            </div>
+            <div className="bg-gray-50 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                alt="Platform Dashboard"
+                className="w-full object-cover transform hover:scale-105 transition-transform duration-700"
+                style={{ height: '500px' }}
+              />
+            </div>
+          </Card>
+          
+          {/* Floating stats cards */}
+          <div className="absolute -bottom-6 -right-6 md:right-12 md:bottom-12 z-10 animate-pulse">
+            <Card className="bg-white p-4 shadow-lg border-t-4 border-green-500 w-48">
+              <div className="text-sm text-gray-500">Compliance Score</div>
+              <div className="text-2xl font-bold text-[#1A2B3C]">96.8%</div>
+              <div className="text-xs text-green-600">↑ 3.2% from last month</div>
+            </Card>
           </div>
           
-          {modules.map((module) => (
-            <TabsContent key={module.id} value={module.id}>
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="md:w-2/3"
-                >
-                  <div className="rounded-lg overflow-hidden shadow-xl border-2 border-cc-purple/10">
-                    <img
-                      src={module.image}
-                      alt={`${module.name} preview`}
-                      className="w-full h-auto"
-                    />
-                  </div>
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="md:w-1/3"
-                >
-                  <div className="bg-cc-white p-6 rounded-lg shadow-md">
-                    <div className="w-12 h-12 bg-cc-purple/10 rounded-lg flex items-center justify-center mb-4 text-cc-purple">
-                      <module.icon className="h-6 w-6" />
-                    </div>
-                    
-                    <h3 className="text-2xl font-display font-bold text-cc-charcoal mb-3">
-                      {module.name}
-                    </h3>
-                    
-                    <p className="text-cc-charcoal/80 mb-4 font-sans">
-                      {module.description}
-                    </p>
-                    
-                    <Button className="bg-cc-purple hover:bg-cc-purple/90 text-white font-sans">
-                      Learn more
-                    </Button>
-                  </div>
-                </motion.div>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+          <div className="absolute top-1/3 -left-6 md:left-12 z-10 animate-pulse" style={{ animationDelay: '1s' }}>
+            <Card className="bg-white p-4 shadow-lg border-t-4 border-[#D4AF37] w-48">
+              <div className="text-sm text-gray-500">Active Facilities</div>
+              <div className="text-2xl font-bold text-[#1A2B3C]">12</div>
+              <div className="text-xs text-[#D4AF37]">All in compliance</div>
+            </Card>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

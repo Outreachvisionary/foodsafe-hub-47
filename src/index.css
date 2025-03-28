@@ -1,6 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -132,32 +130,6 @@
 
 .grid-responsive {
   @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
-}
-
-/* Compliance Core custom styles */
-.cc-underline {
-  @apply relative inline-block after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-cc-purple after:bottom-0 after:left-0;
-}
-
-.cc-border-left {
-  @apply border-l-4 border-cc-purple;
-}
-
-.cc-card {
-  @apply bg-cc-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
-}
-
-.cc-gradient-bg {
-  @apply bg-gradient-to-r from-cc-purple to-cc-charcoal;
-}
-
-.cc-check-item {
-  @apply flex items-start;
-}
-
-.cc-check-item:before {
-  content: '';
-  @apply w-4 h-4 mr-2 bg-cc-purple rounded-full flex-shrink-0 mt-1;
 }
 
 @layer base {

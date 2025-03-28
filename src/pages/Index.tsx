@@ -2,16 +2,13 @@
 import React, { useEffect } from 'react';
 import MainNavigation from '@/components/MainNavigation';
 import HeroSection from '@/components/HeroSection';
-import PlatformOverview from '@/components/PlatformOverview';
-import VisualDemo from '@/components/VisualDemo';
-import CoreFeatures from '@/components/CoreFeatures';
-import ProcessFlow from '@/components/ProcessFlow';
-import MultiFacilityManagement from '@/components/MultiFacilityManagement';
-import ROISection from '@/components/ROISection';
-import TestimonialSection from '@/components/TestimonialSection';
-import PlatformPreview from '@/components/PlatformPreview';
-import CallToAction from '@/components/CallToAction';
 import FooterSection from '@/components/FooterSection';
+import VisualShowcase from '@/components/VisualShowcase';
+import KeyFeatures from '@/components/KeyFeatures';
+import PlatformFunctionality from '@/components/PlatformFunctionality';
+import ValueProposition from '@/components/ValueProposition';
+import Testimonials from '@/components/Testimonials';
+import CallToActionSection from '@/components/CallToActionSection';
 import ConversionTracker from '@/components/ConversionTracker';
 
 const Index = () => {
@@ -21,28 +18,22 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cc-ivory">
+    <div className="min-h-screen bg-white">
       <MainNavigation />
       
       <HeroSection />
       
-      <PlatformOverview />
+      <VisualShowcase />
       
-      <VisualDemo />
+      <KeyFeatures />
       
-      <CoreFeatures />
+      <PlatformFunctionality />
       
-      <ProcessFlow />
+      <ValueProposition />
       
-      <MultiFacilityManagement />
+      <Testimonials />
       
-      <ROISection />
-      
-      <TestimonialSection />
-      
-      <PlatformPreview />
-      
-      <CallToAction />
+      <CallToActionSection />
       
       <FooterSection />
       
