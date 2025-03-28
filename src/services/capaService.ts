@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, CAPAStats } from '@/types/capa';
 
 // These are the actual status values allowed in the database table
-type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Verified';
+type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification';
 
 // Map frontend status values to database status values
 const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
@@ -11,7 +11,7 @@ const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
     'open': 'Open',
     'in-progress': 'In Progress',
     'closed': 'Closed',
-    'verified': 'Verified'
+    'verified': 'Closed' // Map 'verified' to 'Closed' since we don't have a 'Verified' option in database
   };
   return statusMap[status] || 'Open';
 };
