@@ -18,7 +18,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-cc-light">
+      <div className="flex min-h-screen w-full bg-gray-50">
         <AppSidebar />
         
         {/* Main Content */}

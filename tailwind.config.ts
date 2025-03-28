@@ -53,23 +53,13 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
         cc: {
-          teal: '#1D3E40',  // Dark teal from the image background
-          darkTeal: '#1A3538', // Darker variation
-          gold: '#C6A256',   // Gold accent from the image
-          light: '#F8F7F2',  // Light color for contrast
+          purple: '#5B3A94',
+          ivory: '#F8F7F2',
+          charcoal: '#333940',
           white: '#FFFFFF',
-          tagline: '#B49355', // Lighter gold for the tagline
-          ivory: '#F8F7F2',   // Off-white for backgrounds
-          charcoal: '#333333', // Dark text color for contrast
-          purple: '#6E59A5',  // Purple accent for UI elements
-          text: {
-            light: '#F8F7F2',  // Light text for dark backgrounds
-            dark: '#333333',   // Dark text for light backgrounds
-            gold: '#C6A256',   // Gold text for accents
-          }
         },
         brand: {
-          teal: '#1D3E40',
+          teal: '#0A9396',
           lightGray: '#F8F9FA',
           darkGray: '#333333',
         },
@@ -113,8 +103,8 @@ const config: Config = {
         'slide-up': 'slide-up 0.4s ease-out',
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Eurostile', 'Outfit', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Outfit', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
       },
     },
   },
