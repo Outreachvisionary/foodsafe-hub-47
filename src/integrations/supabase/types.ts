@@ -123,15 +123,10 @@ export type Database = {
           corrective_action: string | null
           created_at: string | null
           created_by: string
-          department: string | null
           description: string
           due_date: string
           effectiveness_criteria: string | null
-          effectiveness_rating:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
           effectiveness_verified: boolean | null
-          fsma204_compliant: boolean | null
           id: string
           preventive_action: string | null
           priority: string
@@ -142,8 +137,6 @@ export type Database = {
           title: string
           updated_at: string | null
           verification_date: string | null
-          verification_method: string | null
-          verified_by: string | null
         }
         Insert: {
           assigned_to: string
@@ -151,15 +144,10 @@ export type Database = {
           corrective_action?: string | null
           created_at?: string | null
           created_by: string
-          department?: string | null
           description: string
           due_date: string
           effectiveness_criteria?: string | null
-          effectiveness_rating?:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
           effectiveness_verified?: boolean | null
-          fsma204_compliant?: boolean | null
           id?: string
           preventive_action?: string | null
           priority: string
@@ -170,8 +158,6 @@ export type Database = {
           title: string
           updated_at?: string | null
           verification_date?: string | null
-          verification_method?: string | null
-          verified_by?: string | null
         }
         Update: {
           assigned_to?: string
@@ -179,15 +165,10 @@ export type Database = {
           corrective_action?: string | null
           created_at?: string | null
           created_by?: string
-          department?: string | null
           description?: string
           due_date?: string
           effectiveness_criteria?: string | null
-          effectiveness_rating?:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
           effectiveness_verified?: boolean | null
-          fsma204_compliant?: boolean | null
           id?: string
           preventive_action?: string | null
           priority?: string
@@ -198,191 +179,8 @@ export type Database = {
           title?: string
           updated_at?: string | null
           verification_date?: string | null
-          verification_method?: string | null
-          verified_by?: string | null
         }
         Relationships: []
-      }
-      capa_activities: {
-        Row: {
-          action_description: string
-          action_type: string
-          capa_id: string | null
-          id: string
-          metadata: Json | null
-          new_status: Database["public"]["Enums"]["capa_status"] | null
-          old_status: Database["public"]["Enums"]["capa_status"] | null
-          performed_at: string | null
-          performed_by: string
-        }
-        Insert: {
-          action_description: string
-          action_type: string
-          capa_id?: string | null
-          id?: string
-          metadata?: Json | null
-          new_status?: Database["public"]["Enums"]["capa_status"] | null
-          old_status?: Database["public"]["Enums"]["capa_status"] | null
-          performed_at?: string | null
-          performed_by: string
-        }
-        Update: {
-          action_description?: string
-          action_type?: string
-          capa_id?: string | null
-          id?: string
-          metadata?: Json | null
-          new_status?: Database["public"]["Enums"]["capa_status"] | null
-          old_status?: Database["public"]["Enums"]["capa_status"] | null
-          performed_at?: string | null
-          performed_by?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "capa_activities_capa_id_fkey"
-            columns: ["capa_id"]
-            isOneToOne: false
-            referencedRelation: "capa_actions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      capa_effectiveness_assessments: {
-        Row: {
-          assessment_date: string | null
-          capa_id: string | null
-          created_by: string
-          documentation_complete: boolean | null
-          id: string
-          notes: string | null
-          preventive_measures_implemented: boolean | null
-          rating:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
-          recurrence_check: string | null
-          root_cause_eliminated: boolean | null
-          score: number | null
-        }
-        Insert: {
-          assessment_date?: string | null
-          capa_id?: string | null
-          created_by: string
-          documentation_complete?: boolean | null
-          id?: string
-          notes?: string | null
-          preventive_measures_implemented?: boolean | null
-          rating?:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
-          recurrence_check?: string | null
-          root_cause_eliminated?: boolean | null
-          score?: number | null
-        }
-        Update: {
-          assessment_date?: string | null
-          capa_id?: string | null
-          created_by?: string
-          documentation_complete?: boolean | null
-          id?: string
-          notes?: string | null
-          preventive_measures_implemented?: boolean | null
-          rating?:
-            | Database["public"]["Enums"]["capa_effectiveness_rating"]
-            | null
-          recurrence_check?: string | null
-          root_cause_eliminated?: boolean | null
-          score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "capa_effectiveness_assessments_capa_id_fkey"
-            columns: ["capa_id"]
-            isOneToOne: false
-            referencedRelation: "capa_actions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      capa_related_documents: {
-        Row: {
-          added_at: string | null
-          added_by: string
-          capa_id: string | null
-          document_id: string | null
-          document_type: string | null
-          id: string
-        }
-        Insert: {
-          added_at?: string | null
-          added_by: string
-          capa_id?: string | null
-          document_id?: string | null
-          document_type?: string | null
-          id?: string
-        }
-        Update: {
-          added_at?: string | null
-          added_by?: string
-          capa_id?: string | null
-          document_id?: string | null
-          document_type?: string | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "capa_related_documents_capa_id_fkey"
-            columns: ["capa_id"]
-            isOneToOne: false
-            referencedRelation: "capa_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "capa_related_documents_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      capa_related_training: {
-        Row: {
-          added_at: string | null
-          added_by: string
-          capa_id: string | null
-          id: string
-          training_id: string | null
-        }
-        Insert: {
-          added_at?: string | null
-          added_by: string
-          capa_id?: string | null
-          id?: string
-          training_id?: string | null
-        }
-        Update: {
-          added_at?: string | null
-          added_by?: string
-          capa_id?: string | null
-          id?: string
-          training_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "capa_related_training_capa_id_fkey"
-            columns: ["capa_id"]
-            isOneToOne: false
-            referencedRelation: "capa_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "capa_related_training_training_id_fkey"
-            columns: ["training_id"]
-            isOneToOne: false
-            referencedRelation: "training_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       ccps: {
         Row: {
@@ -1629,18 +1427,6 @@ export type Database = {
         | "Completed"
         | "Cancelled"
         | "Overdue"
-      capa_effectiveness_rating:
-        | "Effective"
-        | "Partially Effective"
-        | "Not Effective"
-      capa_priority: "critical" | "high" | "medium" | "low"
-      capa_source:
-        | "audit"
-        | "haccp"
-        | "supplier"
-        | "complaint"
-        | "traceability"
-        | "nonconformance"
       capa_status:
         | "Open"
         | "In Progress"
