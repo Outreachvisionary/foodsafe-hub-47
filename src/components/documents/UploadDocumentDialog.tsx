@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,9 @@ import { DocumentCategory, DocumentStatus, Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { FilePlus, Upload, Calendar, Tag, X, AlertCircle } from 'lucide-react';
+import { FilePlus, Upload, Calendar, Tag, X } from 'lucide-react';
 import enhancedDocumentService from '@/services/documentService';
 import { useTranslation } from 'react-i18next';
-import { useFileUpload } from '@/hooks/use-file-upload';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -41,25 +41,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     category: (existingDocument?.category || 'SOP') as DocumentCategory,
     changeSummary: ''
   });
-  
-  const { 
-    file, 
-    handleFileChange, 
-    clearFile, 
-    error: fileError 
-  } = useFileUpload({
-    maxSizeMB: 30, // 30MB maximum file size for documents
-    allowedTypes: [
-      'application/pdf', // PDFs
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
-      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PowerPoint
-      'application/zip', 'application/x-zip-compressed', // Zip files
-      'text/plain', 'text/csv', 'text/html', // Text files
-      'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml' // Common image formats
-    ]
-  });
-  
+  const [file, setFile] = useState<File | null>(null);
   const [expiryDate, setExpiryDate] = useState<string>(
     existingDocument?.expiry_date 
       ? new Date(existingDocument.expiry_date).toISOString().split('T')[0] 
@@ -67,6 +49,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   );
   const [tags, setTags] = useState<string[]>(existingDocument?.tags || []);
   const [tagInput, setTagInput] = useState<string>('');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -118,17 +106,20 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       setUploading(true);
 
       if (isNewVersion && existingDocument) {
+        // Upload new version for existing document
         const documentId = existingDocument.id;
         const storagePath = `${documentId}/${file.name}_v${existingDocument.version + 1}`;
         
+        // Upload file to storage
         const fileUrl = await enhancedDocumentService.uploadToStorage(file, existingDocument, existingDocument.version + 1);
         
+        // Create new version record
         const versionDetails = {
           file_name: file.name,
           file_path: storagePath,
           file_size: file.size,
           file_type: file.type,
-          created_by: 'Current User',
+          created_by: 'Current User', // In a real app, this would be the current user
           change_summary: formData.changeSummary,
           storage_path: storagePath
         };
@@ -140,14 +131,17 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           description: t('documents.newVersionUploadedDesc'),
         });
       } else {
+        // Create new document
         const documentId = uuidv4();
         
+        // Upload file to storage
         const fileUrl = await enhancedDocumentService.uploadToStorage(file, {
           id: documentId,
           title: formData.title,
           file_name: file.name
         } as Document);
         
+        // Create new document with database property names
         const newDocument: Document = {
           id: documentId,
           title: formData.title,
@@ -158,21 +152,23 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           category: formData.category,
           status: 'Draft' as DocumentStatus,
           version: 1,
-          created_by: 'Current User',
+          created_by: 'Current User', // In a real app, this would be the current user
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           expiry_date: expiryDate ? new Date(expiryDate).toISOString() : undefined,
           tags: tags
         };
 
+        // Add the document
         await addDocument(newDocument);
         
+        // Create initial version record
         const versionDetails = {
           file_name: file.name,
           file_path: `${documentId}/${file.name}`,
           file_size: file.size,
           file_type: file.type,
-          created_by: 'Current User',
+          created_by: 'Current User', // In a real app, this would be the current user
           change_summary: 'Initial version',
           storage_path: `${documentId}/${file.name}`
         };
@@ -185,13 +181,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         });
       }
       
-      clearFile();
+      // Reset form and close dialog
       setFormData({
         title: '',
         description: '',
         category: 'SOP' as DocumentCategory,
         changeSummary: ''
       });
+      setFile(null);
       setExpiryDate('');
       setTags([]);
       onOpenChange(false);
@@ -350,20 +347,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 className="flex-grow"
               />
             </div>
-            {fileError && (
-              <div className="text-red-500 text-sm flex items-center mt-1">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {fileError}
-              </div>
-            )}
             {file && (
               <p className="text-sm text-gray-500">
                 {t('documents.selected')}: {file.name} ({(file.size / 1024).toFixed(2)} KB)
               </p>
             )}
-            <p className="text-xs text-gray-500">
-              Maximum file size: 30MB. Supported formats include PDF, Office documents, images, and text files.
-            </p>
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
