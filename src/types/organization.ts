@@ -10,4 +10,6 @@ export interface Organization {
   metadata?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
+  org_type?: string;
+  address?: string;
 }

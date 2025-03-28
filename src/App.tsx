@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Main pages
 import Index from './pages/Index';
@@ -12,13 +14,15 @@ import InternalAudits from './pages/InternalAudits';
 import SupplierManagement from './pages/SupplierManagement';
 import Traceability from './pages/Traceability';
 import CAPA from './pages/CAPA';
+import CAPADetailsPage from './pages/CAPADetails';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
-import Standards from './pages/Standards';
+import StandardsPage from './pages/StandardsPage';
 import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
 import Solutions from './pages/Solutions';
 import Products from './pages/Products';
+import Organizations from './pages/Organizations';
 
 // Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
@@ -36,17 +40,66 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/documents/*" element={<Documents />} />
-        <Route path="/haccp" element={<HaccpModule />} />
-        <Route path="/training" element={<TrainingModule />} />
-        <Route path="/internal-audits" element={<InternalAudits />} />
-        <Route path="/supplier-management" element={<SupplierManagement />} />
-        <Route path="/traceability" element={<Traceability />} />
-        <Route path="/capa" element={<CAPA />} />
-        <Route path="/complaint-management" element={<ComplaintManagement />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/standards" element={<Standards />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/documents/*" element={
+          <ProtectedRoute>
+            <Documents />
+          </ProtectedRoute>
+        } />
+        <Route path="/haccp" element={
+          <ProtectedRoute>
+            <HaccpModule />
+          </ProtectedRoute>
+        } />
+        <Route path="/training" element={
+          <ProtectedRoute>
+            <TrainingModule />
+          </ProtectedRoute>
+        } />
+        <Route path="/internal-audits" element={
+          <ProtectedRoute>
+            <InternalAudits />
+          </ProtectedRoute>
+        } />
+        <Route path="/supplier-management" element={
+          <ProtectedRoute>
+            <SupplierManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/traceability" element={
+          <ProtectedRoute>
+            <Traceability />
+          </ProtectedRoute>
+        } />
+        <Route path="/capa" element={
+          <ProtectedRoute>
+            <CAPA />
+          </ProtectedRoute>
+        } />
+        <Route path="/capa/:id" element={
+          <ProtectedRoute>
+            <CAPADetailsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/complaint-management" element={
+          <ProtectedRoute>
+            <ComplaintManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/reports" element={
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        } />
+        
+        {/* Enhanced Standards Routes */}
+        <Route path="/standards" element={<StandardsPage />} />
+        <Route path="/standards/:standardId" element={<StandardsPage />} />
+        <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
         
         {/* Platform Routes */}
         <Route path="/platform/:moduleType" element={<Products />} />
@@ -65,16 +118,53 @@ const App = () => {
         <Route path="/products" element={<Products />} />
         
         {/* Non-Conformance Module Routes */}
-        <Route path="/non-conformance" element={<NonConformanceModule />} />
-        <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
-        <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
-        <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+        <Route path="/non-conformance" element={
+          <ProtectedRoute>
+            <NonConformanceModule />
+          </ProtectedRoute>
+        } />
+        <Route path="/non-conformance/:id" element={
+          <ProtectedRoute>
+            <NonConformanceModule />
+          </ProtectedRoute>
+        } />
+        <Route path="/non-conformance/new" element={
+          <ProtectedRoute>
+            <NonConformanceFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/non-conformance/edit/:id" element={
+          <ProtectedRoute>
+            <NonConformanceFormPage />
+          </ProtectedRoute>
+        } />
         
         {/* Organization & Facility Management Routes */}
-        <Route path="/organization" element={<OrganizationManagement />} />
-        <Route path="/facilities" element={<FacilitiesList />} />
-        <Route path="/facilities/:id" element={<FacilityManagement />} />
-        <Route path="/facilities/new" element={<FacilityManagement />} />
+        <Route path="/organization" element={
+          <ProtectedRoute>
+            <OrganizationManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/organizations" element={
+          <ProtectedRoute>
+            <Organizations />
+          </ProtectedRoute>
+        } />
+        <Route path="/facilities" element={
+          <ProtectedRoute>
+            <FacilitiesList />
+          </ProtectedRoute>
+        } />
+        <Route path="/facilities/:id" element={
+          <ProtectedRoute>
+            <FacilityManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/facilities/new" element={
+          <ProtectedRoute>
+            <FacilityManagement />
+          </ProtectedRoute>
+        } />
         
         {/* Auth Routes */}
         <Route path="/login" element={<Auth />} />

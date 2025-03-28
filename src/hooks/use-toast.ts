@@ -1,6 +1,4 @@
-
 import * as React from "react"
-import { toast as sonnerToast } from "sonner"
 
 import type {
   ToastActionElement,
@@ -151,13 +149,6 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  // Also trigger sonner toast for consistency
-  if (props.title) {
-    sonnerToast(props.title as string, {
-      description: props.description as string,
-    })
-  }
-
   dispatch({
     type: "ADD_TOAST",
     toast: {
@@ -197,4 +188,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast, sonnerToast }
+export { useToast, toast }
