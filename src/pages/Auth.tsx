@@ -1,62 +1,27 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { useAuthForms } from '@/hooks/useAuthForms';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUser } from '@/contexts/UserContext';
-
-// Login form schema
-const loginSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address"
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters"
-  })
-});
-
-// Register form schema
-const registerSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address"
-  }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters"
-  }).regex(/[A-Z]/, {
-    message: "Password must contain at least one uppercase letter"
-  }).regex(/[a-z]/, {
-    message: "Password must contain at least one lowercase letter"
-  }).regex(/[0-9]/, {
-    message: "Password must contain at least one number"
-  }),
-  full_name: z.string().min(2, {
-    message: "Full name is required"
-  }),
-  confirm_password: z.string()
-}).refine(data => data.password === data.confirm_password, {
-  message: "Passwords don't match",
-  path: ["confirm_password"]
-});
+import { BrandedButton } from '@/components/ui/branded-button';
 
 // Auth Page
 const Auth = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated, isLoading: userLoading } = useAuthRedirect();
+  const { loginForm, registerForm, onLogin, onRegister, isLoading } = useAuthForms();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>("login");
 
   // Parse URL params to determine initial tab
   useEffect(() => {
+    if (userLoading) return; // Don't update tabs while checking auth state
+    
     const params = new URLSearchParams(location.search);
     const mode = params.get('mode');
     if (mode === 'register') {
@@ -64,138 +29,28 @@ const Auth = () => {
     } else {
       setActiveTab('login');
     }
-  }, [location]);
+  }, [location, userLoading]);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      // Get the return URL from the query string or default to dashboard
-      const params = new URLSearchParams(location.search);
-      const returnUrl = params.get('returnUrl') || '/dashboard';
-      
-      console.log('User is authenticated, redirecting to:', returnUrl);
-      navigate(returnUrl);
-    }
-  }, [user, navigate, location.search]);
+  // Show a full-page spinner while checking authentication
+  if (userLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-muted-foreground">Checking authentication...</p>
+      </div>
+    );
+  }
 
-  // Login form
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: ""
-    }
-  });
-
-  // Register form
-  const registerForm = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirm_password: "",
-      full_name: ""
-    }
-  });
-
-  // Login handler
-  const onLogin = async (values: z.infer<typeof loginSchema>) => {
-    try {
-      setIsLoading(true);
-      console.log('Attempting login with:', values.email);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password
-      });
-
-      if (error) {
-        console.error('Login error:', error.message);
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        console.log('Login successful, user:', data.user);
-        toast({
-          title: "Login successful",
-          description: "Welcome back!"
-        });
-        
-        // Get return URL from the query string or use default
-        const params = new URLSearchParams(location.search);
-        const returnUrl = params.get('returnUrl') || '/dashboard';
-        navigate(returnUrl);
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Register handler
-  const onRegister = async (values: z.infer<typeof registerSchema>) => {
-    try {
-      setIsLoading(true);
-      console.log('Attempting registration with:', values.email);
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            full_name: values.full_name
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Registration error:', error.message);
-        toast({
-          title: "Registration failed",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else if (data.user) {
-        console.log('Registration successful, user:', data.user);
-        
-        if (data.session) {
-          // User is already confirmed and has a session
-          toast({
-            title: "Registration successful",
-            description: "Your account has been created and you are now logged in!"
-          });
-          navigate('/dashboard');
-        } else {
-          // User needs to confirm their email
-          toast({
-            title: "Registration successful",
-            description: "Please check your email for a confirmation link"
-          });
-          setActiveTab('login');
-        }
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+  // Handle form submissions
+  const handleRegisterSubmit = async (values) => {
+    const shouldSwitchToLogin = await onRegister(values);
+    if (shouldSwitchToLogin) {
+      setActiveTab('login');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12 animate-fade-in">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Compliance Core</CardTitle>
@@ -210,89 +65,113 @@ const Auth = () => {
               <TabsTrigger value="register">Sign Up</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="login">
+            <TabsContent value="login" className="animate-fade-in">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({ field }) => 
-                    <FormItem>
+                  <FormField control={loginForm.control} name="email" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="your@email.com" {...field} />
+                        <Input placeholder="your@email.com" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={loginForm.control} name="password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={loginForm.control} name="password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
-                  </Button>
+                    </FormItem>} />
+                  <BrandedButton 
+                    type="submit" 
+                    disabled={isLoading} 
+                    className="w-full" 
+                    variant="primary"
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span>Signing in...</span>
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </BrandedButton>
                 </form>
               </Form>
               <div className="mt-4 text-center text-sm">
-                <Link to="#" className="text-blue-600 hover:underline">
+                <Link to="#" className="text-accent hover:underline">
                   Forgot your password?
                 </Link>
               </div>
             </TabsContent>
             
-            <TabsContent value="register">
+            <TabsContent value="register" className="animate-fade-in">
               <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                  <FormField control={registerForm.control} name="full_name" render={({ field }) => 
-                    <FormItem>
+                <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
+                  <FormField control={registerForm.control} name="full_name" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Jane Doe" {...field} />
+                        <Input placeholder="Jane Doe" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="email" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="email" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="your@email.com" {...field} />
+                        <Input placeholder="your@email.com" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="confirm_password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="confirm_password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
-                  </Button>
+                    </FormItem>} />
+                  <BrandedButton 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    variant="primary"
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span>Creating account...</span>
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </BrandedButton>
                 </form>
               </Form>
             </TabsContent>
           </Tabs>
         </CardContent>
         <CardFooter>
-          <Button variant="ghost" className="w-full" onClick={() => navigate('/')}>
-            Back to Home
+          <Button variant="ghost" className="w-full" asChild>
+            <Link to="/">Back to Home</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -300,4 +179,5 @@ const Auth = () => {
   );
 };
 
+// Export the component with a Suspense wrapper to support lazy loading
 export default Auth;

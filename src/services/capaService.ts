@@ -20,6 +20,7 @@ import {
   getCAPAActivities
 } from './capa/capaActivityService';
 
+// Export all services
 export {
   fetchCAPAs,
   fetchCAPAById,
