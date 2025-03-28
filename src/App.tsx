@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -13,6 +12,7 @@ import InternalAudits from './pages/InternalAudits';
 import SupplierManagement from './pages/SupplierManagement';
 import Traceability from './pages/Traceability';
 import CAPA from './pages/CAPA';
+import CAPADetailsPage from './pages/CAPADetails';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
 import StandardsPage from './pages/StandardsPage';
@@ -46,6 +46,7 @@ const App = () => {
         <Route path="/supplier-management" element={<SupplierManagement />} />
         <Route path="/traceability" element={<Traceability />} />
         <Route path="/capa" element={<CAPA />} />
+        <Route path="/capa/:id" element={<CAPADetailsPage />} />
         <Route path="/complaint-management" element={<ComplaintManagement />} />
         <Route path="/reports" element={<Reports />} />
         
