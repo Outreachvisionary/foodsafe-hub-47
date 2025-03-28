@@ -1,13 +1,7 @@
+
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,19 +15,6 @@ import { toast } from 'sonner';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-
-// Mock data for demo purposes
-const mockFindings = [
-  {
-    id: 'AF-2023-095',
-    title: 'Sanitation verification swab results show recurring issues in packaging area',
-    description: 'Multiple swab results show increasing levels of Listeria indicators in the packaging area despite regular sanitation procedures.',
-    source: 'audit',
-    sourceId: 'AUDIT-2023-14',
-    date: '2023-11-10',
-    severity: 'critical'
-  }
-];
 
 const CAPA = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -53,7 +34,7 @@ const CAPA = () => {
       title: "CAPA Created",
       description: `New CAPA "${capaData.title}" has been created`
     });
-    // In a real app, we would refresh the data from the API here
+    // Refresh is handled via service functions
     setShowAutomation(false);
   };
 
@@ -170,11 +151,6 @@ const CAPA = () => {
             >
               <Zap className="h-4 w-4 mr-2" />
               Auto-Detected Issues
-              {mockFindings.length > 0 && !showAutomation && (
-                <span className="ml-1 bg-red-100 text-red-800 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {mockFindings.length}
-                </span>
-              )}
             </Button>
             
             <CreateCAPADialog onCAPACreated={handleCAPACreated} />

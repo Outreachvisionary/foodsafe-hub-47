@@ -1,5 +1,6 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.cdnfonts.com/css/eurostile');
 
 @tailwind base;
 @tailwind components;
@@ -7,65 +8,65 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 194 35% 18%;  /* Dark teal background */
+    --foreground: 0 0% 100%;    /* White text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 194 35% 18%;
+    --card-foreground: 0 0% 100%;
  
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 194 35% 18%;
+    --popover-foreground: 0 0% 100%;
  
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 39 44% 55%;      /* Gold */
+    --primary-foreground: 194 35% 18%;  /* Dark teal for contrast on gold */
  
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 194 32% 22%;   /* Slightly lighter teal */
+    --secondary-foreground: 0 0% 98%;  /* Light text on secondary */
  
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 193 35% 25%;
+    --muted-foreground: 0 0% 85%;  /* Lighter color for better contrast */
  
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 39 44% 55%;       /* Gold accent */
+    --accent-foreground: 194 35% 18%;
  
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 39 44% 55%;      /* Gold borders */
+    --input: 194 32% 22%;
+    --ring: 39 44% 55%;
  
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 194 35% 18%;
+    --foreground: 0 0% 98%;
  
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 194 35% 18%;
+    --card-foreground: 0 0% 98%;
  
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 194 35% 18%;
+    --popover-foreground: 0 0% 98%;
  
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 39 44% 55%;
+    --primary-foreground: 194 35% 18%;
  
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 194 32% 22%;
+    --secondary-foreground: 0 0% 98%;
  
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 194 35% 15%;
+    --muted-foreground: 0 0% 85%;
  
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 39 44% 55%;
+    --accent-foreground: 194 35% 18%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 39 44% 55%;
+    --input: 194 32% 22%;
+    --ring: 39 44% 55%;
   }
 }
 
@@ -114,11 +115,11 @@
 
 /* Custom group styles */
 .content-group {
-  @apply p-4 rounded-lg border border-border bg-card mb-4;
+  @apply p-4 rounded-lg border border-cc-gold/40 bg-cc-darkTeal mb-4;
 }
 
 .content-group-title {
-  @apply text-base font-medium mb-3;
+  @apply text-base font-medium mb-3 text-cc-gold;
 }
 
 /* Custom layout helpers */
@@ -136,19 +137,19 @@
 
 /* Compliance Core custom styles */
 .cc-underline {
-  @apply relative inline-block after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-cc-purple after:bottom-0 after:left-0;
+  @apply relative inline-block after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-cc-gold after:bottom-0 after:left-0;
 }
 
 .cc-border-left {
-  @apply border-l-4 border-cc-purple;
+  @apply border-l-4 border-cc-gold;
 }
 
 .cc-card {
-  @apply bg-cc-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
+  @apply bg-cc-darkTeal rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-cc-gold/30;
 }
 
 .cc-gradient-bg {
-  @apply bg-gradient-to-r from-cc-purple to-cc-charcoal;
+  @apply bg-gradient-to-r from-cc-darkTeal to-cc-teal;
 }
 
 .cc-check-item {
@@ -157,7 +158,22 @@
 
 .cc-check-item:before {
   content: '';
-  @apply w-4 h-4 mr-2 bg-cc-purple rounded-full flex-shrink-0 mt-1;
+  @apply w-4 h-4 mr-2 bg-cc-gold rounded-full flex-shrink-0 mt-1;
+}
+
+/* Gold accent line styling */
+.cc-gold-line {
+  @apply relative inline-block;
+}
+
+.cc-gold-line:after {
+  content: '';
+  @apply absolute left-0 bottom-0 w-full h-0.5 bg-cc-gold rounded-full;
+}
+
+/* Tagline styling */
+.cc-tagline {
+  @apply text-cc-tagline font-display tracking-widest uppercase text-sm;
 }
 
 @layer base {
@@ -165,6 +181,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-wide;
   }
 }
