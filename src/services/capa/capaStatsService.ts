@@ -38,8 +38,7 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       haccp: 0,
       supplier: 0,
       complaint: 0,
-      traceability: 0,
-      nonconformance: 0
+      traceability: 0
     },
     overdue: 0,
     averageClosureTime: 0,
@@ -95,33 +94,6 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
   // Calculate average closure time
   stats.averageClosureTime = closedCount > 0 ? Math.round(totalClosureDays / closedCount) : 0;
 
-  // Get effectiveness statistics
-  const { data: effectivenessData, error: effectivenessError } = await supabase
-    .from('capa_effectiveness_assessments')
-    .select('*');
-
-  if (!effectivenessError && effectivenessData) {
-    let effective = 0;
-    let partiallyEffective = 0;
-    let notEffective = 0;
-
-    effectivenessData.forEach(item => {
-      if (item.rating === 'Effective') effective++;
-      else if (item.rating === 'Partially Effective') partiallyEffective++;
-      else if (item.rating === 'Not Effective') notEffective++;
-    });
-
-    stats.effectivenessRating = {
-      effective,
-      partiallyEffective,
-      notEffective
-    };
-  }
-
-  // Calculate FSMA 204 compliance rate
-  const fsma204CompliantCount = data.filter(item => item.fsma204_compliant).length;
-  stats.fsma204ComplianceRate = data.length > 0 ? Math.round((fsma204CompliantCount / data.length) * 100) : 0;
-
   return stats;
 };
 
@@ -157,30 +129,18 @@ export const getAdvancedCAPAMetrics = async (): Promise<any> => {
 
   const averageTimeToClose = closedCount > 0 ? totalDays / closedCount : 0;
 
-  // Calculate distribution by department (based on department field now)
+  // Calculate distribution by department (based on assigned_to field currently)
   const departmentCounts: Record<string, number> = {};
   data.forEach(capa => {
-    if (capa.department) {
-      departmentCounts[capa.department] = (departmentCounts[capa.department] || 0) + 1;
+    if (capa.assigned_to) {
+      departmentCounts[capa.assigned_to] = (departmentCounts[capa.assigned_to] || 0) + 1;
     }
   });
-
-  // Get related CAPAs with effectiveness assessments
-  const { data: effectivenessData, error: effectivenessError } = await supabase
-    .from('capa_effectiveness_assessments')
-    .select('*');
-  
-  let effectivenessRate = 0;
-  if (!effectivenessError && effectivenessData && effectivenessData.length > 0) {
-    const effectiveCAPAs = effectivenessData.filter(item => item.rating === 'Effective').length;
-    effectivenessRate = Math.round((effectiveCAPAs / effectivenessData.length) * 100);
-  }
 
   return {
     averageTimeToClose,
     departmentDistribution: departmentCounts,
     totalClosed: data.length,
-    effectivenessRate,
     closedWithRootCause: data.filter(capa => capa.root_cause && capa.root_cause.trim() !== '').length,
     closedWithVerification: data.filter(capa => capa.verification_date).length
   };
@@ -194,75 +154,19 @@ export const saveEffectivenessMetrics = async (
   metrics: CAPAEffectivenessMetrics
 ): Promise<void> => {
   try {
-    const effectivenessRating = metrics.score >= 85 ? 'Effective' : 
-                                metrics.score >= 60 ? 'Partially Effective' : 'Not Effective';
-    
-    // First check if an assessment already exists
-    const { data: existingAssessment } = await supabase
-      .from('capa_effectiveness_assessments')
-      .select('id')
-      .eq('capa_id', capaId)
-      .single();
-    
-    if (existingAssessment) {
-      // Update existing assessment
-      const { error: updateError } = await supabase
-        .from('capa_effectiveness_assessments')
-        .update({
-          root_cause_eliminated: metrics.rootCauseEliminated,
-          preventive_measures_implemented: metrics.preventiveMeasuresImplemented,
-          documentation_complete: metrics.documentationComplete,
-          recurrence_check: metrics.recurrenceCheck,
-          score: metrics.score,
-          notes: metrics.notes,
-          assessment_date: metrics.assessmentDate || new Date().toISOString(),
-          rating: effectivenessRating
-        })
-        .eq('id', existingAssessment.id);
-      
-      if (updateError) throw updateError;
-    } else {
-      // Create new assessment
-      const { error: insertError } = await supabase
-        .from('capa_effectiveness_assessments')
-        .insert({
-          capa_id: capaId,
-          root_cause_eliminated: metrics.rootCauseEliminated,
-          preventive_measures_implemented: metrics.preventiveMeasuresImplemented,
-          documentation_complete: metrics.documentationComplete,
-          recurrence_check: metrics.recurrenceCheck,
-          score: metrics.score,
-          notes: metrics.notes,
-          assessment_date: metrics.assessmentDate || new Date().toISOString(),
-          created_by: (await supabase.auth.getUser()).data.user?.id || 'system',
-          rating: effectivenessRating
-        });
-      
-      if (insertError) throw insertError;
-    }
-    
-    // Update the CAPA record with effectiveness rating
+    // First update the CAPA record with effectiveness metrics
     const { error } = await supabase
       .from('capa_actions')
       .update({
-        effectiveness_rating: effectivenessRating,
         effectiveness_criteria: JSON.stringify(metrics),
         effectiveness_verified: metrics.score >= 85, // Mark as verified if score is above threshold
       })
       .eq('id', capaId);
     
-    if (error) throw error;
-    
-    // Add an activity record for this effectiveness assessment
-    await supabase
-      .from('capa_activities')
-      .insert({
-        capa_id: capaId,
-        action_type: 'effectiveness_assessment',
-        action_description: `Effectiveness assessed: ${effectivenessRating} (${metrics.score}%)`,
-        performed_by: (await supabase.auth.getUser()).data.user?.id || 'system',
-        metadata: JSON.stringify({ metrics }) // Convert metrics to JSON string
-      });
+    if (error) {
+      console.error('Error saving effectiveness metrics:', error);
+      throw error;
+    }
     
   } catch (err) {
     console.error('Error in saveEffectivenessMetrics function:', err);
@@ -275,26 +179,7 @@ export const saveEffectivenessMetrics = async (
  */
 export const getEffectivenessMetrics = async (capaId: string): Promise<CAPAEffectivenessMetrics | null> => {
   try {
-    // First try to get from the dedicated effectiveness table
-    const { data: assessmentData, error: assessmentError } = await supabase
-      .from('capa_effectiveness_assessments')
-      .select('*')
-      .eq('capa_id', capaId)
-      .single();
-    
-    if (!assessmentError && assessmentData) {
-      return {
-        rootCauseEliminated: assessmentData.root_cause_eliminated,
-        preventiveMeasuresImplemented: assessmentData.preventive_measures_implemented,
-        documentationComplete: assessmentData.documentation_complete,
-        recurrenceCheck: assessmentData.recurrence_check as 'Passed' | 'Minor Issues' | 'Failed',
-        score: assessmentData.score,
-        notes: assessmentData.notes,
-        assessmentDate: assessmentData.assessment_date
-      };
-    }
-    
-    // Fallback to checking the CAPA record itself
+    // Fetch CAPA data
     const { data, error } = await supabase
       .from('capa_actions')
       .select('effectiveness_criteria')
@@ -356,18 +241,6 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
       return [];
     }
     
-    // Fetch non-conformances that don't have a CAPA yet
-    const { data: nonConformances, error: ncError } = await supabase
-      .from('non_conformances')
-      .select('*')
-      .in('risk_level', ['High', 'Critical'])
-      .is('capa_id', null);
-      
-    if (ncError) {
-      console.error('Error fetching non-conformances:', ncError);
-      return [];
-    }
-    
     // Format audit findings for potential CAPAs
     const auditCAPAs = auditFindings?.map(finding => ({
       id: finding.id,
@@ -392,19 +265,7 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
       confidence: complaint.category === 'Product Quality' ? 0.9 : 0.75
     })) || [];
     
-    // Format non-conformances for potential CAPAs
-    const ncCAPAs = nonConformances?.map(nc => ({
-      id: nc.id,
-      title: `Non-Conformance: ${nc.title}`,
-      description: nc.description || nc.reason_details || '',
-      source: 'nonconformance' as CAPASource,
-      sourceId: nc.id,
-      date: nc.reported_date,
-      severity: nc.risk_level === 'Critical' ? 'Critical' : 'Major',
-      confidence: nc.risk_level === 'Critical' ? 0.95 : 0.85
-    })) || [];
-    
-    return [...auditCAPAs, ...complaintCAPAs, ...ncCAPAs];
+    return [...auditCAPAs, ...complaintCAPAs];
   } catch (err) {
     console.error('Error in getPotentialCAPAs function:', err);
     return [];

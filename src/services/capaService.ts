@@ -15,10 +15,6 @@ import {
   isOverdue,
   updateOverdueStatus 
 } from './capa/capaStatusService';
-import {
-  logCAPAActivity,
-  getCAPAActivities
-} from './capa/capaActivityService';
 
 export {
   fetchCAPAs,
@@ -34,7 +30,5 @@ export {
   updateOverdueStatus,
   saveEffectivenessMetrics,
   getEffectivenessMetrics,
-  getPotentialCAPAs,
-  logCAPAActivity,
-  getCAPAActivities
+  getPotentialCAPAs
 };

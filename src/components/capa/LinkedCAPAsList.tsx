@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 interface LinkedCAPAsListProps {
   sourceId: string;
-  sourceType: 'complaint' | 'audit' | 'nonconformance' | string;
+  sourceType: 'complaint' | 'audit' | string;
   onCreateCAPAClick?: () => void;
 }
 

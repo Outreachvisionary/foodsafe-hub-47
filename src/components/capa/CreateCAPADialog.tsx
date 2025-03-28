@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Calendar, Check, ClipboardList, Plus, AlertTriangle, FileText } from 'l
 import CAPAAuditIntegration from './CAPAAuditIntegration';
 import { createCAPA } from '@/services/capaService';
 import { useUser } from '@/contexts/UserContext';
-import { CAPASource, SourceReference } from '@/types/capa';
+import { CAPASource } from '@/types/capa';
 
 interface SourceDataType {
   title?: string;
@@ -18,7 +19,14 @@ interface SourceDataType {
   source?: CAPASource;
   sourceId?: string;
   priority?: string;
-  sourceReference?: SourceReference;
+  sourceReference?: {
+    id: string;
+    type: string;
+    title: string;
+    description?: string;
+    date?: string;
+    status?: string;
+  };
 }
 
 interface CreateCAPADialogProps {
@@ -40,15 +48,17 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // CAPA form state
   const [title, setTitle] = useState(sourceData?.title || '');
   const [description, setDescription] = useState(sourceData?.description || '');
-  const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
+  const [source, setSource] = useState<string>(sourceData?.source || 'audit');
   const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
   const [auditFinding, setAuditFinding] = useState<any>(null);
   
+  // If source data changes, update form fields
   useEffect(() => {
     if (sourceData) {
       setTitle(sourceData.title || '');
@@ -90,23 +100,22 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
+      // Create source reference if we have the data
+      const sourceReference = sourceData?.sourceReference || 
+                             (auditFinding ? {
+                               id: auditFinding.id,
+                               type: 'audit',
+                               title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
+                               description: auditFinding.description,
+                               date: auditFinding.created_at,
+                               status: auditFinding.status
+                             } : undefined);
       
-      if (auditFinding && !sourceReference) {
-        sourceReference = {
-          id: auditFinding.id,
-          type: 'audit',
-          title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
-          description: auditFinding.description,
-          date: auditFinding.created_at,
-          status: auditFinding.status
-        };
-      }
-      
+      // Create new CAPA
       const newCAPA = await createCAPA({
         title,
         description,
-        source,
+        source: source as any,
         sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
         priority: priority as any,
         status: 'open',
@@ -122,10 +131,12 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
       
       toast.success('CAPA created successfully');
       
+      // Notify parent component
       if (onCAPACreated) {
         onCAPACreated(newCAPA);
       }
       
+      // Close dialog and reset form
       handleClose();
     } catch (error) {
       console.error('Error creating CAPA:', error);
@@ -145,6 +156,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setSourceId(finding.id);
   };
 
+  // Use the controlled open state if provided, otherwise use the internal state
   const dialogOpen = open !== undefined ? open : isOpen;
   const setDialogOpen = onOpenChange || setIsOpen;
   
@@ -204,8 +216,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
               <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
               <Select 
                 value={source} 
-                onValueChange={(value) => setSource(value as CAPASource)}
-                disabled={!!sourceData?.source}
+                onValueChange={setSource}
+                disabled={!!sourceData?.source} // Disable if source was provided
               >
                 <SelectTrigger id="source">
                   <SelectValue placeholder="Select source" />
@@ -216,7 +228,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                   <SelectItem value="supplier">Supplier</SelectItem>
                   <SelectItem value="complaint">Complaint</SelectItem>
                   <SelectItem value="traceability">Traceability</SelectItem>
-                  <SelectItem value="nonconformance">Non-Conformance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
