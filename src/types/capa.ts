@@ -48,6 +48,18 @@ export interface SourceReference {
   url?: string; // URL to navigate to the source record
 }
 
+export interface CAPAActivity {
+  id: string;
+  capaId: string;
+  actionType: string;
+  actionDescription: string;
+  performedBy: string;
+  performedAt: string;
+  oldStatus?: CAPAStatus;
+  newStatus?: CAPAStatus;
+  metadata?: any;
+}
+
 export interface CAPAFilters {
   status: string;
   priority: string;
@@ -105,4 +117,21 @@ export interface CAPAStats {
     notEffective: number;
   };
   fsma204ComplianceRate?: number;
+}
+
+export interface CAPARelatedDocument {
+  id: string;
+  capaId: string;
+  documentId: string;
+  documentType: string;
+  addedBy: string;
+  addedAt: string;
+}
+
+export interface CAPARelatedTraining {
+  id: string;
+  capaId: string;
+  trainingId: string;
+  addedBy: string;
+  addedAt: string;
 }
