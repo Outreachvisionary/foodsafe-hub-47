@@ -1,7 +1,13 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,9 +17,23 @@ import CAPAList from '@/components/capa/CAPAList';
 import CAPAEffectiveness from '@/components/capa/CAPAEffectiveness';
 import CAPAReports from '@/components/capa/CAPAReports';
 import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
+
+// Mock data for demo purposes
+const mockFindings = [
+  {
+    id: 'AF-2023-095',
+    title: 'Sanitation verification swab results show recurring issues in packaging area',
+    description: 'Multiple swab results show increasing levels of Listeria indicators in the packaging area despite regular sanitation procedures.',
+    source: 'audit',
+    sourceId: 'AUDIT-2023-14',
+    date: '2023-11-10',
+    severity: 'critical'
+  }
+];
 
 const CAPA = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -26,18 +46,18 @@ const CAPA = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAutomation, setShowAutomation] = useState(false);
   
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
-  const handleCAPACreated = useCallback((capaData: any) => {
-    toast({
+  const handleCAPACreated = (capaData: any) => {
+    uiToast({
       title: "CAPA Created",
       description: `New CAPA "${capaData.title}" has been created`
     });
-    // Refresh is handled via service functions
+    // In a real app, we would refresh the data from the API here
     setShowAutomation(false);
-  }, [toast]);
+  };
 
-  const resetFilters = useCallback(() => {
+  const resetFilters = () => {
     setFilters({
       status: 'all',
       priority: 'all',
@@ -46,22 +66,19 @@ const CAPA = () => {
     });
     setSearchQuery('');
     
-    toast({
+    uiToast({
       title: "Filters Reset",
       description: "All filters have been cleared"
     });
-  }, [toast]);
+  };
 
-  const toggleAutomation = useCallback(() => {
+  const toggleAutomation = () => {
     setShowAutomation(!showAutomation);
     
     if (!showAutomation) {
-      toast({
-        title: "Auto-Detection",
-        description: "Displaying auto-detected issues requiring CAPA"
-      });
+      toast.info("Displaying auto-detected issues requiring CAPA");
     }
-  }, [showAutomation, toast]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,7 +145,7 @@ const CAPA = () => {
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => toast({
+              onClick={() => uiToast({
                 title: "Advanced Filters",
                 description: "Advanced filtering options"
               })}
@@ -153,6 +170,11 @@ const CAPA = () => {
             >
               <Zap className="h-4 w-4 mr-2" />
               Auto-Detected Issues
+              {mockFindings.length > 0 && !showAutomation && (
+                <span className="ml-1 bg-red-100 text-red-800 rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {mockFindings.length}
+                </span>
+              )}
             </Button>
             
             <CreateCAPADialog onCAPACreated={handleCAPACreated} />

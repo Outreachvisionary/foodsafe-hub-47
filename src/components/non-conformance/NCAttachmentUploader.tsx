@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,9 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { fetchNCAttachments, uploadNCAttachment } from '@/services/nonConformanceService';
-import { Paperclip, Upload, X, FileText, Download, AlertCircle } from 'lucide-react';
+import { Paperclip, Upload, X, FileText, Download } from 'lucide-react';
 import { NCAttachment } from '@/types/non-conformance';
-import { useFileUpload } from '@/hooks/use-file-upload';
 
 interface NCAttachmentUploaderProps {
   nonConformanceId: string;
@@ -18,28 +18,13 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
   nonConformanceId, 
   onSuccess 
 }) => {
+  const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<NCAttachment[]>([]);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  
-  const { 
-    file, 
-    handleFileChange, 
-    clearFile, 
-    error: fileError 
-  } = useFileUpload({
-    maxSizeMB: 15, // 15MB maximum file size
-    allowedTypes: [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', // Images
-      'application/pdf', // PDFs
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word docs
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
-      'text/plain', 'text/csv' // Text files
-    ]
-  });
 
   useEffect(() => {
     const loadAttachments = async () => {
@@ -61,6 +46,19 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
 
     loadAttachments();
   }, [nonConformanceId, toast]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleUpload = async () => {
     if (!file) {
@@ -91,7 +89,7 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
       });
 
       // Reset form
-      clearFile();
+      setFile(null);
       setDescription('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -168,15 +166,6 @@ const NCAttachmentUploader: React.FC<NCAttachmentUploaderProps> = ({
               </Button>
             )}
           </div>
-          {fileError && (
-            <div className="text-red-500 text-sm flex items-center mt-1">
-              <AlertCircle className="h-4 w-4 mr-1" />
-              {fileError}
-            </div>
-          )}
-          <p className="text-xs text-gray-500">
-            Maximum file size: 15MB. Allowed formats: Images, PDF, Office documents, and text files.
-          </p>
         </div>
 
         {file && (

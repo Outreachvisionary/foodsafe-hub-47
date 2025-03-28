@@ -1,60 +1,41 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import NCDashboard from '@/components/non-conformance/NCDashboard';
 import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
-import AppLayout from '@/components/layout/AppLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const NonConformanceModule = () => {
-  const { id } = useParams();
+const NonConformanceModule: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // State to track if we're viewing details or list
-  const [viewingDetails, setViewingDetails] = useState(!!id);
-  
-  const handleCreateNew = () => {
-    navigate('/non-conformance/new');
-  };
-  
-  const handleSelectItem = (selectedId: string) => {
-    navigate(`/non-conformance/${selectedId}`);
-    setViewingDetails(true);
-  };
-  
   return (
-    <AppLayout 
-      title="Non-Conformance Management" 
-      subtitle="Track, manage, and resolve product and process non-conformances"
-    >
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          {viewingDetails && (
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                navigate('/non-conformance');
-                setViewingDetails(false);
-              }}
-            >
-              Back to List
-            </Button>
-          )}
+    <SidebarLayout>
+      <div className="flex flex-col space-y-4 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Non-Conformance Management</h1>
         </div>
         
-        <Button onClick={handleCreateNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Non-Conformance
-        </Button>
+        {id ? (
+          <NCDetails id={id} onClose={() => navigate('/non-conformance')} />
+        ) : (
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="list">Non-Conformance Items</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dashboard">
+              <NCDashboard />
+            </TabsContent>
+            <TabsContent value="list">
+              <NCList />
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
-      
-      {id && viewingDetails ? (
-        <NCDetails id={id} />
-      ) : (
-        <NCList onSelectItem={handleSelectItem} />
-      )}
-    </AppLayout>
+    </SidebarLayout>
   );
 };
 

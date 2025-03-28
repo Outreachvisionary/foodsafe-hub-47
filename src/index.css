@@ -1,6 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,65 +7,65 @@
  
 @layer base {
   :root {
-    --background: 217 20% 24%;  /* Deep Indigo background */
-    --foreground: 0 0% 100%;    /* White text */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 217 20% 24%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
  
-    --popover: 217 20% 24%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
  
-    --primary: 39 44% 55%;      /* Amber Gold */
-    --primary-foreground: 217 20% 24%;  /* Deep Indigo for contrast on gold */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
  
-    --secondary: 217 18% 28%;   /* Slightly lighter indigo */
-    --secondary-foreground: 0 0% 98%;  /* Light text on secondary */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
  
-    --muted: 217 18% 28%;
-    --muted-foreground: 0 0% 85%;  /* Lighter color for better contrast */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
  
-    --accent: 39 44% 55%;       /* Amber Gold accent */
-    --accent-foreground: 217 20% 24%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
  
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 39 44% 55%;      /* Amber Gold borders */
-    --input: 217 18% 28%;
-    --ring: 39 44% 55%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 217 20% 24%;
-    --foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
  
-    --card: 217 20% 24%;
-    --card-foreground: 0 0% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
  
-    --popover: 217 20% 24%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
  
-    --primary: 39 44% 55%;
-    --primary-foreground: 217 20% 24%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
  
-    --secondary: 217 18% 28%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
  
-    --muted: 217 20% 20%;
-    --muted-foreground: 0 0% 85%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 39 44% 55%;
-    --accent-foreground: 217 20% 24%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
  
-    --border: 39 44% 55%;
-    --input: 217 18% 28%;
-    --ring: 39 44% 55%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -115,11 +114,11 @@
 
 /* Custom group styles */
 .content-group {
-  @apply p-4 rounded-lg border border-accent-light/40 bg-primary-dark mb-4;
+  @apply p-4 rounded-lg border border-border bg-card mb-4;
 }
 
 .content-group-title {
-  @apply text-base font-medium mb-3 text-accent;
+  @apply text-base font-medium mb-3;
 }
 
 /* Custom layout helpers */
@@ -137,19 +136,19 @@
 
 /* Compliance Core custom styles */
 .cc-underline {
-  @apply relative inline-block after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-accent after:bottom-0 after:left-0;
+  @apply relative inline-block after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-cc-purple after:bottom-0 after:left-0;
 }
 
 .cc-border-left {
-  @apply border-l-4 border-accent;
+  @apply border-l-4 border-cc-purple;
 }
 
 .cc-card {
-  @apply bg-primary-dark rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-accent/30;
+  @apply bg-cc-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
 }
 
 .cc-gradient-bg {
-  @apply bg-gradient-to-r from-primary-dark to-primary;
+  @apply bg-gradient-to-r from-cc-purple to-cc-charcoal;
 }
 
 .cc-check-item {
@@ -158,22 +157,7 @@
 
 .cc-check-item:before {
   content: '';
-  @apply w-4 h-4 mr-2 bg-accent rounded-full flex-shrink-0 mt-1;
-}
-
-/* Gold accent line styling */
-.cc-gold-line {
-  @apply relative inline-block;
-}
-
-.cc-gold-line:after {
-  content: '';
-  @apply absolute left-0 bottom-0 w-full h-0.5 bg-accent rounded-full;
-}
-
-/* Tagline styling */
-.cc-tagline {
-  @apply text-accent-light font-display tracking-widest uppercase text-sm;
+  @apply w-4 h-4 mr-2 bg-cc-purple rounded-full flex-shrink-0 mt-1;
 }
 
 @layer base {
@@ -181,9 +165,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-wide;
+    @apply bg-background text-foreground;
   }
 }

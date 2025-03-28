@@ -1,10 +1,13 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Facebook, Twitter, Linkedin, Instagram, ArrowRight } from 'lucide-react';
+
 const FooterSection = () => {
-  return <footer className="bg-cc-white">
+  return (
+    <footer className="bg-cc-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="border-b border-cc-purple/10 pb-12 mb-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
@@ -58,9 +61,13 @@ const FooterSection = () => {
               <p className="text-cc-charcoal/70 mb-4 font-sans">
                 Stay updated with the latest in food safety compliance.
               </p>
-              <div className="flex bg-cc-white">
-                <Input type="email" placeholder="Your email" className="rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-cc-teal" />
-                <Button className="rounded-l-none bg-cc-tagline">
+              <div className="flex">
+                <Input 
+                  type="email" 
+                  placeholder="Your email" 
+                  className="rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <Button className="rounded-l-none bg-cc-purple hover:bg-cc-purple/90">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -85,6 +92,8 @@ const FooterSection = () => {
           </div>
         </div>
       </div>
-    </footer>;
+    </footer>
+  );
 };
+
 export default FooterSection;
