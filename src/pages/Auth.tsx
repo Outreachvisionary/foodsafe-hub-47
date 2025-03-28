@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
@@ -51,7 +50,9 @@ const registerSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useUser();
+  const {
+    user
+  } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'register'>("login");
 
@@ -72,7 +73,6 @@ const Auth = () => {
       // Get the return URL from the query string or default to dashboard
       const params = new URLSearchParams(location.search);
       const returnUrl = params.get('returnUrl') || '/dashboard';
-      
       console.log('User is authenticated, redirecting to:', returnUrl);
       navigate(returnUrl);
     }
@@ -103,12 +103,13 @@ const Auth = () => {
     try {
       setIsLoading(true);
       console.log('Attempting login with:', values.email);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const {
+        data,
+        error
+      } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password
       });
-
       if (error) {
         console.error('Login error:', error.message);
         toast({
@@ -122,7 +123,7 @@ const Auth = () => {
           title: "Login successful",
           description: "Welcome back!"
         });
-        
+
         // Get return URL from the query string or use default
         const params = new URLSearchParams(location.search);
         const returnUrl = params.get('returnUrl') || '/dashboard';
@@ -145,8 +146,10 @@ const Auth = () => {
     try {
       setIsLoading(true);
       console.log('Attempting registration with:', values.email);
-      
-      const { data, error } = await supabase.auth.signUp({
+      const {
+        data,
+        error
+      } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -155,7 +158,6 @@ const Auth = () => {
           }
         }
       });
-
       if (error) {
         console.error('Registration error:', error.message);
         toast({
@@ -165,7 +167,6 @@ const Auth = () => {
         });
       } else if (data.user) {
         console.log('Registration successful, user:', data.user);
-        
         if (data.session) {
           // User is already confirmed and has a session
           toast({
@@ -193,9 +194,7 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
+  return <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Compliance Core</CardTitle>
@@ -213,25 +212,25 @@ const Auth = () => {
             <TabsContent value="login">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({ field }) => 
-                    <FormItem>
+                  <FormField control={loginForm.control} name="email" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input placeholder="your@email.com" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={loginForm.control} name="password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={loginForm.control} name="password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    </FormItem>} />
+                  <Button type="submit" disabled={isLoading} className="w-full bg-cc-tagline">
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
@@ -246,42 +245,42 @@ const Auth = () => {
             <TabsContent value="register">
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                  <FormField control={registerForm.control} name="full_name" render={({ field }) => 
-                    <FormItem>
+                  <FormField control={registerForm.control} name="full_name" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Jane Doe" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="email" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="email" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input placeholder="your@email.com" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
-                  <FormField control={registerForm.control} name="confirm_password" render={({ field }) => 
-                    <FormItem>
+                    </FormItem>} />
+                  <FormField control={registerForm.control} name="confirm_password" render={({
+                  field
+                }) => <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  } />
+                    </FormItem>} />
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
@@ -296,8 +295,6 @@ const Auth = () => {
           </Button>
         </CardFooter>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Auth;
