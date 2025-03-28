@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, CAPAStats } from '@/types/capa';
 
@@ -166,7 +167,8 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     source_id: capa.sourceId,
     priority: capa.priority,
     // Convert frontend status to the format expected by the database
-    status: mapStatusToDb(capa.status as CAPAStatus),
+    // Ensure it's one of the valid database status values: 'Open', 'In Progress', 'Closed', 'Verified'
+    status: typeof capa.status === 'string' ? mapStatusToDb(capa.status as CAPAStatus) : 'Open',
     assigned_to: capa.assignedTo,
     due_date: capa.dueDate,
     completion_date: capa.completedDate,
