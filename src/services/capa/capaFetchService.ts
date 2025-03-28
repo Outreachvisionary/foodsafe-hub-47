@@ -42,9 +42,8 @@ export const mapDbResultToCapa = (data: any): CAPA => {
  */
 export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    // Start building the query with a type declaration to avoid excessive type instantiation
-    const baseQuery = supabase.from('capa_actions').select('*');
-    let query = baseQuery;
+    // Start building the query with explicit typing to avoid excessive type instantiation
+    let query = supabase.from('capa_actions').select('*');
     
     // Apply filters if provided
     if (params) {
@@ -112,10 +111,8 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         query = query.eq('department', params.department);
       }
       
-      // Handle search query - use simpler approach to avoid type recursion
+      // Search by title or description if searchQuery is provided
       if (params.searchQuery) {
-        // Instead of using string interpolation with .or method which causes type issues,
-        // create a simpler filter with explicit ilike calls
         const searchTerm = `%${params.searchQuery}%`;
         query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
       }
