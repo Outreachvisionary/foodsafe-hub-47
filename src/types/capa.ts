@@ -76,12 +76,12 @@ export interface CAPAStats {
   byStatus: Record<CAPAStatus, number>;
   byPriority: Record<CAPAPriority, number>;
   bySource: Record<CAPASource, number>;
-  averageClosureTime: number;
   overdue: number;
-  effectivenessRating: {
+  averageClosureTime?: number;
+  effectivenessRating?: {
     effective: number;
     partiallyEffective: number;
     notEffective: number;
   };
-  fsma204ComplianceRate: number;
+  fsma204ComplianceRate?: number;
 }

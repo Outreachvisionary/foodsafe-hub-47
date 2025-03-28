@@ -20,7 +20,9 @@ export const fetchCAPAs = async (filters?: {
   // Apply filters if provided
   if (filters) {
     if (filters.status && filters.status !== 'all') {
-      query = query.eq('status', filters.status);
+      // Convert to lowercase for database consistency
+      const dbStatus = filters.status.toLowerCase();
+      query = query.eq('status', dbStatus);
     }
 
     if (filters.priority && filters.priority !== 'all') {
@@ -65,11 +67,11 @@ export const fetchCAPAs = async (filters?: {
     title: item.title,
     description: item.description,
     source: item.source as CAPASource,
-    sourceId: item.source_id,
+    sourceId: item.source_id || '',
     priority: item.priority as CAPAPriority,
     status: item.status as CAPAStatus,
     assignedTo: item.assigned_to,
-    department: item.department || '',
+    department: '', // Not available in current database schema
     dueDate: item.due_date,
     createdDate: item.created_at,
     lastUpdated: item.updated_at,
@@ -77,14 +79,14 @@ export const fetchCAPAs = async (filters?: {
     rootCause: item.root_cause || '',
     correctiveAction: item.corrective_action || '',
     preventiveAction: item.preventive_action || '',
-    verificationMethod: item.verification_method,
+    verificationMethod: '', // Not available in current database schema
     verificationDate: item.verification_date,
-    verifiedBy: item.verified_by,
-    effectivenessRating: item.effectiveness_rating as CAPAEffectivenessRating,
-    effectivenessScore: item.effectiveness_score,
-    relatedDocuments: item.related_documents,
-    relatedTraining: item.related_training,
-    fsma204Compliant: item.fsma204_compliant || false
+    verifiedBy: '', // Not available in current database schema
+    effectivenessRating: undefined, // Not available in current database schema
+    effectivenessScore: undefined, // Not available in current database schema
+    relatedDocuments: [], // Not available in current database schema
+    relatedTraining: [], // Not available in current database schema
+    fsma204Compliant: false // Not available in current database schema
   }));
 };
 
@@ -108,11 +110,11 @@ export const fetchCAPAById = async (id: string): Promise<CAPA> => {
     title: data.title,
     description: data.description,
     source: data.source as CAPASource,
-    sourceId: data.source_id,
+    sourceId: data.source_id || '',
     priority: data.priority as CAPAPriority,
     status: data.status as CAPAStatus,
     assignedTo: data.assigned_to,
-    department: data.department || '',
+    department: '', // Not available in current database schema
     dueDate: data.due_date,
     createdDate: data.created_at,
     lastUpdated: data.updated_at,
@@ -120,14 +122,14 @@ export const fetchCAPAById = async (id: string): Promise<CAPA> => {
     rootCause: data.root_cause || '',
     correctiveAction: data.corrective_action || '',
     preventiveAction: data.preventive_action || '',
-    verificationMethod: data.verification_method,
+    verificationMethod: '', // Not available in current database schema
     verificationDate: data.verification_date,
-    verifiedBy: data.verified_by,
-    effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
-    effectivenessScore: data.effectiveness_score,
-    relatedDocuments: data.related_documents,
-    relatedTraining: data.related_training,
-    fsma204Compliant: data.fsma204_compliant || false
+    verifiedBy: '', // Not available in current database schema
+    effectivenessRating: undefined, // Not available in current database schema
+    effectivenessScore: undefined, // Not available in current database schema
+    relatedDocuments: [], // Not available in current database schema
+    relatedTraining: [], // Not available in current database schema
+    fsma204Compliant: false // Not available in current database schema
   };
 };
 
@@ -142,22 +144,16 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     source: capa.source,
     source_id: capa.sourceId,
     priority: capa.priority,
-    status: capa.status,
+    status: capa.status.toLowerCase(), // Ensure lowercase status for database
     assigned_to: capa.assignedTo,
-    department: capa.department,
     due_date: capa.dueDate,
     completion_date: capa.completedDate,
     root_cause: capa.rootCause,
     corrective_action: capa.correctiveAction,
     preventive_action: capa.preventiveAction,
-    verification_method: capa.verificationMethod,
     verification_date: capa.verificationDate,
-    verified_by: capa.verifiedBy,
-    effectiveness_rating: capa.effectivenessRating,
-    effectiveness_score: capa.effectivenessScore,
-    related_documents: capa.relatedDocuments,
-    related_training: capa.relatedTraining,
-    fsma204_compliant: capa.fsma204Compliant,
+    effectiveness_criteria: '',
+    effectiveness_verified: false,
     created_by: (await supabase.auth.getUser()).data.user?.id || 'system'
   };
 
@@ -178,11 +174,11 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     title: data.title,
     description: data.description,
     source: data.source as CAPASource,
-    sourceId: data.source_id,
+    sourceId: data.source_id || '',
     priority: data.priority as CAPAPriority,
     status: data.status as CAPAStatus,
     assignedTo: data.assigned_to,
-    department: data.department || '',
+    department: '', // Not available in current database schema
     dueDate: data.due_date,
     createdDate: data.created_at,
     lastUpdated: data.updated_at,
@@ -190,14 +186,14 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     rootCause: data.root_cause || '',
     correctiveAction: data.corrective_action || '',
     preventiveAction: data.preventive_action || '',
-    verificationMethod: data.verification_method,
+    verificationMethod: '', // Not available in current database schema
     verificationDate: data.verification_date,
-    verifiedBy: data.verified_by,
-    effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
-    effectivenessScore: data.effectiveness_score,
-    relatedDocuments: data.related_documents,
-    relatedTraining: data.related_training,
-    fsma204Compliant: data.fsma204_compliant || false
+    verifiedBy: '', // Not available in current database schema
+    effectivenessRating: undefined, // Not available in current database schema
+    effectivenessScore: undefined, // Not available in current database schema
+    relatedDocuments: [], // Not available in current database schema
+    relatedTraining: [], // Not available in current database schema
+    fsma204Compliant: false // Not available in current database schema
   };
 };
 
@@ -213,22 +209,14 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
   if (updates.source !== undefined) dbUpdates.source = updates.source;
   if (updates.sourceId !== undefined) dbUpdates.source_id = updates.sourceId;
   if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-  if (updates.status !== undefined) dbUpdates.status = updates.status;
+  if (updates.status !== undefined) dbUpdates.status = updates.status.toLowerCase(); // Ensure lowercase
   if (updates.assignedTo !== undefined) dbUpdates.assigned_to = updates.assignedTo;
-  if (updates.department !== undefined) dbUpdates.department = updates.department;
   if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
   if (updates.completedDate !== undefined) dbUpdates.completion_date = updates.completedDate;
   if (updates.rootCause !== undefined) dbUpdates.root_cause = updates.rootCause;
   if (updates.correctiveAction !== undefined) dbUpdates.corrective_action = updates.correctiveAction;
   if (updates.preventiveAction !== undefined) dbUpdates.preventive_action = updates.preventiveAction;
-  if (updates.verificationMethod !== undefined) dbUpdates.verification_method = updates.verificationMethod;
   if (updates.verificationDate !== undefined) dbUpdates.verification_date = updates.verificationDate;
-  if (updates.verifiedBy !== undefined) dbUpdates.verified_by = updates.verifiedBy;
-  if (updates.effectivenessRating !== undefined) dbUpdates.effectiveness_rating = updates.effectivenessRating;
-  if (updates.effectivenessScore !== undefined) dbUpdates.effectiveness_score = updates.effectivenessScore;
-  if (updates.relatedDocuments !== undefined) dbUpdates.related_documents = updates.relatedDocuments;
-  if (updates.relatedTraining !== undefined) dbUpdates.related_training = updates.relatedTraining;
-  if (updates.fsma204Compliant !== undefined) dbUpdates.fsma204_compliant = updates.fsma204Compliant;
 
   const { data, error } = await supabase
     .from('capa_actions')
@@ -248,11 +236,11 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
     title: data.title,
     description: data.description,
     source: data.source as CAPASource,
-    sourceId: data.source_id,
+    sourceId: data.source_id || '',
     priority: data.priority as CAPAPriority,
     status: data.status as CAPAStatus,
     assignedTo: data.assigned_to,
-    department: data.department || '',
+    department: '', // Not available in current database schema
     dueDate: data.due_date,
     createdDate: data.created_at,
     lastUpdated: data.updated_at,
@@ -260,14 +248,14 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
     rootCause: data.root_cause || '',
     correctiveAction: data.corrective_action || '',
     preventiveAction: data.preventive_action || '',
-    verificationMethod: data.verification_method,
+    verificationMethod: '', // Not available in current database schema
     verificationDate: data.verification_date,
-    verifiedBy: data.verified_by,
-    effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
-    effectivenessScore: data.effectiveness_score,
-    relatedDocuments: data.related_documents,
-    relatedTraining: data.related_training,
-    fsma204Compliant: data.fsma204_compliant || false
+    verifiedBy: '', // Not available in current database schema
+    effectivenessRating: undefined, // Not available in current database schema
+    effectivenessScore: undefined, // Not available in current database schema
+    relatedDocuments: [], // Not available in current database schema
+    relatedTraining: [], // Not available in current database schema
+    fsma204Compliant: false // Not available in current database schema
   };
 };
 
@@ -335,8 +323,9 @@ export const getCAPAStats = async (): Promise<{
   // Process data
   data.forEach(item => {
     // Count by status
-    if (stats.byStatus[item.status as CAPAStatus] !== undefined) {
-      stats.byStatus[item.status as CAPAStatus]++;
+    const status = item.status.toLowerCase() as CAPAStatus;
+    if (stats.byStatus[status] !== undefined) {
+      stats.byStatus[status]++;
     }
 
     // Count by priority
@@ -351,7 +340,7 @@ export const getCAPAStats = async (): Promise<{
 
     // Count overdue items
     if (
-      (item.status === 'open' || item.status === 'in-progress') && 
+      (status === 'open' || status === 'in-progress') && 
       item.due_date && 
       item.due_date < today
     ) {

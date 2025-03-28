@@ -15,21 +15,30 @@ import { useUser } from '@/contexts/UserContext';
 interface CreateCAPADialogProps {
   onCAPACreated?: (data: any) => void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  sourceData?: any;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onCAPACreated, trigger }) => {
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
+  onCAPACreated, 
+  trigger,
+  open,
+  onOpenChange,
+  sourceData
+}) => {
   const { user } = useUser();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // CAPA form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [source, setSource] = useState<string>('audit');
-  const [priority, setPriority] = useState<string>('medium');
+  const [title, setTitle] = useState(sourceData?.title || '');
+  const [description, setDescription] = useState(sourceData?.description || '');
+  const [source, setSource] = useState<string>(sourceData?.source || 'audit');
+  const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
-  const [sourceId, setSourceId] = useState('');
+  const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
   const [auditFinding, setAuditFinding] = useState<any>(null);
   
   const resetForm = () => {
@@ -44,7 +53,11 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onCAPACreated, trig
   };
   
   const handleClose = () => {
-    setOpen(false);
+    if (onOpenChange) {
+      onOpenChange(false);
+    } else {
+      setIsOpen(false);
+    }
     resetForm();
   };
   
@@ -102,9 +115,13 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onCAPACreated, trig
                 finding.severity === 'minor' ? 'medium' : 'low');
     setSourceId(finding.id);
   };
+
+  // Use the controlled open state if provided, otherwise use the internal state
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         {trigger || (
           <Button className="flex items-center">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +29,16 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     setIsLoading(true);
     try {
       const statsData = await getCAPAStats();
-      setStats(statsData);
+      setStats({
+        ...statsData,
+        averageClosureTime: 0,
+        effectivenessRating: {
+          effective: 0,
+          partiallyEffective: 0,
+          notEffective: 0
+        },
+        fsma204ComplianceRate: 0
+      });
       
       const capas = await fetchCAPAs({
         ...filters,

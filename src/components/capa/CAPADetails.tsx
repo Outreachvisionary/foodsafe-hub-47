@@ -1,30 +1,37 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { CAPA } from '@/types/capa';
-import { updateCAPA } from '@/services/capaService';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
+  AlertCircle, 
   Calendar, 
-  Check, 
-  ClipboardList, 
-  Edit, 
-  Save, 
-  X,
-  FileText,
-  UserCircle,
-  AlertTriangle,
-  CheckCircle,
-  Hourglass,
-  BookOpen
+  CheckCircle2, 
+  ChevronDown, 
+  ChevronUp, 
+  Clock, 
+  Edit2, 
+  FileText, 
+  Link2, 
+  Loader2,
+  PenTool,
+  RotateCcw, 
+  Send, 
+  Timer, 
+  Trash2 
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { CAPA, CAPAStatus } from '@/types/capa';
+import { fetchCAPAById, deleteCAPA, updateCAPA } from '@/services/capaService';
+import RootCauseAnalysis from './RootCauseAnalysis';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CAPAEffectivenessMonitor from './CAPAEffectivenessMonitor';
+import CAPATraceabilityIntegration from './CAPATraceabilityIntegration';
 
 interface CAPADetailsProps {
   capa: CAPA;
@@ -41,7 +48,6 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   
-  // Form state
   const [formData, setFormData] = useState({
     title: capa.title,
     description: capa.description,
@@ -123,15 +129,15 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'open':
-        return <AlertTriangle className="h-5 w-5 text-blue-500" />;
+        return <AlertCircle className="h-5 w-5 text-blue-500" />;
       case 'in-progress':
-        return <Hourglass className="h-5 w-5 text-purple-500" />;
+        return <Clock className="h-5 w-5 text-purple-500" />;
       case 'closed':
-        return <Check className="h-5 w-5 text-green-500" />;
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       case 'verified':
-        return <CheckCircle className="h-5 w-5 text-emerald-500" />;
+        return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
       default:
-        return <AlertTriangle className="h-5 w-5 text-gray-500" />;
+        return <AlertCircle className="h-5 w-5 text-gray-500" />;
     }
   };
   
@@ -154,7 +160,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                 size="icon"
                 onClick={() => setEditMode(true)}
               >
-                <Edit className="h-4 w-4" />
+                <Edit2 className="h-4 w-4" />
               </Button>
             )}
             <Button 
@@ -162,7 +168,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
               size="icon"
               onClick={onClose}
             >
-              <X className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
