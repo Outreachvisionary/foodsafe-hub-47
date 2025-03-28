@@ -41,7 +41,8 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       haccp: 0,
       supplier: 0,
       complaint: 0,
-      traceability: 0
+      traceability: 0,
+      nonconformance: 0
     },
     overdue: 0,
     averageClosureTime: 0,
@@ -72,7 +73,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
 
   const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
   const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6'];
-  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4'];
+  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#3b82f6'];
 
   const fetchStats = async () => {
     setIsLoading(true);
@@ -124,7 +125,8 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     { name: 'HACCP', value: stats.bySource.haccp },
     { name: 'Supplier', value: stats.bySource.supplier },
     { name: 'Complaint', value: stats.bySource.complaint },
-    { name: 'Traceability', value: stats.bySource.traceability }
+    { name: 'Traceability', value: stats.bySource.traceability },
+    { name: 'Non-Conformance', value: stats.bySource.nonconformance }
   ] : [];
 
   const getMonthlyTrendData = () => {

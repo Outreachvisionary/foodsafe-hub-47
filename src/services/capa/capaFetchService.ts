@@ -30,8 +30,8 @@ export const mapDbResultToCapa = (data: any): CAPA => {
     effectivenessRating: data.effectiveness_verified ? 'Effective' : undefined,
     effectivenessScore: data.effectiveness_criteria 
       ? (typeof data.effectiveness_criteria === 'string' 
-          ? JSON.parse(data.effectiveness_criteria).score || 0
-          : data.effectiveness_criteria.score || 0)
+          ? JSON.parse(data.effectiveness_criteria).score 
+          : data.effectiveness_criteria.score)
       : undefined,
     fsma204Compliant: false
   };
@@ -49,17 +49,18 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     // Apply filters if provided
     if (params) {
       if (params.status && params.status !== 'all') {
-        const dbStatus = params.status === 'open' 
-          ? ['Open', 'Overdue'] 
-          : params.status === 'in-progress' 
-            ? ['In Progress'] 
-            : params.status === 'closed' 
-              ? ['Closed'] 
-              : ['Pending Verification'];
+        // Map frontend status to database status
+        const dbStatus = 
+          params.status === 'open' ? ['Open', 'Overdue'] : 
+          params.status === 'in-progress' ? ['In Progress'] : 
+          params.status === 'closed' ? ['Closed'] : 
+          ['Pending Verification'];
         
+        // Use a type assertion for the array
         query = query.in('status', dbStatus as any);
       }
       
+      // Apply other filters
       if (params.priority && params.priority !== 'all') {
         query = query.eq('priority', params.priority);
       }
@@ -117,7 +118,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
       }
       
-      // Apply pagination if specified - used with limit() instead of direct operator
+      // Apply pagination if specified
       if (params.limit) {
         query = query.limit(params.limit);
       }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -64,7 +63,6 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   const [showGenerateCAPADialog, setShowGenerateCAPADialog] = useState(false);
   
   const handleCreateCAPA = () => {
-    // Just close the dialog, the actual CAPA creation will be handled by the dialog component
     setShowGenerateCAPADialog(false);
     
     if (onCreateCAPA) {
@@ -84,7 +82,6 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     toast.success("Non-conformance deleted successfully");
   };
   
-  // Mock NC data for CAPA creation
   const mockNCData = {
     id: id,
     title: "Non-conformance issue requiring corrective action",
@@ -183,7 +180,6 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -207,7 +203,6 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Generate CAPA Dialog */}
       <CreateCAPADialog 
         open={showGenerateCAPADialog}
         onOpenChange={setShowGenerateCAPADialog}

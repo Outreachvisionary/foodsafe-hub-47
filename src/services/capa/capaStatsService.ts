@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAStats, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessMetrics } from '@/types/capa';
 import { mapStatusFromDb, isOverdue } from './capaStatusService';
@@ -38,7 +37,8 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       haccp: 0,
       supplier: 0,
       complaint: 0,
-      traceability: 0
+      traceability: 0,
+      nonconformance: 0
     },
     overdue: 0,
     averageClosureTime: 0,

@@ -40,7 +40,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // CAPA form state
   const [title, setTitle] = useState(sourceData?.title || '');
   const [description, setDescription] = useState(sourceData?.description || '');
   const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
@@ -50,7 +49,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
   const [auditFinding, setAuditFinding] = useState<any>(null);
   
-  // If source data changes, update form fields
   useEffect(() => {
     if (sourceData) {
       setTitle(sourceData.title || '');
@@ -92,7 +90,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Create source reference if we have the data
       let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
       
       if (auditFinding && !sourceReference) {
@@ -106,7 +103,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         };
       }
       
-      // Create new CAPA
       const newCAPA = await createCAPA({
         title,
         description,
@@ -126,12 +122,10 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
       
       toast.success('CAPA created successfully');
       
-      // Notify parent component
       if (onCAPACreated) {
         onCAPACreated(newCAPA);
       }
       
-      // Close dialog and reset form
       handleClose();
     } catch (error) {
       console.error('Error creating CAPA:', error);
@@ -151,7 +145,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setSourceId(finding.id);
   };
 
-  // Use the controlled open state if provided, otherwise use the internal state
   const dialogOpen = open !== undefined ? open : isOpen;
   const setDialogOpen = onOpenChange || setIsOpen;
   
@@ -211,8 +204,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
               <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
               <Select 
                 value={source} 
-                onValueChange={setSource}
-                disabled={!!sourceData?.source} // Disable if source was provided
+                onValueChange={(value) => setSource(value as CAPASource)}
+                disabled={!!sourceData?.source}
               >
                 <SelectTrigger id="source">
                   <SelectValue placeholder="Select source" />
@@ -223,6 +216,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                   <SelectItem value="supplier">Supplier</SelectItem>
                   <SelectItem value="complaint">Complaint</SelectItem>
                   <SelectItem value="traceability">Traceability</SelectItem>
+                  <SelectItem value="nonconformance">Non-Conformance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
