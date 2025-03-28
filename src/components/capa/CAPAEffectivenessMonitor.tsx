@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { Loader } from 'lucide-react';
 import { 
   AlertCircle, 
   BarChart3, 
@@ -22,12 +22,12 @@ import {
   Users
 } from 'lucide-react';
 import { CAPAEffectivenessMetrics } from '@/types/capa';
+import { saveEffectivenessMetrics, getEffectivenessMetrics } from '@/services/capaService';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
   title: string;
   implementationDate: string;
-  effectivenessData?: CAPAEffectivenessMetrics;
   onEffectivenessUpdate?: (data: CAPAEffectivenessMetrics) => void;
 }
 
@@ -35,11 +35,10 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   capaId,
   title,
   implementationDate,
-  effectivenessData,
   onEffectivenessUpdate
 }) => {
   const [activeTab, setActiveTab] = useState('checklist');
-  const [metrics, setMetrics] = useState<CAPAEffectivenessMetrics>(effectivenessData || {
+  const [metrics, setMetrics] = useState<CAPAEffectivenessMetrics>({
     rootCauseEliminated: false,
     preventiveMeasuresImplemented: false,
     documentationComplete: false,
@@ -47,6 +46,31 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     score: 0
   });
   const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  useEffect(() => {
+    const loadEffectivenessData = async () => {
+      try {
+        setLoading(true);
+        const data = await getEffectivenessMetrics(capaId);
+        
+        if (data) {
+          setMetrics(data);
+          setNotes(data.notes || '');
+        }
+      } catch (error) {
+        console.error('Error loading effectiveness data:', error);
+        toast.error('Failed to load effectiveness data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (capaId) {
+      loadEffectivenessData();
+    }
+  }, [capaId]);
   
   const calculateScore = (data: Partial<CAPAEffectivenessMetrics> = {}): number => {
     const updatedMetrics = { ...metrics, ...data };
@@ -66,23 +90,34 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     const updatedMetrics = { ...metrics, [field]: value };
     updatedMetrics.score = calculateScore(updatedMetrics);
     setMetrics(updatedMetrics);
-    
-    if (onEffectivenessUpdate) {
-      onEffectivenessUpdate(updatedMetrics);
-    }
   };
   
-  const handleSubmit = () => {
-    const finalScore = calculateScore();
-    const updatedMetrics = { ...metrics, score: finalScore };
-    
-    setMetrics(updatedMetrics);
-    
-    if (onEffectivenessUpdate) {
-      onEffectivenessUpdate(updatedMetrics);
+  const handleSubmit = async () => {
+    try {
+      setSaving(true);
+      const finalScore = calculateScore();
+      const updatedMetrics = { 
+        ...metrics, 
+        score: finalScore,
+        notes: notes,
+        assessmentDate: new Date().toISOString()
+      };
+      
+      setMetrics(updatedMetrics);
+      
+      await saveEffectivenessMetrics(capaId, updatedMetrics);
+      
+      if (onEffectivenessUpdate) {
+        onEffectivenessUpdate(updatedMetrics);
+      }
+      
+      toast.success(`Effectiveness assessment completed with score: ${finalScore}%`);
+    } catch (error) {
+      console.error('Error saving effectiveness assessment:', error);
+      toast.error('Failed to save effectiveness assessment');
+    } finally {
+      setSaving(false);
     }
-    
-    toast.success(`Effectiveness assessment completed with score: ${finalScore}%`);
   };
   
   const getEffectivenessRating = (score: number) => {
@@ -96,6 +131,15 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     if (score >= 60) return 'text-amber-600';
     return 'text-red-600';
   };
+  
+  if (loading) {
+    return (
+      <Card className="p-8 flex justify-center items-center">
+        <Loader className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading effectiveness data...</span>
+      </Card>
+    );
+  }
   
   return (
     <Card>
@@ -389,8 +433,15 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
           FSMA 204 Compliant Assessment
         </div>
         
-        <Button onClick={handleSubmit}>
-          Complete Assessment
+        <Button onClick={handleSubmit} disabled={saving}>
+          {saving ? (
+            <>
+              <Loader className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Complete Assessment'
+          )}
         </Button>
       </CardFooter>
     </Card>
