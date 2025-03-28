@@ -5,19 +5,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { CAPA, CAPAEffectivenessMetrics } from '@/types/capa';
-import { fetchCAPAById, updateCAPA } from '@/services/capaService';
+import { CAPA } from '@/types/capa';
+import { fetchCAPAById } from '@/services/capaService';
 import CAPADetails from '@/components/capa/CAPADetails';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
 
 const CAPADetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const [capa, setCapa] = useState<CAPA | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showEffectivenessMonitor, setShowEffectivenessMonitor] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,11 +30,6 @@ const CAPADetailsPage = () => {
 
         const capaData = await fetchCAPAById(id);
         setCapa(capaData);
-        
-        // Show effectiveness monitor for closed CAPAs
-        if (capaData.status === 'closed' || capaData.status === 'verified') {
-          setShowEffectivenessMonitor(true);
-        }
       } catch (err) {
         console.error('Error loading CAPA:', err);
         setError('Failed to load CAPA details');
@@ -59,43 +52,10 @@ const CAPADetailsPage = () => {
 
   const handleUpdate = (updatedCAPA: CAPA) => {
     setCapa(updatedCAPA);
-    
-    // Show effectiveness monitor if status changed to closed or verified
-    if (updatedCAPA.status === 'closed' || updatedCAPA.status === 'verified') {
-      setShowEffectivenessMonitor(true);
-    }
-    
     toast({
       title: 'CAPA Updated',
       description: 'CAPA details have been updated successfully',
     });
-  };
-  
-  const handleEffectivenessUpdate = async (effectivenessData: CAPAEffectivenessMetrics) => {
-    if (!capa || !id) return;
-    
-    try {
-      // Update CAPA status to verified if effectiveness score is sufficient
-      if (effectivenessData.score >= 85 && capa.status !== 'verified') {
-        const updatedCAPA = await updateCAPA(id, {
-          ...capa,
-          status: 'verified'
-        });
-        
-        setCapa(updatedCAPA);
-        toast({
-          title: 'CAPA Verified',
-          description: 'CAPA has been marked as verified based on effectiveness assessment',
-        });
-      }
-    } catch (error) {
-      console.error('Error updating CAPA status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update CAPA status',
-        variant: 'destructive',
-      });
-    }
   };
 
   return (
@@ -131,22 +91,11 @@ const CAPADetailsPage = () => {
             {error}
           </Card>
         ) : capa ? (
-          <div className="space-y-8">
-            <CAPADetails
-              capa={capa}
-              onClose={handleClose}
-              onUpdate={handleUpdate}
-            />
-            
-            {showEffectivenessMonitor && (
-              <CAPAEffectivenessMonitor
-                capaId={capa.id}
-                title={capa.title}
-                implementationDate={capa.completedDate || capa.lastUpdated}
-                onEffectivenessUpdate={handleEffectivenessUpdate}
-              />
-            )}
-          </div>
+          <CAPADetails
+            capa={capa}
+            onClose={handleClose}
+            onUpdate={handleUpdate}
+          />
         ) : (
           <Card className="p-8 text-center">
             CAPA not found

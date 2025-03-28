@@ -51,8 +51,6 @@ export interface CAPAEffectivenessMetrics {
   documentationComplete: boolean;
   recurrenceCheck: 'Passed' | 'Minor Issues' | 'Failed';
   score: number;
-  notes?: string;
-  assessmentDate?: string;
 }
 
 export interface CAPAReport {
