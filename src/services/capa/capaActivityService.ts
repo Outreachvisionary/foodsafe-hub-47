@@ -1,12 +1,17 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity } from '@/types/capa';
+import { mapStatusFromDb, mapStatusToDb } from './capaStatusService';
 
 /**
  * Log a CAPA activity
  */
 export const logCAPAActivity = async (activity: Omit<CAPAActivity, 'id' | 'performedAt'>): Promise<CAPAActivity> => {
   try {
+    // Convert frontend status to database status format if provided
+    const oldStatus = activity.oldStatus ? mapStatusToDb(activity.oldStatus) : undefined;
+    const newStatus = activity.newStatus ? mapStatusToDb(activity.newStatus) : undefined;
+    
     const { data, error } = await supabase
       .from('capa_activities')
       .insert({
@@ -14,8 +19,8 @@ export const logCAPAActivity = async (activity: Omit<CAPAActivity, 'id' | 'perfo
         action_type: activity.actionType,
         action_description: activity.actionDescription,
         performed_by: activity.performedBy,
-        old_status: activity.oldStatus,
-        new_status: activity.newStatus,
+        old_status: oldStatus,
+        new_status: newStatus,
         metadata: activity.metadata || {}
       })
       .select('*')
@@ -30,8 +35,8 @@ export const logCAPAActivity = async (activity: Omit<CAPAActivity, 'id' | 'perfo
       actionDescription: data.action_description,
       performedBy: data.performed_by,
       performedAt: data.performed_at,
-      oldStatus: data.old_status,
-      newStatus: data.new_status,
+      oldStatus: data.old_status ? mapStatusFromDb(data.old_status) : undefined,
+      newStatus: data.new_status ? mapStatusFromDb(data.new_status) : undefined,
       metadata: data.metadata
     };
   } catch (err) {
@@ -60,8 +65,8 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       actionDescription: item.action_description,
       performedBy: item.performed_by,
       performedAt: item.performed_at,
-      oldStatus: item.old_status,
-      newStatus: item.new_status,
+      oldStatus: item.old_status ? mapStatusFromDb(item.old_status) : undefined,
+      newStatus: item.new_status ? mapStatusFromDb(item.new_status) : undefined,
       metadata: item.metadata
     }));
   } catch (err) {

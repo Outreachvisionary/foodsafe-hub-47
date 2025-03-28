@@ -261,7 +261,7 @@ export const saveEffectivenessMetrics = async (
         action_type: 'effectiveness_assessment',
         action_description: `Effectiveness assessed: ${effectivenessRating} (${metrics.score}%)`,
         performed_by: (await supabase.auth.getUser()).data.user?.id || 'system',
-        metadata: { metrics }
+        metadata: JSON.stringify({ metrics }) // Convert metrics to JSON string
       });
     
   } catch (err) {
