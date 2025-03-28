@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import CAPAList from '@/components/capa/CAPAList';
 import CAPAEffectiveness from '@/components/capa/CAPAEffectiveness';
 import CAPAReports from '@/components/capa/CAPAReports';
 import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
@@ -26,18 +27,18 @@ const CAPA = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAutomation, setShowAutomation] = useState(false);
   
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
-  const handleCAPACreated = useCallback((capaData: any) => {
-    toast({
+  const handleCAPACreated = (capaData: any) => {
+    uiToast({
       title: "CAPA Created",
       description: `New CAPA "${capaData.title}" has been created`
     });
     // Refresh is handled via service functions
     setShowAutomation(false);
-  }, [toast]);
+  };
 
-  const resetFilters = useCallback(() => {
+  const resetFilters = () => {
     setFilters({
       status: 'all',
       priority: 'all',
@@ -46,22 +47,19 @@ const CAPA = () => {
     });
     setSearchQuery('');
     
-    toast({
+    uiToast({
       title: "Filters Reset",
       description: "All filters have been cleared"
     });
-  }, [toast]);
+  };
 
-  const toggleAutomation = useCallback(() => {
+  const toggleAutomation = () => {
     setShowAutomation(!showAutomation);
     
     if (!showAutomation) {
-      toast({
-        title: "Auto-Detection",
-        description: "Displaying auto-detected issues requiring CAPA"
-      });
+      toast.info("Displaying auto-detected issues requiring CAPA");
     }
-  }, [showAutomation, toast]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,7 +126,7 @@ const CAPA = () => {
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => toast({
+              onClick={() => uiToast({
                 title: "Advanced Filters",
                 description: "Advanced filtering options"
               })}
