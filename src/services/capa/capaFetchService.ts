@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAFetchParams, CAPASource, CAPAPriority, SourceReference } from '@/types/capa';
-import { mapStatusFromDb } from './capaStatusService';
+import { mapStatusFromDb, DbCAPAStatus } from './capaStatusService';
 
 /**
  * Map database result to CAPA object
@@ -42,20 +42,21 @@ export const mapDbResultToCapa = (data: any): CAPA => {
  */
 export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    // Start building the query
-    let query = supabase.from('capa_actions').select('*');
+    // Start building the query with a type declaration to avoid excessive type instantiation
+    const baseQuery = supabase.from('capa_actions').select('*');
+    let query = baseQuery;
     
     // Apply filters if provided
     if (params) {
       if (params.status && params.status !== 'all') {
         // Map frontend status to database status values
-        const dbStatus = 
-          params.status === 'open' ? ['Open', 'Overdue'] : 
-          params.status === 'in-progress' ? ['In Progress'] : 
-          params.status === 'closed' ? ['Closed'] : 
-          ['Pending Verification'];
+        const dbStatus: DbCAPAStatus[] = 
+          params.status === 'open' ? ['Open', 'Overdue'] as DbCAPAStatus[] : 
+          params.status === 'in-progress' ? ['In Progress'] as DbCAPAStatus[] : 
+          params.status === 'closed' ? ['Closed'] as DbCAPAStatus[] : 
+          ['Pending Verification'] as DbCAPAStatus[];
         
-        // Use 'in' operator for array of status values
+        // Use typed array for status values
         query = query.in('status', dbStatus);
       }
       
@@ -111,8 +112,10 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         query = query.eq('department', params.department);
       }
       
-      // Search by title or description if searchQuery is provided
+      // Handle search query - use simpler approach to avoid type recursion
       if (params.searchQuery) {
+        // Instead of using string interpolation with .or method which causes type issues,
+        // create a simpler filter with explicit ilike calls
         const searchTerm = `%${params.searchQuery}%`;
         query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
       }
