@@ -166,9 +166,10 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
           </div>
           <NCQuickActions 
             id={id}
-            currentStatus={nonConformance.status}
-            onStatusChange={handleStatusChange}
-            onGenerateCapa={handleGenerateCapa}
+            status={nonConformance.status}
+            onEdit={() => navigate(`/non-conformance/${id}/edit`)}
+            onView={() => {}} // Already viewing, no action needed
+            onCreateCAPA={handleGenerateCapa}
           />
         </div>
       </div>

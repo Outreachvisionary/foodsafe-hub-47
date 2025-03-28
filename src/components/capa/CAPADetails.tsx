@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,12 +17,16 @@ import {
   Edit2, 
   FileText, 
   Link2, 
-  Loader2,
-  PenTool,
+  Loader,
+  PenTool, 
   RotateCcw, 
   Send, 
   Timer, 
-  Trash2 
+  Trash2,
+  User,
+  X as XIcon,
+  Save as SaveIcon,
+  BookOpen as BookOpenIcon
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { CAPA, CAPAStatus } from '@/types/capa';
@@ -173,10 +178,10 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
           </div>
         </div>
         {!editMode && (
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             ID: {capa.id} | Created: {formatDate(capa.createdDate)}
             {capa.completedDate && ` | Completed: ${formatDate(capa.completedDate)}`}
-          </CardDescription>
+          </p>
         )}
       </CardHeader>
       
@@ -319,7 +324,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Assigned To</h4>
                   <p className="mt-1 flex items-center">
-                    <UserCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
+                    <User className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
                     {capa.assignedTo}
                   </p>
                 </div>
@@ -426,7 +431,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                   <div>
                     <h4 className="text-sm font-medium text-gray-500">Verified By</h4>
                     <p className="mt-1 flex items-center">
-                      <UserCircle className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
+                      <User className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
                       {capa.verifiedBy}
                     </p>
                   </div>
@@ -476,7 +481,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                   <div className="mt-2 space-y-2">
                     {capa.relatedTraining.map((training, index) => (
                       <div key={index} className="flex items-center p-2 bg-gray-50 rounded-md border">
-                        <BookOpen className="h-4 w-4 text-purple-500 mr-2" />
+                        <BookOpenIcon className="h-4 w-4 text-purple-500 mr-2" />
                         <span>{training}</span>
                       </div>
                     ))}
@@ -521,18 +526,18 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
               setEditMode(false);
             }}
           >
-            <X className="h-4 w-4 mr-2" />
+            <XIcon className="h-4 w-4 mr-2" />
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
+                <SaveIcon className="h-4 w-4 mr-2" />
                 Save Changes
               </>
             )}

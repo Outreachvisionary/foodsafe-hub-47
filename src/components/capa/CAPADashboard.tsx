@@ -9,15 +9,64 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CAPADashboardProps {
-  filters: CAPAFilters;
+  filters: {
+    status: string;
+    priority: string;
+    source: string;
+    dueDate: string;
+  };
   searchQuery: string;
 }
 
 const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [stats, setStats] = useState<CAPAStats | null>(null);
-  const [capaList, setCAPAList] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<CAPAStats>({
+    total: 0,
+    byStatus: {
+      open: 0,
+      'in-progress': 0,
+      closed: 0,
+      verified: 0
+    },
+    byPriority: {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0
+    },
+    bySource: {
+      audit: 0,
+      haccp: 0,
+      supplier: 0,
+      complaint: 0,
+      traceability: 0
+    },
+    overdue: 0,
+    averageClosureTime: 0,
+    effectivenessRating: {
+      effective: 0,
+      partiallyEffective: 0,
+      notEffective: 0
+    },
+    fsma204ComplianceRate: 0
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      setIsLoading(true);
+      try {
+        const capaStats = await getCAPAStats();
+        setStats(capaStats);
+      } catch (error) {
+        console.error('Error loading CAPA statistics:', error);
+        toast.error('Failed to load CAPA statistics');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [filters, searchQuery]);
 
   // Generate colors for charts
   const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
@@ -52,10 +101,6 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchStats();
-  }, [filters, searchQuery]);
 
   // Transform stats data for charts
   const statusData = stats ? [

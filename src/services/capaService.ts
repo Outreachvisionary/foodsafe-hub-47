@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, CAPAStats } from '@/types/capa';
 
 /**
  * Fetch all CAPA items with optional filtering
@@ -20,7 +20,7 @@ export const fetchCAPAs = async (filters?: {
   // Apply filters if provided
   if (filters) {
     if (filters.status && filters.status !== 'all') {
-      // Convert to lowercase for database consistency
+      // Database status is lowercase, UI status may be capitalized
       const dbStatus = filters.status.toLowerCase();
       query = query.eq('status', dbStatus);
     }
@@ -277,13 +277,7 @@ export const deleteCAPA = async (id: string): Promise<void> => {
 /**
  * Get CAPA statistics
  */
-export const getCAPAStats = async (): Promise<{
-  total: number;
-  byStatus: Record<CAPAStatus, number>;
-  byPriority: Record<CAPAPriority, number>;
-  bySource: Record<CAPASource, number>;
-  overdue: number;
-}> => {
+export const getCAPAStats = async (): Promise<CAPAStats> => {
   // Get all CAPAs for statistics
   const { data, error } = await supabase
     .from('capa_actions')
@@ -296,33 +290,40 @@ export const getCAPAStats = async (): Promise<{
 
   // Calculate statistics
   const today = new Date().toISOString().split('T')[0];
-  const stats = {
+  const stats: CAPAStats = {
     total: data.length,
     byStatus: {
       open: 0,
       'in-progress': 0,
       closed: 0,
       verified: 0
-    } as Record<CAPAStatus, number>,
+    },
     byPriority: {
       critical: 0,
       high: 0,
       medium: 0,
       low: 0
-    } as Record<CAPAPriority, number>,
+    },
     bySource: {
       audit: 0,
       haccp: 0,
       supplier: 0,
       complaint: 0,
       traceability: 0
-    } as Record<CAPASource, number>,
-    overdue: 0
+    },
+    overdue: 0,
+    averageClosureTime: 0,
+    effectivenessRating: {
+      effective: 0,
+      partiallyEffective: 0,
+      notEffective: 0
+    },
+    fsma204ComplianceRate: 0
   };
 
   // Process data
   data.forEach(item => {
-    // Count by status
+    // Count by status (ensure lowercase comparison)
     const status = item.status.toLowerCase() as CAPAStatus;
     if (stats.byStatus[status] !== undefined) {
       stats.byStatus[status]++;
@@ -338,7 +339,7 @@ export const getCAPAStats = async (): Promise<{
       stats.bySource[item.source as CAPASource]++;
     }
 
-    // Count overdue items
+    // Count overdue items - status is lowercase in DB, compare lowercase
     if (
       (status === 'open' || status === 'in-progress') && 
       item.due_date && 
