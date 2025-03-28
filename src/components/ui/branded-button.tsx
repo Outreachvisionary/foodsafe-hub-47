@@ -13,9 +13,9 @@ const BrandedButton = React.forwardRef<HTMLButtonElement, BrandedButtonProps>(
     const baseClasses = "font-display uppercase tracking-wider transition-all duration-300";
     
     const variantClasses = {
-      primary: "bg-cc-gold text-cc-teal hover:bg-cc-gold/90 border border-cc-gold",
-      secondary: "bg-cc-teal text-cc-gold hover:bg-cc-teal/90 border border-cc-gold",
-      outline: "bg-transparent border-2 border-cc-gold text-cc-gold hover:bg-cc-gold/10"
+      primary: "bg-accent text-primary hover:bg-accent/90 border border-accent",
+      secondary: "bg-primary text-accent hover:bg-primary/90 border border-accent",
+      outline: "bg-transparent border-2 border-accent text-accent hover:bg-accent/10"
     };
     
     const sizeClasses = {

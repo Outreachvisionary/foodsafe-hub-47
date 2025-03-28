@@ -5,7 +5,7 @@ export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified';
 
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
 
-export type CAPASource = 'audit' | 'haccp' | 'supplier' | 'complaint' | 'traceability';
+export type CAPASource = 'audit' | 'haccp' | 'supplier' | 'complaint' | 'traceability' | 'nonconformance';
 
 export type CAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective';
 
@@ -34,6 +34,30 @@ export interface CAPA {
   relatedDocuments?: string[];
   relatedTraining?: string[];
   fsma204Compliant: boolean;
+  sourceReference?: SourceReference; // Added to store details about the source
+}
+
+// New interface to store information about the source of a CAPA
+export interface SourceReference {
+  id: string;
+  type: CAPASource;
+  title: string;
+  description?: string;
+  date?: string;
+  status?: string;
+  url?: string; // URL to navigate to the source record
+}
+
+export interface CAPAActivity {
+  id: string;
+  capaId: string;
+  actionType: string;
+  actionDescription: string;
+  performedBy: string;
+  performedAt: string;
+  oldStatus?: CAPAStatus;
+  newStatus?: CAPAStatus;
+  metadata?: any;
 }
 
 export interface CAPAFilters {
@@ -43,6 +67,13 @@ export interface CAPAFilters {
   dueDate: string;
   department?: string;
   assignedTo?: string;
+}
+
+export interface CAPAFetchParams extends Partial<CAPAFilters> {
+  sourceId?: string;
+  limit?: number;
+  offset?: number;
+  searchQuery?: string; // Add searchQuery parameter
 }
 
 export interface CAPAEffectivenessMetrics {
@@ -86,4 +117,21 @@ export interface CAPAStats {
     notEffective: number;
   };
   fsma204ComplianceRate?: number;
+}
+
+export interface CAPARelatedDocument {
+  id: string;
+  capaId: string;
+  documentId: string;
+  documentType: string;
+  addedBy: string;
+  addedAt: string;
+}
+
+export interface CAPARelatedTraining {
+  id: string;
+  capaId: string;
+  trainingId: string;
+  addedBy: string;
+  addedAt: string;
 }
