@@ -38,18 +38,18 @@ const PlatformOverview = () => {
         }} transition={{
           duration: 0.5,
           delay: index * 0.1
-        }} className="relative pl-6 cc-border-left bg-brand-teal rounded">
-              <h3 className="text-xl font-display mb-3 font-extrabold text-cc-light">
+        }} className="relative pl-6 cc-border-left bg-brand-teal">
+              <h3 className="text-xl font-display text-cc-charcoal mb-3 font-extrabold">
                 {feature.title}
               </h3>
-              <p className="mb-4 font-sans text-cc-gold">
+              <p className="text-cc-charcoal/80 mb-4 font-sans text-cc-gold">
                 {feature.description}
               </p>
               
               <div className="space-y-2">
                 {feature.points.map((point, i) => <div key={i} className="flex items-start">
-                    <Check className="h-5 w-5 text-cc-purple mr-2 mt-0.5 flex-shrink-0 bg-cc-tagline" />
-                    <span className="font-sans text-cc-white">{point}</span>
+                    <Check className="h-5 w-5 text-cc-purple mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-cc-charcoal/90 font-sans">{point}</span>
                   </div>)}
               </div>
 

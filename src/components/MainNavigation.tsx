@@ -23,7 +23,7 @@ const MainNavigation = () => {
     return location.pathname === path || path !== '/' && location.pathname.startsWith(path);
   };
   return <nav className="">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-cc-teal">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-display font-bold text-cc-light">
@@ -32,7 +32,7 @@ const MainNavigation = () => {
           </div>
           
           {/* Desktop Nav */}
-          <div className="hidden md:flex md:items-center md:space-x-8 hover:bg-cc-gold/90">
+          <div className="hidden md:flex md:items-center md:space-x-8">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={`font-display text-cc-light hover:text-cc-gold -ml-4 ${isActiveLink('/platform') ? 'cc-underline font-medium' : ''}`}>

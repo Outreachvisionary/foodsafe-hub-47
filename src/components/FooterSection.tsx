@@ -59,7 +59,7 @@ const FooterSection = () => {
                 Stay updated with the latest in food safety compliance.
               </p>
               <div className="flex bg-cc-white">
-                <Input type="email" placeholder="Your email" className="rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-cc-teal" />
+                <Input type="email" placeholder="Your email" className="rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
                 <Button className="rounded-l-none bg-cc-tagline">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
