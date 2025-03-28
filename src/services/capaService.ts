@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, CAPAStats } from '@/types/capa';
 
@@ -22,7 +21,8 @@ export const fetchCAPAs = async (filters?: {
     if (filters.status && filters.status !== 'all') {
       // Database status is lowercase, UI status may be capitalized
       const dbStatus = filters.status.toLowerCase();
-      query = query.eq('status', dbStatus);
+      // Use ilike query and handle case insensitivity
+      query = query.ilike('status', dbStatus);
     }
 
     if (filters.priority && filters.priority !== 'all') {
@@ -69,7 +69,7 @@ export const fetchCAPAs = async (filters?: {
     source: item.source as CAPASource,
     sourceId: item.source_id || '',
     priority: item.priority as CAPAPriority,
-    status: item.status as CAPAStatus,
+    status: item.status.toLowerCase() as CAPAStatus,
     assignedTo: item.assigned_to,
     department: '', // Not available in current database schema
     dueDate: item.due_date,
@@ -144,7 +144,8 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     source: capa.source,
     source_id: capa.sourceId,
     priority: capa.priority,
-    status: capa.status.toLowerCase(), // Ensure lowercase status for database
+    // Convert our lowercase status to the capitalized format expected by the database
+    status: capa.status.charAt(0).toUpperCase() + capa.status.slice(1).replace(/-([a-z])/g, (_, letter) => ` ${letter.toUpperCase()}`),
     assigned_to: capa.assignedTo,
     due_date: capa.dueDate,
     completion_date: capa.completedDate,
@@ -176,7 +177,7 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     source: data.source as CAPASource,
     sourceId: data.source_id || '',
     priority: data.priority as CAPAPriority,
-    status: data.status as CAPAStatus,
+    status: data.status.toLowerCase() as CAPAStatus,
     assignedTo: data.assigned_to,
     department: '', // Not available in current database schema
     dueDate: data.due_date,
@@ -209,7 +210,10 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
   if (updates.source !== undefined) dbUpdates.source = updates.source;
   if (updates.sourceId !== undefined) dbUpdates.source_id = updates.sourceId;
   if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-  if (updates.status !== undefined) dbUpdates.status = updates.status.toLowerCase(); // Ensure lowercase
+  if (updates.status !== undefined) {
+    // Convert our lowercase status to the capitalized format expected by the database
+    dbUpdates.status = updates.status.charAt(0).toUpperCase() + updates.status.slice(1).replace(/-([a-z])/g, (_, letter) => ` ${letter.toUpperCase()}`);
+  }
   if (updates.assignedTo !== undefined) dbUpdates.assigned_to = updates.assignedTo;
   if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
   if (updates.completedDate !== undefined) dbUpdates.completion_date = updates.completedDate;
@@ -238,7 +242,7 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
     source: data.source as CAPASource,
     sourceId: data.source_id || '',
     priority: data.priority as CAPAPriority,
-    status: data.status as CAPAStatus,
+    status: data.status.toLowerCase() as CAPAStatus,
     assignedTo: data.assigned_to,
     department: '', // Not available in current database schema
     dueDate: data.due_date,

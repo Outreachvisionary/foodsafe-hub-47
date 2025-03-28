@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Pie, PieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
-import { CAPAFilters, CAPAStats } from '@/types/capa';
+import { CAPA, CAPAFilters, CAPAStats } from '@/types/capa';
 import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,6 +21,8 @@ interface CAPADashboardProps {
 
 const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [capaList, setCAPAList] = useState<CAPA[]>([]);
   const [stats, setStats] = useState<CAPAStats>({
     total: 0,
     byStatus: {
@@ -80,13 +83,13 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       const statsData = await getCAPAStats();
       setStats({
         ...statsData,
-        averageClosureTime: 0,
-        effectivenessRating: {
+        averageClosureTime: statsData.averageClosureTime || 0,
+        effectivenessRating: statsData.effectivenessRating || {
           effective: 0,
           partiallyEffective: 0,
           notEffective: 0
         },
-        fsma204ComplianceRate: 0
+        fsma204ComplianceRate: statsData.fsma204ComplianceRate || 0
       });
       
       const capas = await fetchCAPAs({
