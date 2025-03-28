@@ -20,7 +20,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [user, loading]);
 
   if (loading) {
-    // Show a loading spinner while checking authentication
     return <Loading />;
   }
 

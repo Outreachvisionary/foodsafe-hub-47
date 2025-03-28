@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,8 +42,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       haccp: 0,
       supplier: 0,
       complaint: 0,
-      traceability: 0,
-      nonconformance: 0
+      traceability: 0
     },
     overdue: 0,
     averageClosureTime: 0,
@@ -71,10 +71,12 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     loadStats();
   }, [filters, searchQuery]);
 
+  // Generate colors for charts
   const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
   const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6'];
-  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#3b82f6'];
+  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4'];
 
+  // Fetch CAPA stats
   const fetchStats = async () => {
     setIsLoading(true);
     try {
@@ -91,11 +93,8 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       });
       
       const capas = await fetchCAPAs({
-        status: filters.status !== 'all' ? filters.status : undefined,
-        priority: filters.priority !== 'all' ? filters.priority : undefined,
-        source: filters.source !== 'all' ? filters.source : undefined,
-        dueDate: filters.dueDate !== 'all' ? filters.dueDate : undefined,
-        searchQuery: searchQuery || undefined
+        ...filters,
+        searchQuery
       });
       setCAPAList(capas);
     } catch (error) {
@@ -106,6 +105,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     }
   };
 
+  // Transform stats data for charts
   const statusData = stats ? [
     { name: 'Open', value: stats.byStatus.open },
     { name: 'In Progress', value: stats.byStatus['in-progress'] },
@@ -125,17 +125,19 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     { name: 'HACCP', value: stats.bySource.haccp },
     { name: 'Supplier', value: stats.bySource.supplier },
     { name: 'Complaint', value: stats.bySource.complaint },
-    { name: 'Traceability', value: stats.bySource.traceability },
-    { name: 'Non-Conformance', value: stats.bySource.nonconformance }
+    { name: 'Traceability', value: stats.bySource.traceability }
   ] : [];
 
+  // Get monthly CAPA data for trends
   const getMonthlyTrendData = () => {
     const now = new Date();
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(now.getMonth() - 6);
     
+    // Group CAPAs by month of creation
     const monthlyData: Record<string, { month: string, created: number, closed: number }> = {};
     
+    // Initialize months
     for (let i = 0; i <= 5; i++) {
       const d = new Date();
       d.setMonth(now.getMonth() - i);
@@ -143,10 +145,12 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       monthlyData[monthYear] = { month: monthYear, created: 0, closed: 0 };
     }
     
+    // Fill in data
     capaList.forEach(capa => {
       const createdDate = new Date(capa.createdDate);
       const completedDate = capa.completedDate ? new Date(capa.completedDate) : null;
       
+      // Only include data from the last 6 months
       if (createdDate >= sixMonthsAgo) {
         const monthYear = `${createdDate.toLocaleString('default', { month: 'short' })} ${createdDate.getFullYear()}`;
         if (monthlyData[monthYear]) {
@@ -162,11 +166,13 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       }
     });
     
+    // Convert to array and sort by date
     return Object.values(monthlyData).reverse();
   };
 
   const monthlyTrendData = getMonthlyTrendData();
 
+  // Get statistic cards
   const StatCard = ({ title, value, description, className = '' }: { title: string, value: number | string, description: string, className?: string }) => (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -179,6 +185,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     </Card>
   );
 
+  // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
