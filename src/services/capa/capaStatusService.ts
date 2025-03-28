@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { CAPAStatus } from '@/types/capa';
 
 // These are the actual status values allowed in the database table

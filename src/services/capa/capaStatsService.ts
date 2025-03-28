@@ -221,7 +221,7 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
     const { data: auditFindings, error: auditError } = await supabase
       .from('audit_findings')
       .select('*')
-      .in('severity', ['critical', 'major'])
+      .in('severity', ['Critical', 'Major'])
       .is('capa_id', null);
     
     if (auditError) {
@@ -233,7 +233,7 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
     const { data: complaints, error: complaintsError } = await supabase
       .from('complaints')
       .select('*')
-      .in('category', ['Food Safety', 'Quality', 'Foreign Material'])
+      .in('category', ['Product Quality', 'Foreign Material'])
       .is('capa_id', null);
     
     if (complaintsError) {
@@ -250,7 +250,7 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
       sourceId: finding.audit_id,
       date: finding.created_at,
       severity: finding.severity,
-      confidence: finding.severity === 'critical' ? 0.95 : 0.8
+      confidence: finding.severity === 'Critical' ? 0.95 : 0.8
     })) || [];
     
     // Format complaints for potential CAPAs
@@ -261,8 +261,8 @@ export const getPotentialCAPAs = async (): Promise<any[]> => {
       source: 'complaint' as CAPASource,
       sourceId: complaint.id,
       date: complaint.reported_date,
-      severity: complaint.category === 'Food Safety' ? 'critical' : 'major',
-      confidence: complaint.category === 'Food Safety' ? 0.9 : 0.75
+      severity: complaint.category === 'Product Quality' ? 'Critical' : 'Major',
+      confidence: complaint.category === 'Product Quality' ? 0.9 : 0.75
     })) || [];
     
     return [...auditCAPAs, ...complaintCAPAs];
