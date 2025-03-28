@@ -1,242 +1,407 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  ClipboardList, 
-  LineChart, 
-  PieChart, 
-  Shield, 
-  Users,
-  Calendar,
-  AlertCircle,
-  BarChart3,
-  ArrowRight
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Pie, PieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
+import { CAPAFilters, CAPAStats } from '@/types/capa';
+import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CAPADashboardProps {
-  filters: {
-    status: string;
-    priority: string;
-    source: string;
-    dueDate: string;
-  };
+  filters: CAPAFilters;
   searchQuery: string;
 }
 
 const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
-  // This would normally fetch data based on filters
-  
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [stats, setStats] = useState<CAPAStats | null>(null);
+  const [capaList, setCAPAList] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('overview');
+
+  // Generate colors for charts
+  const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
+  const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6'];
+  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4'];
+
+  // Fetch CAPA stats
+  const fetchStats = async () => {
+    setIsLoading(true);
+    try {
+      const statsData = await getCAPAStats();
+      setStats(statsData);
+      
+      const capas = await fetchCAPAs({
+        ...filters,
+        searchQuery
+      });
+      setCAPAList(capas);
+    } catch (error) {
+      console.error('Error fetching CAPA statistics:', error);
+      toast.error('Failed to load CAPA statistics');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [filters, searchQuery]);
+
+  // Transform stats data for charts
+  const statusData = stats ? [
+    { name: 'Open', value: stats.byStatus.open },
+    { name: 'In Progress', value: stats.byStatus['in-progress'] },
+    { name: 'Closed', value: stats.byStatus.closed },
+    { name: 'Verified', value: stats.byStatus.verified }
+  ] : [];
+
+  const priorityData = stats ? [
+    { name: 'Critical', value: stats.byPriority.critical },
+    { name: 'High', value: stats.byPriority.high },
+    { name: 'Medium', value: stats.byPriority.medium },
+    { name: 'Low', value: stats.byPriority.low }
+  ] : [];
+
+  const sourceData = stats ? [
+    { name: 'Audit', value: stats.bySource.audit },
+    { name: 'HACCP', value: stats.bySource.haccp },
+    { name: 'Supplier', value: stats.bySource.supplier },
+    { name: 'Complaint', value: stats.bySource.complaint },
+    { name: 'Traceability', value: stats.bySource.traceability }
+  ] : [];
+
+  // Get monthly CAPA data for trends
+  const getMonthlyTrendData = () => {
+    const now = new Date();
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(now.getMonth() - 6);
+    
+    // Group CAPAs by month of creation
+    const monthlyData: Record<string, { month: string, created: number, closed: number }> = {};
+    
+    // Initialize months
+    for (let i = 0; i <= 5; i++) {
+      const d = new Date();
+      d.setMonth(now.getMonth() - i);
+      const monthYear = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+      monthlyData[monthYear] = { month: monthYear, created: 0, closed: 0 };
+    }
+    
+    // Fill in data
+    capaList.forEach(capa => {
+      const createdDate = new Date(capa.createdDate);
+      const completedDate = capa.completedDate ? new Date(capa.completedDate) : null;
+      
+      // Only include data from the last 6 months
+      if (createdDate >= sixMonthsAgo) {
+        const monthYear = `${createdDate.toLocaleString('default', { month: 'short' })} ${createdDate.getFullYear()}`;
+        if (monthlyData[monthYear]) {
+          monthlyData[monthYear].created++;
+        }
+      }
+      
+      if (completedDate && completedDate >= sixMonthsAgo) {
+        const monthYear = `${completedDate.toLocaleString('default', { month: 'short' })} ${completedDate.getFullYear()}`;
+        if (monthlyData[monthYear]) {
+          monthlyData[monthYear].closed++;
+        }
+      }
+    });
+    
+    // Convert to array and sort by date
+    return Object.values(monthlyData).reverse();
+  };
+
+  const monthlyTrendData = getMonthlyTrendData();
+
+  // Get statistic cards
+  const StatCard = ({ title, value, description, className = '' }: { title: string, value: number | string, description: string, className?: string }) => (
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip p-2 bg-white border rounded shadow-sm">
+          <p className="font-medium">{`${label}`}</p>
+          <p className="text-sm">{`${payload[0].name}: ${payload[0].value}`}</p>
+          {payload[1] && <p className="text-sm">{`${payload[1].name}: ${payload[1].value}`}</p>}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Open CAPAs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">24</div>
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                <Clock className="h-3 w-3 mr-1" />
-                8 Due Soon
-              </Badge>
-            </div>
-            <Progress value={45} className="h-2 mt-4" />
-            <p className="text-xs text-muted-foreground mt-2">45% of total CAPAs</p>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-500">Loading dashboard data...</span>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchStats}
+              className="flex items-center"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Data
+            </Button>
+          </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Critical Priority</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">5</div>
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Needs Attention
-              </Badge>
-            </div>
-            <Progress value={20} className="h-2 mt-4 bg-red-100">
-              <div className="bg-red-600 h-full rounded-full" />
-            </Progress>
-            <p className="text-xs text-muted-foreground mt-2">All require management review</p>
-          </CardContent>
-        </Card>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard 
+              title="Total CAPAs" 
+              value={stats?.total || 0} 
+              description="Total number of CAPAs"
+            />
+            <StatCard 
+              title="Open CAPAs" 
+              value={stats ? stats.byStatus.open + stats.byStatus['in-progress'] : 0} 
+              description="CAPAs in progress or not started"
+            />
+            <StatCard 
+              title="Overdue" 
+              value={stats?.overdue || 0} 
+              description="CAPAs past their due date"
+              className={stats && stats.overdue > 0 ? "border-red-200 bg-red-50" : ""}
+            />
+            <StatCard 
+              title="Closed Rate" 
+              value={`${stats && stats.total > 0 ? Math.round((stats.byStatus.closed + stats.byStatus.verified) / stats.total * 100) : 0}%`} 
+              description="Percentage of CAPAs that are closed"
+            />
+          </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Closure Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">14.2</div>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                <Calendar className="h-3 w-3 mr-1" />
-                Days
-              </Badge>
-            </div>
-            <Progress value={75} className="h-2 mt-4" />
-            <p className="text-xs text-muted-foreground mt-2">Target: 10 days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">FSMA 204 Compliance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div className="text-3xl font-bold">86%</div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <Shield className="h-3 w-3 mr-1" />
-                Compliant
-              </Badge>
-            </div>
-            <Progress value={86} className="h-2 mt-4" />
-            <p className="text-xs text-muted-foreground mt-2">14% gap in documentation</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-              CAPA by Source
-            </CardTitle>
-            <CardDescription>
-              Distribution of CAPAs across different modules
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center border rounded-md bg-gray-50">
-              <div className="text-center p-6">
-                <PieChart className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-500">
-                  Chart visualization would appear here showing the distribution of CAPA sources
-                </p>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="trends">Trends</TabsTrigger>
+              <TabsTrigger value="details">Detailed Analysis</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Status Distribution</CardTitle>
+                    <CardDescription>CAPAs by current status</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px] flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={statusData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Priority Distribution</CardTitle>
+                    <CardDescription>CAPAs by priority level</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px] flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={priorityData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {priorityData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Source Distribution</CardTitle>
+                    <CardDescription>CAPAs by origin source</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px] flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={sourceData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {sourceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={sourceColors[index % sourceColors.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <AlertCircle className="h-5 w-5 mr-2 text-red-600" />
-              Critical Action Items
-            </CardTitle>
-            <CardDescription>
-              CAPAs requiring immediate attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="border p-3 rounded-md bg-red-50 border-red-100">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-sm">CAPA-2023-056</p>
-                    <p className="text-xs text-gray-600 mt-1">Foreign Material in Line 3</p>
-                  </div>
-                  <Badge className="bg-red-100 text-red-800">Critical</Badge>
-                </div>
-                <div className="mt-2 flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Source: HACCP</span>
-                  <span className="text-red-700 font-medium">Due: Today</span>
-                </div>
+            </TabsContent>
+            
+            <TabsContent value="trends">
+              <Card>
+                <CardHeader>
+                  <CardTitle>CAPA Trends (6 Months)</CardTitle>
+                  <CardDescription>Created vs Closed CAPAs by month</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={monthlyTrendData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="month" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        tick={{ fontSize: 12 }} 
+                        height={70}
+                      />
+                      <YAxis />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="created" 
+                        name="Created" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="closed" 
+                        name="Closed" 
+                        stroke="#10b981" 
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="details">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>CAPAs by Status</CardTitle>
+                    <CardDescription>Detailed breakdown by status</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={statusData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={0} 
+                          tick={{ fontSize: 12 }} 
+                        />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar 
+                          dataKey="value" 
+                          name="Count" 
+                          fill="#3b82f6"
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>CAPAs by Priority</CardTitle>
+                    <CardDescription>Detailed breakdown by priority</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={priorityData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={0} 
+                          tick={{ fontSize: 12 }} 
+                        />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar 
+                          dataKey="value" 
+                          name="Count" 
+                          fill="#3b82f6"
+                        >
+                          {priorityData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
-
-              <div className="border p-3 rounded-md bg-amber-50 border-amber-100">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-sm">CAPA-2023-062</p>
-                    <p className="text-xs text-gray-600 mt-1">Allergen Control Program Gaps</p>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-800">High</Badge>
-                </div>
-                <div className="mt-2 flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Source: Audit</span>
-                  <span className="text-amber-700 font-medium">Due: Tomorrow</span>
-                </div>
-              </div>
-
-              <div className="border p-3 rounded-md bg-amber-50 border-amber-100">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-sm">CAPA-2023-071</p>
-                    <p className="text-xs text-gray-600 mt-1">Supplier Documentation Missing</p>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-800">High</Badge>
-                </div>
-                <div className="mt-2 flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Source: Supplier</span>
-                  <span className="text-amber-700 font-medium">Due: In 2 days</span>
-                </div>
-              </div>
-
-              <Button className="w-full" variant="outline" size="sm">
-                View All Critical Items
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Users className="h-5 w-5 mr-2 text-purple-600" />
-              CAPA Assignment Distribution
-            </CardTitle>
-            <CardDescription>
-              Distribution of CAPA responsibilities by department
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center border rounded-md bg-gray-50">
-              <div className="text-center p-6">
-                <BarChart3 className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-500">
-                  Chart visualization would appear here showing CAPA assignments by department
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <LineChart className="h-5 w-5 mr-2 text-green-600" />
-              CAPA Effectiveness Trend
-            </CardTitle>
-            <CardDescription>
-              Trend analysis of CAPA effectiveness over time
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center border rounded-md bg-gray-50">
-              <div className="text-center p-6">
-                <LineChart className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-500">
-                  Chart visualization would appear here showing effectiveness metrics over time
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 };
