@@ -175,4 +175,51 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
   );
 };
 
+// Inside CAPAList.tsx
+import { withTimeout } from '@/utils/apiUtils';
+import LoadingTimeout from '@/components/LoadingTimeout';
+import toast from '@/utils/toast';
+
+// Replace useEffect with:
+useEffect(() => {
+  const loadCapas = async () => {
+    setLoading(true);
+    try {
+      const data = await withTimeout(fetchCAPAs({
+        status: filters?.status !== 'all' ? filters?.status : undefined,
+        priority: filters?.priority !== 'all' ? filters?.priority : undefined,
+        source: filters?.source !== 'all' ? filters?.source : undefined,
+        dueDate: filters?.dueDate !== 'all' ? filters?.dueDate : undefined,
+        searchQuery: searchQuery || undefined
+      }));
+      setCapas(data);
+    } catch (error) {
+      console.error('Error loading CAPAs:', error);
+      if (error.message === 'Request timed out') {
+        toast.error('Request timed out. Please try refreshing the page.');
+      } else {
+        toast.error('Failed to load CAPA data');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  loadCapas();
+}, [filters, searchQuery]);
+
+// Then in the component's return statement, wrap content with LoadingTimeout:
+return (
+  <Card>
+    <CardHeader>
+      <CardTitle>CAPA List</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <LoadingTimeout isLoading={loading} timeoutMs={20000}>
+        {/* Your existing content */}
+      </LoadingTimeout>
+    </CardContent>
+  </Card>
+);
+
 export default CAPAList;
