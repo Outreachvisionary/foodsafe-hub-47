@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 import CreateCAPADialog from '../capa/CreateCAPADialog';
+import { NCStatus } from '@/types/non-conformance';
 
 interface NCQuickActionsProps {
   id: string;
@@ -46,6 +47,7 @@ interface NCQuickActionsProps {
   onDelete?: () => void;
   onView?: () => void;
   onCreateCAPA?: () => void;
+  onStatusChange?: (newStatus: NCStatus) => Promise<void>;
 }
 
 const NCQuickActions: React.FC<NCQuickActionsProps> = ({
@@ -54,7 +56,8 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   onEdit,
   onDelete,
   onView,
-  onCreateCAPA
+  onCreateCAPA,
+  onStatusChange
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGenerateCAPADialog, setShowGenerateCAPADialog] = useState(false);
