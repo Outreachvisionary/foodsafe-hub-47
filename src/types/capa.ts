@@ -34,18 +34,6 @@ export interface CAPA {
   relatedDocuments?: string[];
   relatedTraining?: string[];
   fsma204Compliant: boolean;
-  sourceReference?: SourceReference; // Added to store details about the source
-}
-
-// New interface to store information about the source of a CAPA
-export interface SourceReference {
-  id: string;
-  type: CAPASource;
-  title: string;
-  description?: string;
-  date?: string;
-  status?: string;
-  url?: string; // URL to navigate to the source record
 }
 
 export interface CAPAFilters {

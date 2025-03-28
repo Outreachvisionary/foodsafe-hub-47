@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,11 +28,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority, ComplaintSource } from '@/types/complaint';
-import ComplaintDetails from '@/components/complaints/ComplaintDetails';
 
 // Mock data for complaints
-const mockComplaints: Complaint[] = [
+const mockComplaints = [
   {
     id: 'C-2023-001',
     date: '2023-10-15',
@@ -293,7 +291,6 @@ const NewComplaintForm = ({ onSubmitSuccess }: { onSubmitSuccess: () => void }) 
 const ComplaintManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewComplaintDialogOpen, setIsNewComplaintDialogOpen] = useState(false);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   
   // Filter complaints based on search term
   const filteredComplaints = mockComplaints.filter(complaint => 
@@ -302,28 +299,6 @@ const ComplaintManagement = () => {
     complaint.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     complaint.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
-  const handleViewComplaint = (complaint: Complaint) => {
-    setSelectedComplaint(complaint);
-  };
-  
-  if (selectedComplaint) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader 
-          title="Complaint Details" 
-          subtitle="View and manage detailed complaint information" 
-        />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <ComplaintDetails 
-            complaint={selectedComplaint} 
-            onBack={() => setSelectedComplaint(null)} 
-          />
-        </main>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -405,7 +380,7 @@ const ComplaintManagement = () => {
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{complaint.date}</TableCell>
                           <TableCell>{complaint.category}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
@@ -418,11 +393,7 @@ const ComplaintManagement = () => {
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewComplaint(complaint)}
-                            >
+                            <Button variant="ghost" size="sm">
                               View <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -461,7 +432,7 @@ const ComplaintManagement = () => {
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{complaint.date}</TableCell>
                           <TableCell>{complaint.category}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
@@ -471,11 +442,7 @@ const ComplaintManagement = () => {
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewComplaint(complaint)}
-                            >
+                            <Button variant="ghost" size="sm">
                               View <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -513,7 +480,7 @@ const ComplaintManagement = () => {
                     {filteredComplaints.map(complaint => (
                       <TableRow key={complaint.id}>
                         <TableCell className="font-medium">{complaint.id}</TableCell>
-                        <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{complaint.date}</TableCell>
                         <TableCell>{complaint.category}</TableCell>
                         <TableCell className="hidden md:table-cell max-w-xs truncate">
                           {complaint.description}
@@ -526,11 +493,7 @@ const ComplaintManagement = () => {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">{complaint.assignedTo}</TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewComplaint(complaint)}
-                          >
+                          <Button variant="ghost" size="sm">
                             View <ChevronDown className="ml-1 h-4 w-4" />
                           </Button>
                         </TableCell>
