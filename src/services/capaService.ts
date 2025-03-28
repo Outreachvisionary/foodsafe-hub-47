@@ -2,9 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, CAPAStats } from '@/types/capa';
 
+// These are the actual status values allowed in the database table
+type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Verified';
+
 // Map frontend status values to database status values
-const mapStatusToDb = (status: CAPAStatus): string => {
-  const statusMap: Record<CAPAStatus, string> = {
+const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  const statusMap: Record<CAPAStatus, DbCAPAStatus> = {
     'open': 'Open',
     'in-progress': 'In Progress',
     'closed': 'Closed',
@@ -159,6 +162,11 @@ export const fetchCAPAById = async (id: string): Promise<CAPA> => {
  * Create a new CAPA
  */
 export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUpdated'>): Promise<CAPA> => {
+  // Ensure we have a valid status value that exactly matches what the database expects
+  const validStatus: DbCAPAStatus = typeof capa.status === 'string' 
+    ? mapStatusToDb(capa.status as CAPAStatus) 
+    : 'Open';
+
   // Map CAPA type to database schema
   const dbRecord = {
     title: capa.title,
@@ -166,9 +174,8 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     source: capa.source,
     source_id: capa.sourceId,
     priority: capa.priority,
-    // Convert frontend status to the format expected by the database
-    // Ensure it's one of the valid database status values: 'Open', 'In Progress', 'Closed', 'Verified'
-    status: typeof capa.status === 'string' ? mapStatusToDb(capa.status as CAPAStatus) : 'Open',
+    // Use the validated status
+    status: validStatus,
     assigned_to: capa.assignedTo,
     due_date: capa.dueDate,
     completion_date: capa.completedDate,
