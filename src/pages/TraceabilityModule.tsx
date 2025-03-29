@@ -189,7 +189,7 @@ const TraceabilityModule: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="compliance">
-          <ComplianceValidation />
+          <ComplianceValidation batch={selectedBatch} />
         </TabsContent>
         
         <TabsContent value="traces">
@@ -315,6 +315,15 @@ const TraceabilityModule: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Add dialog for batch details but don't show it by default */}
+      <BatchDetailsDialog 
+        batch={selectedBatch}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        onRecallInitiate={() => selectedBatch && handleRecallInitiate(selectedBatch)}
+        onViewCCP={handleCCPClick}
+      />
     </div>
   );
 };

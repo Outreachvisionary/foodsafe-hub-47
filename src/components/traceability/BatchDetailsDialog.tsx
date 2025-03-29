@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -161,7 +160,7 @@ const BatchDetailsDialog: React.FC<BatchDetailsDialogProps> = ({
           <TabsContent value="ccps">
             <CCPTimeline 
               checks={batch.haccpChecks}
-              onCCPClick={(ccp) => onViewCCP(ccp.ccpId)}
+              onCCPClick={onViewCCP}
               onRecallInitiate={onRecallInitiate}
             />
           </TabsContent>

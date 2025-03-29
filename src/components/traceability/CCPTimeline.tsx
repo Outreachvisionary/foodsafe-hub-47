@@ -4,31 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ActivitySquare, Thermometer, AlertTriangle, Check } from 'lucide-react';
-
-// Interface defining the props for the CCP check
-interface CCPCheck {
-  id: string;
-  ccpId: string;
-  name: string;
-  target: number | string;
-  actual: number | string;
-  unit: string;
-  timestamp: string;
-  passed: boolean;
-  auditor: string;
-  auditId?: string;
-  hazardType: 'biological' | 'chemical' | 'physical';
-  notes?: string;
-  criticality?: 'CRITICAL' | 'MAJOR' | 'MINOR';
-}
+import { CCPCheck } from '@/types/traceability';
 
 // Props for the CCPTimeline component
 export interface CCPTimelineProps {
   checks: CCPCheck[];
   onCCPClick: (ccpId: string) => void;
+  onRecallInitiate?: () => void;
 }
 
-const CCPTimeline: React.FC<CCPTimelineProps> = ({ checks, onCCPClick }) => {
+const CCPTimeline: React.FC<CCPTimelineProps> = ({ checks, onCCPClick, onRecallInitiate }) => {
   // Group checks by date for timeline display
   const groupedChecks = checks.reduce<Record<string, CCPCheck[]>>((acc, check) => {
     const date = new Date(check.timestamp).toLocaleDateString();
@@ -53,6 +38,8 @@ const CCPTimeline: React.FC<CCPTimelineProps> = ({ checks, onCCPClick }) => {
         return <Thermometer className="h-4 w-4 text-purple-500" />;
       case 'physical':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'allergen':
+        return <AlertTriangle className="h-4 w-4 text-blue-500" />;
       default:
         return <ActivitySquare className="h-4 w-4" />;
     }
