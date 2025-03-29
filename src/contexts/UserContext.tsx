@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
@@ -29,7 +30,10 @@ const buildUserProfile = (sessionUser: any, profileData: any): UserProfile => {
     assigned_facility_ids: profileData?.assigned_facility_ids,
     preferred_language: profileData?.preferred_language,
     preferences: profileData?.preferences ? 
-      (typeof profileData.preferences === 'object' ? profileData.preferences : {}) : {}
+      (typeof profileData.preferences === 'object' ? profileData.preferences : {}) : {},
+    department_id: profileData?.department_id,
+    status: profileData?.status,
+    metadata: profileData?.metadata,
   };
 };
 

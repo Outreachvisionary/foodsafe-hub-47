@@ -1,133 +1,47 @@
+import React, { Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
+import Loading from '@/components/Loading';
+import Profile from '@/pages/Profile';
+import ResetPassword from '@/pages/ResetPassword';
+import UpdatePassword from '@/pages/UpdatePassword';
 
-// src/App.tsx
+const queryClient = new QueryClient();
 
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
-import { PermissionProvider } from './contexts/PermissionContext';
-
-// Main pages
-import Index from './pages/Index';
-import Dashboard from './pages/Dashboard';
-import Documents from './pages/Documents';
-import HaccpModule from './pages/HaccpModule';
-import TrainingModule from './pages/TrainingModule';
-import InternalAudits from './pages/InternalAudits';
-import SupplierManagement from './pages/SupplierManagement';
-import Traceability from './pages/Traceability';
-import CAPA from './pages/CAPA';
-import CAPADetailsPage from './pages/CAPADetails';
-import ComplaintManagement from './pages/ComplaintManagement';
-import Reports from './pages/Reports';
-import Standards from './pages/Standards';
-import ModuleContent from './components/standards/ModuleContent';
-import NotFound from './pages/NotFound';
-import Auth from './pages/Auth';
-import Solutions from './pages/Solutions';
-import Products from './pages/Products';
-import Organizations from './pages/Organizations';
-
-// Non-Conformance Module
-import NonConformanceModule from './pages/NonConformance';
-import NonConformanceFormPage from './pages/NonConformanceForm';
-import NonConformanceDashboard from './pages/NonConformanceDashboard';
-
-// Organization & Facility Management
-import OrganizationManagement from './pages/OrganizationManagement';
-import FacilitiesList from './pages/FacilitiesList';
-import FacilityManagement from './pages/FacilityManagement';
-
-// User, Role & Department Management
-import UserManagement from './pages/UserManagement';
-import RoleManagement from './pages/RoleManagement';
-import DepartmentManagement from './pages/DepartmentManagement';
-import UserOnboarding from './pages/UserOnboarding';
-
-const App = () => {
+function App() {
   return (
-    <div className="app">
-      {/* Include both toasters to ensure compatibility with both implementations */}
-      <ShadcnToaster />
-      <SonnerToaster position="top-right" />
-      
-      {/* Wrap the entire app with PermissionProvider */}
-      <PermissionProvider>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/login" element={<Auth />} />
-          <Route path="/register" element={<Auth />} />
-          <Route path="/demo" element={<Auth />} />
-          <Route path="/onboarding" element={<UserOnboarding />} />
-          
-          {/* Public product/marketing pages */}
-          <Route path="/standards" element={<Standards />} />
-          <Route path="/standards/:standardId" element={<Standards />} />
-          
-          <Route path="/platform/:moduleType" element={<Products />} />
-          <Route path="/platform" element={<Products />} />
-          <Route path="/industries/:industryType" element={<Solutions />} />
-          <Route path="/industries" element={<Solutions />} />
-          <Route path="/solutions/:solutionType" element={<Solutions />} />
-          <Route path="/solutions" element={<Solutions />} />
-          <Route path="/products/:productType" element={<Products />} />
-          <Route path="/products" element={<Products />} />
-          
-          {/* Protected routes with SidebarLayout */}
-          <Route element={<ProtectedSidebarLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/documents/*" element={<Documents />} />
-            <Route path="/haccp" element={<HaccpModule />} />
-            <Route path="/training" element={<TrainingModule />} />
-            <Route path="/internal-audits" element={<InternalAudits />} />
-            <Route path="/audits" element={<InternalAudits />} /> 
-            <Route path="/supplier-management" element={<SupplierManagement />} />
-            <Route path="/suppliers" element={<SupplierManagement />} /> 
-            <Route path="/traceability" element={<Traceability />} />
-            
-            {/* CAPA Module Routes */}
-            <Route path="/capa" element={<CAPA />} />
-            <Route path="/capa/:id" element={<CAPADetailsPage />} />
-            
-            <Route path="/complaint-management" element={<ComplaintManagement />} />
-            <Route path="/reports" element={<Reports />} />
-            
-            {/* Non-Conformance Module Routes - Well-Organized */}
-            <Route path="/non-conformance" element={<NonConformanceModule />} />
-            <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
-            <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
-            <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
-            <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
-            
-            {/* Organization & Facility Management Routes */}
-            <Route path="/organization" element={<OrganizationManagement />} />
-            <Route path="/organizations" element={<Organizations />} />
-            <Route path="/facilities" element={<FacilitiesList />} />
-            <Route path="/facilities/new" element={<FacilityManagement />} />
-            <Route path="/facilities/:id" element={<FacilityManagement />} />
-            
-            {/* User, Role & Department Management Routes */}
-            <Route path="/users" element={<UserManagement />} />
-            <Route path="/roles" element={<RoleManagement />} />
-            <Route path="/departments" element={<DepartmentManagement />} />
-          </Route>
-          
-          {/* Misc routes */}
-          <Route path="/resources/:resourceType" element={<NotFound />} />
-          <Route path="/resources" element={<NotFound />} />
-          <Route path="/about" element={<NotFound />} />
-          <Route path="/integrations/:integrationType" element={<NotFound />} />
-          <Route path="/integrations" element={<NotFound />} />
-          
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<Loading />} />
+          <Route path="/login" element={<Loading />} />
+          <Route path="/register" element={<Loading />} />
+          <Route path="/forgot-password" element={<Loading />} />
+          <Route path="/dashboard" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/documents" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/standards" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/organizations" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/facilities" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/audits" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/non-conformance" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/capa" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/suppliers" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/training" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/haccp" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/traceability" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/users" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/roles" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/departments" element={<ProtectedSidebarLayout><Loading /></ProtectedSidebarLayout>} />
+          <Route path="/profile" element={<ProtectedSidebarLayout><Profile /></ProtectedSidebarLayout>} />
+          <Route path="/reset-password" element={<ProtectedSidebarLayout><ResetPassword /></ProtectedSidebarLayout>} />
+          <Route path="/update-password" element={<UpdatePassword />} />
         </Routes>
-      </PermissionProvider>
-    </div>
+      </BrowserRouter>
+      <Toaster />
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;
-
