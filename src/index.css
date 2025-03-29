@@ -101,15 +101,15 @@ tbody td {
 
 /* Improved badge styles */
 .badge-success {
-  @apply bg-success text-white px-2 py-1 rounded-full text-xs font-medium;
+  @apply bg-success text-success-foreground px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-warning {
-  @apply bg-warning text-foreground px-2 py-1 rounded-full text-xs font-medium;
+  @apply bg-warning text-warning-foreground px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-danger {
-  @apply bg-destructive text-white px-2 py-1 rounded-full text-xs font-medium;
+  @apply bg-destructive text-destructive-foreground px-2 py-1 rounded-full text-xs font-medium;
 }
 
 /* Button hover effects */
