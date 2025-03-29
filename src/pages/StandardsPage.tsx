@@ -78,5 +78,29 @@ const StandardsPage = () => {
     </AppLayout>
   );
 };
+// src/pages/StandardsPage.tsx
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import StandardsSidebar from '@/components/standards/StandardsSidebar';
+import StandardsContent from '@/components/standards/StandardsContent';
 
+const StandardsPage: React.FC = () => {
+  const { standardId, moduleId } = useParams();
+  
+  return (
+    <div className="flex h-full">
+      {/* Standards-specific sidebar */}
+      <div className="w-64 bg-white border-r border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <StandardsSidebar selectedStandard={standardId} />
+      </div>
+      
+      {/* Standards content area */}
+      <div className="flex-1 overflow-auto pl-6">
+        <StandardsContent standardId={standardId} moduleId={moduleId} />
+      </div>
+    </div>
+  );
+};
+
+export default StandardsPage;
 export default StandardsPage;
