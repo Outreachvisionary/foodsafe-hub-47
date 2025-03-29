@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Role, UserRole } from '@/types/role';
 
@@ -200,11 +201,14 @@ export const checkUserRole = async (
  */
 export const createRoleWithRPC = async (role: Omit<Role, 'id'>): Promise<Role> => {
   try {
-    const { data, error } = await supabase.rpc('create_role', {
-      _name: role.name,
-      _description: role.description || '',
-      _level: role.level || 'organization',
-      _permissions: role.permissions || {}
+    // Use the generic 'functions.invoke' method instead of 'rpc' to avoid typing issues
+    const { data, error } = await supabase.functions.invoke("create-role", {
+      body: {
+        name: role.name,
+        description: role.description || '',
+        level: role.level || 'organization',
+        permissions: role.permissions || {}
+      }
     });
     
     if (error) {
@@ -212,7 +216,8 @@ export const createRoleWithRPC = async (role: Omit<Role, 'id'>): Promise<Role> =
       throw error;
     }
     
-    return data as Role;
+    // We need to cast the result to Role since it's coming from a custom function
+    return data as unknown as Role;
   } catch (error) {
     console.error('Exception creating role through RPC:', error);
     throw error;
@@ -231,13 +236,16 @@ export const assignRoleToUserWithRPC = async (
   departmentId?: string
 ): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc('assign_user_role', {
-      _user_id: userId,
-      _role_id: roleId,
-      _assigned_by: assignedBy,
-      _organization_id: organizationId || null,
-      _facility_id: facilityId || null,
-      _department_id: departmentId || null
+    // Use the generic 'functions.invoke' method instead of 'rpc'
+    const { data, error } = await supabase.functions.invoke("assign-user-role", {
+      body: {
+        userId,
+        roleId,
+        assignedBy,
+        organizationId: organizationId || null,
+        facilityId: facilityId || null,
+        departmentId: departmentId || null
+      }
     });
     
     if (error) {
