@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Menu, X } from 'lucide-react';
-
 const MainNavigation = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -22,13 +19,11 @@ const MainNavigation = () => {
   useEffect(() => {
     setIsNavOpen(false);
   }, [location.pathname]);
-
   const isActiveLink = (path: string) => {
     return location.pathname === path || path !== '/' && location.pathname.startsWith(path);
   };
-
   return <nav className="">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-cc-teal">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-cc-teal bg-slate-100">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-display font-bold text-cc-light">
@@ -234,5 +229,4 @@ const MainNavigation = () => {
         </div>}
     </nav>;
 };
-
 export default MainNavigation;
