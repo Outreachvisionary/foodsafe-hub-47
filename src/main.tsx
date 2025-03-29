@@ -9,6 +9,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import './i18n/i18n'; // Import i18n configuration
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PermissionProvider } from './contexts/PermissionContext';
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -21,9 +22,11 @@ const AppWrapper = () => {
         <ThemeProvider attribute="class" defaultTheme="light">
           <QueryClientProvider client={queryClient}>
             <UserProvider>
-              <LanguageProvider>
-                <App />
-              </LanguageProvider>
+              <PermissionProvider>
+                <LanguageProvider>
+                  <App />
+                </LanguageProvider>
+              </PermissionProvider>
             </UserProvider>
           </QueryClientProvider>
         </ThemeProvider>
