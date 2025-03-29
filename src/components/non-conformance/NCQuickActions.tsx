@@ -192,10 +192,10 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
             Generate CAPA
           </DropdownMenuItem>
           
-       <DropdownMenuItem onClick={() => navigate(`/documents/link/nonconformance/${id}`)}>
-  <Link className="h-4 w-4 mr-2" />
-  Link to Document
-</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/documents?linkedTo=nonconformance&id=${id}`)}>
+            <Link className="h-4 w-4 mr-2" />
+            Link to Document
+          </DropdownMenuItem>
           
           <DropdownMenuItem>
             <FileText className="h-4 w-4 mr-2" />
