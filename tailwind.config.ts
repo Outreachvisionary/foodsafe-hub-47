@@ -1,3 +1,4 @@
+
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
@@ -19,69 +20,67 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Updated color definitions for better contrast and visibility
+        // All your existing color definitions...
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        background: {
-          light: '#FAFAFA', // Light background for tables and sections
-          dark: '#1F2937', // Dark background for headers or sidebars
-          DEFAULT: 'hsl(var(--background))',
-        },
-        foreground: {
-          light: '#374151', // Dark gray text for light backgrounds
-          dark: '#E5E7EB', // Light gray text for dark backgrounds
-          DEFAULT: 'hsl(var(--foreground))',
-        },
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#2563EB', // Vibrant blue for primary elements
-          dark: '#1E40AF',    // Deep navy blue for headers or CTAs
-          light: '#93C5FD',   // Soft sky blue for hover states
-          foreground: '#FFFFFF', // White text on primary buttons
+          DEFAULT: '#1E4D8C', // Professional blue
+          dark: '#15325E',    
+          light: '#4799FF',   
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: '#F3F4F6', // Neutral gray for secondary elements
-          foreground: '#374151', // Dark gray text for secondary buttons
+          DEFAULT: '#F0F4F8',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         destructive: {
-          DEFAULT: '#EF4444', // Red for destructive actions or alerts
-          foreground: '#FFFFFF', // White text on destructive buttons
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: '#F59E0B',  // Bright amber for highlights or warnings
-          light: '#FCD34D',    // Soft yellow for hover states
-          dark: '#B45309',     // Deep amber for badges or emphasis
-          foreground: '#FFFFFF', // White text on accent elements
+          DEFAULT: '#D5A021',  // Refined gold
+          light: '#F3CF71',    
+          dark: '#B2851C',     
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        // Adding the missing color definitions
+        warning: {
+          DEFAULT: '#FFC107', // Yellow for warnings
+          foreground: '#4A4A4A', // Dark text for contrast
         },
         success: {
-          DEFAULT: '#10B981', // Vibrant green for success badges or statuses
-          foreground: '#FFFFFF', // White text on success badges
-        },
-        warning: {
-          DEFAULT: '#F97316', // Orange for warnings or caution badges
-          foreground: '#FFFFFF', // White text on warning badges
+          DEFAULT: '#2E8B57', // Teal for success
+          foreground: '#FFFFFF', // White text
         },
         info: {
-          DEFAULT: '#0EA5E9', // Blue for informational badges or links
-          foreground: '#FFFFFF', // White text on info badges
+          DEFAULT: '#0EA5E9', // Blue for info
+          foreground: '#FFFFFF', // White text
         },
+        // Adding charcoal colors for backward compatibility
         charcoal: {
-          DEFAULT: '#4A4A4A', // Main charcoal color for headings and labels
-          light: '#6C757D',   // Lighter charcoal for secondary text or muted descriptions
-          muted: '#8F9498',   // Muted charcoal for less emphasis elements
-        },
+          DEFAULT: '#4A4A4A', // Main charcoal color
+          light: '#6C757D',   // Lighter charcoal
+          muted: '#8F9498',   // Muted charcoal for less emphasis
+        }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'], // Clean and modern sans-serif font for body text
-        display: ['Poppins', 'system-ui', 'sans-serif'], // Elegant display font for headings and titles
-        mono: ['JetBrains Mono', 'monospace'], // Monospaced font for code or technical sections
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        display: ['Archivo', 'system-ui', 'sans-serif'],
+        secondary: ['DM Sans', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
-      borderColor(theme) {
-        return {
-          ...theme('colors'),
-          DEFAULT: theme('colors.border', 'currentColor'),
-        };
-      },
+      // Rest of your theme configurations...
+      borderColor: theme => ({
+        ...theme('colors'),
+        DEFAULT: theme('colors.border', 'currentColor'),
+      }),
       borderOpacity: {
         '10': '0.1',
         '20': '0.2',
@@ -93,18 +92,11 @@ const config: Config = {
         '80': '0.8',
         '90': '0.9',
       },
-      backgroundImage(theme) {
-        return {
-          ...theme('backgroundImage'),
-          gradientPrimary:
-            'linear-gradient(90deg, #2563EB 0%, #93C5FD 100%)',
-          gradientAccent:
-            'linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%)',
-        };
-      },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+  ],
 } satisfies Config;
 
 export default config;
