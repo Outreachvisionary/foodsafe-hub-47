@@ -12,13 +12,13 @@ import { validateFSMA204Compliance } from '@/services/fsma204ValidationService';
 import ComplianceValidation from './ComplianceValidation';
 import { toast } from 'sonner';
 
-interface RecallRiskDashboardProps {
+export interface RecallRiskDashboardProps {
   batches: BatchTrace[];
   onRecallInitiate: (batch: BatchTrace) => void;
 }
 
 const RecallRiskDashboard: React.FC<RecallRiskDashboardProps> = ({ 
-  batches,
+  batches = [],
   onRecallInitiate
 }) => {
   const [activeTab, setActiveTab] = useState('risks');

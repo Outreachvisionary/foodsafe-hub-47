@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, PlusCircle, Sliders, ClipboardCheck, BarChart3 } from 'lucide-react';
@@ -9,8 +9,107 @@ import CCPTimeline from '@/components/traceability/CCPTimeline';
 import BatchDetailsDialog from '@/components/traceability/BatchDetailsDialog';
 import RecallRiskDashboard from '@/components/traceability/RecallRiskDashboard';
 import ComplianceValidation from '@/components/traceability/ComplianceValidation';
+import { BatchTrace } from '@/types/traceability';
+import { toast } from 'sonner';
+
+// Mock batch data to pass to components
+const mockBatches: BatchTrace[] = [
+  {
+    id: 'BT-2023-0542',
+    product: 'Organic Apple Juice',
+    date: 'May 12, 2023',
+    quantity: '1000 L',
+    status: 'Released',
+    location: 'Warehouse A',
+    suppliers: [
+      { id: 'SUP-001', name: 'Organic Farms Inc.', auditScore: 95 }
+    ],
+    haccpChecks: [
+      {
+        id: 'CCP-001',
+        ccpId: 'CCP-TEMP-001',
+        name: 'Pasteurization',
+        target: 72,
+        actual: 73,
+        unit: '°C',
+        timestamp: '2023-05-12T10:30:00Z',
+        passed: true,
+        auditor: 'John Smith',
+        hazardType: 'biological',
+      }
+    ]
+  },
+  {
+    id: 'BT-2023-0541',
+    product: 'Cheese Spread',
+    date: 'May 10, 2023',
+    quantity: '500 kg',
+    status: 'Released',
+    location: 'Cold Storage B',
+    suppliers: [
+      { id: 'SUP-002', name: 'Dairy Cooperative', auditScore: 92 }
+    ],
+    haccpChecks: [
+      {
+        id: 'CCP-002',
+        ccpId: 'CCP-COOL-001',
+        name: 'Cooling Temperature',
+        target: 4,
+        actual: 3.8,
+        unit: '°C',
+        timestamp: '2023-05-10T14:15:00Z',
+        passed: true,
+        auditor: 'Emma Johnson',
+        hazardType: 'biological',
+      }
+    ]
+  },
+  {
+    id: 'BT-2023-0540',
+    product: 'Wheat Flour',
+    date: 'May 8, 2023',
+    quantity: '1000 kg',
+    status: 'In Production',
+    location: 'Production Line 3',
+    suppliers: [
+      { id: 'SUP-003', name: 'Grain Suppliers Ltd.', auditScore: 78 }
+    ],
+    haccpChecks: [
+      {
+        id: 'CCP-003',
+        ccpId: 'CCP-METAL-001',
+        name: 'Metal Detection',
+        target: 'Pass',
+        actual: 'Pass',
+        unit: '',
+        timestamp: '2023-05-08T09:45:00Z',
+        passed: true,
+        auditor: 'Michael Brown',
+        hazardType: 'physical',
+      }
+    ]
+  }
+];
+
+// Extract CCP checks from mock batches for the CCPTimeline component
+const ccpChecks = mockBatches.flatMap(batch => batch.haccpChecks);
 
 const TraceabilityModule: React.FC = () => {
+  const [selectedBatch, setSelectedBatch] = useState<BatchTrace | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // Handler for recall initiation
+  const handleRecallInitiate = (batch: BatchTrace) => {
+    toast.error(`Recall initiated for batch ${batch.id} - ${batch.product}`);
+    console.log('Initiating recall for batch:', batch);
+  };
+
+  // Handler for CCP click
+  const handleCCPClick = (ccpId: string) => {
+    toast.info(`Viewing CCP details for ${ccpId}`);
+    console.log('Viewing CCP details for:', ccpId);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -76,11 +175,17 @@ const TraceabilityModule: React.FC = () => {
             </Card>
           </div>
           
-          <RecallRiskDashboard />
+          <RecallRiskDashboard 
+            batches={mockBatches} 
+            onRecallInitiate={handleRecallInitiate} 
+          />
         </TabsContent>
         
         <TabsContent value="ccp">
-          <CCPTimeline />
+          <CCPTimeline 
+            checks={ccpChecks} 
+            onCCPClick={handleCCPClick} 
+          />
         </TabsContent>
         
         <TabsContent value="compliance">
@@ -125,10 +230,23 @@ const TraceabilityModule: React.FC = () => {
                     <td className="p-3 text-sm">Organic Apple Juice</td>
                     <td className="p-3 text-sm">May 12, 2023</td>
                     <td className="p-3 text-sm">Forward</td>
-                    <td className="p-3 text-sm"><Badge variant="success">Complete</Badge></td>
+                    <td className="p-3 text-sm">
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                        Complete
+                      </Badge>
+                    </td>
                     <td className="p-3 text-sm">1.2h</td>
                     <td className="p-3 text-sm">
-                      <BatchDetailsDialog batchId="BT-2023-0542" />
+                      <BatchDetailsDialog 
+                        batch={mockBatches[0]} 
+                        open={false}
+                        onOpenChange={(open) => {
+                          if (open) setSelectedBatch(mockBatches[0]);
+                          else setSelectedBatch(null);
+                        }}
+                        onRecallInitiate={() => handleRecallInitiate(mockBatches[0])}
+                        onViewCCP={(ccpId) => handleCCPClick(ccpId)}
+                      />
                     </td>
                   </tr>
                   <tr className="border-t hover:bg-gray-50">
@@ -136,10 +254,23 @@ const TraceabilityModule: React.FC = () => {
                     <td className="p-3 text-sm">Cheese Spread</td>
                     <td className="p-3 text-sm">May 10, 2023</td>
                     <td className="p-3 text-sm">Backward</td>
-                    <td className="p-3 text-sm"><Badge variant="success">Complete</Badge></td>
+                    <td className="p-3 text-sm">
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                        Complete
+                      </Badge>
+                    </td>
                     <td className="p-3 text-sm">0.8h</td>
                     <td className="p-3 text-sm">
-                      <BatchDetailsDialog batchId="BT-2023-0541" />
+                      <BatchDetailsDialog 
+                        batch={mockBatches[1]}
+                        open={false}
+                        onOpenChange={(open) => {
+                          if (open) setSelectedBatch(mockBatches[1]);
+                          else setSelectedBatch(null);
+                        }}
+                        onRecallInitiate={() => handleRecallInitiate(mockBatches[1])}
+                        onViewCCP={(ccpId) => handleCCPClick(ccpId)}
+                      />
                     </td>
                   </tr>
                   <tr className="border-t hover:bg-gray-50">
@@ -147,10 +278,23 @@ const TraceabilityModule: React.FC = () => {
                     <td className="p-3 text-sm">Wheat Flour</td>
                     <td className="p-3 text-sm">May 8, 2023</td>
                     <td className="p-3 text-sm">Full</td>
-                    <td className="p-3 text-sm"><Badge variant="warning">In Progress</Badge></td>
+                    <td className="p-3 text-sm">
+                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
+                        In Progress
+                      </Badge>
+                    </td>
                     <td className="p-3 text-sm">2.4h</td>
                     <td className="p-3 text-sm">
-                      <BatchDetailsDialog batchId="BT-2023-0540" />
+                      <BatchDetailsDialog 
+                        batch={mockBatches[2]}
+                        open={false}
+                        onOpenChange={(open) => {
+                          if (open) setSelectedBatch(mockBatches[2]);
+                          else setSelectedBatch(null);
+                        }}
+                        onRecallInitiate={() => handleRecallInitiate(mockBatches[2])}
+                        onViewCCP={(ccpId) => handleCCPClick(ccpId)}
+                      />
                     </td>
                   </tr>
                 </tbody>
