@@ -1,6 +1,7 @@
+// src/components/layout/SidebarLayout.tsx
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'; // Add Outlet import
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -43,7 +44,8 @@ interface SidebarLink {
   color?: string;
 }
 
-const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
+// Remove children prop as we'll use Outlet instead
+const SidebarLayout = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useUser();
@@ -193,8 +195,10 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-auto bg-muted/20 p-6">{children}</main>
+        {/* Content - Replace children with Outlet */}
+        <main className="flex-1 overflow-auto bg-muted/20 p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
