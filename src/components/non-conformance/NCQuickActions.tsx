@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   AlertCircle, 
@@ -36,6 +38,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
+import { deleteNonConformance } from '@/services/nonConformanceService';
 import CreateCAPADialog from '../capa/CreateCAPADialog';
 import { NCStatus } from '@/types/non-conformance';
 import { CAPASource } from '@/types/capa';
@@ -59,27 +62,61 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   onCreateCAPA,
   onStatusChange
 }) => {
+  const navigate = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGenerateCAPADialog, setShowGenerateCAPADialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const handleCreateCAPA = () => {
     setShowGenerateCAPADialog(false);
     
     if (onCreateCAPA) {
       onCreateCAPA();
+    } else {
+      // Default implementation if no custom handler provided
+      navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
     }
     
     toast.success("CAPA created successfully");
   };
   
-  const handleDelete = () => {
-    setShowDeleteDialog(false);
-    
-    if (onDelete) {
-      onDelete();
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      
+      if (onDelete) {
+        onDelete();
+      } else {
+        // Default implementation if no custom handler provided
+        await deleteNonConformance(id);
+        navigate('/non-conformance');
+      }
+      
+      toast.success("Non-conformance deleted successfully");
+    } catch (error) {
+      console.error('Error deleting non-conformance:', error);
+      toast.error("Failed to delete non-conformance");
+    } finally {
+      setShowDeleteDialog(false);
+      setIsDeleting(false);
     }
-    
-    toast.success("Non-conformance deleted successfully");
+  };
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      // Use the correct route format
+      navigate(`/non-conformance/edit/${id}`);
+    }
+  };
+  
+  const handleView = () => {
+    if (onView) {
+      onView();
+    } else {
+      navigate(`/non-conformance/${id}`);
+    }
   };
   
   const mockNCData = {
@@ -100,7 +137,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={onView}
+              onClick={handleView}
               className="h-8 w-8"
             >
               <Eye className="h-4 w-4" />
@@ -119,7 +156,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={onEdit}
+                onClick={handleEdit}
                 className="h-8 w-8"
               >
                 <Pencil className="h-4 w-4" />
@@ -156,7 +193,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
             Generate CAPA
           </DropdownMenuItem>
           
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/documents?linkedTo=nonconformance&id=${id}`)}>
             <Link className="h-4 w-4 mr-2" />
             Link to Document
           </DropdownMenuItem>
@@ -192,12 +229,29 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)} 
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

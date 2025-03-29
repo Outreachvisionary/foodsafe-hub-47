@@ -1,3 +1,4 @@
+
 // src/App.tsx
 
 import React from 'react';
@@ -18,7 +19,7 @@ import CAPA from './pages/CAPA';
 import CAPADetailsPage from './pages/CAPADetails';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
-import StandardsPage from './pages/StandardsPage';
+import Standards from './pages/Standards';
 import ModuleContent from './components/standards/ModuleContent';
 import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
@@ -29,6 +30,7 @@ import Organizations from './pages/Organizations';
 // Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
 import NonConformanceFormPage from './pages/NonConformanceForm';
+import NonConformanceDashboard from './pages/NonConformanceDashboard';
 
 // Organization & Facility Management
 import OrganizationManagement from './pages/OrganizationManagement';
@@ -48,8 +50,8 @@ const App = () => {
         <Route path="/demo" element={<Auth />} />
         
         {/* Public product/marketing pages */}
-<Route path="/standards" element={<Standards />} />
-<Route path="/standards/:standardId" element={<Standards />} />
+        <Route path="/standards" element={<Standards />} />
+        <Route path="/standards/:standardId" element={<Standards />} />
         
         <Route path="/platform/:moduleType" element={<Products />} />
         <Route path="/platform" element={<Products />} />
@@ -76,8 +78,9 @@ const App = () => {
           <Route path="/complaint-management" element={<ComplaintManagement />} />
           <Route path="/reports" element={<Reports />} />
           
-          {/* Non-Conformance Module Routes */}
+          {/* Non-Conformance Module Routes - Updated */}
           <Route path="/non-conformance" element={<NonConformanceModule />} />
+          <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
           <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
           <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
           <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
