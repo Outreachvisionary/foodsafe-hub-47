@@ -24,6 +24,11 @@ import FacilityManagement from '@/pages/FacilityManagement';
 import HaccpModule from '@/pages/HaccpModule';
 import DepartmentManagement from '@/pages/DepartmentManagement';
 import ComplaintManagement from '@/pages/ComplaintManagement';
+import SupplierManagement from '@/pages/SupplierManagement';
+import TrainingModule from '@/pages/TrainingModule';
+import NonConformanceModule from '@/pages/NonConformance';
+import TraceabilityModule from '@/pages/TraceabilityModule';
+import AuditsModule from '@/pages/AuditsModule';
 
 function App() {
   return (
@@ -113,20 +118,21 @@ function App() {
         <Route path="/audits" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Audits & Inspections</h1>
-                <p>Audits and inspections module is under development.</p>
-              </div>
+              <AuditsModule />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/non-conformance" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Non-Conformance</h1>
-                <p>Non-conformance module is under development.</p>
-              </div>
+              <NonConformanceModule />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/non-conformance/:id" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <NonConformanceModule />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -140,20 +146,14 @@ function App() {
         <Route path="/suppliers" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Suppliers</h1>
-                <p>Suppliers management module is under development.</p>
-              </div>
+              <SupplierManagement />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/training" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Training</h1>
-                <p>Training management module is under development.</p>
-              </div>
+              <TrainingModule />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -167,10 +167,7 @@ function App() {
         <Route path="/traceability" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Traceability</h1>
-                <p>Traceability module is under development.</p>
-              </div>
+              <TraceabilityModule />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
