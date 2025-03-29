@@ -16,12 +16,14 @@ interface OrganizationSelectorProps {
   value?: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  className
 }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       onValueChange={onChange}
       disabled={disabled || loading || organizations.length === 0}
     >
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={className || "w-full"}>
         <SelectValue placeholder="Select organization" />
       </SelectTrigger>
       <SelectContent>

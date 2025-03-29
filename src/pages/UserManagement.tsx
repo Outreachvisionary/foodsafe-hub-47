@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -62,7 +61,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
       
       const formattedUsers = data.map(user => ({
         id: user.id,
-        email: user.email || '',
+        email: user.id.substring(0, 6) + '@example.com', // Fallback email based on ID
         full_name: user.full_name || '',
         avatar_url: user.avatar_url || '',
         role: user.role || '',
@@ -72,7 +71,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         assigned_facility_ids: user.assigned_facility_ids || [],
         preferred_language: user.preferred_language || '',
         status: user.status || '',
-        metadata: user.metadata || {},
+        metadata: {},
       }));
       
       setUsers(formattedUsers);
