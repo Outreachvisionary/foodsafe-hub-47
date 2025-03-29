@@ -9,8 +9,8 @@ import { Loader2, Building2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import { fetchFacilities } from '@/utils/supabaseHelpers';
 import { Facility } from '@/types/facility';
+import { fetchFacilities } from '@/services/facilityService';
 
 const FacilitiesList = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);

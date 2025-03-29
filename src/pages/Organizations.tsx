@@ -1,19 +1,22 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LoadingOverlay } from '@/components/ui/loading-overlay';
+import { Loader2 } from 'lucide-react';
 
 const Organizations: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the proper organization management page
-    navigate('/organizations/management');
+    // Redirect to the organization management page
+    navigate('/organization');
   }, [navigate]);
 
   return (
     <div className="flex items-center justify-center h-full">
-      <LoadingOverlay message="Redirecting to Organizations..." />
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Redirecting to Organizations...</p>
+      </div>
     </div>
   );
 };

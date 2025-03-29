@@ -6,32 +6,26 @@ export const fetchDepartments = async (
   organizationId?: string,
   facilityId?: string
 ): Promise<Department[]> => {
-  if (!organizationId && !facilityId) {
-    console.warn('fetchDepartments called without organizationId or facilityId');
-    return [];
-  }
-
-  let query = supabase
-    .from('departments')
-    .select('*')
-    .order('name');
-  
-  if (organizationId) {
-    query = query.eq('organization_id', organizationId);
-  }
-  
-  if (facilityId) {
-    query = query.eq('facility_id', facilityId);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
+  try {
+    let query = supabase.from('departments').select('*');
+    
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId);
+    }
+    
+    if (facilityId) {
+      query = query.eq('facility_id', facilityId);
+    }
+    
+    const { data, error } = await query.order('name');
+    
+    if (error) throw error;
+    
+    return data as Department[];
+  } catch (error) {
     console.error('Error fetching departments:', error);
     throw error;
   }
-  
-  return data as Department[];
 };
 
 export const fetchDepartmentById = async (id: string): Promise<Department> => {
@@ -49,15 +43,16 @@ export const fetchDepartmentById = async (id: string): Promise<Department> => {
   return data as Department;
 };
 
-export const createDepartment = async (department: Omit<Department, 'id'>): Promise<Department> => {
-  // Ensure name is provided
-  if (!department.name) {
-    throw new Error('Department name is required');
-  }
-
+export const createDepartment = async (department: Partial<Department>): Promise<Department> => {
   const { data, error } = await supabase
     .from('departments')
-    .insert(department)
+    .insert({
+      name: department.name,
+      description: department.description || null,
+      organization_id: department.organization_id,
+      facility_id: department.facility_id,
+      parent_department_id: department.parent_department_id || null
+    })
     .select()
     .single();
   
@@ -70,11 +65,6 @@ export const createDepartment = async (department: Omit<Department, 'id'>): Prom
 };
 
 export const updateDepartment = async (id: string, updates: Partial<Department>): Promise<Department> => {
-  // Ensure name is not being removed
-  if (updates.name === '') {
-    throw new Error('Department name cannot be empty');
-  }
-
   const { data, error } = await supabase
     .from('departments')
     .update(updates)

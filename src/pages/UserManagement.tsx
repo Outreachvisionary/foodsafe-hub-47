@@ -2,48 +2,52 @@
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
-import { toast } from 'sonner';
-import RoleSelector from '@/components/role/RoleSelector';
-import DepartmentSelector from '@/components/department/DepartmentSelector';
-import { PermissionProvider } from '@/contexts/PermissionContext';
-import PermissionGuard from '@/components/auth/PermissionGuard';
+import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fetchRoles } from '@/services/roleService';
+import { fetchDepartments } from '@/services/departmentService';
 
-interface DbProfile {
-  id: string;
-  full_name?: string;
-  avatar_url?: string;
-  role?: string;
-  department?: string;
-  department_id?: string;
-  organization_id?: string;
-  assigned_facility_ids?: string[];
-  preferred_language?: string;
-  status?: string;
-  email?: string; // Added email field
-  metadata?: Record<string, any>; // Added metadata field
-}
+interface UserManagementProps {}
 
-interface ExtendedUserProfile extends UserProfile {
-  email: string;
-  metadata?: Record<string, any>;
-}
-
-const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<ExtendedUserProfile[]>([]);
+const UserManagement: React.FC<UserManagementProps> = () => {
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ExtendedUserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
     fetchUsers();
+    loadRolesAndDepartments();
   }, []);
+  
+  const loadRolesAndDepartments = async () => {
+    try {
+      const [rolesData, departmentsData] = await Promise.all([
+        fetchRoles(),
+        fetchDepartments()
+      ]);
+      
+      setRoles(rolesData.map(role => ({ id: role.id, name: role.name })));
+      setDepartments(departmentsData.map(dept => ({ id: dept.id, name: dept.name })));
+    } catch (err) {
+      console.error('Error loading roles or departments:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load roles or departments',
+        variant: 'destructive'
+      });
+    }
+  };
   
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -56,7 +60,7 @@ const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      const formattedUsers: ExtendedUserProfile[] = (data as DbProfile[]).map(user => ({
+      const formattedUsers = data.map(user => ({
         id: user.id,
         email: user.email || '',
         full_name: user.full_name || '',
@@ -75,13 +79,17 @@ const UserManagement: React.FC = () => {
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setError(err.message || 'Failed to fetch users');
-      toast.error('Error loading users');
+      toast({
+        title: 'Error',
+        description: 'Failed to load users',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
   
-  const updateUserProfile = async (id: string, updates: Partial<ExtendedUserProfile>) => {
+  const updateUserProfile = async (id: string, updates: Partial<UserProfile>) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -96,11 +104,18 @@ const UserManagement: React.FC = () => {
         user.id === id ? { ...user, ...updates } : user
       ));
       
-      toast.success('User profile updated successfully');
+      toast({
+        title: 'Success',
+        description: 'User profile updated successfully',
+      });
       setDialogOpen(false);
     } catch (err: any) {
       console.error('Error updating user:', err);
-      toast.error('Failed to update user profile');
+      toast({
+        title: 'Error',
+        description: 'Failed to update user profile',
+        variant: 'destructive',
+      });
     }
   };
   
@@ -112,7 +127,7 @@ const UserManagement: React.FC = () => {
     }
   };
   
-  const openUserDialog = (user: ExtendedUserProfile) => {
+  const openUserDialog = (user: UserProfile) => {
     setCurrentUser(user);
     setDialogOpen(true);
   };
@@ -121,11 +136,14 @@ const UserManagement: React.FC = () => {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
-        <PermissionGuard permission="users.invite">
-          <Button onClick={() => { /* Navigate to invitation page */ }}>
-            Invite New User
-          </Button>
-        </PermissionGuard>
+        <Button onClick={() => {
+          toast({
+            title: 'Feature in development',
+            description: 'User invitation functionality is coming soon.',
+          });
+        }}>
+          Invite New User
+        </Button>
       </div>
       
       {error && (
@@ -184,30 +202,26 @@ const UserManagement: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <PermissionGuard permission="users.edit">
-                      <Button variant="outline" size="sm" onClick={() => openUserDialog(user)}>
-                        Edit
+                    <Button variant="outline" size="sm" onClick={() => openUserDialog(user)}>
+                      Edit
+                    </Button>
+                    {user.status === 'active' ? (
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleStatusChange(user.id, 'inactive')}
+                      >
+                        Deactivate
                       </Button>
-                    </PermissionGuard>
-                    <PermissionGuard permission="users.status">
-                      {user.status === 'active' ? (
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
-                          onClick={() => handleStatusChange(user.id, 'inactive')}
-                        >
-                          Deactivate
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          onClick={() => handleStatusChange(user.id, 'active')}
-                        >
-                          Activate
-                        </Button>
-                      )}
-                    </PermissionGuard>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        onClick={() => handleStatusChange(user.id, 'active')}
+                      >
+                        Activate
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -234,21 +248,39 @@ const UserManagement: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium mb-1">Role</label>
-                <RoleSelector 
+                <Select 
                   value={currentUser.role || ''}
-                  onChange={(roleId) => setCurrentUser({...currentUser, role: roleId})}
-                />
+                  onValueChange={(roleId) => setCurrentUser({...currentUser, role: roleId})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map(role => (
+                      <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-1">Department</label>
-                <DepartmentSelector 
+                <Select 
                   value={currentUser.department_id || ''}
-                  onChange={(deptId) => setCurrentUser({...currentUser, department_id: deptId})}
-                />
+                  onValueChange={(deptId) => setCurrentUser({...currentUser, department_id: deptId})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(dept => (
+                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className="flex justify-end space-x-2 pt-4">
+              <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
@@ -263,7 +295,7 @@ const UserManagement: React.FC = () => {
                 }}>
                   Save Changes
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           </DialogContent>
         </Dialog>

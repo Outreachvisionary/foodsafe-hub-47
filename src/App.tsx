@@ -1,6 +1,5 @@
-
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 import Loading from '@/components/Loading';
@@ -31,6 +30,7 @@ import TrainingModule from '@/pages/TrainingModule';
 import NonConformanceModule from '@/pages/NonConformance';
 import Traceability from '@/pages/Traceability';
 import AuditsModule from '@/pages/AuditsModule';
+import UserManagement from '@/pages/UserManagement';
 
 function App() {
   return (
@@ -83,7 +83,7 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Organization routes - updated to fix the routing issues */}
+        {/* Organization routes */}
         <Route path="/organizations" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -106,6 +106,7 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
+        {/* Facilities routes */}
         <Route path="/facilities" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -127,6 +128,34 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
+        
+        {/* Admin routes */}
+        <Route path="/users" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <UserManagement />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/roles" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Roles</h1>
+                <p>Role management module is under development.</p>
+              </div>
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/departments" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <DepartmentManagement />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        
+        {/* Other modules */}
         <Route path="/audits" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -183,33 +212,8 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
-        <Route path="/users" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Users</h1>
-                <p>User management module is under development.</p>
-              </div>
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
-        <Route path="/roles" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Roles</h1>
-                <p>Role management module is under development.</p>
-              </div>
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
-        <Route path="/departments" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <DepartmentManagement />
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
+        
+        {/* Profile routes */}
         <Route path="/profile" element={
           <ProtectedSidebarLayout>
             <Profile />
