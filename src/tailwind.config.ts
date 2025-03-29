@@ -17,7 +17,7 @@ const config: Config = {
         '2xl': '1400px',
       },
     },
-   extend: {
+  extend: {
   colors: {
     border: '#D1D5DB', // Light gray border for tables
     input: '#E5E7EB', // Slightly darker gray for input fields
@@ -66,7 +66,6 @@ const config: Config = {
     },
   },
 },
-
       fontFamily: {
         sans: ['Roboto', 'system-ui', 'sans-serif'], // Clean and modern sans-serif font for body text
         display: ['Poppins', 'system-ui', 'sans-serif'], // Elegant display font for headings and titles
