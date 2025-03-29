@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
+// Remove SidebarLayout import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -265,420 +264,419 @@ const OrganizationManagement: React.FC = () => {
   };
 
   return (
-    <SidebarLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Organization Management</h1>
-          
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Organization
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Create Organization</DialogTitle>
-                <DialogDescription>
-                  Add a new organization to the system.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Form {...orgForm}>
-                <form onSubmit={orgForm.handleSubmit(handleCreateOrganization)} className="space-y-4 py-2">
-                  <FormField
-                    control={orgForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ABC Foods Inc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Organic food producer"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={orgForm.control}
-                    name="org_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Type</FormLabel>
-                        <FormControl>
-                          <OrganizationTypeSelector 
-                            value={field.value} 
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="contact_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="email"
-                            placeholder="contact@abcfoods.com"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={orgForm.control}
-                    name="contact_phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="+1 (555) 123-4567"
-                            {...field}
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <DialogFooter className="pt-4">
-                    <Button variant="outline" type="button" onClick={() => setCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting ? 'Creating...' : 'Create'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
+    // Removed SidebarLayout wrapper
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Organization Management</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="md:col-span-1">
-            <CardHeader>
-              <CardTitle>Organizations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {organizations.length === 0 ? (
-                loading ? (
-                  <div className="text-center p-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading organizations...</p>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Building2 className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                    <p className="mt-2 text-muted-foreground">No organizations found.</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4" 
-                      onClick={() => setCreateDialogOpen(true)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create your first organization
-                    </Button>
-                  </div>
-                )
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Organization
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create Organization</DialogTitle>
+              <DialogDescription>
+                Add a new organization to the system.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...orgForm}>
+              <form onSubmit={orgForm.handleSubmit(handleCreateOrganization)} className="space-y-4 py-2">
+                <FormField
+                  control={orgForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ABC Foods Inc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={orgForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Organic food producer"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={orgForm.control}
+                  name="org_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Type</FormLabel>
+                      <FormControl>
+                        <OrganizationTypeSelector 
+                          value={field.value} 
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={orgForm.control}
+                  name="contact_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email"
+                          placeholder="contact@abcfoods.com"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={orgForm.control}
+                  name="contact_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Phone</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="+1 (555) 123-4567"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter className="pt-4">
+                  <Button variant="outline" type="button" onClick={() => setCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? 'Creating...' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Organizations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {organizations.length === 0 ? (
+              loading ? (
+                <div className="text-center p-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Loading organizations...</p>
+                </div>
               ) : (
-                <ul className="space-y-2">
-                  {organizations.map((org) => (
-                    <li key={org.id}>
-                      <Button 
-                        variant={selectedOrganization?.id === org.id ? "default" : "ghost"} 
-                        className="w-full justify-start"
-                        onClick={() => handleSelectOrganization(org)}
-                      >
-                        <Building2 className="mr-2 h-4 w-4" />
-                        {org.name}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-          
-          <div className="md:col-span-3">
-            {selectedOrganization ? (
-              <Tabs defaultValue="details">
-                <TabsList>
-                  <TabsTrigger value="details">Organization Details</TabsTrigger>
-                  <TabsTrigger value="facilities">Facilities</TabsTrigger>
-                  <TabsTrigger value="users">Users</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="details">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{selectedOrganization.name}</CardTitle>
-                      <CardDescription>Organization information and settings</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Description</Label>
-                          <p className="text-muted-foreground">{selectedOrganization.description || 'No description provided'}</p>
-                        </div>
-                        
-                        <div>
-                          <Label>Organization Type</Label>
-                          <p className="text-muted-foreground">{selectedOrganization.org_type || 'Not specified'}</p>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div>
-                          <Label>Contact Information</Label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <div>
-                              <Label className="text-sm">Email</Label>
-                              <p className="text-muted-foreground">{selectedOrganization.contact_email || 'Not specified'}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm">Phone</Label>
-                              <p className="text-muted-foreground">{selectedOrganization.contact_phone || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div className="flex justify-end">
-                          <Button>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Organization
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="facilities">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                <div className="text-center py-6">
+                  <Building2 className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                  <p className="mt-2 text-muted-foreground">No organizations found.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4" 
+                    onClick={() => setCreateDialogOpen(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create your first organization
+                  </Button>
+                </div>
+              )
+            ) : (
+              <ul className="space-y-2">
+                {organizations.map((org) => (
+                  <li key={org.id}>
+                    <Button 
+                      variant={selectedOrganization?.id === org.id ? "default" : "ghost"} 
+                      className="w-full justify-start"
+                      onClick={() => handleSelectOrganization(org)}
+                    >
+                      <Building2 className="mr-2 h-4 w-4" />
+                      {org.name}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        
+        <div className="md:col-span-3">
+          {selectedOrganization ? (
+            <Tabs defaultValue="details">
+              <TabsList>
+                <TabsTrigger value="details">Organization Details</TabsTrigger>
+                <TabsTrigger value="facilities">Facilities</TabsTrigger>
+                <TabsTrigger value="users">Users</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{selectedOrganization.name}</CardTitle>
+                    <CardDescription>Organization information and settings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
                       <div>
-                        <CardTitle>Facilities</CardTitle>
-                        <CardDescription>Manage facilities for {selectedOrganization.name}</CardDescription>
+                        <Label>Description</Label>
+                        <p className="text-muted-foreground">{selectedOrganization.description || 'No description provided'}</p>
                       </div>
                       
-                      <Dialog open={createFacilityDialogOpen} onOpenChange={setCreateFacilityDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Facility
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
-                          <DialogHeader>
-                            <DialogTitle>Add Facility</DialogTitle>
-                            <DialogDescription>
-                              Add a new facility to {selectedOrganization.name}.
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          <Form {...facilityForm}>
-                            <form onSubmit={facilityForm.handleSubmit(handleCreateFacility)} className="space-y-4 py-2">
-                              <FormField
-                                control={facilityForm.control}
-                                name="name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Facility Name</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Production Plant 1" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="description"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Description</FormLabel>
-                                    <FormControl>
-                                      <Textarea 
-                                        placeholder="Main production facility"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="address"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Address</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="123 Production Road, Industry City"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={facilityForm.control}
-                                name="facility_type"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Facility Type</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="Production"
-                                        {...field}
-                                        value={field.value || ''}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <DialogFooter className="pt-4">
-                                <Button variant="outline" type="button" onClick={() => setCreateFacilityDialogOpen(false)}>
-                                  Cancel
-                                </Button>
-                                <Button type="submit" disabled={submitting}>
-                                  {submitting ? 'Adding...' : 'Add Facility'}
-                                </Button>
-                              </DialogFooter>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
-                    </CardHeader>
-                    <CardContent>
-                      {facilitiesLoading ? (
-                        <div className="text-center p-4">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                          <p className="mt-2 text-sm text-muted-foreground">Loading facilities...</p>
-                        </div>
-                      ) : facilities.length === 0 ? (
-                        <div className="text-center py-6">
-                          <Factory className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                          <p className="mt-2 text-muted-foreground">No facilities found. Add your first facility.</p>
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Address</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {facilities.map((facility) => (
-                              <TableRow key={facility.id}>
-                                <TableCell className="font-medium">{facility.name}</TableCell>
-                                <TableCell>{facility.facility_type || 'Not specified'}</TableCell>
-                                <TableCell>{facility.address || 'Not specified'}</TableCell>
-                                <TableCell>
-                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                    facility.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {facility.status}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button variant="ghost" size="sm">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="users">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Users</CardTitle>
-                      <CardDescription>Manage users for {selectedOrganization.name}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-6">
-                        <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                        <p className="mt-2 text-muted-foreground">User management will be implemented soon.</p>
+                      <div>
+                        <Label>Organization Type</Label>
+                        <p className="text-muted-foreground">{selectedOrganization.org_type || 'Not specified'}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Building2 className="h-16 w-16 mx-auto text-muted-foreground opacity-50" />
-                  <p className="mt-4 text-lg text-muted-foreground">Select an organization to view details</p>
-                  {organizations.length === 0 && !loading && (
-                    <Button variant="outline" className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create your first organization
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                      
+                      <Separator />
+                      
+                      <div>
+                        <Label>Contact Information</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <Label className="text-sm">Email</Label>
+                            <p className="text-muted-foreground">{selectedOrganization.contact_email || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm">Phone</Label>
+                            <p className="text-muted-foreground">{selectedOrganization.contact_phone || 'Not specified'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex justify-end">
+                        <Button>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Organization
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="facilities">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Facilities</CardTitle>
+                      <CardDescription>Manage facilities for {selectedOrganization.name}</CardDescription>
+                    </div>
+                    
+                    <Dialog open={createFacilityDialogOpen} onOpenChange={setCreateFacilityDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Facility
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                          <DialogTitle>Add Facility</DialogTitle>
+                          <DialogDescription>
+                            Add a new facility to {selectedOrganization.name}.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <Form {...facilityForm}>
+                          <form onSubmit={facilityForm.handleSubmit(handleCreateFacility)} className="space-y-4 py-2">
+                            <FormField
+                              control={facilityForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Facility Name</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Production Plant 1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={facilityForm.control}
+                              name="description"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Description</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="Main production facility"
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={facilityForm.control}
+                              name="address"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Address</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="123 Production Road, Industry City"
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={facilityForm.control}
+                              name="facility_type"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Facility Type</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Production"
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <DialogFooter className="pt-4">
+                              <Button variant="outline" type="button" onClick={() => setCreateFacilityDialogOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button type="submit" disabled={submitting}>
+                                {submitting ? 'Adding...' : 'Add Facility'}
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </CardHeader>
+                  <CardContent>
+                    {facilitiesLoading ? (
+                      <div className="text-center p-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                        <p className="mt-2 text-sm text-muted-foreground">Loading facilities...</p>
+                      </div>
+                    ) : facilities.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Factory className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                        <p className="mt-2 text-muted-foreground">No facilities found. Add your first facility.</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Address</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {facilities.map((facility) => (
+                            <TableRow key={facility.id}>
+                              <TableCell className="font-medium">{facility.name}</TableCell>
+                              <TableCell>{facility.facility_type || 'Not specified'}</TableCell>
+                              <TableCell>{facility.address || 'Not specified'}</TableCell>
+                              <TableCell>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  facility.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {facility.status}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="users">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Users</CardTitle>
+                    <CardDescription>Manage users for {selectedOrganization.name}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-6">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                      <p className="mt-2 text-muted-foreground">User management will be implemented soon.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Building2 className="h-16 w-16 mx-auto text-muted-foreground opacity-50" />
+                <p className="mt-4 text-lg text-muted-foreground">Select an organization to view details</p>
+                {organizations.length === 0 && !loading && (
+                  <Button variant="outline" className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create your first organization
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
-    </SidebarLayout>
+    </div>
   );
 };
 
