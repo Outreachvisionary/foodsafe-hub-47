@@ -159,3 +159,97 @@ export const createQATechnicianRole = async (): Promise<Role | null> => {
     return null;
   }
 };
+
+/**
+ * Assigns a specific role to a user
+ * @param userId User to assign role to
+ * @param roleId Role to assign
+ * @param organizationId Optional organization context
+ * @param facilityId Optional facility context
+ * @param departmentId Optional department context
+ * @returns Promise resolving to success status
+ */
+export const assignRoleToUser = async (
+  userId: string,
+  roleId: string,
+  organizationId?: string,
+  facilityId?: string,
+  departmentId?: string
+): Promise<boolean> => {
+  try {
+    // Check if this role assignment already exists
+    const { data: existingAssignments, error: checkError } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('role_id', roleId);
+      
+    if (checkError) throw checkError;
+    
+    // If not already assigned, create the assignment
+    if (!existingAssignments || existingAssignments.length === 0) {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: roleId,
+          organization_id: organizationId,
+          facility_id: facilityId,
+          department_id: departmentId,
+          assigned_by: userId // Self-assignment in this case
+        });
+        
+      if (error) throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error assigning role to user:', error);
+    return false;
+  }
+};
+
+/**
+ * Gets the user's role details from their profile
+ * @param userId The user ID to check
+ * @returns Promise resolving to the role name
+ */
+export const getUserRole = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+      
+    if (error) throw error;
+    return data?.role || null;
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return null;
+  }
+};
+
+/**
+ * Updates a user profile with new information
+ * @param userId The user ID to update
+ * @param updates The profile updates to apply
+ * @returns Promise resolving to success status
+ */
+export const updateUserProfile = async (
+  userId: string, 
+  updates: Partial<UserProfile>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return false;
+  }
+};
