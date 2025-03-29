@@ -1,5 +1,3 @@
-// src/App.tsx
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -67,9 +65,9 @@ const App = () => {
           <Route path="/haccp" element={<HaccpModule />} />
           <Route path="/training" element={<TrainingModule />} />
           <Route path="/internal-audits" element={<InternalAudits />} />
-          <Route path="/audits" element={<InternalAudits />} /> {/* Assuming audits route */}
+          <Route path="/audits" element={<InternalAudits />} /> {/* Alias for internal-audits */}
           <Route path="/supplier-management" element={<SupplierManagement />} />
-          <Route path="/suppliers" element={<SupplierManagement />} /> {/* Assuming suppliers route */}
+          <Route path="/suppliers" element={<SupplierManagement />} /> {/* Alias for supplier-management */}
           <Route path="/traceability" element={<Traceability />} />
           <Route path="/capa" element={<CAPA />} />
           <Route path="/capa/:id" element={<CAPADetailsPage />} />
