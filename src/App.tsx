@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -5,7 +6,30 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import SidebarLayout from './components/layout/SidebarLayout';
 import { Outlet } from 'react-router-dom';
 
-// Import all your page components...
+// Import all your page components
+import Index from './pages/Index';
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import Documents from './pages/Documents';
+import HaccpModule from './pages/HaccpModule';
+import TrainingModule from './pages/TrainingModule';
+import InternalAudits from './pages/InternalAudits';
+import SupplierManagement from './pages/SupplierManagement';
+import Traceability from './pages/Traceability';
+import CAPA from './pages/CAPA';
+import CAPADetailsPage from './pages/CAPADetails';
+import ComplaintManagement from './pages/ComplaintManagement';
+import Reports from './pages/Reports';
+import NonConformanceModule from './pages/NonConformance';
+import NonConformanceFormPage from './pages/NonConformanceForm';
+import OrganizationManagement from './pages/OrganizationManagement';
+import Organizations from './pages/Organizations';
+import FacilitiesList from './pages/FacilitiesList';
+import FacilityManagement from './pages/FacilityManagement';
+import StandardsPage from './pages/StandardsPage';
+import Products from './pages/Products';
+import Solutions from './pages/Solutions';
+import NotFound from './pages/NotFound';
 
 // Create a layout route component
 const ProtectedSidebarLayout = () => (
