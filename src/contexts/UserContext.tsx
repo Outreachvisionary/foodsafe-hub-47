@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
@@ -30,10 +29,7 @@ const buildUserProfile = (sessionUser: any, profileData: any): UserProfile => {
     assigned_facility_ids: profileData?.assigned_facility_ids,
     preferred_language: profileData?.preferred_language,
     preferences: profileData?.preferences ? 
-      (typeof profileData.preferences === 'object' ? profileData.preferences : {}) : {},
-    department_id: profileData?.department_id,
-    status: profileData?.status,
-    metadata: profileData?.metadata,
+      (typeof profileData.preferences === 'object' ? profileData.preferences : {}) : {}
   };
 };
 
@@ -206,14 +202,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = (updates: Partial<UserProfile>) => {
     if (user) {
-      // Ensure we're not removing the email field
-      const updatedUser = {
-        ...user,
-        ...updates,
-        email: updates.email || user.email // Ensure email is always available
-      };
-      
-      setUser(updatedUser);
+      setUser({ ...user, ...updates });
     }
   };
 

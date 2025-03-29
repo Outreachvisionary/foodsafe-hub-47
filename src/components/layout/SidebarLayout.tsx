@@ -1,18 +1,19 @@
 
 // src/components/layout/SidebarLayout.tsx
 
-import React, { useState, ReactNode } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/contexts/UserContext';
 import { usePermission } from '@/contexts/PermissionContext';
-import { ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { LogOut, User, Settings, ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import PermissionGuard from '@/components/auth/PermissionGuard';
-import ProfileTile from '@/components/profile/ProfileTile';
 
 interface SidebarLink {
   name: string;
@@ -22,11 +23,7 @@ interface SidebarLink {
   permission?: string;
 }
 
-interface SidebarLayoutProps {
-  children: ReactNode;
-}
-
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
+const SidebarLayout = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useUser();
@@ -129,6 +126,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   ];
   
+  // Admin management links
   const adminLinks: SidebarLink[] = [
     {
       name: 'User Management',
@@ -231,7 +229,42 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
         {/* User Section */}
         <div className="border-t border-border p-3">
-          <ProfileTile />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className={`w-full ${collapsed ? 'justify-center' : 'justify-between'} px-2 text-charcoal`}>
+                <div className="flex items-center">
+                  <Avatar className="h-7 w-7 mr-2">
+                    <AvatarImage src={user?.avatar_url || ''} />
+                    <AvatarFallback>{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
+                  {!collapsed && <div className="text-sm font-medium truncate">
+                      {user?.full_name || user?.email || t('common.user')}
+                    </div>}
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-slate-600 text-charcoal border border-border">
+              <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer hover:bg-secondary">
+                <User className="mr-2 h-4 w-4" />
+                {t('profile.viewProfile')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer hover:bg-secondary">
+                <Settings className="mr-2 h-4 w-4" />
+                {t('profile.settings')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 bg-slate-200">
+                <LanguageSelector />
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive hover:bg-gold">
+                <LogOut className="mr-2 h-4 w-4" />
+                {t('auth.signOut')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -254,7 +287,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
         {/* Content */}
         <main className="flex-1 overflow-auto bg-secondary p-6">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
