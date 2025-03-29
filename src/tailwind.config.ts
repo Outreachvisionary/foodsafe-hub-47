@@ -26,34 +26,50 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#1E4D8C', // Professional blue
-          dark: '#15325E',    // Darker shade
-          light: '#4799FF',   // Lighter shade
+          DEFAULT: '#2E8B57', // Teal primary color
+          dark: '#236744',    // Darker shade
+          light: '#69B18E',   // Lighter shade
           foreground: '#FFFFFF', // White text for primary backgrounds
         },
         secondary: {
-          DEFAULT: '#F0F4F8',
-          foreground: '#222222', // Darkened for better contrast on light backgrounds
+          DEFAULT: '#F5F5F5', // Light gray
+          foreground: '#4A4A4A', // Charcoal gray for text
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: '#E63946', // Brighter red for destructive actions
+          foreground: '#FFFFFF', // White text
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: '#555555', // Darkened for better contrast
+          DEFAULT: '#F9F9F9', // Very light gray
+          foreground: '#6C757D', // Medium gray for muted text
         },
         accent: {
-          DEFAULT: '#D5A021',  // Refined gold
-          light: '#F3CF71',    // Lighter gold
-          dark: '#B2851C',     // Darker gold
-          foreground: '#222222', // Dark text on accent backgrounds
+          DEFAULT: '#2E8B57',  // Teal (same as primary)
+          light: '#69B18E',    // Lighter teal
+          dark: '#236744',     // Darker teal
+          foreground: '#FFFFFF', // White text on accent backgrounds
+        },
+        warning: {
+          DEFAULT: '#FFC107', // Yellow for warnings
+          foreground: '#4A4A4A', // Dark text for contrast
+        },
+        success: {
+          DEFAULT: '#2E8B57', // Teal for success
+          foreground: '#FFFFFF', // White text
+        },
+        info: {
+          DEFAULT: '#0EA5E9', // Blue for info
+          foreground: '#FFFFFF', // White text
+        },
+        charcoal: {
+          DEFAULT: '#333333', // Dark charcoal for headings
+          light: '#4A4A4A',   // Lighter charcoal for body text
+          muted: '#6C757D',   // Medium gray for muted text
         },
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Archivo', 'system-ui', 'sans-serif'],
-        secondary: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['Roboto', 'system-ui', 'sans-serif'],
+        display: ['Poppins', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       borderColor: {

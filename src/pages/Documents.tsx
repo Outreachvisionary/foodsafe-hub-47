@@ -10,7 +10,7 @@ import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
 import DocumentTemplates from '@/components/documents/DocumentTemplates';
 import DocumentEditor from '@/components/documents/DocumentEditor';
 import DocumentNotificationCenter from '@/components/documents/DocumentNotificationCenter';
-import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit } from 'lucide-react';
+import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
@@ -68,8 +68,17 @@ const DocumentsContent = () => {
     setIsUploadOpen(true);
   };
 
+  // Count notifications by type for badge display
+  const approvalNotifications = notifications.filter(n => 
+    n.type === 'approval_overdue' || n.type === 'approval_request'
+  ).length;
+  
+  const expiryNotifications = notifications.filter(n => 
+    n.type === 'expiry_reminder'
+  ).length;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-secondary">
       <DashboardHeader 
         title={t('documents.header.title')}
         subtitle={t('documents.header.subtitle')}
@@ -79,7 +88,7 @@ const DocumentsContent = () => {
         <Breadcrumbs />
         
         <div className="flex justify-between items-center my-6">
-          <h2 className="text-xl font-semibold">{t('documents.controlSystem')}</h2>
+          <h2 className="text-xl font-bold text-charcoal">{t('documents.controlSystem')}</h2>
           <div className="flex items-center gap-3">
             <DocumentNotificationCenter 
               notifications={notifications}
@@ -94,62 +103,87 @@ const DocumentsContent = () => {
         </div>
         
         <Tabs defaultValue="repository" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-8">
-            <TabsTrigger value="repository" className="flex items-center gap-2">
+          <TabsList className="mb-6 bg-white border border-border">
+            <TabsTrigger value="repository" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <FileText className="h-4 w-4" />
               <span>{t('documents.tabs.repository')}</span>
             </TabsTrigger>
-            <TabsTrigger value="approvals" className="flex items-center gap-2">
+            
+            <TabsTrigger value="approvals" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <ClipboardCheck className="h-4 w-4" />
               <span>{t('documents.tabs.approvals')}</span>
-              {notifications.filter(n => n.type === 'approval_overdue' || n.type === 'approval_request').length > 0 && (
-                <Badge variant="destructive" className="ml-1">
-                  {notifications.filter(n => n.type === 'approval_overdue' || n.type === 'approval_request').length}
+              {approvalNotifications > 0 && (
+                <Badge variant="destructive" className="ml-1 bg-destructive text-white">
+                  {approvalNotifications}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="expired" className="flex items-center gap-2">
+            
+            <TabsTrigger value="expired" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <CalendarX className="h-4 w-4" />
               <span>{t('documents.tabs.expired')}</span>
-              {notifications.filter(n => n.type === 'expiry_reminder').length > 0 && (
-                <Badge variant="destructive" className="ml-1">
-                  {notifications.filter(n => n.type === 'expiry_reminder').length}
+              {expiryNotifications > 0 && (
+                <Badge variant="destructive" className="ml-1 bg-destructive text-white">
+                  {expiryNotifications}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-2">
+            
+            <TabsTrigger value="templates" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <FilePlus className="h-4 w-4" />
               <span>{t('documents.tabs.templates')}</span>
             </TabsTrigger>
-            <TabsTrigger value="edit" className="flex items-center gap-2">
+            
+            <TabsTrigger value="edit" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <Edit className="h-4 w-4" />
               <span>{t('documents.tabs.editor')}</span>
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="repository">
-            <DocumentRepository />
+            <div className="bg-white border border-border rounded-lg shadow-sm">
+              <DocumentRepository />
+            </div>
           </TabsContent>
           
           <TabsContent value="approvals">
-            <ApprovalWorkflow />
+            <div className="bg-white border border-border rounded-lg shadow-sm">
+              <ApprovalWorkflow />
+            </div>
           </TabsContent>
           
           <TabsContent value="expired">
-            <ExpiredDocuments />
+            <div className="bg-white border border-border rounded-lg shadow-sm">
+              <ExpiredDocuments />
+            </div>
           </TabsContent>
           
           <TabsContent value="templates">
-            <DocumentTemplates />
+            <div className="bg-white border border-border rounded-lg shadow-sm">
+              <DocumentTemplates />
+            </div>
           </TabsContent>
           
           <TabsContent value="edit">
-            <DocumentEditor 
-              document={selectedDocument} 
-              onSave={handleSaveDocument}
-              onSubmitForReview={handleSubmitForReview}
-              readOnly={!user || selectedDocument?.is_locked}
-            />
+            <div className="bg-white border border-border rounded-lg shadow-sm p-4">
+              {selectedDocument ? (
+                <DocumentEditor 
+                  document={selectedDocument} 
+                  onSave={handleSaveDocument}
+                  onSubmitForReview={handleSubmitForReview}
+                  readOnly={!user || selectedDocument?.is_locked}
+                />
+              ) : (
+                <div className="p-8 text-center">
+                  <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-charcoal mb-2">No Document Selected</h3>
+                  <p className="text-charcoal-muted mb-4">Please select a document from the repository to edit.</p>
+                  <Button onClick={() => setActiveTab('repository')}>
+                    Go to Repository
+                  </Button>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </main>

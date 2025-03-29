@@ -23,7 +23,6 @@ const Breadcrumbs: React.FC = () => {
     'sqf': 'SQF',
     'iso22000': 'ISO 22000',
     'fssc22000': 'FSSC 22000',
-    // Removed duplicate 'haccp' entry
     'brcgs2': 'BRC',
     'brc': 'BRC',
     'profile': 'Profile',
@@ -31,8 +30,8 @@ const Breadcrumbs: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center space-x-2 text-sm text-gray-500 py-2">
-      <Link to="/dashboard" className="flex items-center hover:text-gray-700">
+    <div className="flex items-center space-x-2 text-sm text-charcoal-muted py-2" aria-label="Breadcrumb" role="navigation">
+      <Link to="/dashboard" className="flex items-center hover:text-primary transition-colors" aria-label="Home">
         <Home className="h-4 w-4" />
       </Link>
       
@@ -42,10 +41,11 @@ const Breadcrumbs: React.FC = () => {
         
         return (
           <React.Fragment key={path}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
             <Link 
               to={routeTo}
-              className={`${isLast ? 'font-medium text-gray-800' : 'hover:text-gray-700'}`}
+              className={`${isLast ? 'font-medium text-charcoal' : 'text-charcoal-muted hover:text-primary transition-colors'}`}
+              aria-current={isLast ? 'page' : undefined}
             >
               {pathMap[path] || path}
             </Link>

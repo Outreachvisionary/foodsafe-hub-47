@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils"
  * Label component variants using CVA
  */
 const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+  "text-sm font-medium leading-none text-charcoal peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
   {
     variants: {
       size: {
@@ -22,7 +23,7 @@ const labelVariants = cva(
         bold: "font-bold"
       },
       required: {
-        true: "after:content-['*'] after:text-red-500 after:ml-0.5"
+        true: "after:content-['*'] after:text-destructive after:ml-0.5"
       }
     },
     defaultVariants: {
