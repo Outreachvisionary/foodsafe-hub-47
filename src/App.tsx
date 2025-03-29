@@ -95,6 +95,14 @@ const App = () => {
           <Route path="/facilities/new" element={<FacilityManagement />} />
           <Route path="/facilities/:id" element={<FacilityManagement />} />
         </Route>
+
+        <Route path="/documents/link/:sourceType/:sourceId" element={<DocumentLinkPage />} />
+
+// Then in NCQuickActions.tsx, change to:
+<DropdownMenuItem onClick={() => navigate(`/documents/link/nonconformance/${id}`)}>
+  <Link className="h-4 w-4 mr-2" />
+  Link to Document
+</DropdownMenuItem>
         
         {/* Misc routes */}
         <Route path="/resources/:resourceType" element={<NotFound />} />
