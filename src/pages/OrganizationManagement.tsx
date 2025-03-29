@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Remove SidebarLayout import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,13 +37,11 @@ import {
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-// Form validation schema
 const organizationFormSchema = z.object({
   name: z.string().min(2, "Organization name must be at least 2 characters"),
   description: z.string().optional(),
   contact_email: z.string().email("Invalid email address").optional().or(z.literal('')),
   contact_phone: z.string().optional(),
-  org_type: z.string().optional(),
 });
 
 const facilityFormSchema = z.object({
@@ -69,7 +66,6 @@ const OrganizationManagement: React.FC = () => {
   const { toast } = useToast();
   const { user } = useUser();
 
-  // Initialize React Hook Form for organization
   const orgForm = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: {
@@ -77,11 +73,9 @@ const OrganizationManagement: React.FC = () => {
       description: '',
       contact_email: '',
       contact_phone: '',
-      org_type: undefined,
     }
   });
 
-  // Initialize React Hook Form for facility
   const facilityForm = useForm<FacilityFormValues>({
     resolver: zodResolver(facilityFormSchema),
     defaultValues: {
@@ -110,7 +104,6 @@ const OrganizationManagement: React.FC = () => {
       
       const organizationsData = await fetchOrganizations();
       
-      // Convert to local Organization type
       const mappedOrgs = organizationsData.map((org): Organization => ({
         id: org.id,
         name: org.name,
@@ -147,7 +140,6 @@ const OrganizationManagement: React.FC = () => {
       
       const facilitiesData = await fetchFacilities(orgId);
       
-      // Convert to local Facility type
       const mappedFacilities = facilitiesData.map((facility): Facility => ({
         id: facility.id,
         name: facility.name,
@@ -183,7 +175,6 @@ const OrganizationManagement: React.FC = () => {
           description: values.description || null,
           contact_email: values.contact_email || null,
           contact_phone: values.contact_phone || null,
-          org_type: values.org_type || null,
           status: 'active'
         })
         .select('*')
@@ -264,7 +255,6 @@ const OrganizationManagement: React.FC = () => {
   };
 
   return (
-    // Removed SidebarLayout wrapper
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Organization Management</h1>
@@ -311,23 +301,6 @@ const OrganizationManagement: React.FC = () => {
                           placeholder="Organic food producer"
                           {...field}
                           value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={orgForm.control}
-                  name="org_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organization Type</FormLabel>
-                      <FormControl>
-                        <OrganizationTypeSelector 
-                          value={field.value} 
-                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />

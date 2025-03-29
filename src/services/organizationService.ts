@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Organization } from '@/types/organization';
 
@@ -41,7 +40,6 @@ export const createOrganization = async (organization: Partial<Organization>): P
       contact_phone: organization.contact_phone || null,
       logo_url: organization.logo_url || null,
       status: organization.status || 'active',
-      org_type: organization.org_type || null,
       address: organization.address || null
     })
     .select()
