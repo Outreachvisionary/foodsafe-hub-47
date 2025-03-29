@@ -3,6 +3,7 @@ import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 import SidebarLayout from './SidebarLayout';
+import Loading from '@/components/Loading';
 
 interface ProtectedSidebarLayoutProps {
   children: ReactNode;

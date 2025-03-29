@@ -9,6 +9,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import UpdatePassword from '@/pages/UpdatePassword';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import Dashboard from '@/pages/Dashboard';
 
 function App() {
   return (
@@ -21,7 +22,7 @@ function App() {
         <Route path="/forgot-password" element={<Loading />} />
         <Route path="/dashboard" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Dashboard />
           </ProtectedSidebarLayout>
         } />
         <Route path="/documents" element={

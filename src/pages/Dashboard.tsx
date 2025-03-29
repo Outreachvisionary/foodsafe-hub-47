@@ -1,20 +1,20 @@
 
-import React from 'react';
-import ComplianceOverviewCard from '@/components/dashboard/ComplianceOverviewCard';
-import OpenIssuesCard from '@/components/dashboard/OpenIssuesCard';
-import DocumentStatusCard from '@/components/dashboard/DocumentStatusCard';
-import UpcomingAuditsCard from '@/components/dashboard/UpcomingAuditsCard';
-import RecentActivitiesCard from '@/components/dashboard/RecentActivitiesCard';
-import TeamPerformanceCard from '@/components/dashboard/TeamPerformanceCard';
-import ComplianceTrendChart from '@/components/dashboard/ComplianceTrendChart';
+import React, { useEffect } from 'react';
+import DashboardContent from '@/components/dashboard/DashboardOverview';
 import DashboardHeader from '@/components/DashboardHeader';
-import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
 import AssignRoleButton from '@/components/role/AssignRoleButton';
+import useProfileRealtime from '@/hooks/useProfileRealtime';
 
 const Dashboard = () => {
   const { user } = useUser();
+  const { isListening } = useProfileRealtime();
+  
+  useEffect(() => {
+    console.log('Dashboard mounted, user:', user?.email);
+    console.log('Profile listener active:', isListening);
+  }, [user, isListening]);
   
   return (
     <div className="container mx-auto p-4">
@@ -41,7 +41,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
       
-      <DashboardOverview />
+      <DashboardContent />
     </div>
   );
 };
