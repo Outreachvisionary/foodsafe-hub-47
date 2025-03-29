@@ -1,23 +1,15 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Bell, 
-  Settings, 
-  User, 
-  ChevronDown,
-  Search,
-  HelpCircle
-} from 'lucide-react';
-
+import { Bell, Settings, User, ChevronDown, Search, HelpCircle } from 'lucide-react';
 type DashboardHeaderProps = {
   title: string;
   subtitle?: string;
 };
-
-const DashboardHeader = ({ title, subtitle }: DashboardHeaderProps) => {
-  return (
-    <header className="bg-white border-b border-gray-200 py-4 px-4 sm:px-6 lg:px-8">
+const DashboardHeader = ({
+  title,
+  subtitle
+}: DashboardHeaderProps) => {
+  return <header className="bg-white border-b border-gray-200 sm:px-6 lg:px-8 py-px px-[9px] mx-0 my-0">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
@@ -50,23 +42,15 @@ const DashboardHeader = ({ title, subtitle }: DashboardHeaderProps) => {
             </div>
           </div>
           
-          {subtitle && (
-            <div className="flex items-center justify-between">
+          {subtitle && <div className="flex items-center justify-between">
               <p className="text-gray-500 pr-4">{subtitle}</p>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  className="pl-10 pr-4 py-2 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-fsms-blue/20 focus:border-fsms-blue w-64 transition-all"
-                />
+                <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-fsms-blue/20 focus:border-fsms-blue w-64 transition-all" />
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default DashboardHeader;
