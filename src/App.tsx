@@ -1,41 +1,5 @@
-
 // src/App.tsx
-
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
-
-// Main pages
-import Index from './pages/Index';
-import Dashboard from './pages/Dashboard';
-import Documents from './pages/Documents';
-import HaccpModule from './pages/HaccpModule';
-import TrainingModule from './pages/TrainingModule';
-import InternalAudits from './pages/InternalAudits';
-import SupplierManagement from './pages/SupplierManagement';
-import Traceability from './pages/Traceability';
-import CAPA from './pages/CAPA';
-import CAPADetailsPage from './pages/CAPADetails';
-import ComplaintManagement from './pages/ComplaintManagement';
-import Reports from './pages/Reports';
-import Standards from './pages/Standards';
-import ModuleContent from './components/standards/ModuleContent';
-import NotFound from './pages/NotFound';
-import Auth from './pages/Auth';
-import Solutions from './pages/Solutions';
-import Products from './pages/Products';
-import Organizations from './pages/Organizations';
-
-// Non-Conformance Module
-import NonConformanceModule from './pages/NonConformance';
-import NonConformanceFormPage from './pages/NonConformanceForm';
-import NonConformanceDashboard from './pages/NonConformanceDashboard';
-
-// Organization & Facility Management
-import OrganizationManagement from './pages/OrganizationManagement';
-import FacilitiesList from './pages/FacilitiesList';
-import FacilityManagement from './pages/FacilityManagement';
+// ... imports remain the same
 
 const App = () => {
   return (
@@ -73,27 +37,24 @@ const App = () => {
           <Route path="/supplier-management" element={<SupplierManagement />} />
           <Route path="/suppliers" element={<SupplierManagement />} /> 
           <Route path="/traceability" element={<Traceability />} />
-          
-          {/* CAPA Module Routes */}
           <Route path="/capa" element={<CAPA />} />
           <Route path="/capa/:id" element={<CAPADetailsPage />} />
-          
           <Route path="/complaint-management" element={<ComplaintManagement />} />
           <Route path="/reports" element={<Reports />} />
           
-          {/* Non-Conformance Module Routes - Well-Organized */}
-          <Route path="/non-conformance" element={<NonConformanceModule />} />
+          {/* Non-Conformance Module Routes - FIXED ORDER */}
           <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
           <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
           <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
           <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+          <Route path="/non-conformance" element={<NonConformanceModule />} />
           
           {/* Organization & Facility Management Routes */}
           <Route path="/organization" element={<OrganizationManagement />} />
           <Route path="/organizations" element={<Organizations />} />
           <Route path="/facilities" element={<FacilitiesList />} />
-          <Route path="/facilities/new" element={<FacilityManagement />} />
           <Route path="/facilities/:id" element={<FacilityManagement />} />
+          <Route path="/facilities/new" element={<FacilityManagement />} />
         </Route>
         
         {/* Misc routes */}
