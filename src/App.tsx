@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,6 +8,7 @@ import Loading from '@/components/Loading';
 import Profile from '@/pages/Profile';
 import ResetPassword from '@/pages/ResetPassword';
 import UpdatePassword from '@/pages/UpdatePassword';
+import Index from '@/pages/Index';
 
 const queryClient = new QueryClient();
 
@@ -15,7 +17,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Loading />} />
+          <Route path="/" element={<Index />} />
           <Route path="/login" element={<Loading />} />
           <Route path="/register" element={<Loading />} />
           <Route path="/forgot-password" element={<Loading />} />

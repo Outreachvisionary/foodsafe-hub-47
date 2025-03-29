@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, 
@@ -36,6 +37,9 @@ const ProfileTile: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Use the realtime hook
+  const { isListening } = useProfileRealtime();
+  
   const {
     file,
     handleFileChange,
@@ -59,18 +63,22 @@ const ProfileTile: React.FC = () => {
   useEffect(() => {
     const setupProfileStorage = async () => {
       try {
-        const { error } = await supabase.functions.invoke('setup-profile-storage');
-        if (error) console.error('Failed to setup profile storage:', error);
+        await supabase.functions.invoke('setup-profile-storage');
       } catch (err) {
         console.error('Error invoking setup-profile-storage function:', err);
       }
     };
     
-    setupProfileStorage();
-  }, []);
+    // Only run this if we have a user logged in
+    if (user?.id) {
+      setupProfileStorage();
+    }
+  }, [user?.id]);
 
   const handleProfileClick = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +99,7 @@ const ProfileTile: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!croppedImage || !user) return;
+    if (!croppedImage || !user?.id) return;
     
     setIsUploading(true);
     
@@ -99,9 +107,11 @@ const ProfileTile: React.FC = () => {
       const updatedProfile = await updateProfilePicture(user.id, croppedImage);
       
       if (updatedProfile) {
+        // Make sure to retain the email property
         updateUser({ 
           ...user, 
-          avatar_url: updatedProfile.avatar_url 
+          ...updatedProfile,
+          email: user.email // Ensure email is preserved
         });
         
         toast({
@@ -159,6 +169,26 @@ const ProfileTile: React.FC = () => {
     
     return 'U';
   };
+
+  // Return early with fallback UI if user is not available
+  if (!user) {
+    return (
+      <div className="relative">
+        <Button variant="ghost" className="relative w-full p-2 rounded-lg hover:bg-secondary transition-colors">
+          <div className="flex items-center">
+            <Avatar className="h-10 w-10 border-2 border-primary/10">
+              <AvatarFallback className="bg-primary/10 text-primary">
+                ?
+              </AvatarFallback>
+            </Avatar>
+            <div className="ml-3 text-left flex-1 overflow-hidden">
+              <p className="font-medium text-sm truncate">Loading...</p>
+            </div>
+          </div>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

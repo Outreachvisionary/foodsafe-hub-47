@@ -48,7 +48,15 @@ export const updateProfilePicture = async (userId: string, base64Image: string):
       throw profileError;
     }
     
-    return profileData as UserProfile;
+    // Get the user's email from auth session
+    const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email || '';
+    
+    // Return combined data
+    return {
+      ...profileData,
+      email
+    } as UserProfile;
   } catch (error) {
     console.error('Error in updateProfilePicture:', error);
     throw error;
@@ -84,14 +92,24 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
  */
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    const { data, error } = await supabase
+    // Get profile data
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
       
-    if (error) throw error;
-    return data as UserProfile;
+    if (profileError) throw profileError;
+    
+    // Get the user's email from auth session
+    const { data: { session } } = await supabase.auth.getSession();
+    const email = session?.user?.email || '';
+    
+    // Combine profile data with email
+    return {
+      ...profileData,
+      email
+    } as UserProfile;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return null;
@@ -109,15 +127,27 @@ export const updateUserProfile = async (
   updates: Partial<UserProfile>
 ): Promise<UserProfile | null> => {
   try {
+    // Extract email to prevent trying to update it in the profile table
+    const { email, ...profileUpdates } = updates;
+    
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(profileUpdates)
       .eq('id', userId)
       .select()
       .single();
       
     if (error) throw error;
-    return data as UserProfile;
+    
+    // Get the user's email from auth session
+    const { data: { session } } = await supabase.auth.getSession();
+    const userEmail = session?.user?.email || email || '';
+    
+    // Return combined data
+    return {
+      ...data,
+      email: userEmail
+    } as UserProfile;
   } catch (error) {
     console.error('Error updating user profile:', error);
     return null;

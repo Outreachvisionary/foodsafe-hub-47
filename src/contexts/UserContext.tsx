@@ -206,7 +206,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = (updates: Partial<UserProfile>) => {
     if (user) {
-      setUser({ ...user, ...updates });
+      // Ensure we're not removing the email field
+      const updatedUser = {
+        ...user,
+        ...updates,
+        email: updates.email || user.email // Ensure email is always available
+      };
+      
+      setUser(updatedUser);
     }
   };
 

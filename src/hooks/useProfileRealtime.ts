@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
@@ -22,13 +21,19 @@ export function useProfileRealtime() {
           table: 'profiles',
           filter: `id=eq.${user.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('Profile updated:', payload);
           if (payload.new) {
+            // Keep the email from the current user context
+            const updatedProfile = {
+              ...payload.new,
+              email: user.email // Keep the existing email
+            } as UserProfile;
+            
             // Update the user context with the new profile data
             updateUser({
               ...user,
-              ...(payload.new as UserProfile)
+              ...updatedProfile
             });
           }
         }
