@@ -35,16 +35,7 @@ const DocumentsContent = () => {
       setActiveTab(location.state.activeTab);
     }
   }, [location.state]);
-const { linkedTo, id } = useSearchParams();
 
-useEffect(() => {
-  if (linkedTo === 'nonconformance' && id) {
-    // Show interface for linking documents to this non-conformance
-    setShowLinkingInterface(true);
-    setLinkTargetId(id);
-  }
-}, [linkedTo, id]);
-  
   // Update URL when tab changes for better navigation
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
