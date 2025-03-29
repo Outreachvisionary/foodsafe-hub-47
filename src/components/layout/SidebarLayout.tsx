@@ -6,37 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/contexts/UserContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  LogOut,
-  User,
-  Settings,
-  ChevronsLeft,
-  ChevronsRight,
-  LayoutDashboard,
-  ClipboardCheck,
-  FileText,
-  AlertTriangle,
-  RefreshCw,
-  Truck,
-  GraduationCap,
-  Activity,
-  Building2,
-  Building,
-  Beaker,
-  HardDrive,
-} from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { LogOut, User, Settings, ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-
 interface SidebarLink {
   name: string;
   href: string;
@@ -46,12 +20,16 @@ interface SidebarLink {
 
 // Remove children prop since we'll use Outlet instead
 const SidebarLayout = () => {
-  const { t } = useTranslation();
+  const {
+    t
+  } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const { user, signOut } = useUser();
+  const {
+    user,
+    signOut
+  } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -60,52 +38,82 @@ const SidebarLayout = () => {
       console.error('Error signing out:', error);
     }
   };
-
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
-
-  const sidebarLinks: SidebarLink[] = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-600' },
-    { name: 'Documents', href: '/documents', icon: FileText, color: 'text-green-600' },
-    { name: 'Standards', href: '/standards', icon: ClipboardCheck, color: 'text-purple-600' },
-    { name: 'Organizations', href: '/organizations', icon: Building, color: 'text-indigo-600' },
-    { name: 'Facilities', href: '/facilities', icon: Building2, color: 'text-teal-600' },
-    { name: 'Audits', href: '/audits', icon: HardDrive, color: 'text-yellow-700' },
-    { name: 'Non-Conformance', href: '/non-conformance', icon: AlertTriangle, color: 'text-red-600' },
-    { name: 'CAPA', href: '/capa', icon: RefreshCw, color: 'text-orange-600' },
-    { name: 'Suppliers', href: '/suppliers', icon: Truck, color: 'text-pink-600' },
-    { name: 'Training', href: '/training', icon: GraduationCap, color: 'text-indigo-600' },
-    { name: 'HACCP', href: '/haccp', icon: Beaker, color: 'text-teal-600' },
-    { name: 'Traceability', href: '/traceability', icon: Activity, color: 'text-cyan-600' },
-  ];
-
+  const sidebarLinks: SidebarLink[] = [{
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    color: 'text-blue-600'
+  }, {
+    name: 'Documents',
+    href: '/documents',
+    icon: FileText,
+    color: 'text-green-600'
+  }, {
+    name: 'Standards',
+    href: '/standards',
+    icon: ClipboardCheck,
+    color: 'text-purple-600'
+  }, {
+    name: 'Organizations',
+    href: '/organizations',
+    icon: Building,
+    color: 'text-indigo-600'
+  }, {
+    name: 'Facilities',
+    href: '/facilities',
+    icon: Building2,
+    color: 'text-teal-600'
+  }, {
+    name: 'Audits',
+    href: '/audits',
+    icon: HardDrive,
+    color: 'text-yellow-700'
+  }, {
+    name: 'Non-Conformance',
+    href: '/non-conformance',
+    icon: AlertTriangle,
+    color: 'text-red-600'
+  }, {
+    name: 'CAPA',
+    href: '/capa',
+    icon: RefreshCw,
+    color: 'text-orange-600'
+  }, {
+    name: 'Suppliers',
+    href: '/suppliers',
+    icon: Truck,
+    color: 'text-pink-600'
+  }, {
+    name: 'Training',
+    href: '/training',
+    icon: GraduationCap,
+    color: 'text-indigo-600'
+  }, {
+    name: 'HACCP',
+    href: '/haccp',
+    icon: Beaker,
+    color: 'text-teal-600'
+  }, {
+    name: 'Traceability',
+    href: '/traceability',
+    icon: Activity,
+    color: 'text-cyan-600'
+  }];
   const isActiveLink = (href: string) => {
-    return location.pathname === href || 
-           (href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href));
+    return location.pathname === href || href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href);
   };
-
-  return (
-    <div className="flex h-screen">
+  return <div className="flex h-screen">
       {/* Light theme sidebar */}
-      <div
-        className={`bg-white border-r border-slate-200 h-screen flex flex-col transition-all duration-300 ${
-          collapsed ? 'w-20' : 'w-64'
-        }`}
-      >
+      <div className={`bg-white border-r border-slate-200 h-screen flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
         {/* Logo */}
         <div className={`p-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center`}>
-          {!collapsed && (
-            <Link to="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-blue-600">CompliancePro</span>
-            </Link>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar} 
-            className="h-8 w-8 text-gray-500 hover:text-gray-700"
-          >
+          {!collapsed && <Link to="/dashboard" className="flex items-center">
+              <span className="text-xl font-bold text-blue-600">Compliance Core</span>
+            </Link>}
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8 text-gray-500 hover:text-gray-700">
             {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
           </Button>
         </div>
@@ -115,21 +123,13 @@ const SidebarLayout = () => {
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-2">
           <div className="space-y-0.5">
-            {sidebarLinks.map((link) => (
-              <Link 
-                key={link.href}
-                to={link.href}
-                className={`
+            {sidebarLinks.map(link => <Link key={link.href} to={link.href} className={`
                   group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors
-                  ${isActiveLink(link.href) 
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
-                `}
-              >
+                  ${isActiveLink(link.href) ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
+                `}>
                 <link.icon className={`${link.color || 'text-gray-700'} ${collapsed ? 'mr-0' : 'mr-2'} h-5 w-5 flex-shrink-0`} />
                 {!collapsed && <span>{link.name}</span>}
-              </Link>
-            ))}
+              </Link>)}
           </div>
         </nav>
 
@@ -143,11 +143,9 @@ const SidebarLayout = () => {
                     <AvatarImage src={user?.avatar_url || ''} />
                     <AvatarFallback>{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
-                  {!collapsed && (
-                    <div className="text-sm font-medium truncate">
+                  {!collapsed && <div className="text-sm font-medium truncate">
                       {user?.full_name || user?.email || t('common.user')}
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -187,11 +185,9 @@ const SidebarLayout = () => {
             <Breadcrumbs />
           </div>
           <div className="flex items-center space-x-2">
-            {user?.preferred_language && (
-              <div className="hidden md:block">
+            {user?.preferred_language && <div className="hidden md:block">
                 <LanguageSelector />
-              </div>
-            )}
+              </div>}
           </div>
         </header>
 
@@ -200,8 +196,6 @@ const SidebarLayout = () => {
           <Outlet />
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default SidebarLayout;
