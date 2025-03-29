@@ -92,8 +92,7 @@ const config: Config = {
   // Enable arbitrary values for certain utilities
   plugins: [
     require('tailwindcss-animate'),
-    // Optional: Add plugin to make opacity modifiers work with arbitrary colors
-    require('@tailwindcss/plugin-custom-colors')
+    // Remove the reference to the non-existent plugin
   ],
 } satisfies Config;
 
