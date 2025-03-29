@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,17 +26,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import { usePermission } from '@/contexts/PermissionContext';
 import { Department } from '@/types/department';
 import { fetchDepartments, deleteDepartment } from '@/services/departmentService';
-import { BuildingIcon, Pencil, PlusCircle, Trash2, UserIcon } from 'lucide-react';
+import { BuildingIcon, Pencil, PlusCircle, Trash2 } from 'lucide-react';
 import DepartmentForm from '@/components/department/DepartmentForm';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 const DepartmentManagement: React.FC = () => {
   const { user } = useUser();
@@ -73,7 +69,7 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (department: Department) => {
     setCreateDialogOpen(false);
     if (user?.organization_id) {
       loadDepartments(user.organization_id);
@@ -85,7 +81,7 @@ const DepartmentManagement: React.FC = () => {
     setEditDialogOpen(true);
   };
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = (department: Department) => {
     setEditDialogOpen(false);
     setSelectedDepartment(null);
     if (user?.organization_id) {
@@ -145,8 +141,8 @@ const DepartmentManagement: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <DepartmentForm 
-                organizationId={user.organization_id} 
-                onSuccess={handleCreateSuccess}
+                organizationId={user.organization_id}
+                onSave={handleCreateSuccess}
                 onCancel={() => setCreateDialogOpen(false)}
               />
             </DialogContent>
@@ -226,7 +222,6 @@ const DepartmentManagement: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Edit Department Dialog */}
       {selectedDepartment && (
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
@@ -237,17 +232,16 @@ const DepartmentManagement: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <DepartmentForm 
-              organizationId={selectedDepartment.organization_id || ''} 
-              facilityId={selectedDepartment.facility_id}
               department={selectedDepartment}
-              onSuccess={handleEditSuccess}
+              organizationId={selectedDepartment.organization_id}
+              facilityId={selectedDepartment.facility_id}
+              onSave={handleEditSuccess}
               onCancel={() => setEditDialogOpen(false)}
             />
           </DialogContent>
         </Dialog>
       )}
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
+import { Sidebar } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -9,22 +9,20 @@ import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
+
 interface SidebarLink {
   name: string;
   href: string;
   icon: React.ElementType;
   color?: string;
 }
+
 const AppSidebar = () => {
-  const {
-    t
-  } = useTranslation();
-  const {
-    user,
-    signOut
-  } = useUser();
+  const { t } = useTranslation();
+  const { user, signOut } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
+  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -33,7 +31,9 @@ const AppSidebar = () => {
       console.error('Error signing out:', error);
     }
   };
-  const sidebarLinks: SidebarLink[] = [{
+  
+  const sidebarLinks: SidebarLink[] = [
+    {
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
@@ -93,75 +93,81 @@ const AppSidebar = () => {
     href: '/traceability',
     icon: Activity,
     color: 'text-cyan-500'
-  }];
+  }
+  ];
+  
   const isActiveLink = (href: string) => {
-    return location.pathname === href || href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href);
+    return location.pathname === href || (href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href));
   };
-  return <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="border-b border-border">
+  
+  return (
+    <Sidebar className="border-r border-border h-screen flex flex-col transition-all duration-300">
+      <div className="border-b border-border">
         <div className="flex items-center justify-between px-4 py-2">
           <Link to="/dashboard" className="flex items-center">
             <span className="text-xl font-bold text-primary">Compliance Core</span>
           </Link>
         </div>
-      </SidebarHeader>
+      </div>
       
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarMenu>
-            {sidebarLinks.map(link => <SidebarMenuItem key={link.href}>
-                <SidebarMenuButton asChild isActive={isActiveLink(link.href)} tooltip={link.name}>
-                  <Link to={link.href}>
-                    <link.icon className={`${link.color || 'text-foreground'} h-5 w-5`} />
-                    <span>{link.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>)}
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter>
-        <SidebarSeparator />
-        <div className="p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between px-2">
-                <div className="flex items-center">
-                  <Avatar className="h-7 w-7 mr-2">
-                    <AvatarImage src={user?.avatar_url || ''} />
-                    <AvatarFallback>{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-sm font-medium truncate">
-                    {user?.full_name || user?.email || t('common.user')}
-                  </div>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                {t('profile.viewProfile')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                {t('profile.settings')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5">
-                <LanguageSelector />
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                {t('auth.signOut')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="space-y-1">
+          {sidebarLinks.map(link => (
+            <Link 
+              key={link.href} 
+              to={link.href}
+              className={`
+                group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors
+                ${isActiveLink(link.href) ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-secondary hover:text-foreground'}
+              `}
+            >
+              <link.icon className={`${isActiveLink(link.href) ? link.color : 'text-muted-foreground'} mr-3 h-5 w-5 flex-shrink-0`} />
+              <span>{link.name}</span>
+            </Link>
+          ))}
         </div>
-      </SidebarFooter>
-    </Sidebar>;
+      </div>
+      
+      <div className="border-t border-border p-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between px-2">
+              <div className="flex items-center">
+                <Avatar className="h-7 w-7 mr-2">
+                  <AvatarImage src={user?.avatar_url || ''} />
+                  <AvatarFallback>{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
+                </Avatar>
+                <div className="text-sm font-medium truncate">
+                  {user?.full_name || user?.email || t('common.user')}
+                </div>
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              {t('profile.viewProfile')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              {t('profile.settings')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5">
+              <LanguageSelector />
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              {t('auth.signOut')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </Sidebar>
+  );
 };
+
 export default AppSidebar;

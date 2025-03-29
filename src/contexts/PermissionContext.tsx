@@ -56,7 +56,7 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
 
     // Check if the user has admin permission at any level
     const hasAdminRole = userRoles.some(role => 
-      role.permissions?.admin === true && 
+      role.permissions && role.permissions.admin === true && 
       (
         // If checking for specific context (org/facility/dept)
         (organizationId && role.organization_id === organizationId) ||
@@ -72,7 +72,7 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
     // Check for the specific permission
     return userRoles.some(role => {
       // Match specific permission
-      const hasSpecificPermission = role.permissions?.[permission] === true;
+      const hasSpecificPermission = role.permissions && role.permissions[permission] === true;
       
       // Match the context if provided
       const matchesContext = (

@@ -3,27 +3,33 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { OrganizationSelector } from '@/components/organizations/OrganizationSelector';
-import { FacilitySelector } from '@/components/facilities/FacilitySelector';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
+import FacilitySelector from '@/components/facilities/FacilitySelector';
 import { createDepartment, updateDepartment } from '@/services/departmentService';
 import { Department } from '@/types/department';
 import { toast } from 'sonner';
 
 interface DepartmentFormProps {
   department?: Department;
+  organizationId?: string; 
+  facilityId?: string;
+  onSuccess?: (department: Department) => void;
   onSave?: (department: Department) => void;
   onCancel?: () => void;
 }
 
 const DepartmentForm: React.FC<DepartmentFormProps> = ({
   department,
+  organizationId: initialOrgId,
+  facilityId: initialFacilityId,
   onSave,
+  onSuccess,
   onCancel,
 }) => {
   const [name, setName] = useState(department?.name || '');
   const [description, setDescription] = useState(department?.description || '');
-  const [organizationId, setOrganizationId] = useState(department?.organization_id || '');
-  const [facilityId, setFacilityId] = useState(department?.facility_id || '');
+  const [organizationId, setOrganizationId] = useState(initialOrgId || department?.organization_id || '');
+  const [facilityId, setFacilityId] = useState(initialFacilityId || department?.facility_id || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -68,7 +74,7 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
       } else {
         // Create new department
         savedDepartment = await createDepartment({
-          name, // Now this is required as it should be
+          name,
           description,
           organization_id: organizationId,
           facility_id: facilityId,
@@ -78,6 +84,10 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
       
       if (onSave) {
         onSave(savedDepartment);
+      }
+      
+      if (onSuccess) {
+        onSuccess(savedDepartment);
       }
     } catch (error) {
       console.error('Error saving department:', error);

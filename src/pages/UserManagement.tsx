@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,17 @@ import DepartmentSelector from '@/components/department/DepartmentSelector';
 import { PermissionProvider } from '@/contexts/PermissionContext';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 
+interface ExtendedUserProfile extends UserProfile {
+  email: string;
+  metadata?: Record<string, any>;
+}
+
 const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<ExtendedUserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<ExtendedUserProfile | null>(null);
   
   useEffect(() => {
     fetchUsers();
@@ -36,10 +40,9 @@ const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      // Map the data to ensure it conforms to UserProfile
-      const formattedUsers: UserProfile[] = data.map(user => ({
+      const formattedUsers: ExtendedUserProfile[] = data.map(user => ({
         id: user.id,
-        email: user.email || '',  // Ensure email exists
+        email: user.email || '',
         full_name: user.full_name || '',
         avatar_url: user.avatar_url || '',
         role: user.role || '',
@@ -62,7 +65,7 @@ const UserManagement: React.FC = () => {
     }
   };
   
-  const updateUserProfile = async (id: string, updates: Partial<UserProfile>) => {
+  const updateUserProfile = async (id: string, updates: Partial<ExtendedUserProfile>) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -73,7 +76,6 @@ const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      // Update the users state
       setUsers(users.map(user => 
         user.id === id ? { ...user, ...updates } : user
       ));
@@ -94,7 +96,7 @@ const UserManagement: React.FC = () => {
     }
   };
   
-  const openUserDialog = (user: UserProfile) => {
+  const openUserDialog = (user: ExtendedUserProfile) => {
     setCurrentUser(user);
     setDialogOpen(true);
   };
@@ -158,8 +160,8 @@ const UserManagement: React.FC = () => {
                 <TableCell>{user.department || 'No department'}</TableCell>
                 <TableCell>
                   <Badge 
-                    variant={user.status === 'active' ? 'success' : 
-                            user.status === 'pending' ? 'warning' : 'default'}
+                    variant={user.status === 'active' ? 'default' : 
+                            user.status === 'pending' ? 'outline' : 'secondary'}
                   >
                     {user.status || 'Unknown'}
                   </Badge>

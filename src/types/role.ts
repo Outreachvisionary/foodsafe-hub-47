@@ -15,6 +15,7 @@ export interface UserRole {
   user_id: string;
   role_id: string;
   role_name?: string;
+  permissions?: Record<string, boolean>;
   organization_id?: string;
   facility_id?: string;
   department_id?: string;

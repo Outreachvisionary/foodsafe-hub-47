@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Role, UserRole } from '@/types/role';
 
@@ -132,7 +131,20 @@ export const getUserRoles = async (userId: string): Promise<UserRole[]> => {
     throw error;
   }
   
-  return data as UserRole[];
+  // Transform the data to match the UserRole interface
+  const userRoles: UserRole[] = (data as any[]).map(role => ({
+    id: role.role_id, // Using role_id as the id since we don't have a direct id field
+    user_id: userId,
+    role_id: role.role_id,
+    role_name: role.role_name,
+    permissions: role.permissions,
+    organization_id: role.organization_id,
+    facility_id: role.facility_id,
+    department_id: role.department_id,
+    // We don't have assigned_by and created_at in the response, so leaving them undefined
+  }));
+  
+  return userRoles;
 };
 
 export const checkUserPermission = async (
