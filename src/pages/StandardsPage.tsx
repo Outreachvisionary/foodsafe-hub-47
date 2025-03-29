@@ -25,18 +25,18 @@ const ModuleContent = ({ standard, module }: { standard: string, module: string 
   
   // Default placeholder content
   return (
-    <Card className="p-6">
-      <Alert className="bg-fsms-lightBlue border-fsms-blue">
-        <Shield className="h-5 w-5 text-fsms-blue" />
-        <AlertTitle>{standard.toUpperCase()} - {module.replace(/-/g, ' ')}</AlertTitle>
-        <AlertDescription>
+    <Card className="p-6 bg-white border-border">
+      <Alert className="bg-blue-50 border-primary">
+        <Shield className="h-5 w-5 text-primary" />
+        <AlertTitle className="text-foreground">{standard.toUpperCase()} - {module.replace(/-/g, ' ')}</AlertTitle>
+        <AlertDescription className="text-secondary-foreground">
           This module provides detailed guidance and implementation resources for {module.replace(/-/g, ' ')} 
           under the {standard.toUpperCase()} standard.
         </AlertDescription>
       </Alert>
       <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-2">Module Overview</h3>
-        <p>Comprehensive information and implementation tools for this specific aspect of {standard.toUpperCase()}.</p>
+        <h3 className="text-lg font-semibold mb-2 text-foreground">Module Overview</h3>
+        <p className="text-secondary-foreground">Comprehensive information and implementation tools for this specific aspect of {standard.toUpperCase()}.</p>
       </div>
     </Card>
   );
@@ -69,7 +69,7 @@ const StandardsPage = () => {
       title="Food Safety Standards" 
       subtitle="Comprehensive implementation guides for global food safety standards"
     >
-      <div className="flex h-[calc(100vh-12rem)]">
+      <div className="flex h-[calc(100vh-12rem)] bg-background border border-border rounded-lg overflow-hidden">
         <StandardSidebar />
         <div className="flex-1 p-6 overflow-y-auto">
           <ModuleContent standard={standardId} module={moduleId} />

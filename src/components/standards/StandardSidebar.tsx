@@ -101,15 +101,15 @@ const StandardSidebar = () => {
   )?.id || standards[0].id;
 
   return (
-    <div className="w-64 h-full border-r bg-card">
-      <div className="p-4 border-b">
-        <h2 className="font-semibold text-lg">Standards</h2>
+    <div className="w-64 h-full border-r border-border bg-white">
+      <div className="p-4 border-b border-border">
+        <h2 className="font-semibold text-lg text-foreground">Standards</h2>
       </div>
       <div className="py-2">
         <Accordion type="single" collapsible defaultValue={defaultOpenItem}>
           {standards.map((standard) => (
             <AccordionItem key={standard.id} value={standard.id}>
-              <AccordionTrigger className="px-4 py-2 hover:bg-muted/50">
+              <AccordionTrigger className="px-4 py-2 hover:bg-secondary/50 text-foreground">
                 <div className="flex items-center gap-2">
                   {standard.icon}
                   <span>{standard.name}</span>
@@ -125,7 +125,7 @@ const StandardSidebar = () => {
                         "flex items-center gap-2 px-3 py-2 text-sm rounded-md",
                         currentPath === module.path 
                           ? "bg-primary/10 text-primary font-medium" 
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       )}
                     >
                       {module.icon}

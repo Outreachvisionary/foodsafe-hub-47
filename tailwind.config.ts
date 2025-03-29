@@ -1,3 +1,4 @@
+
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
@@ -19,41 +20,53 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // All your existing color definitions...
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // Light theme color system
+        border: {
+          DEFAULT: '#E5E7EB',
+          medium: '#D1D5DB',
+        },
+        input: '#D1D5DB',
+        ring: '#1E4D8C',
+        background: '#F9FAFC',
+        foreground: '#102A43',
         primary: {
-          DEFAULT: '#1E4D8C', // Updated to more professional blue
-          dark: '#15325E',    // Darker shade
-          light: '#4799FF',   // Lighter shade
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: '#1E4D8C',  // Primary blue
+          dark: '#15325E',    
+          light: '#4799FF',   
+          foreground: '#FFFFFF',
         },
         secondary: {
-          DEFAULT: '#F0F4F8',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: '#F0F4F8',  // Secondary background
+          foreground: '#486581',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: '#EF4444',  // Error red
+          foreground: '#FFFFFF',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: '#F0F4F8',
+          foreground: '#829AB1',
         },
         accent: {
-          DEFAULT: '#D5A021',  // Refined gold
-          light: '#F3CF71',    // Lighter gold
-          dark: '#B2851C',     // Darker gold
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: '#D5A021',  // Gold accent
+          light: '#F3CF71',  
+          dark: '#B2851C',   
+          foreground: '#FFFFFF',
         },
-        // Rest of your colors...
+        card: {
+          DEFAULT: '#FFFFFF',
+          foreground: '#102A43',
+        },
+        status: {
+          success: '#10B981',
+          error: '#EF4444',
+          warning: '#F59E0B',
+          info: '#3B82F6',
+        },
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Archivo', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        display: ['Satoshi', 'system-ui', 'sans-serif'],
         secondary: ['DM Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },

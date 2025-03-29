@@ -8,65 +8,67 @@
  
 @layer base {
   :root {
-    --background: 217 20% 24%;  /* Deep Indigo background */
-    --foreground: 0 0% 100%;    /* White text */
+    --background: 210 20% 98%;  /* #F9FAFC */
+    --foreground: 209 61% 16%;  /* #102A43 */
 
-    --card: 217 20% 24%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;          /* #FFFFFF */
+    --card-foreground: 209 61% 16%;  /* #102A43 */
  
-    --popover: 217 20% 24%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;       /* #FFFFFF */
+    --popover-foreground: 209 61% 16%;  /* #102A43 */
  
-    --primary: 39 44% 55%;      /* Amber Gold */
-    --primary-foreground: 217 20% 24%;  /* Deep Indigo for contrast on gold */
+    --primary: 217 64% 33%;     /* #1E4D8C */
+    --primary-foreground: 0 0% 100%;  /* #FFFFFF */
  
-    --secondary: 217 18% 28%;   /* Slightly lighter indigo */
-    --secondary-foreground: 0 0% 98%;  /* Light text on secondary */
+    --secondary: 209 30% 95%;   /* #F0F4F8 */
+    --secondary-foreground: 209 23% 40%;  /* #486581 */
  
-    --muted: 217 18% 28%;
-    --muted-foreground: 0 0% 85%;  /* Lighter color for better contrast */
+    --muted: 209 30% 95%;       /* #F0F4F8 */
+    --muted-foreground: 209 14% 60%;  /* #829AB1 */
  
-    --accent: 39 44% 55%;       /* Amber Gold accent */
-    --accent-foreground: 217 20% 24%;
+    --accent: 39 69% 48%;       /* #D5A021 */
+    --accent-foreground: 0 0% 100%;  /* #FFFFFF */
  
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;   /* #EF4444 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --border: 39 44% 55%;      /* Amber Gold borders */
-    --input: 217 18% 28%;
-    --ring: 39 44% 55%;
+    --border: 220 13% 91%;      /* #E5E7EB */
+    --input: 217 13% 84%;       /* #D1D5DB */
+    --ring: 217 64% 33%;        /* #1E4D8C */
  
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 217 20% 24%;
-    --foreground: 0 0% 98%;
+    /* Keep dark mode tokens, but they won't be used as we're 
+    implementing an all-light theme based on instructions */
+    --background: 210 20% 98%;  /* #F9FAFC */
+    --foreground: 209 61% 16%;  /* #102A43 */
  
-    --card: 217 20% 24%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;          /* #FFFFFF */
+    --card-foreground: 209 61% 16%;  /* #102A43 */
  
-    --popover: 217 20% 24%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;       /* #FFFFFF */
+    --popover-foreground: 209 61% 16%;  /* #102A43 */
  
-    --primary: 39 44% 55%;
-    --primary-foreground: 217 20% 24%;
+    --primary: 217 64% 33%;     /* #1E4D8C */
+    --primary-foreground: 0 0% 100%;  /* #FFFFFF */
  
-    --secondary: 217 18% 28%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 209 30% 95%;   /* #F0F4F8 */
+    --secondary-foreground: 209 23% 40%;  /* #486581 */
  
-    --muted: 217 20% 20%;
-    --muted-foreground: 0 0% 85%;
+    --muted: 209 30% 95%;       /* #F0F4F8 */
+    --muted-foreground: 209 14% 60%;  /* #829AB1 */
  
-    --accent: 39 44% 55%;
-    --accent-foreground: 217 20% 24%;
+    --accent: 39 69% 48%;       /* #D5A021 */
+    --accent-foreground: 0 0% 100%;  /* #FFFFFF */
  
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;   /* #EF4444 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
  
-    --border: 39 44% 55%;
-    --input: 217 18% 28%;
-    --ring: 39 44% 55%;
+    --border: 220 13% 91%;      /* #E5E7EB */
+    --input: 217 13% 84%;       /* #D1D5DB */
+    --ring: 217 64% 33%;        /* #1E4D8C */
   }
 }
 
@@ -115,11 +117,11 @@
 
 /* Custom group styles */
 .content-group {
-  @apply p-4 rounded-lg border border-accent-light/40 bg-primary-dark mb-4;
+  @apply p-4 rounded-lg border border-border bg-card mb-4;
 }
 
 .content-group-title {
-  @apply text-base font-medium mb-3 text-accent;
+  @apply text-base font-medium mb-3 text-foreground;
 }
 
 /* Custom layout helpers */
@@ -145,11 +147,11 @@
 }
 
 .cc-card {
-  @apply bg-primary-dark rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-accent/30;
+  @apply bg-card rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-border;
 }
 
 .cc-gradient-bg {
-  @apply bg-gradient-to-r from-primary-dark to-primary;
+  @apply bg-gradient-to-r from-primary-light to-primary;
 }
 
 .cc-check-item {
