@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import NCForm from '@/components/non-conformance/NCForm';
 
 const NonConformanceFormPage: React.FC = () => {
@@ -9,14 +7,18 @@ const NonConformanceFormPage: React.FC = () => {
   const navigate = useNavigate();
   
   return (
-    <SidebarLayout>
-      <div className="p-6">
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold text-gray-800">
+        {id ? 'Edit Non-Conformance' : 'New Non-Conformance'}
+      </h1>
+      
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
         <NCForm 
           id={id} 
           onClose={() => navigate('/non-conformance')}
         />
       </div>
-    </SidebarLayout>
+    </div>
   );
 };
 
