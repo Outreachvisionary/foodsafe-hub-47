@@ -74,10 +74,9 @@ const config: Config = {
       },
     },
   },
-  // Enable arbitrary values for certain utilities
+  // Enable animation and remove non-existent plugin
   plugins: [
     require('tailwindcss-animate'),
-    // Remove the custom-colors plugin that doesn't exist
   ],
 } satisfies Config;
 
