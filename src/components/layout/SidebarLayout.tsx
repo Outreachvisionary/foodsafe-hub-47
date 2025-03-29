@@ -1,4 +1,3 @@
-
 // src/components/layout/SidebarLayout.tsx
 
 import React, { useState } from 'react';
@@ -18,14 +17,17 @@ interface SidebarLink {
   icon: React.ElementType;
   color?: string;
 }
-
 const SidebarLayout = () => {
-  const { t } = useTranslation();
+  const {
+    t
+  } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const { user, signOut } = useUser();
+  const {
+    user,
+    signOut
+  } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -34,90 +36,73 @@ const SidebarLayout = () => {
       console.error('Error signing out:', error);
     }
   };
-  
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
-  
-  const sidebarLinks: SidebarLink[] = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      color: 'text-primary'
-    },
-    {
-      name: 'Documents',
-      href: '/documents',
-      icon: FileText,
-      color: 'text-primary'
-    },
-    {
-      name: 'Standards',
-      href: '/standards',
-      icon: ClipboardCheck,
-      color: 'text-primary'
-    },
-    {
-      name: 'Organizations',
-      href: '/organizations',
-      icon: Building,
-      color: 'text-primary'
-    },
-    {
-      name: 'Facilities',
-      href: '/facilities',
-      icon: Building2,
-      color: 'text-primary'
-    },
-    {
-      name: 'Audits',
-      href: '/audits',
-      icon: HardDrive,
-      color: 'text-primary'
-    },
-    {
-      name: 'Non-Conformance',
-      href: '/non-conformance',
-      icon: AlertTriangle,
-      color: 'text-primary'
-    },
-    {
-      name: 'CAPA',
-      href: '/capa',
-      icon: RefreshCw,
-      color: 'text-primary'
-    },
-    {
-      name: 'Suppliers',
-      href: '/suppliers',
-      icon: Truck,
-      color: 'text-primary'
-    },
-    {
-      name: 'Training',
-      href: '/training',
-      icon: GraduationCap,
-      color: 'text-primary'
-    },
-    {
-      name: 'HACCP',
-      href: '/haccp',
-      icon: Beaker,
-      color: 'text-primary'
-    },
-    {
-      name: 'Traceability',
-      href: '/traceability',
-      icon: Activity,
-      color: 'text-primary'
-    }
-  ];
-  
+  const sidebarLinks: SidebarLink[] = [{
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    color: 'text-primary'
+  }, {
+    name: 'Documents',
+    href: '/documents',
+    icon: FileText,
+    color: 'text-primary'
+  }, {
+    name: 'Standards',
+    href: '/standards',
+    icon: ClipboardCheck,
+    color: 'text-primary'
+  }, {
+    name: 'Organizations',
+    href: '/organizations',
+    icon: Building,
+    color: 'text-primary'
+  }, {
+    name: 'Facilities',
+    href: '/facilities',
+    icon: Building2,
+    color: 'text-primary'
+  }, {
+    name: 'Audits',
+    href: '/audits',
+    icon: HardDrive,
+    color: 'text-primary'
+  }, {
+    name: 'Non-Conformance',
+    href: '/non-conformance',
+    icon: AlertTriangle,
+    color: 'text-primary'
+  }, {
+    name: 'CAPA',
+    href: '/capa',
+    icon: RefreshCw,
+    color: 'text-primary'
+  }, {
+    name: 'Suppliers',
+    href: '/suppliers',
+    icon: Truck,
+    color: 'text-primary'
+  }, {
+    name: 'Training',
+    href: '/training',
+    icon: GraduationCap,
+    color: 'text-primary'
+  }, {
+    name: 'HACCP',
+    href: '/haccp',
+    icon: Beaker,
+    color: 'text-primary'
+  }, {
+    name: 'Traceability',
+    href: '/traceability',
+    icon: Activity,
+    color: 'text-primary'
+  }];
   const isActiveLink = (href: string) => {
     return location.pathname === href || href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href);
   };
-  
   return <div className="flex h-screen">
       {/* Light theme sidebar */}
       <div className={`bg-white border-r border-border h-screen flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
@@ -162,7 +147,7 @@ const SidebarLayout = () => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white text-charcoal border border-border">
+            <DropdownMenuContent align="end" className="w-56 bg-gold text-charcoal border border-border">
               <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer hover:bg-secondary">
@@ -211,5 +196,4 @@ const SidebarLayout = () => {
       </div>
     </div>;
 };
-
 export default SidebarLayout;
