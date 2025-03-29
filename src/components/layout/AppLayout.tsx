@@ -1,4 +1,3 @@
-
 // src/components/layout/AppLayout.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,8 +33,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       <div className="flex flex-col">
         <div className="flex items-start justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-            {subtitle && <p className="text-secondary-foreground mt-1">{subtitle}</p>}
+            <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
+            {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
           </div>
           {showBackButton && (
             <Button variant="outline" onClick={handleBack}>
@@ -44,7 +43,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
           )}
         </div>
       </div>
-      <div className="bg-white border border-border rounded-lg shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
         {children}
       </div>
     </div>
