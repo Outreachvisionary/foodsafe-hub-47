@@ -1,14 +1,12 @@
+// src/App.tsx
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import SidebarLayout from './components/layout/SidebarLayout';
-import { Outlet } from 'react-router-dom';
+import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
 
-// Import all your page components
+// Main pages
 import Index from './pages/Index';
-import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import HaccpModule from './pages/HaccpModule';
@@ -20,25 +18,21 @@ import CAPA from './pages/CAPA';
 import CAPADetailsPage from './pages/CAPADetails';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
+import StandardsPage from './pages/StandardsPage';
+import NotFound from './pages/NotFound';
+import Auth from './pages/Auth';
+import Solutions from './pages/Solutions';
+import Products from './pages/Products';
+import Organizations from './pages/Organizations';
+
+// Non-Conformance Module
 import NonConformanceModule from './pages/NonConformance';
 import NonConformanceFormPage from './pages/NonConformanceForm';
+
+// Organization & Facility Management
 import OrganizationManagement from './pages/OrganizationManagement';
-import Organizations from './pages/Organizations';
 import FacilitiesList from './pages/FacilitiesList';
 import FacilityManagement from './pages/FacilityManagement';
-import StandardsPage from './pages/StandardsPage';
-import Products from './pages/Products';
-import Solutions from './pages/Solutions';
-import NotFound from './pages/NotFound';
-
-// Create a layout route component
-const ProtectedSidebarLayout = () => (
-  <ProtectedRoute>
-    <SidebarLayout>
-      <Outlet />
-    </SidebarLayout>
-  </ProtectedRoute>
-);
 
 const App = () => {
   return (
@@ -51,11 +45,11 @@ const App = () => {
         <Route path="/login" element={<Auth />} />
         <Route path="/register" element={<Auth />} />
         <Route path="/demo" element={<Auth />} />
+        
+        {/* Public product/marketing pages */}
         <Route path="/standards" element={<StandardsPage />} />
         <Route path="/standards/:standardId" element={<StandardsPage />} />
         <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
-        
-        {/* Platform and Industry routes */}
         <Route path="/platform/:moduleType" element={<Products />} />
         <Route path="/platform" element={<Products />} />
         <Route path="/industries/:industryType" element={<Solutions />} />
@@ -65,14 +59,16 @@ const App = () => {
         <Route path="/products/:productType" element={<Products />} />
         <Route path="/products" element={<Products />} />
         
-        {/* Protected routes with sidebar layout */}
+        {/* Protected routes with SidebarLayout */}
         <Route element={<ProtectedSidebarLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents/*" element={<Documents />} />
           <Route path="/haccp" element={<HaccpModule />} />
           <Route path="/training" element={<TrainingModule />} />
           <Route path="/internal-audits" element={<InternalAudits />} />
+          <Route path="/audits" element={<InternalAudits />} /> 
           <Route path="/supplier-management" element={<SupplierManagement />} />
+          <Route path="/suppliers" element={<SupplierManagement />} /> 
           <Route path="/traceability" element={<Traceability />} />
           <Route path="/capa" element={<CAPA />} />
           <Route path="/capa/:id" element={<CAPADetailsPage />} />
@@ -91,17 +87,12 @@ const App = () => {
           <Route path="/facilities" element={<FacilitiesList />} />
           <Route path="/facilities/:id" element={<FacilityManagement />} />
           <Route path="/facilities/new" element={<FacilityManagement />} />
-          {/* Add any other routes that should have the sidebar */}
         </Route>
         
-        {/* Resource Routes */}
+        {/* Misc routes */}
         <Route path="/resources/:resourceType" element={<NotFound />} />
         <Route path="/resources" element={<NotFound />} />
-        
-        {/* About Route */}
         <Route path="/about" element={<NotFound />} />
-        
-        {/* Integration Routes */}
         <Route path="/integrations/:integrationType" element={<NotFound />} />
         <Route path="/integrations" element={<NotFound />} />
         

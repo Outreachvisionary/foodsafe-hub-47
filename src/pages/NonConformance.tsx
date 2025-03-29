@@ -1,17 +1,16 @@
-
+// src/pages/NonConformance.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
-import AppLayout from '@/components/layout/AppLayout';
+// Remove AppLayout import
 
 const NonConformanceModule = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // State to track if we're viewing details or list
   const [viewingDetails, setViewingDetails] = useState(!!id);
   
   const handleCreateNew = () => {
@@ -24,11 +23,14 @@ const NonConformanceModule = () => {
   };
   
   return (
-    <AppLayout 
-      title="Non-Conformance Management" 
-      subtitle="Track, manage, and resolve product and process non-conformances"
-    >
-      <div className="flex justify-between items-center mb-6">
+    // Remove AppLayout wrapper - this is the key change
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-800">Non-Conformance Management</h1>
+        <p className="text-gray-600 mt-1">Track, manage, and resolve product and process non-conformances</p>
+      </div>
+
+      <div className="flex justify-between items-center mb-4">
         <div>
           {viewingDetails && (
             <Button 
@@ -49,12 +51,14 @@ const NonConformanceModule = () => {
         </Button>
       </div>
       
-      {id && viewingDetails ? (
-        <NCDetails id={id} />
-      ) : (
-        <NCList onSelectItem={handleSelectItem} />
-      )}
-    </AppLayout>
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        {id && viewingDetails ? (
+          <NCDetails id={id} />
+        ) : (
+          <NCList onSelectItem={handleSelectItem} />
+        )}
+      </div>
+    </div>
   );
 };
 
