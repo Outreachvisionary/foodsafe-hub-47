@@ -10,9 +10,10 @@ import { format } from 'date-fns';
 interface NCRecentItemsProps {
   items: NonConformance[];
   limit?: number;
+  onViewDetails?: (id: string) => void;
 }
 
-const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5 }) => {
+const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5, onViewDetails }) => {
   const navigate = useNavigate();
   const displayItems = items.slice(0, limit);
   
@@ -49,6 +50,14 @@ const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5 }) => {
     }
   };
   
+  const handleViewDetails = (id: string) => {
+    if (onViewDetails) {
+      onViewDetails(id);
+    } else {
+      navigate(`/non-conformance/${id}`);
+    }
+  };
+  
   if (displayItems.length === 0) {
     return (
       <div className="text-center py-6">
@@ -79,7 +88,7 @@ const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5 }) => {
             size="sm" 
             variant="ghost" 
             className="self-end sm:self-center"
-            onClick={() => navigate(`/non-conformance/${item.id}`)}
+            onClick={() => handleViewDetails(item.id)}
           >
             View <ArrowRight className="ml-1 h-3 w-3" />
           </Button>
