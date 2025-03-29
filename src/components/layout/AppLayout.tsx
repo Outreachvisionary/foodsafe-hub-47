@@ -1,39 +1,52 @@
-
+// src/components/layout/AppLayout.tsx
 import React from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/layout/AppSidebar';
-import DashboardHeader from '@/components/DashboardHeader';
-import Breadcrumbs from '@/components/layout/Breadcrumbs';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface AppLayoutProps {
-  children: React.ReactNode;
-  title?: string;
+  title: string;
   subtitle?: string;
+  children: React.ReactNode;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ 
+  title, 
+  subtitle, 
   children, 
-  title = "Dashboard", 
-  subtitle = "Your food safety compliance platform with integrated workflow automation" 
+  showBackButton,
+  onBack
 }) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-cc-light">
-        <AppSidebar />
-        
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <DashboardHeader title={title} subtitle={subtitle} />
-          
-          {/* Content */}
-          <main className="flex-1 p-6">
-            <Breadcrumbs />
-            {children}
-          </main>
+    <div className="space-y-6">
+      <div className="flex flex-col">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
+            {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+          </div>
+          {showBackButton && (
+            <Button variant="outline" onClick={handleBack}>
+              Back
+            </Button>
+          )}
         </div>
       </div>
-    </SidebarProvider>
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+        {children}
+      </div>
+    </div>
   );
 };
 
