@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useUser } from '@/contexts/UserContext';
 import { checkUserPermission, getUserRoles } from '@/services/roleService';
 import { UserRole } from '@/types/role';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface PermissionContextType {
   userRoles: UserRole[];
@@ -32,11 +32,7 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
       setUserRoles(roles);
     } catch (error) {
       console.error('Error loading user roles:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load user permissions',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load user permissions');
     } finally {
       setLoadingPermissions(false);
     }
