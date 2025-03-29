@@ -338,12 +338,12 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  className="w-full" 
-                  onClick={() => navigate(`/non-conformance/${id}/edit`)}
-                >
-                  Edit
-                </Button>
+<Button 
+  className="w-full" 
+  onClick={() => navigate(`/non-conformance/edit/${id}`)}
+>
+  Edit
+</Button>
                 
                 {nonConformance.capa_id ? (
                   <Button 
