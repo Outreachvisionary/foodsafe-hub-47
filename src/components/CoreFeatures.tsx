@@ -47,7 +47,7 @@ const CoreFeatures = () => {
         }} transition={{
           duration: 0.5,
           delay: index * 0.1
-        }} className="p-6 rounded-lg shadow-md border border-cc-purple/10 hover:border-cc-purple/30 transition-all duration-300 bg-white">
+        }} className="p-6 rounded-lg shadow-md border border-cc-purple/10 hover:border-cc-purple/30 transition-all duration-300 bg-teal/90">
               <div className="w-12 h-12 bg-cc-gold/10 rounded-lg flex items-center justify-center mb-4 text-cc-gold">
                 <feature.icon className="h-6 w-6" />
               </div>
