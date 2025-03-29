@@ -60,23 +60,29 @@ export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> 
         'departments.delete': true,
       };
       
-      // Use functions.invoke instead of rpc for custom functions
-      const { data: newRole, error: createRoleError } = await supabase.functions.invoke("create-role", {
-        body: {
-          name: 'Developer',
-          description: 'Full system access for development purposes',
-          level: 'organization',
-          permissions: fullPermissions
+      try {
+        // Call the edge function to create the role
+        console.log('Creating Developer role with permissions:', fullPermissions);
+        const response = await supabase.functions.invoke("create-role", {
+          body: {
+            name: 'Developer',
+            description: 'Full system access for development purposes',
+            level: 'organization',
+            permissions: fullPermissions
+          }
+        });
+        
+        if (response.error) {
+          console.error('Failed to create developer role:', response.error);
+          throw response.error;
         }
-      });
-      
-      if (createRoleError) {
-        console.error('Failed to create developer role:', createRoleError);
-        throw createRoleError;
+        
+        console.log('Developer role created:', response.data);
+        developerRole = response.data as Role;
+      } catch (error) {
+        console.error('Error creating developer role:', error);
+        throw error;
       }
-      
-      console.log('Developer role created:', newRole);
-      developerRole = newRole as unknown as Role;
     } else {
       console.log('Using existing developer role:', existingRoles);
       developerRole = existingRoles as Role;
@@ -90,21 +96,26 @@ export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> 
     // Now assign the developer role to the user
     console.log('Assigning developer role to user:', userId, developerRole.id);
     
-    // Use functions.invoke for the assign role function
-    const { data: roleAssignmentResult, error: assignRoleError } = await supabase.functions.invoke("assign-user-role", {
-      body: {
-        userId: userId,
-        roleId: developerRole.id,
-        assignedBy: userId
+    try {
+      // Call the edge function to assign the role
+      const response = await supabase.functions.invoke("assign-user-role", {
+        body: {
+          userId: userId,
+          roleId: developerRole.id,
+          assignedBy: userId
+        }
+      });
+      
+      if (response.error) {
+        console.error('Failed to assign role to user:', response.error);
+        throw response.error;
       }
-    });
-    
-    if (assignRoleError) {
-      console.error('Failed to assign role to user:', assignRoleError);
-      throw assignRoleError;
+      
+      console.log('Role assignment result:', response.data);
+    } catch (error) {
+      console.error('Error assigning role to user:', error);
+      throw error;
     }
-    
-    console.log('Role assignment result:', roleAssignmentResult);
     
     // Also update the profile's role field for backward compatibility
     const { error: updateProfileError } = await supabase

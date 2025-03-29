@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Assign user role function called');
+    
     // Create a Supabase client with the Admin key, which bypasses RLS
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -31,7 +33,10 @@ serve(async (req) => {
       departmentId 
     } = body;
 
+    console.log('Request body:', body);
+
     if (!userId || !roleId) {
+      console.error('User ID and Role ID are required');
       return new Response(
         JSON.stringify({ error: "User ID and Role ID are required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -55,12 +60,15 @@ serve(async (req) => {
 
     // If the assignment already exists, return success
     if (existingAssignments && existingAssignments.length > 0) {
+      console.log('Role already assigned:', existingAssignments[0]);
       return new Response(
-        JSON.stringify({ success: true, message: "Role already assigned" }),
+        JSON.stringify({ success: true, message: "Role already assigned", data: existingAssignments[0] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log('Creating new role assignment for user:', userId, 'role:', roleId);
+    
     // Insert the user role assignment - using direct table access with service role key bypasses RLS
     const { data: userRole, error } = await supabaseClient
       .from('user_roles')
@@ -83,6 +91,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Role assigned successfully:', userRole);
     return new Response(
       JSON.stringify({ success: true, data: userRole }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

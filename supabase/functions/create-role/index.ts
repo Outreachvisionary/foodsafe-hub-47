@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Create role function called');
+    
     // Create a Supabase client with the Admin key, which bypasses RLS
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -24,10 +26,37 @@ serve(async (req) => {
     const body = await req.json();
     const { name, description, level, permissions } = body;
 
+    console.log('Request body:', body);
+
     if (!name) {
+      console.error('Role name is required');
       return new Response(
         JSON.stringify({ error: "Role name is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Check if the role already exists
+    const { data: existingRole, error: checkError } = await supabaseClient
+      .from('roles')
+      .select('*')
+      .eq('name', name)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking existing role:', checkError);
+      return new Response(
+        JSON.stringify({ error: checkError.message }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+
+    // If the role already exists, return it
+    if (existingRole) {
+      console.log('Role already exists, returning existing role:', existingRole);
+      return new Response(
+        JSON.stringify(existingRole),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -51,6 +80,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Role created successfully:', role);
     return new Response(
       JSON.stringify(role),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Role, UserRole } from '@/types/role';
 
@@ -32,10 +31,9 @@ export const fetchRoleById = async (id: string): Promise<Role> => {
 };
 
 export const createRole = async (role: Omit<Role, 'id'>): Promise<Role> => {
-  // Ensure required fields are provided
   const roleData = {
     name: role.name,
-    level: role.level || "organization", // Default to organization level
+    level: role.level || "organization",
     description: role.description,
     permissions: role.permissions,
     organization_id: role.organization_id
@@ -132,9 +130,8 @@ export const getUserRoles = async (userId: string): Promise<UserRole[]> => {
     throw error;
   }
   
-  // Transform the data to match the UserRole interface
   const userRoles: UserRole[] = (data as any[]).map(role => ({
-    id: role.role_id, // Using role_id as the id since we don't have a direct id field
+    id: role.role_id,
     user_id: userId,
     role_id: role.role_id,
     role_name: role.role_name,
@@ -142,7 +139,6 @@ export const getUserRoles = async (userId: string): Promise<UserRole[]> => {
     organization_id: role.organization_id,
     facility_id: role.facility_id,
     department_id: role.department_id,
-    // We don't have assigned_by and created_at in the response, so leaving them undefined
   }));
   
   return userRoles;
@@ -197,11 +193,12 @@ export const checkUserRole = async (
 };
 
 /**
- * Creates a role bypassing RLS using an RPC function
+ * Creates a role bypassing RLS using an Edge Function
  */
 export const createRoleWithRPC = async (role: Omit<Role, 'id'>): Promise<Role> => {
   try {
-    // Use the generic 'functions.invoke' method instead of 'rpc' to avoid typing issues
+    console.log('Calling create-role edge function with:', role);
+    
     const { data, error } = await supabase.functions.invoke("create-role", {
       body: {
         name: role.name,
@@ -212,20 +209,20 @@ export const createRoleWithRPC = async (role: Omit<Role, 'id'>): Promise<Role> =
     });
     
     if (error) {
-      console.error('Error creating role through RPC:', error);
+      console.error('Error creating role through edge function:', error);
       throw error;
     }
     
-    // We need to cast the result to Role since it's coming from a custom function
-    return data as unknown as Role;
+    console.log('Create role response:', data);
+    return data as Role;
   } catch (error) {
-    console.error('Exception creating role through RPC:', error);
+    console.error('Exception creating role through edge function:', error);
     throw error;
   }
 };
 
 /**
- * Assigns a role to a user bypassing RLS using an RPC function
+ * Assigns a role to a user bypassing RLS using an Edge Function
  */
 export const assignRoleToUserWithRPC = async (
   userId: string, 
@@ -236,7 +233,10 @@ export const assignRoleToUserWithRPC = async (
   departmentId?: string
 ): Promise<boolean> => {
   try {
-    // Use the generic 'functions.invoke' method instead of 'rpc'
+    console.log('Calling assign-user-role edge function with:', {
+      userId, roleId, assignedBy, organizationId, facilityId, departmentId
+    });
+    
     const { data, error } = await supabase.functions.invoke("assign-user-role", {
       body: {
         userId,
@@ -249,13 +249,14 @@ export const assignRoleToUserWithRPC = async (
     });
     
     if (error) {
-      console.error('Error assigning role to user through RPC:', error);
+      console.error('Error assigning role to user through edge function:', error);
       throw error;
     }
     
+    console.log('Assign role response:', data);
     return true;
   } catch (error) {
-    console.error('Exception assigning role to user through RPC:', error);
+    console.error('Exception assigning role to user through edge function:', error);
     throw error;
   }
 };
