@@ -1,4 +1,3 @@
-
 // src/App.tsx
 
 import React from 'react';
@@ -49,9 +48,10 @@ const App = () => {
         <Route path="/demo" element={<Auth />} />
         
         {/* Public product/marketing pages */}
-        <Route path="/standards" element={<StandardsPage />}>
-          <Route path=":standardId/:moduleId" element={<ModuleContent />} />
-        </Route>
+        <Route path="/standards" element={<StandardsPage />} />
+        <Route path="/standards/:standardId" element={<StandardsPage />} />
+        <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
+        
         <Route path="/platform/:moduleType" element={<Products />} />
         <Route path="/platform" element={<Products />} />
         <Route path="/industries/:industryType" element={<Solutions />} />
