@@ -190,7 +190,7 @@ const SidebarLayout = () => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto bg-secondary p-6">
+        <main className="flex-1 overflow-center bg-secondary p-6 py-0 px-0">
           <Outlet />
         </main>
       </div>
