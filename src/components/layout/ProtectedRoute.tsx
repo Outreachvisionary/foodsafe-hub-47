@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
-import Loading from '@/components/Loading';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,8 +20,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [user, loading]);
 
   if (loading) {
-    // Show a loading spinner while checking authentication
-    return <Loading />;
+    // Show a loading overlay while checking authentication
+    return <LoadingOverlay message="Checking authentication..." />;
   }
 
   if (!user) {

@@ -9,6 +9,7 @@ export function useAuthRedirect() {
   const { user, loading } = useUser();
 
   useEffect(() => {
+    // Only redirect if we're not loading and have a user
     if (!loading && user) {
       // Get the return URL from the query string or default to dashboard
       const params = new URLSearchParams(location.search);

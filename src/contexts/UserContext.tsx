@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
+import { Session } from '@supabase/supabase-js';
 
 interface UserContextType {
   user: UserProfile | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -33,51 +35,103 @@ const buildUserProfile = (sessionUser: any, profileData: any): UserProfile => {
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Add a safety timeout to prevent infinite loading
   useEffect(() => {
+    if (!initialCheckDone) return; // Don't start safety timeout until initial check is done
+    
     const safetyTimeout = setTimeout(() => {
       if (loading) {
         console.warn('Loading state timeout - forcing completion');
         setLoading(false);
       }
-    }, 10000); // 10 second safety timeout
+    }, 5000); // 5 second safety timeout (reduced from 10s)
     
     return () => clearTimeout(safetyTimeout);
-  }, [loading]);
+  }, [loading, initialCheckDone]);
+
+  // Fetch user profile data - extracted as a separate function to avoid duplication
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching profile data:', profileError);
+        return null;
+      }
+      
+      return profile;
+    } catch (error) {
+      console.error('Exception fetching profile:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
-    // Check for active session on mount
+    // IMPORTANT: First set up auth state listener before checking current session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        console.log('Auth state changed:', event);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          setLoading(true);
+          
+          // Use setTimeout to prevent potential Supabase callback deadlocks
+          setTimeout(async () => {
+            try {
+              const profile = await fetchUserProfile(currentSession.user.id);
+              
+              if (profile) {
+                setUser(buildUserProfile(currentSession.user, profile));
+              } else {
+                // Set minimal user data if profile fetch fails
+                setUser({
+                  id: currentSession.user.id,
+                  email: currentSession.user.email || '',
+                  // Other fields will be undefined
+                } as UserProfile);
+              }
+            } catch (error) {
+              console.error('Error in auth state change handler:', error);
+              setUser(null);
+            } finally {
+              setLoading(false);
+            }
+          }, 0);
+        } else {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Now check for active session on mount
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Checking for initial session...');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          try {
-            // Fetch user profile data
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (profileError) {
-              console.error('Error fetching profile data:', profileError);
-              // Set minimal user data if profile fetch fails
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                // Other fields will be undefined
-              } as UserProfile);
-            } else {
-              setUser(buildUserProfile(session.user, profile));
-            }
-          } catch (profileError) {
-            console.error('Exception fetching profile:', profileError);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          const profile = await fetchUserProfile(currentSession.user.id);
+          
+          if (profile) {
+            setUser(buildUserProfile(currentSession.user, profile));
+          } else {
+            // Set minimal user data if profile fetch fails
             setUser({
-              id: session.user.id,
-              email: session.user.email || '',
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              // Other fields will be undefined
             } as UserProfile);
           }
         } else {
@@ -88,52 +142,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       } finally {
         setLoading(false);
+        setInitialCheckDone(true);
       }
     };
 
     getInitialSession();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        try {
-          if (session?.user) {
-            try {
-              // Fetch user profile data
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (profileError) {
-                console.error('Error fetching profile data during auth change:', profileError);
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  // Other fields will be undefined
-                } as UserProfile);
-              } else {
-                setUser(buildUserProfile(session.user, profile));
-              }
-            } catch (profileError) {
-              console.error('Exception fetching profile during auth change:', profileError);
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-              } as UserProfile);
-            }
-          } else {
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Error in auth state change handler:', error);
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      }
-    );
 
     return () => {
       subscription.unsubscribe();
@@ -143,14 +156,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Attempting sign in with email:', email);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (error) {
       console.error('Error signing in:', error);
+      setLoading(false); // Important: set loading to false on error
       throw error;
-    } finally {
-      // Note: don't setLoading(false) here, as the auth state change will handle that
     }
+    // Note: we don't setLoading(false) here on success because
+    // the auth state change will handle that when it fires
   };
 
   const signOut = async () => {
@@ -160,10 +175,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error) {
       console.error('Error signing out:', error);
+      setLoading(false); // Important: set loading to false on error
       throw error;
-    } finally {
-      // Note: don't setLoading(false) here, as the auth state change will handle that
     }
+    // Note: we don't setLoading(false) here on success because
+    // the auth state change will handle that when it fires
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
@@ -193,12 +209,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Memoize the context value to prevent unnecessary rerenders
   const value = useMemo(() => ({
     user,
+    session,
     loading,
     signIn,
     signOut,
     updateProfile,
     updateUser
-  }), [user, loading]);
+  }), [user, session, loading]);
 
   return (
     <UserContext.Provider value={value}>
