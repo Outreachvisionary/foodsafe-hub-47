@@ -23,7 +23,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Organization } from '@/types/organization';
 import { Facility } from '@/types/facility';
 import { fetchOrganizations, fetchFacilities } from '@/utils/supabaseHelpers';
-import OrganizationTypeSelector, { OrganizationType } from '@/components/organizations/OrganizationTypeSelector';
 import { useForm } from 'react-hook-form';
 import { 
   Form,
@@ -113,7 +112,6 @@ const OrganizationManagement: React.FC = () => {
         logo_url: org.logo_url || null,
         status: org.status,
         created_at: org.created_at || new Date().toISOString(),
-        org_type: org.org_type || null
       }));
       
       setOrganizations(mappedOrgs);
@@ -428,7 +426,7 @@ const OrganizationManagement: React.FC = () => {
                       
                       <div>
                         <Label>Organization Type</Label>
-                        <p className="text-muted-foreground">{selectedOrganization.org_type || 'Not specified'}</p>
+                        <p className="text-muted-foreground">Not specified</p>
                       </div>
                       
                       <Separator />
