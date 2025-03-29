@@ -8,17 +8,28 @@ import { UserProvider } from './contexts/UserContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import './i18n/i18n'; // Import i18n configuration
 import { ThemeProvider } from 'next-themes';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider attribute="class" defaultTheme="light">
-        <UserProvider>
-          <LanguageProvider>
-            <App />
-          </LanguageProvider>
-        </UserProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+// Create the query client
+const queryClient = new QueryClient();
+
+// Create a function component to wrap the app
+const AppWrapper = () => {
+  return (
+    <React.StrictMode>
+      <BrowserRouter>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <QueryClientProvider client={queryClient}>
+            <UserProvider>
+              <LanguageProvider>
+                <App />
+              </LanguageProvider>
+            </UserProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')!).render(<AppWrapper />);
