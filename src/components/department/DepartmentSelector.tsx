@@ -31,21 +31,23 @@ export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
 
   useEffect(() => {
     const loadDepartments = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchDepartments(organizationId, facilityId);
-        setDepartments(data);
-      } catch (error) {
-        console.error('Failed to load departments:', error);
-      } finally {
-        setLoading(false);
-      }
+        setLoading(true);
+        try {
+            if (!organizationId && !facilityId) {
+                throw new Error('Organization ID or Facility ID must be provided');
+            }
+            const data = await fetchDepartments(organizationId, facilityId);
+            setDepartments(data);
+        } catch (error) {
+            console.error('Failed to load departments:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (organizationId || facilityId) {
-      loadDepartments();
-    }
-  }, [organizationId, facilityId]);
+    loadDepartments();
+}, [organizationId, facilityId]);
+
 
   const selectedDepartment = departments.find(dept => dept.id === value);
 
