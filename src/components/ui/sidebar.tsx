@@ -284,6 +284,14 @@ const sidebarMenuButtonVariants = cva("peer/menu-button flex w-full items-center
     size: "default"
   }
 });
+<div
+  className={cn("flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground", className)}
+  ref={ref}
+  {...props}
+>
+  {children}
+</div>
+
 const SidebarMenuButton = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button"> & {
   asChild?: boolean;
   isActive?: boolean;
