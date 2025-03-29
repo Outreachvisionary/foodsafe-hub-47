@@ -17,10 +17,10 @@ const CallToActionSection = () => {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
               Become audit-ready within weeks, not months
             </h2>
-            <p className="text-xl opacity-90">
+            <p className="text-xl opacity-90 text-white">
               Join the hundreds of food manufacturers who have transformed their compliance processes with FoodSafeSync.
             </p>
           </motion.div>

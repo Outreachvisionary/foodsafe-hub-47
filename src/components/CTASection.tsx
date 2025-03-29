@@ -17,7 +17,7 @@ const CTASection = () => {
           transition={{ duration: 0.5 }}
         >
           <motion.h2 
-            className="text-3xl md:text-4xl font-bold mb-4"
+            className="text-3xl md:text-4xl font-bold mb-4 text-white"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -72,7 +72,7 @@ const CTASection = () => {
           >
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <Shield className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">90-Day Guarantee</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">90-Day Guarantee</h3>
               <p className="text-white/80 text-sm">
                 If you don't see improved compliance in 90 days, we'll extend your subscription for free.
               </p>
@@ -80,7 +80,7 @@ const CTASection = () => {
             
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <FileText className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Free Migration</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">Free Migration</h3>
               <p className="text-white/80 text-sm">
                 Our team will help migrate your existing documentation and set up your compliance system.
               </p>
@@ -88,7 +88,7 @@ const CTASection = () => {
             
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
               <Clipboard className="h-10 w-10 text-white mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Expert Support</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">Expert Support</h3>
               <p className="text-white/80 text-sm">
                 Get unlimited access to our team of food safety consultants during your implementation.
               </p>
