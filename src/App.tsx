@@ -27,7 +27,7 @@ import ComplaintManagement from '@/pages/ComplaintManagement';
 import SupplierManagement from '@/pages/SupplierManagement';
 import TrainingModule from '@/pages/TrainingModule';
 import NonConformanceModule from '@/pages/NonConformance';
-import TraceabilityModule from '@/pages/TraceabilityModule';
+import Traceability from '@/pages/Traceability';
 import AuditsModule from '@/pages/AuditsModule';
 
 function App() {
@@ -167,7 +167,7 @@ function App() {
         <Route path="/traceability" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <TraceabilityModule />
+              <Traceability />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
