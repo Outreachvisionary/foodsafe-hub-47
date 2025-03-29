@@ -67,7 +67,6 @@ extend: {
     },
   },
 },
-
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         display: ['Archivo', 'system-ui', 'sans-serif'],
