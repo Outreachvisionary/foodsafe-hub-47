@@ -8,9 +8,13 @@ import SidebarLayout from './SidebarLayout';
 const ProtectedSidebarLayout: React.FC = () => {
   const { user, loading } = useUser();
   
-  // Show nothing while checking authentication
+  // Show loading indicator while checking authentication
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
   
   // Redirect to login if not authenticated
