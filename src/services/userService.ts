@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
 import { Role } from '@/types/role';
@@ -10,6 +9,7 @@ import { Role } from '@/types/role';
  */
 export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> => {
   try {
+    console.log('Starting developer access process for user:', userId);
     // First, check if a developer role exists
     let developerRole: Role | null = null;
     
@@ -19,7 +19,10 @@ export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> 
       .eq('name', 'Developer')
       .single();
     
+    console.log('Existing Developer role check:', existingRoles, roleQueryError);
+    
     if (roleQueryError || !existingRoles) {
+      console.log('Developer role not found, creating it');
       // Create the developer role if it doesn't exist
       const fullPermissions: Record<string, boolean> = {
         admin: true,
@@ -56,43 +59,49 @@ export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> 
         'departments.delete': true,
       };
       
+      // Use RPC call instead of direct table access to bypass RLS
       const { data: newRole, error: createRoleError } = await supabase
-        .from('roles')
-        .insert({
-          name: 'Developer',
-          description: 'Full system access for development purposes',
-          level: 'organization',
-          permissions: fullPermissions
-        })
-        .select()
-        .single();
+        .rpc('create_role', {
+          _name: 'Developer',
+          _description: 'Full system access for development purposes',
+          _level: 'organization',
+          _permissions: fullPermissions
+        });
       
-      if (createRoleError) throw createRoleError;
+      if (createRoleError) {
+        console.error('Failed to create developer role:', createRoleError);
+        throw createRoleError;
+      }
+      
+      console.log('Developer role created:', newRole);
       developerRole = newRole as Role;
     } else {
+      console.log('Using existing developer role:', existingRoles);
       developerRole = existingRoles as Role;
     }
     
-    // Now assign the developer role to the user
-    // First check if the user already has this role
-    const { data: existingUserRoles, error: userRoleQueryError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('role_id', developerRole.id);
-    
-    if (!existingUserRoles?.length) {
-      // Assign the role to the user
-      const { error: assignRoleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role_id: developerRole.id,
-          assigned_by: userId // Self-assigned
-        });
-      
-      if (assignRoleError) throw assignRoleError;
+    if (!developerRole || !developerRole.id) {
+      console.error('Failed to get or create developer role');
+      return false;
     }
+    
+    // Now assign the developer role to the user
+    console.log('Assigning developer role to user:', userId, developerRole.id);
+    
+    // Use RPC call to bypass RLS
+    const { data: roleAssignmentResult, error: assignRoleError } = await supabase
+      .rpc('assign_user_role', {
+        _user_id: userId,
+        _role_id: developerRole.id,
+        _assigned_by: userId
+      });
+    
+    if (assignRoleError) {
+      console.error('Failed to assign role to user:', assignRoleError);
+      throw assignRoleError;
+    }
+    
+    console.log('Role assignment result:', roleAssignmentResult);
     
     // Also update the profile's role field for backward compatibility
     const { error: updateProfileError } = await supabase
@@ -100,8 +109,12 @@ export const giveUserDeveloperAccess = async (userId: string): Promise<boolean> 
       .update({ role: 'Developer' })
       .eq('id', userId);
     
-    if (updateProfileError) throw updateProfileError;
+    if (updateProfileError) {
+      console.error('Failed to update user profile:', updateProfileError);
+      throw updateProfileError;
+    }
     
+    console.log('Developer access successfully granted to user:', userId);
     return true;
   } catch (error) {
     console.error('Error giving user developer access:', error);

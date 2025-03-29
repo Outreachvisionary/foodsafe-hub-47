@@ -194,3 +194,60 @@ export const checkUserRole = async (
   
   return data as boolean;
 };
+
+/**
+ * Creates a role bypassing RLS using an RPC function
+ */
+export const createRoleWithRPC = async (role: Omit<Role, 'id'>): Promise<Role> => {
+  try {
+    const { data, error } = await supabase.rpc('create_role', {
+      _name: role.name,
+      _description: role.description || '',
+      _level: role.level || 'organization',
+      _permissions: role.permissions || {}
+    });
+    
+    if (error) {
+      console.error('Error creating role through RPC:', error);
+      throw error;
+    }
+    
+    return data as Role;
+  } catch (error) {
+    console.error('Exception creating role through RPC:', error);
+    throw error;
+  }
+};
+
+/**
+ * Assigns a role to a user bypassing RLS using an RPC function
+ */
+export const assignRoleToUserWithRPC = async (
+  userId: string, 
+  roleId: string, 
+  assignedBy: string,
+  organizationId?: string, 
+  facilityId?: string, 
+  departmentId?: string
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('assign_user_role', {
+      _user_id: userId,
+      _role_id: roleId,
+      _assigned_by: assignedBy,
+      _organization_id: organizationId || null,
+      _facility_id: facilityId || null,
+      _department_id: departmentId || null
+    });
+    
+    if (error) {
+      console.error('Error assigning role to user through RPC:', error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception assigning role to user through RPC:', error);
+    throw error;
+  }
+};

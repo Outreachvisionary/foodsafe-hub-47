@@ -22,10 +22,14 @@ const AssignRoleButton: React.FC<AssignRoleButtonProps> = ({ variant = 'default'
     }
     
     setIsLoading(true);
+    toast.info('Processing developer role assignment...');
+    
     try {
+      console.log('Creating QA Technician role');
       // Create the QA Technician role (but don't assign it)
       await createQATechnicianRole();
       
+      console.log('Assigning Developer role to user:', user.id);
       // Assign Developer role to current user
       const success = await giveUserDeveloperAccess(user.id);
       
@@ -34,11 +38,11 @@ const AssignRoleButton: React.FC<AssignRoleButtonProps> = ({ variant = 'default'
         // Refresh the user's permissions
         await refreshPermissions();
       } else {
-        toast.error('Failed to assign Developer role');
+        toast.error('Failed to assign Developer role. Check console for details.');
       }
     } catch (error) {
       console.error('Error assigning role:', error);
-      toast.error('An error occurred while updating roles');
+      toast.error('An error occurred while updating roles: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }

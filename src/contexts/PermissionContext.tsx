@@ -27,8 +27,10 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
     }
 
     try {
+      console.log('Loading roles for user:', user.id);
       setLoadingPermissions(true);
       const roles = await getUserRoles(user.id);
+      console.log('Loaded user roles:', roles);
       setUserRoles(roles);
     } catch (error) {
       console.error('Error loading user roles:', error);
@@ -50,6 +52,14 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
   ): boolean => {
     if (!user || userRoles.length === 0) return false;
 
+    // Debug statement to see permissions being checked
+    console.log(`Checking permission: ${permission} for user: ${user.id}`, {
+      organizationId,
+      facilityId,
+      departmentId,
+      availableRoles: userRoles
+    });
+
     // Check if the user has admin permission at any level
     const hasAdminRole = userRoles.some(role => 
       role.permissions && role.permissions.admin === true && 
@@ -63,12 +73,15 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
       )
     );
 
-    if (hasAdminRole) return true;
+    if (hasAdminRole) {
+      console.log('User has admin role, permission granted');
+      return true;
+    }
 
     // Check for the specific permission
-    return userRoles.some(role => {
+    const hasSpecificPermission = userRoles.some(role => {
       // Match specific permission
-      const hasSpecificPermission = role.permissions && role.permissions[permission] === true;
+      const hasPermission = role.permissions && role.permissions[permission] === true;
       
       // Match the context if provided
       const matchesContext = (
@@ -78,11 +91,19 @@ export const PermissionProvider: React.FC<{ children: ReactNode }> = ({ children
         (departmentId ? role.department_id === departmentId : true)
       );
       
-      return hasSpecificPermission && matchesContext;
+      const result = hasPermission && matchesContext;
+      if (result) {
+        console.log(`Permission ${permission} granted through role: ${role.role_name}`);
+      }
+      return result;
     });
+    
+    console.log(`Permission check result for ${permission}: ${hasSpecificPermission}`);
+    return hasSpecificPermission;
   };
 
   const refreshPermissions = async () => {
+    console.log('Refreshing user permissions');
     await loadUserRoles();
   };
 
