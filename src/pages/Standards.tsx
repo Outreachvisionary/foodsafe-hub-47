@@ -415,47 +415,61 @@ const BRCGS2Content = () => (
 // Standard information wrapper component
 const StandardInformation = () => {
   const { standardId } = useParams<{ standardId: string }>();
-  const activeTab = standardId || 'sqf';
-  const validStandards = ['sqf', 'iso22000', 'fssc22000', 'haccp', 'brcgs2'];
   
+  // Default to 'sqf' if no standardId is provided
+  const activeTab = standardId || 'sqf';
+  
+  // Validate that the standardId is one of the allowed values
+  const validStandards = ['sqf', 'iso22000', 'fssc22000', 'haccp', 'brcgs2'];
   if (standardId && !validStandards.includes(standardId)) {
     return <Navigate to="/standards/sqf" replace />;
   }
 
   return (
-    // REMOVE the min-h-screen and outer div container
-    // REMOVE the DashboardHeader component
-    <div className="space-y-6">
-      {/* Add a simple heading instead of the DashboardHeader */}
-      <div>
-        <h1 className="text-2xl font-bold">Food Safety Standards</h1>
-        <p className="text-muted-foreground">
-          Comprehensive information and implementation guides for global food safety standards.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader 
+        title="Food Safety Standards" 
+        subtitle="Comprehensive information and implementation guides for global food safety standards." 
+      />
       
-      {/* Keep your tabs component but adjust margin */}
-      <Tabs defaultValue={activeTab} className="w-full animate-fade-in">
-        <TabsList className="mb-6">
-          <TabsTrigger value="sqf">SQF</TabsTrigger>
-          <TabsTrigger value="iso22000">ISO 22000</TabsTrigger>
-          <TabsTrigger value="fssc22000">FSSC 22000</TabsTrigger>
-          <TabsTrigger value="haccp">HACCP</TabsTrigger>
-          <TabsTrigger value="brcgs2">BRC GS2</TabsTrigger>
-        </TabsList>
-        
-        {/* Keep all your TabsContent sections as they are */}
-        <TabsContent value="sqf" className="space-y-4">
-          <SQFContent />
-        </TabsContent>
-        
-        {/* Rest of tabs content unchanged */}
-      </Tabs>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue={activeTab} className="w-full animate-fade-in">
+          <TabsList className="mb-8">
+            <TabsTrigger value="sqf">SQF</TabsTrigger>
+            <TabsTrigger value="iso22000">ISO 22000</TabsTrigger>
+            <TabsTrigger value="fssc22000">FSSC 22000</TabsTrigger>
+            <TabsTrigger value="haccp">HACCP</TabsTrigger>
+            <TabsTrigger value="brcgs2">BRC GS2</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="sqf" className="space-y-4">
+            <SQFContent />
+          </TabsContent>
+          
+          <TabsContent value="iso22000" className="space-y-4">
+            <ISO22000Content />
+          </TabsContent>
+          
+          <TabsContent value="fssc22000" className="space-y-4">
+            <FSSC22000Content />
+          </TabsContent>
+          
+          <TabsContent value="haccp" className="space-y-4">
+            <HACCPContent />
+          </TabsContent>
+          
+          <TabsContent value="brcgs2" className="space-y-4">
+            <BRCGS2Content />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 };
+
 // Main Standards page component
 const Standards = () => {
+  // If we're at the root /standards path, redirect to SQF by default
   const { standardId } = useParams<{ standardId: string }>();
   
   if (!standardId) {
@@ -464,4 +478,5 @@ const Standards = () => {
   
   return <StandardInformation />;
 };
+
 export default Standards;
