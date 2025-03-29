@@ -1,5 +1,7 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Loading from '@/components/Loading';
 
 const Organizations: React.FC = () => {
   const navigate = useNavigate();
@@ -9,8 +11,6 @@ const Organizations: React.FC = () => {
     navigate('/organization');
   }, [navigate]);
 
-  // Keep a simple loading indicator without full-screen background
-  // This prevents layout conflicts when nested in the router's SidebarLayout
   return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center">

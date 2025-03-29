@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -15,6 +16,14 @@ import ModuleContent from '@/components/standards/ModuleContent';
 import SystemElements from '@/components/standards/modules/sqf/SystemElements';
 import GMP from '@/components/standards/modules/sqf/GMP';
 import FoodSafetyPlans from '@/components/standards/modules/sqf/FoodSafetyPlans';
+import CAPA from '@/pages/CAPA';
+import Documents from '@/pages/Documents';
+import Organizations from '@/pages/Organizations';
+import FacilitiesList from '@/pages/FacilitiesList';
+import FacilityManagement from '@/pages/FacilityManagement';
+import HaccpModule from '@/pages/HaccpModule';
+import DepartmentManagement from '@/pages/DepartmentManagement';
+import ComplaintManagement from '@/pages/ComplaintManagement';
 
 function App() {
   return (
@@ -62,30 +71,42 @@ function App() {
         <Route path="/documents" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Document Management</h1>
-                <p>Document management module is under development.</p>
-              </div>
+              <Documents />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/organization" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <DepartmentManagement />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/organizations" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Organizations</h1>
-                <p>Organizations module is under development.</p>
-              </div>
+              <Organizations />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/facilities" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Facilities Management</h1>
-                <p>Facilities management module is under development.</p>
-              </div>
+              <FacilitiesList />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/facilities/:id" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <FacilityManagement />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/facilities/new" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <FacilityManagement />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -112,10 +133,7 @@ function App() {
         <Route path="/capa" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">CAPA</h1>
-                <p>Corrective and Preventive Actions module is under development.</p>
-              </div>
+              <CAPA />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -142,10 +160,7 @@ function App() {
         <Route path="/haccp" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">HACCP</h1>
-                <p>HACCP module is under development.</p>
-              </div>
+              <HaccpModule />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -182,10 +197,7 @@ function App() {
         <Route path="/departments" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
-              <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Departments</h1>
-                <p>Department management module is under development.</p>
-              </div>
+              <DepartmentManagement />
             </Suspense>
           </ProtectedSidebarLayout>
         } />
@@ -200,6 +212,13 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/complaints" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <ComplaintManagement />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
       </Routes>
       <Toaster />
     </>
