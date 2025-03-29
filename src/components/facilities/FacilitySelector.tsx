@@ -12,13 +12,15 @@ interface FacilitySelectorProps {
   value?: string | null;
   onChange?: (facilityId: string) => void;
   disabled?: boolean;
+  className?: string; // Added className prop
 }
 
 const FacilitySelector: React.FC<FacilitySelectorProps> = ({
   organizationId,
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  className
 }) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-10">
+      <div className={`flex justify-center items-center h-10 ${className}`}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     );
@@ -67,7 +69,7 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
 
   if (facilities.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground py-2">
+      <div className={`text-sm text-muted-foreground py-2 ${className}`}>
         No facilities available
       </div>
     );
@@ -79,7 +81,7 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
       onValueChange={handleFacilityChange}
       disabled={disabled || facilities.length === 0}
     >
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={className}>
         <SelectValue placeholder="Select Facility" />
       </SelectTrigger>
       <SelectContent>

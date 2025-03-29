@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,21 @@ import RoleSelector from '@/components/role/RoleSelector';
 import DepartmentSelector from '@/components/department/DepartmentSelector';
 import { PermissionProvider } from '@/contexts/PermissionContext';
 import PermissionGuard from '@/components/auth/PermissionGuard';
+
+interface DbProfile {
+  id: string;
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+  department?: string;
+  department_id?: string;
+  organization_id?: string;
+  assigned_facility_ids?: string[];
+  preferred_language?: string;
+  status?: string;
+  email?: string; // Added email field
+  metadata?: Record<string, any>; // Added metadata field
+}
 
 interface ExtendedUserProfile extends UserProfile {
   email: string;
@@ -40,7 +56,7 @@ const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      const formattedUsers: ExtendedUserProfile[] = data.map(user => ({
+      const formattedUsers: ExtendedUserProfile[] = (data as DbProfile[]).map(user => ({
         id: user.id,
         email: user.email || '',
         full_name: user.full_name || '',

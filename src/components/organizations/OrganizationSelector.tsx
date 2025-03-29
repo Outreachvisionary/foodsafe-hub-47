@@ -8,9 +8,10 @@ import { Organization } from '@/types/organization';
 interface OrganizationSelectorProps {
   value?: string;
   onChange?: (value: string) => void;
+  className?: string; // Added className prop
 }
 
-const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ value, onChange }) => {
+const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ value, onChange, className }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<string | undefined>(value);
@@ -64,7 +65,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ value, onCh
   if (loading) {
     return (
       <Select disabled>
-        <SelectTrigger>
+        <SelectTrigger className={className}>
           <SelectValue placeholder="Loading organizations..." />
         </SelectTrigger>
       </Select>
@@ -73,7 +74,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ value, onCh
 
   return (
     <Select value={selectedOrg} onValueChange={handleOrganizationChange}>
-      <SelectTrigger>
+      <SelectTrigger className={className}>
         <SelectValue placeholder="Select an organization" />
       </SelectTrigger>
       <SelectContent>
