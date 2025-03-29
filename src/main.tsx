@@ -8,6 +8,7 @@ import { UserProvider } from './contexts/UserContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './i18n/i18n'; // Import i18n configuration
+import { ThemeProvider } from 'next-themes';
 
 // Create a client for React Query with optimized settings
 const queryClient = new QueryClient({
@@ -23,11 +24,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <UserProvider>
-          <LanguageProvider>
-            <App />
-          </LanguageProvider>
-        </UserProvider>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <UserProvider>
+            <LanguageProvider>
+              <App />
+            </LanguageProvider>
+          </UserProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>,

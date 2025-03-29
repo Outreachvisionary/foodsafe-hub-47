@@ -3,7 +3,8 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
 
 // Main pages
@@ -40,7 +41,10 @@ import FacilityManagement from './pages/FacilityManagement';
 const App = () => {
   return (
     <div className="app">
-      <Toaster />
+      {/* Include both toasters to ensure compatibility with both implementations */}
+      <ShadcnToaster />
+      <SonnerToaster position="top-right" />
+      
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Index />} />
