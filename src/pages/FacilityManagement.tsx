@@ -236,21 +236,21 @@ const FacilityManagement: React.FC = () => {
     return (
       <div className="space-y-4">
         <div>
-          <Label>Description</Label>
+          <span className="font-medium text-sm">Description</span>
           <p className="text-sm text-muted-foreground mt-1">{facility?.description || 'No description provided'}</p>
         </div>
         
         <Separator />
         
         <div>
-          <Label>Facility Details</Label>
+          <span className="font-medium text-sm">Facility Details</span>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             <div>
-              <Label className="text-xs">Address</Label>
+              <span className="text-xs font-medium">Address</span>
               <p className="text-sm text-muted-foreground">{facility?.address || 'Not specified'}</p>
             </div>
             <div>
-              <Label className="text-xs">Type</Label>
+              <span className="text-xs font-medium">Type</span>
               <p className="text-sm text-muted-foreground">{facility?.facility_type || 'Not specified'}</p>
             </div>
           </div>
