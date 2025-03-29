@@ -26,14 +26,14 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#1E4D8C', // Updated to more professional blue
+          DEFAULT: '#1E4D8C', // Professional blue
           dark: '#15325E',    // Darker shade
           light: '#4799FF',   // Lighter shade
-          foreground: 'hsl(var(--primary-foreground))',
+          foreground: '#FFFFFF', // White text for primary backgrounds
         },
         secondary: {
           DEFAULT: '#F0F4F8',
-          foreground: 'hsl(var(--secondary-foreground))',
+          foreground: '#222222', // Darkened for better contrast on light backgrounds
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -41,13 +41,13 @@ const config: Config = {
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          foreground: '#555555', // Darkened for better contrast
         },
         accent: {
           DEFAULT: '#D5A021',  // Refined gold
           light: '#F3CF71',    // Lighter gold
           dark: '#B2851C',     // Darker gold
-          foreground: 'hsl(var(--accent-foreground))',
+          foreground: '#222222', // Dark text on accent backgrounds
         },
       },
       fontFamily: {
