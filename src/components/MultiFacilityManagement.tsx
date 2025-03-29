@@ -25,7 +25,7 @@ const MultiFacilityManagement = () => {
         }} transition={{
           duration: 0.6
         }} className="lg:w-1/2">
-            <div className="bg-cc-slate-200 p-8 rounded-lg shadow-md text-center">
+            <div className="bg-cc-slate200 p-8 rounded-lg shadow-md text-center">
               {/* Facility Map Visualization */}
               <div className="w-full h-80 relative">
                 <div className="absolute top-1/4 left-1/4 flex flex-col items-center">
