@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Menu, X } from 'lucide-react';
+
 const MainNavigation = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -19,9 +22,11 @@ const MainNavigation = () => {
   useEffect(() => {
     setIsNavOpen(false);
   }, [location.pathname]);
+
   const isActiveLink = (path: string) => {
     return location.pathname === path || path !== '/' && location.pathname.startsWith(path);
   };
+
   return <nav className="">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-cc-teal">
         <div className="flex justify-between items-center">
@@ -32,14 +37,14 @@ const MainNavigation = () => {
           </div>
           
           {/* Desktop Nav */}
-          <div className="hidden md:flex md:items-center md:space-x-8 hover:bg-cc-gold/90">
+          <div className="hidden md:flex md:items-center md:space-x-8">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={`font-display text-cc-light hover:text-cc-gold -ml-4 ${isActiveLink('/platform') ? 'cc-underline font-medium' : ''}`}>
                   Platform <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-tagline">
+              <DropdownMenuContent>
                 <DropdownMenuItem>
                   <Link to="/platform/audit-management" className="w-full font-sans">Audit Management</Link>
                 </DropdownMenuItem>
@@ -61,7 +66,7 @@ const MainNavigation = () => {
                   Industries <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-tagline">
+              <DropdownMenuContent>
                 <DropdownMenuItem>
                   <Link to="/industries/processed-foods" className="w-full font-sans">Processed Foods</Link>
                 </DropdownMenuItem>
@@ -83,7 +88,7 @@ const MainNavigation = () => {
                   Resources <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-tagline">
+              <DropdownMenuContent>
                 <DropdownMenuItem>
                   <Link to="/resources/guides" className="w-full font-sans">Guides</Link>
                 </DropdownMenuItem>
@@ -105,7 +110,7 @@ const MainNavigation = () => {
                   Integrations <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-cc-tagline">
+              <DropdownMenuContent>
                 <DropdownMenuItem>
                   <Link to="/integrations/erp" className="w-full font-sans">ERP Systems</Link>
                 </DropdownMenuItem>
@@ -229,4 +234,5 @@ const MainNavigation = () => {
         </div>}
     </nav>;
 };
+
 export default MainNavigation;
