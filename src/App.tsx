@@ -19,6 +19,8 @@ import FoodSafetyPlans from '@/components/standards/modules/sqf/FoodSafetyPlans'
 import CAPA from '@/pages/CAPA';
 import Documents from '@/pages/Documents';
 import Organizations from '@/pages/Organizations';
+import OrganizationsList from '@/pages/OrganizationsList';
+import OrganizationManagement from '@/pages/OrganizationManagement';
 import FacilitiesList from '@/pages/FacilitiesList';
 import FacilityManagement from '@/pages/FacilityManagement';
 import HaccpModule from '@/pages/HaccpModule';
@@ -80,13 +82,8 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
-        <Route path="/organization" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <DepartmentManagement />
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
+        
+        {/* Organization routes - updated to fix the routing issues */}
         <Route path="/organizations" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -94,6 +91,21 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
+        <Route path="/organizations/management" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <OrganizationsList />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/organization" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <OrganizationManagement />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        
         <Route path="/facilities" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>

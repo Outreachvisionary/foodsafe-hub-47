@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,13 +28,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import { usePermission } from '@/contexts/PermissionContext';
 import { Department } from '@/types/department';
 import { fetchDepartments, deleteDepartment } from '@/services/departmentService';
 import { BuildingIcon, Pencil, PlusCircle, Trash2 } from 'lucide-react';
 import DepartmentForm from '@/components/department/DepartmentForm';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
 
 const DepartmentManagement: React.FC = () => {
   const { user } = useUser();
@@ -45,25 +48,33 @@ const DepartmentManagement: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>(user?.organization_id || '');
   
   useEffect(() => {
     if (user?.organization_id) {
-      loadDepartments(user.organization_id);
+      setSelectedOrganizationId(user.organization_id);
     }
   }, [user]);
 
+  useEffect(() => {
+    if (selectedOrganizationId) {
+      loadDepartments(selectedOrganizationId);
+    } else {
+      setDepartments([]);
+      setLoading(false);
+    }
+  }, [selectedOrganizationId]);
+
   const loadDepartments = async (organizationId: string) => {
+    if (!organizationId) return;
+    
     setLoading(true);
     try {
       const data = await fetchDepartments(organizationId);
       setDepartments(data);
     } catch (error) {
       console.error('Error loading departments:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load departments',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load departments');
     } finally {
       setLoading(false);
     }
@@ -71,8 +82,8 @@ const DepartmentManagement: React.FC = () => {
 
   const handleCreateSuccess = (department: Department) => {
     setCreateDialogOpen(false);
-    if (user?.organization_id) {
-      loadDepartments(user.organization_id);
+    if (selectedOrganizationId) {
+      loadDepartments(selectedOrganizationId);
     }
   };
 
@@ -84,8 +95,8 @@ const DepartmentManagement: React.FC = () => {
   const handleEditSuccess = (department: Department) => {
     setEditDialogOpen(false);
     setSelectedDepartment(null);
-    if (user?.organization_id) {
-      loadDepartments(user.organization_id);
+    if (selectedOrganizationId) {
+      loadDepartments(selectedOrganizationId);
     }
   };
 
@@ -99,17 +110,10 @@ const DepartmentManagement: React.FC = () => {
       try {
         await deleteDepartment(departmentToDelete.id);
         setDepartments(departments.filter(d => d.id !== departmentToDelete.id));
-        toast({
-          title: 'Department deleted',
-          description: 'Department has been deleted successfully',
-        });
+        toast.success('Department has been deleted successfully');
       } catch (error) {
         console.error('Error deleting department:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to delete department',
-          variant: 'destructive',
-        });
+        toast.error('Failed to delete department');
       } finally {
         setDeleteDialogOpen(false);
         setDepartmentToDelete(null);
@@ -118,14 +122,14 @@ const DepartmentManagement: React.FC = () => {
   };
 
   // Check if user has permission to manage departments
-  const canManageDepartments = hasPermission('departments:manage', user?.organization_id);
+  const canManageDepartments = hasPermission('departments:manage', selectedOrganizationId);
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Department Management</h1>
         
-        {canManageDepartments && user?.organization_id && (
+        {canManageDepartments && (
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -141,7 +145,7 @@ const DepartmentManagement: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <DepartmentForm 
-                organizationId={user.organization_id}
+                organizationId={selectedOrganizationId}
                 onSave={handleCreateSuccess}
                 onCancel={() => setCreateDialogOpen(false)}
               />
@@ -149,6 +153,21 @@ const DepartmentManagement: React.FC = () => {
           </Dialog>
         )}
       </div>
+      
+      {/* Organization Selector */}
+      {!user?.organization_id && (
+        <div className="mb-6">
+          <label htmlFor="organization-select" className="block text-sm font-medium text-foreground mb-2">
+            Select Organization
+          </label>
+          <div className="max-w-md">
+            <OrganizationSelector
+              value={selectedOrganizationId}
+              onChange={setSelectedOrganizationId}
+            />
+          </div>
+        </div>
+      )}
       
       <Card>
         <CardHeader>
@@ -160,8 +179,13 @@ const DepartmentManagement: React.FC = () => {
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+              <LoadingSpinner className="mx-auto" />
               <p className="mt-2 text-sm text-muted-foreground">Loading departments...</p>
+            </div>
+          ) : !selectedOrganizationId ? (
+            <div className="text-center py-12">
+              <BuildingIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+              <p className="mt-2 text-muted-foreground">Please select an organization to view departments.</p>
             </div>
           ) : departments.length === 0 ? (
             <div className="text-center py-12">

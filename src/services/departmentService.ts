@@ -6,6 +6,11 @@ export const fetchDepartments = async (
   organizationId?: string,
   facilityId?: string
 ): Promise<Department[]> => {
+  if (!organizationId && !facilityId) {
+    console.warn('fetchDepartments called without organizationId or facilityId');
+    return [];
+  }
+
   let query = supabase
     .from('departments')
     .select('*')

@@ -1,19 +1,19 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Loading from '@/components/Loading';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 
 const Organizations: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the organization management page
-    navigate('/organization');
+    // Redirect to the proper organization management page
+    navigate('/organizations/management');
   }, [navigate]);
 
   return (
     <div className="flex items-center justify-center h-full">
-      <Loading message="Redirecting to Organizations..." />
+      <LoadingOverlay message="Redirecting to Organizations..." />
     </div>
   );
 };

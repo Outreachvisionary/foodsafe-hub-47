@@ -8,6 +8,7 @@ import FacilitySelector from '@/components/facilities/FacilitySelector';
 import { createDepartment, updateDepartment } from '@/services/departmentService';
 import { Department } from '@/types/department';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface DepartmentFormProps {
   department?: Department;
@@ -44,10 +45,6 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
       newErrors.organizationId = 'Organization is required';
     }
     
-    if (!facilityId) {
-      newErrors.facilityId = 'Facility is required';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -55,14 +52,25 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    
     setIsSubmitting(true);
     try {
         let savedDepartment;
         if (department?.id) {
-            savedDepartment = await updateDepartment(department.id, { name, description, organization_id: organizationId, facility_id: facilityId });
+            savedDepartment = await updateDepartment(department.id, { 
+                name, 
+                description, 
+                organization_id: organizationId, 
+                facility_id: facilityId || null 
+            });
             toast.success('Department updated successfully');
         } else {
-            savedDepartment = await createDepartment({ name, description, organization_id: organizationId, facility_id: facilityId });
+            savedDepartment = await createDepartment({ 
+                name, 
+                description, 
+                organization_id: organizationId, 
+                facility_id: facilityId || null 
+            });
             toast.success('Department created successfully');
         }
         if (onSave) onSave(savedDepartment);
@@ -73,8 +81,22 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
     } finally {
         setIsSubmitting(false);
     }
-};
+  };
 
+  if (!organizationId && !initialOrgId && !department?.organization_id) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-muted-foreground mb-4">
+          Please select an organization first before creating a department.
+        </p>
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel}>
+            Go Back
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,7 +116,7 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
       
       <div>
         <label htmlFor="facility" className="block text-sm font-medium text-foreground mb-1">
-          Facility
+          Facility (Optional)
         </label>
         <FacilitySelector
           organizationId={organizationId}
@@ -141,7 +163,14 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : department?.id ? 'Update Department' : 'Create Department'}
+          {isSubmitting ? (
+            <>
+              <LoadingSpinner size="sm" className="mr-2" /> 
+              {department?.id ? 'Updating...' : 'Creating...'}
+            </>
+          ) : (
+            department?.id ? 'Update Department' : 'Create Department'
+          )}
         </Button>
       </div>
     </form>
