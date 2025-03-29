@@ -79,11 +79,12 @@ const App = () => {
           <Route path="/reports" element={<Reports />} />
           
           {/* Non-Conformance Module Routes - Updated */}
-          <Route path="/non-conformance" element={<NonConformanceModule />} />
-          <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
-          <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
-          <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
-          <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+{/* Non-Conformance Module Routes - Fixed Order */}
+<Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
+<Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
+<Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+<Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+<Route path="/non-conformance" element={<NonConformanceModule />} />
           
           {/* Organization & Facility Management Routes */}
           <Route path="/organization" element={<OrganizationManagement />} />
