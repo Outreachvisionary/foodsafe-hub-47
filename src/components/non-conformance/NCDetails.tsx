@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +166,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
           <NCQuickActions 
             id={id}
             status={nonConformance?.status || ''}
-            onEdit={() => navigate(`/non-conformance/${id}/edit`)}
+            onEdit={() => navigate(`/non-conformance/edit/${id}`)}
             onView={() => {}} // Already viewing, no action needed
             onStatusChange={handleStatusChange}
             onCreateCAPA={handleGenerateCapa}
@@ -338,12 +337,12 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-<Button 
-  className="w-full" 
-  onClick={() => navigate(`/non-conformance/edit/${id}`)}
->
-  Edit
-</Button>
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate(`/non-conformance/edit/${id}`)}
+                >
+                  Edit
+                </Button>
                 
                 {nonConformance.capa_id ? (
                   <Button 

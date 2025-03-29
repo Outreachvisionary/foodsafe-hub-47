@@ -1,6 +1,6 @@
 
 // src/pages/NonConformance.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, BarChart3 } from 'lucide-react';
@@ -12,6 +12,11 @@ const NonConformanceModule = () => {
   const navigate = useNavigate();
   
   const [viewingDetails, setViewingDetails] = useState(!!id);
+
+  // Ensure viewingDetails matches with URL
+  useEffect(() => {
+    setViewingDetails(!!id);
+  }, [id]);
   
   const handleCreateNew = () => {
     navigate('/non-conformance/new');
@@ -62,7 +67,10 @@ const NonConformanceModule = () => {
       
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
         {id && viewingDetails ? (
-          <NCDetails id={id} />
+          <NCDetails id={id} onClose={() => {
+            navigate('/non-conformance');
+            setViewingDetails(false);
+          }} />
         ) : (
           <NCList onSelectItem={handleSelectItem} />
         )}
