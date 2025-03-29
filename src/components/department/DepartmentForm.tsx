@@ -54,48 +54,27 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validate()) return;
-    
     setIsSubmitting(true);
-    
     try {
-      let savedDepartment: Department;
-      
-      if (department?.id) {
-        // Update existing department
-        savedDepartment = await updateDepartment(department.id, {
-          name,
-          description,
-          organization_id: organizationId,
-          facility_id: facilityId,
-        });
-        toast.success('Department updated successfully');
-      } else {
-        // Create new department
-        savedDepartment = await createDepartment({
-          name,
-          description,
-          organization_id: organizationId,
-          facility_id: facilityId,
-        });
-        toast.success('Department created successfully');
-      }
-      
-      if (onSave) {
-        onSave(savedDepartment);
-      }
-      
-      if (onSuccess) {
-        onSuccess(savedDepartment);
-      }
+        let savedDepartment;
+        if (department?.id) {
+            savedDepartment = await updateDepartment(department.id, { name, description, organization_id: organizationId, facility_id: facilityId });
+            toast.success('Department updated successfully');
+        } else {
+            savedDepartment = await createDepartment({ name, description, organization_id: organizationId, facility_id: facilityId });
+            toast.success('Department created successfully');
+        }
+        if (onSave) onSave(savedDepartment);
+        if (onSuccess) onSuccess(savedDepartment);
     } catch (error) {
-      console.error('Error saving department:', error);
-      toast.error('Failed to save department. Please try again.');
+        console.error('Error saving department:', error);
+        toast.error('Failed to save department. Please try again.');
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  };
+};
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
