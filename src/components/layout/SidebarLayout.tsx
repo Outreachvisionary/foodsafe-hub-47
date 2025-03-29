@@ -198,4 +198,38 @@ const SidebarLayout = () => {
       </div>
     </div>;
 };
+// src/components/layout/SidebarLayout.tsx
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
+// Keep other imports...
+
+// Remove children prop, use Outlet instead
+const SidebarLayout = () => {
+  // Keep existing state and functions...
+  
+  return (
+    <div className="flex h-screen">
+      {/* Sidebar section */}
+      <div className={`bg-white border-r border-slate-200 h-screen flex flex-col transition-all duration-300 ${
+        collapsed ? 'w-20' : 'w-64'
+      }`}>
+        {/* Sidebar content remains the same */}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+          {/* Header content remains the same */}
+        </header>
+
+        {/* Content - Replace children with Outlet */}
+        <main className="flex-1 overflow-auto bg-gray-50 p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default SidebarLayout;
 export default SidebarLayout;
