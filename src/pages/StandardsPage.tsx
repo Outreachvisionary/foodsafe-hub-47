@@ -4,36 +4,45 @@ import { useParams, Navigate, Outlet } from 'react-router-dom';
 import StandardSidebar from '@/components/standards/StandardSidebar';
 import { Separator } from '@/components/ui/separator';
 import { Card } from '@/components/ui/card';
+import DashboardHeader from '@/components/DashboardHeader';
 
 const StandardsPage: React.FC = () => {
   const { standardId, moduleId } = useParams<{ standardId?: string; moduleId?: string }>();
   
   // Redirect to SQF standard by default if no standard is selected
   if (!standardId) {
-    return <Navigate to="/standards/sqf" replace />;
+    return <Navigate to="/standards-modules/sqf" replace />;
   }
   
   // Validate the standardId against our known standards
   const validStandards = ['sqf', 'iso22000', 'fssc22000', 'haccp', 'brcgs2'];
   if (!validStandards.includes(standardId)) {
-    return <Navigate to="/standards/sqf" replace />;
+    return <Navigate to="/standards-modules/sqf" replace />;
   }
   
+  // Format the standard name for display
+  const getStandardDisplayName = () => {
+    switch(standardId) {
+      case 'sqf': return 'SQF';
+      case 'iso22000': return 'ISO 22000';
+      case 'fssc22000': return 'FSSC 22000';
+      case 'haccp': return 'HACCP';
+      case 'brcgs2': return 'BRC GS2';
+      default: return standardId.toUpperCase();
+    }
+  };
+  
   return (
-    <div className="flex h-screen bg-background">
-      <StandardSidebar />
+    <div className="container mx-auto p-4">
+      <DashboardHeader 
+        title={`${getStandardDisplayName()} Standard`} 
+        subtitle={`Review and manage compliance with ${getStandardDisplayName()} requirements`}
+      />
       
-      <div className="flex-1 overflow-auto">
-        <div className="container py-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {standardId.toUpperCase()} Standard
-            </h1>
-            <p className="text-muted-foreground">
-              Review and manage compliance with {standardId.toUpperCase()} requirements
-            </p>
-          </div>
-          
+      <div className="flex h-full mt-6">
+        <StandardSidebar />
+        
+        <div className="flex-1 ml-6">
           <Separator className="mb-6" />
           
           {!moduleId ? (

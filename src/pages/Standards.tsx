@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DashboardHeader from '@/components/DashboardHeader';
 
-// Standard-specific content components
 const SQFContent = () => (
   <div className="space-y-6">
     <Alert className="bg-fsms-lightBlue border-fsms-blue">
@@ -412,14 +410,11 @@ const BRCGS2Content = () => (
   </div>
 );
 
-// Standard information wrapper component
 const StandardInformation = () => {
   const { standardId } = useParams<{ standardId: string }>();
   
-  // Default to 'sqf' if no standardId is provided
   const activeTab = standardId || 'sqf';
   
-  // Validate that the standardId is one of the allowed values
   const validStandards = ['sqf', 'iso22000', 'fssc22000', 'haccp', 'brcgs2'];
   if (standardId && !validStandards.includes(standardId)) {
     return <Navigate to="/standards/sqf" replace />;
@@ -435,11 +430,11 @@ const StandardInformation = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue={activeTab} className="w-full animate-fade-in">
           <TabsList className="mb-8">
-            <TabsTrigger value="sqf">SQF</TabsTrigger>
-            <TabsTrigger value="iso22000">ISO 22000</TabsTrigger>
-            <TabsTrigger value="fssc22000">FSSC 22000</TabsTrigger>
-            <TabsTrigger value="haccp">HACCP</TabsTrigger>
-            <TabsTrigger value="brcgs2">BRC GS2</TabsTrigger>
+            <TabsTrigger value="sqf" onClick={() => window.location.href = "/standards/sqf"}>SQF</TabsTrigger>
+            <TabsTrigger value="iso22000" onClick={() => window.location.href = "/standards/iso22000"}>ISO 22000</TabsTrigger>
+            <TabsTrigger value="fssc22000" onClick={() => window.location.href = "/standards/fssc22000"}>FSSC 22000</TabsTrigger>
+            <TabsTrigger value="haccp" onClick={() => window.location.href = "/standards/haccp"}>HACCP</TabsTrigger>
+            <TabsTrigger value="brcgs2" onClick={() => window.location.href = "/standards/brcgs2"}>BRC GS2</TabsTrigger>
           </TabsList>
           
           <TabsContent value="sqf" className="space-y-4">
@@ -467,9 +462,7 @@ const StandardInformation = () => {
   );
 };
 
-// Main Standards page component
 const Standards = () => {
-  // If we're at the root /standards path, redirect to SQF by default
   const { standardId } = useParams<{ standardId: string }>();
   
   if (!standardId) {

@@ -54,7 +54,7 @@ const Breadcrumbs: React.FC = () => {
   const breadcrumbs = generateBreadcrumbs();
   
   return (
-    <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
+    <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground mb-4">
       <ol className="flex items-center space-x-2">
         {breadcrumbs.map((breadcrumb, index) => (
           <React.Fragment key={breadcrumb.path}>

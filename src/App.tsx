@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -10,6 +9,12 @@ import UpdatePassword from '@/pages/UpdatePassword';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
+import Standards from '@/pages/Standards';
+import StandardsPage from '@/pages/StandardsPage';
+import ModuleContent from '@/components/standards/ModuleContent';
+import SystemElements from '@/components/standards/modules/sqf/SystemElements';
+import GMP from '@/components/standards/modules/sqf/GMP';
+import FoodSafetyPlans from '@/components/standards/modules/sqf/FoodSafetyPlans';
 
 function App() {
   return (
@@ -17,82 +22,171 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/login" element={<Loading />} />
-        <Route path="/register" element={<Loading />} />
-        <Route path="/forgot-password" element={<Loading />} />
+        <Route path="/login" element={<Auth />} />
+        <Route path="/register" element={<Auth />} />
+        <Route path="/forgot-password" element={<Auth />} />
         <Route path="/dashboard" element={
           <ProtectedSidebarLayout>
             <Dashboard />
           </ProtectedSidebarLayout>
         } />
-        <Route path="/documents" element={
+        
+        <Route path="/standards" element={<Standards />} />
+        <Route path="/standards/:standardId" element={<Standards />} />
+        
+        <Route path="/standards-modules" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <StandardsPage />
+          </ProtectedSidebarLayout>
+        }>
+          <Route path=":standardId" element={<StandardsPage />} />
+          <Route path=":standardId/:moduleId" element={<ModuleContent />} />
+        </Route>
+        
+        <Route path="/standards/sqf/system-elements" element={
+          <ProtectedSidebarLayout>
+            <SystemElements />
           </ProtectedSidebarLayout>
         } />
-        <Route path="/standards" element={
+        <Route path="/standards/sqf/gmp" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <GMP />
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/standards/sqf/food-safety-plans" element={
+          <ProtectedSidebarLayout>
+            <FoodSafetyPlans />
+          </ProtectedSidebarLayout>
+        } />
+        
+        <Route path="/documents" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Document Management</h1>
+                <p>Document management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/organizations" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Organizations</h1>
+                <p>Organizations module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/facilities" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Facilities Management</h1>
+                <p>Facilities management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/audits" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Audits & Inspections</h1>
+                <p>Audits and inspections module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/non-conformance" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Non-Conformance</h1>
+                <p>Non-conformance module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/capa" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">CAPA</h1>
+                <p>Corrective and Preventive Actions module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/suppliers" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Suppliers</h1>
+                <p>Suppliers management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/training" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Training</h1>
+                <p>Training management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/haccp" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">HACCP</h1>
+                <p>HACCP module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/traceability" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Traceability</h1>
+                <p>Traceability module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/users" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Users</h1>
+                <p>User management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/roles" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Roles</h1>
+                <p>Role management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/departments" element={
           <ProtectedSidebarLayout>
-            <Loading />
+            <Suspense fallback={<Loading />}>
+              <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Departments</h1>
+                <p>Department management module is under development.</p>
+              </div>
+            </Suspense>
           </ProtectedSidebarLayout>
         } />
         <Route path="/profile" element={
