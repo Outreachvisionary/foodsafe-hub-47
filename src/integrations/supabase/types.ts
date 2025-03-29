@@ -494,6 +494,61 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          facility_id: string | null
+          id: string
+          name: string
+          organization_id: string | null
+          parent_department_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          facility_id?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          parent_department_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          facility_id?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          parent_department_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_parent_department_id_fkey"
+            columns: ["parent_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_access: {
         Row: {
           document_id: string
@@ -1303,6 +1358,77 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_invites: {
+        Row: {
+          department_id: string | null
+          email: string
+          expires_at: string
+          facility_id: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string
+          organization_id: string | null
+          role_id: string | null
+          token: string
+          used: boolean | null
+        }
+        Insert: {
+          department_id?: string | null
+          email: string
+          expires_at: string
+          facility_id?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by: string
+          organization_id?: string | null
+          role_id?: string | null
+          token: string
+          used?: boolean | null
+        }
+        Update: {
+          department_id?: string | null
+          email?: string
+          expires_at?: string
+          facility_id?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string
+          organization_id?: string | null
+          role_id?: string | null
+          token?: string
+          used?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_invites_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_invites_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_invites_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: string | null
@@ -1348,12 +1474,14 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           department: string | null
+          department_id: string | null
           full_name: string | null
           id: string
           organization_id: string | null
           preferences: Json | null
           preferred_language: string | null
           role: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1361,12 +1489,14 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           full_name?: string | null
           id: string
           organization_id?: string | null
           preferences?: Json | null
           preferred_language?: string | null
           role?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1374,15 +1504,24 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           full_name?: string | null
           id?: string
           organization_id?: string | null
           preferences?: Json | null
           preferred_language?: string | null
           role?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_organization_id_fkey"
             columns: ["organization_id"]
@@ -1425,6 +1564,36 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           version?: string | null
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          level: Database["public"]["Enums"]["role_level"]
+          name: string
+          permissions: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["role_level"]
+          name: string
+          permissions?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["role_level"]
+          name?: string
+          permissions?: Json
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1550,6 +1719,68 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          department_id: string | null
+          facility_id: string | null
+          id: string
+          organization_id: string | null
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          department_id?: string | null
+          facility_id?: string | null
+          id?: string
+          organization_id?: string | null
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          department_id?: string | null
+          facility_id?: string | null
+          id?: string
+          organization_id?: string | null
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1623,6 +1854,43 @@ export type Database = {
           updated_at: string | null
           version: string | null
         }[]
+      }
+      get_user_roles: {
+        Args: {
+          _user_id: string
+        }
+        Returns: {
+          role_id: string
+          role_name: string
+          role_level: Database["public"]["Enums"]["role_level"]
+          permissions: Json
+          organization_id: string
+          organization_name: string
+          facility_id: string
+          facility_name: string
+          department_id: string
+          department_name: string
+        }[]
+      }
+      has_permission: {
+        Args: {
+          _user_id: string
+          _permission: string
+          _org_id?: string
+          _facility_id?: string
+          _department_id?: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role_name: string
+          _org_id?: string
+          _facility_id?: string
+          _department_id?: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
@@ -1699,6 +1967,7 @@ export type Database = {
         | "Process Deviation"
         | "Other"
       nc_status: "On Hold" | "Under Review" | "Released" | "Disposed"
+      role_level: "organization" | "facility" | "department"
       training_status:
         | "Not Started"
         | "In Progress"

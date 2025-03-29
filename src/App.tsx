@@ -6,6 +6,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
+import { PermissionProvider } from './contexts/PermissionContext';
 
 // Main pages
 import Index from './pages/Index';
@@ -38,6 +39,12 @@ import OrganizationManagement from './pages/OrganizationManagement';
 import FacilitiesList from './pages/FacilitiesList';
 import FacilityManagement from './pages/FacilityManagement';
 
+// User, Role & Department Management
+import UserManagement from './pages/UserManagement';
+import RoleManagement from './pages/RoleManagement';
+import DepartmentManagement from './pages/DepartmentManagement';
+import UserOnboarding from './pages/UserOnboarding';
+
 const App = () => {
   return (
     <div className="app">
@@ -45,72 +52,82 @@ const App = () => {
       <ShadcnToaster />
       <SonnerToaster position="top-right" />
       
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/login" element={<Auth />} />
-        <Route path="/register" element={<Auth />} />
-        <Route path="/demo" element={<Auth />} />
-        
-        {/* Public product/marketing pages */}
-        <Route path="/standards" element={<Standards />} />
-        <Route path="/standards/:standardId" element={<Standards />} />
-        
-        <Route path="/platform/:moduleType" element={<Products />} />
-        <Route path="/platform" element={<Products />} />
-        <Route path="/industries/:industryType" element={<Solutions />} />
-        <Route path="/industries" element={<Solutions />} />
-        <Route path="/solutions/:solutionType" element={<Solutions />} />
-        <Route path="/solutions" element={<Solutions />} />
-        <Route path="/products/:productType" element={<Products />} />
-        <Route path="/products" element={<Products />} />
-        
-        {/* Protected routes with SidebarLayout */}
-        <Route element={<ProtectedSidebarLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/documents/*" element={<Documents />} />
-          <Route path="/haccp" element={<HaccpModule />} />
-          <Route path="/training" element={<TrainingModule />} />
-          <Route path="/internal-audits" element={<InternalAudits />} />
-          <Route path="/audits" element={<InternalAudits />} /> 
-          <Route path="/supplier-management" element={<SupplierManagement />} />
-          <Route path="/suppliers" element={<SupplierManagement />} /> 
-          <Route path="/traceability" element={<Traceability />} />
+      {/* Wrap the entire app with PermissionProvider */}
+      <PermissionProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Auth />} />
+          <Route path="/register" element={<Auth />} />
+          <Route path="/demo" element={<Auth />} />
+          <Route path="/onboarding" element={<UserOnboarding />} />
           
-          {/* CAPA Module Routes */}
-          <Route path="/capa" element={<CAPA />} />
-          <Route path="/capa/:id" element={<CAPADetailsPage />} />
+          {/* Public product/marketing pages */}
+          <Route path="/standards" element={<Standards />} />
+          <Route path="/standards/:standardId" element={<Standards />} />
           
-          <Route path="/complaint-management" element={<ComplaintManagement />} />
-          <Route path="/reports" element={<Reports />} />
+          <Route path="/platform/:moduleType" element={<Products />} />
+          <Route path="/platform" element={<Products />} />
+          <Route path="/industries/:industryType" element={<Solutions />} />
+          <Route path="/industries" element={<Solutions />} />
+          <Route path="/solutions/:solutionType" element={<Solutions />} />
+          <Route path="/solutions" element={<Solutions />} />
+          <Route path="/products/:productType" element={<Products />} />
+          <Route path="/products" element={<Products />} />
           
-          {/* Non-Conformance Module Routes - Well-Organized */}
-          <Route path="/non-conformance" element={<NonConformanceModule />} />
-          <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
-          <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
-          <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
-          <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+          {/* Protected routes with SidebarLayout */}
+          <Route element={<ProtectedSidebarLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/documents/*" element={<Documents />} />
+            <Route path="/haccp" element={<HaccpModule />} />
+            <Route path="/training" element={<TrainingModule />} />
+            <Route path="/internal-audits" element={<InternalAudits />} />
+            <Route path="/audits" element={<InternalAudits />} /> 
+            <Route path="/supplier-management" element={<SupplierManagement />} />
+            <Route path="/suppliers" element={<SupplierManagement />} /> 
+            <Route path="/traceability" element={<Traceability />} />
+            
+            {/* CAPA Module Routes */}
+            <Route path="/capa" element={<CAPA />} />
+            <Route path="/capa/:id" element={<CAPADetailsPage />} />
+            
+            <Route path="/complaint-management" element={<ComplaintManagement />} />
+            <Route path="/reports" element={<Reports />} />
+            
+            {/* Non-Conformance Module Routes - Well-Organized */}
+            <Route path="/non-conformance" element={<NonConformanceModule />} />
+            <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
+            <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
+            <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+            <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+            
+            {/* Organization & Facility Management Routes */}
+            <Route path="/organization" element={<OrganizationManagement />} />
+            <Route path="/organizations" element={<Organizations />} />
+            <Route path="/facilities" element={<FacilitiesList />} />
+            <Route path="/facilities/new" element={<FacilityManagement />} />
+            <Route path="/facilities/:id" element={<FacilityManagement />} />
+            
+            {/* User, Role & Department Management Routes */}
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/roles" element={<RoleManagement />} />
+            <Route path="/departments" element={<DepartmentManagement />} />
+          </Route>
           
-          {/* Organization & Facility Management Routes */}
-          <Route path="/organization" element={<OrganizationManagement />} />
-          <Route path="/organizations" element={<Organizations />} />
-          <Route path="/facilities" element={<FacilitiesList />} />
-          <Route path="/facilities/new" element={<FacilityManagement />} />
-          <Route path="/facilities/:id" element={<FacilityManagement />} />
-        </Route>
-        
-        {/* Misc routes */}
-        <Route path="/resources/:resourceType" element={<NotFound />} />
-        <Route path="/resources" element={<NotFound />} />
-        <Route path="/about" element={<NotFound />} />
-        <Route path="/integrations/:integrationType" element={<NotFound />} />
-        <Route path="/integrations" element={<NotFound />} />
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Misc routes */}
+          <Route path="/resources/:resourceType" element={<NotFound />} />
+          <Route path="/resources" element={<NotFound />} />
+          <Route path="/about" element={<NotFound />} />
+          <Route path="/integrations/:integrationType" element={<NotFound />} />
+          <Route path="/integrations" element={<NotFound />} />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PermissionProvider>
     </div>
   );
 };
 
 export default App;
+
