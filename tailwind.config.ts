@@ -27,9 +27,9 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#1E4D8C', // Updated to more professional blue
-          dark: '#15325E',    // Darker shade
-          light: '#4799FF',   // Lighter shade
+          DEFAULT: '#1E4D8C', // Professional blue
+          dark: '#15325E',    
+          light: '#4799FF',   
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -46,11 +46,29 @@ const config: Config = {
         },
         accent: {
           DEFAULT: '#D5A021',  // Refined gold
-          light: '#F3CF71',    // Lighter gold
-          dark: '#B2851C',     // Darker gold
+          light: '#F3CF71',    
+          dark: '#B2851C',     
           foreground: 'hsl(var(--accent-foreground))',
         },
-        // Rest of your colors...
+        // Adding the missing color definitions
+        warning: {
+          DEFAULT: '#FFC107', // Yellow for warnings
+          foreground: '#4A4A4A', // Dark text for contrast
+        },
+        success: {
+          DEFAULT: '#2E8B57', // Teal for success
+          foreground: '#FFFFFF', // White text
+        },
+        info: {
+          DEFAULT: '#0EA5E9', // Blue for info
+          foreground: '#FFFFFF', // White text
+        },
+        // Adding charcoal colors for backward compatibility
+        charcoal: {
+          DEFAULT: '#4A4A4A', // Main charcoal color
+          light: '#6C757D',   // Lighter charcoal
+          muted: '#8F9498',   // Muted charcoal for less emphasis
+        }
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -63,7 +81,6 @@ const config: Config = {
         ...theme('colors'),
         DEFAULT: theme('colors.border', 'currentColor'),
       }),
-      // This enables opacity modifiers for border colors
       borderOpacity: {
         '10': '0.1',
         '20': '0.2',
@@ -77,10 +94,8 @@ const config: Config = {
       },
     },
   },
-  // Enable arbitrary values for certain utilities
   plugins: [
     require('tailwindcss-animate'),
-    // Remove the custom-colors plugin that doesn't exist
   ],
 } satisfies Config;
 

@@ -61,6 +61,12 @@ const config: Config = {
           DEFAULT: '#0EA5E9', // Blue for info
           foreground: '#FFFFFF', // White text
         },
+        // Adding charcoal colors for backward compatibility
+        charcoal: {
+          DEFAULT: '#4A4A4A', // Main charcoal color
+          light: '#6C757D',   // Lighter charcoal
+          muted: '#8F9498',   // Muted charcoal for less emphasis
+        }
       },
       fontFamily: {
         sans: ['Roboto', 'system-ui', 'sans-serif'],
