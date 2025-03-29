@@ -46,16 +46,18 @@ const config: Config = {
           DEFAULT: '#EF4444', // Red for destructive actions or alerts
           foreground: '#FFFFFF', // White text on destructive buttons
         },
-        accent: {
-          DEFAULT: '#F59E0B',  // Bright amber for highlights or warnings
-          light: '#FCD34D',    // Soft yellow for hover states
-          dark: '#B45309',     // Deep amber for badges or emphasis
-          foreground: '#FFFFFF', // White text on accent elements
-        },
-        success: {
-          DEFAULT: '#10B981', // Vibrant green for success badges or statuses
-          foreground: '#FFFFFF', // White text on success badges
-        },
+     accent: {
+      DEFAULT: '#F59E0B',  // Bright amber for highlights
+      light: '#FCD34D',    // Soft yellow for hover states
+      dark: '#B45309',     // Deep amber for badges or emphasis
+      foreground: '#FFFFFF', // White text on accent elements
+    },
+    success: {
+      DEFAULT: '#10B981', // Vibrant green for success badges
+      foreground: '#FFFFFF', // White text on success badges
+    },
+  },
+},
         warning: {
           DEFAULT: '#FFC107', // Yellow for warnings or caution badges
           foreground: '#333333', // Darker gray text on warning badges
