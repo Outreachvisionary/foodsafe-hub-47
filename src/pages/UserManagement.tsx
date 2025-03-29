@@ -1,340 +1,255 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
-import { usePermission } from '@/contexts/PermissionContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
-import { UserRole } from '@/types/role';
-import { OnboardingInvite } from '@/types/onboarding';
-import { deleteInvite, getOrganizationInvites } from '@/services/onboardingService';
-import { getUserRoles, removeRoleFromUser } from '@/services/roleService';
-import { fetchDepartments } from '@/services/departmentService';
-import { Department } from '@/types/department';
-import { Users, UserPlus, Shield, Building2, Trash2, Mail } from 'lucide-react';
-import InviteUserForm from '@/components/onboarding/InviteUserForm';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { RoleSelector } from '@/components/role/RoleSelector';
+import { DepartmentSelector } from '@/components/department/DepartmentSelector';
+import { PermissionProvider } from '@/contexts/PermissionContext';
+import PermissionGuard from '@/components/auth/PermissionGuard';
 
 const UserManagement: React.FC = () => {
-  const { user } = useUser();
-  const { hasPermission } = usePermission();
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [invites, setInvites] = useState<OnboardingInvite[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [userRoles, setUserRoles] = useState<Record<string, UserRole[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   
   useEffect(() => {
-    if (user?.organization_id) {
-      setSelectedOrganizationId(user.organization_id);
-      loadData(user.organization_id);
-    }
-  }, [user]);
-
-  const loadData = async (organizationId: string) => {
-    setLoading(true);
+    fetchUsers();
+  }, []);
+  
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // Load users for this organization
-      const { data: usersData, error: usersError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('organization_id', organizationId);
+        .select('*');
       
-      if (usersError) throw usersError;
-      setUsers(usersData as UserProfile[]);
+      if (error) throw error;
       
-      // Load pending invites
-      const invitesData = await getOrganizationInvites(organizationId);
-      setInvites(invitesData);
+      // Map the data to ensure it conforms to UserProfile
+      const formattedUsers: UserProfile[] = data.map(user => ({
+        id: user.id,
+        email: user.email || '',  // Ensure email exists
+        full_name: user.full_name || '',
+        avatar_url: user.avatar_url || '',
+        role: user.role || '',
+        department: user.department || '',
+        department_id: user.department_id || '',
+        organization_id: user.organization_id || '',
+        assigned_facility_ids: user.assigned_facility_ids || [],
+        preferred_language: user.preferred_language || '',
+        status: user.status || '',
+        metadata: user.metadata || {},
+      }));
       
-      // Load departments
-      const departmentsData = await fetchDepartments(organizationId);
-      setDepartments(departmentsData);
-      
-      // Load roles for each user
-      const rolesMap: Record<string, UserRole[]> = {};
-      for (const profile of usersData) {
-        try {
-          const userRolesData = await getUserRoles(profile.id);
-          rolesMap[profile.id] = userRolesData;
-        } catch (error) {
-          console.error(`Error loading roles for user ${profile.id}:`, error);
-        }
-      }
-      setUserRoles(rolesMap);
-      
-    } catch (error) {
-      console.error('Error loading user management data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load user data',
-        variant: 'destructive',
-      });
+      setUsers(formattedUsers);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err.message || 'Failed to fetch users');
+      toast.error('Error loading users');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const getDepartmentName = (departmentId?: string): string => {
-    if (!departmentId) return 'None';
-    const department = departments.find(d => d.id === departmentId);
-    return department ? department.name : 'Unknown';
-  };
-
-  const handleDeleteInvite = async (id: string) => {
+  
+  const updateUserProfile = async (id: string, updates: Partial<UserProfile>) => {
     try {
-      await deleteInvite(id);
-      setInvites(invites.filter(invite => invite.id !== id));
-      toast({
-        title: 'Invite deleted',
-        description: 'The invitation has been deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting invite:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete the invitation',
-        variant: 'destructive',
-      });
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Update the users state
+      setUsers(users.map(user => 
+        user.id === id ? { ...user, ...updates } : user
+      ));
+      
+      toast.success('User profile updated successfully');
+      setDialogOpen(false);
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      toast.error('Failed to update user profile');
     }
   };
-
-  const handleRemoveRole = async (userRoleId: string, userId: string) => {
+  
+  const handleStatusChange = async (userId: string, newStatus: string) => {
     try {
-      await removeRoleFromUser(userRoleId);
-      
-      // Update the local state
-      setUserRoles(prev => {
-        const updated = { ...prev };
-        if (updated[userId]) {
-          updated[userId] = updated[userId].filter(role => role.id !== userRoleId);
-        }
-        return updated;
-      });
-      
-      toast({
-        title: 'Role removed',
-        description: 'The role has been removed successfully',
-      });
-    } catch (error) {
-      console.error('Error removing role:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove the role',
-        variant: 'destructive',
-      });
+      await updateUserProfile(userId, { status: newStatus });
+    } catch (err) {
+      console.error('Error changing status:', err);
     }
   };
-
-  const handleInviteSuccess = () => {
-    setInviteDialogOpen(false);
-    loadData(selectedOrganizationId);
+  
+  const openUserDialog = (user: UserProfile) => {
+    setCurrentUser(user);
+    setDialogOpen(true);
   };
-
-  // Check if user has permission to manage users
-  const canManageUsers = hasPermission('users:manage', selectedOrganizationId);
-
+  
   return (
-    <div className="container mx-auto py-6">
+    <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
-        
-        {canManageUsers && (
-          <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Invite User</DialogTitle>
-                <DialogDescription>
-                  Send an invitation to join your organization.
-                </DialogDescription>
-              </DialogHeader>
-              <InviteUserForm 
-                organizationId={selectedOrganizationId} 
-                onSuccess={handleInviteSuccess}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+        <h1 className="text-2xl font-bold">User Management</h1>
+        <PermissionGuard permission="users.invite">
+          <Button onClick={() => { /* Navigate to invitation page */ }}>
+            Invite New User
+          </Button>
+        </PermissionGuard>
       </div>
       
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="users">
-            <Users className="mr-2 h-4 w-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="invites">
-            <Mail className="mr-2 h-4 w-4" />
-            Pending Invites
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>Users</CardTitle>
-              <CardDescription>
-                Manage users and their roles in your organization.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading users...</p>
-                </div>
-              ) : users.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <p className="mt-2 text-muted-foreground">No users found in this organization.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead>Status</TableHead>
-                      {canManageUsers && <TableHead className="text-right">Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((profile) => (
-                      <TableRow key={profile.id}>
-                        <TableCell className="font-medium">
-                          {profile.full_name || 'Unnamed User'}
-                        </TableCell>
-                        <TableCell>{profile.email}</TableCell>
-                        <TableCell>{getDepartmentName(profile.department_id)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {userRoles[profile.id]?.map((role) => (
-                              <Badge key={role.id} variant="secondary" className="flex items-center gap-1">
-                                <Shield className="h-3 w-3" />
-                                {role.role_name}
-                                {canManageUsers && (
-                                  <button 
-                                    onClick={() => handleRemoveRole(role.id, profile.id)}
-                                    className="ml-1 text-muted-foreground hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                )}
-                              </Badge>
-                            ))}
-                            {(!userRoles[profile.id] || userRoles[profile.id].length === 0) && (
-                              <span className="text-muted-foreground text-sm">No roles assigned</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={profile.status === 'active' ? 'default' : 'outline'}>
-                            {profile.status || 'active'}
-                          </Badge>
-                        </TableCell>
-                        {canManageUsers && (
-                          <TableCell className="text-right">
-                            <Button variant="outline" size="sm">Manage</Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="invites">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Invitations</CardTitle>
-              <CardDescription>
-                View and manage pending user invitations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading invitations...</p>
-                </div>
-              ) : invites.length === 0 ? (
-                <div className="text-center py-12">
-                  <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <p className="mt-2 text-muted-foreground">No pending invitations found.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Invited By</TableHead>
-                      <TableHead>Invited At</TableHead>
-                      <TableHead>Expires At</TableHead>
-                      {canManageUsers && <TableHead className="text-right">Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invites.map((invite) => (
-                      <TableRow key={invite.id}>
-                        <TableCell className="font-medium">{invite.email}</TableCell>
-                        <TableCell>{getDepartmentName(invite.department_id)}</TableCell>
-                        <TableCell>{invite.invited_by}</TableCell>
-                        <TableCell>{new Date(invite.invited_at || '').toLocaleDateString()}</TableCell>
-                        <TableCell>{new Date(invite.expires_at).toLocaleDateString()}</TableCell>
-                        {canManageUsers && (
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDeleteInvite(invite.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {error && (
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6">
+          {error}
+        </div>
+      )}
+      
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>User</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8">
+                Loading users...
+              </TableCell>
+            </TableRow>
+          ) : users.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8">
+                No users found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            users.map(user => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <div className="flex items-center space-x-3">
+                    <Avatar>
+                      <AvatarImage src={user.avatar_url || ''} alt={user.full_name || 'User'} />
+                      <AvatarFallback>{user.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{user.full_name || 'Unnamed User'}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{user.role || 'No role assigned'}</TableCell>
+                <TableCell>{user.department || 'No department'}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={user.status === 'active' ? 'success' : 
+                            user.status === 'pending' ? 'warning' : 'default'}
+                  >
+                    {user.status || 'Unknown'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <PermissionGuard permission="users.edit">
+                      <Button variant="outline" size="sm" onClick={() => openUserDialog(user)}>
+                        Edit
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permission="users.status">
+                      {user.status === 'active' ? (
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => handleStatusChange(user.id, 'inactive')}
+                        >
+                          Deactivate
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={() => handleStatusChange(user.id, 'active')}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                    </PermissionGuard>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+      
+      {currentUser && (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit User: {currentUser.full_name}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Full Name</label>
+                <Input 
+                  value={currentUser.full_name || ''} 
+                  onChange={(e) => setCurrentUser({...currentUser, full_name: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Role</label>
+                <RoleSelector 
+                  value={currentUser.role || ''}
+                  onChange={(roleId) => setCurrentUser({...currentUser, role: roleId})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Department</label>
+                <DepartmentSelector 
+                  value={currentUser.department_id || ''}
+                  onChange={(deptId) => setCurrentUser({...currentUser, department_id: deptId})}
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  if (currentUser.id) {
+                    updateUserProfile(currentUser.id, {
+                      full_name: currentUser.full_name,
+                      role: currentUser.role,
+                      department_id: currentUser.department_id
+                    });
+                  }
+                }}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

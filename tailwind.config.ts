@@ -65,6 +65,10 @@ const config: Config = {
           DEFAULT: '#0EA5E9', // Blue for informational badges or links
           foreground: '#FFFFFF', // White text on info badges
         },
+        muted: {
+          DEFAULT: '#F1F5F9', // Light gray for muted backgrounds
+          foreground: '#64748B', // Medium gray for muted text
+        },
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -73,7 +77,7 @@ const config: Config = {
         mono: ['JetBrains Mono', 'monospace'],
       },
       borderColor: {
-        DEFAULT: 'var(--colors-border)',
+        DEFAULT: 'var(--border)',
       },
       borderOpacity: {
         '10': '0.1',

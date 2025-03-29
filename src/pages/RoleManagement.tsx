@@ -1,389 +1,333 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { fetchRoles, createRole, updateRole, deleteRole } from '@/services/roleService';
+import { Role } from '@/types/role';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { toast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
-import { usePermission } from '@/contexts/PermissionContext';
-import { Role, PERMISSIONS, PERMISSION_CATEGORIES } from '@/types/role';
-import { fetchRoles, createRole, updateRole } from '@/services/roleService';
-import { Shield, PlusCircle, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-
-const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  description: z.string().optional(),
-  level: z.enum(['organization', 'facility', 'department']),
-  permissions: z.record(z.boolean()).optional(),
-});
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { RoleSelector } from '@/components/role/RoleSelector';
+import { usePermission } from '@/contexts/PermissionContext';
+import PermissionGuard from '@/components/auth/PermissionGuard';
 
 const RoleManagement: React.FC = () => {
-  const { user } = useUser();
-  const { hasPermission } = usePermission();
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [activeTab, setActiveTab] = useState('list');
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    level: 'organization' as 'organization' | 'facility' | 'department',
+    permissions: {} as Record<string, boolean>,
+  });
+  
+  const { hasPermission } = usePermission();
   
   useEffect(() => {
     loadRoles();
   }, []);
-
+  
   const loadRoles = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const data = await fetchRoles();
       setRoles(data);
     } catch (error) {
       console.error('Error loading roles:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load roles',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load roles');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const RoleForm = ({ role, onSuccess }: { role?: Role, onSuccess?: () => void }) => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const isEditing = !!role;
+  
+  const handleCreateOrUpdate = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Role name is required');
+      return;
+    }
     
-    const form = useForm<z.infer<typeof formSchema>>({
-      resolver: zodResolver(formSchema),
-      defaultValues: {
-        name: role?.name || '',
-        description: role?.description || '',
-        level: role?.level || 'organization',
-        permissions: role?.permissions || {},
+    try {
+      if (editingRole) {
+        const updated = await updateRole(editingRole.id, formData);
+        setRoles(roles.map(role => role.id === updated.id ? updated : role));
+        toast.success('Role updated successfully');
+      } else {
+        const created = await createRole({
+          name: formData.name, // Now required
+          description: formData.description || undefined,
+          level: formData.level,
+          permissions: formData.permissions,
+        });
+        setRoles([...roles, created]);
+        toast.success('Role created successfully');
+      }
+      resetForm();
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving role:', error);
+      toast.error('Failed to save role');
+    }
+  };
+  
+  const handleDelete = async (roleId: string) => {
+    if (window.confirm('Are you sure you want to delete this role?')) {
+      try {
+        await deleteRole(roleId);
+        setRoles(roles.filter(role => role.id !== roleId));
+        toast.success('Role deleted successfully');
+      } catch (error) {
+        console.error('Error deleting role:', error);
+        toast.error('Failed to delete role');
+      }
+    }
+  };
+  
+  const handleEdit = (role: Role) => {
+    setEditingRole(role);
+    setFormData({
+      name: role.name,
+      description: role.description || '',
+      level: role.level || 'organization',
+      permissions: role.permissions || {},
+    });
+    setDialogOpen(true);
+  };
+  
+  const resetForm = () => {
+    setEditingRole(null);
+    setFormData({
+      name: '',
+      description: '',
+      level: 'organization',
+      permissions: {},
+    });
+  };
+  
+  const togglePermission = (key: string) => {
+    setFormData({
+      ...formData,
+      permissions: {
+        ...formData.permissions,
+        [key]: !formData.permissions[key],
       },
     });
-    
-    const onSubmit = async (values: z.infer<typeof formSchema>) => {
-      setIsSubmitting(true);
-      try {
-        if (isEditing && role) {
-          await updateRole(role.id, values);
-          toast({
-            title: 'Role updated',
-            description: 'Role has been updated successfully',
-          });
-        } else {
-          await createRole(values);
-          toast({
-            title: 'Role created',
-            description: 'New role has been created successfully',
-          });
-        }
-        
-        form.reset();
-        if (onSuccess) onSuccess();
-      } catch (error) {
-        console.error('Failed to save role:', error);
-        toast({
-          title: 'Error',
-          description: `Failed to ${isEditing ? 'update' : 'create'} role. Please try again.`,
-          variant: 'destructive',
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-    
-    return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter role name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Describe this role" {...field} value={field.value || ''} />
-                </FormControl>
-                <FormDescription>Brief description of this role's purpose</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="level"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role Level</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role level" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="organization">Organization</SelectItem>
-                    <SelectItem value="facility">Facility</SelectItem>
-                    <SelectItem value="department">Department</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Determines the scope of this role's permissions
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Permissions</h3>
-            <Tabs defaultValue={PERMISSION_CATEGORIES[0]}>
-              <TabsList className="mb-2">
-                {PERMISSION_CATEGORIES.map(category => (
-                  <TabsTrigger key={category} value={category}>
-                    {category}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              
-              {PERMISSION_CATEGORIES.map(category => (
-                <TabsContent key={category} value={category} className="space-y-4">
-                  {Object.values(PERMISSIONS)
-                    .filter(permission => permission.category === category)
-                    .map(permission => (
-                      <FormField
-                        key={permission.key}
-                        control={form.control}
-                        name={`permissions.${permission.key}`}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel className="text-sm font-medium">
-                                {permission.name}
-                              </FormLabel>
-                              <FormDescription>
-                                {permission.description}
-                              </FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </div>
-          
-          <div className="flex justify-end pt-4">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting 
-                ? (isEditing ? 'Updating...' : 'Creating...') 
-                : (isEditing ? 'Update Role' : 'Create Role')}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    );
   };
-
-  const handleCreateSuccess = () => {
-    setCreateDialogOpen(false);
-    loadRoles();
+  
+  const permissionDefinitions = {
+    'dashboard.view': 'View Dashboard',
+    'documents.create': 'Create Documents',
+    'documents.view': 'View Documents',
+    'documents.edit': 'Edit Documents',
+    'documents.delete': 'Delete Documents',
+    'haccp.view': 'View HACCP',
+    'training.view': 'View Training',
+    'internal_audits.view': 'View Internal Audits',
+    'supplier_management.view': 'View Supplier Management',
+    'traceability.view': 'View Traceability',
+    'capa.view': 'View CAPA',
+    'complaint_management.view': 'View Complaint Management',
+    'reports.view': 'View Reports',
+    'standards.view': 'View Standards',
+    'non_conformance.view': 'View Non-Conformance',
+    'organization.view': 'View Organization',
+    'facilities.view': 'View Facilities',
+    'users.view': 'View Users',
+    'users.create': 'Invite Users',
+    'users.edit': 'Edit Users',
+    'users.delete': 'Delete Users',
+    'users.status': 'Change User Status',
+    'roles.view': 'View Roles',
+    'roles.create': 'Create Roles',
+    'roles.edit': 'Edit Roles',
+    'roles.delete': 'Delete Roles',
+    'departments.view': 'View Departments',
+    'departments.create': 'Create Departments',
+    'departments.edit': 'Edit Departments',
+    'departments.delete': 'Delete Departments',
   };
-
-  const handleEditClick = (role: Role) => {
-    setSelectedRole(role);
-    setEditDialogOpen(true);
+  
+  const getPermissionDescription = (permissionKey: string) => {
+    return permissionDefinitions[permissionKey] || permissionKey;
   };
-
-  const handleEditSuccess = () => {
-    setEditDialogOpen(false);
-    setSelectedRole(null);
-    loadRoles();
-  };
-
-  // Check if user has permission to manage roles
-  const canManageRoles = hasPermission('roles:manage');
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Role Management</h1>
-        
-        {canManageRoles && (
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Role
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Create Role</DialogTitle>
-                <DialogDescription>
-                  Define a new role with specific permissions.
-                </DialogDescription>
-              </DialogHeader>
-              <RoleForm onSuccess={handleCreateSuccess} />
-            </DialogContent>
-          </Dialog>
-        )}
+        <h1 className="text-2xl font-bold">Role Management</h1>
+        <PermissionGuard permission="roles.create">
+          <Button onClick={() => {
+            resetForm();
+            setDialogOpen(true);
+          }}>
+            Create New Role
+          </Button>
+        </PermissionGuard>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Roles</CardTitle>
-          <CardDescription>
-            Manage roles and their permissions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading roles...</p>
-            </div>
-          ) : roles.length === 0 ? (
-            <div className="text-center py-12">
-              <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-2 text-muted-foreground">No roles found.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="list">Roles List</TabsTrigger>
+          <TabsTrigger value="permissions">Permissions Overview</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="list">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Role Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Level</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Permissions</TableHead>
-                  {canManageRoles && <TableHead className="text-right">Actions</TableHead>}
+                  <TableCell colSpan={4} className="text-center py-8">
+                    Loading roles...
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {roles.map((role) => (
+              ) : roles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    No roles found. Create your first role to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                roles.map(role => (
                   <TableRow key={role.id}>
-                    <TableCell className="font-medium flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      {role.name}
-                    </TableCell>
+                    <TableCell className="font-medium">{role.name}</TableCell>
                     <TableCell>{role.description || 'No description'}</TableCell>
+                    <TableCell className="capitalize">{role.level || 'Organization'}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {role.level}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-md">
-                        {Object.keys(role.permissions || {}).map((key) => (
-                          <Badge key={key} variant="secondary" className="text-xs">
-                            {key}
-                          </Badge>
-                        ))}
-                        {Object.keys(role.permissions || {}).length === 0 && (
-                          <span className="text-muted-foreground text-sm">No permissions</span>
-                        )}
+                      <div className="flex space-x-2">
+                        <PermissionGuard permission="roles.update">
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(role)}>
+                            Edit
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission="roles.delete">
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(role.id)}>
+                            Delete
+                          </Button>
+                        </PermissionGuard>
                       </div>
                     </TableCell>
-                    {canManageRoles && (
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditClick(role)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TabsContent>
+        
+        <TabsContent value="permissions">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.keys(permissionDefinitions).map(key => (
+              <div key={key} className="flex items-center justify-between p-3 rounded-md shadow-sm border border-border">
+                <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed flex-grow">
+                  {getPermissionDescription(key)}
+                </label>
+                <Switch 
+                  id={key} 
+                  checked={formData.permissions[key] || false}
+                  onCheckedChange={() => togglePermission(key)}
+                />
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
       
-      {/* Edit Role Dialog */}
-      {selectedRole && (
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Edit Role</DialogTitle>
-              <DialogDescription>
-                Update role information and permissions.
-              </DialogDescription>
-            </DialogHeader>
-            <RoleForm 
-              role={selectedRole}
-              onSuccess={handleEditSuccess}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingRole ? 'Edit Role' : 'Create New Role'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Role Name</label>
+              <Input 
+                value={formData.name} 
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Enter role name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <Textarea 
+                value={formData.description} 
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Enter role description"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Role Level</label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  type="button"
+                  variant={formData.level === 'organization' ? 'default' : 'outline'}
+                  onClick={() => setFormData({...formData, level: 'organization'})}
+                  className="w-full"
+                >
+                  Organization
+                </Button>
+                <Button 
+                  type="button"
+                  variant={formData.level === 'facility' ? 'default' : 'outline'}
+                  onClick={() => setFormData({...formData, level: 'facility'})}
+                  className="w-full"
+                >
+                  Facility
+                </Button>
+                <Button 
+                  type="button"
+                  variant={formData.level === 'department' ? 'default' : 'outline'}
+                  onClick={() => setFormData({...formData, level: 'department'})}
+                  className="w-full"
+                >
+                  Department
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-3">Permissions</label>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto p-2">
+                {Object.keys(permissionDefinitions).map(key => (
+                  <div key={key} className="flex items-center justify-between">
+                    <label htmlFor={`permission-${key}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                      {getPermissionDescription(key)}
+                    </label>
+                    <Switch 
+                      id={`permission-${key}`} 
+                      checked={formData.permissions[key] || false}
+                      onCheckedChange={() => togglePermission(key)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateOrUpdate}>
+                {editingRole ? 'Update Role' : 'Create Role'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

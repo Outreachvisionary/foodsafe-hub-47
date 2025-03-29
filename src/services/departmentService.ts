@@ -45,6 +45,11 @@ export const fetchDepartmentById = async (id: string): Promise<Department> => {
 };
 
 export const createDepartment = async (department: Omit<Department, 'id'>): Promise<Department> => {
+  // Ensure name is provided
+  if (!department.name) {
+    throw new Error('Department name is required');
+  }
+
   const { data, error } = await supabase
     .from('departments')
     .insert(department)
@@ -60,6 +65,11 @@ export const createDepartment = async (department: Omit<Department, 'id'>): Prom
 };
 
 export const updateDepartment = async (id: string, updates: Partial<Department>): Promise<Department> => {
+  // Ensure name is not being removed
+  if (updates.name === '') {
+    throw new Error('Department name cannot be empty');
+  }
+
   const { data, error } = await supabase
     .from('departments')
     .update(updates)
