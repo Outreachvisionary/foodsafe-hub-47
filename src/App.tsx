@@ -1,3 +1,4 @@
+
 // src/App.tsx
 
 import React from 'react';
@@ -19,6 +20,7 @@ import CAPADetailsPage from './pages/CAPADetails';
 import ComplaintManagement from './pages/ComplaintManagement';
 import Reports from './pages/Reports';
 import StandardsPage from './pages/StandardsPage';
+import ModuleContent from './components/standards/ModuleContent';
 import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
 import Solutions from './pages/Solutions';
@@ -47,9 +49,9 @@ const App = () => {
         <Route path="/demo" element={<Auth />} />
         
         {/* Public product/marketing pages */}
-        <Route path="/standards" element={<StandardsPage />} />
-        <Route path="/standards/:standardId" element={<StandardsPage />} />
-        <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
+        <Route path="/standards" element={<StandardsPage />}>
+          <Route path=":standardId/:moduleId" element={<ModuleContent />} />
+        </Route>
         <Route path="/platform/:moduleType" element={<Products />} />
         <Route path="/platform" element={<Products />} />
         <Route path="/industries/:industryType" element={<Solutions />} />
