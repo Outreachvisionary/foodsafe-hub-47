@@ -56,10 +56,9 @@ const config: Config = {
         secondary: ['DM Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
-      borderColor: theme => ({
-        ...theme('colors'),
-        DEFAULT: theme('colors.border', 'currentColor'),
-      }),
+      borderColor: {
+        DEFAULT: 'hsl(var(--border))',
+      },
       // This enables opacity modifiers for border colors
       borderOpacity: {
         '10': '0.1',
@@ -74,7 +73,7 @@ const config: Config = {
       },
     },
   },
-  // Enable animation and remove non-existent plugin
+  // Enable animation
   plugins: [
     require('tailwindcss-animate'),
   ],
