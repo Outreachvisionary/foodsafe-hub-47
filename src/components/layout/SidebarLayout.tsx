@@ -147,7 +147,7 @@ const SidebarLayout = () => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-gold text-charcoal border border-border">
+            <DropdownMenuContent align="end" className="w-56 bg-slate-600 text-charcoal border border-border">
               <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer hover:bg-secondary">
