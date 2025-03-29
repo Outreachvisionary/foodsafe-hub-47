@@ -159,11 +159,11 @@ const SidebarLayout = () => {
                 {t('profile.settings')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <div className="px-2 py-1.5">
+              <div className="px-2 py-1.5 bg-slate-200">
                 <LanguageSelector />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive hover:bg-secondary">
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive hover:bg-gold">
                 <LogOut className="mr-2 h-4 w-4" />
                 {t('auth.signOut')}
               </DropdownMenuItem>
