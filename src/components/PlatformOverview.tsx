@@ -15,7 +15,7 @@ const PlatformOverview = () => {
     description: "Manage compliance across multiple locations with standardized processes and centralized monitoring capabilities.",
     points: ["Unified facility management", "Standardized processes", "Regional compliance insights"]
   }];
-  return <section className="py-16 md:py-24 bg-white">
+  return <section className="py-16 md:py-24 -full bg-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold font-display text-cc-charcoal mb-4 text-brand-teal">
@@ -38,7 +38,7 @@ const PlatformOverview = () => {
         }} transition={{
           duration: 0.5,
           delay: index * 0.1
-        }} className="relative pl-6 cc-border-left bg-brand-teal rounded">
+        }} className="relative pl-6 cc-border-left bg-brand-teal rounded cc-border-zinc-900">
               <h3 className="text-xl font-display mb-3 font-extrabold text-cc-light">
                 {feature.title}
               </h3>
