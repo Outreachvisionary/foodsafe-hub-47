@@ -11,15 +11,15 @@ import { cn } from '@/lib/utils';
 interface RoleSelectorProps {
   value?: string;
   onChange: (value: string) => void;
-  level?: 'organization' | 'facility' | 'department';
+  organizationId?: string;
   placeholder?: string;
   className?: string;
 }
 
-const RoleSelector: React.FC<RoleSelectorProps> = ({
+export const RoleSelector: React.FC<RoleSelectorProps> = ({
   value,
   onChange,
-  level,
+  organizationId,
   placeholder = "Select role...",
   className,
 }) => {
@@ -32,11 +32,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
       setLoading(true);
       try {
         const data = await fetchRoles();
-        if (level) {
-          setRoles(data.filter(role => role.level === level));
-        } else {
-          setRoles(data);
-        }
+        setRoles(data);
       } catch (error) {
         console.error('Failed to load roles:', error);
       } finally {
@@ -45,7 +41,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
     };
 
     loadRoles();
-  }, [level]);
+  }, []);
 
   const selectedRole = roles.find(role => role.id === value);
 
@@ -102,4 +98,5 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
   );
 };
 
+// Also export as default for backward compatibility
 export default RoleSelector;

@@ -32,9 +32,18 @@ export const fetchRoleById = async (id: string): Promise<Role> => {
 };
 
 export const createRole = async (role: Omit<Role, 'id'>): Promise<Role> => {
+  // Ensure required fields are provided
+  const roleData = {
+    name: role.name,
+    level: role.level || "organization", // Default to organization level
+    description: role.description,
+    permissions: role.permissions,
+    organization_id: role.organization_id
+  };
+
   const { data, error } = await supabase
     .from('roles')
-    .insert(role)
+    .insert(roleData)
     .select()
     .single();
   

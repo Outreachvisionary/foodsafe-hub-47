@@ -17,7 +17,7 @@ interface DepartmentSelectorProps {
   className?: string;
 }
 
-const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
+export const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
   value,
   onChange,
   organizationId,
@@ -102,4 +102,5 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({
   );
 };
 
+// Also export as default for backward compatibility
 export default DepartmentSelector;

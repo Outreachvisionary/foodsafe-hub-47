@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
 import { toast } from 'sonner';
-import { RoleSelector } from '@/components/role/RoleSelector';
-import { DepartmentSelector } from '@/components/department/DepartmentSelector';
+import RoleSelector from '@/components/role/RoleSelector';
+import DepartmentSelector from '@/components/department/DepartmentSelector';
 import { PermissionProvider } from '@/contexts/PermissionContext';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 

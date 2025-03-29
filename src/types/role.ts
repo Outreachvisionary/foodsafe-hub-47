@@ -9,3 +9,15 @@ export interface Role {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role_id: string;
+  role_name?: string;
+  organization_id?: string;
+  facility_id?: string;
+  department_id?: string;
+  assigned_by?: string;
+  created_at?: string;
+}

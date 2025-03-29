@@ -75,6 +75,11 @@ const config: Config = {
         display: ['Poppins', 'system-ui', 'sans-serif'], // Elegant display font for headings and titles
         mono: ['JetBrains Mono', 'monospace'], // Monospaced font for code or technical sections
       },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
       borderColor: {
         DEFAULT: 'var(--border)',
       },
@@ -88,8 +93,8 @@ const config: Config = {
         '70': '0.7',
         '80': '0.8',
         '90': '0.9',
-      },
-    },
+      }
+    }
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
