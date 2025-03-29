@@ -1,11 +1,14 @@
-// src/components/layout/ProtectedSidebarLayout.tsx
 
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import React, { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 import SidebarLayout from './SidebarLayout';
 
-const ProtectedSidebarLayout: React.FC = () => {
+interface ProtectedSidebarLayoutProps {
+  children: ReactNode;
+}
+
+const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ children }) => {
   const { user, loading } = useUser();
   
   // Show loading indicator while checking authentication
@@ -22,8 +25,8 @@ const ProtectedSidebarLayout: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
   
-  // Show the sidebar layout with nested routes
-  return <SidebarLayout />;
+  // Show the sidebar layout with the children
+  return <SidebarLayout>{children}</SidebarLayout>;
 };
 
 export default ProtectedSidebarLayout;
