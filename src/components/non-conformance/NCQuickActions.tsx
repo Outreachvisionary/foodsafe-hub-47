@@ -37,7 +37,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { deleteNonConformance } from '@/services/nonConformanceService';
 import CreateCAPADialog from '../capa/CreateCAPADialog';
 import { NCStatus } from '@/types/non-conformance';
@@ -63,6 +63,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   onStatusChange
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGenerateCAPADialog, setShowGenerateCAPADialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -77,7 +78,10 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
       navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
     }
     
-    toast.success("CAPA created successfully");
+    toast({
+      title: "Success",
+      description: "CAPA created successfully",
+    });
   };
   
   const handleDelete = async () => {
@@ -92,10 +96,17 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         navigate('/non-conformance');
       }
       
-      toast.success("Non-conformance deleted successfully");
+      toast({
+        title: "Success",
+        description: "Non-conformance deleted successfully"
+      });
     } catch (error) {
       console.error('Error deleting non-conformance:', error);
-      toast.error("Failed to delete non-conformance");
+      toast({
+        title: "Error",
+        description: "Failed to delete non-conformance",
+        variant: "destructive"
+      });
     } finally {
       setShowDeleteDialog(false);
       setIsDeleting(false);
