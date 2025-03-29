@@ -1,7 +1,7 @@
 // src/components/layout/SidebarLayout.tsx
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'; // Add Outlet import
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'; // Add Outlet
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,7 +44,7 @@ interface SidebarLink {
   color?: string;
 }
 
-// Remove children prop as we'll use Outlet instead
+// Remove children prop and use Outlet instead
 const SidebarLayout = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -66,18 +66,18 @@ const SidebarLayout = () => {
   };
 
   const sidebarLinks: SidebarLink[] = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-500' },
-    { name: 'Documents', href: '/documents', icon: FileText, color: 'text-green-500' },
-    { name: 'Standards', href: '/standards', icon: ClipboardCheck, color: 'text-purple-500' },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-600' },
+    { name: 'Documents', href: '/documents', icon: FileText, color: 'text-green-600' },
+    { name: 'Standards', href: '/standards', icon: ClipboardCheck, color: 'text-purple-600' },
     { name: 'Organizations', href: '/organizations', icon: Building, color: 'text-indigo-600' },
-    { name: 'Facilities', href: '/facilities', icon: Building2, color: 'text-teal-500' },
-    { name: 'Audits', href: '/audits', icon: HardDrive, color: 'text-yellow-600' },
-    { name: 'Non-Conformance', href: '/non-conformance', icon: AlertTriangle, color: 'text-red-500' },
-    { name: 'CAPA', href: '/capa', icon: RefreshCw, color: 'text-orange-500' },
-    { name: 'Suppliers', href: '/suppliers', icon: Truck, color: 'text-pink-500' },
-    { name: 'Training', href: '/training', icon: GraduationCap, color: 'text-indigo-500' },
-    { name: 'HACCP', href: '/haccp', icon: Beaker, color: 'text-teal-500' },
-    { name: 'Traceability', href: '/traceability', icon: Activity, color: 'text-cyan-500' },
+    { name: 'Facilities', href: '/facilities', icon: Building2, color: 'text-teal-600' },
+    { name: 'Audits', href: '/audits', icon: HardDrive, color: 'text-yellow-700' },
+    { name: 'Non-Conformance', href: '/non-conformance', icon: AlertTriangle, color: 'text-red-600' },
+    { name: 'CAPA', href: '/capa', icon: RefreshCw, color: 'text-orange-600' },
+    { name: 'Suppliers', href: '/suppliers', icon: Truck, color: 'text-pink-600' },
+    { name: 'Training', href: '/training', icon: GraduationCap, color: 'text-indigo-600' },
+    { name: 'HACCP', href: '/haccp', icon: Beaker, color: 'text-teal-600' },
+    { name: 'Traceability', href: '/traceability', icon: Activity, color: 'text-cyan-600' },
   ];
 
   const isActiveLink = (href: string) => {
@@ -87,9 +87,9 @@ const SidebarLayout = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
+      {/* Light theme sidebar */}
       <div
-        className={`bg-card border-r border-border h-screen flex flex-col transition-all duration-300 ${
+        className={`bg-slate-50 border-r border-gray-200 h-screen flex flex-col transition-all duration-300 ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -97,14 +97,14 @@ const SidebarLayout = () => {
         <div className={`p-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center`}>
           {!collapsed && (
             <Link to="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-primary">CompliancePro</span>
+              <span className="text-xl font-bold text-blue-600">CompliancePro</span>
             </Link>
           )}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={toggleSidebar} 
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-8 w-8 text-gray-500 hover:text-gray-700"
           >
             {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
           </Button>
@@ -122,11 +122,11 @@ const SidebarLayout = () => {
                 className={`
                   group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors
                   ${isActiveLink(link.href) 
-                    ? 'bg-secondary text-secondary-foreground' 
-                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'}
+                    ? 'bg-blue-50 text-blue-700' 
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
                 `}
               >
-                <link.icon className={`${link.color || 'text-foreground'} ${collapsed ? 'mr-0' : 'mr-2'} h-5 w-5 flex-shrink-0`} />
+                <link.icon className={`${link.color || 'text-gray-700'} ${collapsed ? 'mr-0' : 'mr-2'} h-5 w-5 flex-shrink-0`} />
                 {!collapsed && <span>{link.name}</span>}
               </Link>
             ))}
@@ -134,10 +134,10 @@ const SidebarLayout = () => {
         </nav>
 
         {/* User Section */}
-        <div className="border-t border-border p-3">
+        <div className="border-t border-gray-200 p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className={`w-full ${collapsed ? 'justify-center' : 'justify-between'} px-2`}>
+              <Button variant="ghost" className={`w-full ${collapsed ? 'justify-center' : 'justify-between'} px-2 text-gray-700`}>
                 <div className="flex items-center">
                   <Avatar className="h-7 w-7 mr-2">
                     <AvatarImage src={user?.avatar_url || ''} />
@@ -167,7 +167,7 @@ const SidebarLayout = () => {
                 <LanguageSelector />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 hover:text-red-700">
                 <LogOut className="mr-2 h-4 w-4" />
                 {t('auth.signOut')}
               </DropdownMenuItem>
@@ -176,12 +176,12 @@ const SidebarLayout = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Light Theme */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4 flex justify-between items-center">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-semibold mb-1">
+            <h1 className="text-xl font-semibold mb-1 text-gray-800">
               {sidebarLinks.find(link => isActiveLink(link.href))?.name || 'Dashboard'}
             </h1>
             <Breadcrumbs />
@@ -196,7 +196,7 @@ const SidebarLayout = () => {
         </header>
 
         {/* Content - Replace children with Outlet */}
-        <main className="flex-1 overflow-auto bg-muted/20 p-6">
+        <main className="flex-1 overflow-auto bg-gray-50 p-6">
           <Outlet />
         </main>
       </div>
