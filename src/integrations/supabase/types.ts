@@ -1240,6 +1240,7 @@ export type Database = {
           status: Database["public"]["Enums"]["nc_status"]
           tags: string[] | null
           title: string
+          units: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1268,6 +1269,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["nc_status"]
           tags?: string[] | null
           title: string
+          units?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1296,6 +1298,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["nc_status"]
           tags?: string[] | null
           title?: string
+          units?: string | null
           updated_at?: string | null
         }
         Relationships: []

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -106,7 +105,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     if (onEdit) {
       onEdit();
     } else {
-      // Use the correct route format
+      // Update the route format to match the one defined in App.tsx
       navigate(`/non-conformance/edit/${id}`);
     }
   };
