@@ -1,7 +1,8 @@
+
 // src/components/layout/SidebarLayout.tsx
 
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import React, { useState, ReactNode } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
@@ -21,7 +22,11 @@ interface SidebarLink {
   permission?: string;
 }
 
-const SidebarLayout = () => {
+interface SidebarLayoutProps {
+  children: ReactNode;
+}
+
+const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useUser();
@@ -224,7 +229,7 @@ const SidebarLayout = () => {
           </div>
         </nav>
 
-        {/* User Section - Replace with ProfileTile */}
+        {/* User Section */}
         <div className="border-t border-border p-3">
           <ProfileTile />
         </div>
@@ -249,7 +254,7 @@ const SidebarLayout = () => {
 
         {/* Content */}
         <main className="flex-1 overflow-auto bg-secondary p-6">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
