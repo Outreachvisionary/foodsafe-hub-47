@@ -48,9 +48,8 @@ const App = () => {
         <Route path="/demo" element={<Auth />} />
         
         {/* Public product/marketing pages */}
-        <Route path="/standards" element={<StandardsPage />} />
-        <Route path="/standards/:standardId" element={<StandardsPage />} />
-        <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
+<Route path="/standards" element={<Standards />} />
+<Route path="/standards/:standardId" element={<Standards />} />
         
         <Route path="/platform/:moduleType" element={<Products />} />
         <Route path="/platform" element={<Products />} />
