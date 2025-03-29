@@ -10,14 +10,14 @@ const App = () => {
         {/* Public routes outside SidebarLayout */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        
+          <Route path="/" element={<Index />} />
+  <Route path="/auth" element={<Auth />} />
         {/* Protected routes with navigation sidebar */}
         <Route element={<SidebarLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents/*" element={<Documents />} />
-          <Route path="/standards" element={<StandardsPage />} />
-          <Route path="/standards/:standardId" element={<StandardsPage />} />
-          <Route path="/standards/:standardId/:moduleId" element={<StandardsPage />} />
+    <Route path="/standards" element={<Standards />} />
+    <Route path="/standards/:standardId" element={<Standards />} />
           <Route path="/organization" element={<OrganizationManagement />} />
           <Route path="/organizations" element={<Organizations />} />
           <Route path="/facilities" element={<FacilitiesList />} />
