@@ -1,11 +1,8 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, CheckCircle } from 'lucide-react';
-
 const MultiFacilityManagement = () => {
-  return (
-    <section className="py-16 md:py-24 bg-white">
+  return <section className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold font-display text-cc-charcoal mb-4">
@@ -17,14 +14,18 @@ const MultiFacilityManagement = () => {
         </div>
         
         <div className="flex flex-col lg:flex-row items-center gap-12">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="lg:w-1/2"
-          >
-            <div className="relative bg-cc-ivory p-10 rounded-xl">
+          <motion.div initial={{
+          opacity: 0,
+          x: -20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.6
+        }} className="lg:w-1/2">
+            <div className=" p-10 rounded-xl">
               {/* Facility Map Visualization */}
               <div className="w-full h-80 relative">
                 <div className="absolute top-1/4 left-1/4 flex flex-col items-center">
@@ -79,13 +80,17 @@ const MultiFacilityManagement = () => {
             </div>
           </motion.div>
           
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="lg:w-1/2"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          x: 20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.6
+        }} className="lg:w-1/2">
             <h3 className="text-2xl font-display font-bold text-cc-charcoal mb-4">
               Centralized Multi-facility Management
             </h3>
@@ -121,8 +126,6 @@ const MultiFacilityManagement = () => {
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default MultiFacilityManagement;
