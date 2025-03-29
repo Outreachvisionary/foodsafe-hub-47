@@ -1,7 +1,7 @@
 // src/components/layout/SidebarLayout.tsx
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'; // Add Outlet
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'; // Add Outlet import
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,7 +44,7 @@ interface SidebarLink {
   color?: string;
 }
 
-// Remove children prop and use Outlet instead
+// Remove children prop since we'll use Outlet instead
 const SidebarLayout = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -89,7 +89,7 @@ const SidebarLayout = () => {
     <div className="flex h-screen">
       {/* Light theme sidebar */}
       <div
-        className={`bg-slate-50 border-r border-gray-200 h-screen flex flex-col transition-all duration-300 ${
+        className={`bg-white border-r border-slate-200 h-screen flex flex-col transition-all duration-300 ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -134,7 +134,7 @@ const SidebarLayout = () => {
         </nav>
 
         {/* User Section */}
-        <div className="border-t border-gray-200 p-3">
+        <div className="border-t border-slate-200 p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className={`w-full ${collapsed ? 'justify-center' : 'justify-between'} px-2 text-gray-700`}>
@@ -151,7 +151,7 @@ const SidebarLayout = () => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-white text-gray-800">
               <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
@@ -179,7 +179,7 @@ const SidebarLayout = () => {
       {/* Main Content - Light Theme */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-xl font-semibold mb-1 text-gray-800">
               {sidebarLinks.find(link => isActiveLink(link.href))?.name || 'Dashboard'}
