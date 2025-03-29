@@ -158,17 +158,19 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h2 className="text-2xl font-bold">{nonConformance.title}</h2>
+          <h2 className="text-2xl font-bold">{nonConformance?.title}</h2>
         </div>
         <div className="flex items-center space-x-2">
           <div className={`px-3 py-1 rounded-full border ${getStatusClass()}`}>
-            {nonConformance.status}
+            {nonConformance?.status}
           </div>
           <NCQuickActions 
             id={id}
-            currentStatus={nonConformance.status}
+            status={nonConformance?.status || ''}
+            onEdit={() => navigate(`/non-conformance/${id}/edit`)}
+            onView={() => {}} // Already viewing, no action needed
             onStatusChange={handleStatusChange}
-            onGenerateCapa={handleGenerateCapa}
+            onCreateCAPA={handleGenerateCapa}
           />
         </div>
       </div>

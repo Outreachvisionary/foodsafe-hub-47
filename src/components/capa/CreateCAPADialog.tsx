@@ -1,217 +1,315 @@
-
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, Zap } from 'lucide-react';
-import CAPAForm from './CAPAForm';
-import { useToast } from '@/components/ui/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import RootCauseAnalysis from './RootCauseAnalysis';
-import CAPAWorkflowEngine from './CAPAWorkflowEngine';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Calendar, Check, ClipboardList, Plus, AlertTriangle, FileText } from 'lucide-react';
+import CAPAAuditIntegration from './CAPAAuditIntegration';
+import { createCAPA } from '@/services/capaService';
+import { useUser } from '@/contexts/UserContext';
+import { CAPASource, SourceReference } from '@/types/capa';
+
+interface SourceDataType {
+  title?: string;
+  description?: string;
+  source?: CAPASource;
+  sourceId?: string;
+  priority?: string;
+  sourceReference?: SourceReference;
+}
 
 interface CreateCAPADialogProps {
   onCAPACreated?: (data: any) => void;
   trigger?: React.ReactNode;
-  initialData?: any;
-  sourceData?: {
-    id: string;
-    title: string;
-    description: string;
-    source: string;
-    sourceId: string;
-    date: string;
-    severity: string;
-  };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  sourceData?: SourceDataType;
 }
 
 const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
-  onCAPACreated,
+  onCAPACreated, 
   trigger,
-  initialData,
-  sourceData,
   open,
-  onOpenChange
+  onOpenChange,
+  sourceData
 }) => {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = useState("details");
-  const [capaData, setCAPAData] = useState<any>(initialData || {});
-  const { toast } = useToast();
-
-  // Handle controlled or uncontrolled state
-  const isOpen = open !== undefined ? open : dialogOpen;
-  const setIsOpen = onOpenChange || setDialogOpen;
-
-  const handleSubmit = (data: any) => {
-    console.log('New CAPA data:', data);
-    
-    // Save the CAPA data to be accessible to other tabs
-    setCAPAData({
-      ...capaData,
-      ...data,
-      id: capaData.id || `CAPA-${Date.now()}`,
-      status: capaData.status || 'open',
-      createdDate: capaData.createdDate || new Date().toISOString().split('T')[0]
-    });
-    
-    // Here we would normally send this to an API
-    // For now we'll just simulate success and call the callback
-    
-    if (onCAPACreated) {
-      onCAPACreated({
-        ...capaData,
-        ...data,
-        id: capaData.id || `CAPA-${Date.now()}`,
-        status: capaData.status || 'open',
-        createdDate: capaData.createdDate || new Date().toISOString().split('T')[0]
-      });
+  const { user } = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [title, setTitle] = useState(sourceData?.title || '');
+  const [description, setDescription] = useState(sourceData?.description || '');
+  const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
+  const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
+  const [dueDate, setDueDate] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
+  const [auditFinding, setAuditFinding] = useState<any>(null);
+  
+  useEffect(() => {
+    if (sourceData) {
+      setTitle(sourceData.title || '');
+      setDescription(sourceData.description || '');
+      setSource(sourceData.source || 'audit');
+      setPriority(sourceData.priority || 'medium');
+      setSourceId(sourceData.sourceId || '');
     }
-    
-    if (activeTab === "workflow") {
-      // If on the last tab, close the dialog
-      setIsOpen(false);
+  }, [sourceData]);
+  
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setSource('audit');
+    setPriority('medium');
+    setDueDate('');
+    setAssignedTo('');
+    setSourceId('');
+    setAuditFinding(null);
+  };
+  
+  const handleClose = () => {
+    if (onOpenChange) {
+      onOpenChange(false);
     } else {
-      // Otherwise move to the next tab
-      if (activeTab === "details") setActiveTab("rootcause");
-      else if (activeTab === "rootcause") setActiveTab("workflow");
+      setIsOpen(false);
+    }
+    resetForm();
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !description || !source || !priority || !dueDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
+      
+      if (auditFinding && !sourceReference) {
+        sourceReference = {
+          id: auditFinding.id,
+          type: 'audit',
+          title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
+          description: auditFinding.description,
+          date: auditFinding.created_at,
+          status: auditFinding.status
+        };
+      }
+      
+      const newCAPA = await createCAPA({
+        title,
+        description,
+        source,
+        sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
+        priority: priority as any,
+        status: 'open',
+        assignedTo: assignedTo || user?.full_name || 'Unassigned',
+        department: '',
+        dueDate,
+        rootCause: '',
+        correctiveAction: '',
+        preventiveAction: '',
+        sourceReference,
+        fsma204Compliant: false
+      });
+      
+      toast.success('CAPA created successfully');
+      
+      if (onCAPACreated) {
+        onCAPACreated(newCAPA);
+      }
+      
+      handleClose();
+    } catch (error) {
+      console.error('Error creating CAPA:', error);
+      toast.error('Failed to create CAPA');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const handleRootCauseSelected = (rootCause: string) => {
-    setCAPAData({
-      ...capaData,
-      rootCause
-    });
+  
+  const handleFindingSelected = (finding: any) => {
+    setAuditFinding(finding);
+    setTitle(finding.description);
+    setDescription(`Finding from audit ${finding.auditId}: ${finding.description}`);
+    setPriority(finding.severity === 'Critical' ? 'critical' : 
+                finding.severity === 'Major' ? 'high' : 
+                finding.severity === 'Minor' ? 'medium' : 'low');
+    setSourceId(finding.id);
   };
 
-  const handleCancel = () => {
-    setIsOpen(false);
-    setCAPAData({});
-    setActiveTab("details");
-  };
-
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(newOpen) => {
-      setIsOpen(newOpen);
-      if (!newOpen) {
-        setCAPAData({});
-        setActiveTab("details");
-      }
-    }}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      
-      <DialogContent className="sm:max-w-[1000px]">
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button className="flex items-center">
+            <Plus className="h-4 w-4 mr-2" />
+            Create CAPA
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{sourceData ? 'Create CAPA from Issue' : 'Create New CAPA'}</DialogTitle>
+          <DialogTitle>Create New CAPA</DialogTitle>
           <DialogDescription>
-            {sourceData 
-              ? `Creating a corrective and preventive action plan based on ${sourceData.id}`
-              : 'Define a new Corrective and Preventive Action plan'
-            }
+            Create a new Corrective and Preventive Action (CAPA) to address compliance issues
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="details">CAPA Details</TabsTrigger>
-            <TabsTrigger value="rootcause">Root Cause Analysis</TabsTrigger>
-            <TabsTrigger value="workflow">Approval Workflow</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="pt-4">
-            <CAPAForm 
-              initialData={sourceData ? {
-                title: sourceData.title,
-                description: sourceData.description,
-                source: sourceData.source as any,
-                sourceId: sourceData.sourceId,
-                priority: (sourceData.severity === 'critical' ? 'critical' : 
-                          sourceData.severity === 'major' ? 'high' : 
-                          sourceData.severity === 'minor' ? 'medium' : 'low') as any
-              } : initialData}
-              onSubmit={handleSubmit} 
-              onCancel={handleCancel} 
-            />
-          </TabsContent>
-          
-          <TabsContent value="rootcause" className="pt-4">
-            {capaData.title ? (
-              <RootCauseAnalysis 
-                findingId={capaData.sourceId || "New CAPA"}
-                findingType={capaData.source || ""}
-                findingDescription={capaData.description || ""}
-                severity={capaData.priority || "medium"}
-                onRootCauseSelected={handleRootCauseSelected}
-              />
-            ) : (
-              <div className="p-8 text-center">
-                <p>Please complete the CAPA details first</p>
-                <Button onClick={() => setActiveTab("details")} className="mt-4">
-                  Go to CAPA Details
-                </Button>
-              </div>
-            )}
-            
-            <div className="flex justify-end mt-4 space-x-2">
-              <Button variant="outline" onClick={() => setActiveTab("details")}>
-                Back
-              </Button>
-              <Button onClick={() => setActiveTab("workflow")}>
-                Continue to Workflow
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="workflow" className="pt-4">
-            {capaData.title ? (
-              <CAPAWorkflowEngine 
-                capaId={capaData.id || "New CAPA"}
-                title={capaData.title}
-                priority={capaData.priority || "medium"}
-                requiredSignoffs={['Quality Manager', 'Department Head']}
-                initialStatus="draft"
-              />
-            ) : (
-              <div className="p-8 text-center">
-                <p>Please complete the CAPA details first</p>
-                <Button onClick={() => setActiveTab("details")} className="mt-4">
-                  Go to CAPA Details
-                </Button>
-              </div>
-            )}
-            
-            <div className="flex justify-end mt-4 space-x-2">
-              <Button variant="outline" onClick={() => setActiveTab("rootcause")}>
-                Back
-              </Button>
-              <Button onClick={() => {
-                if (onCAPACreated) {
-                  onCAPACreated(capaData);
-                }
-                setIsOpen(false);
-                setCAPAData({});
-                setActiveTab("details");
-              }}>
-                {sourceData ? (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Create Automated CAPA
-                  </>
-                ) : (
-                  "Finish & Create CAPA"
+        {sourceData && sourceData.sourceReference && (
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
+            <div className="flex items-start">
+              <FileText className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-700">
+                  Creating CAPA from {sourceData.sourceReference.type}
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  {sourceData.sourceReference.title}
+                </p>
+                {sourceData.sourceReference.date && (
+                  <p className="text-xs text-blue-500 mt-1">
+                    Reported on {new Date(sourceData.sourceReference.date).toLocaleDateString()}
+                  </p>
                 )}
-              </Button>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+            <Input
+              id="title"
+              placeholder="Enter CAPA title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
+              <Select 
+                value={source} 
+                onValueChange={(value) => setSource(value as CAPASource)}
+                disabled={!!sourceData?.source}
+              >
+                <SelectTrigger id="source">
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="audit">Audit</SelectItem>
+                  <SelectItem value="haccp">HACCP</SelectItem>
+                  <SelectItem value="supplier">Supplier</SelectItem>
+                  <SelectItem value="complaint">Complaint</SelectItem>
+                  <SelectItem value="traceability">Traceability</SelectItem>
+                  <SelectItem value="nonconformance">Non-Conformance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger id="priority">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+            <Textarea
+              id="description"
+              placeholder="Describe the issue or non-conformance requiring corrective action"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Input
+                id="assignedTo"
+                placeholder="Person responsible"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Due Date <span className="text-red-500">*</span></Label>
+              <div className="relative">
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+          
+          {source === 'audit' && !sourceData?.source && (
+            <div className="space-y-2">
+              <Label htmlFor="auditFinding">Link to Audit Finding</Label>
+              <CAPAAuditIntegration onFindingSelected={handleFindingSelected} />
+              {auditFinding && (
+                <div className="flex items-center mt-2 p-2 bg-green-50 border border-green-100 rounded-md">
+                  <Check className="h-4 w-4 text-green-500 mr-2" />
+                  <span className="text-sm text-green-700">
+                    Linked to finding: {auditFinding.id}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" type="button" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <ClipboardList className="h-4 w-4 mr-2 animate-pulse" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Create CAPA
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

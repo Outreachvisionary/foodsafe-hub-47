@@ -1,39 +1,56 @@
 
 import React, { useEffect } from 'react';
 import MainNavigation from '@/components/MainNavigation';
-import HeroSection from '@/components/HeroSection';
+import BrandHeader from '@/components/BrandHeader';
+import PlatformOverview from '@/components/PlatformOverview';
+import VisualDemo from '@/components/VisualDemo';
+import CoreFeatures from '@/components/CoreFeatures';
+import ProcessFlow from '@/components/ProcessFlow';
+import MultiFacilityManagement from '@/components/MultiFacilityManagement';
+import ROISection from '@/components/ROISection';
+import TestimonialSection from '@/components/TestimonialSection';
+import PlatformPreview from '@/components/PlatformPreview';
+import CallToAction from '@/components/CallToAction';
 import FooterSection from '@/components/FooterSection';
-import VisualShowcase from '@/components/VisualShowcase';
-import KeyFeatures from '@/components/KeyFeatures';
-import PlatformFunctionality from '@/components/PlatformFunctionality';
-import ValueProposition from '@/components/ValueProposition';
-import Testimonials from '@/components/Testimonials';
-import CallToActionSection from '@/components/CallToActionSection';
 import ConversionTracker from '@/components/ConversionTracker';
 
 const Index = () => {
   useEffect(() => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
+    
+    // Update document background color to match branding
+    document.body.classList.add('bg-cc-teal');
+    
+    return () => {
+      // Clean up by removing the class when component unmounts
+      document.body.classList.remove('bg-cc-teal');
+    };
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-cc-teal">
       <MainNavigation />
       
-      <HeroSection />
+      <BrandHeader />
       
-      <VisualShowcase />
+      <PlatformOverview />
       
-      <KeyFeatures />
+      <VisualDemo />
       
-      <PlatformFunctionality />
+      <CoreFeatures />
       
-      <ValueProposition />
+      <ProcessFlow />
       
-      <Testimonials />
+      <MultiFacilityManagement />
       
-      <CallToActionSection />
+      <ROISection />
+      
+      <TestimonialSection />
+      
+      <PlatformPreview />
+      
+      <CallToAction />
       
       <FooterSection />
       
