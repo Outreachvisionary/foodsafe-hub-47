@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react';
 import FacilityForm from '@/components/facilities/FacilityForm';
 import { Facility } from '@/types/facility';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CreateFacilityDialogProps {
   organizationId: string;
@@ -50,7 +51,7 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Add Facility</DialogTitle>
           <DialogDescription>
@@ -58,12 +59,14 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <FacilityForm 
-          initialData={{ organization_id: organizationId }}
-          onSuccess={handleSuccess}
-          onCancel={() => setOpen(false)}
-          isDialog={true}
-        />
+        <ScrollArea className="flex-1 pr-4 -mr-4">
+          <FacilityForm 
+            initialData={{ organization_id: organizationId }}
+            onSuccess={handleSuccess}
+            onCancel={() => setOpen(false)}
+            isDialog={true}
+          />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

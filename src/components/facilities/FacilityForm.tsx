@@ -214,22 +214,35 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Facility Name*</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter facility name" {...field} />
-                </FormControl>
-                <FormDescription>
-                  The name of your facility as it will appear in the system
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Facility Name*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter facility name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="facility_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Facility Type</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Manufacturing, Warehouse, etc." {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <FormField
             control={form.control}
@@ -240,23 +253,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
                 <FormControl>
                   <Textarea placeholder="Brief description of the facility" {...field} value={field.value || ''} />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="facility_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Facility Type</FormLabel>
-                <FormControl>
-                  <Input placeholder="Manufacturing, Warehouse, etc." {...field} value={field.value || ''} />
-                </FormControl>
-                <FormDescription>
-                  The type or purpose of this facility
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
