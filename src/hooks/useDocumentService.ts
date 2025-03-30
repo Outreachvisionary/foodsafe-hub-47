@@ -109,9 +109,10 @@ export function useDocumentService() {
       // Create approval activity record
       await enhancedDocumentService.createDocumentActivity({
         document_id: id,
-        activity_type: 'approval',
-        details: { comment },
-        timestamp: new Date().toISOString(),
+        action: 'approve',
+        performedBy: 'system',
+        performedAt: new Date().toISOString(),
+        details: comment
       });
       
       debugLog('Document approved:', result);
@@ -147,9 +148,10 @@ export function useDocumentService() {
       // Create rejection activity record
       await enhancedDocumentService.createDocumentActivity({
         document_id: id,
-        activity_type: 'rejection',
-        details: { comment },
-        timestamp: new Date().toISOString(),
+        action: 'reject',
+        performedBy: 'system',
+        performedAt: new Date().toISOString(),
+        details: comment
       });
       
       debugLog('Document rejected:', result);
@@ -210,7 +212,7 @@ export function useDocumentService() {
     }
   };
 
-  const createDocumentVersion = async (versionData: Partial<DocumentVersion>) => {
+  const createDocumentVersion = async (versionData: Omit<DocumentVersion, 'id'>) => {
     try {
       setIsLoading(true);
       setError(null);

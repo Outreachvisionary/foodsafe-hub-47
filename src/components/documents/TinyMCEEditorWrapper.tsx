@@ -24,20 +24,30 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
+  // Initialize with empty string, not undefined
   const [editorData, setEditorData] = useState<string>(content || '');
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // Debug function for tracking component lifecycle and data
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[RichTextEditor] ${message}`, data ? data : '');
+    }
+  };
   
   // Initialize editor data when content prop changes
   useEffect(() => {
-    if (content !== undefined) {
-      setEditorData(content);
-    }
+    debugLog('Content prop changed', content);
+    setEditorData(content || '');
   }, [content]);
   
   // Initialize editor session
   useEffect(() => {
-    if (!documentId || readOnly || !supabase) return;
+    if (!documentId || readOnly || !supabase) {
+      debugLog('Skipping session creation - conditions not met', { documentId, readOnly });
+      return;
+    }
     
     // Only attempt to create a session if documentId is a valid UUID
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
@@ -55,6 +65,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           return;
         }
         
+        debugLog('Creating editor session', { document_id: documentId, user_id: user.id });
+        
         const { data, error } = await supabase
           .from('document_editor_sessions')
           .insert({
@@ -66,8 +78,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           .select('id')
           .single();
         
-        if (error) throw error;
-        if (data) setSessionId(data.id);
+        if (error) {
+          console.error('Error creating session:', error);
+          throw error;
+        }
+        
+        if (data) {
+          debugLog('Session created successfully', data);
+          setSessionId(data.id);
+        }
       } catch (error) {
         console.error('Error creating editor session:', error);
       }
@@ -83,13 +102,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       clearInterval(interval);
       closeSession();
     };
-  }, [documentId, readOnly, editorData]);
+  }, [documentId, readOnly]);
   
   // Fetch active users
   const fetchActiveUsers = async () => {
-    if (!documentId || !supabase || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) return;
+    if (!documentId || !supabase || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
+      return;
+    }
     
     try {
+      debugLog('Fetching active users');
+      
       const { data, error } = await supabase
         .from('document_editor_sessions')
         .select('user_id')
@@ -102,6 +125,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         // Fetch user info for each active user
         const userIds = data.map(session => session.user_id);
         setActiveUsers(userIds);
+        
+        debugLog('Active users fetched', userIds);
         
         // If multiple users, show toast
         if (userIds.length > 1 && !readOnly) {
@@ -121,6 +146,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!sessionId || !supabase) return;
     
     try {
+      debugLog('Closing editor session', sessionId);
+      
       await supabase
         .from('document_editor_sessions')
         .update({
@@ -131,6 +158,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           }
         })
         .eq('id', sessionId);
+        
+      debugLog('Session closed successfully');
     } catch (error) {
       console.error('Error closing session:', error);
     }
@@ -155,6 +184,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Handle editor content change
   const handleEditorChange = (content: string) => {
+    debugLog('Editor content changed', { contentLength: content?.length });
     setEditorData(content);
     
     if (onChange) onChange(content);
@@ -165,6 +195,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 5000);
     
     return () => clearTimeout(timeoutId);
+  };
+
+  // Handle successful initialization of TinyMCE
+  const handleEditorInit = (evt: any, editor: any) => {
+    debugLog('Editor initialized');
+    editorRef.current = editor;
+    setIsLoading(false);
   };
 
   return (
@@ -178,10 +215,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <div style={{ height: `${height}px` }} className="overflow-auto border rounded-md">
         <Editor
           apiKey="no-api-key" // Replace with your TinyMCE API key if you have one
-          onInit={(evt, editor) => {
-            editorRef.current = editor;
-            setIsLoading(false);
-          }}
+          onInit={handleEditorInit}
           initialValue={editorData}
           value={editorData}
           onEditorChange={handleEditorChange}
@@ -198,7 +232,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               'bold italic forecolor | alignleft aligncenter ' +
               'alignright alignjustify | bullist numlist outdent indent | ' +
               'removeformat | help',
-            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+            statusbar: false,
+            branding: false,
+            promotion: false
           }}
         />
       </div>

@@ -5,13 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardCheck, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { ClipboardCheck, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentApproverProps {
   document: Document;
   onApprove: (document: Document, comment: string) => void;
-  onReject: (document: Document, comment: string) => void;
+  onReject: (document: Document, reason: string) => void;
 }
 
 const DocumentApprover: React.FC<DocumentApproverProps> = ({ 
@@ -23,7 +23,16 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Debug function
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DocumentApprover] ${message}`, data ? data : '');
+    }
+  };
+
   const handleApprove = async () => {
+    debugLog('Approve clicked', { document });
+    
     if (!document || !document.id) {
       toast({
         title: "Error",
@@ -35,6 +44,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
 
     try {
       setIsSubmitting(true);
+      debugLog('Approving document', { id: document.id, comment });
       await onApprove(document, comment);
       
       toast({
@@ -54,6 +64,8 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
   };
 
   const handleReject = async () => {
+    debugLog('Reject clicked', { document });
+    
     if (!document || !document.id) {
       toast({
         title: "Error",
@@ -63,8 +75,18 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
       return;
     }
 
+    if (!comment.trim()) {
+      toast({
+        title: "Comment required",
+        description: "Please provide a reason for rejecting this document",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      debugLog('Rejecting document', { id: document.id, reason: comment });
       await onReject(document, comment);
       
       toast({
@@ -85,6 +107,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
 
   // Document must be in "Pending Approval" status to be approved
   if (!document) {
+    debugLog('No document provided');
     return (
       <Card className="bg-white">
         <CardHeader>
@@ -99,6 +122,8 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
       </Card>
     );
   }
+
+  debugLog('Rendering with document', { id: document.id, status: document.status });
 
   if (document.status !== 'Pending Approval') {
     return (
@@ -161,7 +186,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
           disabled={isSubmitting || !comment.trim()}
           className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
         >
-          <XCircle className="mr-2 h-4 w-4" />
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
           Reject
         </Button>
         <Button 
@@ -169,7 +194,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
           onClick={handleApprove}
           disabled={isSubmitting}
         >
-          <ClipboardCheck className="mr-2 h-4 w-4" />
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardCheck className="mr-2 h-4 w-4" />}
           Approve Document
         </Button>
       </CardFooter>
