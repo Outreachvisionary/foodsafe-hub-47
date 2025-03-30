@@ -106,13 +106,15 @@ export function useDocumentService() {
         updated_at: new Date().toISOString(),
       });
       
-      // Create approval activity record
+      // Create approval activity record - using the correct property names in DocumentActivity
       await enhancedDocumentService.createDocumentActivity({
         document_id: id,
         action: 'approve',
-        performedBy: 'system',
-        performedAt: new Date().toISOString(),
-        details: comment
+        user_id: 'system', // Using user_id instead of performedBy
+        user_name: 'System',
+        user_role: 'System',
+        timestamp: new Date().toISOString(), // Using timestamp instead of performedAt
+        comments: comment // Using comments instead of details
       });
       
       debugLog('Document approved:', result);
@@ -145,13 +147,15 @@ export function useDocumentService() {
         updated_at: new Date().toISOString(),
       });
       
-      // Create rejection activity record
+      // Create rejection activity record - using the correct property names in DocumentActivity
       await enhancedDocumentService.createDocumentActivity({
         document_id: id,
         action: 'reject',
-        performedBy: 'system',
-        performedAt: new Date().toISOString(),
-        details: comment
+        user_id: 'system', // Using user_id instead of performedBy
+        user_name: 'System',
+        user_role: 'System',
+        timestamp: new Date().toISOString(), // Using timestamp instead of performedAt
+        comments: comment // Using comments instead of details
       });
       
       debugLog('Document rejected:', result);
