@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { ICountry, IState, ICity } from 'country-state-city/lib/interface';
-import { 
-  getAllCountries, 
-  getStatesForCountry, 
+import {
+  getAllCountries,
+  getStatesForCountry,
   getCitiesForState,
   validateZipcode,
-  getZipcodeExample
+  getZipcodeExample,
 } from '@/utils/locationUtils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,7 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
@@ -45,28 +44,22 @@ const LocationForm: React.FC<LocationFormProps> = ({
   onChange,
   showValidationErrors = false,
   disabled = false,
-  className
+  className,
 }) => {
   const [countries, setCountries] = useState<ICountry[]>([]);
   const [states, setStates] = useState<IState[]>([]);
   const [cities, setCities] = useState<ICity[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   
-  const [selectedCountry, setSelectedCountry] = useState<string | undefined>(
-    initialData?.countryCode
-  );
-  const [selectedState, setSelectedState] = useState<string | undefined>(
-    initialData?.stateCode
-  );
-  const [selectedCity, setSelectedCity] = useState<string | undefined>(
-    initialData?.city
-  );
-  const [address, setAddress] = useState<string | undefined>(
-    initialData?.address
-  );
-  const [zipcode, setZipcode] = useState<string | undefined>(
-    initialData?.zipcode
-  );
+  const [loadingCountries, setLoadingCountries] = useState<boolean>(true);
+  const [loadingStates, setLoadingStates] = useState<boolean>(false);
+  const [loadingCities, setLoadingCities] = useState<boolean>(false);
+
+  const [selectedCountry, setSelectedCountry] = useState<string | undefined>(initialData?.countryCode);
+  const [selectedState, setSelectedState] = useState<string | undefined>(initialData?.stateCode);
+  const [selectedCity, setSelectedCity] = useState<string | undefined>(initialData?.city);
+  
+  const [address, setAddress] = useState<string | undefined>(initialData?.address);
+  const [zipcode, setZipcode] = useState<string | undefined>(initialData?.zipcode);
   
   const [zipcodeError, setZipcodeError] = useState<string | null>(null);
 
@@ -74,86 +67,66 @@ const LocationForm: React.FC<LocationFormProps> = ({
   useEffect(() => {
     const loadCountries = async () => {
       try {
-        setLoading(true);
+        setLoadingCountries(true);
         const allCountries = getAllCountries();
-        console.log('Loaded countries:', allCountries.length);
         setCountries(allCountries);
       } catch (error) {
         console.error('Error loading countries:', error);
       } finally {
-        setLoading(false);
+        setLoadingCountries(false);
       }
     };
-    
+
     loadCountries();
   }, []);
-
-  // Set initial values from initialData when component mounts
-  useEffect(() => {
-    if (initialData) {
-      console.log('Setting initial location data:', initialData);
-      if (initialData.countryCode) {
-        setSelectedCountry(initialData.countryCode);
-      }
-      if (initialData.stateCode) {
-        setSelectedState(initialData.stateCode);
-      }
-      if (initialData.city) {
-        setSelectedCity(initialData.city);
-      }
-      if (initialData.address) {
-        setAddress(initialData.address);
-      }
-      if (initialData.zipcode) {
-        setZipcode(initialData.zipcode);
-      }
-    }
-  }, [initialData]);
 
   // Load states when country changes
   useEffect(() => {
     if (selectedCountry) {
-      console.log('Loading states for country:', selectedCountry);
-      const statesForCountry = getStatesForCountry(selectedCountry);
-      console.log('Loaded states:', statesForCountry.length);
-      setStates(statesForCountry);
-      
-      // Reset state and city if country changes
-      if (!initialData || selectedCountry !== initialData.countryCode) {
-        setSelectedState(undefined);
-        setSelectedCity(undefined);
+      setLoadingStates(true);
+      try {
+        const statesForCountry = getStatesForCountry(selectedCountry);
+        setStates(statesForCountry);
+        setSelectedState(undefined); // Reset state when country changes
+        setSelectedCity(undefined); // Reset city when country changes
+      } catch (error) {
+        console.error('Error loading states:', error);
+      } finally {
+        setLoadingStates(false);
       }
     } else {
       setStates([]);
       setSelectedState(undefined);
       setSelectedCity(undefined);
     }
-  }, [selectedCountry, initialData]);
+  }, [selectedCountry]);
 
   // Load cities when state changes
   useEffect(() => {
     if (selectedCountry && selectedState) {
-      console.log('Loading cities for state:', selectedState, 'in country:', selectedCountry);
-      const citiesForState = getCitiesForState(selectedCountry, selectedState);
-      console.log('Loaded cities:', citiesForState.length);
-      setCities(citiesForState);
-      
-      // Reset city if state changes
-      if (!initialData || selectedState !== initialData.stateCode) {
-        setSelectedCity(undefined);
+      setLoadingCities(true);
+      try {
+        const citiesForState = getCitiesForState(selectedCountry, selectedState);
+        setCities(citiesForState);
+        setSelectedCity(undefined); // Reset city when state changes
+      } catch (error) {
+        console.error('Error loading cities:', error);
+      } finally {
+        setLoadingCities(false);
       }
     } else {
       setCities([]);
       setSelectedCity(undefined);
     }
-  }, [selectedCountry, selectedState, initialData]);
+  }, [selectedCountry, selectedState]);
 
   // Validate zipcode
   useEffect(() => {
     if (zipcode && selectedCountry) {
       const isValid = validateZipcode(zipcode, selectedCountry);
       if (!isValid) {
-        setZipcodeError(`Invalid format. Example: ${getZipcodeExample(selectedCountry)}`);
+        const example = getZipcodeExample(selectedCountry) || 'N/A';
+        setZipcodeError(`Invalid format. Example: ${example}`);
       } else {
         setZipcodeError(null);
       }
@@ -162,161 +135,134 @@ const LocationForm: React.FC<LocationFormProps> = ({
     }
   }, [zipcode, selectedCountry]);
 
-  // Update parent component with location data
+  // Notify parent component of location data changes
   useEffect(() => {
-    const selectedCountryObj = countries.find(c => c.isoCode === selectedCountry);
-    const selectedStateObj = states.find(s => s.isoCode === selectedState);
-    
-    const locationData: LocationData = {
+    const selectedCountryObj = countries.find((c) => c.isoCode === selectedCountry);
+    const selectedStateObj = states.find((s) => s.isoCode === selectedState);
+
+    onChange({
       countryCode: selectedCountry,
       country: selectedCountryObj?.name,
       stateCode: selectedState,
       state: selectedStateObj?.name,
       city: selectedCity,
       zipcode,
-      address
-    };
-    
-    console.log('Location data updated:', locationData);
-    onChange(locationData);
-  }, [selectedCountry, selectedState, selectedCity, zipcode, address, countries, states, onChange]);
-
-  const handleCountryChange = (value: string) => {
-    console.log('Country selected:', value);
-    setSelectedCountry(value);
-  };
-
-  const handleStateChange = (value: string) => {
-    console.log('State selected:', value);
-    setSelectedState(value);
-  };
-
-  const handleCityChange = (value: string) => {
-    console.log('City selected:', value);
-    setSelectedCity(value);
-  };
+      address,
+    });
+  }, [selectedCountry, selectedState, selectedCity, zipcode, address]);
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <FormItem>
-            <FormLabel>Country</FormLabel>
-            <Select
-              value={selectedCountry}
-              onValueChange={handleCountryChange}
-              disabled={disabled || loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select country">
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Countries</SelectLabel>
-                  {countries.map((country) => (
-                    <SelectItem key={country.isoCode} value={country.isoCode}>
-                      {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </FormItem>
-        </div>
-        
-        <div>
-          <FormItem>
-            <FormLabel>State/Province</FormLabel>
-            <Select
-              value={selectedState}
-              onValueChange={handleStateChange}
-              disabled={disabled || !selectedCountry || states.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.length === 0 ? (
-                  <SelectItem value="no-states" disabled>
-                    {selectedCountry ? 'No states available' : 'Select a country first'}
-                  </SelectItem>
-                ) : (
-                  <SelectGroup>
-                    <SelectLabel>States</SelectLabel>
-                    {states.map((state) => (
-                      <SelectItem key={state.isoCode} value={state.isoCode}>
-                        {state.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                )}
-              </SelectContent>
-            </Select>
-          </FormItem>
-        </div>
-      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <FormItem>
-            <FormLabel>City</FormLabel>
-            <Select
-              value={selectedCity}
-              onValueChange={handleCityChange}
-              disabled={disabled || !selectedState || cities.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                {cities.length === 0 ? (
-                  <SelectItem value="no-cities" disabled>
-                    {selectedState ? 'No cities available' : 'Select a state first'}
+      {/* Country Selector */}
+      <FormItem>
+        <FormLabel>Country</FormLabel>
+        <Select
+          value={selectedCountry}
+          onValueChange={setSelectedCountry}
+          disabled={disabled || loadingCountries}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select country">
+              {loadingCountries && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Countries</SelectLabel>
+              {countries.map((country) => (
+                <SelectItem key={country.isoCode} value={country.isoCode}>
+                  {country.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </FormItem>
+
+      {/* State Selector */}
+      <FormItem>
+        <FormLabel>State/Province</FormLabel>
+        <Select
+          value={selectedState}
+          onValueChange={setSelectedState}
+          disabled={disabled || !selectedCountry || loadingStates}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select state" />
+          </SelectTrigger>
+          <SelectContent>
+            {states.length === 0 ? (
+              <SelectItem value="no-states" disabled>
+                {selectedCountry ? 'No states available' : 'Select a country first'}
+              </SelectItem>
+            ) : (
+              <SelectGroup>
+                {states.map((state) => (
+                  <SelectItem key={state.isoCode} value={state.isoCode}>
+                    {state.name}
                   </SelectItem>
-                ) : (
-                  <SelectGroup>
-                    <SelectLabel>Cities</SelectLabel>
-                    {cities.map((city) => (
-                      <SelectItem key={city.name} value={city.name}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                )}
-              </SelectContent>
-            </Select>
-          </FormItem>
-        </div>
-        
-        <div>
-          <FormItem>
-            <FormLabel>Postal/Zip Code</FormLabel>
-            <Input
-              placeholder="Enter postal code"
-              value={zipcode || ''}
-              onChange={(e) => setZipcode(e.target.value)}
-              disabled={disabled || !selectedCountry}
-            />
-            {showValidationErrors && zipcodeError && (
-              <FormMessage>{zipcodeError}</FormMessage>
+                ))}
+              </SelectGroup>
             )}
-          </FormItem>
-        </div>
-      </div>
-      
-      <div>
-        <FormItem>
-          <FormLabel>Address</FormLabel>
-          <Input
-            placeholder="Enter street address"
-            value={address || ''}
-            onChange={(e) => setAddress(e.target.value)}
-            disabled={disabled}
-          />
-        </FormItem>
-      </div>
+          </SelectContent>
+        </Select>
+      </FormItem>
+
+      {/* City Selector */}
+      <FormItem>
+        <FormLabel>City</FormLabel>
+        <Select
+          value={selectedCity}
+          onValueChange={setSelectedCity}
+          disabled={disabled || !selectedState || loadingCities}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select city" />
+          </SelectTrigger>
+          <SelectContent>
+            {cities.length === 0 ? (
+              <SelectItem value="no-cities" disabled>
+                {selectedState ? 'No cities available' : 'Select a state first'}
+              </SelectItem>
+            ) : (
+              <SelectGroup>
+                {cities.map((city) => (
+                  <SelectItem key={city.name} value={city.name}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+          </SelectContent>
+        </Select>
+      </FormItem>
+
+      {/* Zip Code Input */}
+      <FormItem>
+        <FormLabel>Postal/Zip Code</FormLabel>
+        <Input
+          placeholder="Enter postal code"
+          value={zipcode || ''}
+          onChange={(e) => setZipcode(e.target.value)}
+          disabled={disabled || !selectedCountry}
+        />
+        {showValidationErrors && zipcodeError && (
+          <FormMessage>{zipcodeError}</FormMessage>
+        )}
+      </FormItem>
+
+      {/* Address Input */}
+      <FormItem>
+        <FormLabel>Address</FormLabel>
+        <Input
+          placeholder="Enter street address"
+          value={address || ''}
+          onChange={(e) => setAddress(e.target.value)}
+          disabled={disabled}
+        />
+      </FormItem>
+
     </div>
   );
 };
