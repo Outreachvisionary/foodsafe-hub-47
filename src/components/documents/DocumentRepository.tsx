@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
 
-// Helper function to format dates
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'N/A';
   try {
@@ -52,7 +50,7 @@ const formatDate = (dateStr?: string) => {
 };
 
 const DocumentRepository: React.FC = () => {
-  const { documents, fetchDocuments, setSelectedDocument, deleteDocument } = useDocuments();
+  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats } = useDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -63,20 +61,33 @@ const DocumentRepository: React.FC = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  // Filter documents based on search and filters
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        await refreshDocumentStats();
+      } catch (error) {
+        console.error('Error loading documents:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load documents',
+          variant: 'destructive'
+        });
+      }
+    };
+    
+    loadDocuments();
+  }, [refreshDocumentStats, toast]);
+  
   const filteredDocuments = documents.filter(doc => {
-    // Search term filter
     const matchesSearch = searchTerm 
       ? doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()))
       : true;
     
-    // Category filter
     const matchesCategory = categoryFilter 
       ? doc.category === categoryFilter 
       : true;
     
-    // Status filter
     const matchesStatus = statusFilter 
       ? doc.status === statusFilter 
       : true;
@@ -84,7 +95,6 @@ const DocumentRepository: React.FC = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Group documents by category for grid view
   const documentsByCategory = filteredDocuments.reduce((acc: Record<string, Document[]>, doc) => {
     if (!acc[doc.category]) {
       acc[doc.category] = [];
@@ -93,12 +103,11 @@ const DocumentRepository: React.FC = () => {
     return acc;
   }, {});
 
-  // Get unique categories and statuses for filters
   const categories = Array.from(new Set(documents.map(doc => doc.category)));
   const statuses = Array.from(new Set(documents.map(doc => doc.status)));
 
   const handleDocumentUploadComplete = (document: Document) => {
-    fetchDocuments();
+    addDocument(document);
     setUploadDialogOpen(false);
     toast({
       title: 'Document uploaded',
@@ -126,18 +135,14 @@ const DocumentRepository: React.FC = () => {
 
   const handleEditDocument = (doc: Document) => {
     setSelectedDocument(doc);
-    // Navigate to editor tab is handled by the parent component
   };
 
   const handleDownloadDocument = async (doc: Document) => {
     try {
-      // Get the storage path for the document
       const storagePath = documentService.getStoragePath(doc);
       
-      // Get a signed URL for the file
       const url = await documentService.getDownloadUrl(storagePath);
       
-      // Use the browser's download capability
       const a = window.document.createElement('a');
       a.href = url;
       a.download = doc.file_name;
@@ -145,7 +150,6 @@ const DocumentRepository: React.FC = () => {
       a.click();
       window.document.body.removeChild(a);
       
-      // Record download activity
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await documentService.createDocumentActivity({
@@ -178,10 +182,9 @@ const DocumentRepository: React.FC = () => {
   };
 
   const handleDocumentUpdate = (updatedDoc: Document) => {
-    fetchDocuments();
+    updateDocument(updatedDoc);
   };
 
-  // Statistical data for dashboard
   const documentStats = {
     total: documents.length,
     byStatus: statuses.reduce((acc: Record<string, number>, status) => {
@@ -272,7 +275,6 @@ const DocumentRepository: React.FC = () => {
         </TabsList>
         
         <TabsContent value="documents">
-          {/* List View */}
           {viewMode === 'list' && (
             <Card>
               <CardContent className="p-0">
@@ -373,7 +375,6 @@ const DocumentRepository: React.FC = () => {
             </Card>
           )}
           
-          {/* Grid View */}
           {viewMode === 'grid' && (
             <div>
               {Object.keys(documentsByCategory).length > 0 ? (
@@ -464,7 +465,6 @@ const DocumentRepository: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="dashboard">
-          {/* Dashboard View with Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardContent className="pt-6">
@@ -529,7 +529,6 @@ const DocumentRepository: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Document preview dialog */}
       <DocumentPreviewDialog 
         document={selectedDocForPreview} 
         open={isPreviewOpen} 
@@ -537,7 +536,6 @@ const DocumentRepository: React.FC = () => {
         onDocumentUpdate={handleDocumentUpdate}
       />
       
-      {/* Document upload dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -552,7 +550,6 @@ const DocumentRepository: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Confirm delete dialog */}
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -585,7 +582,6 @@ const DocumentRepository: React.FC = () => {
   );
 };
 
-// Helper component for status badges
 const StatusBadge: React.FC<{ status: DocumentStatus | string }> = ({ status }) => {
   switch (status) {
     case 'Draft':

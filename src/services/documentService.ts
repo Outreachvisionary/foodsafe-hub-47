@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Document, 
@@ -6,7 +5,9 @@ import {
   DocumentWorkflow, 
   DocumentWorkflowStep, 
   DocumentActivity,
-  DocumentAccess
+  DocumentAccess,
+  DocumentStatus,
+  DocumentCategory
 } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -72,8 +73,8 @@ const documentService = {
     const documentData = {
       id: documentId,
       title: document.title || 'Untitled Document',
-      status: document.status || 'Draft',
-      category: document.category || 'Other',
+      status: (document.status as DocumentStatus) || 'Draft',
+      category: (document.category as DocumentCategory) || 'Other',
       file_name: document.file_name || `${documentId}.txt`,
       file_size: document.file_size || 0,
       file_type: document.file_type || 'text/plain',
@@ -294,8 +295,8 @@ const documentService = {
       throw error;
     }
   },
-
-  // Document access control methods - adding these missing methods
+  
+  // Document access control methods
   async fetchAccess(documentId: string): Promise<DocumentAccess[]> {
     const { data, error } = await supabase
       .from('document_access')
@@ -347,7 +348,7 @@ const documentService = {
     }
   },
   
-  // New method for uploadToStorage
+  // Method for uploadToStorage
   async uploadToStorage(file: File, document: Partial<Document>, versionNumber = 1): Promise<string> {
     const documentId = document.id;
     const fileName = file.name;
@@ -359,7 +360,7 @@ const documentService = {
     return storagePath;
   },
   
-  // New method for creating versions
+  // Method for creating versions
   async createVersion(document: Document, versionDetails: any): Promise<DocumentVersion> {
     const versionNumber = document.version + 1;
     
