@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,60 +8,49 @@ import { ICountry, IState } from 'country-state-city/lib/interface';
 import { X } from 'lucide-react';
 
 interface FacilityFiltersProps {
-  onFilterChange: (filters: { country?: string, state?: string, city?: string }) => void;
+  onFilterChange: (filters: { country?: string; state?: string; city?: string }) => void;
   className?: string;
 }
 
 const FacilityFilters: React.FC<FacilityFiltersProps> = ({ onFilterChange, className }) => {
   const [countries, setCountries] = useState<ICountry[]>([]);
   const [states, setStates] = useState<IState[]>([]);
-  
-  const [selectedCountry, setSelectedCountry] = useState<string | undefined>();
-  const [selectedState, setSelectedState] = useState<string | undefined>();
-  const [selectedCity, setSelectedCity] = useState<string | undefined>();
-  
-  // Load countries on mount
+  const [selectedCountry, setSelectedCountry] = useState<string>();
+  const [selectedState, setSelectedState] = useState<string>();
+
+  // Load countries on initial mount
   useEffect(() => {
-    const allCountries = Country.getAllCountries();
-    setCountries(allCountries);
+    setCountries(Country.getAllCountries());
   }, []);
-  
-  // Load states when country changes
+
+  // Update states when country changes
   useEffect(() => {
     if (selectedCountry) {
-      const statesForCountry = State.getStatesOfCountry(selectedCountry);
-      setStates(statesForCountry);
-      
-      // Reset state and city selections when country changes
-      if (selectedState) {
-        setSelectedState(undefined);
-        setSelectedCity(undefined);
-      }
+      setStates(State.getStatesOfCountry(selectedCountry));
     } else {
       setStates([]);
-      setSelectedState(undefined);
-      setSelectedCity(undefined);
     }
+    // Reset dependent selections
+    setSelectedState(undefined);
   }, [selectedCountry]);
-  
-  // Notify parent component when filters change
+
+  // Notify parent of filter changes
   useEffect(() => {
-    const selectedCountryObj = countries.find(c => c.isoCode === selectedCountry);
-    const selectedStateObj = states.find(s => s.isoCode === selectedState);
+    const countryObj = countries.find(c => c.isoCode === selectedCountry);
+    const stateObj = states.find(s => s.isoCode === selectedState);
     
     onFilterChange({
-      country: selectedCountryObj?.name,
-      state: selectedStateObj?.name,
-      city: selectedCity
+      country: countryObj?.name,
+      state: stateObj?.name,
+      city: undefined // Reserved for future implementation
     });
-  }, [selectedCountry, selectedState, selectedCity, onFilterChange, countries, states]);
-  
+  }, [selectedCountry, selectedState]);
+
   const clearFilters = () => {
     setSelectedCountry(undefined);
     setSelectedState(undefined);
-    setSelectedCity(undefined);
   };
-  
+
   return (
     <Card className={`p-4 ${className}`}>
       <div className="flex justify-between items-center mb-4">
@@ -72,26 +60,31 @@ const FacilityFilters: React.FC<FacilityFiltersProps> = ({ onFilterChange, class
           size="sm" 
           onClick={clearFilters}
           className="h-8 px-2"
+          aria-label="Clear filters"
         >
           <X className="h-4 w-4 mr-1" />
           Clear
         </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium mb-1 block">Country</Label>
           <Select
             value={selectedCountry}
-            onValueChange={setSelectedCountry}
+            onValueChange={(value: string) => setSelectedCountry(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Select country">
               <SelectValue placeholder="Any country" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {countries.map((country) => (
-                  <SelectItem key={country.isoCode} value={country.isoCode}>
+                  <SelectItem 
+                    key={country.isoCode} 
+                    value={country.isoCode}
+                    aria-label={country.name}
+                  >
                     {country.name}
                   </SelectItem>
                 ))}
@@ -99,21 +92,27 @@ const FacilityFilters: React.FC<FacilityFiltersProps> = ({ onFilterChange, class
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
           <Label className="text-sm font-medium mb-1 block">State/Province</Label>
           <Select
             value={selectedState}
-            onValueChange={setSelectedState}
-            disabled={!selectedCountry || states.length === 0}
+            onValueChange={(value: string) => setSelectedState(value)}
+            disabled={!selectedCountry}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={selectedCountry ? "Any state" : "Select a country first"} />
+            <SelectTrigger aria-label="Select state/province">
+              <SelectValue 
+                placeholder={selectedCountry ? "Any state" : "Select country first"} 
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {states.map((state) => (
-                  <SelectItem key={state.isoCode} value={state.isoCode}>
+                  <SelectItem 
+                    key={state.isoCode} 
+                    value={state.isoCode}
+                    aria-label={state.name}
+                  >
                     {state.name}
                   </SelectItem>
                 ))}
@@ -121,8 +120,6 @@ const FacilityFilters: React.FC<FacilityFiltersProps> = ({ onFilterChange, class
             </SelectContent>
           </Select>
         </div>
-        
-        {/* We could add a city dropdown here, but it would require additional API calls */}
       </div>
     </Card>
   );
