@@ -100,6 +100,7 @@ const FacilityManagement = () => {
       }
       
       const facilityData = await fetchFacilityById(id);
+      console.log('Loaded facility data:', facilityData);
       
       // Update form values
       form.reset({
@@ -121,7 +122,9 @@ const FacilityManagement = () => {
       setLocationData({
         address: facilityData.address,
         country: facilityData.country,
+        countryCode: facilityData.location_data?.countryCode || '',
         state: facilityData.state,
+        stateCode: facilityData.location_data?.stateCode || '',
         city: facilityData.city,
         zipcode: facilityData.zipcode,
       });
@@ -170,13 +173,19 @@ const FacilityManagement = () => {
         state: data.state || locationData.state,
         city: data.city || locationData.city,
         zipcode: data.zipcode || locationData.zipcode,
+        location_data: {
+          countryCode: locationData.countryCode,
+          stateCode: locationData.stateCode
+        }
       };
       
       let savedFacility: Facility;
       
       if (isNewFacility) {
         // Create new facility
+        console.log('Creating new facility with data:', facilityData);
         savedFacility = await createFacility(facilityData);
+        console.log('Facility created successfully:', savedFacility);
         toast({
           title: 'Facility Created',
           description: `Successfully created ${savedFacility.name}`,
@@ -184,7 +193,9 @@ const FacilityManagement = () => {
         navigate('/facilities');
       } else {
         // Update existing facility
+        console.log('Updating facility with data:', facilityData);
         savedFacility = await updateFacility(id!, facilityData);
+        console.log('Facility updated successfully:', savedFacility);
         toast({
           title: 'Facility Updated',
           description: `Successfully updated ${savedFacility.name}`,

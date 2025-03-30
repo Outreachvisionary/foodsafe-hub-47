@@ -70,18 +70,25 @@ export const fetchFacilitiesByLocation = async (
 };
 
 export const fetchFacilityById = async (id: string): Promise<Facility> => {
-  const { data, error } = await supabase
-    .from('facilities')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) {
+  try {
+    console.log('Fetching facility by ID:', id);
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching facility:', error);
+      throw error;
+    }
+    
+    console.log('Facility data retrieved:', data);
+    return data as Facility;
+  } catch (error) {
     console.error('Error fetching facility:', error);
     throw error;
   }
-  
-  return data as Facility;
 };
 
 export const createFacility = async (facility: Partial<Facility>): Promise<Facility> => {
@@ -165,12 +172,20 @@ export const updateFacility = async (id: string, updates: Partial<Facility>): Pr
 };
 
 export const deleteFacility = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('facilities')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
+  try {
+    console.log('Deleting facility:', id);
+    const { error } = await supabase
+      .from('facilities')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting facility:', error);
+      throw error;
+    }
+    
+    console.log('Facility deleted successfully');
+  } catch (error) {
     console.error('Error deleting facility:', error);
     throw error;
   }
