@@ -174,6 +174,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onReady={(editor) => {
             editorRef.current = editor;
             setIsLoading(false);
+            
+            // Set read-only state after editor is ready
+            if (readOnly) {
+              editor.isReadOnly = true;
+            }
           }}
           onChange={handleEditorChange}
           config={{
@@ -184,8 +189,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               'blockQuote', 'insertTable', '|',
               'undo', 'redo'
             ],
-            placeholder: 'Type your content here...',
-            isReadOnly: readOnly
+            placeholder: 'Type your content here...'
+            // The correct approach is to set readOnly through the editor instance
+            // rather than in the config object
           }}
         />
       </div>
