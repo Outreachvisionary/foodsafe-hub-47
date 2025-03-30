@@ -1,28 +1,26 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface TinyMCEEditorWrapperProps {
+// Rename the component to better reflect its purpose
+interface RichTextEditorProps {
   content: string;
   onChange?: (content: string) => void;
   documentId?: string;
   readOnly?: boolean;
   height?: number;
-  plugins?: string[];
-  toolbar?: string;
 }
 
-const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
   content,
   onChange,
   documentId,
   readOnly = false,
   height = 500,
-  plugins,
-  toolbar
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -48,7 +46,7 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
           .from('document_editor_sessions')
           .insert({
             document_id: documentId,
-            user_id: user.id, // Add the user ID
+            user_id: user.id, // Include the user ID
             is_active: true,
             session_data: { last_content: content }
           })
@@ -116,7 +114,7 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
           is_active: false,
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorRef.current ? editorRef.current.getContent() : content
+            last_content: editorRef.current ? editorRef.current.getData() : content
           }
         })
         .eq('id', sessionId);
@@ -143,28 +141,23 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
   };
   
   // Handle editor content change
-  const handleEditorChange = (content: string) => {
-    if (onChange) onChange(content);
+  const handleEditorChange = (event: any, editor: any) => {
+    const data = editor.getData();
+    
+    if (onChange) onChange(data);
+    
+    // Store reference to the editor instance
+    if (!editorRef.current) {
+      editorRef.current = editor;
+    }
     
     // Debounce updates to reduce database load
     const timeoutId = setTimeout(() => {
-      updateSessionActivity(content);
+      updateSessionActivity(data);
     }, 5000);
     
     return () => clearTimeout(timeoutId);
   };
-
-  const defaultPlugins = [
-    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-    'template'
-  ];
-
-  const defaultToolbar = 'undo redo | blocks | ' +
-    'bold italic forecolor | alignleft aligncenter ' +
-    'alignright alignjustify | bullist numlist outdent indent | ' +
-    'removeformat | help';
 
   return (
     <div className="relative">
@@ -174,28 +167,28 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
         </div>
       )}
       
-      <Editor
-        apiKey="no-api-key" // You can use without an API key for testing or add your own
-        onInit={(evt, editor) => {
-          editorRef.current = editor;
-          setIsLoading(false);
-        }}
-        initialValue={content}
-        onEditorChange={handleEditorChange}
-        disabled={readOnly}
-        init={{
-          height,
-          menubar: true,
-          plugins: plugins || defaultPlugins,
-          toolbar: toolbar || defaultToolbar,
-          content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-          resize: false,
-          branding: false,
-          promotion: false,
-          statusbar: true,
-          readonly: readOnly
-        }}
-      />
+      <div style={{ height: `${height}px` }}>
+        <CKEditor
+          editor={ClassicEditor}
+          data={content}
+          onReady={(editor) => {
+            editorRef.current = editor;
+            setIsLoading(false);
+          }}
+          onChange={handleEditorChange}
+          config={{
+            toolbar: [
+              'heading', '|', 
+              'bold', 'italic', 'link', '|',
+              'bulletedList', 'numberedList', '|',
+              'blockQuote', 'insertTable', '|',
+              'undo', 'redo'
+            ],
+            placeholder: 'Type your content here...',
+            isReadOnly: readOnly
+          }}
+        />
+      </div>
       
       {activeUsers.length > 1 && !readOnly && (
         <div className="mt-2 p-2 bg-blue-50 text-blue-700 text-sm rounded">
@@ -206,4 +199,4 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
   );
 };
 
-export default TinyMCEEditorWrapper;
+export default RichTextEditor;

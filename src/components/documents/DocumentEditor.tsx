@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Editor } from '@tinymce/tinymce-react';
+import RichTextEditor from './TinyMCEEditorWrapper';
 import { 
   Save, 
   History, 
@@ -48,14 +47,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       setTitle(document.title);
       setContent(document.description || '');
       
-      // Create or update editing session
       if (!readOnly && document.id) {
         createEditorSession(document.id);
       }
     }
     
     return () => {
-      // Cleanup editor session on unmount
       if (sessionId) {
         closeEditorSession(sessionId);
       }
@@ -64,7 +61,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
   const createEditorSession = async (documentId: string) => {
     try {
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -76,7 +72,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
         .from('document_editor_sessions')
         .insert({
           document_id: documentId,
-          user_id: user.id, // Add the user ID
+          user_id: user.id,
           is_active: true,
           session_data: { last_content: content }
         })
@@ -122,9 +118,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     }
   };
 
-  const handleEditorChange = (content: string) => {
-    setContent(content);
-    // Update session activity periodically (debounced)
+  const handleEditorChange = (newContent: string) => {
+    setContent(newContent);
     const timeoutId = setTimeout(() => {
       updateSessionActivity();
     }, 5000);
@@ -147,7 +142,6 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
       
       onSave?.(updatedDoc);
       
-      // Update editor metadata in document_versions if needed
       if (document.current_version_id) {
         await supabase
           .from('document_versions')
@@ -289,32 +283,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </TabsList>
           
           <TabsContent value="edit" className="flex-grow overflow-auto">
-            <Editor
-              apiKey="no-api-key" // You can use without an API key for testing or add your own
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={content}
-              disabled={readOnly}
-              init={{
-                height: 500,
-                menubar: true,
-                plugins: [
-                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                  'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                  'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                  'template'
-                ],
-                toolbar: 'undo redo | blocks | ' +
-                  'bold italic forecolor | alignleft aligncenter ' +
-                  'alignright alignjustify | bullist numlist outdent indent | ' +
-                  'removeformat | help',
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                resize: false,
-                branding: false,
-                promotion: false,
-                statusbar: true,
-                readonly: readOnly
-              }}
-              onEditorChange={handleEditorChange}
+            <RichTextEditor
+              content={content}
+              onChange={handleEditorChange}
+              readOnly={readOnly}
+              documentId={document.id}
             />
           </TabsContent>
           
