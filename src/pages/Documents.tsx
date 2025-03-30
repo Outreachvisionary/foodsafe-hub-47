@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -36,7 +35,6 @@ const DocumentsContent = () => {
     }
   }, [location.state]);
 
-  // Update URL when tab changes for better navigation
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     searchParams.set('tab', activeTab);
@@ -46,7 +44,6 @@ const DocumentsContent = () => {
     }, { replace: true });
   }, [activeTab, navigate, location.pathname]);
 
-  // Check URL params on initial load
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get('tab');
@@ -68,7 +65,6 @@ const DocumentsContent = () => {
     setIsUploadOpen(true);
   };
 
-  // Count notifications by type for badge display
   const approvalNotifications = notifications.filter(n => 
     n.type === 'approval_overdue' || n.type === 'approval_request'
   ).length;

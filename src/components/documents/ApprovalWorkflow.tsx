@@ -22,7 +22,6 @@ const ApprovalWorkflow: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('pending');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter documents based on status and search query
   const filteredDocuments = documents.filter(doc => {
     const matchesStatus = 
       (filterStatus === 'pending' && doc.status === 'Pending Approval') ||
@@ -37,10 +36,8 @@ const ApprovalWorkflow: React.FC = () => {
     return matchesStatus && matchesSearch;
   });
 
-  // Documents pending approval
   const pendingDocuments = documents.filter(doc => doc.status === 'Pending Approval');
   
-  // Count by category for pending documents
   const categoryCount: Record<string, number> = {};
   pendingDocuments.forEach(doc => {
     if (!categoryCount[doc.category]) {
@@ -65,7 +62,6 @@ const ApprovalWorkflow: React.FC = () => {
   };
 
   const getPriorityBadge = (doc: Document) => {
-    // Check how long the document has been pending
     if (!doc.pending_since) return null;
     
     const pendingDate = new Date(doc.pending_since);
@@ -76,7 +72,6 @@ const ApprovalWorkflow: React.FC = () => {
     if (daysPending >= 7) {
       return <Badge variant="destructive" className="ml-2">Overdue</Badge>;
     } else if (daysPending >= 3) {
-      // Changed from "warning" to "outline" with custom amber colors
       return <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">High Priority</Badge>;
     }
     return null;
@@ -374,14 +369,12 @@ const ApprovalWorkflow: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Document preview dialog */}
       <DocumentPreviewDialog 
         document={selectedDocument} 
         open={isPreviewOpen} 
         onOpenChange={setIsPreviewOpen} 
       />
 
-      {/* Document approver component */}
       {selectedDocument && selectedDocument.status === 'Pending Approval' && (
         <DocumentApprover 
           document={selectedDocument} 
@@ -390,7 +383,6 @@ const ApprovalWorkflow: React.FC = () => {
         />
       )}
 
-      {/* Rejection reason dialog */}
       <Dialog open={rejectionDialog.open} onOpenChange={(open) => setRejectionDialog(prev => ({ ...prev, open }))}>
         <DialogContent>
           <DialogHeader>
