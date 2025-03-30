@@ -122,6 +122,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
       contact_email?: string;
       contact_phone?: string;
       zipcode?: string;
+      facility_type?: string;
       location_data?: Record<string, any>;
     } = {
       name: facility.name,
@@ -138,6 +139,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
     if (facility.contact_email) facilityData.contact_email = facility.contact_email;
     if (facility.contact_phone) facilityData.contact_phone = facility.contact_phone;
     if (facility.zipcode) facilityData.zipcode = facility.zipcode;
+    if (facility.facility_type) facilityData.facility_type = facility.facility_type;
     if (facility.location_data) facilityData.location_data = facility.location_data;
     
     console.log('Sending facility data to Supabase:', facilityData);
@@ -181,6 +183,7 @@ export const updateFacility = async (id: string, updates: Partial<Facility>): Pr
     if (updates.contact_phone !== undefined) cleanUpdates.contact_phone = updates.contact_phone;
     if (updates.location_data !== undefined) cleanUpdates.location_data = updates.location_data;
     if (updates.organization_id !== undefined) cleanUpdates.organization_id = updates.organization_id;
+    if (updates.facility_type !== undefined) cleanUpdates.facility_type = updates.facility_type;
     
     console.log('Cleaned updates for Supabase:', cleanUpdates);
     

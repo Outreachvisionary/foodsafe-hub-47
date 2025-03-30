@@ -15,4 +15,5 @@ export interface Facility {
   state?: string | null;
   city?: string | null;
   zipcode?: string | null;
+  facility_type?: string | null;
 }

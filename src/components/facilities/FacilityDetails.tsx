@@ -1,187 +1,113 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Edit, MapPin, Phone, Mail, Building2 } from 'lucide-react';
+import { Edit, MapPin, Phone, Mail, Building } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Facility } from '@/types/facility';
 
 interface FacilityDetailsProps {
   facility: Facility;
-  onUpdate: (updatedData: Partial<Facility>) => Promise<void>;
+  onEdit?: () => void;
 }
 
-const FacilityDetails: React.FC<FacilityDetailsProps> = ({ facility, onUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: facility.name,
-    description: facility.description || '',
-    address: facility.address || '',
-    facility_type: facility.facility_type || '',
-    contact_email: facility.contact_email || '',
-    contact_phone: facility.contact_phone || '',
-  });
-
-  const handleSave = async () => {
-    try {
-      await onUpdate({
-        name: formData.name,
-        description: formData.description || null,
-        address: formData.address || null,
-        facility_type: formData.facility_type || null,
-        contact_email: formData.contact_email || null,
-        contact_phone: formData.contact_phone || null,
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating facility:', error);
+const FacilityDetails: React.FC<FacilityDetailsProps> = ({ facility, onEdit }) => {
+  const navigate = useNavigate();
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      navigate(`/facilities/${facility.id}`);
     }
   };
-
-  if (isEditing) {
-    return (
-      <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="name">Facility Name</Label>
-          <Input 
-            id="name" 
-            value={formData.name} 
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea 
-            id="description" 
-            value={formData.description} 
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            rows={3}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="address">Address</Label>
-          <Textarea 
-            id="address" 
-            value={formData.address} 
-            onChange={(e) => setFormData({...formData, address: e.target.value})}
-            rows={2}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="facilityType">Facility Type</Label>
-          <Input 
-            id="facilityType" 
-            value={formData.facility_type} 
-            onChange={(e) => setFormData({...formData, facility_type: e.target.value})}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="contact_email">Contact Email</Label>
-          <Input 
-            id="contact_email" 
-            type="email"
-            value={formData.contact_email} 
-            onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="contact_phone">Contact Phone</Label>
-          <Input 
-            id="contact_phone" 
-            value={formData.contact_phone} 
-            onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-          />
-        </div>
-        
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
-        </div>
-      </div>
-    );
-  }
+  
+  const formatAddress = () => {
+    const parts = [
+      facility.address,
+      facility.city,
+      facility.state,
+      facility.zipcode,
+      facility.country
+    ].filter(Boolean);
+    
+    return parts.join(', ');
+  };
   
   return (
-    <div className="space-y-4">
-      <div>
-        <Label>Description</Label>
-        <p className="text-sm text-muted-foreground mt-1">
-          {facility.description || 'No description provided'}
-        </p>
-      </div>
-      
-      <Separator />
-      
-      <div className="space-y-2">
-        <Label>Facility Details</Label>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-          <div className="flex items-start space-x-2">
-            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div>
-              <Label className="text-xs">Address</Label>
-              <p className="text-sm text-muted-foreground">
-                {facility.address || 'Not specified'}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-start space-x-2">
-            <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div>
-              <Label className="text-xs">Type</Label>
-              <p className="text-sm text-muted-foreground">
-                {facility.facility_type || 'Not specified'}
-              </p>
-            </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>{facility.name}</CardTitle>
+          <div className="text-sm text-muted-foreground mt-1">
+            <span className="inline-flex items-center">
+              <Building className="mr-1 h-4 w-4" />
+              {facility.facility_type || 'No type specified'}
+            </span>
           </div>
         </div>
-      </div>
-      
-      <Separator />
-      
-      <div className="space-y-2">
-        <Label>Contact Information</Label>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-          <div className="flex items-start space-x-2">
-            <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div>
-              <Label className="text-xs">Email</Label>
-              <p className="text-sm text-muted-foreground">
-                {facility.contact_email || 'Not specified'}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-start space-x-2">
-            <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div>
-              <Label className="text-xs">Phone</Label>
-              <p className="text-sm text-muted-foreground">
-                {facility.contact_phone || 'Not specified'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <Separator />
-      
-      <div className="flex justify-end">
-        <Button onClick={() => setIsEditing(true)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit Facility
+        <Button variant="outline" size="sm" onClick={handleEdit}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
         </Button>
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <h3 className="text-sm font-medium mb-1">Description</h3>
+          <p className="text-sm text-muted-foreground">
+            {facility.description || 'No description provided'}
+          </p>
+        </div>
+        
+        <div>
+          <h3 className="text-sm font-medium mb-1">Status</h3>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            facility.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          }`}>
+            {facility.status}
+          </span>
+        </div>
+        
+        <div>
+          <h3 className="text-sm font-medium mb-1">Address</h3>
+          <div className="flex items-start">
+            <MapPin className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {formatAddress() || 'No address provided'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-sm font-medium mb-1">Contact Email</h3>
+            <div className="flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {facility.contact_email || 'No email provided'}
+              </span>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium mb-1">Contact Phone</h3>
+            <div className="flex items-center">
+              <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {facility.contact_phone || 'No phone provided'}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-sm font-medium mb-1">Type</h3>
+          <span className="text-sm text-muted-foreground">
+            {facility.facility_type || 'Not specified'}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

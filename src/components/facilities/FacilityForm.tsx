@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from 'react-hook-form/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -29,6 +30,7 @@ const facilityFormSchema = z.object({
   state: z.string().optional(),
   city: z.string().optional(),
   zipcode: z.string().optional(),
+  facility_type: z.string().optional(),
 });
 
 type FacilityFormValues = z.infer<typeof facilityFormSchema>;
@@ -69,6 +71,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
       state: initialData?.state || '',
       city: initialData?.city || '',
       zipcode: initialData?.zipcode || '',
+      facility_type: initialData?.facility_type || '',
     },
   });
 
@@ -138,6 +141,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
         state: data.state || locationData.state,
         city: data.city || locationData.city,
         zipcode: data.zipcode || locationData.zipcode,
+        facility_type: data.facility_type,
         location_data: {
           countryCode: locationData.countryCode,
           stateCode: locationData.stateCode
@@ -236,6 +240,23 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
                 <FormControl>
                   <Textarea placeholder="Brief description of the facility" {...field} value={field.value || ''} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="facility_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Facility Type</FormLabel>
+                <FormControl>
+                  <Input placeholder="Manufacturing, Warehouse, etc." {...field} value={field.value || ''} />
+                </FormControl>
+                <FormDescription>
+                  The type or purpose of this facility
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

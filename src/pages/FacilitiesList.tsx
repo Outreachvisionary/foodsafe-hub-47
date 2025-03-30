@@ -1,69 +1,35 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Building2, PlusCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
-import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import FacilityFilters from '@/components/facilities/FacilityFilters';
+import { Plus, Search, Building } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { fetchFacilities } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
-import { fetchFacilities, fetchFacilitiesByLocation } from '@/services/facilityService';
+import { useToast } from '@/hooks/use-toast';
 
 const FacilitiesList = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('all-facilities');
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useUser();
-  
-  // Filter states
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(
-    user?.organization_id
-  );
-  const [locationFilters, setLocationFilters] = useState<{
-    country?: string,
-    state?: string,
-    city?: string
-  }>({});
-  
-  // Track if location filters are active
-  const hasLocationFilters = !!(locationFilters.country || locationFilters.state || locationFilters.city);
 
   useEffect(() => {
-    if (user) {
-      loadFacilities();
-    }
-  }, [user, selectedOrganizationId, selectedTab, locationFilters]);
+    loadFacilities();
+  }, []);
 
   const loadFacilities = async () => {
     try {
       setLoading(true);
-      
-      let facilitiesData: Facility[] = [];
-      const onlyAssigned = selectedTab === 'my-facilities';
-      
-      // If location filters are active, use the location-based query
-      if (hasLocationFilters) {
-        facilitiesData = await fetchFacilitiesByLocation(
-          selectedOrganizationId,
-          locationFilters.country,
-          locationFilters.state,
-          locationFilters.city
-        );
-      } else {
-        // Otherwise use the standard query
-        facilitiesData = await fetchFacilities(
-          selectedOrganizationId,
-          onlyAssigned
-        );
-      }
-      
-      console.log('Loaded facilities:', facilitiesData);
-      setFacilities(facilitiesData);
+      const data = await fetchFacilities();
+      setFacilities(data);
+      setFilteredFacilities(data);
+      setLoading(false);
     } catch (error) {
       console.error('Error loading facilities:', error);
       toast({
@@ -71,155 +37,137 @@ const FacilitiesList = () => {
         description: 'Failed to load facilities',
         variant: 'destructive',
       });
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleOrganizationChange = (orgId: string) => {
-    setSelectedOrganizationId(orgId);
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredFacilities(facilities);
+      return;
+    }
+
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    const filtered = facilities.filter(facility => 
+      facility.name.toLowerCase().includes(lowerCaseSearch) ||
+      (facility.city && facility.city.toLowerCase().includes(lowerCaseSearch)) ||
+      (facility.state && facility.state.toLowerCase().includes(lowerCaseSearch)) ||
+      (facility.country && facility.country.toLowerCase().includes(lowerCaseSearch)) ||
+      (facility.facility_type && facility.facility_type.toLowerCase().includes(lowerCaseSearch))
+    );
+    setFilteredFacilities(filtered);
+  }, [searchTerm, facilities]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
-  
-  const handleLocationFilterChange = (filters: { country?: string, state?: string, city?: string }) => {
-    console.log('Location filters changed:', filters);
-    setLocationFilters(filters);
+
+  const handleFacilityClick = (id: string) => {
+    navigate(`/facilities/${id}`);
   };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Facilities</h1>
-          <Button onClick={() => navigate('/facilities/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Facility
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Facilities Management</CardTitle>
-            <CardDescription>
-              View and manage all facilities in your organization
-            </CardDescription>
-            
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Organization</label>
-                  <OrganizationSelector 
-                    value={selectedOrganizationId}
-                    onChange={handleOrganizationChange}
-                  />
-                </div>
-              </div>
-              
-              <FacilityFilters 
-                onFilterChange={handleLocationFilterChange}
-                className="mt-4"
+    <AppLayout
+      title="Facilities"
+      subtitle="Manage all your organization facilities"
+      actions={
+        <Button onClick={() => navigate('/facilities/new')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Facility
+        </Button>
+      }
+    >
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Facilities Management</CardTitle>
+          <CardDescription>
+            View and manage all facilities across your organization
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search facilities by name, location, or type..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={handleSearch}
               />
             </div>
-          </CardHeader>
-          
-          <CardContent>
-            <Tabs defaultValue="all-facilities" value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="all-facilities">All Facilities</TabsTrigger>
-                {user?.assigned_facility_ids && user.assigned_facility_ids.length > 0 && (
-                  <TabsTrigger value="my-facilities">My Facilities</TabsTrigger>
-                )}
-              </TabsList>
-              
-              <TabsContent value="all-facilities">
-                {renderFacilitiesTable()}
-              </TabsContent>
-              
-              <TabsContent value="my-facilities">
-                {renderFacilitiesTable()}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-
-  function renderFacilitiesTable() {
-    if (loading) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
-    }
-
-    if (facilities.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">No facilities found</h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            {hasLocationFilters 
-              ? "Try adjusting your location filters"
-              : "Get started by adding your first facility"
-            }
-          </p>
-          <Button className="mt-4" onClick={() => navigate('/facilities/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Facility
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {facilities.map((facility) => (
-              <TableRow key={facility.id}>
-                <TableCell className="font-medium">{facility.name}</TableCell>
-                <TableCell>{facility.facility_type || 'N/A'}</TableCell>
-                <TableCell>
-                  {[
-                    facility.city, 
-                    facility.state, 
-                    facility.country
-                  ].filter(Boolean).join(', ') || facility.address || 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    facility.status === 'active' ? 'bg-green-100 text-green-800' : 
-                    facility.status === 'inactive' ? 'bg-gray-100 text-gray-800' : 
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {facility.status}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
+            
+            {loading ? (
+              <div className="flex justify-center items-center h-48">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : filteredFacilities.length === 0 ? (
+              <div className="text-center py-12">
+                <Building className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                <h3 className="mt-4 text-lg font-medium">No facilities found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {searchTerm ? 'Try adjusting your search term' : 'Add your first facility to get started'}
+                </p>
+                {!searchTerm && (
                   <Button 
-                    variant="ghost" 
-                    onClick={() => navigate(`/facilities/${facility.id}`)}
+                    onClick={() => navigate('/facilities/new')}
+                    className="mt-4"
                   >
-                    View
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Facility
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }
+                )}
+              </div>
+            ) : (
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Contact</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFacilities.map((facility) => (
+                      <TableRow 
+                        key={facility.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleFacilityClick(facility.id)}
+                      >
+                        <TableCell className="font-medium">{facility.name}</TableCell>
+                        <TableCell>{facility.facility_type || 'Not specified'}</TableCell>
+                        <TableCell>
+                          {[
+                            facility.city, 
+                            facility.state, 
+                            facility.country
+                          ].filter(Boolean).join(', ') || 'Not specified'}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            facility.status === 'active' ? 'bg-green-100 text-green-800' : 
+                            facility.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {facility.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {facility.contact_email || facility.contact_phone || 'Not specified'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </AppLayout>
+  );
 };
 
 export default FacilitiesList;
