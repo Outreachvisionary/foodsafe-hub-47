@@ -56,48 +56,52 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
   const [isCheckingStorage, setIsCheckingStorage] = useState(false);
   
   // FIXED: Improved storage availability check with retry mechanism
-  React.useEffect(() => {
-    if (open) {
-      const checkStorage = async () => {
-        try {
-          setIsCheckingStorage(true);
-          setErrorMessage(null);
-          
-          // Try storage check with retry logic
-          let attempts = 3;
-          let isAvailable = false;
-          
-          while (attempts > 0 && !isAvailable) {
-            console.log(`Storage check attempt ${4-attempts}/3`);
-            isAvailable = await checkStorageAvailability();
-            
-            if (isAvailable) {
-              break;
-            } else if (attempts > 1) {
-              // Wait before retrying (increase backoff time with each attempt)
-              await new Promise(resolve => setTimeout(resolve, 1000 * (4-attempts)));
-            }
-            
-            attempts--;
-          }
-          
-          setStorageAvailable(isAvailable);
-          if (!isAvailable) {
-            setErrorMessage('Document storage is not available. Please contact your administrator.');
-          }
-        } catch (err) {
-          console.error('Error checking storage:', err);
-          setStorageAvailable(false);
-          setErrorMessage(`Storage connection error: ${(err as Error).message}`);
-        } finally {
-          setIsCheckingStorage(false);
+ // In UploadDocumentDialog.tsx, modify the useEffect that checks storage
+React.useEffect(() => {
+  if (open) {
+    // Force timeout after 10 seconds regardless of response
+    const forceTimeoutId = setTimeout(() => {
+      if (isCheckingStorage) {
+        console.error("Storage check timed out after 10 seconds");
+        setIsCheckingStorage(false);
+        setStorageAvailable(false);
+        setErrorMessage("Storage check timed out. Try again or contact your administrator.");
+      }
+    }, 10000); // 10 seconds hard timeout
+    
+    const checkStorage = async () => {
+      try {
+        setIsCheckingStorage(true);
+        setErrorMessage(null);
+        
+        // Skip retry logic - just try once with a short timeout
+        console.log("Checking storage availability...");
+        
+        // Try with a single attempt and short timeout
+        const isAvailable = await checkStorageAvailability();
+        setStorageAvailable(isAvailable);
+        
+        if (!isAvailable) {
+          setErrorMessage('Document storage is not available. Please contact your administrator.');
         }
-      };
-      
-      checkStorage();
-    }
-  }, [open, checkStorageAvailability]);
-
+      } catch (err) {
+        console.error('Error checking storage:', err);
+        setStorageAvailable(false);
+        setErrorMessage(`Storage connection error: ${(err as Error).message}`);
+      } finally {
+        clearTimeout(forceTimeoutId); // Clear the force timeout
+        setIsCheckingStorage(false);
+      }
+    };
+    
+    checkStorage();
+    
+    return () => {
+      clearTimeout(forceTimeoutId); // Clean up on unmount
+    };
+  }
+}, [open, checkStorageAvailability]);
+  
   const resetForm = () => {
     setTitle('');
     setDescription('');
