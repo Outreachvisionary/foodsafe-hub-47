@@ -50,7 +50,7 @@ const formatDate = (dateStr?: string) => {
 };
 
 const DocumentRepository: React.FC = () => {
-  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats } = useDocuments();
+  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats, setSelectedDocument } = useDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Document, 
@@ -26,11 +27,11 @@ const documentService = {
     // Apply filters if provided
     if (filters) {
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status as DocumentStatus);
       }
       
       if (filters.category) {
-        query = query.eq('category', filters.category);
+        query = query.eq('category', filters.category as DocumentCategory);
       }
       
       if (filters.searchTerm) {
