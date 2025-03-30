@@ -125,6 +125,7 @@ interface DocumentContextType {
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   refreshDocumentStats: () => void;
+  fetchDocuments: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -182,6 +183,18 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const refreshDocumentStats = () => {
     const calculatedStats = documentWorkflowService.getDocumentStats(documents);
     setStats(calculatedStats);
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setDocuments(initialDocuments);
+      refreshDocumentStats();
+      return;
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      throw error;
+    }
   };
 
   const addDocument = (doc: Document) => {
@@ -321,7 +334,8 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         archiveDocument,
         markNotificationAsRead,
         clearAllNotifications,
-        refreshDocumentStats
+        refreshDocumentStats,
+        fetchDocuments
       }}
     >
       {children}
