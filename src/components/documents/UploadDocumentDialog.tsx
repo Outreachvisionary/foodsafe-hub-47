@@ -54,6 +54,10 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word
       'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
       'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PowerPoint
+      'application/vnd.oasis.opendocument.text', // OpenDocument Text
+      'application/vnd.oasis.opendocument.spreadsheet', // OpenDocument Spreadsheet
+      'application/vnd.oasis.opendocument.presentation', // OpenDocument Presentation
+      'application/rtf', // Rich Text Format
       'application/zip', 'application/x-zip-compressed', // Zip files
       'text/plain', 'text/csv', 'text/html', // Text files
       'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml' // Common image formats
@@ -123,6 +127,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         
         const fileUrl = await enhancedDocumentService.uploadToStorage(file, existingDocument, existingDocument.version + 1);
         
+        const isOfficeDocument = isOfficeFileType(file.type);
         const versionDetails = {
           file_name: file.name,
           file_path: storagePath,
@@ -130,7 +135,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           file_type: file.type,
           created_by: 'Current User',
           change_summary: formData.changeSummary,
-          storage_path: storagePath
+          storage_path: storagePath,
+          is_binary_file: isOfficeDocument,
+          editor_metadata: isOfficeDocument ? {
+            document_type: getDocumentTypeFromMime(file.type),
+            original_extension: file.name.split('.').pop()
+          } : null
         };
         
         await enhancedDocumentService.createVersion(existingDocument, versionDetails);
@@ -140,6 +150,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           description: t('documents.newVersionUploadedDesc'),
         });
       } else {
+        const isOfficeDocument = isOfficeFileType(file.type);
         const documentId = uuidv4();
         
         const fileUrl = await enhancedDocumentService.uploadToStorage(file, {
@@ -174,7 +185,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           file_type: file.type,
           created_by: 'Current User',
           change_summary: 'Initial version',
-          storage_path: `${documentId}/${file.name}`
+          storage_path: `${documentId}/${file.name}`,
+          is_binary_file: isOfficeDocument,
+          editor_metadata: isOfficeDocument ? {
+            document_type: getDocumentTypeFromMime(file.type),
+            original_extension: file.name.split('.').pop()
+          } : null
         };
         
         await enhancedDocumentService.createVersion(newDocument, versionDetails);
@@ -205,6 +221,35 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const isOfficeFileType = (mimeType: string): boolean => {
+    const officeTypes = [
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.oasis.opendocument.text',
+      'application/vnd.oasis.opendocument.spreadsheet',
+      'application/vnd.oasis.opendocument.presentation',
+      'application/rtf'
+    ];
+    return officeTypes.includes(mimeType);
+  };
+
+  const getDocumentTypeFromMime = (mimeType: string): string => {
+    if (mimeType.includes('word') || mimeType === 'application/msword' || mimeType === 'application/rtf' ||
+        mimeType === 'application/vnd.oasis.opendocument.text') {
+      return 'word';
+    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+      return 'excel';
+    } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+      return 'powerpoint';
+    } else {
+      return 'other';
     }
   };
 

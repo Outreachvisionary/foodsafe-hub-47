@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { Editor } from '@tinymce/tinymce-react';
 import { 
   Save, 
   History, 
@@ -14,9 +15,11 @@ import {
   User, 
   Clock, 
   FileText, 
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import { Document, DocumentStatus } from '@/types/database';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentEditorProps {
   document: Document | null;
@@ -35,51 +38,166 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [title, setTitle] = useState<string>('');
   const [comment, setComment] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('edit');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     if (document) {
       setTitle(document.title);
-      setContent(document.description || 'Sample document content. This would be the full text of the document.');
+      setContent(document.description || '');
+      
+      // Create or update editing session
+      if (!readOnly && document.id) {
+        createEditorSession(document.id);
+      }
     }
-  }, [document]);
-
-  const handleSave = () => {
-    if (!document) return;
     
-    const updatedDoc = {
-      ...document,
-      title,
-      description: content,
-      updated_at: new Date().toISOString()
+    return () => {
+      // Cleanup editor session on unmount
+      if (sessionId) {
+        closeEditorSession(sessionId);
+      }
     };
+  }, [document, readOnly]);
+
+  const createEditorSession = async (documentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('document_editor_sessions')
+        .insert({
+          document_id: documentId,
+          is_active: true,
+          session_data: { last_content: content }
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      if (data) setSessionId(data.id);
+    } catch (error) {
+      console.error('Error creating editor session:', error);
+    }
+  };
+
+  const closeEditorSession = async (id: string) => {
+    try {
+      await supabase
+        .from('document_editor_sessions')
+        .update({
+          is_active: false,
+          last_activity: new Date().toISOString()
+        })
+        .eq('id', id);
+    } catch (error) {
+      console.error('Error closing editor session:', error);
+    }
+  };
+
+  const updateSessionActivity = async () => {
+    if (!sessionId) return;
     
-    onSave?.(updatedDoc);
+    try {
+      await supabase
+        .from('document_editor_sessions')
+        .update({
+          last_activity: new Date().toISOString(),
+          session_data: {
+            last_content: editorRef.current ? editorRef.current.getContent() : content
+          }
+        })
+        .eq('id', sessionId);
+    } catch (error) {
+      console.error('Error updating session activity:', error);
+    }
+  };
+
+  const handleEditorChange = (content: string) => {
+    setContent(content);
+    // Update session activity periodically (debounced)
+    const timeoutId = setTimeout(() => {
+      updateSessionActivity();
+    }, 5000);
+    return () => clearTimeout(timeoutId);
+  };
+
+  const handleSave = async () => {
+    if (!document) return;
+    setIsLoading(true);
     
-    toast({
-      title: "Document saved",
-      description: "Your changes have been saved successfully.",
-    });
+    try {
+      const updatedContent = editorRef.current ? editorRef.current.getContent() : content;
+      
+      const updatedDoc = {
+        ...document,
+        title,
+        description: updatedContent,
+        updated_at: new Date().toISOString()
+      };
+      
+      onSave?.(updatedDoc);
+      
+      // Update editor metadata in document_versions if needed
+      if (document.current_version_id) {
+        await supabase
+          .from('document_versions')
+          .update({
+            editor_metadata: {
+              last_saved: new Date().toISOString(),
+              editor: 'tinymce'
+            }
+          })
+          .eq('id', document.current_version_id);
+      }
+      
+      toast({
+        title: "Document saved",
+        description: "Your changes have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving document:', error);
+      toast({
+        title: "Error saving document",
+        description: "There was a problem saving your changes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmitForReview = () => {
     if (!document) return;
+    setIsLoading(true);
     
-    const docForReview = {
-      ...document,
-      title,
-      description: content,
-      status: 'Pending Approval' as DocumentStatus,
-      updated_at: new Date().toISOString()
-    };
-    
-    onSubmitForReview?.(docForReview);
-    
-    toast({
-      title: "Submitted for review",
-      description: "Document has been submitted for review and approval.",
-    });
+    try {
+      const updatedContent = editorRef.current ? editorRef.current.getContent() : content;
+      
+      const docForReview = {
+        ...document,
+        title,
+        description: updatedContent,
+        status: 'Pending Approval' as DocumentStatus,
+        updated_at: new Date().toISOString()
+      };
+      
+      onSubmitForReview?.(docForReview);
+      
+      toast({
+        title: "Submitted for review",
+        description: "Document has been submitted for review and approval.",
+      });
+    } catch (error) {
+      console.error('Error submitting document for review:', error);
+      toast({
+        title: "Error submitting document",
+        description: "There was a problem submitting your document for review.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddComment = () => {
@@ -121,14 +239,23 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-blue-50 text-blue-700">v{document.version}</Badge>
             {document.status === 'Draft' && !readOnly && (
-              <Button variant="outline" onClick={handleSubmitForReview} className="flex items-center gap-1">
-                <Send className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                onClick={handleSubmitForReview} 
+                className="flex items-center gap-1"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 <span>Submit for Review</span>
               </Button>
             )}
             {!readOnly && (
-              <Button onClick={handleSave} className="flex items-center gap-1">
-                <Save className="h-4 w-4" />
+              <Button 
+                onClick={handleSave} 
+                className="flex items-center gap-1"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 <span>Save</span>
               </Button>
             )}
@@ -153,13 +280,32 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </TabsList>
           
           <TabsContent value="edit" className="flex-grow overflow-auto">
-            <Textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[500px] font-mono resize-none p-4"
-              placeholder="Enter document content..."
+            <Editor
+              apiKey="no-api-key" // You can use without an API key for testing or add your own
+              onInit={(evt, editor) => editorRef.current = editor}
+              initialValue={content}
               disabled={readOnly}
+              init={{
+                height: 500,
+                menubar: true,
+                plugins: [
+                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                  'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                  'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+                  'template'
+                ],
+                toolbar: 'undo redo | blocks | ' +
+                  'bold italic forecolor | alignleft aligncenter ' +
+                  'alignright alignjustify | bullist numlist outdent indent | ' +
+                  'removeformat | help',
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                resize: false,
+                branding: false,
+                promotion: false,
+                statusbar: true,
+                readonly: readOnly
+              }}
+              onEditorChange={handleEditorChange}
             />
           </TabsContent>
           
@@ -191,11 +337,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
             </div>
             
             <div className="flex gap-2">
-              <Textarea
+              <Input
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Add a comment..."
-                className="resize-none"
+                className="flex-grow"
               />
               <Button onClick={handleAddComment} className="self-end">Add Comment</Button>
             </div>

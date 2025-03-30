@@ -638,6 +638,44 @@ export type Database = {
           },
         ]
       }
+      document_editor_sessions: {
+        Row: {
+          document_id: string | null
+          id: string
+          is_active: boolean | null
+          last_activity: string | null
+          session_data: Json | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_data?: Json | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_data?: Json | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_editor_sessions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_previews: {
         Row: {
           content: string | null
@@ -689,9 +727,11 @@ export type Database = {
           created_at: string | null
           created_by: string
           document_id: string
+          editor_metadata: Json | null
           file_name: string
           file_size: number
           id: string
+          is_binary_file: boolean | null
           version: number
         }
         Insert: {
@@ -699,9 +739,11 @@ export type Database = {
           created_at?: string | null
           created_by: string
           document_id: string
+          editor_metadata?: Json | null
           file_name: string
           file_size: number
           id?: string
+          is_binary_file?: boolean | null
           version: number
         }
         Update: {
@@ -709,9 +751,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           document_id?: string
+          editor_metadata?: Json | null
           file_name?: string
           file_size?: number
           id?: string
+          is_binary_file?: boolean | null
           version?: number
         }
         Relationships: [

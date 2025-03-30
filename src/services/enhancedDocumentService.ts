@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Document, 
@@ -89,7 +88,7 @@ const enhancedDocumentService = {
     }
   },
 
-  // Document versions
+  // Document versions with enhanced metadata support
   async fetchDocumentVersions(documentId: string): Promise<DocumentVersion[]> {
     const { data, error } = await supabase
       .from('document_versions')
@@ -105,7 +104,7 @@ const enhancedDocumentService = {
     return data as DocumentVersion[];
   },
   
-  // Create a new document version
+  // Create a new document version with enhanced metadata
   async createDocumentVersion(version: Omit<DocumentVersion, 'id'>): Promise<DocumentVersion> {
     // Ensure version is defined and properly typed
     const versionData = {
@@ -115,7 +114,9 @@ const enhancedDocumentService = {
       file_type: version.file_type,
       created_by: version.created_by,
       change_notes: version.change_notes || version.change_summary,
-      version: version.version ?? 1 // Ensure version is always provided
+      version: version.version ?? 1, // Ensure version is always provided
+      editor_metadata: version.editor_metadata || null,
+      is_binary_file: version.is_binary_file || false
     };
     
     const { data, error } = await supabase
@@ -268,6 +269,103 @@ const enhancedDocumentService = {
       console.error(`Error uploading file to ${path}:`, error);
       throw error;
     }
+  },
+
+  // Editor sessions management
+  async createEditorSession(documentId: string, userId: string): Promise<string> {
+    const { data, error } = await supabase
+      .from('document_editor_sessions')
+      .insert({
+        document_id: documentId,
+        user_id: userId,
+        is_active: true
+      })
+      .select('id')
+      .single();
+      
+    if (error) {
+      console.error('Error creating editor session:', error);
+      throw error;
+    }
+    
+    return data.id;
+  },
+  
+  async updateEditorSession(sessionId: string, sessionData: any): Promise<void> {
+    const { error } = await supabase
+      .from('document_editor_sessions')
+      .update({
+        last_activity: new Date().toISOString(),
+        session_data: sessionData
+      })
+      .eq('id', sessionId);
+      
+    if (error) {
+      console.error('Error updating editor session:', error);
+      throw error;
+    }
+  },
+  
+  async closeEditorSession(sessionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('document_editor_sessions')
+      .update({
+        is_active: false,
+        last_activity: new Date().toISOString()
+      })
+      .eq('id', sessionId);
+      
+    if (error) {
+      console.error('Error closing editor session:', error);
+      throw error;
+    }
+  },
+  
+  async getActiveEditorSessions(documentId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('document_editor_sessions')
+      .select('*')
+      .eq('document_id', documentId)
+      .eq('is_active', true);
+      
+    if (error) {
+      console.error('Error fetching active editor sessions:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+  
+  // Office document special handling
+  detectDocumentType(fileName: string, mimeType: string): string {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    if (['doc', 'docx'].includes(extension || '') || 
+        mimeType.includes('word') || 
+        mimeType === 'application/msword' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return 'word';
+    }
+    
+    if (['xls', 'xlsx'].includes(extension || '') || 
+        mimeType.includes('excel') || 
+        mimeType === 'application/vnd.ms-excel' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      return 'excel';
+    }
+    
+    if (['ppt', 'pptx'].includes(extension || '') || 
+        mimeType.includes('powerpoint') || 
+        mimeType === 'application/vnd.ms-powerpoint' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+      return 'powerpoint';
+    }
+    
+    if (['pdf'].includes(extension || '') || mimeType === 'application/pdf') {
+      return 'pdf';
+    }
+    
+    return 'other';
   }
 };
 
