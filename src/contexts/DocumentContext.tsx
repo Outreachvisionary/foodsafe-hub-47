@@ -11,6 +11,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
+// Debug mode for additional console logging
+const DEBUG_MODE = true;
+
+// Helper debug logger
+const debugLog = (...args: any[]) => {
+  if (DEBUG_MODE) {
+    console.log('[DocumentContext Debug]', ...args);
+  }
+};
+
 // Sample documents for initial state - these will be replaced with data from Supabase
 const initialDocuments: Document[] = [];
 
@@ -48,6 +58,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [documentsChannel, setDocumentsChannel] = useState<RealtimeChannel | null>(null);
+  const [connectionRetries, setConnectionRetries] = useState(0);
   const [stats, setStats] = useState<DocumentStats>({
     totalDocuments: 0,
     pendingApproval: 0,
@@ -63,13 +74,15 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     let channel: RealtimeChannel;
 
     const setupRealtimeSubscription = () => {
+      debugLog('Setting up realtime subscription...');
+      
       // Subscribe to changes on the documents table
       channel = supabase
         .channel('document-changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'documents' },
           async (payload) => {
-            console.log('Document change received:', payload);
+            debugLog('Document change received:', payload);
             
             // Handle different types of changes
             if (payload.eventType === 'INSERT') {
@@ -99,9 +112,22 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
           }
         )
         .subscribe((status) => {
-          console.log('Subscription status:', status);
+          debugLog('Subscription status:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to document changes');
+            debugLog('Successfully subscribed to document changes');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Error subscribing to document changes');
+            // If we keep getting errors, we might want to try a fallback approach
+            if (connectionRetries < 3) {
+              setConnectionRetries(prev => prev + 1);
+              setTimeout(() => {
+                debugLog(`Retrying subscription (attempt ${connectionRetries + 1})...`);
+                if (channel) {
+                  supabase.removeChannel(channel);
+                }
+                setupRealtimeSubscription();
+              }, 2000); // Wait 2 seconds before retrying
+            }
           }
         });
         
@@ -122,10 +148,11 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Cleanup subscription on unmount
     return () => {
       if (channel) {
+        debugLog('Cleaning up document subscription');
         supabase.removeChannel(channel);
       }
     };
-  }, []);
+  }, [connectionRetries]);
 
   // Process documents to update expirations and generate notifications
   useEffect(() => {
@@ -188,9 +215,9 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       setIsLoading(true);
       setError(null);
       
-      console.log('Fetching documents...');
+      debugLog('Fetching documents...');
       const fetchedDocuments = await documentService.fetchDocuments();
-      console.log('Documents fetched:', fetchedDocuments);
+      debugLog('Documents fetched:', fetchedDocuments);
       
       if (Array.isArray(fetchedDocuments)) {
         setDocuments(fetchedDocuments);
@@ -212,12 +239,14 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   
   // Added retry function for document fetching
   const retryFetchDocuments = async () => {
+    debugLog('Retrying document fetch...');
     toast.info('Retrying document fetch...');
     return fetchDocuments();
   };
 
   const addDocument = async (doc: Document) => {
     try {
+      debugLog('Adding document:', doc);
       const createdDoc = await documentService.createDocument(doc as Omit<Document, 'id'>);
       // We don't need to update state here as the realtime subscription will handle it
       toast.success('Document added successfully');
@@ -231,6 +260,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateDocument = async (doc: Document) => {
     try {
+      debugLog('Updating document:', doc);
       const updatedDoc = await documentService.updateDocument(doc.id, doc);
       
       // The document will be updated automatically via the real-time subscription,
@@ -254,6 +284,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteDocument = async (id: string) => {
     try {
+      debugLog('Deleting document:', id);
       await documentService.deleteDocument(id);
       
       // The document will be removed automatically via the real-time subscription,
@@ -273,77 +304,107 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const submitForApproval = (doc: Document) => {
-    const updatedDoc = documentWorkflowService.submitForApproval(doc);
-    updateDocument(updatedDoc);
-    
-    const newNotification: DocumentNotification = {
-      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
-      documentId: doc.id,
-      documentTitle: doc.title,
-      type: 'approval_request',
-      message: `New approval request for "${doc.title}"`,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      targetUserIds: []
-    };
-    
-    setNotifications(prev => [...prev, newNotification]);
-    toast.success('Document submitted for approval');
+    try {
+      debugLog('Submitting document for approval:', doc.id);
+      const updatedDoc = documentWorkflowService.submitForApproval(doc);
+      updateDocument(updatedDoc);
+      
+      const newNotification: DocumentNotification = {
+        id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+        documentId: doc.id,
+        documentTitle: doc.title,
+        type: 'approval_request',
+        message: `New approval request for "${doc.title}"`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: []
+      };
+      
+      setNotifications(prev => [...prev, newNotification]);
+      toast.success('Document submitted for approval');
+    } catch (error) {
+      console.error("Error submitting document for approval:", error);
+      toast.error('Failed to submit document for approval. Please try again.');
+    }
   };
 
   const approveDocument = (doc: Document, comment?: string) => {
-    const updatedDoc = documentWorkflowService.approveDocument(doc, comment);
-    updateDocument(updatedDoc);
-    
-    const newNotification: DocumentNotification = {
-      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
-      documentId: doc.id,
-      documentTitle: doc.title,
-      type: 'approval_complete',
-      message: `"${doc.title}" has been approved`,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      targetUserIds: []
-    };
-    
-    setNotifications(prev => [...prev, newNotification]);
-    toast.success('Document approved successfully');
+    try {
+      debugLog('Approving document:', doc.id, 'Comment:', comment);
+      const updatedDoc = documentWorkflowService.approveDocument(doc, comment);
+      updateDocument(updatedDoc);
+      
+      const newNotification: DocumentNotification = {
+        id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+        documentId: doc.id,
+        documentTitle: doc.title,
+        type: 'approval_complete',
+        message: `"${doc.title}" has been approved`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: []
+      };
+      
+      setNotifications(prev => [...prev, newNotification]);
+      toast.success('Document approved successfully');
+    } catch (error) {
+      console.error("Error approving document:", error);
+      toast.error('Failed to approve document. Please try again.');
+    }
   };
 
   const rejectDocument = (doc: Document, reason: string) => {
-    const updatedDoc = documentWorkflowService.rejectDocument(doc, reason);
-    updateDocument(updatedDoc);
-    
-    const newNotification: DocumentNotification = {
-      id: `notification-${Math.random().toString(36).substring(2, 11)}`,
-      documentId: doc.id,
-      documentTitle: doc.title,
-      type: 'document_rejected',
-      message: `"${doc.title}" was rejected: ${reason}`,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      targetUserIds: []
-    };
-    
-    setNotifications(prev => [...prev, newNotification]);
-    toast.error('Document rejected');
+    try {
+      debugLog('Rejecting document:', doc.id, 'Reason:', reason);
+      const updatedDoc = documentWorkflowService.rejectDocument(doc, reason);
+      updateDocument(updatedDoc);
+      
+      const newNotification: DocumentNotification = {
+        id: `notification-${Math.random().toString(36).substring(2, 11)}`,
+        documentId: doc.id,
+        documentTitle: doc.title,
+        type: 'document_rejected',
+        message: `"${doc.title}" was rejected: ${reason}`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: []
+      };
+      
+      setNotifications(prev => [...prev, newNotification]);
+      toast.error('Document rejected');
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+      toast.error('Failed to reject document. Please try again.');
+    }
   };
 
   const publishDocument = (doc: Document) => {
-    if (doc.status !== 'Approved') {
-      toast.error('Document must be approved before publishing');
-      return;
+    try {
+      if (doc.status !== 'Approved') {
+        toast.error('Document must be approved before publishing');
+        return;
+      }
+      
+      debugLog('Publishing document:', doc.id);
+      const updatedDoc = documentWorkflowService.publishDocument(doc);
+      updateDocument(updatedDoc);
+      toast.success('Document published successfully');
+    } catch (error) {
+      console.error("Error publishing document:", error);
+      toast.error('Failed to publish document. Please try again.');
     }
-    
-    const updatedDoc = documentWorkflowService.publishDocument(doc);
-    updateDocument(updatedDoc);
-    toast.success('Document published successfully');
   };
 
   const archiveDocument = (doc: Document) => {
-    const updatedDoc = documentWorkflowService.archiveDocument(doc);
-    updateDocument(updatedDoc);
-    toast.success('Document archived successfully');
+    try {
+      debugLog('Archiving document:', doc.id);
+      const updatedDoc = documentWorkflowService.archiveDocument(doc);
+      updateDocument(updatedDoc);
+      toast.success('Document archived successfully');
+    } catch (error) {
+      console.error("Error archiving document:", error);
+      toast.error('Failed to archive document. Please try again.');
+    }
   };
 
   const markNotificationAsRead = (id: string) => {

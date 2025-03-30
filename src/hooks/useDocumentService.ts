@@ -5,18 +5,30 @@ import documentService from '@/services/documentService';
 import { useToast } from './use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+// Debug flag - turn on for more verbose logging
+const DEBUG_MODE = true;
+
 export function useDocumentService() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
+  const debugLog = (...args: any[]) => {
+    if (DEBUG_MODE) {
+      console.log('[DocumentService Debug]', ...args);
+    }
+  };
+
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Fetching documents...');
       const documents = await documentService.fetchDocuments();
+      debugLog('Documents fetched:', documents);
       return documents;
     } catch (err) {
+      console.error('Error fetching documents:', err);
       setError(err as Error);
       toast({
         title: 'Error fetching documents',
@@ -33,13 +45,16 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Creating document:', document);
       const result = await documentService.createDocument(document);
+      debugLog('Document created:', result);
       toast({
         title: 'Document created',
         description: 'The document has been created successfully'
       });
       return result;
     } catch (err) {
+      console.error('Error creating document:', err);
       setError(err as Error);
       toast({
         title: 'Error creating document',
@@ -56,13 +71,16 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Updating document:', id, document);
       const result = await documentService.updateDocument(id, document);
+      debugLog('Document updated:', result);
       toast({
         title: 'Document updated',
         description: 'The document has been updated successfully'
       });
       return result;
     } catch (err) {
+      console.error('Error updating document:', err);
       setError(err as Error);
       toast({
         title: 'Error updating document',
@@ -79,12 +97,15 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Deleting document:', id);
       await documentService.deleteDocument(id);
+      debugLog('Document deleted:', id);
       toast({
         title: 'Document deleted',
         description: 'The document has been deleted successfully'
       });
     } catch (err) {
+      console.error('Error deleting document:', err);
       setError(err as Error);
       toast({
         title: 'Error deleting document',
@@ -101,9 +122,12 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Uploading file:', file.name, 'to path:', path);
       await documentService.uploadFile(file, path);
+      debugLog('File uploaded successfully');
       return true;
     } catch (err) {
+      console.error('Error uploading file:', err);
       setError(err as Error);
       toast({
         title: 'Error uploading file',
@@ -120,9 +144,12 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Creating document version:', versionData);
       const result = await documentService.createDocumentVersion(versionData);
+      debugLog('Document version created:', result);
       return result;
     } catch (err) {
+      console.error('Error creating document version:', err);
       setError(err as Error);
       toast({
         title: 'Error creating document version',
@@ -135,13 +162,16 @@ export function useDocumentService() {
     }
   };
 
-  const getDocumentVersions = async (documentId: string) => {
+  const fetchDocumentVersions = async (documentId: string) => {
     try {
       setIsLoading(true);
       setError(null);
+      debugLog('Fetching document versions for:', documentId);
       const versions = await documentService.fetchDocumentVersions(documentId);
+      debugLog('Document versions fetched:', versions);
       return versions;
     } catch (err) {
+      console.error('Error fetching document versions:', err);
       setError(err as Error);
       toast({
         title: 'Error fetching document versions',
@@ -157,17 +187,78 @@ export function useDocumentService() {
   // Function to check Supabase storage availability
   const checkStorageAvailability = async () => {
     try {
-      // Try to list the first bucket to check if storage is available
-      const { data, error } = await supabase.storage.listBuckets();
+      debugLog('Checking storage availability...');
+      // Try to list buckets first to check if storage is available
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
-      if (error) {
-        console.error('Storage error:', error);
+      if (bucketsError) {
+        console.error('Storage bucket access error:', bucketsError);
         return false;
       }
       
+      // If we can list buckets, check if our needed bucket exists
+      const attachmentsBucket = buckets?.find(bucket => bucket.name === 'attachments');
+      
+      if (!attachmentsBucket) {
+        console.warn('Attachments bucket not found. Checking if we can create it...');
+        try {
+          // Try to create the attachments bucket if it doesn't exist
+          const { error: createError } = await supabase.storage.createBucket('attachments', {
+            public: false,
+            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+          });
+          
+          if (createError) {
+            console.error('Error creating attachments bucket:', createError);
+            return false;
+          }
+          
+          debugLog('Created attachments bucket successfully');
+          return true;
+        } catch (createErr) {
+          console.error('Exception creating bucket:', createErr);
+          return false;
+        }
+      }
+      
+      // Try to list files in the attachments bucket as final test
+      const { error: filesError } = await supabase.storage
+        .from('attachments')
+        .list('', { limit: 1 });
+        
+      if (filesError) {
+        console.error('Error listing files in attachments bucket:', filesError);
+        return false;
+      }
+      
+      debugLog('Storage is available and working properly');
       return true;
     } catch (err) {
       console.error('Error checking storage availability:', err);
+      return false;
+    }
+  };
+
+  // Function to check database connection and table access
+  const checkDatabaseAvailability = async () => {
+    try {
+      debugLog('Checking database availability...');
+      
+      // Check if we can access the documents table
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id')
+        .limit(1);
+        
+      if (error) {
+        console.error('Database access error:', error);
+        return false;
+      }
+      
+      debugLog('Database connection successful');
+      return true;
+    } catch (err) {
+      console.error('Error checking database availability:', err);
       return false;
     }
   };
@@ -181,7 +272,8 @@ export function useDocumentService() {
     deleteDocument,
     uploadFile,
     createDocumentVersion,
-    getDocumentVersions,
-    checkStorageAvailability
+    fetchDocumentVersions,
+    checkStorageAvailability,
+    checkDatabaseAvailability
   };
 }

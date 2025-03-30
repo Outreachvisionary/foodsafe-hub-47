@@ -37,17 +37,22 @@ const DocumentsContent = () => {
     markNotificationAsRead, 
     clearAllNotifications,
     fetchDocuments,
-    error
+    error,
+    isLoading
   } = useDocuments();
   
   const [activeTab, setActiveTab] = useState<string>(
     location.state?.activeTab || 'repository'
   );
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
 
   // Load documents on component mount
   useEffect(() => {
     const loadData = async () => {
+      if (initialLoadAttempted) return; // Avoid multiple initial load attempts
+      
+      setInitialLoadAttempted(true);
       try {
         await fetchDocuments();
         console.log("Documents loaded:", documents);
@@ -62,7 +67,7 @@ const DocumentsContent = () => {
     };
     
     loadData();
-  }, [fetchDocuments]);
+  }, [fetchDocuments, initialLoadAttempted]);
 
   useEffect(() => {
     if (location.state?.activeTab) {

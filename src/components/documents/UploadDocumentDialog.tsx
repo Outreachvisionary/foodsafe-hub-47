@@ -1,515 +1,371 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DocumentCategory, DocumentStatus, Document } from '@/types/database';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon, Cloud, FileText, Loader2, Plus, Upload } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useDocuments } from '@/contexts/DocumentContext';
-import { useToast } from '@/hooks/use-toast';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import { Document } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
-import { FilePlus, Upload, Calendar, Tag, X, AlertCircle, Loader2 } from 'lucide-react';
-import documentService from '@/services/documentService';
-import { useTranslation } from 'react-i18next';
-import { useFileUpload } from '@/hooks/use-file-upload';
-import { useDocumentCategories } from '@/hooks/useDocumentReferences';
+import { useUser } from '@/contexts/UserContext';
 
 interface UploadDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  existingDocument?: Document; // Optional for creating new versions
 }
 
-const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ 
-  open, 
-  onOpenChange,
-  existingDocument 
-}) => {
-  const { t } = useTranslation();
+type CategoryOption = {
+  label: string;
+  value: string;
+};
+
+const CATEGORIES: CategoryOption[] = [
+  { label: 'SOP', value: 'SOP' },
+  { label: 'Policy', value: 'Policy' },
+  { label: 'Form', value: 'Form' },
+  { label: 'Certificate', value: 'Certificate' },
+  { label: 'Audit Report', value: 'Audit Report' },
+  { label: 'HACCP Plan', value: 'HACCP Plan' },
+  { label: 'Training Material', value: 'Training Material' },
+  { label: 'Supplier Documentation', value: 'Supplier Documentation' },
+  { label: 'Risk Assessment', value: 'Risk Assessment' },
+  { label: 'Other', value: 'Other' },
+];
+
+const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpenChange }) => {
   const { addDocument } = useDocuments();
-  const { toast } = useToast();
-  const { categories, loading: categoriesLoading } = useDocumentCategories();
+  const { uploadFile, checkStorageAvailability, createDocumentVersion } = useDocumentService();
+  const { user } = useUser();
   
-  const isNewVersion = Boolean(existingDocument);
-  const dialogTitle = isNewVersion 
-    ? t('documents.uploadNewVersion', 'Upload New Version') 
-    : t('documents.uploadDocument', 'Upload Document');
-  
-  const [uploading, setUploading] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null);
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [formData, setFormData] = useState({
-    title: existingDocument?.title || '',
-    description: existingDocument?.description || '',
-    category: (existingDocument?.category || 'SOP') as DocumentCategory,
-    changeSummary: ''
-  });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [storageAvailable, setStorageAvailable] = useState<boolean | null>(null);
   
-  const { 
-    file, 
-    handleFileChange, 
-    clearFile, 
-    error: fileError 
-  } = useFileUpload({
-    maxSizeMB: 30, // 30MB maximum file size for documents
-    allowedTypes: [
-      'application/pdf', // PDFs
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // Word
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel
-      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PowerPoint
-      'application/vnd.oasis.opendocument.text', // OpenDocument Text
-      'application/vnd.oasis.opendocument.spreadsheet', // OpenDocument Spreadsheet
-      'application/vnd.oasis.opendocument.presentation', // OpenDocument Presentation
-      'application/rtf', // Rich Text Format
-      'application/zip', 'application/x-zip-compressed', // Zip files
-      'text/plain', 'text/csv', 'text/html', // Text files
-      'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml' // Common image formats
-    ]
-  });
-  
-  const [expiryDate, setExpiryDate] = useState<string>(
-    existingDocument?.expiry_date 
-      ? new Date(existingDocument.expiry_date).toISOString().split('T')[0] 
-      : ''
-  );
-  const [tags, setTags] = useState<string[]>(existingDocument?.tags || []);
-  const [tagInput, setTagInput] = useState<string>('');
-
-  useEffect(() => {
+  // Check storage on dialog open
+  React.useEffect(() => {
     if (open) {
-      // Keep the existing state when dialog opens
-    } else {
-      // Clear form when dialog closes
-      clearFile();
-      setFormData({
-        title: existingDocument?.title || '',
-        description: existingDocument?.description || '',
-        category: (existingDocument?.category || 'SOP') as DocumentCategory,
-        changeSummary: ''
-      });
-      setExpiryDate(existingDocument?.expiry_date 
-        ? new Date(existingDocument.expiry_date).toISOString().split('T')[0] 
-        : '');
-      setTags(existingDocument?.tags || []);
-      setTagInput('');
-      setUploadProgress(0);
-    }
-  }, [open, existingDocument, clearFile]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleCategoryChange = (value: DocumentCategory) => {
-    setFormData({ ...formData, category: value });
-  };
-
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
-  };
-
-  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddTag();
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      toast({
-        title: t('common.error', 'Error'),
-        description: t('documents.noFileSelected', 'No file selected'),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isNewVersion && !formData.title.trim()) {
-      toast({
-        title: t('common.error', 'Error'),
-        description: t('documents.titleRequired', 'Document title is required'),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setUploading(true);
-      setUploadProgress(10);
-
-      if (isNewVersion && existingDocument) {
-        const documentId = existingDocument.id;
-        const storagePath = `documents/${documentId}/${file.name}_v${existingDocument.version + 1}`;
-        
-        setUploadProgress(20);
-        
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev < 80) return prev + 5;
-            return prev;
-          });
-        }, 500);
-        
-        await documentService.uploadFile(file, storagePath);
-        clearInterval(progressInterval);
-        setUploadProgress(90);
-        
-        const isOfficeDocument = isOfficeFileType(file.type);
-        const versionDetails = {
-          file_name: file.name,
-          file_path: storagePath,
-          file_size: file.size,
-          file_type: file.type,
-          created_by: 'Current User',
-          change_summary: formData.changeSummary,
-          storage_path: storagePath,
-          is_binary_file: isOfficeDocument,
-          editor_metadata: isOfficeDocument ? {
-            document_type: getDocumentTypeFromMime(file.type),
-            original_extension: file.name.split('.').pop()
-          } : null
-        };
-        
-        await documentService.createDocumentVersion({
-          document_id: existingDocument.id,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          created_by: 'Current User',
-          change_notes: formData.changeSummary,
-          version: existingDocument.version + 1
-        });
-        
-        setUploadProgress(100);
-        
-        toast({
-          title: t('documents.versionUploaded', 'Version Uploaded'),
-          description: t('documents.newVersionUploadedDesc', 'New document version has been uploaded successfully'),
-        });
-      } else {
-        const isOfficeDocument = isOfficeFileType(file.type);
-        const documentId = uuidv4();
-        const storagePath = `documents/${documentId}/${file.name}`;
-        
-        setUploadProgress(20);
-        
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev < 80) return prev + 5;
-            return prev;
-          });
-        }, 500);
-        
-        await documentService.uploadFile(file, storagePath);
-        clearInterval(progressInterval);
-        setUploadProgress(90);
-        
-        const newDocument: Document = {
-          id: documentId,
-          title: formData.title,
-          description: formData.description,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          category: formData.category,
-          status: 'Draft' as DocumentStatus,
-          version: 1,
-          created_by: 'Current User',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          expiry_date: expiryDate ? new Date(expiryDate).toISOString() : undefined,
-          tags: tags
-        };
-
-        try {
-          await addDocument(newDocument);
-        
-          await documentService.createDocumentVersion({
-            document_id: documentId,
-            file_name: file.name,
-            file_size: file.size,
-            file_type: file.type,
-            created_by: 'Current User',
-            change_notes: 'Initial version',
-            version: 1
-          });
-          
-          setUploadProgress(100);
-          
-          toast({
-            title: t('documents.documentUploaded', 'Document Uploaded'),
-            description: t('documents.documentUploadedDesc', 'Document has been uploaded successfully'),
-          });
-        } catch (addError) {
-          console.error('Error adding document metadata:', addError);
-          toast({
-            title: t('common.error', 'Error'),
-            description: t('documents.metadataUploadFailed', 'File uploaded but metadata could not be saved'),
-            variant: "destructive",
-          });
+      const checkStorage = async () => {
+        const isAvailable = await checkStorageAvailability();
+        setStorageAvailable(isAvailable);
+        if (!isAvailable) {
+          setErrorMessage('Document storage is not available. Please contact your administrator.');
         }
+      };
+      
+      checkStorage();
+    }
+  }, [open, checkStorageAvailability]);
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setFile(null);
+    setExpiryDate(undefined);
+    setErrorMessage(null);
+    setUploadProgress(0);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      
+      // If no title is set yet, use the file name without extension as a suggestion
+      if (!title) {
+        const fileName = selectedFile.name.split('.');
+        fileName.pop(); // Remove extension
+        setTitle(fileName.join('.'));
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!file) {
+      setErrorMessage('Please select a file to upload');
+      return;
+    }
+    
+    if (!title) {
+      setErrorMessage('Please enter a document title');
+      return;
+    }
+    
+    if (!category) {
+      setErrorMessage('Please select a document category');
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setErrorMessage(null);
+      
+      // Generate a unique ID for the document
+      const documentId = uuidv4();
+      
+      // Create the document object
+      const newDocument: Omit<Document, 'id'> = {
+        title,
+        description,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type || 'application/octet-stream',
+        category: category as any,
+        status: 'Draft',
+        version: 1,
+        created_by: user?.id || 'system',
+        expiry_date: expiryDate ? expiryDate.toISOString() : undefined,
+        is_locked: false,
+        tags: []
+      };
+      
+      // First check if storage is available
+      const isStorageAvailable = await checkStorageAvailability();
+      if (!isStorageAvailable) {
+        throw new Error('Document storage is not available. Please contact your administrator.');
       }
       
-      clearFile();
-      setFormData({
-        title: '',
-        description: '',
-        category: 'SOP' as DocumentCategory,
-        changeSummary: ''
-      });
-      setExpiryDate('');
-      setTags([]);
-      onOpenChange(false);
+      // Step 1: First create the document in the database
+      console.log('Creating document record:', newDocument);
+      const createdDocument = await addDocument({
+        id: documentId,
+        ...newDocument
+      } as Document);
       
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast({
-        title: t('common.error', 'Error'),
-        description: t('documents.uploadFailed', 'Failed to upload document. Please try again.'),
-        variant: "destructive",
+      setUploadProgress(33);
+      
+      // Step 2: Now upload the file to storage
+      const storagePath = `documents/${documentId}/${file.name}`;
+      console.log('Uploading file to storage:', storagePath);
+      await uploadFile(file, storagePath);
+      
+      setUploadProgress(66);
+      
+      // Step 3: Create an initial version record
+      console.log('Creating document version record');
+      await createDocumentVersion({
+        document_id: documentId,
+        file_name: file.name,
+        file_size: file.size,
+        version: 1,
+        created_by: user?.id || 'system',
+        change_notes: 'Initial version'
       });
+      
+      setUploadProgress(100);
+      
+      resetForm();
+      onOpenChange(false);
+    } catch (err) {
+      console.error('Error uploading document:', err);
+      setErrorMessage((err as Error).message || 'Failed to upload document');
     } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const isOfficeFileType = (mimeType: string): boolean => {
-    const officeTypes = [
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/vnd.oasis.opendocument.text',
-      'application/vnd.oasis.opendocument.spreadsheet',
-      'application/vnd.oasis.opendocument.presentation',
-      'application/rtf'
-    ];
-    return officeTypes.includes(mimeType);
-  };
-
-  const getDocumentTypeFromMime = (mimeType: string): string => {
-    if (mimeType.includes('word') || mimeType === 'application/msword' || mimeType === 'application/rtf' ||
-        mimeType === 'application/vnd.oasis.opendocument.text') {
-      return 'word';
-    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
-      return 'excel';
-    } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
-      return 'powerpoint';
-    } else {
-      return 'other';
+      setIsUploading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!isUploading) {
+        if (!newOpen) resetForm();
+        onOpenChange(newOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Upload className="mr-2 h-5 w-5" />
-            {dialogTitle}
+            Upload New Document
           </DialogTitle>
-          <DialogDescription>
-            {isNewVersion 
-              ? t('documents.uploadNewVersionDesc', 'Upload a new version of this document')
-              : t('documents.uploadNewDocumentDesc', 'Upload a new document to the repository')
-            }
-          </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-          {!isNewVersion && (
-            <>
-              <div className="grid gap-2">
-                <Label htmlFor="title">{t('documents.documentTitle', 'Document Title')}</Label>
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+            <div className="flex">
+              <div className="py-1"><svg className="fill-current h-5 w-5 text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+              <div>
+                <p className="font-bold">Upload Error</p>
+                <p className="text-sm">{errorMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="col-span-1">
+                <Label htmlFor="title">Document Title *</Label>
                 <Input
                   id="title"
-                  name="title"
-                  placeholder={t('documents.enterDocumentTitle', 'Enter document title')}
-                  value={formData.title}
-                  onChange={handleInputChange}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter document title"
+                  required
                 />
               </div>
               
-              <div className="grid gap-2">
-                <Label htmlFor="description">{t('documents.description', 'Description')}</Label>
+              <div className="col-span-1">
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  name="description"
-                  placeholder={t('documents.enterDocumentDescription', 'Enter document description')}
-                  value={formData.description}
-                  onChange={handleInputChange}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter document description"
                   rows={3}
                 />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="category">{t('documents.category', 'Category')}</Label>
-                  {categoriesLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Loading categories...</span>
-                    </div>
-                  ) : (
-                    <Select value={formData.category} onValueChange={handleCategoryChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('documents.selectCategory', 'Select category')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={category} onValueChange={setCategory} required>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <div className="grid gap-2">
-                  <Label htmlFor="expiryDate">{t('documents.expiryDate', 'Expiry Date')}</Label>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                    <Input
-                      id="expiryDate"
-                      type="date"
-                      value={expiryDate}
-                      onChange={(e) => setExpiryDate(e.target.value)}
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="expiryDate">Expiry Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !expiryDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {expiryDate ? format(expiryDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={expiryDate}
+                        onSelect={setExpiryDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               
-              <div className="grid gap-2">
-                <Label htmlFor="tags">{t('documents.tags', 'Tags')}</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {tags.map(tag => (
-                    <div key={tag} className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
-                      <span className="text-sm">{tag}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 text-blue-500 hover:text-blue-700"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex">
-                  <Input
-                    id="tagInput"
-                    placeholder={t('documents.addTag', 'Add tag')}
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagInputKeyDown}
-                    className="flex-grow"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleAddTag}
-                    className="ml-2 flex items-center"
-                    disabled={!tagInput.trim()}
-                  >
-                    <Tag className="h-4 w-4 mr-1" />
-                    {t('documents.add', 'Add')}
-                  </Button>
+              <div className="col-span-1">
+                <Label htmlFor="file">File Upload *</Label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 rounded-md">
+                  <div className="space-y-1 text-center">
+                    {file ? (
+                      <div className="flex flex-col items-center">
+                        <FileText className="mx-auto h-12 w-12 text-primary" />
+                        <p className="text-sm font-medium">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setFile(null)}
+                          className="mt-2"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Cloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <div className="flex text-sm text-muted-foreground">
+                          <label
+                            htmlFor="file-upload"
+                            className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                          >
+                            <span>Upload a file</span>
+                            <Input
+                              id="file-upload"
+                              name="file-upload"
+                              type="file"
+                              className="sr-only"
+                              onChange={handleFileChange}
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png"
+                            />
+                          </label>
+                          <p className="pl-1">or drag and drop</p>
+                        </div>
+                        <p className="text-xs">
+                          PDF, Office documents, images up to 50MB
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </>
-          )}
-          
-          {isNewVersion && (
-            <div className="grid gap-2">
-              <Label htmlFor="changeSummary">{t('documents.changeSummary', 'Change Summary')}</Label>
-              <Textarea
-                id="changeSummary"
-                name="changeSummary"
-                placeholder={t('documents.enterChangeSummary', 'Describe what changed in this version')}
-                value={formData.changeSummary}
-                onChange={handleInputChange}
-                rows={3}
-              />
             </div>
-          )}
-          
-          <div className="grid gap-2">
-            <Label htmlFor="file">{t('documents.file', 'File')}</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="file"
-                type="file"
-                onChange={handleFileChange}
-                className="flex-grow"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip,.jpg,.jpeg,.png,.gif,.svg"
-              />
-            </div>
-            {fileError && (
-              <div className="text-red-500 text-sm flex items-center mt-1">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {fileError}
-              </div>
-            )}
-            {file && (
-              <p className="text-sm text-gray-500">
-                {t('documents.selected', 'Selected')}: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-              </p>
-            )}
-            <p className="text-xs text-gray-500">
-              Maximum file size: 30MB. Supported formats include PDF, Office documents, images, and text files.
-            </p>
           </div>
           
-          {uploading && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+          {isUploading && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
               <div 
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                className="bg-primary h-2.5 rounded-full transition-all duration-500" 
                 style={{ width: `${uploadProgress}%` }}
               ></div>
-              <p className="text-xs text-gray-500 mt-1 text-center">
-                {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
-              </p>
+              <p className="text-xs text-center mt-2">Uploading... {uploadProgress}%</p>
             </div>
           )}
           
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
               onClick={() => onOpenChange(false)}
-              disabled={uploading}
+              disabled={isUploading}
             >
-              {t('common.cancel', 'Cancel')}
+              Cancel
             </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={uploading || !file || (!isNewVersion && !formData.title.trim())}
+            <Button 
+              type="submit" 
+              disabled={isUploading || !file || !title || !category || storageAvailable === false}
               className="flex items-center"
             >
-              {uploading ? (
-                <span className="flex items-center">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t('documents.uploading', 'Uploading...')}
-                </span>
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
               ) : (
                 <>
-                  <FilePlus className="h-4 w-4 mr-1" />
-                  {isNewVersion ? t('documents.uploadNewVersion', 'Upload New Version') : t('documents.uploadDocument', 'Upload Document')}
+                  <Plus className="mr-2 h-4 w-4" />
+                  Upload Document
                 </>
               )}
             </Button>
-          </div>
-        </div>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

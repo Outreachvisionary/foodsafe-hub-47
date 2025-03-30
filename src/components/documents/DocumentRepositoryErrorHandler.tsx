@@ -80,6 +80,13 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
     setDiagnosisComplete(true);
   };
 
+  // Run diagnostics when an error is detected
+  useEffect(() => {
+    if (error && !diagnosisComplete && !diagnosisRunning) {
+      runDiagnostics();
+    }
+  }, [error]);
+
   if (!error) return null;
 
   return (
