@@ -1,573 +1,395 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentPreview, DocumentAccess, DocumentWorkflow, DocumentWorkflowInstance } from '@/types/document';
-import { toast } from 'sonner';
+import { 
+  Document, 
+  DocumentVersion, 
+  DocumentWorkflow, 
+  DocumentWorkflowStep, 
+  DocumentActivity
+} from '@/types/document';
+import { v4 as uuidv4 } from 'uuid';
 
-// Document Versioning Service
-export const fetchDocumentVersions = async (documentId: string): Promise<DocumentVersion[]> => {
-  const { data, error } = await supabase
-    .from('document_versions')
-    .select('*')
-    .eq('document_id', documentId)
-    .order('version_number', { ascending: false });
+const documentService = {
+  // Fetch documents with optional filters
+  async fetchDocuments(filters?: {
+    status?: string;
+    category?: string;
+    searchTerm?: string;
+  }): Promise<Document[]> {
+    let query = supabase
+      .from('documents')
+      .select('*')
+      .order('updated_at', { ascending: false });
+      
+    // Apply filters if provided
+    if (filters) {
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+      
+      if (filters.searchTerm) {
+        query = query.or(`title.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`);
+      }
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching documents:', error);
+      throw error;
+    }
+    
+    return data as Document[];
+  },
   
-  if (error) {
-    console.error('Error fetching document versions:', error);
-    throw error;
-  }
-  
-  return data as unknown as DocumentVersion[];
-};
-
-export const createDocumentVersion = async (document: Document, versionDetails: Partial<DocumentVersion>): Promise<DocumentVersion> => {
-  try {
-    // Create the document version - ensure fields match the database schema
+  // Fetch a single document by ID
+  async fetchDocumentById(id: string): Promise<Document> {
     const { data, error } = await supabase
-      .from('document_versions')
-      .insert({
-        document_id: document.id,
-        file_name: versionDetails.file_name || document.file_name,
-        file_size: versionDetails.file_size || document.file_size,
-        created_by: versionDetails.created_by || document.created_by,
-        change_notes: versionDetails.change_summary || '',
-        version: versionDetails.version_number || document.version
-      })
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error(`Error fetching document with ID ${id}:`, error);
+      throw error;
+    }
+    
+    return data as Document;
+  },
+  
+  // Create a new document
+  async createDocument(document: Partial<Document>): Promise<Document> {
+    // Generate ID if not provided
+    const documentId = document.id || uuidv4();
+    
+    // Ensure required fields
+    const documentData = {
+      id: documentId,
+      title: document.title || 'Untitled Document',
+      status: document.status || 'Draft',
+      category: document.category || 'Other',
+      file_name: document.file_name || `${documentId}.txt`,
+      file_size: document.file_size || 0,
+      file_type: document.file_type || 'text/plain',
+      version: document.version || 1,
+      created_by: document.created_by,
+      created_at: document.created_at || new Date().toISOString(),
+      updated_at: document.updated_at || new Date().toISOString(),
+      ...document
+    };
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .insert(documentData)
       .select()
       .single();
-
+      
+    if (error) {
+      console.error('Error creating document:', error);
+      throw error;
+    }
+    
+    return data as Document;
+  },
+  
+  // Update an existing document
+  async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
+    // Add updated_at timestamp if not provided
+    const updateData = {
+      ...updates,
+      updated_at: updates.updated_at || new Date().toISOString()
+    };
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error updating document with ID ${id}:`, error);
+      throw error;
+    }
+    
+    // Log document activity
+    if (updates.status) {
+      await this.createDocumentActivity({
+        document_id: id,
+        action: `update_status_to_${updates.status}`,
+        user_id: updates.created_by || 'system',
+        user_name: 'System',
+        user_role: 'System',
+        comments: `Document status updated to ${updates.status}`
+      });
+    }
+    
+    return data as Document;
+  },
+  
+  // Delete a document
+  async deleteDocument(id: string): Promise<void> {
+    // First delete related records
+    try {
+      // Delete document versions
+      await supabase
+        .from('document_versions')
+        .delete()
+        .eq('document_id', id);
+        
+      // Delete document activities
+      await supabase
+        .from('document_activities')
+        .delete()
+        .eq('document_id', id);
+        
+      // Delete document editor sessions
+      await supabase
+        .from('document_editor_sessions')
+        .delete()
+        .eq('document_id', id);
+        
+      // Delete document workflow instances
+      await supabase
+        .from('document_workflow_instances')
+        .delete()
+        .eq('document_id', id);
+        
+      // Finally delete the document
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Error deleting document with ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Document versions
+  async createDocumentVersion(version: Partial<DocumentVersion>): Promise<DocumentVersion> {
+    // Ensure required fields
+    const versionData = {
+      document_id: version.document_id,
+      file_name: version.file_name,
+      file_size: version.file_size,
+      created_by: version.created_by,
+      version: version.version || 1,
+      created_at: version.created_at || new Date().toISOString(),
+      ...version
+    };
+    
+    const { data, error } = await supabase
+      .from('document_versions')
+      .insert(versionData)
+      .select()
+      .single();
+      
     if (error) {
       console.error('Error creating document version:', error);
       throw error;
     }
-
-    // Update the document with current version id
-    await supabase
-      .from('documents')
-      .update({ current_version_id: data.id })
-      .eq('id', document.id);
-      
-    return data as unknown as DocumentVersion;
-  } catch (error) {
-    console.error('Error in version creation process:', error);
-    throw error;
-  }
-};
-
-export const revertToVersion = async (document: Document, versionId: string): Promise<Document> => {
-  try {
-    // 1. Update the document to point to this version
+    
+    // Update document's current_version_id
+    await this.updateDocument(version.document_id as string, {
+      current_version_id: data.id,
+      version: version.version || 1
+    });
+    
+    return data as DocumentVersion;
+  },
+  
+  async fetchDocumentVersions(documentId: string): Promise<DocumentVersion[]> {
     const { data, error } = await supabase
-      .from('documents')
-      .update({ current_version_id: versionId })
-      .eq('id', document.id)
+      .from('document_versions')
+      .select('*')
+      .eq('document_id', documentId)
+      .order('version', { ascending: false });
+      
+    if (error) {
+      console.error(`Error fetching versions for document ${documentId}:`, error);
+      throw error;
+    }
+    
+    return data as DocumentVersion[];
+  },
+  
+  // Document activities
+  async createDocumentActivity(activity: Partial<DocumentActivity>): Promise<DocumentActivity> {
+    // Ensure required fields
+    const activityData = {
+      document_id: activity.document_id,
+      action: activity.action,
+      user_id: activity.user_id,
+      user_name: activity.user_name,
+      user_role: activity.user_role,
+      timestamp: activity.timestamp || new Date().toISOString(),
+      ...activity
+    };
+    
+    const { data, error } = await supabase
+      .from('document_activities')
+      .insert(activityData)
       .select()
       .single();
       
     if (error) {
-      console.error('Error reverting document version:', error);
+      console.error('Error creating document activity:', error);
       throw error;
     }
     
-    // 2. Record the revert action in activities
-    await supabase
+    return data as DocumentActivity;
+  },
+  
+  async fetchDocumentActivities(documentId: string): Promise<DocumentActivity[]> {
+    const { data, error } = await supabase
       .from('document_activities')
-      .insert({
-        document_id: document.id,
-        action: 'revert_version',
-        user_id: 'current_user', // Should be replaced with actual user ID
-        user_name: 'Current User', // Should be replaced with actual user name
-        user_role: 'Admin', // Should be replaced with actual user role
-        comments: `Reverted to version ${versionId}`
-      });
-      
-    return data as Document;
-  } catch (error) {
-    console.error('Error in version revert process:', error);
-    throw error;
-  }
-};
-
-// Document Preview Service
-export const fetchDocumentPreview = async (documentId: string, previewType = 'thumbnail'): Promise<DocumentPreview | null> => {
-  const { data, error } = await supabase
-    .from('document_previews')
-    .select('*')
-    .eq('document_id', documentId)
-    .eq('preview_type', previewType)
-    .maybeSingle();
-  
-  if (error) {
-    console.error('Error fetching document preview:', error);
-    throw error;
-  }
-  
-  return data as DocumentPreview | null;
-};
-
-export const createDocumentPreview = async (preview: Partial<DocumentPreview>): Promise<DocumentPreview> => {
-  // Make sure required fields are present
-  if (!preview.document_id || !preview.preview_type) {
-    throw new Error('Missing required fields for document preview');
-  }
-
-  const { data, error } = await supabase
-    .from('document_previews')
-    .insert(preview as any)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating document preview:', error);
-    throw error;
-  }
-  
-  return data as DocumentPreview;
-};
-
-// Document Access Control Service
-export const fetchDocumentAccess = async (documentId: string): Promise<DocumentAccess[]> => {
-  const { data, error } = await supabase
-    .from('document_access')
-    .select('*')
-    .eq('document_id', documentId);
-  
-  if (error) {
-    console.error('Error fetching document access:', error);
-    throw error;
-  }
-  
-  return data as DocumentAccess[];
-};
-
-export const grantDocumentAccess = async (access: Partial<DocumentAccess>): Promise<DocumentAccess> => {
-  // Make sure required fields are present
-  if (!access.document_id || !access.permission_level || !access.granted_by) {
-    throw new Error('Missing required fields for document access');
-  }
-
-  const { data, error } = await supabase
-    .from('document_access')
-    .insert(access as any)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error granting document access:', error);
-    throw error;
-  }
-  
-  return data as DocumentAccess;
-};
-
-export const revokeDocumentAccess = async (accessId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('document_access')
-    .delete()
-    .eq('id', accessId);
-  
-  if (error) {
-    console.error('Error revoking document access:', error);
-    throw error;
-  }
-};
-
-// Document Checkout/Checkin Service
-export const checkoutDocument = async (documentId: string, userId: string): Promise<Document> => {
-  // First check if document is already checked out
-  const { data: doc, error: fetchError } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('id', documentId)
-    .single();
-    
-  if (fetchError) {
-    console.error('Error fetching document for checkout:', fetchError);
-    throw fetchError;
-  }
-  
-  if (doc.checkout_user_id && doc.checkout_user_id !== userId) {
-    throw new Error(`Document is already checked out by another user since ${new Date(doc.checkout_timestamp).toLocaleString()}`);
-  }
-  
-  // Proceed with checkout
-  const { data, error } = await supabase
-    .from('documents')
-    .update({
-      checkout_user_id: userId,
-      checkout_timestamp: new Date().toISOString(),
-      is_locked: true
-    })
-    .eq('id', documentId)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error checking out document:', error);
-    throw error;
-  }
-  
-  // Record checkout activity
-  await supabase
-    .from('document_activities')
-    .insert({
-      document_id: documentId,
-      action: 'checkout',
-      user_id: userId,
-      user_name: 'Current User', // Should be replaced with actual user name
-      user_role: 'User' // Should be replaced with actual user role
-    });
-    
-  return data as Document;
-};
-
-export const checkinDocument = async (documentId: string, userId: string, createNewVersion = false, versionDetails?: Partial<DocumentVersion>): Promise<Document> => {
-  // First check if document is checked out by this user
-  const { data: doc, error: fetchError } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('id', documentId)
-    .single();
-    
-  if (fetchError) {
-    console.error('Error fetching document for checkin:', fetchError);
-    throw fetchError;
-  }
-  
-  if (!doc.checkout_user_id) {
-    throw new Error('Document is not currently checked out');
-  }
-  
-  if (doc.checkout_user_id !== userId) {
-    throw new Error('Document is checked out by another user');
-  }
-  
-  // Create new version if requested
-  if (createNewVersion && versionDetails) {
-    await createDocumentVersion(doc, versionDetails);
-  }
-  
-  // Proceed with checkin
-  const { data, error } = await supabase
-    .from('documents')
-    .update({
-      checkout_user_id: null,
-      checkout_timestamp: null,
-      is_locked: false,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', documentId)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error checking in document:', error);
-    throw error;
-  }
-  
-  // Record checkin activity
-  await supabase
-    .from('document_activities')
-    .insert({
-      document_id: documentId,
-      action: 'checkin',
-      user_id: userId,
-      user_name: 'Current User', // Should be replaced with actual user name
-      user_role: 'User', // Should be replaced with actual user role
-      comments: createNewVersion ? 'Checked in with new version' : 'Checked in'
-    });
-    
-  return data as Document;
-};
-
-// Document Workflow Service
-export const fetchWorkflows = async (): Promise<DocumentWorkflow[]> => {
-  const { data, error } = await supabase
-    .from('document_workflows')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching workflows:', error);
-    throw error;
-  }
-  
-  // Parse JSON steps
-  const workflows = data.map(workflow => ({
-    ...workflow,
-    steps: typeof workflow.steps === 'string' ? JSON.parse(workflow.steps) : workflow.steps
-  }));
-  
-  return workflows as DocumentWorkflow[];
-};
-
-export const createWorkflow = async (workflow: Partial<DocumentWorkflow>): Promise<DocumentWorkflow> => {
-  // Make sure required fields are present
-  if (!workflow.name || !workflow.steps || !workflow.created_by) {
-    throw new Error('Missing required fields for document workflow');
-  }
-
-  // Ensure steps is a JSON string
-  const workflowToInsert = {
-    ...workflow,
-    steps: JSON.stringify(workflow.steps)
-  };
-  
-  const { data, error } = await supabase
-    .from('document_workflows')
-    .insert(workflowToInsert as any)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating workflow:', error);
-    throw error;
-  }
-  
-  // Parse JSON steps for return value
-  return {
-    ...data,
-    steps: typeof data.steps === 'string' ? JSON.parse(data.steps) : data.steps
-  } as DocumentWorkflow;
-};
-
-export const startWorkflow = async (documentId: string, workflowId: string, userId: string): Promise<DocumentWorkflowInstance> => {
-  // Create workflow instance
-  const { data, error } = await supabase
-    .from('document_workflow_instances')
-    .insert({
-      document_id: documentId,
-      workflow_id: workflowId,
-      created_by: userId,
-      current_step: 0,
-      status: 'in_progress'
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error starting workflow:', error);
-    throw error;
-  }
-  
-  // Update document status
-  await supabase
-    .from('documents')
-    .update({
-      status: 'Pending Approval' as any,
-      workflow_status: 'in_progress'
-    })
-    .eq('id', documentId);
-    
-  // Record activity
-  await supabase
-    .from('document_activities')
-    .insert({
-      document_id: documentId,
-      action: 'submit_for_approval',
-      user_id: userId,
-      user_name: 'Current User', // Should be replaced with actual user name
-      user_role: 'User', // Should be replaced with actual user role
-      comments: `Started workflow ${workflowId}`
-    });
-    
-  return data as DocumentWorkflowInstance;
-};
-
-export const advanceWorkflow = async (
-  instanceId: string, 
-  documentId: string,
-  approved: boolean, 
-  userId: string,
-  comments?: string
-): Promise<DocumentWorkflowInstance> => {
-  try {
-    // 1. Get the current workflow instance
-    const { data: instance, error: instanceError } = await supabase
-      .from('document_workflow_instances')
-      .select('*, document_workflows!inner(*)')
-      .eq('id', instanceId)
-      .single();
-      
-    if (instanceError) {
-      console.error('Error fetching workflow instance:', instanceError);
-      throw instanceError;
-    }
-    
-    // 2. Get the workflow details
-    const workflow = instance.document_workflows;
-    const steps = typeof workflow.steps === 'string' ? JSON.parse(workflow.steps) : workflow.steps;
-    
-    // 3. Determine the next step based on approval
-    let newStatus = instance.status;
-    let newStep = instance.current_step;
-    let documentStatus = 'Pending Approval';
-    
-    if (approved) {
-      // Move to next step
-      if (newStep < steps.length - 1) {
-        newStep += 1;
-      } else {
-        // This was the final step
-        newStatus = 'completed';
-        documentStatus = 'Approved';
-      }
-    } else {
-      // Rejected
-      newStatus = 'rejected';
-      documentStatus = 'Draft';
-    }
-    
-    // 4. Update the workflow instance
-    const { data: updatedInstance, error: updateError } = await supabase
-      .from('document_workflow_instances')
-      .update({
-        current_step: newStep,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', instanceId)
-      .select()
-      .single();
-      
-    if (updateError) {
-      console.error('Error updating workflow instance:', updateError);
-      throw updateError;
-    }
-    
-    // 5. Update the document status
-    await supabase
-      .from('documents')
-      .update({
-        status: documentStatus as any,
-        workflow_status: newStatus,
-        rejection_reason: approved ? null : comments
-      })
-      .eq('id', documentId);
-      
-    // 6. Record activity
-    await supabase
-      .from('document_activities')
-      .insert({
-        document_id: documentId,
-        action: approved ? 'approve' : 'reject',
-        user_id: userId,
-        user_name: 'Current User', // Should be replaced with actual user name
-        user_role: 'Approver', // Should be replaced with actual user role
-        comments: comments || (approved ? 'Approved' : 'Rejected')
-      });
-      
-    return updatedInstance as DocumentWorkflowInstance;
-    
-  } catch (error) {
-    console.error('Error advancing workflow:', error);
-    throw error;
-  }
-};
-
-export const fetchWorkflowInstance = async (documentId: string): Promise<DocumentWorkflowInstance | null> => {
-  const { data, error } = await supabase
-    .from('document_workflow_instances')
-    .select('*')
-    .eq('document_id', documentId)
-    .eq('status', 'in_progress')
-    .maybeSingle();
-  
-  if (error) {
-    console.error('Error fetching workflow instance:', error);
-    throw error;
-  }
-  
-  return data as DocumentWorkflowInstance | null;
-};
-
-// Utility functions for working with document storage
-export const getDocumentStoragePath = (document: Document, version?: number): string => {
-  const versionSuffix = version ? `_v${version}` : '';
-  return `${document.id}/${document.file_name}${versionSuffix}`;
-};
-
-export const uploadDocumentToStorage = async (file: File, document: Document, version?: number): Promise<string> => {
-  try {
-    const storagePath = getDocumentStoragePath(document, version);
-    
-    const { data, error } = await supabase.storage
-      .from('documents')
-      .upload(storagePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
+      .select('*')
+      .eq('document_id', documentId)
+      .order('timestamp', { ascending: false });
       
     if (error) {
-      console.error('Error uploading document to storage:', error);
+      console.error(`Error fetching activities for document ${documentId}:`, error);
       throw error;
     }
     
-    // Get the public URL for the uploaded file
-    const { data: publicUrlData } = supabase.storage
-      .from('documents')
-      .getPublicUrl(storagePath);
-    
-    return publicUrlData.publicUrl;
-  } catch (error) {
-    console.error('Error in document upload process:', error);
-    throw error;
-  }
-};
-
-export const getDocumentDownloadUrl = async (storagePath: string): Promise<string> => {
-  try {
-    // Check if the storagePath is already a full URL
-    if (storagePath.startsWith('http')) {
-      // For a public URL, we can just return it directly
-      return storagePath;
-    }
-    
-    // Otherwise, create a signed URL for private files
+    return data as DocumentActivity[];
+  },
+  
+  // File storage operations
+  getStoragePath(document: Document): string {
+    return `documents/${document.id}/${document.file_name}`;
+  },
+  
+  async getDownloadUrl(path: string): Promise<string> {
     const { data, error } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(storagePath, 60 * 60); // 1 hour expiry
+      .from('attachments')
+      .createSignedUrl(path, 60); // URL valid for 60 seconds
       
     if (error) {
-      console.error('Error creating signed URL:', error);
+      console.error(`Error getting download URL for ${path}:`, error);
       throw error;
     }
     
     return data.signedUrl;
-  } catch (error) {
-    console.error('Error getting document download URL:', error);
-    throw error;
+  },
+  
+  async uploadFile(file: File, path: string): Promise<void> {
+    const { error } = await supabase.storage
+      .from('attachments')
+      .upload(path, file);
+      
+    if (error) {
+      console.error(`Error uploading file to ${path}:`, error);
+      throw error;
+    }
+  },
+  
+  // Workflow management
+  async submitForApproval(document: Document): Promise<Document> {
+    return this.updateDocument(document.id, {
+      status: 'Pending Approval',
+      pending_since: new Date().toISOString(),
+      is_locked: true
+    });
+  },
+  
+  async approveDocument(document: Document): Promise<Document> {
+    return this.updateDocument(document.id, {
+      status: 'Approved',
+      pending_since: undefined,
+      is_locked: false
+    });
+  },
+  
+  async rejectDocument(document: Document, reason: string): Promise<Document> {
+    return this.updateDocument(document.id, {
+      status: 'Draft',
+      pending_since: undefined,
+      is_locked: false,
+      rejection_reason: reason
+    });
+  },
+  
+  async publishDocument(document: Document): Promise<Document> {
+    if (document.status !== 'Approved') {
+      throw new Error('Document must be approved before publishing');
+    }
+    
+    return this.updateDocument(document.id, {
+      status: 'Published'
+    });
+  },
+  
+  // Document checkout functionality
+  async checkoutDocument(documentId: string, userId: string): Promise<Document> {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        checkout_user_id: userId,
+        checkout_timestamp: new Date().toISOString(),
+        is_locked: true
+      })
+      .eq('id', documentId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error checking out document ${documentId}:`, error);
+      throw error;
+    }
+    
+    await this.createDocumentActivity({
+      document_id: documentId,
+      action: 'checkout',
+      user_id: userId,
+      user_name: 'User', // Would be populated from user profile
+      user_role: 'User', // Would be populated from user profile
+      comments: 'Document checked out for editing'
+    });
+    
+    return data as Document;
+  },
+  
+  async checkinDocument(documentId: string, userId: string): Promise<Document> {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        checkout_user_id: null,
+        checkout_timestamp: null,
+        is_locked: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId)
+      .eq('checkout_user_id', userId) // Ensure only the user who checked out can check in
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error checking in document ${documentId}:`, error);
+      throw error;
+    }
+    
+    await this.createDocumentActivity({
+      document_id: documentId,
+      action: 'checkin',
+      user_id: userId,
+      user_name: 'User', // Would be populated from user profile
+      user_role: 'User', // Would be populated from user profile
+      comments: 'Document checked in after editing'
+    });
+    
+    return data as Document;
   }
 };
 
-// Build on top of existing document services
-export const enhancedDocumentService = {
-  // Version management
-  fetchVersions: fetchDocumentVersions,
-  createVersion: createDocumentVersion,
-  revertToVersion,
-  
-  // Document access
-  fetchAccess: fetchDocumentAccess,
-  grantAccess: grantDocumentAccess,
-  revokeAccess: revokeDocumentAccess,
-  
-  // Document preview
-  fetchPreview: fetchDocumentPreview,
-  createPreview: createDocumentPreview,
-  
-  // Checkout/checkin
-  checkout: checkoutDocument,
-  checkin: checkinDocument,
-  
-  // Workflow
-  fetchWorkflows,
-  createWorkflow,
-  startWorkflow,
-  advanceWorkflow,
-  fetchWorkflowInstance,
-  
-  // Storage
-  uploadToStorage: uploadDocumentToStorage,
-  getDownloadUrl: getDocumentDownloadUrl,
-  getStoragePath: getDocumentStoragePath
-};
-
-export default enhancedDocumentService;
+export default documentService;

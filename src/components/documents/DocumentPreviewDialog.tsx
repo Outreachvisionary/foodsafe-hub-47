@@ -1,204 +1,232 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
-import { FileDown, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import enhancedDocumentService from '@/services/documentService';
-import { useToast } from '@/hooks/use-toast';
+import { Loader2, FileText, Download, Calendar, User } from 'lucide-react';
+import documentService from '@/services/documentService';
 
 interface DocumentPreviewDialogProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDocumentUpdate?: (document: Document) => void;
 }
 
-const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ 
-  document, 
-  open, 
+const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
+  document,
+  open,
   onOpenChange,
-  onDocumentUpdate 
 }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
-  // Reset state when dialog opens or document changes
   useEffect(() => {
     if (open && document) {
       loadPreview();
     } else {
+      // Clear the preview when dialog closes
       setPreviewUrl(null);
-      setCurrentPage(1);
-      setTotalPages(1);
+      setError(null);
     }
   }, [open, document]);
 
   const loadPreview = async () => {
     if (!document) return;
     
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
+      // Determine the storage path for the document
+      const storagePath = documentService.getStoragePath(document);
       
-      // For PDF files, we might need to generate a preview
-      // For images, we can directly use them
-      // For other files, we'd need specialized handling
+      // Get a signed URL for the file
+      const url = await documentService.getDownloadUrl(storagePath);
+      setPreviewUrl(url);
       
-      // Get the storage path or use the document ID and filename
-      const storagePath = document.id && document.file_name ? 
-        `${document.id}/${document.file_name}` : 
-        enhancedDocumentService.getStoragePath(document);
-      
-      // Get the download URL from storage
-      const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
-      
-      setPreviewUrl(downloadUrl);
-      
-      // For PDFs, we could fetch page count here
-      // For demo purposes, let's set a random number
-      if (document.file_type === 'application/pdf') {
-        setTotalPages(Math.floor(Math.random() * 10) + 1);
-      } else {
-        setTotalPages(1);
-      }
+      // Record view activity
+      await documentService.createDocumentActivity({
+        document_id: document.id,
+        action: 'view',
+        user_id: 'current-user', // Replace with actual user ID
+        user_name: 'Current User', // Replace with actual user name
+        user_role: 'User', // Replace with actual user role
+        comments: 'Document previewed'
+      });
     } catch (error) {
       console.error('Error loading document preview:', error);
-      toast({
-        title: "Preview failed",
-        description: "Could not load document preview. Please try downloading instead.",
-        variant: "destructive",
-      });
+      setError('Failed to load document preview. The file may not exist or you may not have permission to view it.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!document) return;
+    if (!document || !previewUrl) return;
     
     try {
-      // Get the storage path or use the document ID and filename
-      const storagePath = document.id && document.file_name ? 
-        `${document.id}/${document.file_name}` : 
-        enhancedDocumentService.getStoragePath(document);
+      // Create a temporary anchor and trigger download
+      const a = document.createElement('a');
+      a.href = previewUrl;
+      a.download = document.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       
-      // Get the download URL from storage
-      const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
-      
-      // Create an anchor element and trigger download
-      const link = window.document.createElement('a');
-      link.href = downloadUrl;
-      link.download = document.file_name;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      
-      toast({
-        title: "Download started",
-        description: `Downloading ${document.file_name}`,
+      // Record download activity
+      await documentService.createDocumentActivity({
+        document_id: document.id,
+        action: 'download',
+        user_id: 'current-user', // Replace with actual user ID
+        user_name: 'Current User', // Replace with actual user name
+        user_role: 'User', // Replace with actual user role
+        comments: 'Document downloaded'
       });
     } catch (error) {
       console.error('Error downloading document:', error);
-      toast({
-        title: "Download failed",
-        description: "Could not download the document",
-        variant: "destructive",
-      });
     }
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const renderPreview = () => {
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-96">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Loading document preview...</p>
+        </div>
+      );
     }
-  };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-96 text-center p-4">
+          <FileText className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">Preview Not Available</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={handleDownload} disabled={!previewUrl}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Instead
+          </Button>
+        </div>
+      );
     }
+
+    if (!previewUrl) {
+      return (
+        <div className="flex flex-col items-center justify-center h-96">
+          <FileText className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+          <p className="text-muted-foreground">No preview available</p>
+        </div>
+      );
+    }
+
+    // If we have a preview URL, render different preview based on file type
+    if (document) {
+      const fileType = document.file_type.toLowerCase();
+      
+      if (fileType.includes('pdf')) {
+        return (
+          <iframe
+            src={`${previewUrl}#toolbar=0`}
+            className="w-full h-[70vh] border rounded"
+            title={document.title}
+          />
+        );
+      } else if (fileType.includes('image')) {
+        return (
+          <div className="flex justify-center h-[70vh] overflow-auto">
+            <img
+              src={previewUrl}
+              alt={document.title}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        );
+      } else if (fileType.includes('text') || fileType.includes('html')) {
+        return (
+          <iframe
+            src={previewUrl}
+            className="w-full h-[70vh] border rounded"
+            title={document.title}
+          />
+        );
+      } else {
+        // For other file types, show a download button
+        return (
+          <div className="flex flex-col items-center justify-center h-96">
+            <FileText className="h-16 w-16 text-primary mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Preview Not Available</h3>
+            <p className="text-muted-foreground mb-4">
+              This file type ({document.file_type}) cannot be previewed in the browser.
+            </p>
+            <Button onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download File
+            </Button>
+          </div>
+        );
+      }
+    }
+    
+    return null;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             <FileText className="h-5 w-5" />
-            {document?.title}
+            {document?.title || 'Document Preview'}
           </DialogTitle>
-          <DialogDescription>
-            {document?.file_name} • Version {document?.version}
-          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-auto border rounded-md bg-gray-50 flex items-center justify-center">
-          {loading ? (
-            <div className="text-center py-12 text-gray-500">Loading preview...</div>
-          ) : previewUrl ? (
-            document?.file_type?.startsWith('image/') ? (
-              <img 
-                src={previewUrl} 
-                alt={document.title} 
-                className="max-h-full object-contain"
-              />
-            ) : document?.file_type === 'application/pdf' ? (
-              <iframe
-                src={`${previewUrl}#page=${currentPage}`}
-                className="w-full h-full"
-                title={document.title}
-              />
-            ) : (
-              <div className="text-center py-12 text-gray-600 px-4">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <p className="font-medium mb-2">Preview not available for this file type</p>
-                <p className="text-sm text-gray-500 mb-6">
-                  This document ({document?.file_type}) cannot be previewed directly.
-                </p>
-                <Button onClick={handleDownload} variant="outline" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Download for viewing
-                </Button>
+        {document && (
+          <div className="space-y-4 overflow-hidden flex-grow flex flex-col">
+            <div className="flex flex-wrap gap-2 items-center">
+              <Badge variant={document.status === 'Published' ? 'default' : 'outline'}>
+                {document.status}
+              </Badge>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5 mr-1" />
+                <span>Updated: {new Date(document.updated_at).toLocaleDateString()}</span>
               </div>
-            )
-          ) : (
-            <div className="text-center py-12 text-gray-500">No preview available</div>
-          )}
-        </div>
-        
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 py-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrevPage}
-              disabled={currentPage <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <User className="h-3.5 w-3.5 mr-1" />
+                <span>By: {document.created_by}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Version: {document.version}
+              </div>
+            </div>
+            
+            <Card className="flex-grow overflow-hidden p-0">
+              {renderPreview()}
+            </Card>
           </div>
         )}
         
-        <div className="flex justify-end pt-2">
-          <Button onClick={handleDownload} className="gap-2">
-            <FileDown className="h-4 w-4" />
-            Download
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
           </Button>
-        </div>
+          {document && (
+            <Button onClick={handleDownload} disabled={!previewUrl || loading}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

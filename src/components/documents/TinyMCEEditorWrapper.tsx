@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Rename the component to better reflect its purpose
+// Component renamed to better reflect its purpose
 interface RichTextEditorProps {
   content: string;
   onChange?: (content: string) => void;
@@ -26,8 +26,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
   const [editorInstance, setEditorInstance] = useState<any>(null);
+  const [editorData, setEditorData] = useState<string>(content || '');
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
+  
+  // Initialize editor data when content prop changes
+  useEffect(() => {
+    if (content !== undefined) {
+      setEditorData(content);
+    }
+  }, [content]);
   
   // Initialize editor session
   useEffect(() => {
@@ -55,7 +63,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             document_id: documentId,
             user_id: user.id, // Include the user ID
             is_active: true,
-            session_data: { last_content: content }
+            session_data: { last_content: editorData }
           })
           .select('id')
           .single();
@@ -77,7 +85,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       clearInterval(interval);
       closeSession();
     };
-  }, [documentId, readOnly, content]);
+  }, [documentId, readOnly, editorData]);
   
   // Fetch active users
   const fetchActiveUsers = async () => {
@@ -121,7 +129,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           is_active: false,
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorInstance ? editorInstance.getData() : content
+            last_content: editorInstance ? editorInstance.getData() : editorData
           }
         })
         .eq('id', sessionId);
@@ -149,7 +157,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Handle editor content change
   const handleEditorChange = (event: any, editor: any) => {
+    if (!editor) return;
+    
     const data = editor.getData();
+    setEditorData(data);
     
     if (onChange) onChange(data);
     
@@ -170,10 +181,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       )}
       
       <div style={{ height: `${height}px` }} className="overflow-auto border rounded-md">
-        {content !== undefined && (
+        {editorData !== undefined && (
           <CKEditor
             editor={ClassicEditor}
-            data={content || ''}
+            data={editorData}
             onReady={(editor) => {
               console.log('Editor is ready to use!', editor);
               editorRef.current = editor;
@@ -181,7 +192,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               setIsLoading(false);
               
               // Set read-only state after editor is ready
-              if (readOnly) {
+              if (readOnly && editor) {
                 editor.isReadOnly = true;
               }
             }}

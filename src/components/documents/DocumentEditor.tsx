@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,11 +41,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
-  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     if (document) {
-      setTitle(document.title);
+      setTitle(document.title || '');
       setContent(document.description || '');
       
       if (!readOnly && document.id) {
@@ -60,7 +60,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   }, [document, readOnly]);
 
   const createEditorSession = async (documentId: string) => {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
+    if (!documentId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
       console.log('Skipping editor session creation for invalid document ID:', documentId);
       return;
     }
@@ -109,14 +109,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     if (!sessionId) return;
     
     try {
-      const currentContent = content;
-      
       await supabase
         .from('document_editor_sessions')
         .update({
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: currentContent
+            last_content: content
           }
         })
         .eq('id', sessionId);
@@ -180,12 +178,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     setIsLoading(true);
     
     try {
-      const updatedContent = editorRef.current ? editorRef.current.getContent() : content;
-      
       const docForReview = {
         ...document,
         title,
-        description: updatedContent,
+        description: content,
         status: 'Pending Approval' as DocumentStatus,
         updated_at: new Date().toISOString()
       };
@@ -288,7 +284,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </TabsList>
           
           <TabsContent value="edit" className="flex-grow overflow-auto">
-            {document && (
+            {document && document.id && (
               <RichTextEditor
                 content={content}
                 onChange={handleEditorChange}
