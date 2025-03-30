@@ -104,6 +104,11 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
       throw new Error('Organization ID is required to create a facility');
     }
     
+    // Ensure name is set
+    if (!facility.name) {
+      throw new Error('Facility name is required');
+    }
+    
     // Capitalize location names if present
     const processedFacility = {
       ...facility,
@@ -113,7 +118,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
     
     const { data, error } = await supabase
       .from('facilities')
-      .insert([processedFacility])
+      .insert(processedFacility)
       .select()
       .single();
     
