@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Document, 
@@ -8,7 +7,8 @@ import {
   DocumentActivity,
   DocumentAccess,
   DocumentStatus,
-  DocumentCategory
+  DocumentCategory,
+  parseWorkflowSteps
 } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -479,6 +479,90 @@ const documentService = {
     });
     
     return data as Document;
+  },
+
+  // Reference data fetching methods
+  async fetchDocumentStatuses() {
+    try {
+      const { data, error } = await supabase
+        .from('document_status_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+        
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching document statuses:', error);
+      throw error;
+    }
+  },
+  
+  async fetchDocumentCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('document_category_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+        
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching document categories:', error);
+      throw error;
+    }
+  },
+  
+  async fetchDocumentPermissions() {
+    try {
+      const { data, error } = await supabase
+        .from('document_permission_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+        
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching document permissions:', error);
+      throw error;
+    }
+  },
+
+  // Office document special handling
+  detectDocumentType(fileName: string, mimeType: string): string {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    if (['doc', 'docx'].includes(extension || '') || 
+        mimeType.includes('word') || 
+        mimeType === 'application/msword' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return 'word';
+    }
+    
+    if (['xls', 'xlsx'].includes(extension || '') || 
+        mimeType.includes('excel') || 
+        mimeType === 'application/vnd.ms-excel' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      return 'excel';
+    }
+    
+    if (['ppt', 'pptx'].includes(extension || '') || 
+        mimeType.includes('powerpoint') || 
+        mimeType === 'application/vnd.ms-powerpoint' || 
+        mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+      return 'powerpoint';
+    }
+    
+    if (['pdf'].includes(extension || '') || mimeType === 'application/pdf') {
+      return 'pdf';
+    }
+    
+    return 'other';
   }
 };
 

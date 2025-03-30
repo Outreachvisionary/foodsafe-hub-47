@@ -638,6 +638,36 @@ export type Database = {
           },
         ]
       }
+      document_category_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       document_editor_sessions: {
         Row: {
           document_id: string | null
@@ -675,6 +705,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_permission_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       document_previews: {
         Row: {
@@ -720,6 +780,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_status_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       document_versions: {
         Row: {
