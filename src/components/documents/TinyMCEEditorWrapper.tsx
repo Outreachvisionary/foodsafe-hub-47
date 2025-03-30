@@ -25,6 +25,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
+  const [editorInstance, setEditorInstance] = useState<any>(null);
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
   
@@ -120,7 +121,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           is_active: false,
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorRef.current ? editorRef.current.getData() : content
+            last_content: editorInstance ? editorInstance.getData() : content
           }
         })
         .eq('id', sessionId);
@@ -152,11 +153,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     
     if (onChange) onChange(data);
     
-    // Store reference to the editor instance
-    if (!editorRef.current) {
-      editorRef.current = editor;
-    }
-    
     // Debounce updates to reduce database load
     const timeoutId = setTimeout(() => {
       updateSessionActivity(data);
@@ -174,12 +170,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       )}
       
       <div style={{ height: `${height}px` }} className="overflow-auto border rounded-md">
-        {content !== null && (
+        {content !== undefined && (
           <CKEditor
             editor={ClassicEditor}
             data={content || ''}
             onReady={(editor) => {
+              console.log('Editor is ready to use!', editor);
               editorRef.current = editor;
+              setEditorInstance(editor);
               setIsLoading(false);
               
               // Set read-only state after editor is ready
@@ -197,8 +195,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 'undo', 'redo'
               ],
               placeholder: 'Type your content here...'
-              // The correct approach is to set readOnly through the editor instance
-              // rather than in the config object
             }}
           />
         )}

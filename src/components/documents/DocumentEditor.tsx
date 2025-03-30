@@ -109,12 +109,14 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     if (!sessionId) return;
     
     try {
+      const currentContent = content;
+      
       await supabase
         .from('document_editor_sessions')
         .update({
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorRef.current ? editorRef.current.getContent() : content
+            last_content: currentContent
           }
         })
         .eq('id', sessionId);
@@ -136,12 +138,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     setIsLoading(true);
     
     try {
-      const updatedContent = editorRef.current ? editorRef.current.getContent() : content;
-      
       const updatedDoc = {
         ...document,
         title,
-        description: updatedContent,
+        description: content,
         updated_at: new Date().toISOString()
       };
       
@@ -288,12 +288,14 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </TabsList>
           
           <TabsContent value="edit" className="flex-grow overflow-auto">
-            <RichTextEditor
-              content={content}
-              onChange={handleEditorChange}
-              readOnly={readOnly}
-              documentId={document.id}
-            />
+            {document && (
+              <RichTextEditor
+                content={content}
+                onChange={handleEditorChange}
+                readOnly={readOnly}
+                documentId={document.id}
+              />
+            )}
           </TabsContent>
           
           <TabsContent value="comments" className="h-full flex flex-col">
