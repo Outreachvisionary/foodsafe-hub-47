@@ -1,99 +1,115 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from '@/components/LanguageSelector';
+import ProfileTile from '@/components/profile/ProfileTile';
 
 interface SidebarLink {
   name: string;
   href: string;
   icon: React.ElementType;
   color: string;
+  gradientFrom?: string;
+  gradientTo?: string;
 }
 
 const AppSidebar = () => {
   const { t } = useTranslation();
-  const { user, signOut } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const [collapsed, setCollapsed] = useState(false);
   
   const sidebarLinks: SidebarLink[] = [
     {
       name: 'Dashboard',
       href: '/dashboard',
       icon: LayoutDashboard,
-      color: 'text-blue-500'
+      color: 'text-blue-500',
+      gradientFrom: 'from-blue-500',
+      gradientTo: 'to-blue-600'
     }, {
       name: 'Documents',
       href: '/documents',
       icon: FileText,
-      color: 'text-green-500'
+      color: 'text-green-500',
+      gradientFrom: 'from-green-500',
+      gradientTo: 'to-green-600'
     }, {
       name: 'Standards',
       href: '/standards-modules',
-      icon: ClipboardCheck,
-      color: 'text-purple-500'
+      icon: BookOpen,
+      color: 'text-purple-500',
+      gradientFrom: 'from-purple-500',
+      gradientTo: 'to-purple-600'
     }, {
       name: 'Organizations',
       href: '/organizations',
       icon: Building,
-      color: 'text-indigo-600'
+      color: 'text-indigo-600',
+      gradientFrom: 'from-indigo-500',
+      gradientTo: 'to-indigo-600'
     }, {
       name: 'Facilities',
       href: '/facilities',
       icon: Building2,
-      color: 'text-teal-500'
+      color: 'text-teal-500',
+      gradientFrom: 'from-teal-500',
+      gradientTo: 'to-teal-600'
     }, {
       name: 'Audits',
       href: '/audits',
       icon: HardDrive,
-      color: 'text-yellow-600'
+      color: 'text-yellow-600',
+      gradientFrom: 'from-yellow-500',
+      gradientTo: 'to-yellow-600'
     }, {
       name: 'Non-Conformance',
       href: '/non-conformance',
       icon: AlertTriangle,
-      color: 'text-red-500'
+      color: 'text-red-500',
+      gradientFrom: 'from-red-500',
+      gradientTo: 'to-red-600'
     }, {
       name: 'CAPA',
       href: '/capa',
       icon: RefreshCw,
-      color: 'text-orange-500'
+      color: 'text-orange-500',
+      gradientFrom: 'from-orange-500',
+      gradientTo: 'to-orange-600'
     }, {
       name: 'Suppliers',
       href: '/suppliers',
       icon: Truck,
-      color: 'text-pink-500'
+      color: 'text-pink-500',
+      gradientFrom: 'from-pink-500',
+      gradientTo: 'to-pink-600'
     }, {
       name: 'Training',
       href: '/training',
       icon: GraduationCap,
-      color: 'text-indigo-500'
+      color: 'text-indigo-500',
+      gradientFrom: 'from-indigo-400',
+      gradientTo: 'to-indigo-500'
     }, {
       name: 'HACCP',
       href: '/haccp',
       icon: Beaker,
-      color: 'text-emerald-500'
+      color: 'text-emerald-500',
+      gradientFrom: 'from-emerald-500',
+      gradientTo: 'to-emerald-600'
     }, {
       name: 'Traceability',
       href: '/traceability',
       icon: Activity,
-      color: 'text-cyan-500'
+      color: 'text-cyan-500',
+      gradientFrom: 'from-cyan-500',
+      gradientTo: 'to-cyan-600'
     }
   ];
   
@@ -103,14 +119,25 @@ const AppSidebar = () => {
   
   return (
     <Sidebar className="h-screen flex flex-col transition-all duration-300">
-      <div className="border-b border-border/60">
+      <div className="border-b border-border/60 relative">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="bg-gradient-to-r from-accent to-accent-light rounded-md p-1.5">
+            <div className="bg-gradient-to-r from-accent to-primary rounded-md p-1.5 shadow-glow">
               <ClipboardCheck className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Compliance Core</span>
+            {!collapsed && (
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Compliance Core</span>
+            )}
           </Link>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setCollapsed(!collapsed)}
+            className="hover:bg-accent/10 text-accent absolute right-2"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
       
@@ -121,18 +148,20 @@ const AppSidebar = () => {
               key={link.href} 
               to={link.href}
               className={`
-                group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors
+                group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all
                 ${isActiveLink(link.href) 
-                  ? 'bg-gradient-to-r from-accent/10 to-primary/10 text-primary' 
+                  ? `bg-gradient-to-r ${link.gradientFrom} ${link.gradientTo} text-white shadow-md` 
                   : 'text-foreground hover:bg-secondary hover:text-primary'}
               `}
             >
-              <div className={`${isActiveLink(link.href) ? link.color : 'text-muted-foreground'} mr-3 h-5 w-5 flex-shrink-0 transition-all group-hover:scale-110`}>
+              <div className={`${isActiveLink(link.href) ? 'text-white' : link.color} mr-3 h-5 w-5 flex-shrink-0 transition-all group-hover:scale-110`}>
                 <link.icon className="h-5 w-5" />
               </div>
-              <span>{link.name}</span>
-              {isActiveLink(link.href) && (
-                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-accent"></div>
+              {!collapsed && (
+                <span>{link.name}</span>
+              )}
+              {isActiveLink(link.href) && !collapsed && (
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white animate-pulse"></div>
               )}
             </Link>
           ))}
@@ -140,42 +169,7 @@ const AppSidebar = () => {
       </div>
       
       <div className="border-t border-border/60 p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between px-2 hover:bg-secondary group">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all">
-                  <AvatarImage src={user?.avatar_url || ''} />
-                  <AvatarFallback className="bg-accent/10 text-accent">{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="text-sm font-medium truncate">
-                  {user?.full_name || user?.email || t('common.user')}
-                </div>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
-              <User className="mr-2 h-4 w-4 text-blue-500" />
-              {t('profile.viewProfile')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4 text-orange-500" />
-              {t('profile.settings')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5">
-              <LanguageSelector />
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />
-              {t('auth.signOut')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ProfileTile collapsed={collapsed} />
       </div>
     </Sidebar>
   );

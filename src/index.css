@@ -18,8 +18,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 30% 15%;
  
-    --primary: 215 38% 28%;      /* Deep navy primary */
+    --primary: 230 65% 45%;      /* Vibrant blue primary */
     --primary-foreground: 0 0% 100%;  /* White text on primary */
+    --primary-light: 230 65% 55%;     /* Lighter blue for hover */
  
     --secondary: 210 30% 96%;   /* Light blue-gray */
     --secondary-foreground: 215 38% 28%;  /* Navy text on secondary */
@@ -27,11 +28,21 @@
     --muted: 210 30% 97%;
     --muted-foreground: 215 16% 47%;  /* Medium blue-gray for muted text */
  
-    --accent: 185 78% 43%;       /* Turquoise accent */
+    --accent: 185 82% 45%;       /* Turquoise accent */
     --accent-foreground: 0 0% 100%;
+    --accent-light: 185 82% 55%;   /* Lighter turquoise for gradients */
  
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 215 82% 45%;
+    --info-foreground: 0 0% 100%;
 
     --border: 210 20% 93%;      /* Light blue-gray borders */
     --input: 210 20% 93%;
@@ -121,9 +132,29 @@ tbody td {
   @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full;
 }
 
-/* Card styles with subtle gradients */
+/* Card styles with vibrant gradients */
 .card-gradient {
   @apply bg-gradient-to-br from-white to-secondary/40;
+}
+
+.card-gradient-primary {
+  @apply bg-gradient-to-br from-primary/5 to-accent/5;
+}
+
+.card-gradient-accent {
+  @apply bg-gradient-to-br from-accent/5 to-primary/5;
+}
+
+.card-gradient-success {
+  @apply bg-gradient-to-br from-success/5 to-accent/5;
+}
+
+.card-gradient-warning {
+  @apply bg-gradient-to-br from-warning/5 to-accent/5;
+}
+
+.card-gradient-danger {
+  @apply bg-gradient-to-br from-destructive/5 to-accent/5;
 }
 
 /* Animated icon styles */
@@ -131,3 +162,39 @@ tbody td {
   @apply transition-transform duration-200 hover:scale-110 hover:text-accent;
 }
 
+/* Text gradient styles */
+.text-gradient-primary {
+  @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+}
+
+.text-gradient-accent {
+  @apply bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent;
+}
+
+/* Glassmorphism styles */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-md;
+}
+
+.glass-dark {
+  @apply bg-primary/10 backdrop-blur-md border border-primary/20 shadow-md;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

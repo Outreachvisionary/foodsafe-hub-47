@@ -30,11 +30,11 @@ const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className={`w-full justify-between px-2 hover:bg-secondary group ${collapsed ? 'justify-center' : ''}`}>
+        <Button variant="ghost" className={`w-full justify-between px-2 hover:bg-accent/10 transition-all group ${collapsed ? 'justify-center' : ''}`}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-            <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all">
+            <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/60 transition-all shadow-glow">
               <AvatarImage src={user?.avatar_url || ''} />
-              <AvatarFallback className="bg-accent/10 text-accent">{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white">{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="text-sm font-medium truncate">
@@ -44,15 +44,15 @@ const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-56 bg-white/90 backdrop-blur-md border-accent/20 shadow-lg animate-fade-in">
+        <DropdownMenuLabel className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t('profile.title')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
-          <User className="mr-2 h-4 w-4 text-blue-500" />
+        <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer hover:bg-accent/10 transition-all">
+          <User className="mr-2 h-4 w-4 text-accent" />
           {t('profile.viewProfile')}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
-          <Settings className="mr-2 h-4 w-4 text-orange-500" />
+        <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer hover:bg-primary/10 transition-all">
+          <Settings className="mr-2 h-4 w-4 text-primary" />
           {t('profile.settings')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -60,7 +60,7 @@ const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
           <LanguageSelector />
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
           <LogOut className="mr-2 h-4 w-4" />
           {t('auth.signOut')}
         </DropdownMenuItem>

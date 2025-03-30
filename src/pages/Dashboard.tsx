@@ -29,9 +29,9 @@ const Dashboard = () => {
         subtitle="Overview of your compliance status" 
       />
       
-      <Card className="mb-6 bg-gradient-to-br from-white to-accent/5 border border-border/60 mt-6 shadow-sm">
+      <Card className="mb-6 bg-gradient-to-br from-accent/5 to-primary/5 border border-border/60 mt-6 shadow-md">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-primary">Welcome to Compliance Core</CardTitle>
+          <CardTitle className="text-lg bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">Welcome to Compliance Core</CardTitle>
           <CardDescription>
             Your comprehensive solution for food safety management and compliance
           </CardDescription>

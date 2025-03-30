@@ -20,54 +20,52 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: '#E2E8F0', // Refined light blue-gray border
-        input: '#EDF2F7', // Lighter blue-gray for input fields
-        ring: '#4A6FA5', // Steel blue for focus states
-        background: {
-          light: '#F8FAFC', // Off-white background for sections
-          dark: '#2D3F63', // Deep navy for headers or sidebars
-          DEFAULT: '#FFFFFF', // Default white background
-        },
-        foreground: {
-          light: '#4A5568', // Medium blue-gray for lighter text
-          dark: '#F8FAFC', // Off-white text for dark backgrounds
-          DEFAULT: '#1A2333', // Near black for default text
-        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#2D3F63', // Deep navy blue for primary elements
-          dark: '#1A2333',    // Darker navy for emphasis
-          light: '#4A6FA5',   // Steel blue for hover states
-          foreground: '#FFFFFF', // White text on primary buttons
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          light: 'hsl(var(--primary-light))',
         },
         secondary: {
-          DEFAULT: '#EDF2F7', // Light blue-gray for secondary elements
-          foreground: '#2D3F63', // Deep navy text on secondary buttons
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         destructive: {
-          DEFAULT: '#E53E3E', // Refined red for destructive actions
-          foreground: '#FFFFFF', // White text on destructive buttons
-        },
-        accent: {
-          DEFAULT: '#16BAC5',  // Turquoise for accents
-          light: '#4FD1DB',    // Lighter turquoise for hover states
-          dark: '#0E9AA7',     // Deeper turquoise for emphasis
-          foreground: '#FFFFFF', // White text on accent elements
-        },
-        success: {
-          DEFAULT: '#3CCF91', // Mint green for success indicators
-          foreground: '#FFFFFF', // White text on success badges
-        },
-        warning: {
-          DEFAULT: '#FF9F43', // Amber for warnings
-          foreground: '#1A2333', // Near black text on warning badges
-        },
-        info: {
-          DEFAULT: '#4A6FA5', // Steel blue for informational elements
-          foreground: '#FFFFFF', // White text on info badges
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
         },
         muted: {
-          DEFAULT: '#F1F5F9', // Light blue-gray for muted backgrounds
-          foreground: '#64748B', // Medium blue-gray for muted text
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+          light: 'hsl(var(--accent-light))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
       },
       fontFamily: {
@@ -93,8 +91,27 @@ const config: Config = {
         '70': '0.7',
         '80': '0.8',
         '90': '0.9',
-      }
-    }
+      },
+      boxShadow: {
+        'soft': '0 4px 12px rgba(0, 0, 0, 0.05)',
+        'glow': '0 0 15px rgba(22, 186, 197, 0.3)',
+        'card': '0 10px 30px -5px rgba(0, 0, 0, 0.1)',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+    },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
