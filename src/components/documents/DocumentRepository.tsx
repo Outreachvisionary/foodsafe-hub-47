@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,38 +13,13 @@ import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentUploader from './DocumentUploader';
 import { format } from 'date-fns';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Download, 
-  Trash2, 
-  MoreHorizontal, 
-  Edit, 
-  Eye, 
-  Check,
-  X,
-  AlertTriangle,
-  FileText,
-  CalendarDays,
-  Loader2,
-  RefreshCw,
-  FileWarning
-} from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Search, Filter, Plus, Download, Trash2, MoreHorizontal, Edit, Eye, Check, X, AlertTriangle, FileText, CalendarDays, Loader2, RefreshCw, FileWarning } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
 import { useDocumentCategories, useDocumentStatuses } from '@/hooks/useDocumentReferences';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'N/A';
   try {
@@ -54,10 +28,21 @@ const formatDate = (dateStr?: string) => {
     return 'Invalid Date';
   }
 };
-
 const DocumentRepository: React.FC = () => {
-  const { t } = useTranslation();
-  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats, setSelectedDocument, isLoading, error: documentsError, retryFetchDocuments } = useDocuments();
+  const {
+    t
+  } = useTranslation();
+  const {
+    documents,
+    addDocument,
+    updateDocument,
+    deleteDocument,
+    refreshDocumentStats,
+    setSelectedDocument,
+    isLoading,
+    error: documentsError,
+    retryFetchDocuments
+  } = useDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -66,12 +51,21 @@ const DocumentRepository: React.FC = () => {
   const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
+
   // Use our reference data hooks
-  const { categories, loading: categoriesLoading, error: categoriesError } = useDocumentCategories();
-  const { statuses, loading: statusesLoading, error: statusesError } = useDocumentStatuses();
-  
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError
+  } = useDocumentCategories();
+  const {
+    statuses,
+    loading: statusesLoading,
+    error: statusesError
+  } = useDocumentStatuses();
   useEffect(() => {
     const loadDocuments = async () => {
       try {
@@ -80,25 +74,14 @@ const DocumentRepository: React.FC = () => {
         console.error('Error loading documents:', error);
       }
     };
-    
     loadDocuments();
   }, [refreshDocumentStats]);
-  
+
   // Filter documents based on search and filters
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = searchTerm 
-      ? doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      : true;
-    
-    const matchesCategory = categoryFilter 
-      ? doc.category === categoryFilter 
-      : true;
-    
-    const matchesStatus = statusFilter 
-      ? doc.status === statusFilter 
-      : true;
-    
+    const matchesSearch = searchTerm ? doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+    const matchesCategory = categoryFilter ? doc.category === categoryFilter : true;
+    const matchesStatus = statusFilter ? doc.status === statusFilter : true;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
@@ -149,17 +132,18 @@ const DocumentRepository: React.FC = () => {
   const handleDownloadDocument = async (doc: Document) => {
     try {
       const storagePath = documentService.getStoragePath(doc);
-      
       const url = await documentService.getDownloadUrl(storagePath);
-      
       const a = window.document.createElement('a');
       a.href = url;
       a.download = doc.file_name;
       window.document.body.appendChild(a);
       a.click();
       window.document.body.removeChild(a);
-      
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
         await documentService.createDocumentActivity({
           document_id: doc.id,
@@ -170,7 +154,6 @@ const DocumentRepository: React.FC = () => {
           comments: 'Document downloaded from repository'
         });
       }
-      
       toast({
         title: 'Download started',
         description: `${doc.title} is being downloaded.`
@@ -190,7 +173,6 @@ const DocumentRepository: React.FC = () => {
     setSelectedDocForPreview(doc);
     setIsPreviewOpen(true);
   };
-
   const handleDocumentUpdate = (updatedDoc: Document) => {
     updateDocument(updatedDoc);
   };
@@ -210,42 +192,32 @@ const DocumentRepository: React.FC = () => {
 
   // Show loading state
   if (isLoading || categoriesLoading || statusesLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center h-64">
+    return <div className="flex flex-col justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
         <span className="text-lg">Loading documents...</span>
-      </div>
-    );
+      </div>;
   }
 
   // Show error state
   if (documentsError || categoriesError || statusesError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
+    return <div className="flex flex-col items-center justify-center h-64">
         <Alert variant="destructive" className="mb-4 max-w-md">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error loading documents</AlertTitle>
           <AlertDescription>
-            {documentsError?.message || categoriesError?.message || statusesError?.message || 
-              'There was a problem loading the document repository.'}
+            {documentsError?.message || categoriesError?.message || statusesError?.message || 'There was a problem loading the document repository.'}
           </AlertDescription>
         </Alert>
-        <Button 
-          onClick={retryFetchDocuments} 
-          variant="outline"
-          className="flex items-center"
-        >
+        <Button onClick={retryFetchDocuments} variant="outline" className="flex items-center">
           <RefreshCw className="h-4 w-4 mr-2" />
           Retry
         </Button>
-      </div>
-    );
+      </div>;
   }
 
   // Show empty state if no documents and no errors
   if (documents.length === 0) {
-    return (
-      <div className="text-center p-12 bg-white rounded-lg shadow-sm flex flex-col items-center">
+    return <div className="text-center p-12 bg-white rounded-lg shadow-sm flex flex-col items-center">
         <FileWarning className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
         <h3 className="text-xl font-medium mb-2">No Documents Found</h3>
         <p className="text-muted-foreground mb-6 max-w-md">
@@ -265,27 +237,16 @@ const DocumentRepository: React.FC = () => {
                 {t('documents.uploadDescription', 'Upload a document to the repository')}
               </DialogDescription>
             </DialogHeader>
-            <DocumentUploader 
-              onUploadComplete={handleDocumentUploadComplete}
-            />
+            <DocumentUploader onUploadComplete={handleDocumentUploadComplete} />
           </DialogContent>
         </Dialog>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6 animate-fade-in">
+  return <div className="space-y-6 animate-fade-in bg-cc-sky-200">
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder={t('documents.search', 'Search documents...')}
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <Input type="search" placeholder={t('documents.search', 'Search documents...')} className="pl-8" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         
         <div className="flex flex-wrap gap-2">
@@ -298,9 +259,7 @@ const DocumentRepository: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-              ))}
+              {categories.map(category => <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>)}
             </SelectContent>
           </Select>
           
@@ -313,27 +272,15 @@ const DocumentRepository: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Statuses</SelectItem>
-              {statuses.map((status) => (
-                <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>
-              ))}
+              {statuses.map(status => <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>)}
             </SelectContent>
           </Select>
           
           <div className="flex">
-            <Button 
-              variant="outline" 
-              className="rounded-l-md rounded-r-none border-r-0"
-              onClick={() => setViewMode('list')}
-              data-active={viewMode === 'list'}
-            >
+            <Button variant="outline" className="rounded-l-md rounded-r-none border-r-0" onClick={() => setViewMode('list')} data-active={viewMode === 'list'}>
               List
             </Button>
-            <Button 
-              variant="outline" 
-              className="rounded-r-md rounded-l-none"
-              onClick={() => setViewMode('grid')}
-              data-active={viewMode === 'grid'}
-            >
+            <Button variant="outline" className="rounded-r-md rounded-l-none" onClick={() => setViewMode('grid')} data-active={viewMode === 'grid'}>
               Grid
             </Button>
           </div>
@@ -353,11 +300,9 @@ const DocumentRepository: React.FC = () => {
         
         {/* Document list view */}
         <TabsContent value="documents">
-          {viewMode === 'list' && (
-            <Card>
+          {viewMode === 'list' && <Card>
               <CardContent className="p-0">
-                {filteredDocuments.length > 0 ? (
-                  <Table>
+                {filteredDocuments.length > 0 ? <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('documents.title', 'Title')}</TableHead>
@@ -369,8 +314,7 @@ const DocumentRepository: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredDocuments.map((doc) => (
-                        <TableRow key={doc.id}>
+                      {filteredDocuments.map(doc => <TableRow key={doc.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center">
                               <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -403,7 +347,7 @@ const DocumentRepository: React.FC = () => {
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" className="bg-slate-800">
                                 <DropdownMenuLabel>{t('documents.actions', 'Actions')}</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handlePreviewDocument(doc)}>
                                   <Eye className="h-4 w-4 mr-2" />
@@ -418,58 +362,39 @@ const DocumentRepository: React.FC = () => {
                                   {t('buttons.edit', 'Edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => setConfirmDeleteId(doc.id)}
-                                  className="text-red-600"
-                                >
+                                <DropdownMenuItem onClick={() => setConfirmDeleteId(doc.id)} className="text-red-600">
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   {t('buttons.delete', 'Delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
-                        </TableRow>
-                      ))}
+                        </TableRow>)}
                     </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center p-8">
+                  </Table> : <div className="text-center p-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                     <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      {searchTerm || categoryFilter || statusFilter 
-                        ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for')
-                        : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
+                      {searchTerm || categoryFilter || statusFilter ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for') : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
                     </p>
-                    {!(searchTerm || categoryFilter || statusFilter) && (
-                      <Button onClick={() => setUploadDialogOpen(true)}>
+                    {!(searchTerm || categoryFilter || statusFilter) && <Button onClick={() => setUploadDialogOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         {t('documents.uploadDocument', 'Upload Document')}
-                      </Button>
-                    )}
-                  </div>
-                )}
+                      </Button>}
+                  </div>}
               </CardContent>
-            </Card>
-          )}
+            </Card>}
           
           {/* Document grid view */}
-          {viewMode === 'grid' && (
-            <div>
-              {Object.keys(documentsByCategory).length > 0 ? (
-                Object.entries(documentsByCategory).map(([category, docs]) => (
-                  <div key={category} className="mb-6">
+          {viewMode === 'grid' && <div>
+              {Object.keys(documentsByCategory).length > 0 ? Object.entries(documentsByCategory).map(([category, docs]) => <div key={category} className="mb-6">
                     <h3 className="text-lg font-medium mb-3 flex items-center">
                       <span className="inline-block w-3 h-3 bg-primary rounded-full mr-2"></span>
                       {category} <span className="text-muted-foreground ml-2 text-sm">({docs.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {docs.map((doc) => (
-                        <Card key={doc.id} className="overflow-hidden">
-                          <div 
-                            className="h-32 bg-gray-100 flex items-center justify-center cursor-pointer"
-                            onClick={() => handlePreviewDocument(doc)}
-                          >
+                      {docs.map(doc => <Card key={doc.id} className="overflow-hidden">
+                          <div className="h-32 bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => handlePreviewDocument(doc)}>
                             <FileText className="h-12 w-12 text-muted-foreground opacity-50" />
                           </div>
                           <CardContent className="p-4">
@@ -486,61 +411,34 @@ const DocumentRepository: React.FC = () => {
                               <span>{t('documents.updated', 'Updated')}: {formatDate(doc.updated_at)}</span>
                             </div>
                             <div className="flex justify-between mt-3">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handlePreviewDocument(doc)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => handlePreviewDocument(doc)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDownloadDocument(doc)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => handleDownloadDocument(doc)}>
                                 <Download className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditDocument(doc)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => handleEditDocument(doc)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500"
-                                onClick={() => setConfirmDeleteId(doc.id)}
-                              >
+                              <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setConfirmDeleteId(doc.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </CardContent>
-                        </Card>
-                      ))}
+                        </Card>)}
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center p-8 bg-white rounded-lg shadow-sm">
+                  </div>) : <div className="text-center p-8 bg-white rounded-lg shadow-sm">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                   <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
                   <p className="text-muted-foreground mb-4">
-                    {searchTerm || categoryFilter || statusFilter 
-                      ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for')
-                      : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
+                    {searchTerm || categoryFilter || statusFilter ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for') : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
                   </p>
-                  {!(searchTerm || categoryFilter || statusFilter) && (
-                    <Button onClick={() => setUploadDialogOpen(true)}>
+                  {!(searchTerm || categoryFilter || statusFilter) && <Button onClick={() => setUploadDialogOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       {t('documents.uploadDocument', 'Upload Document')}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                    </Button>}
+                </div>}
+            </div>}
         </TabsContent>
         
         {/* Dashboard view */}
@@ -575,15 +473,13 @@ const DocumentRepository: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {Object.entries(documentStats.byCategory).map(([category, count]) => (
-                    <div key={category} className="flex items-center justify-between">
+                  {Object.entries(documentStats.byCategory).map(([category, count]) => <div key={category} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
                         <span>{category}</span>
                       </div>
                       <Badge variant="outline">{count}</Badge>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -594,14 +490,12 @@ const DocumentRepository: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {Object.entries(documentStats.byStatus).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
+                  {Object.entries(documentStats.byStatus).map(([status, count]) => <div key={status} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <StatusBadge status={status} />
                       </div>
                       <Badge variant="outline">{count}</Badge>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -610,12 +504,7 @@ const DocumentRepository: React.FC = () => {
       </Tabs>
       
       {/* Document preview dialog */}
-      <DocumentPreviewDialog 
-        document={selectedDocForPreview} 
-        open={isPreviewOpen} 
-        onOpenChange={setIsPreviewOpen}
-        onDocumentUpdate={handleDocumentUpdate}
-      />
+      <DocumentPreviewDialog document={selectedDocForPreview} open={isPreviewOpen} onOpenChange={setIsPreviewOpen} onDocumentUpdate={handleDocumentUpdate} />
       
       {/* Upload dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -626,14 +515,12 @@ const DocumentRepository: React.FC = () => {
               {t('documents.uploadDescription', 'Upload a document to the repository')}
             </DialogDescription>
           </DialogHeader>
-          <DocumentUploader 
-            onUploadComplete={handleDocumentUploadComplete}
-          />
+          <DocumentUploader onUploadComplete={handleDocumentUploadComplete} />
         </DialogContent>
       </Dialog>
       
       {/* Delete confirmation dialog */}
-      <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+      <Dialog open={!!confirmDeleteId} onOpenChange={open => !open && setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -651,52 +538,37 @@ const DocumentRepository: React.FC = () => {
               <X className="h-4 w-4 mr-2" />
               {t('buttons.cancel', 'Cancel')}
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
-            >
+            <Button variant="destructive" onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}>
               <Trash2 className="h-4 w-4 mr-2" />
               {t('buttons.delete', 'Delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
 
 // Status badge component
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+const StatusBadge: React.FC<{
+  status: string;
+}> = ({
+  status
+}) => {
   switch (status) {
     case 'Draft':
-      return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-800">Draft</Badge>
-      );
+      return <Badge variant="outline" className="bg-gray-100 text-gray-800">Draft</Badge>;
     case 'Pending Approval':
-      return (
-        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending Approval</Badge>
-      );
+      return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending Approval</Badge>;
     case 'Approved':
-      return (
-        <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
-      );
+      return <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>;
     case 'Published':
-      return (
-        <Badge variant="default">Published</Badge>
-      );
+      return <Badge variant="default">Published</Badge>;
     case 'Archived':
-      return (
-        <Badge variant="outline" className="bg-purple-100 text-purple-800">Archived</Badge>
-      );
+      return <Badge variant="outline" className="bg-purple-100 text-purple-800">Archived</Badge>;
     case 'Expired':
-      return (
-        <Badge variant="outline" className="bg-red-100 text-red-800">Expired</Badge>
-      );
+      return <Badge variant="outline" className="bg-red-100 text-red-800">Expired</Badge>;
     default:
-      return (
-        <Badge variant="outline">{status}</Badge>
-      );
+      return <Badge variant="outline">{status}</Badge>;
   }
 };
-
 export default DocumentRepository;
