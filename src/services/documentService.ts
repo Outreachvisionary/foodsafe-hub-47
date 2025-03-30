@@ -25,11 +25,11 @@ const documentService = {
     // Apply filters if provided
     if (filters) {
       if (filters.status) {
-        query = query.eq('status', filters.status as any);
+        query = query.eq('status', filters.status);
       }
       
       if (filters.category) {
-        query = query.eq('category', filters.category as any);
+        query = query.eq('category', filters.category);
       }
       
       if (filters.searchTerm) {
@@ -86,7 +86,7 @@ const documentService = {
     
     const { data, error } = await supabase
       .from('documents')
-      .insert(documentData as any)
+      .insert(documentData)
       .select()
       .single();
       
@@ -295,42 +295,7 @@ const documentService = {
     }
   },
 
-  // New method for uploadToStorage
-  async uploadToStorage(file: File, document: Partial<Document>, versionNumber = 1): Promise<string> {
-    const documentId = document.id;
-    const fileName = file.name;
-    const storagePath = `documents/${documentId}/${fileName}_v${versionNumber}`;
-    
-    await this.uploadFile(file, storagePath);
-    
-    // Return the storage path
-    return storagePath;
-  },
-  
-  // New method for creating versions
-  async createVersion(document: Document, versionDetails: any): Promise<DocumentVersion> {
-    const versionNumber = document.version + 1;
-    
-    const versionData = {
-      document_id: document.id,
-      version: versionNumber,
-      ...versionDetails
-    };
-    
-    // Create version record
-    const version = await this.createDocumentVersion(versionData);
-    
-    // Update document with new version
-    await this.updateDocument(document.id, {
-      version: versionNumber,
-      current_version_id: version.id,
-      updated_at: new Date().toISOString()
-    });
-    
-    return version;
-  },
-  
-  // Document access methods
+  // Document access control methods - adding these missing methods
   async fetchAccess(documentId: string): Promise<DocumentAccess[]> {
     const { data, error } = await supabase
       .from('document_access')
@@ -380,6 +345,41 @@ const documentService = {
       console.error(`Error revoking access with ID ${accessId}:`, error);
       throw error;
     }
+  },
+  
+  // New method for uploadToStorage
+  async uploadToStorage(file: File, document: Partial<Document>, versionNumber = 1): Promise<string> {
+    const documentId = document.id;
+    const fileName = file.name;
+    const storagePath = `documents/${documentId}/${fileName}_v${versionNumber}`;
+    
+    await this.uploadFile(file, storagePath);
+    
+    // Return the storage path
+    return storagePath;
+  },
+  
+  // New method for creating versions
+  async createVersion(document: Document, versionDetails: any): Promise<DocumentVersion> {
+    const versionNumber = document.version + 1;
+    
+    const versionData = {
+      document_id: document.id,
+      version: versionNumber,
+      ...versionDetails
+    };
+    
+    // Create version record
+    const version = await this.createDocumentVersion(versionData);
+    
+    // Update document with new version
+    await this.updateDocument(document.id, {
+      version: versionNumber,
+      current_version_id: version.id,
+      updated_at: new Date().toISOString()
+    });
+    
+    return version;
   },
   
   // Workflow management
@@ -481,4 +481,3 @@ const documentService = {
 };
 
 export default documentService;
-

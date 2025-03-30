@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, File, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentCategory, DocumentStatus } from '@/types/database';
+import { Document, DocumentCategory, DocumentStatus } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
+import documentService from '@/services/documentService';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -87,7 +88,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       const fileName = `${documentId}_${file.name}`;
       const filePath = `documents/${documentId}/${fileName}`;
       
-      // Use upload without progress for now since onUploadProgress is not supported in the type
+      // Use upload without progress tracking
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(filePath, file);
@@ -111,21 +112,15 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         updated_at: new Date().toISOString(),
       };
       
-      const { data: documentData, error: documentError } = await supabase
-        .from('documents')
-        .insert(newDocument as any)
-        .select()
-        .single();
-      
-      if (documentError) {
-        throw documentError;
-      }
+      // Use the documentService to create the document
+      const documentData = await documentService.createDocument(newDocument);
       
       // Create initial version record
-      const initialVersionData = {
+      const versionData = {
         document_id: documentId,
         file_name: fileName,
         file_size: file.size,
+        file_type: file.type,
         created_by: user.id,
         version: 1,
         editor_metadata: { 
@@ -134,37 +129,23 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         }
       };
       
-      const { data: versionResponseData, error: versionError } = await supabase
-        .from('document_versions')
-        .insert(initialVersionData)
-        .select()
-        .single();
-      
-      if (versionError) {
-        throw versionError;
-      }
+      // Use documentService to create the version
+      const versionResponse = await documentService.createDocumentVersion(versionData);
       
       // Update document with version ID
-      const { error: updateError } = await supabase
-        .from('documents')
-        .update({ current_version_id: versionResponseData.id })
-        .eq('id', documentId);
-      
-      if (updateError) {
-        throw updateError;
-      }
+      await documentService.updateDocument(documentId, { 
+        current_version_id: versionResponse.id 
+      });
       
       // Record activity
-      await supabase
-        .from('document_activities')
-        .insert({
-          document_id: documentId,
-          action: 'create',
-          user_id: user.id,
-          user_name: user.email || 'Unknown user',
-          user_role: 'Unknown', // Would be populated from user profile in a real app
-          comments: 'Document created through file upload'
-        });
+      await documentService.createDocumentActivity({
+        document_id: documentId,
+        action: 'create',
+        user_id: user.id,
+        user_name: user.email || 'Unknown user',
+        user_role: 'User', // Would be populated from user profile in a real app
+        comments: 'Document created through file upload'
+      });
       
       toast({
         title: "Upload successful",
@@ -172,7 +153,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       });
       
       if (onUploadComplete) {
-        onUploadComplete(documentData as Document);
+        onUploadComplete(documentData);
       }
       
       // Reset state
@@ -188,6 +169,21 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Add a function to simulate upload progress
+  const simulateProgress = () => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 5;
+      if (progress > 100) {
+        clearInterval(interval);
+      } else {
+        setUploadProgress(progress);
+      }
+    }, 200);
+    
+    return () => clearInterval(interval);
   };
 
   return (
@@ -273,4 +269,3 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 };
 
 export default DocumentUploader;
-
