@@ -87,14 +87,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       const fileName = `${documentId}_${file.name}`;
       const filePath = `documents/${documentId}/${fileName}`;
       
+      // Use upload without progress for now since onUploadProgress is not supported in the type
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setUploadProgress(percent);
-          }
-        });
+        .upload(filePath, file);
       
       if (uploadError) {
         throw uploadError;
@@ -108,7 +104,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         file_size: file.size,
         file_type: file.type,
         category: category,
-        status: 'Draft',
+        status: 'Draft' as DocumentStatus,
         version: 1,
         created_by: user.id,
         created_at: new Date().toISOString(),
@@ -117,7 +113,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       const { data: documentData, error: documentError } = await supabase
         .from('documents')
-        .insert(newDocument)
+        .insert(newDocument as any)
         .select()
         .single();
       
@@ -126,7 +122,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       // Create initial version record
-      const versionData = {
+      const initialVersionData = {
         document_id: documentId,
         file_name: fileName,
         file_size: file.size,
@@ -138,9 +134,9 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         }
       };
       
-      const { data: versionData, error: versionError } = await supabase
+      const { data: versionResponseData, error: versionError } = await supabase
         .from('document_versions')
-        .insert(versionData)
+        .insert(initialVersionData)
         .select()
         .single();
       
@@ -151,7 +147,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       // Update document with version ID
       const { error: updateError } = await supabase
         .from('documents')
-        .update({ current_version_id: versionData.id })
+        .update({ current_version_id: versionResponseData.id })
         .eq('id', documentId);
       
       if (updateError) {
@@ -277,3 +273,4 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 };
 
 export default DocumentUploader;
+

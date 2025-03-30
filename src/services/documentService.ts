@@ -5,7 +5,8 @@ import {
   DocumentVersion, 
   DocumentWorkflow, 
   DocumentWorkflowStep, 
-  DocumentActivity
+  DocumentActivity,
+  DocumentAccess
 } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,11 +25,11 @@ const documentService = {
     // Apply filters if provided
     if (filters) {
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status as any);
       }
       
       if (filters.category) {
-        query = query.eq('category', filters.category);
+        query = query.eq('category', filters.category as any);
       }
       
       if (filters.searchTerm) {
@@ -85,7 +86,7 @@ const documentService = {
     
     const { data, error } = await supabase
       .from('documents')
-      .insert(documentData)
+      .insert(documentData as any)
       .select()
       .single();
       
@@ -293,6 +294,93 @@ const documentService = {
       throw error;
     }
   },
+
+  // New method for uploadToStorage
+  async uploadToStorage(file: File, document: Partial<Document>, versionNumber = 1): Promise<string> {
+    const documentId = document.id;
+    const fileName = file.name;
+    const storagePath = `documents/${documentId}/${fileName}_v${versionNumber}`;
+    
+    await this.uploadFile(file, storagePath);
+    
+    // Return the storage path
+    return storagePath;
+  },
+  
+  // New method for creating versions
+  async createVersion(document: Document, versionDetails: any): Promise<DocumentVersion> {
+    const versionNumber = document.version + 1;
+    
+    const versionData = {
+      document_id: document.id,
+      version: versionNumber,
+      ...versionDetails
+    };
+    
+    // Create version record
+    const version = await this.createDocumentVersion(versionData);
+    
+    // Update document with new version
+    await this.updateDocument(document.id, {
+      version: versionNumber,
+      current_version_id: version.id,
+      updated_at: new Date().toISOString()
+    });
+    
+    return version;
+  },
+  
+  // Document access methods
+  async fetchAccess(documentId: string): Promise<DocumentAccess[]> {
+    const { data, error } = await supabase
+      .from('document_access')
+      .select('*')
+      .eq('document_id', documentId)
+      .order('granted_at', { ascending: false });
+      
+    if (error) {
+      console.error(`Error fetching access for document ${documentId}:`, error);
+      throw error;
+    }
+    
+    return data as DocumentAccess[];
+  },
+  
+  async grantAccess(access: Partial<DocumentAccess>): Promise<DocumentAccess> {
+    const accessData = {
+      document_id: access.document_id,
+      user_id: access.user_id,
+      permission_level: access.permission_level,
+      granted_by: access.granted_by,
+      granted_at: access.granted_at || new Date().toISOString(),
+      ...access
+    };
+    
+    const { data, error } = await supabase
+      .from('document_access')
+      .insert(accessData)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error granting document access:', error);
+      throw error;
+    }
+    
+    return data as DocumentAccess;
+  },
+  
+  async revokeAccess(accessId: string): Promise<void> {
+    const { error } = await supabase
+      .from('document_access')
+      .delete()
+      .eq('id', accessId);
+      
+    if (error) {
+      console.error(`Error revoking access with ID ${accessId}:`, error);
+      throw error;
+    }
+  },
   
   // Workflow management
   async submitForApproval(document: Document): Promise<Document> {
@@ -393,3 +481,4 @@ const documentService = {
 };
 
 export default documentService;
+

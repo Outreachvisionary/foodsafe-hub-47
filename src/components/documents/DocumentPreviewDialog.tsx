@@ -19,12 +19,14 @@ interface DocumentPreviewDialogProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDocumentUpdate?: (updatedDoc: Document) => void;
 }
 
 const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   document,
   open,
   onOpenChange,
+  onDocumentUpdate,
 }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -75,13 +77,13 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     if (!document || !previewUrl) return;
     
     try {
-      // Create a temporary anchor and trigger download
-      const a = document.createElement('a');
+      // Create a temporary anchor and trigger download using browser DOM API
+      const a = document.createElement ? document.createElement('a') : window.document.createElement('a');
       a.href = previewUrl;
       a.download = document.file_name;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
       
       // Record download activity
       await documentService.createDocumentActivity({
@@ -92,6 +94,11 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
         user_role: 'User', // Replace with actual user role
         comments: 'Document downloaded'
       });
+
+      // Call the update callback if provided
+      if (onDocumentUpdate && typeof onDocumentUpdate === 'function') {
+        onDocumentUpdate(document);
+      }
     } catch (error) {
       console.error('Error downloading document:', error);
     }
@@ -233,3 +240,4 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
 };
 
 export default DocumentPreviewDialog;
+

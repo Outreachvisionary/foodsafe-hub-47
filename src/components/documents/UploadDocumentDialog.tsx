@@ -10,7 +10,7 @@ import { useDocuments } from '@/contexts/DocumentContext';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { FilePlus, Upload, Calendar, Tag, X, AlertCircle } from 'lucide-react';
-import enhancedDocumentService from '@/services/documentService';
+import documentService from '@/services/documentService';
 import { useTranslation } from 'react-i18next';
 import { useFileUpload } from '@/hooks/use-file-upload';
 
@@ -123,9 +123,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
       if (isNewVersion && existingDocument) {
         const documentId = existingDocument.id;
-        const storagePath = `${documentId}/${file.name}_v${existingDocument.version + 1}`;
+        const storagePath = `documents/${documentId}/${file.name}_v${existingDocument.version + 1}`;
         
-        const fileUrl = await enhancedDocumentService.uploadToStorage(file, existingDocument, existingDocument.version + 1);
+        await documentService.uploadFile(file, storagePath);
         
         const isOfficeDocument = isOfficeFileType(file.type);
         const versionDetails = {
@@ -143,7 +143,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           } : null
         };
         
-        await enhancedDocumentService.createVersion(existingDocument, versionDetails);
+        await documentService.createDocumentVersion({
+          document_id: existingDocument.id,
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          created_by: 'Current User',
+          change_notes: formData.changeSummary,
+          version: existingDocument.version + 1
+        });
         
         toast({
           title: t('documents.versionUploaded'),
@@ -152,12 +160,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       } else {
         const isOfficeDocument = isOfficeFileType(file.type);
         const documentId = uuidv4();
+        const storagePath = `documents/${documentId}/${file.name}`;
         
-        const fileUrl = await enhancedDocumentService.uploadToStorage(file, {
-          id: documentId,
-          title: formData.title,
-          file_name: file.name
-        } as Document);
+        await documentService.uploadFile(file, storagePath);
         
         const newDocument: Document = {
           id: documentId,
@@ -178,22 +183,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
         await addDocument(newDocument);
         
-        const versionDetails = {
+        await documentService.createDocumentVersion({
+          document_id: documentId,
           file_name: file.name,
-          file_path: `${documentId}/${file.name}`,
           file_size: file.size,
           file_type: file.type,
           created_by: 'Current User',
-          change_summary: 'Initial version',
-          storage_path: `${documentId}/${file.name}`,
-          is_binary_file: isOfficeDocument,
-          editor_metadata: isOfficeDocument ? {
-            document_type: getDocumentTypeFromMime(file.type),
-            original_extension: file.name.split('.').pop()
-          } : null
-        };
-        
-        await enhancedDocumentService.createVersion(newDocument, versionDetails);
+          change_notes: 'Initial version',
+          version: 1
+        });
         
         toast({
           title: t('documents.documentUploaded'),
