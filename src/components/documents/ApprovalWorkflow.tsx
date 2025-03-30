@@ -26,7 +26,7 @@ const ApprovalWorkflow: React.FC = () => {
     const matchesStatus = 
       (filterStatus === 'pending' && doc.status === 'Pending Approval') ||
       (filterStatus === 'approved' && doc.status === 'Approved') ||
-      (filterStatus === 'all');
+      (filterStatus === 'all_docs');
       
     const matchesSearch = 
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,7 +132,7 @@ const ApprovalWorkflow: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="pending">Pending Approval</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="all">All Documents</SelectItem>
+                  <SelectItem value="all_docs">All Documents</SelectItem>
                 </SelectContent>
               </Select>
             </div>

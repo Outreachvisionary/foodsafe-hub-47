@@ -220,7 +220,7 @@ const DocumentRepository: React.FC = () => {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all_categories">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}
@@ -235,7 +235,7 @@ const DocumentRepository: React.FC = () => {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all_statuses">All Statuses</SelectItem>
               {statuses.map((status) => (
                 <SelectItem key={status} value={status}>{status}</SelectItem>
               ))}

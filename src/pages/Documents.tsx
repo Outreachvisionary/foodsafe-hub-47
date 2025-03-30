@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -17,17 +18,49 @@ import { DocumentProvider, useDocuments } from '@/contexts/DocumentContext';
 import { Document as DocumentType } from '@/types/document';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/hooks/use-toast';
 
 const DocumentsContent = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user } = useUser();
-  const { documents, notifications, selectedDocument, setSelectedDocument, submitForApproval, updateDocument, markNotificationAsRead, clearAllNotifications } = useDocuments();
+  const { 
+    documents, 
+    notifications, 
+    selectedDocument, 
+    setSelectedDocument, 
+    submitForApproval, 
+    updateDocument, 
+    markNotificationAsRead, 
+    clearAllNotifications,
+    fetchDocuments 
+  } = useDocuments();
+  
   const [activeTab, setActiveTab] = useState<string>(
     location.state?.activeTab || 'repository'
   );
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  // Load documents on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await fetchDocuments();
+        console.log("Documents loaded:", documents);
+      } catch (error) {
+        console.error("Error loading documents:", error);
+        toast({
+          title: "Error loading documents",
+          description: "Could not load documents. Please try again later.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    loadData();
+  }, [fetchDocuments]);
 
   useEffect(() => {
     if (location.state?.activeTab) {
