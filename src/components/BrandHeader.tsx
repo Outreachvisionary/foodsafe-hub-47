@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 const BrandHeader: React.FC = () => {
   return <div className="bg-cc-teal py-8 px-4 md:px-8 text-center">
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col items-center justify-center mb-6">
+        <div className="flex flex-col items-center justify-center mb-6 my-[21px]">
           
           <h1 className="text-4xl md:text-5xl font-display mb-3 font-medium text-zinc-900">
             COMPLIANCE <span className="text-cc-gold">CORE</span>
