@@ -139,7 +139,7 @@ export function useDocumentService() {
     try {
       setIsLoading(true);
       setError(null);
-      const versions = await documentService.getDocumentVersions(documentId);
+      const versions = await documentService.fetchDocumentVersions(documentId);
       return versions;
     } catch (err) {
       setError(err as Error);

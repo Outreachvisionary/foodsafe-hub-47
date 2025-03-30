@@ -34,8 +34,8 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
     };
 
     try {
-      // Test Supabase connection
-      const { data: connectionTest } = await supabase.from('_schemas').select('*').limit(1);
+      // Test Supabase connection - using a safer method
+      const { data: connectionTest } = await supabase.from('documents').select('id').limit(1);
       results.supabaseConnection = connectionTest !== null;
     } catch (error) {
       console.error('Error testing Supabase connection:', error);
