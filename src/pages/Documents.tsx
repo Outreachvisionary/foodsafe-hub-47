@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import DashboardHeader from '@/components/DashboardHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import DocumentRepository from '@/components/documents/DocumentRepository';
 import ApprovalWorkflow from '@/components/documents/ApprovalWorkflow';
@@ -230,5 +229,48 @@ const Documents = () => (
     <DocumentsContent />
   </DocumentProvider>
 );
+export default function DocumentsPage() {
+  const { t } = useTranslation();
 
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex items-center justify-between mb-6">
+        <nav className="text-sm breadcrumbs">
+          <ul className="flex space-x-2">
+            <li><a href="/dashboard">{t("navigation.dashboard")}</a></li>
+            <li>›</li>
+            <li>{t("documents.controlSystem")}</li>
+          </ul>
+        </nav>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t("documents.controlSystem")}</h1>
+
+        <button className="btn btn-primary">
+          {t("documents.createNewDocument")}
+        </button>
+      </div>
+
+      <Tabs defaultValue="repository">
+        <TabsList>
+          <TabsTrigger labelKey="documents.repository" value="repository" />
+          <TabsTrigger labelKey="documents.approvals" value="approvals" />
+          <TabsTrigger labelKey="documents.expired" value="expired" />
+          <TabsTrigger labelKey="documents.templates" value="templates" />
+          <TabsTrigger labelKey="documents.editor" value="editor" />
+        </TabsList>
+
+        {/* Tab Contents */}
+        <TabsContent value="repository">
+          {/* Repository Content */}
+        </TabsContent>
+        <TabsContent value="approvals">
+          {/* Approvals Content */}
+        </TabsContent>
+        {/* Add other tab contents */}
+      </Tabs>
+    </div>
+  );
+}
 export default Documents;
