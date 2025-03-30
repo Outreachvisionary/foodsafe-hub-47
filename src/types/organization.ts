@@ -11,4 +11,8 @@ export interface Organization {
   created_at?: string;
   updated_at?: string;
   address?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  zipcode?: string;
 }

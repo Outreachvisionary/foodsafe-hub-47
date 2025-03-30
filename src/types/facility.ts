@@ -13,4 +13,8 @@ export interface Facility {
   contact_email?: string | null;
   contact_phone?: string | null;
   location_data?: Record<string, any> | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  zipcode?: string | null;
 }

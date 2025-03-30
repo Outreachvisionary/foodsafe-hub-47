@@ -14,6 +14,10 @@ import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import { Facility } from '@/types/facility';
+import { fetchFacilityById, createFacility, updateFacility } from '@/services/facilityService';
+import LocationForm, { LocationData } from '@/components/location/LocationForm';
+import { validateZipcode } from '@/utils/locationUtils';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
 
 // Create form schema using zod
 const facilityFormSchema = z.object({
@@ -26,6 +30,11 @@ const facilityFormSchema = z.object({
   contact_email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
   contact_phone: z.string().optional(),
   status: z.enum(["active", "inactive", "pending"]),
+  organization_id: z.string().min(1, { message: "Organization is required" }),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
+  zipcode: z.string().optional(),
 });
 
 type FacilityFormValues = z.infer<typeof facilityFormSchema>;
@@ -38,6 +47,8 @@ const FacilityManagement = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const isNewFacility = id === 'new' || !id;
+  const [locationData, setLocationData] = useState<LocationData>({});
+  const [zipcodeValid, setZipcodeValid] = useState<boolean>(true);
 
   // Initialize form with default values
   const form = useForm<FacilityFormValues>({
@@ -50,6 +61,7 @@ const FacilityManagement = () => {
       contact_email: '',
       contact_phone: '',
       status: 'active',
+      organization_id: '',
     },
   });
 
@@ -61,31 +73,57 @@ const FacilityManagement = () => {
     }
   }, [id]);
 
+  // Update form when location data changes
+  useEffect(() => {
+    if (locationData) {
+      form.setValue('address', locationData.address || '');
+      form.setValue('country', locationData.country || '');
+      form.setValue('state', locationData.state || '');
+      form.setValue('city', locationData.city || '');
+      form.setValue('zipcode', locationData.zipcode || '');
+      
+      // Validate zipcode if country is selected
+      if (locationData.countryCode && locationData.zipcode) {
+        const isValid = validateZipcode(locationData.zipcode, locationData.countryCode);
+        setZipcodeValid(isValid);
+      }
+    }
+  }, [locationData, form]);
+
   const loadFacilityData = async () => {
     try {
       setLoading(true);
-      // Mock data for now - would normally fetch from API
-      const mockFacility: Facility = {
-        id: id || 'new',
-        organization_id: 'org123',
-        name: 'Main Processing Facility',
-        description: 'Our main food processing facility with 5 production lines',
-        address: '123 Production Lane, Industry City, CA 90210',
-        facility_type: 'Processing',
-        status: 'active',
-        contact_email: 'facility@example.com',
-        contact_phone: '555-123-4567',
-      };
+      
+      if (!id || id === 'new') {
+        setLoading(false);
+        return;
+      }
+      
+      const facilityData = await fetchFacilityById(id);
       
       // Update form values
       form.reset({
-        name: mockFacility.name,
-        description: mockFacility.description || '',
-        facility_type: mockFacility.facility_type || '',
-        address: mockFacility.address || '',
-        contact_email: mockFacility.contact_email || '',
-        contact_phone: mockFacility.contact_phone || '',
-        status: mockFacility.status as "active" | "inactive" | "pending",
+        name: facilityData.name,
+        description: facilityData.description || '',
+        facility_type: facilityData.facility_type || '',
+        address: facilityData.address || '',
+        contact_email: facilityData.contact_email || '',
+        contact_phone: facilityData.contact_phone || '',
+        status: facilityData.status as "active" | "inactive" | "pending",
+        organization_id: facilityData.organization_id,
+        country: facilityData.country || '',
+        state: facilityData.state || '',
+        city: facilityData.city || '',
+        zipcode: facilityData.zipcode || '',
+      });
+      
+      // Set location data
+      setLocationData({
+        address: facilityData.address,
+        country: facilityData.country,
+        state: facilityData.state,
+        city: facilityData.city,
+        zipcode: facilityData.zipcode,
       });
       
       setLoading(false);
@@ -100,24 +138,57 @@ const FacilityManagement = () => {
     }
   };
 
+  const handleLocationChange = (data: LocationData) => {
+    console.log('Location data changed:', data);
+    setLocationData(data);
+  };
+
   const onSubmit = async (data: FacilityFormValues) => {
     try {
+      // Validate zipcode if country is selected
+      if (locationData.countryCode && locationData.zipcode) {
+        const isValid = validateZipcode(locationData.zipcode, locationData.countryCode);
+        if (!isValid) {
+          toast({
+            title: 'Validation Error',
+            description: 'Please enter a valid postal code for the selected country',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+      
       setSaving(true);
+      console.log('Submitting facility data:', data);
       
-      // Mock API call
-      console.log('Saving facility data:', data);
+      // Process the facility data
+      const facilityData: Partial<Facility> = {
+        ...data,
+        // Get the location fields from the form data or the location component
+        address: data.address || locationData.address,
+        country: data.country || locationData.country,
+        state: data.state || locationData.state,
+        city: data.city || locationData.city,
+        zipcode: data.zipcode || locationData.zipcode,
+      };
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: isNewFacility ? 'Facility Created' : 'Facility Updated',
-        description: `Successfully ${isNewFacility ? 'created' : 'updated'} ${data.name}`,
-      });
+      let savedFacility: Facility;
       
       if (isNewFacility) {
-        // Redirect to facilities list after creating a new facility
+        // Create new facility
+        savedFacility = await createFacility(facilityData);
+        toast({
+          title: 'Facility Created',
+          description: `Successfully created ${savedFacility.name}`,
+        });
         navigate('/facilities');
+      } else {
+        // Update existing facility
+        savedFacility = await updateFacility(id!, facilityData);
+        toast({
+          title: 'Facility Updated',
+          description: `Successfully updated ${savedFacility.name}`,
+        });
       }
       
       setSaving(false);
@@ -167,6 +238,27 @@ const FacilityManagement = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="organization_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization*</FormLabel>
+                        <FormControl>
+                          <OrganizationSelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={!isNewFacility || saving}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          The organization this facility belongs to
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <FormField
                     control={form.control}
                     name="name"
@@ -245,25 +337,26 @@ const FacilityManagement = () => {
             <TabsContent value="location">
               <Card>
                 <CardHeader>
-                  <CardTitle>Location & Contact Information</CardTitle>
+                  <CardTitle>Location Information</CardTitle>
                   <CardDescription>
-                    Address and contact information for this facility
+                    Address and location details for this facility
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Facility Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter complete address" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                  <LocationForm
+                    initialData={{
+                      address: form.getValues('address'),
+                      country: form.getValues('country'),
+                      state: form.getValues('state'),
+                      city: form.getValues('city'),
+                      zipcode: form.getValues('zipcode'),
+                    }}
+                    onChange={handleLocationChange}
+                    showValidationErrors={true}
+                    disabled={saving}
                   />
+                  
+                  <Separator className="my-6" />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
@@ -326,7 +419,7 @@ const FacilityManagement = () => {
               
               <Button 
                 type="submit"
-                disabled={saving}
+                disabled={saving || !zipcodeValid}
               >
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {!saving && <Save className="mr-2 h-4 w-4" />}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +8,9 @@ import { Loader2, Building2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
+import FacilityFilters from '@/components/facilities/FacilityFilters';
 import { Facility } from '@/types/facility';
-import { fetchFacilities } from '@/services/facilityService';
+import { fetchFacilities, fetchFacilitiesByLocation } from '@/services/facilityService';
 
 const FacilitiesList = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
@@ -20,27 +20,49 @@ const FacilitiesList = () => {
   const { toast } = useToast();
   const { user } = useUser();
   
-  // Filter to current organization by default
+  // Filter states
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(
     user?.organization_id
   );
+  const [locationFilters, setLocationFilters] = useState<{
+    country?: string,
+    state?: string,
+    city?: string
+  }>({});
+  
+  // Track if location filters are active
+  const hasLocationFilters = !!(locationFilters.country || locationFilters.state || locationFilters.city);
 
   useEffect(() => {
     if (user) {
       loadFacilities();
     }
-  }, [user, selectedOrganizationId, selectedTab]);
+  }, [user, selectedOrganizationId, selectedTab, locationFilters]);
 
   const loadFacilities = async () => {
     try {
       setLoading(true);
       
+      let facilitiesData: Facility[] = [];
       const onlyAssigned = selectedTab === 'my-facilities';
-      const facilitiesData = await fetchFacilities(
-        selectedOrganizationId,
-        onlyAssigned
-      );
       
+      // If location filters are active, use the location-based query
+      if (hasLocationFilters) {
+        facilitiesData = await fetchFacilitiesByLocation(
+          selectedOrganizationId,
+          locationFilters.country,
+          locationFilters.state,
+          locationFilters.city
+        );
+      } else {
+        // Otherwise use the standard query
+        facilitiesData = await fetchFacilities(
+          selectedOrganizationId,
+          onlyAssigned
+        );
+      }
+      
+      console.log('Loaded facilities:', facilitiesData);
       setFacilities(facilitiesData);
     } catch (error) {
       console.error('Error loading facilities:', error);
@@ -56,6 +78,11 @@ const FacilitiesList = () => {
 
   const handleOrganizationChange = (orgId: string) => {
     setSelectedOrganizationId(orgId);
+  };
+  
+  const handleLocationFilterChange = (filters: { country?: string, state?: string, city?: string }) => {
+    console.log('Location filters changed:', filters);
+    setLocationFilters(filters);
   };
 
   return (
@@ -86,6 +113,11 @@ const FacilitiesList = () => {
                   />
                 </div>
               </div>
+              
+              <FacilityFilters 
+                onFilterChange={handleLocationFilterChange}
+                className="mt-4"
+              />
             </div>
           </CardHeader>
           
@@ -127,7 +159,10 @@ const FacilitiesList = () => {
           <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">No facilities found</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            Get started by adding your first facility
+            {hasLocationFilters 
+              ? "Try adjusting your location filters"
+              : "Get started by adding your first facility"
+            }
           </p>
           <Button className="mt-4" onClick={() => navigate('/facilities/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -144,7 +179,7 @@ const FacilitiesList = () => {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Address</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -154,7 +189,13 @@ const FacilitiesList = () => {
               <TableRow key={facility.id}>
                 <TableCell className="font-medium">{facility.name}</TableCell>
                 <TableCell>{facility.facility_type || 'N/A'}</TableCell>
-                <TableCell>{facility.address || 'N/A'}</TableCell>
+                <TableCell>
+                  {[
+                    facility.city, 
+                    facility.state, 
+                    facility.country
+                  ].filter(Boolean).join(', ') || facility.address || 'N/A'}
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     facility.status === 'active' ? 'bg-green-100 text-green-800' : 

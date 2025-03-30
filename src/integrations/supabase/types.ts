@@ -919,42 +919,54 @@ export type Database = {
       facilities: {
         Row: {
           address: string | null
+          city: string | null
           contact_email: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           location_data: Json | null
           name: string
           organization_id: string | null
+          state: string | null
           status: string | null
           updated_at: string | null
+          zipcode: string | null
         }
         Insert: {
           address?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           location_data?: Json | null
           name: string
           organization_id?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          zipcode?: string | null
         }
         Update: {
           address?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           location_data?: Json | null
           name?: string
           organization_id?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          zipcode?: string | null
         }
         Relationships: [
           {
@@ -1432,39 +1444,51 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          city: string | null
           contact_email: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
+          state: string | null
           status: string | null
           updated_at: string | null
+          zipcode: string | null
         }
         Insert: {
           address?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          zipcode?: string | null
         }
         Update: {
           address?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          zipcode?: string | null
         }
         Relationships: []
       }
@@ -1793,16 +1817,20 @@ export type Database = {
         }
         Returns: {
           address: string | null
+          city: string | null
           contact_email: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           location_data: Json | null
           name: string
           organization_id: string | null
+          state: string | null
           status: string | null
           updated_at: string | null
+          zipcode: string | null
         }[]
       }
       get_facility_standards: {
@@ -1830,15 +1858,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           address: string | null
+          city: string | null
           contact_email: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
+          state: string | null
           status: string | null
           updated_at: string | null
+          zipcode: string | null
         }[]
       }
       get_regulatory_standards: {
