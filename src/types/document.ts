@@ -19,6 +19,8 @@ export interface DocumentVersion {
   storage_path?: string;
   organization_id?: string;
   facility_id?: string;
+  editor_metadata?: any; // Adding this field
+  is_binary_file?: boolean; // Adding this field
 }
 
 export interface DocumentActivity {

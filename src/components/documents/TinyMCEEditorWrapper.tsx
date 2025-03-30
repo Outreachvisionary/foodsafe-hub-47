@@ -36,10 +36,19 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
     
     const createSession = async () => {
       try {
+        // Get the current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          console.error('No authenticated user found');
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('document_editor_sessions')
           .insert({
             document_id: documentId,
+            user_id: user.id, // Add the user ID
             is_active: true,
             session_data: { last_content: content }
           })
@@ -63,7 +72,7 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
       clearInterval(interval);
       closeSession();
     };
-  }, [documentId, readOnly]);
+  }, [documentId, readOnly, content]);
   
   // Fetch active users
   const fetchActiveUsers = async () => {

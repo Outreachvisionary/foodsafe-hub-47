@@ -64,10 +64,19 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
   const createEditorSession = async (documentId: string) => {
     try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('document_editor_sessions')
         .insert({
           document_id: documentId,
+          user_id: user.id, // Add the user ID
           is_active: true,
           session_data: { last_content: content }
         })
