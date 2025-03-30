@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { Editor } from '@tinymce/tinymce-react';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +24,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
-  const [editorInstance, setEditorInstance] = useState<any>(null);
   const [editorData, setEditorData] = useState<string>(content || '');
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
@@ -129,7 +127,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           is_active: false,
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorInstance ? editorInstance.getData() : editorData
+            last_content: editorRef.current ? editorRef.current.getContent() : editorData
           }
         })
         .eq('id', sessionId);
@@ -156,17 +154,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
   
   // Handle editor content change
-  const handleEditorChange = (event: any, editor: any) => {
-    if (!editor) return;
+  const handleEditorChange = (content: string) => {
+    setEditorData(content);
     
-    const data = editor.getData();
-    setEditorData(data);
-    
-    if (onChange) onChange(data);
+    if (onChange) onChange(content);
     
     // Debounce updates to reduce database load
     const timeoutId = setTimeout(() => {
-      updateSessionActivity(data);
+      updateSessionActivity(content);
     }, 5000);
     
     return () => clearTimeout(timeoutId);
@@ -181,34 +176,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       )}
       
       <div style={{ height: `${height}px` }} className="overflow-auto border rounded-md">
-        {editorData !== undefined && (
-          <CKEditor
-            editor={ClassicEditor}
-            data={editorData}
-            onReady={(editor) => {
-              console.log('Editor is ready to use!', editor);
-              editorRef.current = editor;
-              setEditorInstance(editor);
-              setIsLoading(false);
-              
-              // Set read-only state after editor is ready
-              if (readOnly && editor) {
-                editor.isReadOnly = true;
-              }
-            }}
-            onChange={handleEditorChange}
-            config={{
-              toolbar: [
-                'heading', '|', 
-                'bold', 'italic', 'link', '|',
-                'bulletedList', 'numberedList', '|',
-                'blockQuote', 'insertTable', '|',
-                'undo', 'redo'
-              ],
-              placeholder: 'Type your content here...'
-            }}
-          />
-        )}
+        <Editor
+          apiKey="no-api-key" // Replace with your TinyMCE API key if you have one
+          onInit={(evt, editor) => {
+            editorRef.current = editor;
+            setIsLoading(false);
+          }}
+          initialValue={editorData}
+          value={editorData}
+          onEditorChange={handleEditorChange}
+          disabled={readOnly}
+          init={{
+            height,
+            menubar: false,
+            plugins: [
+              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+              'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+              'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+              'bold italic forecolor | alignleft aligncenter ' +
+              'alignright alignjustify | bullist numlist outdent indent | ' +
+              'removeformat | help',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+          }}
+        />
       </div>
       
       {activeUsers.length > 1 && !readOnly && (

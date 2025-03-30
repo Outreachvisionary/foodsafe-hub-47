@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Document, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
+import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { useToast } from './use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,7 +25,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Fetching documents...');
-      const documents = await documentService.fetchDocuments();
+      const documents = await enhancedDocumentService.fetchDocuments();
       debugLog('Documents fetched:', documents);
       return documents;
     } catch (err) {
@@ -46,7 +47,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Creating document:', document);
-      const result = await documentService.createDocument(document);
+      const result = await enhancedDocumentService.createDocument(document);
       debugLog('Document created:', result);
       toast({
         title: 'Document created',
@@ -72,7 +73,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Updating document:', id, document);
-      const result = await documentService.updateDocument(id, document);
+      const result = await enhancedDocumentService.updateDocument(id, document);
       debugLog('Document updated:', result);
       toast({
         title: 'Document updated',
@@ -93,12 +94,81 @@ export function useDocumentService() {
     }
   };
 
+  const approveDocument = async (id: string, comment: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      debugLog('Approving document:', id, 'Comment:', comment);
+      
+      const result = await enhancedDocumentService.updateDocument(id, {
+        status: 'Approved',
+        last_action: 'approved',
+        updated_at: new Date().toISOString(),
+      });
+      
+      // Create approval activity record
+      await enhancedDocumentService.createDocumentActivity({
+        document_id: id,
+        activity_type: 'approval',
+        details: { comment },
+        timestamp: new Date().toISOString(),
+      });
+      
+      debugLog('Document approved:', result);
+      return result;
+    } catch (err) {
+      console.error('Error approving document:', err);
+      setError(err as Error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const rejectDocument = async (id: string, comment: string) => {
+    if (!comment.trim()) {
+      const error = new Error('Rejection reason is required');
+      setError(error);
+      throw error;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      debugLog('Rejecting document:', id, 'Reason:', comment);
+      
+      const result = await enhancedDocumentService.updateDocument(id, {
+        status: 'Draft',
+        last_action: 'rejected',
+        rejection_reason: comment,
+        updated_at: new Date().toISOString(),
+      });
+      
+      // Create rejection activity record
+      await enhancedDocumentService.createDocumentActivity({
+        document_id: id,
+        activity_type: 'rejection',
+        details: { comment },
+        timestamp: new Date().toISOString(),
+      });
+      
+      debugLog('Document rejected:', result);
+      return result;
+    } catch (err) {
+      console.error('Error rejecting document:', err);
+      setError(err as Error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const deleteDocument = async (id: string) => {
     try {
       setIsLoading(true);
       setError(null);
       debugLog('Deleting document:', id);
-      await documentService.deleteDocument(id);
+      await enhancedDocumentService.deleteDocument(id);
       debugLog('Document deleted:', id);
       toast({
         title: 'Document deleted',
@@ -123,7 +193,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Uploading file:', file.name, 'to path:', path);
-      await documentService.uploadFile(file, path);
+      await enhancedDocumentService.uploadFile(file, path);
       debugLog('File uploaded successfully');
       return true;
     } catch (err) {
@@ -145,7 +215,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Creating document version:', versionData);
-      const result = await documentService.createDocumentVersion(versionData);
+      const result = await enhancedDocumentService.createDocumentVersion(versionData);
       debugLog('Document version created:', result);
       return result;
     } catch (err) {
@@ -167,7 +237,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Fetching document versions for:', documentId);
-      const versions = await documentService.fetchDocumentVersions(documentId);
+      const versions = await enhancedDocumentService.fetchDocumentVersions(documentId);
       debugLog('Document versions fetched:', versions);
       return versions;
     } catch (err) {
@@ -269,6 +339,8 @@ export function useDocumentService() {
     fetchDocuments,
     createDocument,
     updateDocument,
+    approveDocument,
+    rejectDocument,
     deleteDocument,
     uploadFile,
     createDocumentVersion,
