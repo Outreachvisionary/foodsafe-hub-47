@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import FacilityForm from '@/components/facilities/FacilityForm';
 import { Facility } from '@/types/facility';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateFacilityDialogProps {
   organizationId: string;
@@ -25,11 +26,17 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
   trigger
 }) => {
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleSuccess = (facility: Facility) => {
+    console.log('Facility created successfully in dialog:', facility);
     if (onFacilityCreated) {
       onFacilityCreated(facility);
     }
+    toast({
+      title: 'Success',
+      description: `Facility "${facility.name}" has been created.`,
+    });
     setOpen(false);
   };
 

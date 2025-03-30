@@ -6,8 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Factory } from 'lucide-react';
 import { Facility } from '@/types/facility';
-import { fetchFacilities } from '@/services/facilityService';
+import { fetchFacilities, deleteFacility } from '@/services/facilityService';
 import CreateFacilityDialog from './CreateFacilityDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface FacilitiesTabProps {
   organizationId: string;
@@ -16,16 +17,24 @@ interface FacilitiesTabProps {
 const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const loadFacilities = async () => {
     try {
       setLoading(true);
+      console.log('Loading facilities for organization ID:', organizationId);
       const data = await fetchFacilities(organizationId);
       console.log('Loaded facilities for organization:', data);
       setFacilities(data);
     } catch (error) {
       console.error('Error loading facilities:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load facilities',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -38,7 +47,31 @@ const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
   }, [organizationId]);
 
   const handleFacilityCreated = (facility: Facility) => {
+    console.log('Facility created, reloading facilities list');
     loadFacilities();
+  };
+
+  const handleDeleteFacility = async (id: string) => {
+    if (confirm('Are you sure you want to delete this facility?')) {
+      try {
+        setDeleting(id);
+        await deleteFacility(id);
+        toast({
+          title: 'Success',
+          description: 'Facility has been deleted',
+        });
+        loadFacilities();
+      } catch (error) {
+        console.error('Error deleting facility:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete facility',
+          variant: 'destructive',
+        });
+      } finally {
+        setDeleting(null);
+      }
+    }
   };
 
   return (
@@ -99,8 +132,17 @@ const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
                     <Button variant="ghost" size="sm" onClick={() => navigate(`/facilities/${facility.id}`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDeleteFacility(facility.id)}
+                      disabled={deleting === facility.id}
+                    >
+                      {deleting === facility.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-red-700" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -7,14 +7,18 @@ export const fetchFacilities = async (organizationId?: string, onlyAssigned: boo
   try {
     console.log('Fetching facilities for organization:', organizationId, 'onlyAssigned:', onlyAssigned);
     const { data, error } = await supabase
-      .rpc('get_facilities', {
-        p_organization_id: organizationId || null,
-        p_only_assigned: onlyAssigned
-      });
+      .from('facilities')
+      .select('*')
+      .eq('status', 'active')
+      .order('name');
     
     if (error) {
-      console.error('Error in get_facilities RPC:', error);
+      console.error('Error fetching facilities:', error);
       throw error;
+    }
+    
+    if (organizationId) {
+      return (data as Facility[]).filter(f => f.organization_id === organizationId);
     }
     
     console.log('Facilities data retrieved:', data);
@@ -109,21 +113,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
     
     const { data, error } = await supabase
       .from('facilities')
-      .insert({
-        name: processedFacility.name,
-        description: processedFacility.description || null,
-        address: processedFacility.address || null,
-        facility_type: processedFacility.facility_type || null,
-        organization_id: processedFacility.organization_id,
-        status: processedFacility.status || 'active',
-        contact_email: processedFacility.contact_email || null,
-        contact_phone: processedFacility.contact_phone || null,
-        location_data: processedFacility.location_data || null,
-        country: processedFacility.country || null,
-        state: processedFacility.state || null,
-        city: processedFacility.city || null,
-        zipcode: processedFacility.zipcode || null
-      })
+      .insert([processedFacility])
       .select()
       .single();
     

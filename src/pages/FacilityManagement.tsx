@@ -50,6 +50,8 @@ const FacilityManagement = () => {
   const [locationData, setLocationData] = useState<LocationData>({});
   const [zipcodeValid, setZipcodeValid] = useState<boolean>(true);
 
+  console.log('FacilityManagement rendered, id:', id, 'isNewFacility:', isNewFacility);
+
   // Initialize form with default values
   const form = useForm<FacilityFormValues>({
     resolver: zodResolver(facilityFormSchema),
@@ -62,6 +64,10 @@ const FacilityManagement = () => {
       contact_phone: '',
       status: 'active',
       organization_id: '',
+      country: '',
+      state: '',
+      city: '',
+      zipcode: '',
     },
   });
 
@@ -76,6 +82,7 @@ const FacilityManagement = () => {
   // Update form when location data changes
   useEffect(() => {
     if (locationData) {
+      console.log('Updating form with location data:', locationData);
       form.setValue('address', locationData.address || '');
       form.setValue('country', locationData.country || '');
       form.setValue('state', locationData.state || '');
@@ -138,6 +145,8 @@ const FacilityManagement = () => {
         variant: 'destructive',
       });
       setLoading(false);
+      // Navigate back if we can't load the data
+      navigate('/facilities');
     }
   };
 
@@ -179,6 +188,7 @@ const FacilityManagement = () => {
         }
       };
       
+      console.log('Final facility data being sent to API:', facilityData);
       let savedFacility: Facility;
       
       if (isNewFacility) {
@@ -355,13 +365,7 @@ const FacilityManagement = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <LocationForm
-                    initialData={{
-                      address: form.getValues('address'),
-                      country: form.getValues('country'),
-                      state: form.getValues('state'),
-                      city: form.getValues('city'),
-                      zipcode: form.getValues('zipcode'),
-                    }}
+                    initialData={locationData}
                     onChange={handleLocationChange}
                     showValidationErrors={true}
                     disabled={saving}

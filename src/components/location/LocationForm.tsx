@@ -76,6 +76,7 @@ const LocationForm: React.FC<LocationFormProps> = ({
       try {
         setLoading(true);
         const allCountries = getAllCountries();
+        console.log('Loaded countries:', allCountries.length);
         setCountries(allCountries);
       } catch (error) {
         console.error('Error loading countries:', error);
@@ -87,10 +88,34 @@ const LocationForm: React.FC<LocationFormProps> = ({
     loadCountries();
   }, []);
 
+  // Set initial values from initialData when component mounts
+  useEffect(() => {
+    if (initialData) {
+      console.log('Setting initial location data:', initialData);
+      if (initialData.countryCode) {
+        setSelectedCountry(initialData.countryCode);
+      }
+      if (initialData.stateCode) {
+        setSelectedState(initialData.stateCode);
+      }
+      if (initialData.city) {
+        setSelectedCity(initialData.city);
+      }
+      if (initialData.address) {
+        setAddress(initialData.address);
+      }
+      if (initialData.zipcode) {
+        setZipcode(initialData.zipcode);
+      }
+    }
+  }, [initialData]);
+
   // Load states when country changes
   useEffect(() => {
     if (selectedCountry) {
+      console.log('Loading states for country:', selectedCountry);
       const statesForCountry = getStatesForCountry(selectedCountry);
+      console.log('Loaded states:', statesForCountry.length);
       setStates(statesForCountry);
       
       // Reset state and city if country changes
@@ -108,7 +133,9 @@ const LocationForm: React.FC<LocationFormProps> = ({
   // Load cities when state changes
   useEffect(() => {
     if (selectedCountry && selectedState) {
+      console.log('Loading cities for state:', selectedState, 'in country:', selectedCountry);
       const citiesForState = getCitiesForState(selectedCountry, selectedState);
+      console.log('Loaded cities:', citiesForState.length);
       setCities(citiesForState);
       
       // Reset city if state changes
@@ -150,8 +177,24 @@ const LocationForm: React.FC<LocationFormProps> = ({
       address
     };
     
+    console.log('Location data updated:', locationData);
     onChange(locationData);
   }, [selectedCountry, selectedState, selectedCity, zipcode, address, countries, states, onChange]);
+
+  const handleCountryChange = (value: string) => {
+    console.log('Country selected:', value);
+    setSelectedCountry(value);
+  };
+
+  const handleStateChange = (value: string) => {
+    console.log('State selected:', value);
+    setSelectedState(value);
+  };
+
+  const handleCityChange = (value: string) => {
+    console.log('City selected:', value);
+    setSelectedCity(value);
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -161,7 +204,7 @@ const LocationForm: React.FC<LocationFormProps> = ({
             <FormLabel>Country</FormLabel>
             <Select
               value={selectedCountry}
-              onValueChange={setSelectedCountry}
+              onValueChange={handleCountryChange}
               disabled={disabled || loading}
             >
               <SelectTrigger>
@@ -188,7 +231,7 @@ const LocationForm: React.FC<LocationFormProps> = ({
             <FormLabel>State/Province</FormLabel>
             <Select
               value={selectedState}
-              onValueChange={setSelectedState}
+              onValueChange={handleStateChange}
               disabled={disabled || !selectedCountry || states.length === 0}
             >
               <SelectTrigger>
@@ -221,7 +264,7 @@ const LocationForm: React.FC<LocationFormProps> = ({
             <FormLabel>City</FormLabel>
             <Select
               value={selectedCity}
-              onValueChange={setSelectedCity}
+              onValueChange={handleCityChange}
               disabled={disabled || !selectedState || cities.length === 0}
             >
               <SelectTrigger>

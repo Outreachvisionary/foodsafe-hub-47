@@ -54,6 +54,8 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
   const [zipcodeValid, setZipcodeValid] = useState<boolean>(true);
   const isNewFacility = !initialData?.id;
 
+  console.log('FacilityForm initialized with initialData:', initialData);
+
   // Initialize form with default values
   const form = useForm<FacilityFormValues>({
     resolver: zodResolver(facilityFormSchema),
@@ -73,9 +75,26 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
     },
   });
 
+  // Set initial location data
+  useEffect(() => {
+    if (initialData) {
+      console.log('Setting initial location data from facility:', initialData);
+      setLocationData({
+        address: initialData.address,
+        country: initialData.country,
+        countryCode: initialData.location_data?.countryCode || '',
+        state: initialData.state,
+        stateCode: initialData.location_data?.stateCode || '',
+        city: initialData.city,
+        zipcode: initialData.zipcode,
+      });
+    }
+  }, [initialData]);
+
   // Update form when location data changes
   useEffect(() => {
     if (locationData) {
+      console.log('Updating form with location data:', locationData);
       form.setValue('address', locationData.address || '');
       form.setValue('country', locationData.country || '');
       form.setValue('state', locationData.state || '');
@@ -89,21 +108,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
       }
     }
   }, [locationData, form]);
-
-  // Set initial location data
-  useEffect(() => {
-    if (initialData) {
-      setLocationData({
-        address: initialData.address,
-        country: initialData.country,
-        countryCode: initialData.location_data?.countryCode || '',
-        state: initialData.state,
-        stateCode: initialData.location_data?.stateCode || '',
-        city: initialData.city,
-        zipcode: initialData.zipcode,
-      });
-    }
-  }, [initialData]);
 
   const handleLocationChange = (data: LocationData) => {
     console.log('Location data changed:', data);
@@ -143,12 +147,14 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
         }
       };
       
+      console.log('Final facility data being sent to API:', facilityData);
       let savedFacility: Facility;
       
       if (isNewFacility) {
         // Create new facility
         console.log('Creating new facility with data:', facilityData);
         savedFacility = await createFacility(facilityData);
+        console.log('Facility created successfully:', savedFacility);
         toast({
           title: 'Facility Created',
           description: `Successfully created ${savedFacility.name}`,
@@ -157,6 +163,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
         // Update existing facility
         console.log('Updating facility with data:', facilityData);
         savedFacility = await updateFacility(initialData.id, facilityData);
+        console.log('Facility updated successfully:', savedFacility);
         toast({
           title: 'Facility Updated',
           description: `Successfully updated ${savedFacility.name}`,
@@ -281,13 +288,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
           <div className="pt-4">
             <h3 className="text-lg font-medium mb-2">Location Information</h3>
             <LocationForm
-              initialData={{
-                address: form.getValues('address'),
-                country: form.getValues('country'),
-                state: form.getValues('state'),
-                city: form.getValues('city'),
-                zipcode: form.getValues('zipcode'),
-              }}
+              initialData={locationData}
               onChange={handleLocationChange}
               showValidationErrors={true}
               disabled={saving}
