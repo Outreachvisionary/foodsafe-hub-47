@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Document, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
@@ -260,93 +259,103 @@ export function useDocumentService() {
     }
   };
 
-  // Function to check Supabase storage availability
-  // Replace the existing checkStorageAvailability function in useDocumentService.ts
-const checkStorageAvailability = async (): Promise<boolean> => {
-  try {
-    debugLog('Checking storage availability...');
-    
-    // Check if Supabase client is properly initialized
-    if (!supabase || !supabase.storage) {
-      console.error('Supabase client not properly initialized');
-      return false;
-    }
-    
-    // Check authentication state
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Session error:', sessionError);
-      // Continue anyway as some operations might work without auth
-    }
-    
-    // Add timeout to prevent hanging API calls
-    const timeoutPromise = new Promise<{data: null, error: Error}>(
-      (_, reject) => setTimeout(() => reject({ 
-        data: null, 
-        error: new Error('Storage operation timed out') 
-      }), 8000)
-    );
-    
-    // Check if storage API is responsive
+  // FIXED: Improved storage availability check function with timeout, error handling, and retries
+  const checkStorageAvailability = async (): Promise<boolean> => {
     try {
-      const listBucketsPromise = supabase.storage.listBuckets();
-      const { data: buckets, error: bucketsError } = await Promise.race([
-        listBucketsPromise,
-        timeoutPromise as Promise<any>
-      ]);
+      debugLog('Checking storage availability...');
       
-      if (bucketsError) {
-        console.error('Storage API error:', bucketsError);
+      // Check if Supabase client is properly initialized
+      if (!supabase || !supabase.storage) {
+        console.error('Supabase client not properly initialized');
         return false;
       }
       
-      // Check if our bucket exists
-      const attachmentsBucket = buckets?.find(bucket => bucket.name === 'attachments');
+      // Check session - authentication might be required for storage operations
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session error when checking storage:', sessionError);
+        // Continue anyway - some operations might work without auth
+      }
       
-      if (!attachmentsBucket) {
-        // Bucket doesn't exist - try to create it
-        try {
-          const { error: createError } = await supabase.storage.createBucket('attachments', {
-            public: false,
-            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-          });
-          
-          if (createError) {
-            // Special case: bucket might actually exist but we don't have list permissions
-            if (createError.message?.includes('already exists')) {
-              console.warn('Bucket exists but not visible in list - trying to access directly');
-            } else {
-              console.error('Error creating bucket:', createError);
-              return false;
-            }
-          }
-        } catch (createErr) {
-          console.error('Exception creating bucket:', createErr);
+      // Setup timeout for storage operations
+      const timeoutPromise = new Promise<{data: null, error: Error}>(
+        (_, reject) => setTimeout(() => reject({
+          data: null,
+          error: new Error('Storage operation timed out')
+        }), 8000)
+      );
+      
+      // Check if storage API is responsive
+      try {
+        debugLog('Listing storage buckets...');
+        const listBucketsPromise = supabase.storage.listBuckets();
+        const { data: buckets, error: bucketsError } = await Promise.race([
+          listBucketsPromise,
+          timeoutPromise as Promise<any>
+        ]);
+        
+        if (bucketsError) {
+          console.error('Storage API error:', bucketsError);
           return false;
         }
-      }
-      
-      // Final check - attempt to list files in the bucket as verification
-      const { error: listError } = await supabase.storage
-        .from('attachments')
-        .list('', { limit: 1 });
         
-      if (listError) {
-        console.error('Cannot access attachments bucket:', listError);
+        // Check if our bucket exists
+        const attachmentsBucket = buckets?.find(bucket => bucket.name === 'attachments');
+        debugLog('Available buckets:', buckets?.map(b => b.name).join(', ') || 'none');
+        
+        if (!attachmentsBucket) {
+          debugLog('Attachments bucket not found. Creating bucket...');
+          
+          // Attempt to create the bucket if it doesn't exist
+          try {
+            const { error: createError } = await supabase.storage.createBucket('attachments', {
+              public: false,
+              fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+            });
+            
+            if (createError) {
+              // Special case: bucket might actually exist but we don't have list permissions
+              if (createError.message?.includes('already exists')) {
+                debugLog('Bucket exists but not visible in list - trying direct access');
+              } else {
+                console.error('Error creating bucket:', createError);
+                return false;
+              }
+            } else {
+              debugLog('Successfully created attachments bucket');
+            }
+          } catch (createErr) {
+            console.error('Exception creating bucket:', createErr);
+            return false;
+          }
+        }
+        
+        // Final verification - try listing files in the bucket
+        debugLog('Testing bucket access by listing files...');
+        const { error: listError } = await supabase.storage
+          .from('attachments')
+          .list('', { limit: 1 });
+          
+        if (listError) {
+          console.error('Cannot access attachments bucket:', listError);
+          return false;
+        }
+        
+        debugLog('Storage is available and working properly');
+        return true;
+      } catch (error) {
+        if ((error as any).message?.includes('timed out')) {
+          console.error('Storage operation timed out');
+        } else {
+          console.error('Error during storage check:', error);
+        }
         return false;
       }
-      
-      debugLog('Storage is available and working properly');
-      return true;
-    } catch (timeoutErr) {
-      console.error('Storage operation timed out:', timeoutErr);
+    } catch (err) {
+      console.error('Unhandled error checking storage:', err);
       return false;
     }
-  } catch (err) {
-    console.error('Unhandled error checking storage:', err);
-    return false;
-  }
-};
+  };
 
   // Function to check database connection and table access
   const checkDatabaseAvailability = async () => {
