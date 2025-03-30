@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Cloud, FileText, Loader2, Plus, Upload, AlertCircle } from 'lucide-react';
+import { CalendarIcon, Cloud, FileText, Loader2, Plus, Upload, AlertCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { useDocumentService } from '@/hooks/useDocumentService';
 import { Document } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '@/contexts/UserContext';
+import { initializeStorage } from '@/integrations/supabase/client';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -54,53 +56,70 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storageAvailable, setStorageAvailable] = useState<boolean | null>(null);
   const [isCheckingStorage, setIsCheckingStorage] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
-  // FIXED: Improved storage availability check with retry mechanism
- // In UploadDocumentDialog.tsx, modify the useEffect that checks storage
-React.useEffect(() => {
-  if (open) {
-    // Force timeout after 10 seconds regardless of response
-    const forceTimeoutId = setTimeout(() => {
-      if (isCheckingStorage) {
-        console.error("Storage check timed out after 10 seconds");
-        setIsCheckingStorage(false);
-        setStorageAvailable(false);
-        setErrorMessage("Storage check timed out. Try again or contact your administrator.");
-      }
-    }, 10000); // 10 seconds hard timeout
-    
-    const checkStorage = async () => {
-      try {
-        setIsCheckingStorage(true);
-        setErrorMessage(null);
-        
-        // Skip retry logic - just try once with a short timeout
-        console.log("Checking storage availability...");
-        
-        // Try with a single attempt and short timeout
-        const isAvailable = await checkStorageAvailability();
-        setStorageAvailable(isAvailable);
-        
-        if (!isAvailable) {
-          setErrorMessage('Document storage is not available. Please contact your administrator.');
+  // Improved storage availability check with auto-retry
+  useEffect(() => {
+    if (open) {
+      // Force timeout after 10 seconds regardless of response
+      const forceTimeoutId = setTimeout(() => {
+        if (isCheckingStorage) {
+          console.error("Storage check timed out after 10 seconds");
+          setIsCheckingStorage(false);
+          setStorageAvailable(false);
+          setErrorMessage("Storage check timed out. Try again or contact your administrator.");
         }
-      } catch (err) {
-        console.error('Error checking storage:', err);
-        setStorageAvailable(false);
-        setErrorMessage(`Storage connection error: ${(err as Error).message}`);
-      } finally {
-        clearTimeout(forceTimeoutId); // Clear the force timeout
-        setIsCheckingStorage(false);
-      }
-    };
-    
-    checkStorage();
-    
-    return () => {
-      clearTimeout(forceTimeoutId); // Clean up on unmount
-    };
-  }
-}, [open, checkStorageAvailability]);
+      }, 10000); // 10 seconds hard timeout
+      
+      const checkStorage = async () => {
+        try {
+          setIsCheckingStorage(true);
+          setErrorMessage(null);
+          
+          console.log("Checking storage availability...");
+          
+          // Try to initialize storage first
+          await initializeStorage();
+          
+          // Now check if it's available
+          const isAvailable = await checkStorageAvailability();
+          setStorageAvailable(isAvailable);
+          
+          if (!isAvailable) {
+            setErrorMessage('Document storage is not available. Please contact your administrator.');
+            console.error('Storage is not available');
+            
+            // Auto-retry up to 3 times
+            if (retryCount < 3) {
+              console.log(`Auto-retrying storage check (attempt ${retryCount + 1}/3)...`);
+              setRetryCount(prev => prev + 1);
+              // Wait 1 second before retrying
+              setTimeout(() => {
+                checkStorage();
+              }, 1000);
+            }
+          } else {
+            console.log('Storage is available and accessible');
+          }
+        } catch (err) {
+          console.error('Error checking storage:', err);
+          setStorageAvailable(false);
+          setErrorMessage(`Storage connection error: ${(err as Error).message}`);
+        } finally {
+          clearTimeout(forceTimeoutId); // Clear the force timeout
+          setIsCheckingStorage(false);
+        }
+      };
+      
+      checkStorage();
+      
+      return () => {
+        clearTimeout(forceTimeoutId); // Clean up on unmount
+      };
+    } else {
+      setRetryCount(0); // Reset retry count when dialog closes
+    }
+  }, [open, checkStorageAvailability, retryCount]);
   
   const resetForm = () => {
     setTitle('');
@@ -126,7 +145,7 @@ React.useEffect(() => {
     }
   };
 
-  // FIXED: Improved submit handler with additional storage check
+  // Improved submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -149,6 +168,16 @@ React.useEffect(() => {
       setIsUploading(true);
       setErrorMessage(null);
       
+      // Initialize storage first if needed
+      if (!storageAvailable) {
+        console.log('Trying to initialize storage before upload...');
+        await initializeStorage();
+        const isStorageAvailable = await checkStorageAvailability();
+        if (!isStorageAvailable) {
+          throw new Error('Document storage is not available. Please try again later or contact your administrator.');
+        }
+      }
+      
       // Generate a unique ID for the document
       const documentId = uuidv4();
       
@@ -168,11 +197,7 @@ React.useEffect(() => {
         tags: []
       };
       
-      // Double check storage availability before proceeding
-      const isStorageAvailable = await checkStorageAvailability();
-      if (!isStorageAvailable) {
-        throw new Error('Document storage is not available. Please try again later or contact your administrator.');
-      }
+      setUploadProgress(10);
       
       // Step 1: First create the document in the database
       console.log('Creating document record:', newDocument);
@@ -181,14 +206,32 @@ React.useEffect(() => {
         ...newDocument
       } as Document);
       
-      setUploadProgress(33);
+      setUploadProgress(30);
       
-      // Step 2: Now upload the file to storage
+      // Step 2: Now upload the file to storage with retries
       const storagePath = `documents/${documentId}/${file.name}`;
-      console.log('Uploading file to storage:', storagePath);
-      await uploadFile(file, storagePath);
+      let uploadSuccess = false;
+      let uploadAttempt = 0;
+      const maxUploadAttempts = 3;
       
-      setUploadProgress(66);
+      while (!uploadSuccess && uploadAttempt < maxUploadAttempts) {
+        uploadAttempt++;
+        try {
+          console.log(`Upload attempt ${uploadAttempt}/${maxUploadAttempts} for file:`, storagePath);
+          await uploadFile(file, storagePath);
+          uploadSuccess = true;
+          console.log('File upload successful');
+        } catch (uploadErr) {
+          console.error(`Upload attempt ${uploadAttempt} failed:`, uploadErr);
+          if (uploadAttempt >= maxUploadAttempts) {
+            throw new Error(`Failed to upload file after ${maxUploadAttempts} attempts: ${(uploadErr as Error).message}`);
+          }
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      setUploadProgress(70);
       
       // Step 3: Create an initial version record
       console.log('Creating document version record');
@@ -213,6 +256,30 @@ React.useEffect(() => {
     }
   };
 
+  // Function to manually retry storage check
+  const handleRetryStorageCheck = async () => {
+    setErrorMessage(null);
+    setIsCheckingStorage(true);
+    
+    try {
+      // Try to initialize storage first
+      await initializeStorage();
+      
+      // Then check availability
+      const isAvailable = await checkStorageAvailability();
+      setStorageAvailable(isAvailable);
+      
+      if (!isAvailable) {
+        setErrorMessage('Document storage is still not available. Please contact your administrator.');
+      }
+    } catch (err) {
+      console.error('Error during manual storage check:', err);
+      setErrorMessage(`Storage check failed: ${(err as Error).message}`);
+    } finally {
+      setIsCheckingStorage(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
       if (!isUploading) {
@@ -232,15 +299,61 @@ React.useEffect(() => {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
             <div className="flex">
               <div className="py-1"><AlertCircle className="h-5 w-5 text-red-500 mr-2" /></div>
-              <div>
+              <div className="flex-1">
                 <p className="font-bold">Upload Error</p>
                 <p className="text-sm">{errorMessage}</p>
+                {errorMessage.includes('storage') && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRetryStorageCheck} 
+                    className="mt-2"
+                    disabled={isCheckingStorage}
+                  >
+                    {isCheckingStorage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Retrying...
+                      </>
+                    ) : (
+                      'Retry Storage Check'
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         )}
         
-        {isCheckingStorage && (
+        {storageAvailable === false && !errorMessage && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-md mb-4">
+            <div className="flex">
+              <div className="py-1"><AlertTriangle className="h-5 w-5 text-amber-500 mr-2" /></div>
+              <div className="flex-1">
+                <p className="font-bold">Storage Unavailable</p>
+                <p className="text-sm">Document storage is not available. Documents cannot be uploaded at this time.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetryStorageCheck} 
+                  className="mt-2"
+                  disabled={isCheckingStorage}
+                >
+                  {isCheckingStorage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Retrying...
+                    </>
+                  ) : (
+                    'Retry Storage Check'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {isCheckingStorage && !errorMessage && (
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md mb-4">
             <div className="flex">
               <div className="py-1">

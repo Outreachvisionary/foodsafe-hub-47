@@ -3,7 +3,7 @@ import { Document, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { useToast } from './use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, initializeStorage } from '@/integrations/supabase/client';
 
 // Debug flag - turn on for more verbose logging
 const DEBUG_MODE = true;
@@ -198,8 +198,32 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Uploading file:', file.name, 'to path:', path);
-      await enhancedDocumentService.uploadFile(file, path);
-      debugLog('File uploaded successfully');
+      
+      // First, ensure storage is available
+      const isStorageReady = await checkStorageAvailability();
+      if (!isStorageReady) {
+        // Try to initialize storage
+        await initializeStorage();
+        // Check again after initialization attempt
+        const isAvailableAfterInit = await checkStorageAvailability();
+        if (!isAvailableAfterInit) {
+          throw new Error('Document storage is not available. Please contact your administrator.');
+        }
+      }
+      
+      const { error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        throw uploadError;
+      }
+      
+      debugLog('File uploaded successfully to path:', path);
       return true;
     } catch (err) {
       console.error('Error uploading file:', err);
@@ -259,14 +283,14 @@ export function useDocumentService() {
     }
   };
 
-  // FIXED: Quick storage availability check with shorter timeout
+  // Improved storage availability check
   const checkStorageAvailability = async (): Promise<boolean> => {
     // Set a global timeout for the entire function
     const hardTimeoutPromise = new Promise<boolean>(resolve => {
       setTimeout(() => {
         console.warn('Hard timeout triggered for storage check');
         resolve(false);
-      }, 3000); // 3 second global timeout
+      }, 5000); // 5 second global timeout, reduced from 10s
     });
 
     // Main check logic
@@ -280,34 +304,38 @@ export function useDocumentService() {
           return false;
         }
         
-        // Simplified check - just see if we can access the storage API
-        try {
-          // Quick check with short timeout
-          const { error } = await supabase.storage.from('attachments').list('', { 
+        // First, check if the buckets API is accessible
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        
+        if (bucketsError) {
+          console.error('Error listing storage buckets:', bucketsError);
+          return false;
+        }
+        
+        // Check if the attachments bucket exists
+        const attachmentsBucket = buckets.find(bucket => bucket.name === 'attachments');
+        if (!attachmentsBucket) {
+          console.error('Attachments bucket not found. Available buckets:', buckets.map(b => b.name).join(', '));
+          return false;
+        }
+        
+        debugLog('Attachments bucket exists:', attachmentsBucket);
+        
+        // Try to list files in the bucket to verify access
+        const { error: listError } = await supabase.storage
+          .from('attachments')
+          .list('', { 
             limit: 1,
             sortBy: { column: 'name', order: 'asc' }
           });
-          
-          if (error) {
-            // If there's an error listing, try to see if bucket exists
-            const { data: buckets } = await supabase.storage.listBuckets();
-            
-            // If we can at least list buckets, assume we can create the missing bucket
-            if (buckets && Array.isArray(buckets)) {
-              debugLog('Storage API is accessible but attachments bucket may not exist');
-              return true;
-            }
-            
-            console.error('Storage access error:', error);
-            return false;
-          }
-          
-          debugLog('Storage is available');
-          return true;
-        } catch (error) {
-          console.error('Storage check failed:', error);
+        
+        if (listError) {
+          console.error('Error accessing attachments bucket:', listError);
           return false;
         }
+        
+        debugLog('Storage is available and accessible');
+        return true;
       } catch (err) {
         console.error('General error checking storage:', err);
         return false;

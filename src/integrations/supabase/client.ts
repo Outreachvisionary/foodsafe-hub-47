@@ -10,40 +10,56 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Initialize storage bucket (if needed)
-(async () => {
+export const initializeStorage = async () => {
   try {
-    // Check if we need to create the attachments bucket
+    console.log('Checking storage buckets...');
+    
+    // Check if attachments bucket exists
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
     if (error) {
       console.error('Error checking buckets:', error);
-      return;
+      return false;
     }
     
     const attachmentsBucket = buckets.find(bucket => bucket.name === 'attachments');
     
     if (!attachmentsBucket) {
-      console.log('Creating attachments bucket...');
-      const { error: createError } = await supabase.storage.createBucket('attachments', {
-        public: false,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-      });
-      
-      if (createError) {
-        console.error('Error creating attachments bucket:', createError);
-      } else {
-        console.log('Attachments bucket created successfully.');
+      console.log('Attachments bucket not found in the list of buckets. Available buckets:', buckets.map(b => b.name).join(', '));
+      console.log('Please ensure the "attachments" bucket is created in Supabase.');
+      return false;
+    }
+    
+    console.log('Attachments bucket exists:', attachmentsBucket);
+    
+    // Test access to the bucket
+    try {
+      const { data: testObject, error: testError } = await supabase.storage
+        .from('attachments')
+        .list('', { limit: 1 });
         
-        // Set up a public RLS policy for the bucket
-        // NOTE: In a production environment, you'll want more restrictive policies
-        const { error: policyError } = await supabase.storage.from('attachments').createSignedUrl('dummy.txt', 10);
-        if (policyError) {
-          console.warn('Note: You may need to set up storage policies for the attachments bucket.');
-        }
+      if (testError) {
+        console.error('Error accessing attachments bucket:', testError);
+        return false;
       }
+      
+      console.log('Successfully accessed attachments bucket');
+      return true;
+    } catch (testErr) {
+      console.error('Error testing access to attachments bucket:', testErr);
+      return false;
     }
   } catch (err) {
     console.error('Error initializing storage:', err);
+    return false;
   }
-})();
+};
 
+// Run initialization on load, but don't block
+initializeStorage().then(success => {
+  if (success) {
+    console.log('Storage initialization successful');
+  } else {
+    console.warn('Storage initialization failed. Document uploads may not work correctly.');
+  }
+});
