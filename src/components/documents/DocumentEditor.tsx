@@ -7,13 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { 
-  Save, 
-  History, 
-  Send, 
-  MessageSquare, 
-  User, 
-  Clock, 
+import {
+  Save,
+  History,
+  Send,
+  MessageSquare,
+  User,
+  Clock,
   FileText,
   Loader2
 } from 'lucide-react';
@@ -27,9 +27,9 @@ interface DocumentEditorProps {
   readOnly?: boolean;
 }
 
-const DocumentEditor: React.FC<DocumentEditorProps> = ({ 
-  document, 
-  onSave, 
+const DocumentEditor: React.FC<DocumentEditorProps> = ({
+  document,
+  onSave,
   onSubmitForReview,
   readOnly = false
 }) => {
@@ -46,12 +46,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     if (document) {
       setTitle(document.title);
       setContent(document.description || '');
-      
+
       if (!readOnly && document.id) {
         createEditorSession(document.id);
       }
     }
-    
+
     return () => {
       if (sessionId) {
         closeEditorSession(sessionId);
@@ -62,12 +62,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const createEditorSession = async (documentId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         console.error('No authenticated user found');
         return;
       }
-      
+
       const { data, error } = await supabase
         .from('document_editor_sessions')
         .insert({
@@ -78,7 +78,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
         })
         .select('id')
         .single();
-      
+
       if (error) throw error;
       if (data) setSessionId(data.id);
     } catch (error) {
@@ -102,7 +102,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
   const updateSessionActivity = async () => {
     if (!sessionId) return;
-    
+
     try {
       await supabase
         .from('document_editor_sessions')
@@ -121,7 +121,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const handleEditorChange = (_event: any, editor: any) => {
     const newContent = editor.getData();
     setContent(newContent);
-    
+
     const timeoutId = setTimeout(() => {
       updateSessionActivity();
     }, 5000);
@@ -131,19 +131,19 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const handleSave = async () => {
     if (!document) return;
     setIsLoading(true);
-    
+
     try {
       const updatedContent = editorRef.current ? editorRef.current.getData() : content;
-      
+
       const updatedDoc = {
         ...document,
         title,
         description: updatedContent,
         updated_at: new Date().toISOString()
       };
-      
+
       onSave?.(updatedDoc);
-      
+
       if (document.current_version_id) {
         await supabase
           .from('document_versions')
@@ -155,7 +155,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           })
           .eq('id', document.current_version_id);
       }
-      
+
       toast({
         title: "Document saved",
         description: "Your changes have been saved successfully.",
@@ -175,10 +175,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const handleSubmitForReview = () => {
     if (!document) return;
     setIsLoading(true);
-    
+
     try {
       const updatedContent = editorRef.current ? editorRef.current.getData() : content;
-      
+
       const docForReview = {
         ...document,
         title,
@@ -186,9 +186,9 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
         status: 'Pending Approval' as DocumentStatus,
         updated_at: new Date().toISOString()
       };
-      
+
       onSubmitForReview?.(docForReview);
-      
+
       toast({
         title: "Submitted for review",
         description: "Document has been submitted for review and approval.",
@@ -207,12 +207,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
   const handleAddComment = () => {
     if (!comment.trim()) return;
-    
+
     toast({
       title: "Comment added",
       description: "Your comment has been added to the document.",
     });
-    
+
     setComment('');
   };
 
@@ -243,47 +243,42 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-blue-50 text-blue-700">v{document.version}</Badge>
-            {document.status === 'Draft' && !readOnly && (
-              <Button 
-                variant="outline" 
-                onClick={handleSubmitForReview} 
-                className="flex items-center gap-1"
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                <span>Submit for Review</span>
-              </Button>
-            )}
             {!readOnly && (
-              <Button 
-                onClick={handleSave} 
-                className="flex items-center gap-1"
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span>Save</span>
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleSubmitForReview}
+                  disabled={isLoading}
+                  className="flex items-center gap-1"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send />}
+                  Submit for Review
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="flex items-center gap-1"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save />}
+                  Save
+                </Button>
+              </>
             )}
           </div>
         </div>
       </CardHeader>
+
+      {/* Content */}
       <CardContent className="flex-grow overflow-hidden">
         <Tabs defaultValue="edit" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          {/* Tabs */}
           <TabsList>
-            <TabsTrigger value="edit" className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              <span>{readOnly ? 'View' : 'Edit'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              <span>Comments</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1">
-              <History className="h-4 w-4" />
-              <span>History</span>
-            </TabsTrigger>
+            <TabsTrigger value="edit">Edit</TabsTrigger>
+            <TabsTrigger value="comments">Comments</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
-          
+
+          {/* Editor Tab */}
           <TabsContent value="edit" className="flex-grow overflow-auto">
             <CKEditor
               editor={ClassicEditor}
@@ -291,33 +286,23 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
               onReady={(editor) => (editorRef.current = editor)}
               onChange={handleEditorChange}
               config={{
-                toolbar: [
-                  'heading', '|',
-                  'bold', 'italic', 'link', '|',
-                  'bulletedList', 'numberedList', '|',
-                  'blockQuote', 'undo', 'redo'
-                ],
+                toolbar: ['heading', '|', 'bold', 'italic', 'link', '|', 'undo', 'redo'],
                 readOnly
               }}
             />
           </TabsContent>
-          
-          {/* Keep comments and history sections unchanged */}
-          {/* ... existing comments and history tabs content ... */}
+
+          {/* Comments Tab */}
+          {/* Add comments section here */}
+
+          {/* History Tab */}
+          {/* Add history section here */}
           
         </Tabs>
       </CardContent>
-      
-      <CardFooter className="flex justify-between text-sm text-gray-500 pt-2 border-t">
-        <div className="flex items-center gap-1">
-          <User className="h-3 w-3" />
-          <span>Last edited by: {document.created_by}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span>Last updated: {document.updated_at ? new Date(document.updated_at).toLocaleString() : 'Unknown'}</span>
-        </div>
-      </CardFooter>
+
+      {/* Footer */}
+      <CardFooter>Last updated at {new Date().toLocaleString()}</CardFooter>
     </Card>
   );
 };
