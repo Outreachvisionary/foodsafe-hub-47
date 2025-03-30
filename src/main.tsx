@@ -35,4 +35,5 @@ const AppWrapper = () => {
   );
 };
 
+// Ensure DOM is loaded before rendering
 ReactDOM.createRoot(document.getElementById('root')!).render(<AppWrapper />);

@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -31,6 +32,7 @@ import NonConformanceModule from '@/pages/NonConformance';
 import Traceability from '@/pages/Traceability';
 import AuditsModule from '@/pages/AuditsModule';
 import UserManagement from '@/pages/UserManagement';
+import NotFound from '@/pages/NotFound';
 
 function App() {
   return (
@@ -232,6 +234,9 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
+        
+        {/* Catch-all route for 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
     </>
