@@ -21,6 +21,7 @@ interface DocumentContextType {
   activities: DocumentActivity[];
   stats: DocumentStats;
   isLoading: boolean;
+  error: Error | null;
   setSelectedDocument: (doc: Document | null) => void;
   addDocument: (doc: Document) => void;
   updateDocument: (doc: Document) => void;
@@ -34,6 +35,7 @@ interface DocumentContextType {
   clearAllNotifications: () => void;
   refreshDocumentStats: () => void;
   fetchDocuments: () => Promise<void>;
+  retryFetchDocuments: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -44,6 +46,8 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [notifications, setNotifications] = useState<DocumentNotification[]>([]);
   const [activities, setActivities] = useState<DocumentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [documentsChannel, setDocumentsChannel] = useState<RealtimeChannel | null>(null);
   const [stats, setStats] = useState<DocumentStats>({
     totalDocuments: 0,
     pendingApproval: 0,
@@ -56,11 +60,11 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Set up real-time subscriptions for documents
   useEffect(() => {
-    let documentsChannel: RealtimeChannel;
+    let channel: RealtimeChannel;
 
     const setupRealtimeSubscription = () => {
       // Subscribe to changes on the documents table
-      documentsChannel = supabase
+      channel = supabase
         .channel('document-changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'documents' },
@@ -94,17 +98,31 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
             refreshDocumentStats();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Successfully subscribed to document changes');
+          }
+        });
+        
+      setDocumentsChannel(channel);
     };
 
-    fetchDocuments().then(() => {
-      setupRealtimeSubscription();
-    });
+    // First fetch the documents, then set up the subscription
+    fetchDocuments()
+      .then(() => {
+        setupRealtimeSubscription();
+      })
+      .catch(err => {
+        console.error('Error in initial document fetch:', err);
+        setError(err as Error);
+        setIsLoading(false);
+      });
 
     // Cleanup subscription on unmount
     return () => {
-      if (documentsChannel) {
-        supabase.removeChannel(documentsChannel);
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
   }, []);
@@ -113,68 +131,96 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     if (documents.length === 0) return;
     
-    const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
-    if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
-      setDocuments(updatedDocs);
+    try {
+      const updatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
+      if (JSON.stringify(updatedDocs) !== JSON.stringify(documents)) {
+        setDocuments(updatedDocs);
+      }
+      
+      const generatedNotifications = documentWorkflowService.generateNotifications(updatedDocs);
+      setNotifications(generatedNotifications);
+      
+      refreshDocumentStats();
+    } catch (err) {
+      console.error('Error processing document expirations:', err);
     }
-    
-    const generatedNotifications = documentWorkflowService.generateNotifications(updatedDocs);
-    setNotifications(generatedNotifications);
-    
-    refreshDocumentStats();
     
     // Set up interval to check for expiry updates regularly
     const interval = setInterval(() => {
-      const freshUpdatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
-      if (JSON.stringify(freshUpdatedDocs) !== JSON.stringify(documents)) {
-        setDocuments(freshUpdatedDocs);
-      }
-      
-      const freshNotifications = documentWorkflowService.generateNotifications(freshUpdatedDocs);
-      setNotifications(previousNotifications => {
-        const existingNotificationMap = new Map(
-          previousNotifications.map(n => [n.id, n.isRead])
-        );
+      try {
+        const freshUpdatedDocs = documentWorkflowService.updateDocumentStatusBasedOnExpiry(documents);
+        if (JSON.stringify(freshUpdatedDocs) !== JSON.stringify(documents)) {
+          setDocuments(freshUpdatedDocs);
+        }
         
-        return freshNotifications.map(n => ({
-          ...n,
-          isRead: existingNotificationMap.get(n.id) || false
-        }));
-      });
-      
-      refreshDocumentStats();
+        const freshNotifications = documentWorkflowService.generateNotifications(freshUpdatedDocs);
+        setNotifications(previousNotifications => {
+          const existingNotificationMap = new Map(
+            previousNotifications.map(n => [n.id, n.isRead])
+          );
+          
+          return freshNotifications.map(n => ({
+            ...n,
+            isRead: existingNotificationMap.get(n.id) || false
+          }));
+        });
+        
+        refreshDocumentStats();
+      } catch (err) {
+        console.error('Error in document expiry interval check:', err);
+      }
     }, 60000);
     
     return () => clearInterval(interval);
   }, [documents]);
 
   const refreshDocumentStats = () => {
-    const calculatedStats = documentWorkflowService.getDocumentStats(documents);
-    setStats(calculatedStats);
+    try {
+      const calculatedStats = documentWorkflowService.getDocumentStats(documents);
+      setStats(calculatedStats);
+    } catch (err) {
+      console.error('Error calculating document stats:', err);
+    }
   };
 
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log('Fetching documents...');
       const fetchedDocuments = await documentService.fetchDocuments();
-      setDocuments(fetchedDocuments);
-      refreshDocumentStats();
+      console.log('Documents fetched:', fetchedDocuments);
+      
+      if (Array.isArray(fetchedDocuments)) {
+        setDocuments(fetchedDocuments);
+        refreshDocumentStats();
+      } else {
+        throw new Error('Fetched documents is not an array');
+      }
+      
       return;
     } catch (error) {
       console.error("Error fetching documents:", error);
+      setError(error as Error);
       toast.error('Failed to load documents. Please try again later.');
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Added retry function for document fetching
+  const retryFetchDocuments = async () => {
+    toast.info('Retrying document fetch...');
+    return fetchDocuments();
+  };
 
   const addDocument = async (doc: Document) => {
     try {
       const createdDoc = await documentService.createDocument(doc as Omit<Document, 'id'>);
-      setDocuments(prev => [...prev, createdDoc]);
+      // We don't need to update state here as the realtime subscription will handle it
       toast.success('Document added successfully');
-      refreshDocumentStats();
       return createdDoc;
     } catch (error) {
       console.error("Error adding document:", error);
@@ -323,6 +369,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         activities,
         stats,
         isLoading,
+        error,
         setSelectedDocument,
         addDocument,
         updateDocument,
@@ -335,7 +382,8 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         markNotificationAsRead,
         clearAllNotifications,
         refreshDocumentStats,
-        fetchDocuments
+        fetchDocuments,
+        retryFetchDocuments
       }}
     >
       {children}

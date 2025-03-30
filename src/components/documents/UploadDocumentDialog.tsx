@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,10 +9,11 @@ import { DocumentCategory, DocumentStatus, Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { FilePlus, Upload, Calendar, Tag, X, AlertCircle } from 'lucide-react';
+import { FilePlus, Upload, Calendar, Tag, X, AlertCircle, Loader2 } from 'lucide-react';
 import documentService from '@/services/documentService';
 import { useTranslation } from 'react-i18next';
 import { useFileUpload } from '@/hooks/use-file-upload';
+import { useDocumentCategories } from '@/hooks/useDocumentReferences';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -28,13 +29,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const { t } = useTranslation();
   const { addDocument } = useDocuments();
   const { toast } = useToast();
+  const { categories, loading: categoriesLoading } = useDocumentCategories();
   
   const isNewVersion = Boolean(existingDocument);
   const dialogTitle = isNewVersion 
-    ? t('documents.uploadNewVersion') 
-    : t('documents.uploadDocument');
+    ? t('documents.uploadNewVersion', 'Upload New Version') 
+    : t('documents.uploadDocument', 'Upload Document');
   
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [formData, setFormData] = useState({
     title: existingDocument?.title || '',
     description: existingDocument?.description || '',
@@ -72,6 +75,27 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [tags, setTags] = useState<string[]>(existingDocument?.tags || []);
   const [tagInput, setTagInput] = useState<string>('');
 
+  useEffect(() => {
+    if (open) {
+      // Keep the existing state when dialog opens
+    } else {
+      // Clear form when dialog closes
+      clearFile();
+      setFormData({
+        title: existingDocument?.title || '',
+        description: existingDocument?.description || '',
+        category: (existingDocument?.category || 'SOP') as DocumentCategory,
+        changeSummary: ''
+      });
+      setExpiryDate(existingDocument?.expiry_date 
+        ? new Date(existingDocument.expiry_date).toISOString().split('T')[0] 
+        : '');
+      setTags(existingDocument?.tags || []);
+      setTagInput('');
+      setUploadProgress(0);
+    }
+  }, [open, existingDocument, clearFile]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -102,8 +126,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const handleUpload = async () => {
     if (!file) {
       toast({
-        title: t('common.error'),
-        description: t('documents.noFileSelected'),
+        title: t('common.error', 'Error'),
+        description: t('documents.noFileSelected', 'No file selected'),
         variant: "destructive",
       });
       return;
@@ -111,8 +135,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
     if (!isNewVersion && !formData.title.trim()) {
       toast({
-        title: t('common.error'),
-        description: t('documents.titleRequired'),
+        title: t('common.error', 'Error'),
+        description: t('documents.titleRequired', 'Document title is required'),
         variant: "destructive",
       });
       return;
@@ -120,12 +144,24 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
     try {
       setUploading(true);
+      setUploadProgress(10);
 
       if (isNewVersion && existingDocument) {
         const documentId = existingDocument.id;
         const storagePath = `documents/${documentId}/${file.name}_v${existingDocument.version + 1}`;
         
+        setUploadProgress(20);
+        
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev < 80) return prev + 5;
+            return prev;
+          });
+        }, 500);
+        
         await documentService.uploadFile(file, storagePath);
+        clearInterval(progressInterval);
+        setUploadProgress(90);
         
         const isOfficeDocument = isOfficeFileType(file.type);
         const versionDetails = {
@@ -153,16 +189,29 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           version: existingDocument.version + 1
         });
         
+        setUploadProgress(100);
+        
         toast({
-          title: t('documents.versionUploaded'),
-          description: t('documents.newVersionUploadedDesc'),
+          title: t('documents.versionUploaded', 'Version Uploaded'),
+          description: t('documents.newVersionUploadedDesc', 'New document version has been uploaded successfully'),
         });
       } else {
         const isOfficeDocument = isOfficeFileType(file.type);
         const documentId = uuidv4();
         const storagePath = `documents/${documentId}/${file.name}`;
         
+        setUploadProgress(20);
+        
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev < 80) return prev + 5;
+            return prev;
+          });
+        }, 500);
+        
         await documentService.uploadFile(file, storagePath);
+        clearInterval(progressInterval);
+        setUploadProgress(90);
         
         const newDocument: Document = {
           id: documentId,
@@ -181,22 +230,33 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           tags: tags
         };
 
-        await addDocument(newDocument);
+        try {
+          await addDocument(newDocument);
         
-        await documentService.createDocumentVersion({
-          document_id: documentId,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          created_by: 'Current User',
-          change_notes: 'Initial version',
-          version: 1
-        });
-        
-        toast({
-          title: t('documents.documentUploaded'),
-          description: t('documents.documentUploadedDesc'),
-        });
+          await documentService.createDocumentVersion({
+            document_id: documentId,
+            file_name: file.name,
+            file_size: file.size,
+            file_type: file.type,
+            created_by: 'Current User',
+            change_notes: 'Initial version',
+            version: 1
+          });
+          
+          setUploadProgress(100);
+          
+          toast({
+            title: t('documents.documentUploaded', 'Document Uploaded'),
+            description: t('documents.documentUploadedDesc', 'Document has been uploaded successfully'),
+          });
+        } catch (addError) {
+          console.error('Error adding document metadata:', addError);
+          toast({
+            title: t('common.error', 'Error'),
+            description: t('documents.metadataUploadFailed', 'File uploaded but metadata could not be saved'),
+            variant: "destructive",
+          });
+        }
       }
       
       clearFile();
@@ -213,12 +273,13 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     } catch (error) {
       console.error('Error uploading document:', error);
       toast({
-        title: t('common.error'),
-        description: t('documents.uploadFailed'),
+        title: t('common.error', 'Error'),
+        description: t('documents.uploadFailed', 'Failed to upload document. Please try again.'),
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -261,8 +322,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           </DialogTitle>
           <DialogDescription>
             {isNewVersion 
-              ? t('documents.uploadNewVersionDesc')
-              : t('documents.uploadNewDocumentDesc')
+              ? t('documents.uploadNewVersionDesc', 'Upload a new version of this document')
+              : t('documents.uploadNewDocumentDesc', 'Upload a new document to the repository')
             }
           </DialogDescription>
         </DialogHeader>
@@ -271,22 +332,22 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           {!isNewVersion && (
             <>
               <div className="grid gap-2">
-                <Label htmlFor="title">{t('documents.documentTitle')}</Label>
+                <Label htmlFor="title">{t('documents.documentTitle', 'Document Title')}</Label>
                 <Input
                   id="title"
                   name="title"
-                  placeholder={t('documents.enterDocumentTitle')}
+                  placeholder={t('documents.enterDocumentTitle', 'Enter document title')}
                   value={formData.title}
                   onChange={handleInputChange}
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="description">{t('documents.description')}</Label>
+                <Label htmlFor="description">{t('documents.description', 'Description')}</Label>
                 <Textarea
                   id="description"
                   name="description"
-                  placeholder={t('documents.enterDocumentDescription')}
+                  placeholder={t('documents.enterDocumentDescription', 'Enter document description')}
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={3}
@@ -295,28 +356,28 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="category">{t('documents.category')}</Label>
-                  <Select value={formData.category} onValueChange={handleCategoryChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('documents.selectCategory')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SOP">SOP</SelectItem>
-                      <SelectItem value="Policy">Policy</SelectItem>
-                      <SelectItem value="Form">Form</SelectItem>
-                      <SelectItem value="Certificate">Certificate</SelectItem>
-                      <SelectItem value="Audit Report">Audit Report</SelectItem>
-                      <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
-                      <SelectItem value="Training Material">Training Material</SelectItem>
-                      <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
-                      <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="category">{t('documents.category', 'Category')}</Label>
+                  {categoriesLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading categories...</span>
+                    </div>
+                  ) : (
+                    <Select value={formData.category} onValueChange={handleCategoryChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('documents.selectCategory', 'Select category')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="expiryDate">{t('documents.expiryDate')}</Label>
+                  <Label htmlFor="expiryDate">{t('documents.expiryDate', 'Expiry Date')}</Label>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 text-gray-500 mr-2" />
                     <Input
@@ -330,7 +391,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="tags">{t('documents.tags')}</Label>
+                <Label htmlFor="tags">{t('documents.tags', 'Tags')}</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {tags.map(tag => (
                     <div key={tag} className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
@@ -348,7 +409,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 <div className="flex">
                   <Input
                     id="tagInput"
-                    placeholder={t('documents.addTag')}
+                    placeholder={t('documents.addTag', 'Add tag')}
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={handleTagInputKeyDown}
@@ -362,7 +423,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                     disabled={!tagInput.trim()}
                   >
                     <Tag className="h-4 w-4 mr-1" />
-                    {t('documents.add')}
+                    {t('documents.add', 'Add')}
                   </Button>
                 </div>
               </div>
@@ -371,11 +432,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           
           {isNewVersion && (
             <div className="grid gap-2">
-              <Label htmlFor="changeSummary">{t('documents.changeSummary')}</Label>
+              <Label htmlFor="changeSummary">{t('documents.changeSummary', 'Change Summary')}</Label>
               <Textarea
                 id="changeSummary"
                 name="changeSummary"
-                placeholder={t('documents.enterChangeSummary')}
+                placeholder={t('documents.enterChangeSummary', 'Describe what changed in this version')}
                 value={formData.changeSummary}
                 onChange={handleInputChange}
                 rows={3}
@@ -384,13 +445,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           )}
           
           <div className="grid gap-2">
-            <Label htmlFor="file">{t('documents.file')}</Label>
+            <Label htmlFor="file">{t('documents.file', 'File')}</Label>
             <div className="flex items-center space-x-2">
               <Input
                 id="file"
                 type="file"
                 onChange={handleFileChange}
                 className="flex-grow"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip,.jpg,.jpeg,.png,.gif,.svg"
               />
             </div>
             {fileError && (
@@ -401,7 +463,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             )}
             {file && (
               <p className="text-sm text-gray-500">
-                {t('documents.selected')}: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                {t('documents.selected', 'Selected')}: {file.name} ({(file.size / 1024).toFixed(2)} KB)
               </p>
             )}
             <p className="text-xs text-gray-500">
@@ -409,25 +471,42 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             </p>
           </div>
           
+          {uploading && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
+              </p>
+            </div>
+          )}
+          
           <div className="flex justify-end space-x-2 pt-4">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={uploading}
             >
-              {t('common.cancel')}
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button
               onClick={handleUpload}
               disabled={uploading || !file || (!isNewVersion && !formData.title.trim())}
               className="flex items-center"
             >
-              {uploading ? 
-                t('documents.uploading') : 
+              {uploading ? (
+                <span className="flex items-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {t('documents.uploading', 'Uploading...')}
+                </span>
+              ) : (
                 <>
                   <FilePlus className="h-4 w-4 mr-1" />
-                  {isNewVersion ? t('documents.uploadNewVersion') : t('documents.uploadDocument')}
+                  {isNewVersion ? t('documents.uploadNewVersion', 'Upload New Version') : t('documents.uploadDocument', 'Upload Document')}
                 </>
-              }
+              )}
             </Button>
           </div>
         </div>

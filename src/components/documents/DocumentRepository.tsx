@@ -28,7 +28,9 @@ import {
   AlertTriangle,
   FileText,
   CalendarDays,
-  Loader2
+  Loader2,
+  RefreshCw,
+  FileWarning
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -42,6 +44,7 @@ import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
 import { useDocumentCategories, useDocumentStatuses } from '@/hooks/useDocumentReferences';
 import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'N/A';
@@ -54,7 +57,7 @@ const formatDate = (dateStr?: string) => {
 
 const DocumentRepository: React.FC = () => {
   const { t } = useTranslation();
-  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats, setSelectedDocument, isLoading } = useDocuments();
+  const { documents, addDocument, updateDocument, deleteDocument, refreshDocumentStats, setSelectedDocument, isLoading, error: documentsError, retryFetchDocuments } = useDocuments();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -65,9 +68,9 @@ const DocumentRepository: React.FC = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  // Use our new reference data hooks
-  const { categories, loading: categoriesLoading } = useDocumentCategories();
-  const { statuses, loading: statusesLoading } = useDocumentStatuses();
+  // Use our reference data hooks
+  const { categories, loading: categoriesLoading, error: categoriesError } = useDocumentCategories();
+  const { statuses, loading: statusesLoading, error: statusesError } = useDocumentStatuses();
   
   useEffect(() => {
     const loadDocuments = async () => {
@@ -75,16 +78,11 @@ const DocumentRepository: React.FC = () => {
         await refreshDocumentStats();
       } catch (error) {
         console.error('Error loading documents:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load documents',
-          variant: 'destructive'
-        });
       }
     };
     
     loadDocuments();
-  }, [refreshDocumentStats, toast]);
+  }, [refreshDocumentStats]);
   
   // Filter documents based on search and filters
   const filteredDocuments = documents.filter(doc => {
@@ -210,11 +208,68 @@ const DocumentRepository: React.FC = () => {
     }, {})
   };
 
+  // Show loading state
   if (isLoading || categoriesLoading || statusesLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg">Loading documents...</span>
+      <div className="flex flex-col justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <span className="text-lg">Loading documents...</span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (documentsError || categoriesError || statusesError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <Alert variant="destructive" className="mb-4 max-w-md">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error loading documents</AlertTitle>
+          <AlertDescription>
+            {documentsError?.message || categoriesError?.message || statusesError?.message || 
+              'There was a problem loading the document repository.'}
+          </AlertDescription>
+        </Alert>
+        <Button 
+          onClick={retryFetchDocuments} 
+          variant="outline"
+          className="flex items-center"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Show empty state if no documents and no errors
+  if (documents.length === 0) {
+    return (
+      <div className="text-center p-12 bg-white rounded-lg shadow-sm flex flex-col items-center">
+        <FileWarning className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
+        <h3 className="text-xl font-medium mb-2">No Documents Found</h3>
+        <p className="text-muted-foreground mb-6 max-w-md">
+          Your document repository is empty. Get started by uploading your first document.
+        </p>
+        <Button onClick={() => setUploadDialogOpen(true)} className="flex items-center">
+          <Plus className="h-4 w-4 mr-2" />
+          Upload Your First Document
+        </Button>
+        
+        {/* Upload dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('documents.uploadDocument', 'Upload Document')}</DialogTitle>
+              <DialogDescription>
+                {t('documents.uploadDescription', 'Upload a document to the repository')}
+              </DialogDescription>
+            </DialogHeader>
+            <DocumentUploader 
+              onUploadComplete={handleDocumentUploadComplete}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -226,7 +281,7 @@ const DocumentRepository: React.FC = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             type="search"
-            placeholder={t('documents.search')}
+            placeholder={t('documents.search', 'Search documents...')}
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -238,7 +293,7 @@ const DocumentRepository: React.FC = () => {
             <SelectTrigger className="w-[160px]">
               <div className="flex items-center">
                 <Filter className="h-4 w-4 mr-2" />
-                <span>{categoryFilter || t('documents.allCategories')}</span>
+                <span>{categoryFilter || t('documents.allCategories', 'All Categories')}</span>
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -253,7 +308,7 @@ const DocumentRepository: React.FC = () => {
             <SelectTrigger className="w-[140px]">
               <div className="flex items-center">
                 <Filter className="h-4 w-4 mr-2" />
-                <span>{statusFilter || t('documents.allStatuses')}</span>
+                <span>{statusFilter || t('documents.allStatuses', 'All Statuses')}</span>
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -285,7 +340,7 @@ const DocumentRepository: React.FC = () => {
           
           <Button onClick={() => setUploadDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            {t('documents.addDocument')}
+            {t('documents.addDocument', 'Add Document')}
           </Button>
         </div>
       </div>
@@ -305,12 +360,12 @@ const DocumentRepository: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t('documents.title')}</TableHead>
-                        <TableHead>{t('documents.category')}</TableHead>
-                        <TableHead>{t('documents.status')}</TableHead>
-                        <TableHead>{t('documents.updated')}</TableHead>
-                        <TableHead>{t('documents.version')}</TableHead>
-                        <TableHead className="text-right">{t('documents.actions')}</TableHead>
+                        <TableHead>{t('documents.title', 'Title')}</TableHead>
+                        <TableHead>{t('documents.category', 'Category')}</TableHead>
+                        <TableHead>{t('documents.status', 'Status')}</TableHead>
+                        <TableHead>{t('documents.updated', 'Updated')}</TableHead>
+                        <TableHead>{t('documents.version', 'Version')}</TableHead>
+                        <TableHead className="text-right">{t('documents.actions', 'Actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -349,18 +404,18 @@ const DocumentRepository: React.FC = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>{t('documents.actions')}</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('documents.actions', 'Actions')}</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handlePreviewDocument(doc)}>
                                   <Eye className="h-4 w-4 mr-2" />
-                                  {t('buttons.view')}
+                                  {t('buttons.view', 'View')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDownloadDocument(doc)}>
                                   <Download className="h-4 w-4 mr-2" />
-                                  {t('buttons.download')}
+                                  {t('buttons.download', 'Download')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleEditDocument(doc)}>
                                   <Edit className="h-4 w-4 mr-2" />
-                                  {t('buttons.edit')}
+                                  {t('buttons.edit', 'Edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
@@ -368,7 +423,7 @@ const DocumentRepository: React.FC = () => {
                                   className="text-red-600"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  {t('buttons.delete')}
+                                  {t('buttons.delete', 'Delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -380,16 +435,16 @@ const DocumentRepository: React.FC = () => {
                 ) : (
                   <div className="text-center p-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                    <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound')}</h3>
+                    <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
                     <p className="text-muted-foreground mb-4">
                       {searchTerm || categoryFilter || statusFilter 
-                        ? t('documents.adjustFilters')
-                        : t('documents.uploadFirstDocument')}
+                        ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for')
+                        : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
                     </p>
                     {!(searchTerm || categoryFilter || statusFilter) && (
                       <Button onClick={() => setUploadDialogOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
-                        {t('documents.uploadDocument')}
+                        {t('documents.uploadDocument', 'Upload Document')}
                       </Button>
                     )}
                   </div>
@@ -428,7 +483,7 @@ const DocumentRepository: React.FC = () => {
                               </Badge>
                             </div>
                             <div className="text-xs text-muted-foreground mt-2 flex justify-between">
-                              <span>{t('documents.updated')}: {formatDate(doc.updated_at)}</span>
+                              <span>{t('documents.updated', 'Updated')}: {formatDate(doc.updated_at)}</span>
                             </div>
                             <div className="flex justify-between mt-3">
                               <Button 
@@ -470,16 +525,16 @@ const DocumentRepository: React.FC = () => {
               ) : (
                 <div className="text-center p-8 bg-white rounded-lg shadow-sm">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound')}</h3>
+                  <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
                   <p className="text-muted-foreground mb-4">
                     {searchTerm || categoryFilter || statusFilter 
-                      ? t('documents.adjustFilters')
-                      : t('documents.uploadFirstDocument')}
+                      ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for')
+                      : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
                   </p>
                   {!(searchTerm || categoryFilter || statusFilter) && (
                     <Button onClick={() => setUploadDialogOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      {t('documents.uploadDocument')}
+                      {t('documents.uploadDocument', 'Upload Document')}
                     </Button>
                   )}
                 </div>
@@ -494,21 +549,21 @@ const DocumentRepository: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold">{documentStats.total}</div>
-                <p className="text-muted-foreground">{t('documents.totalDocuments')}</p>
+                <p className="text-muted-foreground">{t('documents.totalDocuments', 'Total Documents')}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold">{documentStats.byStatus['Published'] || 0}</div>
-                <p className="text-muted-foreground">{t('documents.publishedDocuments')}</p>
+                <p className="text-muted-foreground">{t('documents.publishedDocuments', 'Published Documents')}</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold">{documentStats.byStatus['Pending Approval'] || 0}</div>
-                <p className="text-muted-foreground">{t('documents.awaitingApproval')}</p>
+                <p className="text-muted-foreground">{t('documents.awaitingApproval', 'Awaiting Approval')}</p>
               </CardContent>
             </Card>
           </div>
@@ -516,7 +571,7 @@ const DocumentRepository: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('documents.documentsByCategory')}</CardTitle>
+                <CardTitle>{t('documents.documentsByCategory', 'Documents by Category')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -535,7 +590,7 @@ const DocumentRepository: React.FC = () => {
             
             <Card>
               <CardHeader>
-                <CardTitle>{t('documents.documentsByStatus')}</CardTitle>
+                <CardTitle>{t('documents.documentsByStatus', 'Documents by Status')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -566,9 +621,9 @@ const DocumentRepository: React.FC = () => {
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('documents.uploadDocument')}</DialogTitle>
+            <DialogTitle>{t('documents.uploadDocument', 'Upload Document')}</DialogTitle>
             <DialogDescription>
-              {t('documents.uploadDescription')}
+              {t('documents.uploadDescription', 'Upload a document to the repository')}
             </DialogDescription>
           </DialogHeader>
           <DocumentUploader 
@@ -584,24 +639,24 @@ const DocumentRepository: React.FC = () => {
             <DialogTitle>
               <div className="flex items-center">
                 <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
-                {t('documents.confirmDelete')}
+                {t('documents.confirmDelete', 'Confirm Delete')}
               </div>
             </DialogTitle>
             <DialogDescription>
-              {t('documents.deleteWarning')}
+              {t('documents.deleteWarning', 'This action cannot be undone. This will permanently delete the document and all its versions.')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
               <X className="h-4 w-4 mr-2" />
-              {t('buttons.cancel')}
+              {t('buttons.cancel', 'Cancel')}
             </Button>
             <Button 
               variant="destructive" 
               onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {t('buttons.delete')}
+              {t('buttons.delete', 'Delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

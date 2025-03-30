@@ -10,6 +10,7 @@ import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
 import DocumentTemplates from '@/components/documents/DocumentTemplates';
 import DocumentEditor from '@/components/documents/DocumentEditor';
 import DocumentNotificationCenter from '@/components/documents/DocumentNotificationCenter';
+import DocumentRepositoryErrorHandler from '@/components/documents/DocumentRepositoryErrorHandler';
 import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +36,8 @@ const DocumentsContent = () => {
     updateDocument, 
     markNotificationAsRead, 
     clearAllNotifications,
-    fetchDocuments 
+    fetchDocuments,
+    error
   } = useDocuments();
   
   const [activeTab, setActiveTab] = useState<string>(
@@ -109,15 +111,18 @@ const DocumentsContent = () => {
   return (
     <div className="min-h-screen bg-secondary">
       <DashboardHeader 
-        title={t('documents.header.title')}
-        subtitle={t('documents.header.subtitle')}
+        title={t('documents.header.title', 'Document Management')}
+        subtitle={t('documents.header.subtitle', 'Manage and control your documents and approval workflows')}
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumbs />
         
+        {/* Display error handler when there's an error */}
+        {error && <DocumentRepositoryErrorHandler />}
+        
         <div className="flex justify-between items-center my-6">
-          <h2 className="text-xl font-bold text-charcoal">{t('documents.controlSystem')}</h2>
+          <h2 className="text-xl font-bold text-charcoal">{t('documents.controlSystem', 'Documents Control System')}</h2>
           <div className="flex items-center gap-3">
             <DocumentNotificationCenter 
               notifications={notifications}
@@ -126,7 +131,7 @@ const DocumentsContent = () => {
             />
             <Button onClick={handleDocumentWorkflow} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              <span>{t('documents.createNew')}</span>
+              <span>{t('documents.createNew', 'Upload Document')}</span>
             </Button>
           </div>
         </div>
@@ -135,12 +140,12 @@ const DocumentsContent = () => {
           <TabsList className="mb-6 bg-white border border-border">
             <TabsTrigger value="repository" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <FileText className="h-4 w-4" />
-              <span>{t('documents.tabs.repository')}</span>
+              <span>{t('documents.tabs.repository', 'Repository')}</span>
             </TabsTrigger>
             
             <TabsTrigger value="approvals" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <ClipboardCheck className="h-4 w-4" />
-              <span>{t('documents.tabs.approvals')}</span>
+              <span>{t('documents.tabs.approvals', 'Approvals')}</span>
               {approvalNotifications > 0 && (
                 <Badge variant="destructive" className="ml-1 bg-destructive text-white">
                   {approvalNotifications}
@@ -150,7 +155,7 @@ const DocumentsContent = () => {
             
             <TabsTrigger value="expired" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <CalendarX className="h-4 w-4" />
-              <span>{t('documents.tabs.expired')}</span>
+              <span>{t('documents.tabs.expired', 'Expired')}</span>
               {expiryNotifications > 0 && (
                 <Badge variant="destructive" className="ml-1 bg-destructive text-white">
                   {expiryNotifications}
@@ -160,12 +165,12 @@ const DocumentsContent = () => {
             
             <TabsTrigger value="templates" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <FilePlus className="h-4 w-4" />
-              <span>{t('documents.tabs.templates')}</span>
+              <span>{t('documents.tabs.templates', 'Templates')}</span>
             </TabsTrigger>
             
             <TabsTrigger value="edit" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <Edit className="h-4 w-4" />
-              <span>{t('documents.tabs.editor')}</span>
+              <span>{t('documents.tabs.editor', 'Editor')}</span>
             </TabsTrigger>
           </TabsList>
           
