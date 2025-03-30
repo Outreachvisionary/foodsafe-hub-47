@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -51,15 +50,24 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+      <DialogContent
+        style={{
+          width: '90%',
+          maxWidth: '700px',
+          maxHeight: '90vh',
+          overflowY: 'auto', // Enables scrolling if content overflows
+        }}
+        className="flex flex-col"
+      >
         <DialogHeader>
           <DialogTitle>Add Facility</DialogTitle>
           <DialogDescription>
             Add a new facility to this organization.
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="flex-1 pr-4 -mr-4">
+
+        {/* Scrollable Area for Form */}
+        <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
           <FacilityForm 
             initialData={{ organization_id: organizationId }}
             onSuccess={handleSuccess}
