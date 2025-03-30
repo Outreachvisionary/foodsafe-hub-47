@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { useTranslation } from "react-i18next";
@@ -23,8 +24,8 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { labelKey: string }
->(({ className, labelKey, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { labelKey?: string }
+>(({ className, labelKey, children, ...props }, ref) => {
   const { t } = useTranslation(); // Translation hook
 
   return (
@@ -36,7 +37,7 @@ const TabsTrigger = React.forwardRef<
       )}
       {...props}
     >
-      {t(labelKey)} {/* Fetch localized string */}
+      {labelKey ? t(labelKey) : children} {/* Use translation if labelKey is provided, otherwise use children */}
     </TabsPrimitive.Trigger>
   );
 });
