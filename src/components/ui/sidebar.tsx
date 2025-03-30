@@ -11,7 +11,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex flex-col h-full bg-background border-r border-border", className)}
+        className={cn(
+          "flex flex-col h-full bg-gradient-to-b from-background to-secondary/20 border-r border-border shadow-sm", 
+          className
+        )}
         {...props}
       >
         {children}

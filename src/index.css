@@ -1,6 +1,7 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,38 +10,36 @@
 @layer base {
   :root {
     --background: 0 0% 100%;  /* White background */
-    --foreground: 0 0% 20%;    /* Dark text */
+    --foreground: 215 30% 15%;    /* Dark navy text */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
+    --card-foreground: 215 30% 15%;
  
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
+    --popover-foreground: 215 30% 15%;
  
-    --primary: 153 50% 36%;      /* Teal primary */
+    --primary: 215 38% 28%;      /* Deep navy primary */
     --primary-foreground: 0 0% 100%;  /* White text on primary */
  
-    --secondary: 0 0% 96%;   /* Light gray */
-    --secondary-foreground: 0 0% 29%;  /* Charcoal text on secondary */
+    --secondary: 210 30% 96%;   /* Light blue-gray */
+    --secondary-foreground: 215 38% 28%;  /* Navy text on secondary */
  
-    --muted: 0 0% 98%;
-    --muted-foreground: 210 11% 45%;  /* Medium gray for muted text */
+    --muted: 210 30% 97%;
+    --muted-foreground: 215 16% 47%;  /* Medium blue-gray for muted text */
  
-    --accent: 153 50% 36%;       /* Teal accent */
+    --accent: 185 78% 43%;       /* Turquoise accent */
     --accent-foreground: 0 0% 100%;
  
-    --destructive: 352 77% 56%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;      /* Light gray borders */
-    --input: 0 0% 90%;
-    --ring: 153 50% 36%;
+    --border: 210 20% 93%;      /* Light blue-gray borders */
+    --input: 210 20% 93%;
+    --ring: 215 38% 47%;
  
     --radius: 0.5rem;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -48,13 +47,13 @@
     @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-bold text-foreground tracking-wide;
+    @apply font-display font-semibold text-foreground tracking-tight;
   }
 }
 
 /* Accessibility focus styles */
 :focus-visible {
-  @apply outline-2 outline-offset-2 outline-primary;
+  @apply outline-2 outline-offset-2 outline-accent;
 }
 
 /* Consistent table styles */
@@ -92,11 +91,11 @@ tbody td {
 }
 
 .form-input {
-  @apply bg-secondary border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-md px-3 py-2 w-full;
+  @apply bg-secondary border-border focus:border-accent focus:ring-1 focus:ring-accent rounded-md px-3 py-2 w-full;
 }
 
 .form-select {
-  @apply bg-secondary border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-md px-3 py-2 w-full;
+  @apply bg-secondary border-border focus:border-accent focus:ring-1 focus:ring-accent rounded-md px-3 py-2 w-full;
 }
 
 /* Improved badge styles */
@@ -116,3 +115,19 @@ tbody td {
 .btn-hover-effect {
   @apply transition-all hover:shadow-md active:scale-95;
 }
+
+/* Animated underline for links */
+.animated-underline {
+  @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full;
+}
+
+/* Card styles with subtle gradients */
+.card-gradient {
+  @apply bg-gradient-to-br from-white to-secondary/40;
+}
+
+/* Animated icon styles */
+.icon-hover {
+  @apply transition-transform duration-200 hover:scale-110 hover:text-accent;
+}
+

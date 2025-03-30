@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/ui/sidebar';
@@ -14,7 +15,7 @@ interface SidebarLink {
   name: string;
   href: string;
   icon: React.ElementType;
-  color?: string;
+  color: string;
 }
 
 const AppSidebar = () => {
@@ -34,66 +35,66 @@ const AppSidebar = () => {
   
   const sidebarLinks: SidebarLink[] = [
     {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    color: 'text-blue-500'
-  }, {
-    name: 'Documents',
-    href: '/documents',
-    icon: FileText,
-    color: 'text-green-500'
-  }, {
-    name: 'Standards',
-    href: '/standards',
-    icon: ClipboardCheck,
-    color: 'text-purple-500'
-  }, {
-    name: 'Organizations',
-    href: '/organizations',
-    icon: Building,
-    color: 'text-indigo-600'
-  }, {
-    name: 'Facilities',
-    href: '/facilities',
-    icon: Building2,
-    color: 'text-teal-500'
-  }, {
-    name: 'Audits',
-    href: '/audits',
-    icon: HardDrive,
-    color: 'text-yellow-600'
-  }, {
-    name: 'Non-Conformance',
-    href: '/non-conformance',
-    icon: AlertTriangle,
-    color: 'text-red-500'
-  }, {
-    name: 'CAPA',
-    href: '/capa',
-    icon: RefreshCw,
-    color: 'text-orange-500'
-  }, {
-    name: 'Suppliers',
-    href: '/suppliers',
-    icon: Truck,
-    color: 'text-pink-500'
-  }, {
-    name: 'Training',
-    href: '/training',
-    icon: GraduationCap,
-    color: 'text-indigo-500'
-  }, {
-    name: 'HACCP',
-    href: '/haccp',
-    icon: Beaker,
-    color: 'text-teal-500'
-  }, {
-    name: 'Traceability',
-    href: '/traceability',
-    icon: Activity,
-    color: 'text-cyan-500'
-  }
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      color: 'text-blue-500'
+    }, {
+      name: 'Documents',
+      href: '/documents',
+      icon: FileText,
+      color: 'text-green-500'
+    }, {
+      name: 'Standards',
+      href: '/standards-modules',
+      icon: ClipboardCheck,
+      color: 'text-purple-500'
+    }, {
+      name: 'Organizations',
+      href: '/organizations',
+      icon: Building,
+      color: 'text-indigo-600'
+    }, {
+      name: 'Facilities',
+      href: '/facilities',
+      icon: Building2,
+      color: 'text-teal-500'
+    }, {
+      name: 'Audits',
+      href: '/audits',
+      icon: HardDrive,
+      color: 'text-yellow-600'
+    }, {
+      name: 'Non-Conformance',
+      href: '/non-conformance',
+      icon: AlertTriangle,
+      color: 'text-red-500'
+    }, {
+      name: 'CAPA',
+      href: '/capa',
+      icon: RefreshCw,
+      color: 'text-orange-500'
+    }, {
+      name: 'Suppliers',
+      href: '/suppliers',
+      icon: Truck,
+      color: 'text-pink-500'
+    }, {
+      name: 'Training',
+      href: '/training',
+      icon: GraduationCap,
+      color: 'text-indigo-500'
+    }, {
+      name: 'HACCP',
+      href: '/haccp',
+      icon: Beaker,
+      color: 'text-emerald-500'
+    }, {
+      name: 'Traceability',
+      href: '/traceability',
+      icon: Activity,
+      color: 'text-cyan-500'
+    }
   ];
   
   const isActiveLink = (href: string) => {
@@ -101,41 +102,51 @@ const AppSidebar = () => {
   };
   
   return (
-    <Sidebar className="border-r border-border h-screen flex flex-col transition-all duration-300">
-      <div className="border-b border-border">
-        <div className="flex items-center justify-between px-4 py-2">
-          <Link to="/dashboard" className="flex items-center">
-            <span className="text-xl font-bold text-primary">Compliance Core</span>
+    <Sidebar className="h-screen flex flex-col transition-all duration-300">
+      <div className="border-b border-border/60">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link to="/dashboard" className="flex items-center space-x-2">
+            <div className="bg-gradient-to-r from-accent to-accent-light rounded-md p-1.5">
+              <ClipboardCheck className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Compliance Core</span>
           </Link>
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        <div className="space-y-1">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="space-y-1.5">
           {sidebarLinks.map(link => (
             <Link 
               key={link.href} 
               to={link.href}
               className={`
                 group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors
-                ${isActiveLink(link.href) ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-secondary hover:text-foreground'}
+                ${isActiveLink(link.href) 
+                  ? 'bg-gradient-to-r from-accent/10 to-primary/10 text-primary' 
+                  : 'text-foreground hover:bg-secondary hover:text-primary'}
               `}
             >
-              <link.icon className={`${isActiveLink(link.href) ? link.color : 'text-muted-foreground'} mr-3 h-5 w-5 flex-shrink-0`} />
+              <div className={`${isActiveLink(link.href) ? link.color : 'text-muted-foreground'} mr-3 h-5 w-5 flex-shrink-0 transition-all group-hover:scale-110`}>
+                <link.icon className="h-5 w-5" />
+              </div>
               <span>{link.name}</span>
+              {isActiveLink(link.href) && (
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-accent"></div>
+              )}
             </Link>
           ))}
         </div>
       </div>
       
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border/60 p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between px-2">
+            <Button variant="ghost" className="w-full justify-between px-2 hover:bg-secondary group">
               <div className="flex items-center">
-                <Avatar className="h-7 w-7 mr-2">
+                <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all">
                   <AvatarImage src={user?.avatar_url || ''} />
-                  <AvatarFallback>{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
+                  <AvatarFallback className="bg-accent/10 text-accent">{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="text-sm font-medium truncate">
                   {user?.full_name || user?.email || t('common.user')}
@@ -147,11 +158,11 @@ const AppSidebar = () => {
             <DropdownMenuLabel>{t('profile.title')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
-              <User className="mr-2 h-4 w-4" />
+              <User className="mr-2 h-4 w-4 text-blue-500" />
               {t('profile.viewProfile')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="mr-2 h-4 w-4 text-orange-500" />
               {t('profile.settings')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
