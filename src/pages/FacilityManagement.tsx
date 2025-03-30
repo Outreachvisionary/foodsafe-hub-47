@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -25,7 +24,6 @@ const facilityFormSchema = z.object({
     message: "Facility name must be at least 2 characters.",
   }),
   description: z.string().optional(),
-  facility_type: z.string().optional(),
   address: z.string().optional(),
   contact_email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
   contact_phone: z.string().optional(),
@@ -58,7 +56,6 @@ const FacilityManagement = () => {
     defaultValues: {
       name: '',
       description: '',
-      facility_type: '',
       address: '',
       contact_email: '',
       contact_phone: '',
@@ -113,7 +110,6 @@ const FacilityManagement = () => {
       form.reset({
         name: facilityData.name,
         description: facilityData.description || '',
-        facility_type: facilityData.facility_type || '',
         address: facilityData.address || '',
         contact_email: facilityData.contact_email || '',
         contact_phone: facilityData.contact_phone || '',
@@ -305,20 +301,6 @@ const FacilityManagement = () => {
                         <FormLabel>Description</FormLabel>
                         <FormControl>
                           <Input placeholder="Brief description of the facility" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="facility_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Facility Type</FormLabel>
-                        <FormControl>
-                          <Input placeholder="E.g. Manufacturing, Processing, Storage" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

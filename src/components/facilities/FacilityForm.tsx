@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from 'react-hook-form/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -21,7 +20,6 @@ const facilityFormSchema = z.object({
     message: "Facility name must be at least 2 characters.",
   }),
   description: z.string().optional(),
-  facility_type: z.string().optional(),
   address: z.string().optional(),
   contact_email: z.string().email({ message: "Invalid email address" }).optional().or(z.literal('')),
   contact_phone: z.string().optional(),
@@ -62,7 +60,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
-      facility_type: initialData?.facility_type || '',
       address: initialData?.address || '',
       contact_email: initialData?.contact_email || '',
       contact_phone: initialData?.contact_phone || '',
@@ -238,20 +235,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea placeholder="Brief description of the facility" {...field} value={field.value || ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="facility_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Facility Type</FormLabel>
-                <FormControl>
-                  <Input placeholder="E.g. Manufacturing, Processing, Storage" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -118,7 +118,6 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
       state?: string;
       country?: string;
       description?: string;
-      facility_type?: string;
       address?: string;
       contact_email?: string;
       contact_phone?: string;
@@ -135,7 +134,6 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
     if (facility.state) facilityData.state = capitalizeLocation(facility.state);
     if (facility.country) facilityData.country = facility.country;
     if (facility.description) facilityData.description = facility.description;
-    if (facility.facility_type) facilityData.facility_type = facility.facility_type;
     if (facility.address) facilityData.address = facility.address;
     if (facility.contact_email) facilityData.contact_email = facility.contact_email;
     if (facility.contact_phone) facilityData.contact_phone = facility.contact_phone;
@@ -167,16 +165,28 @@ export const updateFacility = async (id: string, updates: Partial<Facility>): Pr
   try {
     console.log('Updating facility:', id, 'with data:', updates);
     
-    // Capitalize location names if present
-    const processedUpdates = {
-      ...updates,
-      city: updates.city ? capitalizeLocation(updates.city) : updates.city,
-      state: updates.state ? capitalizeLocation(updates.state) : updates.state,
-    };
+    // Create a new object with only the fields that exist in the database
+    const cleanUpdates: Record<string, any> = {};
+    
+    // Include only the fields that are allowed to be updated
+    if (updates.name !== undefined) cleanUpdates.name = updates.name;
+    if (updates.description !== undefined) cleanUpdates.description = updates.description;
+    if (updates.status !== undefined) cleanUpdates.status = updates.status;
+    if (updates.address !== undefined) cleanUpdates.address = updates.address;
+    if (updates.city !== undefined) cleanUpdates.city = capitalizeLocation(updates.city);
+    if (updates.state !== undefined) cleanUpdates.state = capitalizeLocation(updates.state);
+    if (updates.country !== undefined) cleanUpdates.country = updates.country;
+    if (updates.zipcode !== undefined) cleanUpdates.zipcode = updates.zipcode;
+    if (updates.contact_email !== undefined) cleanUpdates.contact_email = updates.contact_email;
+    if (updates.contact_phone !== undefined) cleanUpdates.contact_phone = updates.contact_phone;
+    if (updates.location_data !== undefined) cleanUpdates.location_data = updates.location_data;
+    if (updates.organization_id !== undefined) cleanUpdates.organization_id = updates.organization_id;
+    
+    console.log('Cleaned updates for Supabase:', cleanUpdates);
     
     const { data, error } = await supabase
       .from('facilities')
-      .update(processedUpdates)
+      .update(cleanUpdates)
       .eq('id', id)
       .select()
       .single();
