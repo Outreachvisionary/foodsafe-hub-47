@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchRoles } from '@/services/roleService';
 import { fetchDepartments } from '@/services/departmentService';
+import OrganizationSelector from '@/components/organizations/OrganizationSelector';
+import { fetchOrganizations } from '@/services/organizationService';
 
 interface UserManagementProps {}
 
@@ -22,18 +25,46 @@ const UserManagement: React.FC<UserManagementProps> = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(undefined);
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
   const { toast } = useToast();
   
   useEffect(() => {
-    fetchUsers();
-    loadRolesAndDepartments();
+    loadOrganizations();
   }, []);
+  
+  useEffect(() => {
+    if (selectedOrganizationId) {
+      fetchUsers();
+      loadRolesAndDepartments();
+    }
+  }, [selectedOrganizationId]);
+  
+  const loadOrganizations = async () => {
+    try {
+      const orgsData = await fetchOrganizations();
+      setOrganizations(orgsData.map(org => ({ id: org.id, name: org.name })));
+      
+      if (orgsData.length > 0) {
+        setSelectedOrganizationId(orgsData[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading organizations:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load organizations',
+        variant: 'destructive'
+      });
+    }
+  };
   
   const loadRolesAndDepartments = async () => {
     try {
+      if (!selectedOrganizationId) return;
+      
       const [rolesData, departmentsData] = await Promise.all([
         fetchRoles(),
-        fetchDepartments()
+        fetchDepartments(selectedOrganizationId)
       ]);
       
       setRoles(rolesData.map(role => ({ id: role.id, name: role.name })));
@@ -53,11 +84,21 @@ const UserManagement: React.FC<UserManagementProps> = () => {
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
+      console.log('Fetching profiles...');
+      let query = supabase.from('profiles').select('*');
       
-      if (error) throw error;
+      if (selectedOrganizationId) {
+        query = query.eq('organization_id', selectedOrganizationId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('User profiles retrieved:', data);
       
       const formattedUsers = data.map(user => ({
         id: user.id,
@@ -90,6 +131,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
   
   const updateUserProfile = async (id: string, updates: Partial<UserProfile>) => {
     try {
+      console.log('Updating user profile:', id, 'with data:', updates);
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -97,7 +139,12 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
+      
+      console.log('Updated profile:', data);
       
       setUsers(users.map(user => 
         user.id === id ? { ...user, ...updates } : user
@@ -131,6 +178,10 @@ const UserManagement: React.FC<UserManagementProps> = () => {
     setDialogOpen(true);
   };
   
+  const handleOrganizationChange = (orgId: string) => {
+    setSelectedOrganizationId(orgId);
+  };
+  
   return (
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
@@ -143,6 +194,17 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         }}>
           Invite New User
         </Button>
+      </div>
+      
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-1">Organization</label>
+        <div className="max-w-md">
+          <OrganizationSelector 
+            value={selectedOrganizationId}
+            onChange={handleOrganizationChange}
+            className="w-full"
+          />
+        </div>
       </div>
       
       {error && (
@@ -190,7 +252,9 @@ const UserManagement: React.FC<UserManagementProps> = () => {
                   </div>
                 </TableCell>
                 <TableCell>{user.role || 'No role assigned'}</TableCell>
-                <TableCell>{user.department || 'No department'}</TableCell>
+                <TableCell>
+                  {departments.find(d => d.id === user.department_id)?.name || user.department || 'No department'}
+                </TableCell>
                 <TableCell>
                   <Badge 
                     variant={user.status === 'active' ? 'default' : 
@@ -246,6 +310,17 @@ const UserManagement: React.FC<UserManagementProps> = () => {
               </div>
               
               <div>
+                <label className="block text-sm font-medium mb-1">Organization</label>
+                <OrganizationSelector 
+                  value={currentUser.organization_id || selectedOrganizationId}
+                  onChange={(orgId) => {
+                    setCurrentUser({...currentUser, organization_id: orgId});
+                  }}
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
                 <label className="block text-sm font-medium mb-1">Role</label>
                 <Select 
                   value={currentUser.role || ''}
@@ -288,7 +363,8 @@ const UserManagement: React.FC<UserManagementProps> = () => {
                     updateUserProfile(currentUser.id, {
                       full_name: currentUser.full_name,
                       role: currentUser.role,
-                      department_id: currentUser.department_id
+                      department_id: currentUser.department_id,
+                      organization_id: currentUser.organization_id
                     });
                   }
                 }}>
