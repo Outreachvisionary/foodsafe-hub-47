@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Editor } from '@tinymce/tinymce-react';
+import TinyMCEEditorWrapper from './TinyMCEEditorWrapper';
 import { 
   Save, 
   History, 
@@ -289,32 +288,12 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </TabsList>
           
           <TabsContent value="edit" className="flex-grow overflow-auto">
-            <Editor
-              apiKey="no-api-key" // You can use without an API key for testing or add your own
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={content}
-              disabled={readOnly}
-              init={{
-                height: 500,
-                menubar: true,
-                plugins: [
-                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                  'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                  'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                  'template'
-                ],
-                toolbar: 'undo redo | blocks | ' +
-                  'bold italic forecolor | alignleft aligncenter ' +
-                  'alignright alignjustify | bullist numlist outdent indent | ' +
-                  'removeformat | help',
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                resize: false,
-                branding: false,
-                promotion: false,
-                statusbar: true,
-                readonly: readOnly
-              }}
-              onEditorChange={handleEditorChange}
+            <TinyMCEEditorWrapper
+              content={content}
+              onChange={handleEditorChange}
+              documentId={document.id}
+              readOnly={readOnly}
+              height={500}
             />
           </TabsContent>
           

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,8 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
-  const editorRef = useRef<any>(null);
+  const [editorContent, setEditorContent] = useState(content);
+  const editorRef = useRef<ReactQuill>(null);
   const { toast } = useToast();
   
   // Initialize editor session
@@ -48,7 +50,7 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
           .from('document_editor_sessions')
           .insert({
             document_id: documentId,
-            user_id: user.id, // Add the user ID
+            user_id: user.id,
             is_active: true,
             session_data: { last_content: content }
           })
@@ -67,6 +69,8 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
     // Set up polling for active users
     const interval = setInterval(fetchActiveUsers, 30000);
     fetchActiveUsers();
+
+    setIsLoading(false);
     
     return () => {
       clearInterval(interval);
@@ -116,7 +120,7 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
           is_active: false,
           last_activity: new Date().toISOString(),
           session_data: {
-            last_content: editorRef.current ? editorRef.current.getContent() : content
+            last_content: editorContent
           }
         })
         .eq('id', sessionId);
@@ -143,28 +147,46 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
   };
   
   // Handle editor content change
-  const handleEditorChange = (content: string) => {
-    if (onChange) onChange(content);
+  const handleEditorChange = (value: string) => {
+    setEditorContent(value);
+    if (onChange) onChange(value);
     
     // Debounce updates to reduce database load
     const timeoutId = setTimeout(() => {
-      updateSessionActivity(content);
+      updateSessionActivity(value);
     }, 5000);
     
     return () => clearTimeout(timeoutId);
   };
 
-  const defaultPlugins = [
-    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-    'template'
+  // Quill editor modules and formats
+  const modules = {
+    toolbar: toolbar ? JSON.parse(toolbar) : [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'indent',
+    'color', 'background',
+    'align',
+    'link', 'image'
   ];
 
-  const defaultToolbar = 'undo redo | blocks | ' +
-    'bold italic forecolor | alignleft aligncenter ' +
-    'alignright alignjustify | bullist numlist outdent indent | ' +
-    'removeformat | help';
+  const editorStyle = {
+    height: `${height}px`,
+    width: '100%',
+    marginBottom: '20px',
+  };
 
   return (
     <div className="relative">
@@ -174,27 +196,15 @@ const TinyMCEEditorWrapper: React.FC<TinyMCEEditorWrapperProps> = ({
         </div>
       )}
       
-      <Editor
-        apiKey="no-api-key" // You can use without an API key for testing or add your own
-        onInit={(evt, editor) => {
-          editorRef.current = editor;
-          setIsLoading(false);
-        }}
-        initialValue={content}
-        onEditorChange={handleEditorChange}
-        disabled={readOnly}
-        init={{
-          height,
-          menubar: true,
-          plugins: plugins || defaultPlugins,
-          toolbar: toolbar || defaultToolbar,
-          content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-          resize: false,
-          branding: false,
-          promotion: false,
-          statusbar: true,
-          readonly: readOnly
-        }}
+      <ReactQuill
+        ref={editorRef}
+        theme="snow"
+        value={editorContent}
+        onChange={handleEditorChange}
+        modules={modules}
+        formats={formats}
+        style={editorStyle}
+        readOnly={readOnly}
       />
       
       {activeUsers.length > 1 && !readOnly && (
