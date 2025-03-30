@@ -109,16 +109,44 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
       throw new Error('Facility name is required');
     }
     
-    // Capitalize location names if present
-    const processedFacility = {
-      ...facility,
-      city: facility.city ? capitalizeLocation(facility.city) : facility.city,
-      state: facility.state ? capitalizeLocation(facility.state) : facility.state,
+    // Create a properly typed facility object with required fields
+    const facilityData: { 
+      name: string;
+      organization_id: string;
+      status: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      description?: string;
+      facility_type?: string;
+      address?: string;
+      contact_email?: string;
+      contact_phone?: string;
+      zipcode?: string;
+      location_data?: Record<string, any>;
+    } = {
+      name: facility.name,
+      organization_id: facility.organization_id,
+      status: facility.status || 'active',
     };
+    
+    // Add optional fields if they exist
+    if (facility.city) facilityData.city = capitalizeLocation(facility.city);
+    if (facility.state) facilityData.state = capitalizeLocation(facility.state);
+    if (facility.country) facilityData.country = facility.country;
+    if (facility.description) facilityData.description = facility.description;
+    if (facility.facility_type) facilityData.facility_type = facility.facility_type;
+    if (facility.address) facilityData.address = facility.address;
+    if (facility.contact_email) facilityData.contact_email = facility.contact_email;
+    if (facility.contact_phone) facilityData.contact_phone = facility.contact_phone;
+    if (facility.zipcode) facilityData.zipcode = facility.zipcode;
+    if (facility.location_data) facilityData.location_data = facility.location_data;
+    
+    console.log('Sending facility data to Supabase:', facilityData);
     
     const { data, error } = await supabase
       .from('facilities')
-      .insert(processedFacility)
+      .insert(facilityData)
       .select()
       .single();
     
