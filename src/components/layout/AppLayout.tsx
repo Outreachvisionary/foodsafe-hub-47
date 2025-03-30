@@ -11,6 +11,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
   showBackButton?: boolean;
   onBack?: () => void;
+  actions?: React.ReactNode; // Added actions prop
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -18,7 +19,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   subtitle, 
   children, 
   showBackButton,
-  onBack
+  onBack,
+  actions
 }) => {
   const navigate = useNavigate();
 
@@ -38,12 +40,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             <h1 className="text-2xl font-semibold text-foreground mb-1">{title}</h1>
             {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
           </div>
-          {showBackButton && (
-            <Button variant="outline" onClick={handleBack} className="flex items-center">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back
-            </Button>
-          )}
+          <div className="flex items-center space-x-2">
+            {showBackButton && (
+              <Button variant="outline" onClick={handleBack} className="flex items-center">
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            )}
+            {actions}
+          </div>
         </div>
       </div>
       <div className="bg-white border border-border rounded-lg shadow-sm p-6">
