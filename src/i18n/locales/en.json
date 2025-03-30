@@ -30,18 +30,16 @@
     "openIssues": "Open Issues",
     "documentStatus": "Document Status"
   },
-{
   "documents": {
+    "title": "Document Management",
+    "subtitle": "Centralized repository for all compliance documentation",
     "repository": "Document Repository",
     "approvals": "Approval Workflow",
     "expired": "Expiring Documents",
     "templates": "Templates",
     "editor": "Document Editor",
     "controlSystem": "Documents Control System",
-    "createNewDocument": "Create New Document"
-  }
-}
-
+    "createNewDocument": "Create New Document",
     "search": "Search documents...",
     "category": "Category",
     "status": "Status",
