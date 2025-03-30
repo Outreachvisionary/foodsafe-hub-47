@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -77,8 +76,8 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     if (!document || !previewUrl) return;
     
     try {
-      // Create a temporary anchor and trigger download using browser DOM API
-      const a = document.createElement ? document.createElement('a') : window.document.createElement('a');
+      // Use window.document instead of document to avoid confusion with the document prop
+      const a = window.document.createElement('a');
       a.href = previewUrl;
       a.download = document.file_name;
       window.document.body.appendChild(a);
@@ -240,4 +239,3 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
 };
 
 export default DocumentPreviewDialog;
-
