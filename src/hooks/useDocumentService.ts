@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { Document, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { useToast } from './use-toast';
 import { supabase, initializeStorage } from '@/integrations/supabase/client';
+import { uploadFileWithRetry } from '@/utils/fileStorage';
 
 // Debug flag - turn on for more verbose logging
 const DEBUG_MODE = true;
@@ -211,19 +213,16 @@ export function useDocumentService() {
         }
       }
       
-      const { error: uploadError } = await supabase.storage
-        .from('attachments')
-        .upload(path, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        throw uploadError;
-      }
+      // Use our enhanced upload function with retry capabilities
+      const result = await uploadFileWithRetry(file, 'attachments', path, {
+        upsert: true,
+        maxRetries: 3,
+        progressCallback: (progress) => {
+          debugLog(`Upload progress: ${progress}%`);
+        }
+      });
       
-      debugLog('File uploaded successfully to path:', path);
+      debugLog('File uploaded successfully to path:', path, 'Public URL:', result.url);
       return true;
     } catch (err) {
       console.error('Error uploading file:', err);

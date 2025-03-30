@@ -145,7 +145,8 @@ export const getFileUrl = async (
       width?: number;
       height?: number;
       resize?: 'cover' | 'contain' | 'fill';
-      format?: 'origin' | 'webp' | 'avif';
+      // Fix: Restrict format to just 'origin' to match Supabase's TransformOptions type
+      format?: 'origin';
       quality?: number;
     };
   }

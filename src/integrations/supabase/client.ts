@@ -25,12 +25,29 @@ export const initializeStorage = async () => {
     const attachmentsBucket = buckets.find(bucket => bucket.name === 'attachments');
     
     if (!attachmentsBucket) {
-      console.log('Attachments bucket not found in the list of buckets. Available buckets:', buckets.map(b => b.name).join(', '));
-      console.log('Please ensure the "attachments" bucket is created in Supabase.');
-      return false;
+      console.log('Attachments bucket not found. Available buckets:', buckets.map(b => b.name).join(', '));
+      console.log('Creating attachments bucket...');
+      
+      // Create the attachments bucket if it doesn't exist
+      try {
+        const { error: createError } = await supabase.storage.createBucket('attachments', {
+          public: true,
+          fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
+        });
+        
+        if (createError) {
+          console.error('Error creating attachments bucket:', createError);
+          return false;
+        }
+        
+        console.log('Attachments bucket created successfully');
+      } catch (createErr) {
+        console.error('Error creating attachments bucket:', createErr);
+        return false;
+      }
+    } else {
+      console.log('Attachments bucket exists:', attachmentsBucket);
     }
-    
-    console.log('Attachments bucket exists:', attachmentsBucket);
     
     // Test access to the bucket
     try {
