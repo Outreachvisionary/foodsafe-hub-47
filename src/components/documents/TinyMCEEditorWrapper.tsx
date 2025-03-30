@@ -30,7 +30,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Initialize editor session
   useEffect(() => {
-    if (!documentId || readOnly) return;
+    if (!documentId || readOnly || !supabase) return;
+    
+    // Only attempt to create a session if documentId is a valid UUID
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
+      console.log('Invalid document ID format for editor session:', documentId);
+      return;
+    }
     
     const createSession = async () => {
       try {
@@ -74,7 +80,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Fetch active users
   const fetchActiveUsers = async () => {
-    if (!documentId) return;
+    if (!documentId || !supabase || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) return;
     
     try {
       const { data, error } = await supabase
@@ -105,7 +111,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Close session when component unmounts
   const closeSession = async () => {
-    if (!sessionId) return;
+    if (!sessionId || !supabase) return;
     
     try {
       await supabase
@@ -125,7 +131,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   
   // Update session activity on content change
   const updateSessionActivity = async (newContent: string) => {
-    if (!sessionId) return;
+    if (!sessionId || !supabase) return;
     
     try {
       await supabase
@@ -167,33 +173,35 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </div>
       )}
       
-      <div style={{ height: `${height}px` }}>
-        <CKEditor
-          editor={ClassicEditor}
-          data={content}
-          onReady={(editor) => {
-            editorRef.current = editor;
-            setIsLoading(false);
-            
-            // Set read-only state after editor is ready
-            if (readOnly) {
-              editor.isReadOnly = true;
-            }
-          }}
-          onChange={handleEditorChange}
-          config={{
-            toolbar: [
-              'heading', '|', 
-              'bold', 'italic', 'link', '|',
-              'bulletedList', 'numberedList', '|',
-              'blockQuote', 'insertTable', '|',
-              'undo', 'redo'
-            ],
-            placeholder: 'Type your content here...'
-            // The correct approach is to set readOnly through the editor instance
-            // rather than in the config object
-          }}
-        />
+      <div style={{ height: `${height}px` }} className="overflow-auto border rounded-md">
+        {content !== null && (
+          <CKEditor
+            editor={ClassicEditor}
+            data={content || ''}
+            onReady={(editor) => {
+              editorRef.current = editor;
+              setIsLoading(false);
+              
+              // Set read-only state after editor is ready
+              if (readOnly) {
+                editor.isReadOnly = true;
+              }
+            }}
+            onChange={handleEditorChange}
+            config={{
+              toolbar: [
+                'heading', '|', 
+                'bold', 'italic', 'link', '|',
+                'bulletedList', 'numberedList', '|',
+                'blockQuote', 'insertTable', '|',
+                'undo', 'redo'
+              ],
+              placeholder: 'Type your content here...'
+              // The correct approach is to set readOnly through the editor instance
+              // rather than in the config object
+            }}
+          />
+        )}
       </div>
       
       {activeUsers.length > 1 && !readOnly && (

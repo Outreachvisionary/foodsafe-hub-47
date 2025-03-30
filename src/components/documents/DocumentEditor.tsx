@@ -60,6 +60,11 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   }, [document, readOnly]);
 
   const createEditorSession = async (documentId: string) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
+      console.log('Skipping editor session creation for invalid document ID:', documentId);
+      return;
+    }
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -148,7 +153,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           .update({
             editor_metadata: {
               last_saved: new Date().toISOString(),
-              editor: 'tinymce'
+              editor: 'ckeditor'
             }
           })
           .eq('id', document.current_version_id);
