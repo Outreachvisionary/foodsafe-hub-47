@@ -1,408 +1,270 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { Save, Send, Clock, AlertTriangle } from 'lucide-react';
 import RichTextEditor from './TinyMCEEditorWrapper';
-import { 
-  Save, 
-  History, 
-  Send, 
-  MessageSquare, 
-  User, 
-  Clock, 
-  FileText, 
-  CheckCircle,
-  Loader2
-} from 'lucide-react';
-import { Document, DocumentStatus } from '@/types/database';
-import { supabase } from '@/integrations/supabase/client';
+import DocumentVersionHistory from './DocumentVersionHistory';
+import DocumentComments from './DocumentComments';
+import { useToast } from '@/hooks/use-toast';
+import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentEditorProps {
-  document: Document | null;
-  onSave?: (updatedDoc: Document) => void;
-  onSubmitForReview?: (doc: Document) => void;
+  document: Document;
+  onSave?: (document: Document) => void;
+  onSubmitForReview?: (document: Document) => void;
   readOnly?: boolean;
 }
 
-const DocumentEditor: React.FC<DocumentEditorProps> = ({ 
-  document, 
-  onSave, 
+const DocumentEditor: React.FC<DocumentEditorProps> = ({
+  document,
+  onSave,
   onSubmitForReview,
   readOnly = false
 }) => {
-  const [content, setContent] = useState<string>('');
-  const [title, setTitle] = useState<string>('');
-  const [comment, setComment] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('edit');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [documentContent, setDocumentContent] = useState<string>("");
+  const [documentTitle, setDocumentTitle] = useState(document.title);
+  const [documentDescription, setDocumentDescription] = useState(document.description || "");
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const documentService = useDocumentService();
 
   useEffect(() => {
-    if (document) {
-      setTitle(document.title || '');
-      setContent(document.description || '');
-      
-      if (!readOnly && document.id) {
-        createEditorSession(document.id);
-      }
-    }
-    
-    return () => {
-      if (sessionId) {
-        closeEditorSession(sessionId);
+    const loadDocumentContent = async () => {
+      setIsLoading(true);
+      try {
+        const versions = await documentService.fetchVersions(document.id);
+        if (versions && versions.length > 0) {
+          const latestVersion = versions[0];
+          if (latestVersion.editor_metadata && latestVersion.editor_metadata.content) {
+            setDocumentContent(latestVersion.editor_metadata.content);
+          } else {
+            setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+          }
+        } else {
+          setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+        }
+      } catch (error) {
+        console.error('Error loading document content:', error);
+        setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+        toast({
+          title: "Error",
+          description: "Failed to load document content",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [document, readOnly]);
 
-  const createEditorSession = async (documentId: string) => {
-    if (!documentId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(documentId)) {
-      console.log('Skipping editor session creation for invalid document ID:', documentId);
-      return;
-    }
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error('No authenticated user found');
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('document_editor_sessions')
-        .insert({
-          document_id: documentId,
-          user_id: user.id,
-          is_active: true,
-          session_data: { last_content: content }
-        })
-        .select('id')
-        .single();
-      
-      if (error) throw error;
-      if (data) setSessionId(data.id);
-    } catch (error) {
-      console.error('Error creating editor session:', error);
-    }
-  };
-
-  const closeEditorSession = async (id: string) => {
-    try {
-      await supabase
-        .from('document_editor_sessions')
-        .update({
-          is_active: false,
-          last_activity: new Date().toISOString()
-        })
-        .eq('id', id);
-    } catch (error) {
-      console.error('Error closing editor session:', error);
-    }
-  };
-
-  const updateSessionActivity = async () => {
-    if (!sessionId) return;
-    
-    try {
-      await supabase
-        .from('document_editor_sessions')
-        .update({
-          last_activity: new Date().toISOString(),
-          session_data: {
-            last_content: content
-          }
-        })
-        .eq('id', sessionId);
-    } catch (error) {
-      console.error('Error updating session activity:', error);
-    }
-  };
-
-  const handleEditorChange = (newContent: string) => {
-    setContent(newContent);
-    const timeoutId = setTimeout(() => {
-      updateSessionActivity();
-    }, 5000);
-    return () => clearTimeout(timeoutId);
-  };
+    setDocumentTitle(document.title);
+    setDocumentDescription(document.description || "");
+    loadDocumentContent();
+  }, [document]);
 
   const handleSave = async () => {
-    if (!document) return;
-    setIsLoading(true);
-    
-    try {
-      const updatedDoc = {
-        ...document,
-        title,
-        description: content,
-        updated_at: new Date().toISOString()
-      };
-      
-      onSave?.(updatedDoc);
-      
-      if (document.current_version_id) {
-        await supabase
-          .from('document_versions')
-          .update({
-            editor_metadata: {
-              last_saved: new Date().toISOString(),
-              editor: 'ckeditor'
-            }
-          })
-          .eq('id', document.current_version_id);
-      }
-      
+    if (readOnly) {
       toast({
-        title: "Document saved",
-        description: "Your changes have been saved successfully.",
+        title: "Cannot save",
+        description: "This document is currently in read-only mode",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Update document metadata
+      const updatedDocument = await documentService.updateDocument(document.id, {
+        title: documentTitle,
+        description: documentDescription,
+        updated_at: new Date().toISOString()
+      });
+
+      // Create a new version with the content
+      await documentService.createVersion({
+        document_id: document.id,
+        file_name: document.file_name,
+        file_size: document.file_size,
+        created_by: 'admin',
+        editor_metadata: { content: documentContent }
+      });
+
+      // Record the activity
+      await documentService.recordActivity({
+        document_id: document.id,
+        action: 'edit',
+        user_id: 'admin',
+        user_name: 'Administrator',
+        user_role: 'Admin',
+        comments: 'Updated document content'
+      });
+
+      toast({
+        title: "Success",
+        description: "Document saved successfully",
+      });
+
+      if (onSave && updatedDocument) {
+        onSave(updatedDocument);
+      }
     } catch (error) {
       console.error('Error saving document:', error);
       toast({
-        title: "Error saving document",
-        description: "There was a problem saving your changes.",
-        variant: "destructive"
+        title: "Error",
+        description: "Failed to save document",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   const handleSubmitForReview = () => {
-    if (!document) return;
-    setIsLoading(true);
-    
-    try {
-      const docForReview = {
-        ...document,
-        title,
-        description: content,
-        status: 'Pending Approval' as DocumentStatus,
-        updated_at: new Date().toISOString()
-      };
-      
-      onSubmitForReview?.(docForReview);
-      
+    if (readOnly) {
       toast({
-        title: "Submitted for review",
-        description: "Document has been submitted for review and approval.",
+        title: "Cannot submit",
+        description: "This document is currently in read-only mode",
+        variant: "destructive",
       });
-    } catch (error) {
-      console.error('Error submitting document for review:', error);
-      toast({
-        title: "Error submitting document",
-        description: "There was a problem submitting your document for review.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    if (onSubmitForReview) {
+      onSubmitForReview(document);
     }
   };
 
-  const handleAddComment = () => {
-    if (!comment.trim()) return;
-    
-    toast({
-      title: "Comment added",
-      description: "Your comment has been added to the document.",
-    });
-    
-    setComment('');
-  };
-
-  if (!document) {
-    return <div>No document selected</div>;
-  }
-
   return (
-    <Card className="h-full flex flex-col animate-fade-in">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-xl">
-            {readOnly ? (
-              <div className="flex items-baseline gap-2">
-                <span>{title}</span>
-                <Badge className="ml-2" variant={document.status === 'Published' ? 'default' : 'outline'}>
-                  {document.status}
-                </Badge>
-              </div>
-            ) : (
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-xl font-semibold"
-                disabled={readOnly}
-              />
-            )}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700">v{document.version}</Badge>
-            {document.status === 'Draft' && !readOnly && (
-              <Button 
-                variant="outline" 
-                onClick={handleSubmitForReview} 
-                className="flex items-center gap-1"
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                <span>Submit for Review</span>
-              </Button>
-            )}
-            {!readOnly && (
-              <Button 
-                onClick={handleSave} 
-                className="flex items-center gap-1"
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span>Save</span>
-              </Button>
-            )}
-          </div>
+    <div className="flex flex-col h-full">
+      {readOnly && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-md mb-4 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5" />
+          <span>This document is currently in read-only mode. You cannot make changes.</span>
         </div>
-      </CardHeader>
-      <CardContent className="flex-grow overflow-hidden">
-        <Tabs defaultValue="edit" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList>
-            <TabsTrigger value="edit" className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              <span>{readOnly ? 'View' : 'Edit'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              <span>Comments</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1">
-              <History className="h-4 w-4" />
-              <span>History</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="edit" className="flex-grow overflow-auto">
-            {document && document.id && (
-              <RichTextEditor
-                content={content}
-                onChange={handleEditorChange}
-                readOnly={readOnly}
-                documentId={document.id}
-              />
-            )}
-          </TabsContent>
-          
-          <TabsContent value="comments" className="h-full flex flex-col">
-            <div className="flex-grow overflow-auto border rounded-md p-4 mb-4">
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="bg-blue-100 rounded-full p-1">
-                      <User className="h-4 w-4 text-blue-700" />
-                    </div>
-                    <span className="font-medium">Jane Smith</span>
-                    <span className="text-gray-500 text-sm">• 2 days ago</span>
-                  </div>
-                  <p className="text-gray-700">Please update section 3.2 to include the new sanitation procedures.</p>
-                </div>
-                
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="bg-green-100 rounded-full p-1">
-                      <User className="h-4 w-4 text-green-700" />
-                    </div>
-                    <span className="font-medium">John Doe</span>
-                    <span className="text-gray-500 text-sm">• 1 day ago</span>
-                  </div>
-                  <p className="text-gray-700">Added the requested changes to section 3.2 and updated references.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-grow"
-              />
-              <Button onClick={handleAddComment} className="self-end">Add Comment</Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="history" className="h-full overflow-auto">
-            <div className="space-y-4">
-              <div className="border-b pb-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h4 className="font-medium">Version 3 (Current)</h4>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>Updated {document.updated_at ? new Date(document.updated_at).toLocaleDateString() : 'Unknown'}</span>
-                    </div>
-                  </div>
-                  <Badge>Current</Badge>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Updated procedures in section 4.1</p>
-                <div className="flex gap-2 mt-2">
-                  <Button variant="outline" size="sm">View</Button>
-                  <Button variant="outline" size="sm">Restore</Button>
-                </div>
-              </div>
-              
-              <div className="border-b pb-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h4 className="font-medium">Version 2</h4>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>Updated 2023-09-15</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Added compliance references and updated formatting</p>
-                <div className="flex gap-2 mt-2">
-                  <Button variant="outline" size="sm">View</Button>
-                  <Button variant="outline" size="sm">Restore</Button>
-                  <Button variant="outline" size="sm">Compare with Current</Button>
-                </div>
-              </div>
-              
-              <div className="pb-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h4 className="font-medium">Version 1</h4>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>Created 2023-06-10</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Initial document creation</p>
-                <div className="flex gap-2 mt-2">
-                  <Button variant="outline" size="sm">View</Button>
-                  <Button variant="outline" size="sm">Restore</Button>
-                  <Button variant="outline" size="sm">Compare with Current</Button>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
+      )}
       
-      <CardFooter className="flex justify-between text-sm text-gray-500 pt-2 border-t">
-        <div className="flex items-center gap-1">
-          <User className="h-3 w-3" />
-          <span>Last edited by: {document.created_by}</span>
+      <div className="mb-6 space-y-4">
+        <div>
+          <Label htmlFor="document-title">Title</Label>
+          <Input
+            id="document-title"
+            value={documentTitle}
+            onChange={(e) => setDocumentTitle(e.target.value)}
+            className="text-lg font-medium"
+            readOnly={readOnly}
+          />
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span>Last updated: {document.updated_at ? new Date(document.updated_at).toLocaleString() : 'Unknown'}</span>
+        
+        <div>
+          <Label htmlFor="document-description">Description</Label>
+          <Input
+            id="document-description"
+            value={documentDescription}
+            onChange={(e) => setDocumentDescription(e.target.value)}
+            className="text-base"
+            readOnly={readOnly}
+          />
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+      
+      <Tabs defaultValue="editor" className="flex-1">
+        <TabsList className="mb-4">
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
+          <TabsTrigger value="history">Version History</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="editor" className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Document Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RichTextEditor 
+                content={documentContent} 
+                onChange={setDocumentContent}
+                documentId={document.id}
+                readOnly={readOnly}
+                height={500}
+              />
+              
+              {!readOnly && (
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsVersionHistoryOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="h-4 w-4" />
+                    Version History
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleSubmitForReview}
+                    className="flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Submit for Review
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="comments" className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Comments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DocumentComments documentId={document.id} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="history" className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Version History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={() => setIsVersionHistoryOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                View Version History
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <DocumentVersionHistory
+        document={document}
+        open={isVersionHistoryOpen}
+        onOpenChange={setIsVersionHistoryOpen}
+      />
+    </div>
   );
 };
 

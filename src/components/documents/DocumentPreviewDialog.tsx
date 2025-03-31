@@ -1,320 +1,368 @@
-
 import React, { useState, useEffect } from 'react';
+import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
-import { Document } from '@/types/database';
-import { useDocumentService } from '@/hooks/useDocumentService';
-import { Loader2, FileText, Download, Copy, Share, Info, Eye, Edit, Trash2, X } from 'lucide-react';
-import { format } from 'date-fns';
-import DocumentVersionHistory from './DocumentVersionHistory';
-import DocumentComments from './DocumentComments';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Download, Edit, Copy, Save, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import RichTextEditor from './TinyMCEEditorWrapper';
+import { DocumentComment } from '@/types/document-comment';
+import DocumentComments from './DocumentComments';
 
-interface DocumentPreviewProps {
+interface DocumentPreviewDialogProps {
   document: Document;
   onClose?: () => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }
 
-const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({ 
-  document, 
-  onClose, 
-  open, 
-  onOpenChange 
-}) => {
-  const [activeTab, setActiveTab] = useState('preview');
-  const [isLoading, setIsLoading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
+const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ document, onClose }) => {
+  const [activeTab, setActiveTab] = useState<string>("preview");
+  const [isEditing, setIsEditing] = useState(false);
+  const [documentContent, setDocumentContent] = useState<string>("");
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   const documentService = useDocumentService();
 
   useEffect(() => {
-    const loadPreview = async () => {
-      if (!document) return;
-      
+    const loadDocumentPreview = async () => {
       setIsLoading(true);
-      setPreviewError(null);
-      
       try {
-        // Try to get a URL for in-browser preview
-        const storagePath = documentService.getStoragePath(document.id, document.file_name);
-        const url = await documentService.getDownloadUrl(storagePath);
-        setPreviewUrl(url);
-        
-        // For certain file types, we need to handle preview differently
-        if (document.file_type && (
-            document.file_type.includes('pdf') || 
-            document.file_type.includes('image') ||
-            document.file_type.includes('text') ||
-            document.file_type.includes('html')
-        )) {
-          // These file types can be previewed directly
-          console.log("File can be previewed in browser:", document.file_type);
+        if (document.file_type?.startsWith('image/')) {
+          // Handle images
+          const previewInfo = await documentService.getPreviewUrl(
+            document.id, 
+            document.file_name, 
+            document.file_type
+          );
+          setIframeUrl(previewInfo.url);
+          setDocumentContent("");
+        } else if (document.file_type === 'application/pdf') {
+          // Handle PDFs
+          const previewInfo = await documentService.getPreviewUrl(
+            document.id, 
+            document.file_name, 
+            document.file_type
+          );
+          setIframeUrl(previewInfo.url);
+          setDocumentContent("");
+        } else if (document.file_type === 'text/plain' || document.file_type === 'text/html' || document.file_type?.includes('document')) {
+          // Handle text and document files
+          try {
+            const versions = await documentService.fetchVersions(document.id);
+            if (versions && versions.length > 0) {
+              const latestVersion = versions[0];
+              if (latestVersion.editor_metadata && latestVersion.editor_metadata.content) {
+                setDocumentContent(latestVersion.editor_metadata.content);
+              } else {
+                setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+              }
+            } else {
+              setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+            }
+            setIframeUrl(null);
+          } catch (err) {
+            console.error("Error fetching document versions:", err);
+            setDocumentContent(`<h1>${document.title}</h1><p>${document.description || ''}</p>`);
+          }
         } else {
-          // Set an error for file types that can't be previewed in browser
-          setPreviewError(`File type ${document.file_type} cannot be previewed directly.`);
+          // Other file types - provide download instead of preview
+          setDocumentContent(`<div class="text-center p-8">
+            <p class="mb-4">Preview not available for this file type (${document.file_type}).</p>
+            <p>Please download the file to view it.</p>
+          </div>`);
+          setIframeUrl(null);
         }
       } catch (error) {
         console.error('Error loading document preview:', error);
-        setPreviewError('Failed to load document preview');
+        setDocumentContent(`<div class="text-center p-8">
+          <p class="mb-4">Error loading preview.</p>
+          <p>Please try downloading the file instead.</p>
+        </div>`);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    loadPreview();
+
+    loadDocumentPreview();
   }, [document]);
 
   const handleDownload = async () => {
-    if (!document || !previewUrl) return;
-    
     try {
-      // Create a temporary anchor element to trigger the download
-      const link = window.document.createElement('a');
-      link.href = previewUrl;
-      link.download = document.file_name;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
+      const url = await documentService.getDownloadUrl(
+        documentService.getStoragePath(document.id, document.file_name)
+      );
+      
+      // Create a temporary link and click it
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = document.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Download initiated",
+        description: `Downloading ${document.file_name}`,
+      });
     } catch (error) {
       console.error('Error downloading document:', error);
+      toast({
+        title: "Download failed",
+        description: "Could not download the document",
+        variant: "destructive",
+      });
     }
   };
 
-  if (!document) return null;
+  const handleSaveContent = async () => {
+    try {
+      // Create a new document version with the edited content
+      await documentService.createVersion({
+        document_id: document.id,
+        file_name: document.file_name,
+        file_size: document.file_size,
+        created_by: 'admin',
+        editor_metadata: { content: documentContent }
+      });
 
-  // Use the onClose prop if provided, otherwise use onOpenChange
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    } else if (onOpenChange) {
-      onOpenChange(false);
+      // Record the activity
+      await documentService.recordActivity({
+        document_id: document.id,
+        action: 'edit',
+        user_id: 'admin',
+        user_name: 'Administrator',
+        user_role: 'Admin',
+        comments: 'Edited document content'
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Document content updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving document content:', error);
+      toast({
+        title: "Save failed",
+        description: "Could not save the document content",
+        variant: "destructive",
+      });
     }
+  };
+
+  const renderPreviewContent = () => {
+    if (isLoading) {
+      return <div className="flex justify-center items-center h-96">Loading preview...</div>;
+    }
+
+    if (iframeUrl) {
+      return (
+        <iframe 
+          src={iframeUrl} 
+          className="w-full h-[600px] border-0" 
+          title={document.title}
+        />
+      );
+    }
+
+    if (isEditing) {
+      return (
+        <div className="w-full">
+          <RichTextEditor 
+            content={documentContent} 
+            onChange={setDocumentContent}
+            documentId={document.id}
+            height={500}
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveContent}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative">
+        <div 
+          className="document-preview prose prose-sm max-w-none bg-white p-4 rounded-md border min-h-[500px]"
+          dangerouslySetInnerHTML={{ __html: documentContent }}
+        />
+        {(document.file_type === 'text/plain' || document.file_type === 'text/html' || document.file_type?.includes('document')) && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="absolute top-2 right-2 flex items-center gap-2"
+            onClick={() => setIsEditing(true)}
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-start">
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-2xl font-bold">{document.title}</h2>
-          <p className="text-muted-foreground">{document.description}</p>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleClose}>
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-      
-      <div className="flex border-b">
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === 'preview' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
-          onClick={() => setActiveTab('preview')}
-        >
-          Preview
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === 'details' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
-          onClick={() => setActiveTab('details')}
-        >
-          Details
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === 'comments' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
-          onClick={() => setActiveTab('comments')}
-        >
-          Comments
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === 'history' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
-          onClick={() => setActiveTab('history')}
-        >
-          Version History
-        </button>
-      </div>
-      
-      <div className="mt-4">
-        {activeTab === 'preview' && (
-          <div className="min-h-[400px] flex flex-col border rounded-md relative overflow-hidden">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-full py-12">
-                <Loader2 className="h-10 w-10 animate-spin mb-2" />
-                <p>Loading document preview...</p>
-              </div>
-            ) : previewError ? (
-              <div className="flex flex-col items-center justify-center h-full py-12">
-                <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">Preview not available</p>
-                <p className="text-muted-foreground mb-4">{previewError}</p>
-                <Button onClick={handleDownload}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Document
-                </Button>
-              </div>
-            ) : previewUrl ? (
-              <div className="h-[600px] w-full">
-                {document.file_type?.includes('pdf') ? (
-                  <iframe 
-                    src={`${previewUrl}#toolbar=0&navpanes=0`} 
-                    className="w-full h-full border-0" 
-                    title={document.title}
-                  />
-                ) : document.file_type?.includes('image') ? (
-                  <div className="flex items-center justify-center h-full p-4">
-                    <img 
-                      src={previewUrl} 
-                      alt={document.title} 
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                ) : document.file_type?.includes('text') || document.file_type?.includes('html') ? (
-                  <iframe 
-                    src={previewUrl} 
-                    className="w-full h-full border-0" 
-                    title={document.title}
-                    sandbox="allow-same-origin"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium">Preview not available</p>
-                    <p className="text-muted-foreground mb-4">This document type cannot be previewed directly.</p>
-                    <Button onClick={handleDownload}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Document
-                    </Button>
-                  </div>
-                )}
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={handleDownload}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full py-12">
-                <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">Preview not available</p>
-                <p className="text-muted-foreground mb-4">Unable to load document preview.</p>
-              </div>
-            )}
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="bg-secondary/30">
+              {document.category}
+            </Badge>
+            <Badge
+              className={
+                document.status === 'Draft' ? 'bg-slate-200 text-slate-700' :
+                document.status === 'Pending Approval' ? 'bg-amber-100 text-amber-700' :
+                document.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                document.status === 'Published' ? 'bg-blue-100 text-blue-700' :
+                document.status === 'Archived' ? 'bg-gray-100 text-gray-700' :
+                'bg-red-100 text-red-700'
+              }
+            >
+              {document.status}
+            </Badge>
           </div>
-        )}
+        </div>
         
-        {activeTab === 'details' && (
-          <div className="space-y-6">
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownload}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download
+          </Button>
+          {onClose && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onClose}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {document.description && (
+        <p className="text-muted-foreground mb-4">{document.description}</p>
+      )}
+      
+      <div className="text-sm text-muted-foreground mb-4">
+        <span>Created: {format(new Date(document.created_at || ''), 'PPP')}</span>
+        {document.updated_at && document.updated_at !== document.created_at && (
+          <span className="ml-4">Updated: {format(new Date(document.updated_at), 'PPP')}</span>
+        )}
+        {document.expiry_date && (
+          <span className="ml-4">Expires: {format(new Date(document.expiry_date), 'PPP')}</span>
+        )}
+      </div>
+      
+      <Tabs defaultValue="preview" value={activeTab} onValueChange={setActiveTab} className="flex-1">
+        <TabsList className="mb-4">
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="edit">Edit</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="preview" className="flex-1">
+          {renderPreviewContent()}
+        </TabsContent>
+        
+        <TabsContent value="edit" className="flex-1">
+          <RichTextEditor 
+            content={documentContent} 
+            onChange={setDocumentContent}
+            documentId={document.id}
+            height={500}
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              onClick={handleSaveContent}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="comments" className="flex-1">
+          <DocumentComments documentId={document.id} />
+        </TabsContent>
+        
+        <TabsContent value="details" className="flex-1">
+          <div className="bg-white p-4 rounded-md border">
+            <h3 className="text-lg font-medium mb-4">Document Details</h3>
+            
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Category</p>
-                <Badge variant="outline" className="bg-secondary/30 font-medium">
-                  {document.category}
-                </Badge>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">File Name</h4>
+                <p>{document.file_name}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge
-                  className={cn(
-                    document.status === 'Draft' && 'bg-slate-200 text-slate-700',
-                    document.status === 'Pending Approval' && 'bg-amber-100 text-amber-700',
-                    document.status === 'Approved' && 'bg-green-100 text-green-700',
-                    document.status === 'Published' && 'bg-blue-100 text-blue-700',
-                    document.status === 'Archived' && 'bg-gray-100 text-gray-700',
-                    document.status === 'Expired' && 'bg-red-100 text-red-700',
-                    'font-medium'
-                  )}
-                >
-                  {document.status}
-                </Badge>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">File Type</h4>
+                <p>{document.file_type}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Created By</p>
-                <p className="font-medium">{document.created_by}</p>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">File Size</h4>
+                <p>{(document.file_size / 1024).toFixed(2)} KB</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Created Date</p>
-                <p className="font-medium">{format(new Date(document.created_at), 'MMM d, yyyy')}</p>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Version</h4>
+                <p>{document.version}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Last Updated</p>
-                <p className="font-medium">{format(new Date(document.updated_at), 'MMM d, yyyy')}</p>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Created By</h4>
+                <p>{document.created_by}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Version</p>
-                <p className="font-medium">{document.version}</p>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                <p>{document.status}</p>
               </div>
-              {document.expiry_date && (
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Expiry Date</p>
-                  <p className="font-medium">{format(new Date(document.expiry_date), 'MMM d, yyyy')}</p>
+              
+              {document.tags && document.tags.length > 0 && (
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Tags</h4>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {document.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary">{tag}</Badge>
+                    ))}
+                  </div>
                 </div>
               )}
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">File Name</p>
-                <p className="font-medium">{document.file_name}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">File Type</p>
-                <p className="font-medium">{document.file_type}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">File Size</p>
-                <p className="font-medium">{(document.file_size / 1024).toFixed(2)} KB</p>
-              </div>
-            </div>
-            
-            {document.tags && document.tags.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Tags</p>
-                <div className="flex flex-wrap gap-2">
-                  {document.tags.map((tag, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" className="flex items-center" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              <Button variant="outline" className="flex items-center">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Link
-              </Button>
-              <Button variant="outline" className="flex items-center">
-                <Share className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline" className="flex items-center" onClick={() => setShowVersionHistory(true)}>
-                <Info className="h-4 w-4 mr-2" />
-                Version History
-              </Button>
             </div>
           </div>
-        )}
-        
-        {activeTab === 'comments' && (
-          <DocumentComments documentId={document.id} />
-        )}
-        
-        {activeTab === 'history' && (
-          <div>
-            <h3 className="text-lg font-medium mb-4">Version History</h3>
-            <DocumentVersionHistory 
-              document={document} 
-              open={showVersionHistory} 
-              onOpenChange={setShowVersionHistory} 
-            />
-          </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
