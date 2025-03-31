@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
@@ -13,10 +14,17 @@ import DocumentComments from './DocumentComments';
 
 interface DocumentPreviewDialogProps {
   document: Document;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
 }
 
-const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ document, onClose }) => {
+const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ 
+  document, 
+  open,
+  onOpenChange,
+  onClose 
+}) => {
   const [activeTab, setActiveTab] = useState<string>("preview");
   const [isEditing, setIsEditing] = useState(false);
   const [documentContent, setDocumentContent] = useState<string>("");
@@ -94,13 +102,13 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ document,
         documentService.getStoragePath(document.id, document.file_name)
       );
       
-      // Create a temporary link and click it
-      const a = document.createElement('a');
+      // Create a temporary link and click it - fixing the DOM manipulation errors
+      const a = window.document.createElement('a');
       a.href = url;
       a.download = document.file_name;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
       
       toast({
         title: "Download initiated",
@@ -252,11 +260,14 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ document,
             <Download className="h-4 w-4" />
             Download
           </Button>
-          {onClose && (
+          {(onClose || onOpenChange) && (
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={onClose}
+              onClick={() => {
+                if (onClose) onClose();
+                if (onOpenChange) onOpenChange(false);
+              }}
               className="flex items-center gap-2"
             >
               <X className="h-4 w-4" />

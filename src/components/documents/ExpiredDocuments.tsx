@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentExpirySettings from './DocumentExpirySettings';
-import DocumentPreviewDialog from './DocumentPreviewDialog';
+import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
 import { CalendarClock, Search, AlertTriangle, Filter, Clock, ExternalLink, Calendar, RotateCcw } from 'lucide-react';
 
 const ExpiredDocuments: React.FC = () => {
@@ -20,10 +20,8 @@ const ExpiredDocuments: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  // Get all unique categories from documents
   const categories = Array.from(new Set(documents.map(doc => doc.category)));
 
-  // Filter documents based on search query, status, and category
   const filteredDocuments = documents.filter(doc => {
     const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date();
     const isExpiringSoon = doc.expiry_date && !isExpired && 
@@ -77,7 +75,6 @@ const ExpiredDocuments: React.FC = () => {
   };
 
   const renewDocument = (doc: Document) => {
-    // Set new expiry date to 1 year from current date
     const newExpiryDate = new Date();
     newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
     
@@ -282,14 +279,12 @@ const ExpiredDocuments: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Document preview dialog */}
-      <DocumentPreviewDialog 
-        document={selectedDocument} 
-        open={showPreview} 
-        onOpenChange={setShowPreview} 
+      <DocumentPreviewDialogWrapper
+        document={selectedDocument}
+        open={showPreview}
+        onOpenChange={setShowPreview}
       />
 
-      {/* Document expiry settings dialog */}
       {selectedDocument && (
         <DocumentExpirySettings 
           document={selectedDocument}

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Document } from '@/types/database';
 import { useDocuments } from '@/contexts/DocumentContext';
-import DocumentPreviewDialog from './DocumentPreviewDialog';
+import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
 import DocumentApprover from './DocumentApprover';
 import { AlertCircle, CheckCircle2, Clock, Search, FileText, Users, CalendarClock, ClipboardCheck } from 'lucide-react';
 
@@ -369,10 +369,10 @@ const ApprovalWorkflow: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      <DocumentPreviewDialog 
-        document={selectedDocument} 
-        open={isPreviewOpen} 
-        onOpenChange={setIsPreviewOpen} 
+      <DocumentPreviewDialogWrapper
+        document={selectedDocument}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
       />
 
       {selectedDocument && selectedDocument.status === 'Pending Approval' && (
