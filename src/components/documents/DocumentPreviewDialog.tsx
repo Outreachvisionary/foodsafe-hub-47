@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -10,10 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
 import { Loader2, FileText, Download, Calendar, User } from 'lucide-react';
-import documentService from '@/services/documentService';
+import enhancedDocumentService from '@/services/enhancedDocumentService';
 
 interface DocumentPreviewDialogProps {
   document: Document | null;
@@ -50,14 +48,14 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     
     try {
       // Determine the storage path for the document
-      const storagePath = documentService.getStoragePath(document);
+      const storagePath = enhancedDocumentService.getStoragePath(document.id, document.file_name);
       
       // Get a signed URL for the file
-      const url = await documentService.getDownloadUrl(storagePath);
+      const url = await enhancedDocumentService.getDownloadUrl(storagePath);
       setPreviewUrl(url);
       
       // Record view activity
-      await documentService.createDocumentActivity({
+      await enhancedDocumentService.createDocumentActivity({
         document_id: document.id,
         action: 'view',
         user_id: 'current-user', // Replace with actual user ID
@@ -86,7 +84,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       window.document.body.removeChild(a);
       
       // Record download activity
-      await documentService.createDocumentActivity({
+      await enhancedDocumentService.createDocumentActivity({
         document_id: document.id,
         action: 'download',
         user_id: 'current-user', // Replace with actual user ID

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/contexts/UserContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Send, Trash2, Edit2 } from 'lucide-react';
-import documentService from '@/services/documentService';
+import documentCommentService from '@/services/documentCommentService';
 
 interface Comment {
   id: string;
@@ -36,8 +35,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      // Fetch comments from your API
-      const commentsData = await documentService.getDocumentComments(documentId);
+      const commentsData = await documentCommentService.getDocumentComments(documentId);
       setComments(commentsData);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -71,8 +69,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
         created_at: new Date().toISOString()
       };
       
-      // Save comment to your API
-      const savedComment = await documentService.createDocumentComment(newComment);
+      const savedComment = await documentCommentService.createDocumentComment(newComment);
       
       setComments(prev => [savedComment, ...prev]);
       setComment('');
@@ -104,8 +101,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
     try {
       setSubmitting(true);
       
-      // Update comment through your API
-      await documentService.updateDocumentComment(commentId, {
+      await documentCommentService.updateDocumentComment(commentId, {
         content: editContent,
         updated_at: new Date().toISOString()
       });
@@ -139,8 +135,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
   
   const handleDeleteComment = async (commentId: string) => {
     try {
-      // Delete comment through your API
-      await documentService.deleteDocumentComment(commentId);
+      await documentCommentService.deleteDocumentComment(commentId);
       
       setComments(prev => prev.filter(c => c.id !== commentId));
       

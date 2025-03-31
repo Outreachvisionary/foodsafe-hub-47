@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -16,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Shield, Trash2 } from 'lucide-react';
 import { DocumentAccess } from '@/types/document';
-import enhancedDocumentService from '@/services/documentService';
+import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { useTranslation } from 'react-i18next';
 
 interface DocumentAccessControlProps {
@@ -77,14 +76,13 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
     try {
       setLoading(true);
       
-      const accessData: Partial<DocumentAccess> = {
-        document_id: documentId,
-        user_id: newAccess.userId,
-        permission_level: newAccess.permissionLevel,
-        granted_by: 'current-user', // This would be the actual user ID in a real app
-      };
+      const createdAccess = await enhancedDocumentService.grantAccess(
+        documentId,
+        newAccess.userId,
+        newAccess.permissionLevel,
+        'current-user' // This would be the actual user ID in a real app
+      );
       
-      const createdAccess = await enhancedDocumentService.grantAccess(accessData);
       setAccessList([...accessList, createdAccess]);
       
       setNewAccess({

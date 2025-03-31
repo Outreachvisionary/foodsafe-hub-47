@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Document, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';
+import documentCommentService from '@/services/documentCommentService';
 import { useToast } from './use-toast';
 import { supabase, initializeStorage } from '@/integrations/supabase/client';
 import { uploadFileWithRetry } from '@/utils/fileStorage';
@@ -26,7 +27,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Fetching documents...');
-      const documents = await enhancedDocumentService.fetchDocuments();
+      const documents = await documentService.fetchDocuments();
       debugLog('Documents fetched:', documents);
       return documents;
     } catch (err) {
@@ -48,7 +49,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Creating document:', document);
-      const result = await enhancedDocumentService.createDocument(document);
+      const result = await documentService.createDocument(document);
       debugLog('Document created:', result);
       toast({
         title: 'Document created',
@@ -74,7 +75,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Updating document:', id, document);
-      const result = await enhancedDocumentService.updateDocument(id, document);
+      const result = await documentService.updateDocument(id, document);
       debugLog('Document updated:', result);
       toast({
         title: 'Document updated',
@@ -101,14 +102,14 @@ export function useDocumentService() {
       setError(null);
       debugLog('Approving document:', id, 'Comment:', comment);
       
-      const result = await enhancedDocumentService.updateDocument(id, {
+      const result = await documentService.updateDocument(id, {
         status: 'Approved',
         last_action: 'approved',
         updated_at: new Date().toISOString(),
       });
       
       // Create approval activity record - using the correct property names in DocumentActivity
-      await enhancedDocumentService.createDocumentActivity({
+      await documentService.createDocumentActivity({
         document_id: id,
         action: 'approve',
         user_id: 'system', // Using user_id instead of performedBy
@@ -141,7 +142,7 @@ export function useDocumentService() {
       setError(null);
       debugLog('Rejecting document:', id, 'Reason:', comment);
       
-      const result = await enhancedDocumentService.updateDocument(id, {
+      const result = await documentService.updateDocument(id, {
         status: 'Draft',
         last_action: 'rejected',
         rejection_reason: comment,
@@ -149,7 +150,7 @@ export function useDocumentService() {
       });
       
       // Create rejection activity record - using the correct property names in DocumentActivity
-      await enhancedDocumentService.createDocumentActivity({
+      await documentService.createDocumentActivity({
         document_id: id,
         action: 'reject',
         user_id: 'system', // Using user_id instead of performedBy
@@ -175,7 +176,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Deleting document:', id);
-      await enhancedDocumentService.deleteDocument(id);
+      await documentService.deleteDocument(id);
       debugLog('Document deleted:', id);
       toast({
         title: 'Document deleted',
@@ -243,7 +244,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Creating document version:', versionData);
-      const result = await enhancedDocumentService.createDocumentVersion(versionData);
+      const result = await documentService.createDocumentVersion(versionData);
       debugLog('Document version created:', result);
       return result;
     } catch (err) {
@@ -265,7 +266,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Fetching document versions for:', documentId);
-      const versions = await enhancedDocumentService.fetchDocumentVersions(documentId);
+      const versions = await documentService.fetchDocumentVersions(documentId);
       debugLog('Document versions fetched:', versions);
       return versions;
     } catch (err) {
@@ -382,6 +383,17 @@ export function useDocumentService() {
     createDocumentVersion,
     fetchDocumentVersions,
     checkStorageAvailability,
-    checkDatabaseAvailability
+    checkDatabaseAvailability,
+    // Include functions from enhancedDocumentService
+    getStoragePath: enhancedDocumentService.getStoragePath,
+    getDownloadUrl: enhancedDocumentService.getDownloadUrl,
+    fetchAccess: enhancedDocumentService.fetchAccess,
+    grantAccess: enhancedDocumentService.grantAccess,
+    revokeAccess: enhancedDocumentService.revokeAccess,
+    // Include functions from documentCommentService
+    getDocumentComments: documentCommentService.getDocumentComments,
+    createDocumentComment: documentCommentService.createDocumentComment,
+    updateDocumentComment: documentCommentService.updateDocumentComment,
+    deleteDocumentComment: documentCommentService.deleteDocumentComment
   };
 }

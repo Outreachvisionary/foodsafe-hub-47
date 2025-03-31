@@ -14,7 +14,7 @@ const documentCommentService = {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return data || [] as DocumentComment[];
     } catch (error) {
       console.error(`Error fetching comments for document ${documentId}:`, error);
       throw error;
@@ -39,7 +39,7 @@ const documentCommentService = {
         .single();
       
       if (error) throw error;
-      return data;
+      return data as DocumentComment;
     } catch (error) {
       console.error('Error creating document comment:', error);
       throw error;
@@ -59,7 +59,7 @@ const documentCommentService = {
         .single();
       
       if (error) throw error;
-      return data;
+      return data as DocumentComment;
     } catch (error) {
       console.error(`Error updating comment ${commentId}:`, error);
       throw error;

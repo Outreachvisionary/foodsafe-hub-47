@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -73,16 +72,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       
-      // If no title is set yet, use the file name without extension as a suggestion
       if (!title) {
         const fileName = selectedFile.name.split('.');
-        fileName.pop(); // Remove extension
+        fileName.pop();
         setTitle(fileName.join('.'));
       }
     }
   };
 
-  // Direct upload method similar to "Add Document"
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -106,13 +103,10 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
       setErrorMessage(null);
       setUploadProgress(10);
       
-      // Generate a unique ID for the document
       const documentId = uuidv4();
       
-      // File path in storage
       const filePath = `documents/${documentId}/${file.name}`;
       
-      // Step 1: Upload the file directly
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(filePath, file, {
@@ -126,7 +120,6 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
       
       setUploadProgress(50);
       
-      // Step 2: Get the public URL
       const { data: urlData } = await supabase.storage
         .from('attachments')
         .getPublicUrl(filePath);
@@ -135,7 +128,6 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
       
       setUploadProgress(70);
       
-      // Step 3: Create the document record
       const newDocument = {
         id: documentId,
         title,
@@ -155,10 +147,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
         tags: []
       };
       
-      // Create the document in the database
-      await documentService.createDocument(newDocument);
+      const createdDocument = await documentService.createDocument(newDocument);
       
-      // Create initial version record
       await documentService.createDocumentVersion({
         document_id: documentId,
         file_name: file.name,
@@ -172,8 +162,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
         }
       });
       
-      // Add to context state
-      addDocument(newDocument);
+      addDocument(createdDocument);
       
       setUploadProgress(100);
       setUploadSuccess(true);

@@ -50,7 +50,7 @@ const documentService = {
         title: document.title || '',
         description: document.description,
         file_name: document.file_name || '',
-        file_path: document.file_path,
+        file_path: document.file_path || null,
         file_size: document.file_size || 0,
         file_type: document.file_type || '',
         category: document.category || 'Other',

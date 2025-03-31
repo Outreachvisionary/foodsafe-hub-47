@@ -17,9 +17,11 @@ import { Search, Filter, Plus, Download, Trash2, MoreHorizontal, Edit, Eye, Chec
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
+import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { useDocumentCategories, useDocumentStatuses } from '@/hooks/useDocumentReferences';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return 'N/A';
   try {
@@ -28,6 +30,7 @@ const formatDate = (dateStr?: string) => {
     return 'Invalid Date';
   }
 };
+
 const DocumentRepository: React.FC = () => {
   const {
     t
@@ -55,7 +58,6 @@ const DocumentRepository: React.FC = () => {
     toast
   } = useToast();
 
-  // Use our reference data hooks
   const {
     categories,
     loading: categoriesLoading,
@@ -66,6 +68,7 @@ const DocumentRepository: React.FC = () => {
     loading: statusesLoading,
     error: statusesError
   } = useDocumentStatuses();
+
   useEffect(() => {
     const loadDocuments = async () => {
       try {
@@ -77,7 +80,6 @@ const DocumentRepository: React.FC = () => {
     loadDocuments();
   }, [refreshDocumentStats]);
 
-  // Filter documents based on search and filters
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = searchTerm ? doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()) : true;
     const matchesCategory = categoryFilter ? doc.category === categoryFilter : true;
@@ -85,7 +87,6 @@ const DocumentRepository: React.FC = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Group documents by category
   const documentsByCategory = filteredDocuments.reduce((acc: Record<string, Document[]>, doc) => {
     if (!acc[doc.category]) {
       acc[doc.category] = [];
@@ -94,7 +95,6 @@ const DocumentRepository: React.FC = () => {
     return acc;
   }, {});
 
-  // Handle document upload
   const handleDocumentUploadComplete = (document: Document) => {
     addDocument(document);
     setUploadDialogOpen(false);
@@ -104,7 +104,6 @@ const DocumentRepository: React.FC = () => {
     });
   };
 
-  // Handle document deletion
   const handleDeleteDocument = async (documentId: string) => {
     try {
       await deleteDocument(documentId);
@@ -123,22 +122,23 @@ const DocumentRepository: React.FC = () => {
     }
   };
 
-  // Handle document editing
   const handleEditDocument = (doc: Document) => {
     setSelectedDocument(doc);
   };
 
-  // Handle document download
-  const handleDownloadDocument = async (doc: Document) => {
+  const handleDownload = async (document: Document) => {
     try {
-      const storagePath = documentService.getStoragePath(doc);
-      const url = await documentService.getDownloadUrl(storagePath);
-      const a = window.document.createElement('a');
-      a.href = url;
-      a.download = doc.file_name;
-      window.document.body.appendChild(a);
+      setLoadingDocumentId(document.id);
+      const storagePath = enhancedDocumentService.getStoragePath(document.id, document.file_name);
+      const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
+      
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = document.file_name;
+      document.body.appendChild(a);
       a.click();
-      window.document.body.removeChild(a);
+      document.body.removeChild(a);
+      
       const {
         data: {
           user
@@ -146,7 +146,7 @@ const DocumentRepository: React.FC = () => {
       } = await supabase.auth.getUser();
       if (user) {
         await documentService.createDocumentActivity({
-          document_id: doc.id,
+          document_id: document.id,
           action: 'download',
           user_id: user.id,
           user_name: user.email || 'Unknown',
@@ -156,7 +156,7 @@ const DocumentRepository: React.FC = () => {
       }
       toast({
         title: 'Download started',
-        description: `${doc.title} is being downloaded.`
+        description: `${document.title} is being downloaded.`
       });
     } catch (error) {
       console.error('Error downloading document:', error);
@@ -165,19 +165,20 @@ const DocumentRepository: React.FC = () => {
         description: 'There was a problem downloading the document.',
         variant: 'destructive'
       });
+    } finally {
+      setLoadingDocumentId(null);
     }
   };
 
-  // Handle document preview
   const handlePreviewDocument = (doc: Document) => {
     setSelectedDocForPreview(doc);
     setIsPreviewOpen(true);
   };
+
   const handleDocumentUpdate = (updatedDoc: Document) => {
     updateDocument(updatedDoc);
   };
 
-  // Calculate document statistics
   const documentStats = {
     total: documents.length,
     byStatus: statuses.reduce((acc: Record<string, number>, status) => {
@@ -190,7 +191,6 @@ const DocumentRepository: React.FC = () => {
     }, {})
   };
 
-  // Show loading state
   if (isLoading || categoriesLoading || statusesLoading) {
     return <div className="flex flex-col justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -198,7 +198,6 @@ const DocumentRepository: React.FC = () => {
       </div>;
   }
 
-  // Show error state
   if (documentsError || categoriesError || statusesError) {
     return <div className="flex flex-col items-center justify-center h-64">
         <Alert variant="destructive" className="mb-4 max-w-md">
@@ -215,7 +214,6 @@ const DocumentRepository: React.FC = () => {
       </div>;
   }
 
-  // Show empty state if no documents and no errors
   if (documents.length === 0) {
     return <div className="text-center p-12 bg-white rounded-lg shadow-sm flex flex-col items-center">
         <FileWarning className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
@@ -228,7 +226,6 @@ const DocumentRepository: React.FC = () => {
           Upload Your First Document
         </Button>
         
-        {/* Upload dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -242,6 +239,7 @@ const DocumentRepository: React.FC = () => {
         </Dialog>
       </div>;
   }
+
   return <div className="space-y-6 animate-fade-in bg-cc-sky-200">
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div className="relative w-full md:w-96">
@@ -298,7 +296,6 @@ const DocumentRepository: React.FC = () => {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         </TabsList>
         
-        {/* Document list view */}
         <TabsContent value="documents">
           {viewMode === 'list' && <Card>
               <CardContent className="p-0">
@@ -385,8 +382,7 @@ const DocumentRepository: React.FC = () => {
               </CardContent>
             </Card>}
           
-          {/* Document grid view */}
-          {viewMode === 'grid' && <div>
+          <div key={viewMode === 'grid' && <div>
               {Object.keys(documentsByCategory).length > 0 ? Object.entries(documentsByCategory).map(([category, docs]) => <div key={category} className="mb-6">
                     <h3 className="text-lg font-medium mb-3 flex items-center">
                       <span className="inline-block w-3 h-3 bg-primary rounded-full mr-2"></span>
@@ -441,7 +437,6 @@ const DocumentRepository: React.FC = () => {
             </div>}
         </TabsContent>
         
-        {/* Dashboard view */}
         <TabsContent value="dashboard">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
@@ -503,10 +498,8 @@ const DocumentRepository: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Document preview dialog */}
       <DocumentPreviewDialog document={selectedDocForPreview} open={isPreviewOpen} onOpenChange={setIsPreviewOpen} onDocumentUpdate={handleDocumentUpdate} />
       
-      {/* Upload dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -519,7 +512,6 @@ const DocumentRepository: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete confirmation dialog */}
       <Dialog open={!!confirmDeleteId} onOpenChange={open => !open && setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -548,7 +540,6 @@ const DocumentRepository: React.FC = () => {
     </div>;
 };
 
-// Status badge component
 const StatusBadge: React.FC<{
   status: string;
 }> = ({
@@ -571,4 +562,5 @@ const StatusBadge: React.FC<{
       return <Badge variant="outline">{status}</Badge>;
   }
 };
+
 export default DocumentRepository;
