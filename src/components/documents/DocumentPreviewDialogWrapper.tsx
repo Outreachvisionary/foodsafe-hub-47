@@ -15,12 +15,12 @@ const DocumentPreviewDialogWrapper: React.FC<DocumentPreviewDialogWrapperProps> 
   open, 
   onOpenChange 
 }) => {
-  // Early return with null rendering if there's no document or dialog is not open
+  // Early return if there's no document or dialog is not open
   if (!document || !open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] p-6 overflow-auto">
+      <DialogContent className="max-w-4xl h-[80vh] p-6 overflow-auto bg-white">
         <DocumentPreviewDialog 
           document={document} 
           onOpenChange={onOpenChange}

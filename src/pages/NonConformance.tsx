@@ -12,6 +12,7 @@ const NonConformanceModule = () => {
   const navigate = useNavigate();
   
   const [viewingDetails, setViewingDetails] = useState(!!id);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Ensure viewingDetails matches with URL
   useEffect(() => {
@@ -20,20 +21,20 @@ const NonConformanceModule = () => {
   
   // Handle errors from the non-conformance module
   useEffect(() => {
-    const handleErrors = () => {
-      try {
-        // This is a simple check to ensure the module loads properly
-        if (document.getElementById('nc-module-container')) {
-          console.log('Non-conformance module loaded successfully');
-        }
-      } catch (error) {
-        console.error('Error in non-conformance module:', error);
-        toast.error('There was an issue loading the non-conformance module. Please refresh the page.');
+    try {
+      // This is a simple check to ensure the module loads properly
+      console.log('Loading non-conformance module, ID:', id);
+      
+      if (document.getElementById('nc-module-container')) {
+        console.log('Non-conformance module loaded successfully');
+        setLoadError(null);
       }
-    };
-    
-    handleErrors();
-  }, []);
+    } catch (error) {
+      console.error('Error in non-conformance module:', error);
+      setLoadError('There was an issue loading the non-conformance module');
+      toast.error('There was an issue loading the non-conformance module. Please refresh the page.');
+    }
+  }, [id]);
   
   const handleCreateNew = () => {
     navigate('/non-conformance/new');
@@ -43,6 +44,16 @@ const NonConformanceModule = () => {
     navigate(`/non-conformance/${selectedId}`);
     setViewingDetails(true);
   };
+  
+  if (loadError) {
+    return (
+      <div className="space-y-6 p-8 text-center">
+        <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
+        <p className="text-gray-700">{loadError}</p>
+        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+      </div>
+    );
+  }
   
   return (
     <div id="nc-module-container" className="space-y-6 animate-fade-in">

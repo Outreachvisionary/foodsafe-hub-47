@@ -9,7 +9,7 @@ import {
   getTrainingRelatedToNC, 
   getAuditsRelatedToNC 
 } from '@/services/nonConformanceService';
-import { FileText, FileCheck, Calendar, ArrowUpRight } from 'lucide-react';
+import { FileText, FileCheck, Calendar, ArrowUpRight, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface NCIntegrationsListProps {
@@ -21,27 +21,37 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
   const [trainings, setTrainings] = useState<any[]>([]);
   const [audits, setAudits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const loadIntegrations = async () => {
+      if (!nonConformanceId) {
+        setError("No non-conformance ID provided");
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
+        setError(null);
+        console.log('Loading integrations for NC ID:', nonConformanceId);
         
         // Load related documents
         const docsData = await getDocumentsRelatedToNC(nonConformanceId);
-        setDocuments(docsData);
+        setDocuments(Array.isArray(docsData) ? docsData : []);
         
         // Load related training
         const trainingData = await getTrainingRelatedToNC(nonConformanceId);
-        setTrainings(trainingData);
+        setTrainings(Array.isArray(trainingData) ? trainingData : []);
         
         // Load related audits
         const auditData = await getAuditsRelatedToNC(nonConformanceId);
-        setAudits(auditData);
+        setAudits(Array.isArray(auditData) ? auditData : []);
       } catch (error) {
         console.error('Error loading integrations:', error);
+        setError("Failed to load integrated data");
         toast({
           title: 'Failed to load integrations',
           description: 'There was an error loading integrated data.',
@@ -55,11 +65,47 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
     loadIntegrations();
   }, [nonConformanceId, toast]);
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Integrated Modules</CardTitle>
+          <CardDescription>
+            View related documents, training sessions, and audits.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-md">
+            <AlertCircle className="h-10 w-10 text-red-500 mb-2" />
+            <p className="text-gray-700 font-medium">{error}</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Integrated Modules</CardTitle>
+          <CardDescription>
+            Loading related content...
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -107,10 +153,12 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
                       <div className="flex items-center">
                         <FileText className="h-4 w-4 text-gray-500 mr-2" />
                         <div>
-                          <p className="font-medium text-sm">{doc.documents.title}</p>
+                          <p className="font-medium text-sm">
+                            {doc.documents?.title || 'Untitled Document'}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {doc.documents.category} · 
-                            {doc.documents.created_at && new Date(doc.documents.created_at).toLocaleDateString()}
+                            {doc.documents?.category || 'No category'} · 
+                            {doc.documents?.created_at && new Date(doc.documents.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -139,10 +187,12 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
                       <div className="flex items-center">
                         <FileCheck className="h-4 w-4 text-gray-500 mr-2" />
                         <div>
-                          <p className="font-medium text-sm">{training.training_sessions.title}</p>
+                          <p className="font-medium text-sm">
+                            {training.training_sessions?.title || 'Untitled Training'}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {training.training_sessions.training_type} · 
-                            {training.training_sessions.due_date && 
+                            {training.training_sessions?.training_type || 'No type'} · 
+                            {training.training_sessions?.due_date && 
                               `Due: ${new Date(training.training_sessions.due_date).toLocaleDateString()}`}
                           </p>
                         </div>
@@ -172,11 +222,13 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 text-gray-500 mr-2" />
                         <div>
-                          <p className="font-medium text-sm">{audit.audits.title}</p>
+                          <p className="font-medium text-sm">
+                            {audit.audits?.title || 'Untitled Audit'}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {audit.audits.audit_type} · 
-                            {audit.audits.status} · 
-                            {audit.audits.due_date && 
+                            {audit.audits?.audit_type || 'No type'} · 
+                            {audit.audits?.status || 'Unknown status'} · 
+                            {audit.audits?.due_date && 
                               `Due: ${new Date(audit.audits.due_date).toLocaleDateString()}`}
                           </p>
                         </div>
