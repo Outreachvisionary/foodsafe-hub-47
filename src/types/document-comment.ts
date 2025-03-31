@@ -1,7 +1,4 @@
 
-/**
- * Represents a comment on a document
- */
 export interface DocumentComment {
   id: string;
   document_id: string;

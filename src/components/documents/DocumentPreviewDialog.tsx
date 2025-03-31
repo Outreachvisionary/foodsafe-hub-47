@@ -72,12 +72,12 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
     
     try {
       // Create a temporary anchor element to trigger the download
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = previewUrl;
       link.download = document.file_name;
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
     } catch (error) {
       console.error('Error downloading document:', error);
     }

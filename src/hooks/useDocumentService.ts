@@ -2,7 +2,10 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
-import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
+import documentCommentService from '@/services/documentCommentService';
+import enhancedDocumentService from '@/services/enhancedDocumentService';
+import { Document, DocumentVersion, DocumentActivity, DocumentAccess } from '@/types/document';
+import { DocumentComment } from '@/types/document-comment';
 import { useToast } from '@/hooks/use-toast';
 
 export const useDocumentService = () => {
@@ -249,6 +252,131 @@ export const useDocumentService = () => {
     }
   }, []);
 
+  // ===== Document Access Control Methods =====
+  const fetchAccess = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const accessList = await enhancedDocumentService.fetchAccess(documentId);
+      return accessList;
+    } catch (err: any) {
+      setError(err.message || `Failed to fetch access for document ${documentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const grantAccess = useCallback(async (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const newAccess = await enhancedDocumentService.grantAccess(documentId, userId, permissionLevel, grantedBy);
+      return newAccess;
+    } catch (err: any) {
+      setError(err.message || `Failed to grant access for document ${documentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const revokeAccess = useCallback(async (accessId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await enhancedDocumentService.revokeAccess(accessId);
+    } catch (err: any) {
+      setError(err.message || `Failed to revoke access ${accessId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ===== Document Comments Methods =====
+  const getDocumentComments = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const comments = await documentCommentService.getDocumentComments(documentId);
+      return comments;
+    } catch (err: any) {
+      setError(err.message || `Failed to get comments for document ${documentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const createDocumentComment = useCallback(async (comment: Partial<DocumentComment>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const newComment = await documentCommentService.createDocumentComment(comment);
+      return newComment;
+    } catch (err: any) {
+      setError(err.message || 'Failed to create document comment');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateDocumentComment = useCallback(async (commentId: string, updates: Partial<DocumentComment>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedComment = await documentCommentService.updateDocumentComment(commentId, updates);
+      return updatedComment;
+    } catch (err: any) {
+      setError(err.message || `Failed to update comment ${commentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteDocumentComment = useCallback(async (commentId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await documentCommentService.deleteDocumentComment(commentId);
+    } catch (err: any) {
+      setError(err.message || `Failed to delete comment ${commentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ===== Document Versions Methods =====
+  const fetchDocumentVersions = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const versions = await enhancedDocumentService.fetchDocumentVersions(documentId);
+      return versions;
+    } catch (err: any) {
+      setError(err.message || `Failed to fetch versions for document ${documentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ===== Storage Check Method =====
+  const checkStorageAvailability = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.storage.getBucket('attachments');
+      if (error) throw error;
+      return !!data;
+    } catch (err: any) {
+      setError(err.message || 'Failed to check storage availability');
+      return false;
+    }
+  }, []);
+
   return {
     isLoading,
     error,
@@ -265,6 +393,18 @@ export const useDocumentService = () => {
     getDownloadUrl,
     getPreviewUrl,
     checkoutDocument,
-    checkinDocument
+    checkinDocument,
+    // Access control methods
+    fetchAccess,
+    grantAccess,
+    revokeAccess,
+    // Comments methods
+    getDocumentComments,
+    createDocumentComment,
+    updateDocumentComment,
+    deleteDocumentComment,
+    // Additional methods
+    fetchDocumentVersions,
+    checkStorageAvailability
   };
 };
