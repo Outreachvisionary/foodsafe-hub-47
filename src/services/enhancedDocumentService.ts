@@ -1,22 +1,38 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentActivity, DocumentAccess } from '@/types/document';
-import documentService from './documentService';
 import { v4 as uuidv4 } from 'uuid';
 
-// Enhanced document service with additional methods
+/**
+ * Enhanced document service with additional functionality
+ */
 const enhancedDocumentService = {
-  // Re-export original methods
-  ...documentService,
+  // Storage paths and URLs
+  getStoragePath(documentId: string, fileName: string): string {
+    return `documents/${documentId}/${fileName}`;
+  },
 
-  // Document access methods
-  async fetchAccess(documentId: string): Promise<DocumentAccess[]> {
+  async getDownloadUrl(filePath: string): Promise<string> {
+    try {
+      const { data, error } = await supabase.storage
+        .from('document-files')
+        .createSignedUrl(filePath, 60 * 60); // 1 hour expiry
+      
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error(`Error getting download URL for ${filePath}:`, error);
+      throw error;
+    }
+  },
+
+  // Access control
+  async fetchAccess(documentId: string) {
     try {
       const { data, error } = await supabase
         .from('document_access')
         .select('*')
         .eq('document_id', documentId);
-        
+      
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -24,18 +40,21 @@ const enhancedDocumentService = {
       throw error;
     }
   },
-  
-  async grantAccess(access: Partial<DocumentAccess>): Promise<DocumentAccess> {
+
+  async grantAccess(documentId: string, userId: string, permissionLevel: string, grantedBy: string) {
     try {
-      const newAccess = {
-        id: access.id || uuidv4(),
-        ...access,
-        granted_at: access.granted_at || new Date().toISOString()
+      const accessRecord = {
+        id: uuidv4(),
+        document_id: documentId,
+        user_id: userId,
+        permission_level: permissionLevel,
+        granted_by: grantedBy,
+        granted_at: new Date().toISOString()
       };
       
       const { data, error } = await supabase
         .from('document_access')
-        .insert(newAccess)
+        .insert(accessRecord)
         .select()
         .single();
       
@@ -46,8 +65,8 @@ const enhancedDocumentService = {
       throw error;
     }
   },
-  
-  async revokeAccess(accessId: string): Promise<void> {
+
+  async revokeAccess(accessId: string) {
     try {
       const { error } = await supabase
         .from('document_access')
@@ -57,27 +76,6 @@ const enhancedDocumentService = {
       if (error) throw error;
     } catch (error) {
       console.error(`Error revoking access ${accessId}:`, error);
-      throw error;
-    }
-  },
-
-  // Storage and URL methods
-  async getStoragePath(document: Document): Promise<string> {
-    return `documents/${document.id}/${document.file_name}`;
-  },
-  
-  async getDownloadUrl(filePath: string): Promise<string> {
-    try {
-      const { data, error } = await supabase.storage
-        .from('attachments')
-        .createSignedUrl(filePath, 60 * 60); // 1-hour expiry
-      
-      if (error) throw error;
-      if (!data?.signedUrl) throw new Error("Failed to generate download URL");
-      
-      return data.signedUrl;
-    } catch (error) {
-      console.error(`Error generating download URL for ${filePath}:`, error);
       throw error;
     }
   }

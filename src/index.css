@@ -225,7 +225,12 @@
 }
 
 .btn-hover-glow {
-  @apply transition-all hover:shadow-glow-accent hover:scale-105 active:scale-100;
+  @apply transition-all hover:scale-105 active:scale-100;
+}
+
+/* Add hover variant directly instead of trying to use hover modifier with a custom shadow */
+.btn-hover-glow:hover {
+  box-shadow: 0 0 15px rgba(22, 186, 197, 0.3);
 }
 
 /* Animations */
@@ -272,7 +277,12 @@
 }
 
 .card-active {
-  @apply border-accent shadow-glow-accent;
+  @apply border-accent;
+}
+
+/* Apply the glow effect directly */
+.card-active {
+  box-shadow: 0 0 15px rgba(22, 186, 197, 0.3);
 }
 
 /* Status colors */

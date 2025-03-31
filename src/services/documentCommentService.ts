@@ -1,13 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DocumentComment } from '@/types/document';
+import { DocumentComment } from '@/types/document-comment';
 import { v4 as uuidv4 } from 'uuid';
 
 const documentCommentService = {
   // Document comments
   async getDocumentComments(documentId: string): Promise<DocumentComment[]> {
     try {
-      // Use the correct table name for comments
       const { data, error } = await supabase
         .from('document_comments')
         .select('*')
