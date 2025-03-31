@@ -26,7 +26,24 @@ const documentCommentService = {
   
   async createDocumentComment(comment: Partial<DocumentComment>): Promise<DocumentComment> {
     try {
-      const newComment: Partial<DocumentComment> = {
+      // Ensure the comment has all required fields according to the DocumentComment interface
+      if (!comment.content) {
+        throw new Error("Comment content is required");
+      }
+
+      if (!comment.document_id) {
+        throw new Error("Document ID is required");
+      }
+
+      if (!comment.user_id) {
+        throw new Error("User ID is required");
+      }
+
+      if (!comment.user_name) {
+        throw new Error("User name is required");
+      }
+
+      const newComment = {
         id: comment.id || uuidv4(),
         document_id: comment.document_id,
         user_id: comment.user_id,

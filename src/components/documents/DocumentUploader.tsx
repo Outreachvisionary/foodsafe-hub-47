@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, File, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentCategory, DocumentStatus } from '@/types/document';
+import { Document, DocumentCategory, DocumentStatus } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
 import documentService from '@/services/documentService';
 

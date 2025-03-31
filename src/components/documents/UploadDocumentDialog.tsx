@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DocumentUploader } from './DocumentUploader';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import DocumentUploader from './DocumentUploader';
 import { DocumentCategory } from '@/types/database';
 
 interface UploadDocumentDialogProps {
