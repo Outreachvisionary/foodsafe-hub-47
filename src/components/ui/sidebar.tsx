@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -12,27 +11,20 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     const [isHovered, setIsHovered] = useState(false);
     
     return (
-      <motion.div
+      <div
         ref={ref}
         className={cn(
           "flex flex-col h-full bg-gradient-to-b from-primary/90 to-accent/80 border-r border-white/10 shadow-xl backdrop-blur-sm", 
           className
         )}
-        initial={{ opacity: 0.9 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         {...props}
       >
         {/* Animated glow effect on hover */}
         {isHovered && (
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-b from-accent/20 to-primary/20 rounded-r-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+          <div 
+            className="absolute inset-0 bg-gradient-to-b from-accent/20 to-primary/20 rounded-r-lg opacity-50"
           />
         )}
         
@@ -45,7 +37,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         <div className="relative z-10">
           {children}
         </div>
-      </motion.div>
+      </div>
     );
   }
 );

@@ -8,16 +8,6 @@ interface DocumentServiceError extends Error {
   detail?: string;
 }
 
-interface DocumentComment {
-  id: string;
-  document_id: string;
-  user_id: string;
-  user_name: string;
-  content: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 const documentService = {
   // Document CRUD
   async fetchDocuments(): Promise<Document[]> {
@@ -57,9 +47,21 @@ const documentService = {
     try {
       const newDoc = {
         id: document.id || uuidv4(),
-        ...document,
+        title: document.title || '',
+        description: document.description,
+        file_name: document.file_name || '',
+        file_path: document.file_path,
+        file_size: document.file_size || 0,
+        file_type: document.file_type || '',
+        category: document.category || 'Other',
+        status: document.status || 'Draft',
+        version: document.version || 1,
+        created_by: document.created_by || 'system',
         created_at: document.created_at || new Date().toISOString(),
-        updated_at: document.updated_at || new Date().toISOString()
+        updated_at: document.updated_at || new Date().toISOString(),
+        expiry_date: document.expiry_date,
+        is_locked: document.is_locked || false,
+        tags: document.tags || []
       };
       
       const { data, error } = await supabase
@@ -115,8 +117,15 @@ const documentService = {
     try {
       const newVersion = {
         id: version.id || uuidv4(),
-        ...version,
-        created_at: version.created_at || new Date().toISOString()
+        document_id: version.document_id || '',
+        file_name: version.file_name || '',
+        file_size: version.file_size || 0,
+        file_type: version.file_type || '',
+        version: version.version || 1,
+        created_by: version.created_by || 'system',
+        created_at: version.created_at || new Date().toISOString(),
+        change_notes: version.change_notes,
+        editor_metadata: version.editor_metadata
       };
       
       const { data, error } = await supabase
@@ -154,8 +163,13 @@ const documentService = {
     try {
       const newActivity = {
         id: activity.id || uuidv4(),
-        ...activity,
-        timestamp: activity.timestamp || new Date().toISOString()
+        document_id: activity.document_id || '',
+        action: activity.action || 'view',
+        user_id: activity.user_id || 'system',
+        user_name: activity.user_name || 'System',
+        user_role: activity.user_role || 'System',
+        timestamp: activity.timestamp || new Date().toISOString(),
+        comments: activity.comments
       };
       
       const { data, error } = await supabase
@@ -184,76 +198,6 @@ const documentService = {
       return data || [];
     } catch (error) {
       console.error(`Error fetching activities for document ${documentId}:`, error);
-      throw error;
-    }
-  },
-  
-  // Document comments
-  async getDocumentComments(documentId: string): Promise<DocumentComment[]> {
-    try {
-      const { data, error } = await supabase
-        .from('document_comments')
-        .select('*')
-        .eq('document_id', documentId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error(`Error fetching comments for document ${documentId}:`, error);
-      throw error;
-    }
-  },
-  
-  async createDocumentComment(comment: Partial<DocumentComment>): Promise<DocumentComment> {
-    try {
-      const newComment = {
-        id: comment.id || uuidv4(),
-        ...comment,
-        created_at: comment.created_at || new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('document_comments')
-        .insert(newComment)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating document comment:', error);
-      throw error;
-    }
-  },
-  
-  async updateDocumentComment(commentId: string, updates: Partial<DocumentComment>): Promise<DocumentComment> {
-    try {
-      const { data, error } = await supabase
-        .from('document_comments')
-        .update(updates)
-        .eq('id', commentId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error(`Error updating comment ${commentId}:`, error);
-      throw error;
-    }
-  },
-  
-  async deleteDocumentComment(commentId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('document_comments')
-        .delete()
-        .eq('id', commentId);
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error(`Error deleting comment ${commentId}:`, error);
       throw error;
     }
   }

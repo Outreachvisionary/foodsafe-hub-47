@@ -113,24 +113,22 @@ const DocumentsContent = () => {
     n.type === 'expiry_reminder'
   ).length;
 
+  const titleElement = (
+    <div className="text-gradient-primary text-3xl font-bold">
+      {t('documents.header.title', 'Document Management')}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/50 to-white">
       <DashboardHeader 
-        title={
-          <div className="text-gradient-primary text-3xl font-bold">
-            {t('documents.header.title', 'Document Management')}
-          </div>
-        }
-        subtitle={
-          <div className="text-foreground/80 text-lg">
-            {t('documents.header.subtitle', 'Manage and control your documents and approval workflows')}
-          </div>
-        }
+        title={titleElement}
+        subtitle={t('documents.header.subtitle', 'Manage and control your documents and approval workflows')}
         className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-accent/10"
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        <Breadcrumbs className="text-lg mb-8" />
+        <Breadcrumbs />
         
         {/* Display error handler when there's an error */}
         {error && <DocumentRepositoryErrorHandler />}

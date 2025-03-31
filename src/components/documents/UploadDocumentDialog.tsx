@@ -17,6 +17,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import documentService from '@/services/documentService';
 import { supabase } from '@/integrations/supabase/client';
+import { DocumentCategory, DocumentStatus } from '@/types/document';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -25,7 +26,7 @@ interface UploadDocumentDialogProps {
 
 type CategoryOption = {
   label: string;
-  value: string;
+  value: DocumentCategory;
 };
 
 const CATEGORIES: CategoryOption[] = [
@@ -48,7 +49,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<string>('');
+  const [category, setCategory] = useState<DocumentCategory | ''>('');
   const [file, setFile] = useState<File | null>(null);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
@@ -143,8 +144,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
         file_size: file.size,
         file_type: file.type || 'application/octet-stream',
         file_path: fileUrl,
-        category: category,
-        status: 'Draft',
+        category: category as DocumentCategory,
+        status: 'Draft' as DocumentStatus,
         version: 1,
         created_by: user?.id || 'system',
         created_at: new Date().toISOString(),
@@ -180,7 +181,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
       toast({
         title: "Document uploaded successfully",
         description: "Your document has been uploaded and added to the repository.",
-        variant: "success",
+        variant: "default",
       });
       
       setTimeout(() => {
@@ -269,7 +270,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
                   <Label htmlFor="category" className="text-lg font-medium">Category *</Label>
                   <Select 
                     value={category} 
-                    onValueChange={setCategory} 
+                    onValueChange={(value) => setCategory(value as DocumentCategory)} 
                     required
                     disabled={isUploading}
                   >

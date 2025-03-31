@@ -4,7 +4,6 @@ import DashboardContent from '@/components/dashboard/DashboardOverview';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
-import AssignRoleButton from '@/components/role/AssignRoleButton';
 import useProfileRealtime from '@/hooks/useProfileRealtime';
 import { LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,16 +17,18 @@ const Dashboard = () => {
     console.log('Profile listener active:', isListening);
   }, [user, isListening]);
   
+  const titleElement = (
+    <div className="flex items-center gap-2 text-3xl">
+      <LayoutDashboard className="h-8 w-8 text-accent" />
+      <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-bold">Dashboard</span>
+    </div>
+  );
+  
   return (
     <div className="container mx-auto p-4">
       <DashboardHeader 
-        title={
-          <div className="flex items-center gap-2 text-3xl">
-            <LayoutDashboard className="h-8 w-8 text-accent" />
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-bold">Dashboard</span>
-          </div>
-        } 
-        subtitle="Overview of your compliance status" 
+        title={titleElement}
+        subtitle="Overview of your compliance status"
         className="mb-8"
       />
       
