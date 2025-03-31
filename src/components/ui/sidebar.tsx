@@ -15,14 +15,14 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       <motion.div
         ref={ref}
         className={cn(
-          "flex flex-col h-full bg-gradient-to-b from-primary/90 via-primary/80 to-accent/80 border-r border-white/10 shadow-xl backdrop-blur-sm", 
+          "flex flex-col h-full bg-gradient-to-b from-primary/90 to-accent/80 border-r border-white/10 shadow-xl backdrop-blur-sm", 
           className
         )}
         initial={{ opacity: 0.9 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        onHoverStart={() => setIsHovered(true)}
-        onHoverEnd={() => setIsHovered(false)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         {...props}
       >
         {/* Animated glow effect on hover */}

@@ -136,7 +136,8 @@
 }
 
 .bg-sidebar {
-  @apply bg-gradient-to-b from-primary/90 via-primary-dark to-accent-dark;
+  /* Fixed: removed via-primary-dark and used only available classes */
+  @apply bg-gradient-to-b from-primary/90 to-accent-dark;
 }
 
 .bg-header {
