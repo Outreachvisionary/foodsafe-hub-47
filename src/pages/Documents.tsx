@@ -11,7 +11,7 @@ import DocumentTemplates from '@/components/documents/DocumentTemplates';
 import DocumentEditor from '@/components/documents/DocumentEditor';
 import DocumentNotificationCenter from '@/components/documents/DocumentNotificationCenter';
 import DocumentRepositoryErrorHandler from '@/components/documents/DocumentRepositoryErrorHandler';
-import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit, AlertTriangle, Search, Plus } from 'lucide-react';
+import { FileText, ClipboardCheck, CalendarX, FilePlus, Edit, AlertTriangle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
@@ -101,10 +101,6 @@ const DocumentsContent = () => {
     setActiveTab('approvals');
   };
 
-  const handleDocumentWorkflow = () => {
-    setIsUploadOpen(true);
-  };
-
   const approvalNotifications = notifications.filter(n => 
     n.type === 'approval_overdue' || n.type === 'approval_request'
   ).length;
@@ -141,13 +137,6 @@ const DocumentsContent = () => {
               onMarkAsRead={markNotificationAsRead}
               onClearAll={clearAllNotifications}
             />
-            <Button 
-              onClick={handleDocumentWorkflow} 
-              className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary-dark hover:to-accent-dark text-white font-medium text-base py-5 shadow-md hover:shadow-lg transition-all"
-            >
-              <Upload className="h-5 w-5" />
-              <span>{t('documents.createNew', 'Upload Document')}</span>
-            </Button>
           </div>
         </div>
         
@@ -206,23 +195,6 @@ const DocumentsContent = () => {
           
           <TabsContent value="repository">
             <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
-              <div className="flex justify-between items-center p-4 border-b border-accent/10">
-                <div className="relative w-1/3">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <input 
-                    type="search" 
-                    placeholder="Search documents..." 
-                    className="pl-10 pr-4 py-2 w-full rounded-md border border-border/60 focus:border-accent focus:ring-accent text-base"
-                  />
-                </div>
-                <Button 
-                  onClick={() => setIsUploadOpen(true)}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-base shadow-sm"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Add Document</span>
-                </Button>
-              </div>
               <DocumentRepository />
             </div>
           </TabsContent>

@@ -1,416 +1,270 @@
+
 import { useState, useCallback } from 'react';
-import { Document, DocumentVersion, Folder } from '@/types/database';
+import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
-import enhancedDocumentService from '@/services/enhancedDocumentService';
-import documentCommentService from '@/services/documentCommentService';
-import { useToast } from './use-toast';
-import { supabase, initializeStorage } from '@/integrations/supabase/client';
-import { uploadFileWithRetry } from '@/utils/fileStorage';
+import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
+import { useToast } from '@/hooks/use-toast';
 
-// Debug flag - turn on for more verbose logging
-const DEBUG_MODE = true;
-
-export function useDocumentService() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const useDocumentService = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const debugLog = (...args: any[]) => {
-    if (DEBUG_MODE) {
-      console.log('[DocumentService Debug]', ...args);
-    }
-  };
+  const fetchDocuments = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-  const fetchDocuments = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Fetching documents...');
       const documents = await documentService.fetchDocuments();
-      debugLog('Documents fetched:', documents);
       return documents;
-    } catch (err) {
-      console.error('Error fetching documents:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error fetching documents',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch documents');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchFolders = async (): Promise<Folder[]> => {
+  const fetchDocument = useCallback(async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Fetching folders...');
-      // Return empty array for now
-      return [];
-    } catch (err) {
-      console.error('Error fetching folders:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error fetching folders',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+      const document = await documentService.fetchDocument(id);
+      return document;
+    } catch (err: any) {
+      setError(err.message || `Failed to fetch document with ID ${id}`);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const createDocument = async (document: Omit<Document, 'id'>) => {
+  const createDocument = useCallback(async (document: Partial<Document>) => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Creating document:', document);
-      const result = await documentService.createDocument(document);
-      debugLog('Document created:', result);
-      toast({
-        title: 'Document created',
-        description: 'The document has been created successfully'
-      });
-      return result;
-    } catch (err) {
-      console.error('Error creating document:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error creating document',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+      const newDocument = await documentService.createDocument(document);
+      return newDocument;
+    } catch (err: any) {
+      setError(err.message || 'Failed to create document');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const updateDocument = async (id: string, document: Partial<Document>) => {
+  const updateDocument = useCallback(async (id: string, updates: Partial<Document>) => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Updating document:', id, document);
-      const result = await documentService.updateDocument(id, document);
-      debugLog('Document updated:', result);
-      toast({
-        title: 'Document updated',
-        description: 'The document has been updated successfully'
-      });
-      return result;
-    } catch (err) {
-      console.error('Error updating document:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error updating document',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+      const updatedDocument = await documentService.updateDocument(id, updates);
+      return updatedDocument;
+    } catch (err: any) {
+      setError(err.message || `Failed to update document with ID ${id}`);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const approveDocument = async (id: string, comment: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Approving document:', id, 'Comment:', comment);
-      
-      const result = await documentService.updateDocument(id, {
-        status: 'Approved',
-        last_action: 'approved',
-        updated_at: new Date().toISOString(),
-      });
-      
-      // Create approval activity record - using the correct property names in DocumentActivity
-      await enhancedDocumentService.createDocumentActivity({
-        document_id: id,
-        action: 'approve',
-        user_id: 'system', // Using user_id instead of performedBy
-        user_name: 'System',
-        user_role: 'System',
-        timestamp: new Date().toISOString(), // Using timestamp instead of performedAt
-        comments: comment // Using comments instead of details
-      });
-      
-      debugLog('Document approved:', result);
-      return result;
-    } catch (err) {
-      console.error('Error approving document:', err);
-      setError(err as Error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const deleteDocument = useCallback(async (id: string) => {
+    setIsLoading(true);
+    setError(null);
 
-  const rejectDocument = async (id: string, comment: string) => {
-    if (!comment.trim()) {
-      const error = new Error('Rejection reason is required');
-      setError(error);
-      throw error;
-    }
-    
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Rejecting document:', id, 'Reason:', comment);
-      
-      const result = await documentService.updateDocument(id, {
-        status: 'Draft',
-        last_action: 'rejected',
-        rejection_reason: comment,
-        updated_at: new Date().toISOString(),
-      });
-      
-      // Create rejection activity record - using the correct property names in DocumentActivity
-      await enhancedDocumentService.createDocumentActivity({
-        document_id: id,
-        action: 'reject',
-        user_id: 'system', // Using user_id instead of performedBy
-        user_name: 'System',
-        user_role: 'System',
-        timestamp: new Date().toISOString(), // Using timestamp instead of performedAt
-        comments: comment // Using comments instead of details
-      });
-      
-      debugLog('Document rejected:', result);
-      return result;
-    } catch (err) {
-      console.error('Error rejecting document:', err);
-      setError(err as Error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deleteDocument = async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Deleting document:', id);
       await documentService.deleteDocument(id);
-      debugLog('Document deleted:', id);
-      toast({
-        title: 'Document deleted',
-        description: 'The document has been deleted successfully'
-      });
-    } catch (err) {
-      console.error('Error deleting document:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error deleting document',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      setError(err.message || `Failed to delete document with ID ${id}`);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const uploadFile = async (file: File, path: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Uploading file:', file.name, 'to path:', path);
-      
-      // First, ensure storage is available
-      const isStorageReady = await checkStorageAvailability();
-      if (!isStorageReady) {
-        // Try to initialize storage
-        await initializeStorage();
-        // Check again after initialization attempt
-        const isAvailableAfterInit = await checkStorageAvailability();
-        if (!isAvailableAfterInit) {
-          throw new Error('Document storage is not available. Please contact your administrator.');
-        }
-      }
-      
-      // Use our enhanced upload function with retry capabilities
-      const result = await uploadFileWithRetry(file, 'attachments', path, {
-        upsert: true,
-        maxRetries: 3,
-        progressCallback: (progress) => {
-          debugLog(`Upload progress: ${progress}%`);
-        }
-      });
-      
-      debugLog('File uploaded successfully to path:', path, 'Public URL:', result.url);
-      return true;
-    } catch (err) {
-      console.error('Error uploading file:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error uploading file',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchVersions = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    setError(null);
 
-  const createDocumentVersion = async (versionData: Omit<DocumentVersion, 'id'>) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Creating document version:', versionData);
-      const result = await documentService.createDocumentVersion(versionData);
-      debugLog('Document version created:', result);
-      return result;
-    } catch (err) {
-      console.error('Error creating document version:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error creating document version',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchDocumentVersions = async (documentId: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      debugLog('Fetching document versions for:', documentId);
-      const versions = await enhancedDocumentService.fetchDocumentVersions(documentId);
-      debugLog('Document versions fetched:', versions);
+      const versions = await documentService.fetchDocumentVersions(documentId);
       return versions;
-    } catch (err) {
-      console.error('Error fetching document versions:', err);
-      setError(err as Error);
-      toast({
-        title: 'Error fetching document versions',
-        description: (err as Error).message,
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      setError(err.message || `Failed to fetch versions for document ${documentId}`);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const checkStorageAvailability = async (): Promise<boolean> => {
-    // Set a global timeout for the entire function
-    const hardTimeoutPromise = new Promise<boolean>(resolve => {
-      setTimeout(() => {
-        console.warn('Hard timeout triggered for storage check');
-        resolve(false);
-      }, 5000); // 5 second global timeout, reduced from 10s
-    });
+  const createVersion = useCallback(async (version: Partial<DocumentVersion>) => {
+    setIsLoading(true);
+    setError(null);
 
-    // Main check logic
-    const checkPromise = async (): Promise<boolean> => {
-      try {
-        debugLog('Checking storage availability...');
-        
-        // Check if Supabase client is properly initialized
-        if (!supabase || !supabase.storage) {
-          console.error('Supabase client not properly initialized');
-          return false;
-        }
-        
-        // First, check if the buckets API is accessible
-        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-        
-        if (bucketsError) {
-          console.error('Error listing storage buckets:', bucketsError);
-          return false;
-        }
-        
-        // Check if the attachments bucket exists
-        const attachmentsBucket = buckets.find(bucket => bucket.name === 'attachments');
-        if (!attachmentsBucket) {
-          console.error('Attachments bucket not found. Available buckets:', buckets.map(b => b.name).join(', '));
-          return false;
-        }
-        
-        debugLog('Attachments bucket exists:', attachmentsBucket);
-        
-        // Try to list files in the bucket to verify access
-        const { error: listError } = await supabase.storage
-          .from('attachments')
-          .list('', { 
-            limit: 1,
-            sortBy: { column: 'name', order: 'asc' }
-          });
-        
-        if (listError) {
-          console.error('Error accessing attachments bucket:', listError);
-          return false;
-        }
-        
-        debugLog('Storage is available and accessible');
-        return true;
-      } catch (err) {
-        console.error('General error checking storage:', err);
-        return false;
-      }
-    };
-
-    // Race between the check and the hard timeout
-    return Promise.race([checkPromise(), hardTimeoutPromise]);
-  };
-
-  const checkDatabaseAvailability = async () => {
     try {
-      debugLog('Checking database availability...');
-      
-      // Check if we can access the documents table
-      const { data, error } = await supabase
-        .from('documents')
-        .select('id')
-        .limit(1);
-        
-      if (error) {
-        console.error('Database access error:', error);
-        return false;
-      }
-      
-      debugLog('Database connection successful');
-      return true;
-    } catch (err) {
-      console.error('Error checking database availability:', err);
-      return false;
+      const newVersion = await documentService.createDocumentVersion(version);
+      return newVersion;
+    } catch (err: any) {
+      setError(err.message || 'Failed to create document version');
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  const recordActivity = useCallback(async (activity: Partial<DocumentActivity>) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const newActivity = await documentService.createDocumentActivity(activity);
+      return newActivity;
+    } catch (err: any) {
+      setError(err.message || 'Failed to record document activity');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchActivities = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const activities = await documentService.fetchDocumentActivities(documentId);
+      return activities;
+    } catch (err: any) {
+      setError(err.message || `Failed to fetch activities for document ${documentId}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Get storage path for a document file
+  const getStoragePath = useCallback((documentId: string, fileName: string) => {
+    return `documents/${documentId}/${fileName}`;
+  }, []);
+
+  // Get download URL for a file in storage
+  const getDownloadUrl = useCallback(async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('attachments')
+        .createSignedUrl(path, 3600); // URL expires in 1 hour
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || !data.signedUrl) {
+        throw new Error('Failed to generate download URL');
+      }
+
+      return data.signedUrl;
+    } catch (err: any) {
+      setError(err.message || 'Failed to get download URL');
+      throw err;
+    }
+  }, []);
+
+  // Get file preview URL for specified file types
+  const getPreviewUrl = useCallback(async (documentId: string, fileName: string, fileType: string) => {
+    try {
+      const storagePath = getStoragePath(documentId, fileName);
+      const url = await getDownloadUrl(storagePath);
+      
+      // Check if the file type is supported for preview
+      const previewableTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'text/plain',
+        'text/html'
+      ];
+      
+      if (previewableTypes.includes(fileType)) {
+        return { url, previewable: true };
+      } else {
+        return { url, previewable: false };
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to get preview URL');
+      throw err;
+    }
+  }, [getStoragePath, getDownloadUrl]);
+
+  // Handle document checkout
+  const checkoutDocument = useCallback(async (documentId: string, userId: string) => {
+    try {
+      const updatedDocument = await documentService.updateDocument(documentId, {
+        checkout_user_id: userId,
+        checkout_timestamp: new Date().toISOString(),
+        is_locked: true
+      });
+      
+      await documentService.createDocumentActivity({
+        document_id: documentId,
+        action: 'checkout',
+        user_id: userId,
+        user_name: userId, // Should be replaced with actual user name
+        user_role: 'User', // Should be replaced with actual user role
+        comments: 'Document checked out for editing'
+      });
+      
+      return updatedDocument;
+    } catch (err: any) {
+      setError(err.message || 'Failed to checkout document');
+      throw err;
+    }
+  }, []);
+
+  // Handle document checkin
+  const checkinDocument = useCallback(async (documentId: string, userId: string) => {
+    try {
+      const updatedDocument = await documentService.updateDocument(documentId, {
+        checkout_user_id: null,
+        checkout_timestamp: null,
+        is_locked: false
+      });
+      
+      await documentService.createDocumentActivity({
+        document_id: documentId,
+        action: 'checkin',
+        user_id: userId,
+        user_name: userId, // Should be replaced with actual user name
+        user_role: 'User', // Should be replaced with actual user role
+        comments: 'Document checked in after editing'
+      });
+      
+      return updatedDocument;
+    } catch (err: any) {
+      setError(err.message || 'Failed to checkin document');
+      throw err;
+    }
+  }, []);
 
   return {
     isLoading,
     error,
     fetchDocuments,
+    fetchDocument,
     createDocument,
     updateDocument,
-    approveDocument,
-    rejectDocument,
     deleteDocument,
-    uploadFile,
-    createDocumentVersion,
-    fetchDocumentVersions,
-    checkStorageAvailability,
-    checkDatabaseAvailability,
-    fetchFolders,
-    getStoragePath: enhancedDocumentService.getStoragePath,
-    getDownloadUrl: enhancedDocumentService.getDownloadUrl,
-    fetchAccess: enhancedDocumentService.fetchAccess,
-    grantAccess: enhancedDocumentService.grantAccess,
-    revokeAccess: enhancedDocumentService.revokeAccess,
-    getDocumentComments: documentCommentService.getDocumentComments,
-    createDocumentComment: documentCommentService.createDocumentComment,
-    updateDocumentComment: documentCommentService.updateDocumentComment,
-    deleteDocumentComment: documentCommentService.deleteDocumentComment
+    fetchVersions,
+    createVersion,
+    recordActivity,
+    fetchActivities,
+    getStoragePath,
+    getDownloadUrl,
+    getPreviewUrl,
+    checkoutDocument,
+    checkinDocument
   };
-}
+};

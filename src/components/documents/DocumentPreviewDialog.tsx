@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Document } from '@/types/database';
 import { useDocumentService } from '@/hooks/useDocumentService';
-import { Loader2, FileText, Download, Copy, Share, Info } from 'lucide-react';
+import { Loader2, FileText, Download, Copy, Share, Info, Eye, Edit, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import DocumentVersionHistory from './DocumentVersionHistory';
 import DocumentComments from './DocumentComments';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface DocumentPreviewProps {
   document: Document;
@@ -23,6 +26,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
   const [activeTab, setActiveTab] = useState('preview');
   const [isLoading, setIsLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const documentService = useDocumentService();
 
@@ -31,14 +35,30 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
       if (!document) return;
       
       setIsLoading(true);
+      setPreviewError(null);
+      
       try {
+        // Try to get a URL for in-browser preview
         const storagePath = documentService.getStoragePath(document.id, document.file_name);
-        
-        // Generate download URL
         const url = await documentService.getDownloadUrl(storagePath);
         setPreviewUrl(url);
+        
+        // For certain file types, we need to handle preview differently
+        if (document.file_type && (
+            document.file_type.includes('pdf') || 
+            document.file_type.includes('image') ||
+            document.file_type.includes('text') ||
+            document.file_type.includes('html')
+        )) {
+          // These file types can be previewed directly
+          console.log("File can be previewed in browser:", document.file_type);
+        } else {
+          // Set an error for file types that can't be previewed in browser
+          setPreviewError(`File type ${document.file_type} cannot be previewed directly.`);
+        }
       } catch (error) {
         console.error('Error loading document preview:', error);
+        setPreviewError('Failed to load document preview');
       } finally {
         setIsLoading(false);
       }
@@ -46,6 +66,22 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
     
     loadPreview();
   }, [document]);
+
+  const handleDownload = async () => {
+    if (!document || !previewUrl) return;
+    
+    try {
+      // Create a temporary anchor element to trigger the download
+      const link = document.createElement('a');
+      link.href = previewUrl;
+      link.download = document.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
+  };
 
   if (!document) return null;
 
@@ -65,7 +101,9 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
           <h2 className="text-2xl font-bold">{document.title}</h2>
           <p className="text-muted-foreground">{document.description}</p>
         </div>
-        <Button variant="ghost" onClick={handleClose}>Close</Button>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
+          <X className="h-5 w-5" />
+        </Button>
       </div>
       
       <div className="flex border-b">
@@ -97,27 +135,68 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
       
       <div className="mt-4">
         {activeTab === 'preview' && (
-          <div className="min-h-[400px] flex flex-col items-center justify-center border rounded-md">
+          <div className="min-h-[400px] flex flex-col border rounded-md relative overflow-hidden">
             {isLoading ? (
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center justify-center h-full py-12">
                 <Loader2 className="h-10 w-10 animate-spin mb-2" />
                 <p>Loading document preview...</p>
               </div>
-            ) : previewUrl ? (
-              <iframe 
-                src={previewUrl} 
-                className="w-full h-[600px] border-0" 
-                title={document.title}
-              />
-            ) : (
-              <div className="flex flex-col items-center">
+            ) : previewError ? (
+              <div className="flex flex-col items-center justify-center h-full py-12">
                 <FileText className="h-16 w-16 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">Preview not available</p>
-                <p className="text-muted-foreground mb-4">This document type cannot be previewed directly in the browser.</p>
-                <Button>
+                <p className="text-muted-foreground mb-4">{previewError}</p>
+                <Button onClick={handleDownload}>
                   <Download className="h-4 w-4 mr-2" />
                   Download Document
                 </Button>
+              </div>
+            ) : previewUrl ? (
+              <div className="h-[600px] w-full">
+                {document.file_type?.includes('pdf') ? (
+                  <iframe 
+                    src={`${previewUrl}#toolbar=0&navpanes=0`} 
+                    className="w-full h-full border-0" 
+                    title={document.title}
+                  />
+                ) : document.file_type?.includes('image') ? (
+                  <div className="flex items-center justify-center h-full p-4">
+                    <img 
+                      src={previewUrl} 
+                      alt={document.title} 
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : document.file_type?.includes('text') || document.file_type?.includes('html') ? (
+                  <iframe 
+                    src={previewUrl} 
+                    className="w-full h-full border-0" 
+                    title={document.title}
+                    sandbox="allow-same-origin"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium">Preview not available</p>
+                    <p className="text-muted-foreground mb-4">This document type cannot be previewed directly.</p>
+                    <Button onClick={handleDownload}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Document
+                    </Button>
+                  </div>
+                )}
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full py-12">
+                <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium">Preview not available</p>
+                <p className="text-muted-foreground mb-4">Unable to load document preview.</p>
               </div>
             )}
           </div>
@@ -128,11 +207,25 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Category</p>
-                <p className="font-medium">{document.category}</p>
+                <Badge variant="outline" className="bg-secondary/30 font-medium">
+                  {document.category}
+                </Badge>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-medium">{document.status}</p>
+                <Badge
+                  className={cn(
+                    document.status === 'Draft' && 'bg-slate-200 text-slate-700',
+                    document.status === 'Pending Approval' && 'bg-amber-100 text-amber-700',
+                    document.status === 'Approved' && 'bg-green-100 text-green-700',
+                    document.status === 'Published' && 'bg-blue-100 text-blue-700',
+                    document.status === 'Archived' && 'bg-gray-100 text-gray-700',
+                    document.status === 'Expired' && 'bg-red-100 text-red-700',
+                    'font-medium'
+                  )}
+                >
+                  {document.status}
+                </Badge>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Created By</p>
@@ -186,8 +279,8 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({
               </div>
             )}
             
-            <div className="flex space-x-2">
-              <Button variant="outline" className="flex items-center">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="flex items-center" onClick={handleDownload}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>

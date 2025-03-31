@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, File, X } from 'lucide-react';
+import { Loader2, Upload, File, X, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentCategory, DocumentStatus } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
 import documentService from '@/services/documentService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -22,12 +30,15 @@ interface DocumentUploaderProps {
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   onUploadComplete,
   category = 'Other',
-  allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx'],
+  allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'],
   maxSize = 10, // Default 10MB
   onSuccess,
   onCancel
 }) => {
   const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(category);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
@@ -58,18 +69,41 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       setFile(selectedFile);
+      // Set the default title to the file name without extension
+      const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
+      setTitle(fileName);
     }
   };
 
   const handleRemoveFile = () => {
     setFile(null);
+    setTitle('');
   };
 
   const uploadDocument = async () => {
-    if (!file) return;
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!title.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please provide a title for the document",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsUploading(true);
     setUploadProgress(0);
+    
+    // Simulate progress
+    const progressInterval = simulateProgress();
     
     try {
       // Get current user
@@ -104,11 +138,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       // Create document record in database
       const newDocument: Partial<Document> = {
         id: documentId,
-        title: file.name.split('.').slice(0, -1).join('.'), // Remove extension from filename
+        title: title.trim(),
+        description: description.trim(),
         file_name: fileName,
         file_size: file.size,
         file_type: file.type,
-        category: category,
+        category: selectedCategory,
         status: 'Draft' as DocumentStatus,
         version: 1,
         created_by: user.id,
@@ -151,114 +186,192 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         comments: 'Document created through file upload'
       });
       
-      toast({
-        title: "Upload successful",
-        description: "Document has been uploaded successfully.",
-      });
+      setUploadProgress(100);
       
-      if (onUploadComplete) {
-        onUploadComplete(documentData);
-      }
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Reset state
-      setFile(null);
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        
+        toast({
+          title: "Upload successful",
+          description: "Document has been uploaded successfully.",
+        });
+        
+        if (onUploadComplete) {
+          onUploadComplete(documentData);
+        }
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // Reset state
+        setFile(null);
+        setTitle('');
+        setDescription('');
+        setSelectedCategory(category);
+        setIsUploading(false);
+      }, 500);
       
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error uploading document:', error);
       toast({
         title: "Upload failed",
         description: "There was a problem uploading your document.",
         variant: "destructive"
       });
-    } finally {
       setIsUploading(false);
     }
   };
 
-  // Add a function to simulate upload progress
+  // Function to simulate upload progress
   const simulateProgress = () => {
     let progress = 0;
     const interval = setInterval(() => {
       progress += 5;
-      if (progress > 100) {
+      if (progress > 90) {
         clearInterval(interval);
+        setUploadProgress(90); // Cap at 90% until the upload is actually complete
       } else {
         setUploadProgress(progress);
       }
     }, 200);
     
-    return () => clearInterval(interval);
+    return interval;
   };
 
   return (
-    <div className="p-4 bg-white rounded-md">
+    <div className="p-4">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="document-upload">Upload Document</Label>
-          <Input 
-            id="document-upload"
-            type="file"
-            onChange={handleFileChange}
-            disabled={isUploading || !!file}
-            className="cursor-pointer"
-          />
-          {!file && (
-            <p className="text-sm text-gray-500">
-              Allowed file types: {allowedTypes.join(', ')} (Max size: {maxSize}MB)
-            </p>
-          )}
-        </div>
-        
-        {file && (
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <File className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="font-medium">{file.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+        {!file ? (
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
+            <Input 
+              id="document-upload"
+              type="file"
+              onChange={handleFileChange}
+              disabled={isUploading}
+              className="hidden"
+            />
+            <Label htmlFor="document-upload" className="cursor-pointer flex flex-col items-center justify-center">
+              <FileText className="h-10 w-10 text-muted-foreground mb-3" />
+              <span className="text-lg font-medium mb-1">Drag & drop a file or click to browse</span>
+              <span className="text-sm text-muted-foreground">
+                Allowed file types: {allowedTypes.join(', ')} (Max size: {maxSize}MB)
+              </span>
+            </Label>
+          </div>
+        ) : (
+          <>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-md">
+                    <File className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{file.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
                 </div>
+                
+                {!isUploading && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleRemoveFile}
+                    className="text-gray-500 hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               
-              {!isUploading && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleRemoveFile}
-                  className="text-gray-500 hover:text-red-500"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              {isUploading && (
+                <div className="mt-3">
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    {uploadProgress}% uploaded
+                  </p>
+                </div>
               )}
             </div>
             
-            {isUploading && (
-              <div className="mt-2">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  {uploadProgress}% uploaded
-                </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="document-title">Title</Label>
+                <Input 
+                  id="document-title" 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Document title"
+                  disabled={isUploading}
+                  required
+                />
               </div>
-            )}
-          </div>
+              
+              <div>
+                <Label htmlFor="document-description">Description (optional)</Label>
+                <Textarea 
+                  id="document-description" 
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of this document"
+                  disabled={isUploading}
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="document-category">Category</Label>
+                <Select 
+                  value={selectedCategory} 
+                  onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
+                  disabled={isUploading}
+                >
+                  <SelectTrigger id="document-category">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SOP">SOP</SelectItem>
+                    <SelectItem value="Policy">Policy</SelectItem>
+                    <SelectItem value="Form">Form</SelectItem>
+                    <SelectItem value="Certificate">Certificate</SelectItem>
+                    <SelectItem value="Audit Report">Audit Report</SelectItem>
+                    <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
+                    <SelectItem value="Training Material">Training Material</SelectItem>
+                    <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
+                    <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
         )}
         
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-3 pt-2">
+          {onCancel && (
+            <Button 
+              onClick={onCancel} 
+              variant="outline" 
+              disabled={isUploading}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          )}
+          
           <Button
             onClick={uploadDocument}
-            disabled={!file || isUploading}
-            className="w-full mr-2"
+            disabled={!file || isUploading || !title.trim()}
+            className="w-full"
           >
             {isUploading ? (
               <>
@@ -272,17 +385,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               </>
             )}
           </Button>
-          
-          {onCancel && (
-            <Button 
-              onClick={onCancel} 
-              variant="outline" 
-              disabled={isUploading}
-              className="ml-2"
-            >
-              Cancel
-            </Button>
-          )}
         </div>
       </div>
     </div>
