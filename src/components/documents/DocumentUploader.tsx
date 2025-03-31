@@ -15,6 +15,8 @@ interface DocumentUploaderProps {
   category?: DocumentCategory;
   allowedTypes?: string[];
   maxSize?: number; // In MB
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({
@@ -22,6 +24,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   category = 'Other',
   allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx'],
   maxSize = 10, // Default 10MB
+  onSuccess,
+  onCancel
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -156,6 +160,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         onUploadComplete(documentData);
       }
       
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       // Reset state
       setFile(null);
       
@@ -246,23 +254,36 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           </div>
         )}
         
-        <Button
-          onClick={uploadDocument}
-          disabled={!file || isUploading}
-          className="w-full"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
-            </>
+        <div className="flex justify-between">
+          <Button
+            onClick={uploadDocument}
+            disabled={!file || isUploading}
+            className="w-full mr-2"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Document
+              </>
+            )}
+          </Button>
+          
+          {onCancel && (
+            <Button 
+              onClick={onCancel} 
+              variant="outline" 
+              disabled={isUploading}
+              className="ml-2"
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   );

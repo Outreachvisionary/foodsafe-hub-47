@@ -66,7 +66,16 @@ const createPlaceholderComponent = (name: string) => {
   return () => <div>Placeholder for {name} component</div>;
 };
 
-const DocumentUpload = createPlaceholderComponent('DocumentUpload');
+const DocumentUpload = ({ onSuccess, onCancel }: { 
+  onSuccess?: () => void; 
+  onCancel?: () => void; 
+}) => (
+  <DocumentUploader 
+    onSuccess={onSuccess} 
+    onCancel={onCancel} 
+  />
+);
+
 const DocumentActions = createPlaceholderComponent('DocumentActions');
 const DocumentFilters = ({ 
   categoryFilter, statusFilter, dateRangeFilter, isLockedFilter, 
