@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Upload, FileText } from 'lucide-react';
+import { CalendarIcon, Upload, FileText, UserCircle2, ClipboardCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useDocumentService } from '@/hooks/useDocumentService';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -38,6 +47,8 @@ const documentFormSchema = z.object({
   expiry_date: z.date().optional(),
   tags: z.string().optional(),
   is_locked: z.boolean().default(false),
+  needs_review: z.boolean().default(false),
+  assigned_approvers: z.string().optional(),
 });
 
 type DocumentFormValues = z.infer<typeof documentFormSchema>;
@@ -53,6 +64,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const { toast } = useToast();
   const { createDocument } = useDocumentService();
 
+  // List of available approvers - in a real app, this would be fetched from a backend service
+  const availableApprovers = [
+    { id: "1", name: "John Smith", role: "Quality Manager" },
+    { id: "2", name: "Sarah Johnson", role: "Department Head" },
+    { id: "3", name: "Michael Chen", role: "Compliance Officer" },
+    { id: "4", name: "Lisa Rodriguez", role: "Food Safety Manager" },
+    { id: "5", name: "David Wilson", role: "Operations Director" }
+  ];
+
   const form = useForm<DocumentFormValues>({
     resolver: zodResolver(documentFormSchema),
     defaultValues: {
@@ -63,8 +83,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       expiry_date: undefined,
       tags: "",
       is_locked: false,
+      needs_review: false,
+      assigned_approvers: "",
     },
   });
+
+  const needsReview = form.watch('needs_review');
 
   const handleUploadComplete = () => {
     onOpenChange(false);
@@ -79,6 +103,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   const handleCreateDocument = async (values: DocumentFormValues) => {
     try {
+      // If document needs review, set status to Pending Approval
+      const status = values.needs_review ? 'Pending Approval' : values.status;
+      
       const newDocument = {
         title: values.title,
         description: values.description,
@@ -86,7 +113,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         file_size: 0,
         file_type: 'text/plain',
         category: values.category,
-        status: values.status,
+        status: status,
         version: 1,
         created_by: 'admin',
         created_at: new Date().toISOString(),
@@ -94,6 +121,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         expiry_date: values.expiry_date?.toISOString(),
         tags: values.tags?.split(',').map(tag => tag.trim()),
         is_locked: values.is_locked,
+        approvers: values.assigned_approvers ? values.assigned_approvers.split(',').map(approver => approver.trim()) : [],
+        pending_since: values.needs_review ? new Date().toISOString() : undefined,
       };
 
       await createDocument(newDocument);
@@ -116,7 +145,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-white">
         <DialogHeader>
           <DialogTitle>Document Management</DialogTitle>
         </DialogHeader>
@@ -164,7 +193,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input placeholder="Document Description" {...field} />
+                        <Textarea placeholder="Document Description" {...field} className="min-h-20" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,17 +212,17 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                             <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="SOP">SOP</SelectItem>
-                          <SelectItem value="Policy">Policy</SelectItem>
-                          <SelectItem value="Form">Form</SelectItem>
-                          <SelectItem value="Certificate">Certificate</SelectItem>
-                          <SelectItem value="Audit Report">Audit Report</SelectItem>
-                          <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
-                          <SelectItem value="Training Material">Training Material</SelectItem>
-                          <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
-                          <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
+                        <SelectContent className="bg-white text-gray-900">
+                          <SelectItem value="SOP" className="text-gray-900">SOP</SelectItem>
+                          <SelectItem value="Policy" className="text-gray-900">Policy</SelectItem>
+                          <SelectItem value="Form" className="text-gray-900">Form</SelectItem>
+                          <SelectItem value="Certificate" className="text-gray-900">Certificate</SelectItem>
+                          <SelectItem value="Audit Report" className="text-gray-900">Audit Report</SelectItem>
+                          <SelectItem value="HACCP Plan" className="text-gray-900">HACCP Plan</SelectItem>
+                          <SelectItem value="Training Material" className="text-gray-900">Training Material</SelectItem>
+                          <SelectItem value="Supplier Documentation" className="text-gray-900">Supplier Documentation</SelectItem>
+                          <SelectItem value="Risk Assessment" className="text-gray-900">Risk Assessment</SelectItem>
+                          <SelectItem value="Other" className="text-gray-900">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -207,21 +236,30 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={needsReview}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a status" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Draft">Draft</SelectItem>
-                          <SelectItem value="Pending Approval">Pending Approval</SelectItem>
-                          <SelectItem value="Approved">Approved</SelectItem>
-                          <SelectItem value="Published">Published</SelectItem>
-                          <SelectItem value="Archived">Archived</SelectItem>
-                          <SelectItem value="Expired">Expired</SelectItem>
+                        <SelectContent className="bg-white text-gray-900">
+                          <SelectItem value="Draft" className="text-gray-900">Draft</SelectItem>
+                          <SelectItem value="Pending Approval" className="text-gray-900">Pending Approval</SelectItem>
+                          <SelectItem value="Approved" className="text-gray-900">Approved</SelectItem>
+                          <SelectItem value="Published" className="text-gray-900">Published</SelectItem>
+                          <SelectItem value="Archived" className="text-gray-900">Archived</SelectItem>
+                          <SelectItem value="Expired" className="text-gray-900">Expired</SelectItem>
                         </SelectContent>
                       </Select>
+                      {needsReview && (
+                        <FormDescription>
+                          Status will be set to "Pending Approval" when document is submitted for review.
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -252,7 +290,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 bg-white" align="start">
                           <Calendar
                             mode="single"
                             selected={field.value}
@@ -286,6 +324,90 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="needs_review"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Submit for Review</FormLabel>
+                        <FormDescription>
+                          Document will be submitted for approval workflow
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                {needsReview && (
+                  <FormField
+                    control={form.control}
+                    name="assigned_approvers"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <UserCircle2 className="h-4 w-4" />
+                          Assign Approvers
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              placeholder="Enter approver names (comma-separated)" 
+                              {...field} 
+                              className="pr-10"
+                            />
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
+                                >
+                                  <UserCircle2 className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56 bg-white text-gray-900 p-2">
+                                <DropdownMenuLabel className="text-gray-900">Select Approvers</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {availableApprovers.map((approver) => (
+                                  <DropdownMenuItem 
+                                    key={approver.id}
+                                    className="text-gray-900 cursor-pointer"
+                                    onClick={() => {
+                                      const currentApprovers = field.value ? field.value.split(',').map(a => a.trim()) : [];
+                                      if (!currentApprovers.includes(approver.name)) {
+                                        const newValue = currentApprovers.length > 0 
+                                          ? `${field.value}, ${approver.name}` 
+                                          : approver.name;
+                                        field.onChange(newValue);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span>{approver.name}</span>
+                                      <span className="text-xs text-gray-500">{approver.role}</span>
+                                    </div>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Select or type the names of people who should approve this document.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
                 <FormField
                   control={form.control}
@@ -312,7 +434,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                   <Button type="button" variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
-                  <Button type="submit">Create Document</Button>
+                  <Button type="submit" className="gap-1">
+                    {needsReview ? (
+                      <>
+                        <ClipboardCheck className="h-4 w-4" />
+                        Submit for Review
+                      </>
+                    ) : 'Create Document'}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
