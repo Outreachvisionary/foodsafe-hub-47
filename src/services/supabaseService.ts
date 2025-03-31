@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document, Folder, TrainingRecord, TrainingSession } from '@/types/database';
 
@@ -102,9 +101,25 @@ export const fetchTrainingRecords = async (): Promise<TrainingRecord[]> => {
 };
 
 export const createTrainingRecord = async (record: Omit<TrainingRecord, 'id'>): Promise<TrainingRecord> => {
+  // Ensure the record has all required fields according to the TrainingRecord interface
+  const validRecord = {
+    session_id: record.session_id,
+    employee_id: record.employee_id,
+    employee_name: record.employee_name,
+    due_date: record.due_date,
+    status: record.status || 'Not Started',
+    assigned_date: record.assigned_date || new Date().toISOString(),
+    completion_date: record.completion_date,
+    score: record.score,
+    pass_threshold: record.pass_threshold,
+    notes: record.notes,
+    next_recurrence: record.next_recurrence,
+    last_recurrence: record.last_recurrence
+  };
+
   const { data, error } = await supabase
     .from('training_records')
-    .insert(record)
+    .insert(validRecord)
     .select()
     .single();
   

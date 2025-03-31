@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Document } from '@/types/database';
@@ -10,10 +9,17 @@ import DocumentComments from './DocumentComments';
 
 interface DocumentPreviewProps {
   document: Document;
-  onClose: () => void;
+  onClose?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({ document, onClose }) => {
+const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({ 
+  document, 
+  onClose, 
+  open, 
+  onOpenChange 
+}) => {
   const [activeTab, setActiveTab] = useState('preview');
   const [isLoading, setIsLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -43,6 +49,15 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({ document, onClo
 
   if (!document) return null;
 
+  // Use the onClose prop if provided, otherwise use onOpenChange
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (onOpenChange) {
+      onOpenChange(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-start">
@@ -50,7 +65,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewProps> = ({ document, onClo
           <h2 className="text-2xl font-bold">{document.title}</h2>
           <p className="text-muted-foreground">{document.description}</p>
         </div>
-        <Button variant="ghost" onClick={onClose}>Close</Button>
+        <Button variant="ghost" onClick={handleClose}>Close</Button>
       </div>
       
       <div className="flex border-b">

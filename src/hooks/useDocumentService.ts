@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Document, DocumentVersion, Folder } from '@/types/database';
 import documentService from '@/services/documentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';

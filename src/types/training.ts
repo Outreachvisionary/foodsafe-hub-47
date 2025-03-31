@@ -1,6 +1,8 @@
-
 // Re-export our database types to maintain compatibility
-export type { TrainingStatus, TrainingSession, TrainingRecord } from './database';
+export type { TrainingSession, TrainingRecord } from './database';
+
+// Define TrainingStatus type since it's not exported from database.ts
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
 
 export interface EmployeeRole {
   id: string;

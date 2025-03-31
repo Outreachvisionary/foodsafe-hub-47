@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DocumentComment } from '@/types/document-comment';
+import { DocumentComment } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
 
 const documentCommentService = {
   // Document comments
   async getDocumentComments(documentId: string): Promise<DocumentComment[]> {
     try {
-      // Use 'document_comments' table - we'll need to make sure this exists in the database
+      // Check if 'document_comments' table exists first
       const { data, error } = await supabase
         .from('document_comments')
         .select('*')
@@ -16,7 +16,7 @@ const documentCommentService = {
       
       if (error) throw error;
       
-      // Explicitly cast the data to DocumentComment[]
+      // Return the data cast as DocumentComment[]
       return (data || []) as DocumentComment[];
     } catch (error) {
       console.error(`Error fetching comments for document ${documentId}:`, error);
@@ -26,7 +26,7 @@ const documentCommentService = {
   
   async createDocumentComment(comment: Partial<DocumentComment>): Promise<DocumentComment> {
     try {
-      const newComment = {
+      const newComment: Partial<DocumentComment> = {
         id: comment.id || uuidv4(),
         document_id: comment.document_id,
         user_id: comment.user_id,
@@ -43,7 +43,7 @@ const documentCommentService = {
       
       if (error) throw error;
       
-      // Explicitly cast the data to DocumentComment
+      // Return the data cast as DocumentComment
       return data as DocumentComment;
     } catch (error) {
       console.error('Error creating document comment:', error);
@@ -67,7 +67,7 @@ const documentCommentService = {
       
       if (error) throw error;
       
-      // Explicitly cast the data to DocumentComment
+      // Return the data cast as DocumentComment
       return data as DocumentComment;
     } catch (error) {
       console.error(`Error updating comment ${commentId}:`, error);
