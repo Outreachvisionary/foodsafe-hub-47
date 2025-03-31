@@ -1,566 +1,850 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Document } from '@/types/document';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, CheckCircle, Copy, CopyCheck, File, FileText, Filter, FolderPlus, Loader2, MoreHorizontal, Plus, RefreshCw, Search, Trash2, Upload, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useDocuments } from '@/contexts/DocumentContext';
-import DocumentPreviewDialog from './DocumentPreviewDialog';
-import DocumentUploader from './DocumentUploader';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import { Document, DocumentCategory, DocumentStatus, Folder } from '@/types/database';
 import { format } from 'date-fns';
-import { Search, Filter, Plus, Download, Trash2, MoreHorizontal, Edit, Eye, Check, X, AlertTriangle, FileText, CalendarDays, Loader2, RefreshCw, FileWarning } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { supabase } from '@/integrations/supabase/client';
-import documentService from '@/services/documentService';
-import enhancedDocumentService from '@/services/enhancedDocumentService';
-import { useDocumentCategories, useDocumentStatuses } from '@/hooks/useDocumentReferences';
-import { useTranslation } from 'react-i18next';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { DocumentPreview } from './DocumentPreview';
+import { DocumentVersionHistory } from './DocumentVersionHistory';
+import { DocumentComments } from './DocumentComments';
+import { DocumentUpload } from './DocumentUpload';
+import { DocumentActions } from './DocumentActions';
+import { DocumentFilters } from './DocumentFilters';
+import { DocumentFolders } from './DocumentFolders';
+import { DocumentMetadata } from './DocumentMetadata';
+import { DocumentAccessControl } from './DocumentAccessControl';
+import { DocumentWorkflowManagement } from './DocumentWorkflowManagement';
+import { DocumentTrainingIntegration } from './DocumentTrainingIntegration';
+import { DocumentReviewSchedule } from './DocumentReviewSchedule';
+import { DocumentLinking } from './DocumentLinking';
+import { DocumentSecuritySettings } from './DocumentSecuritySettings';
+import { DocumentCompliance } from './DocumentCompliance';
+import { DocumentTranslations } from './DocumentTranslations';
+import { DocumentAnalytics } from './DocumentAnalytics';
+import { DocumentTemplates } from './DocumentTemplates';
+import { DocumentCollaboration } from './DocumentCollaboration';
+import { DocumentCheckinCheckout } from './DocumentCheckinCheckout';
+import { DocumentApprovalWorkflow } from './DocumentApprovalWorkflow';
+import { DocumentNotifications } from './DocumentNotifications';
+import { DocumentAuditTrail } from './DocumentAuditTrail';
+import { DocumentRetentionPolicy } from './DocumentRetentionPolicy';
+import { DocumentExport } from './DocumentExport';
+import { DocumentImport } from './DocumentImport';
+import { DocumentSearch } from './DocumentSearch';
+import { DocumentTagging } from './DocumentTagging';
+import { DocumentCustomFields } from './DocumentCustomFields';
+import { DocumentReporting } from './DocumentReporting';
+import { DocumentWatermarking } from './DocumentWatermarking';
+import { DocumentDigitalSignatures } from './DocumentDigitalSignatures';
+import { DocumentOCR } from './DocumentOCR';
+import { DocumentAI } from './DocumentAI';
+import { DocumentMobileAccess } from './DocumentMobileAccess';
+import { DocumentOfflineAccess } from './DocumentOfflineAccess';
+import { DocumentIntegration } from './DocumentIntegration';
+import { DocumentBranding } from './DocumentBranding';
+import { DocumentHelp } from './DocumentHelp';
+import { DocumentSettings } from './DocumentSettings';
 
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return 'N/A';
-  try {
-    return format(new Date(dateStr), 'MMM d, yyyy');
-  } catch (e) {
-    return 'Invalid Date';
-  }
-};
+const documentFormSchema = z.object({
+  title: z.string().min(2, {
+    message: "Title must be at least 2 characters.",
+  }),
+  description: z.string().optional(),
+  category: z.enum(['SOP', 'Policy', 'Form', 'Certificate', 'Audit Report', 'HACCP Plan', 'Training Material', 'Supplier Documentation', 'Risk Assessment', 'Other'] as [string, ...string[]]),
+  status: z.enum(['Draft', 'Pending Approval', 'Approved', 'Published', 'Archived', 'Expired'] as [string, ...string[]]),
+  expiry_date: z.date().optional(),
+  tags: z.string().optional(),
+  is_locked: z.boolean().default(false),
+});
+
+type DocumentFormValues = z.infer<typeof documentFormSchema>;
 
 const DocumentRepository: React.FC = () => {
-  const {
-    t
-  } = useTranslation();
-  const {
-    documents,
-    addDocument,
-    updateDocument,
-    deleteDocument,
-    refreshDocumentStats,
-    setSelectedDocument,
-    isLoading,
-    error: documentsError,
-    retryFetchDocuments
-  } = useDocuments();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | null>(null);
+  const [statusFilter, setStatusFilter] = useState<DocumentStatus | null>(null);
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRange | undefined>(undefined);
+  const [isLockedFilter, setIsLockedFilter] = useState<boolean | null>(null);
+  const [isAscendingSort, setIsAscendingSort] = useState(true);
+  const [selectedDocumentToDelete, setSelectedDocumentToDelete] = useState<Document | null>(null);
+  const { toast } = useToast();
+  const documentService = useDocumentService();
 
-  const {
-    categories,
-    loading: categoriesLoading,
-    error: categoriesError
-  } = useDocumentCategories();
-  const {
-    statuses,
-    loading: statusesLoading,
-    error: statusesError
-  } = useDocumentStatuses();
-
-  useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        await refreshDocumentStats();
-      } catch (error) {
-        console.error('Error loading documents:', error);
-      }
-    };
-    loadDocuments();
-  }, [refreshDocumentStats]);
-
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = searchTerm ? doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()) : true;
-    const matchesCategory = categoryFilter ? doc.category === categoryFilter : true;
-    const matchesStatus = statusFilter ? doc.status === statusFilter : true;
-    return matchesSearch && matchesCategory && matchesStatus;
+  const form = useForm<DocumentFormValues>({
+    resolver: zodResolver(documentFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      category: "Other",
+      status: "Draft",
+      expiry_date: undefined,
+      tags: "",
+      is_locked: false,
+    },
   });
 
-  const documentsByCategory = filteredDocuments.reduce((acc: Record<string, Document[]>, doc) => {
-    if (!acc[doc.category]) {
-      acc[doc.category] = [];
-    }
-    acc[doc.category].push(doc);
-    return acc;
-  }, {});
+  useEffect(() => {
+    loadDocuments();
+    loadFolders();
+  }, []);
 
-  const handleDocumentUploadComplete = (document: Document) => {
-    addDocument(document);
-    setUploadDialogOpen(false);
-    toast({
-      title: 'Document uploaded',
-      description: `${document.title} has been successfully uploaded.`
-    });
+  const loadDocuments = async () => {
+    setLoading(true);
+    try {
+      const fetchedDocuments = await documentService.fetchDocuments();
+      setDocuments(fetchedDocuments);
+    } catch (error: any) {
+      setError(error.message || 'Failed to load documents');
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
+  const loadFolders = async () => {
     try {
-      await deleteDocument(documentId);
-      setConfirmDeleteId(null);
+      // Fetch folders from your data source (e.g., Supabase)
+      const fetchedFolders = await documentService.fetchFolders();
+      setFolders(fetchedFolders);
+    } catch (error: any) {
+      console.error('Error loading folders:', error);
       toast({
-        title: 'Document deleted',
-        description: 'The document has been permanently deleted.'
+        title: 'Error',
+        description: 'Failed to load folders',
+        variant: 'destructive',
       });
-    } catch (error) {
+    }
+  };
+
+  const handleCreateDocument = async (values: DocumentFormValues) => {
+    try {
+      const newDocument: Omit<Document, 'id'> = {
+        title: values.title,
+        description: values.description,
+        file_name: 'N/A',
+        file_size: 0,
+        file_type: 'N/A',
+        category: values.category,
+        status: values.status,
+        version: 1,
+        created_by: 'admin', // Replace with actual user
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        expiry_date: values.expiry_date?.toISOString(),
+        tags: values.tags?.split(',').map(tag => tag.trim()),
+        is_locked: values.is_locked,
+      };
+
+      await documentService.createDocument(newDocument);
+      toast({
+        title: 'Success',
+        description: 'Document created successfully',
+      });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Error creating document:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create document',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateDocument = async (values: DocumentFormValues) => {
+    if (!selectedDocument) return;
+
+    try {
+      const updatedDocument: Partial<Document> = {
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        status: values.status,
+        expiry_date: values.expiry_date?.toISOString(),
+        tags: values.tags?.split(',').map(tag => tag.trim()),
+        is_locked: values.is_locked,
+      };
+
+      await documentService.updateDocument(selectedDocument.id, updatedDocument);
+      toast({
+        title: 'Success',
+        description: 'Document updated successfully',
+      });
+      setIsEditDialogOpen(false);
+      form.reset();
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Error updating document:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update document',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!selectedDocumentToDelete) return;
+
+    try {
+      await documentService.deleteDocument(selectedDocumentToDelete.id);
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+      setIsDeleteDialogOpen(false);
+      loadDocuments();
+    } catch (error: any) {
       console.error('Error deleting document:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete document. Please try again.',
-        variant: 'destructive'
+        description: error.message || 'Failed to delete document',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleEditDocument = (doc: Document) => {
-    setSelectedDocument(doc);
+  const handleDocumentUploadSuccess = () => {
+    setIsUploadDialogOpen(false);
+    loadDocuments();
   };
 
-  const handleDownload = async (document: Document) => {
-    try {
-      setLoadingDocumentId(document.id);
-      const storagePath = enhancedDocumentService.getStoragePath(document.id, document.file_name);
-      const downloadUrl = await enhancedDocumentService.getDownloadUrl(storagePath);
-      
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = document.file_name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (user) {
-        await documentService.createDocumentActivity({
-          document_id: document.id,
-          action: 'download',
-          user_id: user.id,
-          user_name: user.email || 'Unknown',
-          user_role: 'User',
-          comments: 'Document downloaded from repository'
-        });
-      }
-      toast({
-        title: 'Download started',
-        description: `${document.title} is being downloaded.`
-      });
-    } catch (error) {
-      console.error('Error downloading document:', error);
-      toast({
-        title: 'Download failed',
-        description: 'There was a problem downloading the document.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoadingDocumentId(null);
-    }
-  };
+  const filteredDocuments = documents.filter(doc => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const titleMatch = doc.title.toLowerCase().includes(searchTermLower);
+    const descriptionMatch = doc.description?.toLowerCase().includes(searchTermLower);
+    const categoryMatch = !categoryFilter || doc.category === categoryFilter;
+    const statusMatch = !statusFilter || doc.status === statusFilter;
+    const dateRangeMatch = !dateRangeFilter ||
+      (doc.created_at &&
+        new Date(doc.created_at) >= (dateRangeFilter.from || new Date(0)) &&
+        new Date(doc.created_at) <= (dateRangeFilter.to || new Date()));
+    const isLockedMatch = isLockedFilter === null || doc.is_locked === isLockedFilter;
 
-  const handlePreviewDocument = (doc: Document) => {
-    setSelectedDocForPreview(doc);
+    return titleMatch || descriptionMatch && categoryMatch && statusMatch && dateRangeMatch && isLockedMatch;
+  });
+
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+    const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+    const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+    return isAscendingSort ? dateA - dateB : dateB - dateA;
+  });
+
+  const handleDocumentSelected = (document: Document) => {
+    setSelectedDocument(document);
     setIsPreviewOpen(true);
   };
 
-  const handleDocumentUpdate = (updatedDoc: Document) => {
-    updateDocument(updatedDoc);
+  const handleOpenEditDialog = (document: Document) => {
+    setSelectedDocument(document);
+    form.setValue('title', document.title);
+    form.setValue('description', document.description || '');
+    form.setValue('category', document.category);
+    form.setValue('status', document.status);
+    form.setValue('expiry_date', document.expiry_date ? new Date(document.expiry_date) : undefined);
+    form.setValue('tags', document.tags?.join(', ') || '');
+    form.setValue('is_locked', document.is_locked || false);
+    setIsEditDialogOpen(true);
   };
 
-  const documentStats = {
-    total: documents.length,
-    byStatus: statuses.reduce((acc: Record<string, number>, status) => {
-      acc[status.name] = documents.filter(doc => doc.status === status.name).length;
-      return acc;
-    }, {}),
-    byCategory: categories.reduce((acc: Record<string, number>, category) => {
-      acc[category.name] = documents.filter(doc => doc.category === category.name).length;
-      return acc;
-    }, {})
+  const handleOpenDeleteDialog = (document: Document) => {
+    setSelectedDocumentToDelete(document);
+    setIsDeleteDialogOpen(true);
   };
 
-  if (isLoading || categoriesLoading || statusesLoading) {
-    return <div className="flex flex-col justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <span className="text-lg">Loading documents...</span>
-      </div>;
-  }
+  const handleSortToggle = () => {
+    setIsAscendingSort(!isAscendingSort);
+  };
 
-  if (documentsError || categoriesError || statusesError) {
-    return <div className="flex flex-col items-center justify-center h-64">
-        <Alert variant="destructive" className="mb-4 max-w-md">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error loading documents</AlertTitle>
-          <AlertDescription>
-            {documentsError?.message || categoriesError?.message || statusesError?.message || 'There was a problem loading the document repository.'}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={retryFetchDocuments} variant="outline" className="flex items-center">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </Button>
-      </div>;
-  }
+  const handleCategoryFilterChange = (category: DocumentCategory | null) => {
+    setCategoryFilter(category);
+  };
 
-  if (documents.length === 0) {
-    return <div className="text-center p-12 bg-white rounded-lg shadow-sm flex flex-col items-center">
-        <FileWarning className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
-        <h3 className="text-xl font-medium mb-2">No Documents Found</h3>
-        <p className="text-muted-foreground mb-6 max-w-md">
-          Your document repository is empty. Get started by uploading your first document.
-        </p>
-        <Button onClick={() => setUploadDialogOpen(true)} className="flex items-center">
-          <Plus className="h-4 w-4 mr-2" />
-          Upload Your First Document
-        </Button>
-        
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t('documents.uploadDocument', 'Upload Document')}</DialogTitle>
-              <DialogDescription>
-                {t('documents.uploadDescription', 'Upload a document to the repository')}
-              </DialogDescription>
-            </DialogHeader>
-            <DocumentUploader onUploadComplete={handleDocumentUploadComplete} />
-          </DialogContent>
-        </Dialog>
-      </div>;
-  }
+  const handleStatusFilterChange = (status: DocumentStatus | null) => {
+    setStatusFilter(status);
+  };
 
-  return <div className="space-y-6 animate-fade-in bg-cc-sky-200">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input type="search" placeholder={t('documents.search', 'Search documents...')} className="pl-8" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[160px]">
-              <div className="flex items-center">
-                <Filter className="h-4 w-4 mr-2" />
-                <span>{categoryFilter || t('documents.allCategories', 'All Categories')}</span>
+  const handleDateRangeFilterChange = (dateRange: DateRange | undefined) => {
+    setDateRangeFilter(dateRange);
+  };
+
+  const handleIsLockedFilterChange = (isLocked: boolean | null) => {
+    setIsLockedFilter(isLocked);
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Document Repository</CardTitle>
+          <CardDescription>Manage and organize your documents</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Search documents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-between items-center">
+              <Button variant="outline" size="sm" onClick={handleSortToggle}>
+                Sort by Date {isAscendingSort ? '↑' : '↓'}
+              </Button>
+
+              <DocumentFilters
+                categoryFilter={categoryFilter}
+                statusFilter={statusFilter}
+                dateRangeFilter={dateRangeFilter}
+                isLockedFilter={isLockedFilter}
+                onCategoryChange={handleCategoryFilterChange}
+                onStatusChange={handleStatusFilterChange}
+                onDateRangeChange={handleDateRangeFilterChange}
+                onIsLockedChange={handleIsLockedFilterChange}
+              />
+
+              <div className="space-x-2">
+                <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  Upload
+                </Button>
+                <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Document
+                </Button>
               </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
-              {categories.map(category => <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <div className="flex items-center">
-                <Filter className="h-4 w-4 mr-2" />
-                <span>{statusFilter || t('documents.allStatuses', 'All Statuses')}</span>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading documents...
               </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
-              {statuses.map(status => <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          
-          <div className="flex">
-            <Button variant="outline" className="rounded-l-md rounded-r-none border-r-0" onClick={() => setViewMode('list')} data-active={viewMode === 'list'}>
-              List
-            </Button>
-            <Button variant="outline" className="rounded-r-md rounded-l-none" onClick={() => setViewMode('grid')} data-active={viewMode === 'grid'}>
-              Grid
-            </Button>
-          </div>
-          
-          <Button onClick={() => setUploadDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('documents.addDocument', 'Add Document')}
-          </Button>
-        </div>
-      </div>
-      
-      <Tabs defaultValue="documents">
-        <TabsList>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="documents">
-          {viewMode === 'list' && <Card>
-              <CardContent className="p-0">
-                {filteredDocuments.length > 0 ? <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('documents.title', 'Title')}</TableHead>
-                        <TableHead>{t('documents.category', 'Category')}</TableHead>
-                        <TableHead>{t('documents.status', 'Status')}</TableHead>
-                        <TableHead>{t('documents.updated', 'Updated')}</TableHead>
-                        <TableHead>{t('documents.version', 'Version')}</TableHead>
-                        <TableHead className="text-right">{t('documents.actions', 'Actions')}</TableHead>
+            ) : error ? (
+              <div className="text-red-500 py-4">Error: {error}</div>
+            ) : (
+              <ScrollArea className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Updated At</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedDocuments.map((document) => (
+                      <TableRow key={document.id}>
+                        <TableCell className="font-medium">{document.title}</TableCell>
+                        <TableCell>{document.category}</TableCell>
+                        <TableCell>{document.status}</TableCell>
+                        <TableCell>
+                          {document.updated_at
+                            ? format(new Date(document.updated_at), 'MMM d, yyyy h:mm a')
+                            : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => handleDocumentSelected(document)}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEditDialog(document)}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenDeleteDialog(document)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDocuments.map(doc => <TableRow key={doc.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center">
-                              <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span>{doc.title}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-gray-100">
-                              {doc.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={doc.status} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <CalendarDays className="h-3 w-3 mr-1 text-muted-foreground" />
-                              <span>{formatDate(doc.updated_at)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                              v{doc.version}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-slate-800">
-                                <DropdownMenuLabel>{t('documents.actions', 'Actions')}</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handlePreviewDocument(doc)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  {t('buttons.view', 'View')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadDocument(doc)}>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  {t('buttons.download', 'Download')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEditDocument(doc)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  {t('buttons.edit', 'Edit')}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setConfirmDeleteId(doc.id)} className="text-red-600">
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  {t('buttons.delete', 'Delete')}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>)}
-                    </TableBody>
-                  </Table> : <div className="text-center p-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                    <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {searchTerm || categoryFilter || statusFilter ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for') : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
-                    </p>
-                    {!(searchTerm || categoryFilter || statusFilter) && <Button onClick={() => setUploadDialogOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t('documents.uploadDocument', 'Upload Document')}
-                      </Button>}
-                  </div>}
-              </CardContent>
-            </Card>}
-          
-          <div key={viewMode === 'grid' && <div>
-              {Object.keys(documentsByCategory).length > 0 ? Object.entries(documentsByCategory).map(([category, docs]) => <div key={category} className="mb-6">
-                    <h3 className="text-lg font-medium mb-3 flex items-center">
-                      <span className="inline-block w-3 h-3 bg-primary rounded-full mr-2"></span>
-                      {category} <span className="text-muted-foreground ml-2 text-sm">({docs.length})</span>
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {docs.map(doc => <Card key={doc.id} className="overflow-hidden">
-                          <div className="h-32 bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => handlePreviewDocument(doc)}>
-                            <FileText className="h-12 w-12 text-muted-foreground opacity-50" />
-                          </div>
-                          <CardContent className="p-4">
-                            <h4 className="font-medium truncate" title={doc.title}>
-                              {doc.title}
-                            </h4>
-                            <div className="flex justify-between items-center mt-2">
-                              <StatusBadge status={doc.status} />
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                v{doc.version}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2 flex justify-between">
-                              <span>{t('documents.updated', 'Updated')}: {formatDate(doc.updated_at)}</span>
-                            </div>
-                            <div className="flex justify-between mt-3">
-                              <Button variant="ghost" size="sm" onClick={() => handlePreviewDocument(doc)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDownloadDocument(doc)}>
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleEditDocument(doc)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setConfirmDeleteId(doc.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>)}
-                    </div>
-                  </div>) : <div className="text-center p-8 bg-white rounded-lg shadow-sm">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <h3 className="text-lg font-medium mb-1">{t('documents.noDocumentsFound', 'No Documents Found')}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm || categoryFilter || statusFilter ? t('documents.adjustFilters', 'Try adjusting your filters to find what you\'re looking for') : t('documents.uploadFirstDocument', 'Upload your first document to get started')}
-                  </p>
-                  {!(searchTerm || categoryFilter || statusFilter) && <Button onClick={() => setUploadDialogOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('documents.uploadDocument', 'Upload Document')}
-                    </Button>}
-                </div>}
-            </div>}
-        </TabsContent>
-        
-        <TabsContent value="dashboard">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{documentStats.total}</div>
-                <p className="text-muted-foreground">{t('documents.totalDocuments', 'Total Documents')}</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{documentStats.byStatus['Published'] || 0}</div>
-                <p className="text-muted-foreground">{t('documents.publishedDocuments', 'Published Documents')}</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{documentStats.byStatus['Pending Approval'] || 0}</div>
-                <p className="text-muted-foreground">{t('documents.awaitingApproval', 'Awaiting Approval')}</p>
-              </CardContent>
-            </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            )}
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('documents.documentsByCategory', 'Documents by Category')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(documentStats.byCategory).map(([category, count]) => <div key={category} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
-                        <span>{category}</span>
-                      </div>
-                      <Badge variant="outline">{count}</Badge>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('documents.documentsByStatus', 'Documents by Status')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(documentStats.byStatus).map(([status, count]) => <div key={status} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <StatusBadge status={status} />
-                      </div>
-                      <Badge variant="outline">{count}</Badge>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      <DocumentPreviewDialog document={selectedDocForPreview} open={isPreviewOpen} onOpenChange={setIsPreviewOpen} onDocumentUpdate={handleDocumentUpdate} />
-      
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        </CardContent>
+      </Card>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle>{t('documents.uploadDocument', 'Upload Document')}</DialogTitle>
+            <DialogTitle>Create Document</DialogTitle>
             <DialogDescription>
-              {t('documents.uploadDescription', 'Upload a document to the repository')}
+              Add a new document to the repository.
             </DialogDescription>
           </DialogHeader>
-          <DocumentUploader onUploadComplete={handleDocumentUploadComplete} />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateDocument)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Document Title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Document Description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="SOP">SOP</SelectItem>
+                        <SelectItem value="Policy">Policy</SelectItem>
+                        <SelectItem value="Form">Form</SelectItem>
+                        <SelectItem value="Certificate">Certificate</SelectItem>
+                        <SelectItem value="Audit Report">Audit Report</SelectItem>
+                        <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
+                        <SelectItem value="Training Material">Training Material</SelectItem>
+                        <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
+                        <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                        <SelectItem value="Approved">Approved</SelectItem>
+                        <SelectItem value="Published">Published</SelectItem>
+                        <SelectItem value="Archived">Archived</SelectItem>
+                        <SelectItem value="Expired">Expired</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="expiry_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col space-y-1.5">
+                    <FormLabel>Expiry Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-[240px] pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, 'PPP')
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date()
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Set an expiry date for the document.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Comma separated tags" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Add comma separated tags for document.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_locked"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Lock Document</FormLabel>
+                      <FormDescription>
+                        Prevent further modifications to the document.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Create</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={!!confirmDeleteId} onOpenChange={open => !open && setConfirmDeleteId(null)}>
-        <DialogContent>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle>
-              <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
-                {t('documents.confirmDelete', 'Confirm Delete')}
-              </div>
-            </DialogTitle>
+            <DialogTitle>Edit Document</DialogTitle>
             <DialogDescription>
-              {t('documents.deleteWarning', 'This action cannot be undone. This will permanently delete the document and all its versions.')}
+              Edit the selected document.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleUpdateDocument)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Document Title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Document Description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="SOP">SOP</SelectItem>
+                        <SelectItem value="Policy">Policy</SelectItem>
+                        <SelectItem value="Form">Form</SelectItem>
+                        <SelectItem value="Certificate">Certificate</SelectItem>
+                        <SelectItem value="Audit Report">Audit Report</SelectItem>
+                        <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
+                        <SelectItem value="Training Material">Training Material</SelectItem>
+                        <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
+                        <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                        <SelectItem value="Approved">Approved</SelectItem>
+                        <SelectItem value="Published">Published</SelectItem>
+                        <SelectItem value="Archived">Archived</SelectItem>
+                        <SelectItem value="Expired">Expired</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="expiry_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col space-y-1.5">
+                    <FormLabel>Expiry Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-[240px] pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, 'PPP')
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date()
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Set an expiry date for the document.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Comma separated tags" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Add comma separated tags for document.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_locked"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Lock Document</FormLabel>
+                      <FormDescription>
+                        Prevent further modifications to the document.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Update</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-              <X className="h-4 w-4 mr-2" />
-              {t('buttons.cancel', 'Cancel')}
+            <Button type="button" variant="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
             </Button>
-            <Button variant="destructive" onClick={() => confirmDeleteId && handleDeleteDocument(confirmDeleteId)}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {t('buttons.delete', 'Delete')}
+            <Button type="button" variant="destructive" onClick={handleDeleteDocument}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>;
-};
 
-const StatusBadge: React.FC<{
-  status: string;
-}> = ({
-  status
-}) => {
-  switch (status) {
-    case 'Draft':
-      return <Badge variant="outline" className="bg-gray-100 text-gray-800">Draft</Badge>;
-    case 'Pending Approval':
-      return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending Approval</Badge>;
-    case 'Approved':
-      return <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>;
-    case 'Published':
-      return <Badge variant="default">Published</Badge>;
-    case 'Archived':
-      return <Badge variant="outline" className="bg-purple-100 text-purple-800">Archived</Badge>;
-    case 'Expired':
-      return <Badge variant="outline" className="bg-red-100 text-red-800">Expired</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a new document to the repository.
+            </DialogDescription>
+          </DialogHeader>
+          <DocumentUpload onSuccess={handleDocumentUploadSuccess} onCancel={() => setIsUploadDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="sm:max-w-[80%] sm:max-h-[90vh]">
+          {selectedDocument && (
+            <DocumentPreview document={selectedDocument} onClose={() => setIsPreviewOpen(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <DocumentVersionHistory
+        document={selectedDocument}
+        open={isVersionHistoryOpen}
+        onOpenChange={setIsVersionHistoryOpen}
+      />
+    </>
+  );
 };
 
 export default DocumentRepository;

@@ -109,7 +109,7 @@ export function useDocumentService() {
       });
       
       // Create approval activity record - using the correct property names in DocumentActivity
-      await documentService.createDocumentActivity({
+      await enhancedDocumentService.createDocumentActivity({
         document_id: id,
         action: 'approve',
         user_id: 'system', // Using user_id instead of performedBy
@@ -150,7 +150,7 @@ export function useDocumentService() {
       });
       
       // Create rejection activity record - using the correct property names in DocumentActivity
-      await documentService.createDocumentActivity({
+      await enhancedDocumentService.createDocumentActivity({
         document_id: id,
         action: 'reject',
         user_id: 'system', // Using user_id instead of performedBy
@@ -266,7 +266,7 @@ export function useDocumentService() {
       setIsLoading(true);
       setError(null);
       debugLog('Fetching document versions for:', documentId);
-      const versions = await documentService.fetchDocumentVersions(documentId);
+      const versions = await enhancedDocumentService.fetchDocumentVersions(documentId);
       debugLog('Document versions fetched:', versions);
       return versions;
     } catch (err) {
