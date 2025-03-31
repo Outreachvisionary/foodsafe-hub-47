@@ -15,7 +15,8 @@ const DocumentPreviewDialogWrapper: React.FC<DocumentPreviewDialogWrapperProps> 
   open, 
   onOpenChange 
 }) => {
-  if (!document) return null;
+  // Early return with null rendering if there's no document or dialog is not open
+  if (!document || !open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
