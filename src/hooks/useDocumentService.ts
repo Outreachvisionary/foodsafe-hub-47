@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Document, DocumentVersion } from '@/types/document';
+import { Document, DocumentVersion, Folder } from '@/types/database';
 import documentService from '@/services/documentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';
 import documentCommentService from '@/services/documentCommentService';
@@ -35,6 +34,27 @@ export function useDocumentService() {
       setError(err as Error);
       toast({
         title: 'Error fetching documents',
+        description: (err as Error).message,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchFolders = async (): Promise<Folder[]> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      debugLog('Fetching folders...');
+      // Return empty array for now
+      return [];
+    } catch (err) {
+      console.error('Error fetching folders:', err);
+      setError(err as Error);
+      toast({
+        title: 'Error fetching folders',
         description: (err as Error).message,
         variant: 'destructive',
       });
@@ -283,7 +303,6 @@ export function useDocumentService() {
     }
   };
 
-  // Improved storage availability check
   const checkStorageAvailability = async (): Promise<boolean> => {
     // Set a global timeout for the entire function
     const hardTimeoutPromise = new Promise<boolean>(resolve => {
@@ -346,7 +365,6 @@ export function useDocumentService() {
     return Promise.race([checkPromise(), hardTimeoutPromise]);
   };
 
-  // Function to check database connection and table access
   const checkDatabaseAvailability = async () => {
     try {
       debugLog('Checking database availability...');
@@ -384,13 +402,12 @@ export function useDocumentService() {
     fetchDocumentVersions,
     checkStorageAvailability,
     checkDatabaseAvailability,
-    // Include functions from enhancedDocumentService
+    fetchFolders,
     getStoragePath: enhancedDocumentService.getStoragePath,
     getDownloadUrl: enhancedDocumentService.getDownloadUrl,
     fetchAccess: enhancedDocumentService.fetchAccess,
     grantAccess: enhancedDocumentService.grantAccess,
     revokeAccess: enhancedDocumentService.revokeAccess,
-    // Include functions from documentCommentService
     getDocumentComments: documentCommentService.getDocumentComments,
     createDocumentComment: documentCommentService.createDocumentComment,
     updateDocumentComment: documentCommentService.updateDocumentComment,

@@ -7,6 +7,7 @@ const documentCommentService = {
   // Document comments
   async getDocumentComments(documentId: string): Promise<DocumentComment[]> {
     try {
+      // Use 'document_comments' table - we'll need to make sure this exists in the database
       const { data, error } = await supabase
         .from('document_comments')
         .select('*')
@@ -14,7 +15,9 @@ const documentCommentService = {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [] as DocumentComment[];
+      
+      // Explicitly cast the data to DocumentComment[]
+      return (data || []) as DocumentComment[];
     } catch (error) {
       console.error(`Error fetching comments for document ${documentId}:`, error);
       throw error;
@@ -39,6 +42,8 @@ const documentCommentService = {
         .single();
       
       if (error) throw error;
+      
+      // Explicitly cast the data to DocumentComment
       return data as DocumentComment;
     } catch (error) {
       console.error('Error creating document comment:', error);
@@ -48,17 +53,21 @@ const documentCommentService = {
   
   async updateDocumentComment(commentId: string, updates: Partial<DocumentComment>): Promise<DocumentComment> {
     try {
+      const updatedData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      
       const { data, error } = await supabase
         .from('document_comments')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatedData)
         .eq('id', commentId)
         .select()
         .single();
       
       if (error) throw error;
+      
+      // Explicitly cast the data to DocumentComment
       return data as DocumentComment;
     } catch (error) {
       console.error(`Error updating comment ${commentId}:`, error);
