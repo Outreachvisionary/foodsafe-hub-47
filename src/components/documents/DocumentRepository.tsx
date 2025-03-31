@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
@@ -61,6 +62,7 @@ import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentVersionHistory from './DocumentVersionHistory';
 import DocumentComments from './DocumentComments';
 import DocumentAccessControl from './DocumentAccessControl';
+import DocumentUploader from './DocumentUploader';
 
 const createPlaceholderComponent = (name: string) => {
   return () => <div>Placeholder for {name} component</div>;
