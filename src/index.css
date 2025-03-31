@@ -136,7 +136,7 @@
 }
 
 .bg-sidebar {
-  @apply bg-gradient-to-b from-primary/90 to-accent-dark;
+  @apply bg-gradient-to-b from-primary/90 to-accent/50;
 }
 
 .bg-header {
