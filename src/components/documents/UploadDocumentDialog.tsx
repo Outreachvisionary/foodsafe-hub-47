@@ -9,14 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Cloud, FileText, Loader2, Plus, Upload, AlertCircle, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Cloud, FileText, Loader2, Plus, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDocuments } from '@/contexts/DocumentContext';
-import { useDocumentService } from '@/hooks/useDocumentService';
-import { Document } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '@/contexts/UserContext';
-import { initializeStorage } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import documentService from '@/services/documentService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -43,8 +43,8 @@ const CATEGORIES: CategoryOption[] = [
 
 const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpenChange }) => {
   const { addDocument } = useDocuments();
-  const { uploadFile, checkStorageAvailability, createDocumentVersion } = useDocumentService();
   const { user } = useUser();
+  const { toast } = useToast();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -54,72 +54,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [storageAvailable, setStorageAvailable] = useState<boolean | null>(null);
-  const [isCheckingStorage, setIsCheckingStorage] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  
-  // Improved storage availability check with auto-retry
-  useEffect(() => {
-    if (open) {
-      // Force timeout after 10 seconds regardless of response
-      const forceTimeoutId = setTimeout(() => {
-        if (isCheckingStorage) {
-          console.error("Storage check timed out after 10 seconds");
-          setIsCheckingStorage(false);
-          setStorageAvailable(false);
-          setErrorMessage("Storage check timed out. Try again or contact your administrator.");
-        }
-      }, 10000); // 10 seconds hard timeout
-      
-      const checkStorage = async () => {
-        try {
-          setIsCheckingStorage(true);
-          setErrorMessage(null);
-          
-          console.log("Checking storage availability...");
-          
-          // Try to initialize storage first
-          await initializeStorage();
-          
-          // Now check if it's available
-          const isAvailable = await checkStorageAvailability();
-          setStorageAvailable(isAvailable);
-          
-          if (!isAvailable) {
-            setErrorMessage('Document storage is not available. Please contact your administrator.');
-            console.error('Storage is not available');
-            
-            // Auto-retry up to 3 times
-            if (retryCount < 3) {
-              console.log(`Auto-retrying storage check (attempt ${retryCount + 1}/3)...`);
-              setRetryCount(prev => prev + 1);
-              // Wait 1 second before retrying
-              setTimeout(() => {
-                checkStorage();
-              }, 1000);
-            }
-          } else {
-            console.log('Storage is available and accessible');
-          }
-        } catch (err) {
-          console.error('Error checking storage:', err);
-          setStorageAvailable(false);
-          setErrorMessage(`Storage connection error: ${(err as Error).message}`);
-        } finally {
-          clearTimeout(forceTimeoutId); // Clear the force timeout
-          setIsCheckingStorage(false);
-        }
-      };
-      
-      checkStorage();
-      
-      return () => {
-        clearTimeout(forceTimeoutId); // Clean up on unmount
-      };
-    } else {
-      setRetryCount(0); // Reset retry count when dialog closes
-    }
-  }, [open, checkStorageAvailability, retryCount]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   
   const resetForm = () => {
     setTitle('');
@@ -129,6 +64,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
     setExpiryDate(undefined);
     setErrorMessage(null);
     setUploadProgress(0);
+    setUploadSuccess(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +81,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
     }
   };
 
-  // Improved submit handler
+  // Direct upload method similar to "Add Document"
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -167,116 +103,96 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
     try {
       setIsUploading(true);
       setErrorMessage(null);
-      
-      // Initialize storage first if needed
-      if (!storageAvailable) {
-        console.log('Trying to initialize storage before upload...');
-        await initializeStorage();
-        const isStorageAvailable = await checkStorageAvailability();
-        if (!isStorageAvailable) {
-          throw new Error('Document storage is not available. Please try again later or contact your administrator.');
-        }
-      }
+      setUploadProgress(10);
       
       // Generate a unique ID for the document
       const documentId = uuidv4();
       
-      // Create the document object
-      const newDocument: Omit<Document, 'id'> = {
+      // File path in storage
+      const filePath = `documents/${documentId}/${file.name}`;
+      
+      // Step 1: Upload the file directly
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        throw new Error(`File upload failed: ${uploadError.message}`);
+      }
+      
+      setUploadProgress(50);
+      
+      // Step 2: Get the public URL
+      const { data: urlData } = await supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+      
+      const fileUrl = urlData?.publicUrl;
+      
+      setUploadProgress(70);
+      
+      // Step 3: Create the document record
+      const newDocument = {
+        id: documentId,
         title,
         description,
         file_name: file.name,
         file_size: file.size,
         file_type: file.type || 'application/octet-stream',
-        category: category as any,
+        file_path: fileUrl,
+        category: category,
         status: 'Draft',
         version: 1,
         created_by: user?.id || 'system',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         expiry_date: expiryDate ? expiryDate.toISOString() : undefined,
         is_locked: false,
         tags: []
       };
       
-      setUploadProgress(10);
+      // Create the document in the database
+      await documentService.createDocument(newDocument);
       
-      // Step 1: First create the document in the database
-      console.log('Creating document record:', newDocument);
-      const createdDocument = await addDocument({
-        id: documentId,
-        ...newDocument
-      } as Document);
-      
-      setUploadProgress(30);
-      
-      // Step 2: Now upload the file to storage with retries
-      const storagePath = `documents/${documentId}/${file.name}`;
-      let uploadSuccess = false;
-      let uploadAttempt = 0;
-      const maxUploadAttempts = 3;
-      
-      while (!uploadSuccess && uploadAttempt < maxUploadAttempts) {
-        uploadAttempt++;
-        try {
-          console.log(`Upload attempt ${uploadAttempt}/${maxUploadAttempts} for file:`, storagePath);
-          await uploadFile(file, storagePath);
-          uploadSuccess = true;
-          console.log('File upload successful');
-        } catch (uploadErr) {
-          console.error(`Upload attempt ${uploadAttempt} failed:`, uploadErr);
-          if (uploadAttempt >= maxUploadAttempts) {
-            throw new Error(`Failed to upload file after ${maxUploadAttempts} attempts: ${(uploadErr as Error).message}`);
-          }
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-      
-      setUploadProgress(70);
-      
-      // Step 3: Create an initial version record
-      console.log('Creating document version record');
-      await createDocumentVersion({
+      // Create initial version record
+      await documentService.createDocumentVersion({
         document_id: documentId,
         file_name: file.name,
         file_size: file.size,
+        file_type: file.type || 'application/octet-stream',
         version: 1,
         created_by: user?.id || 'system',
-        change_notes: 'Initial version'
+        editor_metadata: { 
+          upload_source: 'web',
+          original_filename: file.name
+        }
       });
       
-      setUploadProgress(100);
+      // Add to context state
+      addDocument(newDocument);
       
-      resetForm();
-      onOpenChange(false);
+      setUploadProgress(100);
+      setUploadSuccess(true);
+      
+      toast({
+        title: "Document uploaded successfully",
+        description: "Your document has been uploaded and added to the repository.",
+        variant: "success",
+      });
+      
+      setTimeout(() => {
+        resetForm();
+        onOpenChange(false);
+      }, 1500);
+      
     } catch (err) {
       console.error('Error uploading document:', err);
       setErrorMessage((err as Error).message || 'Failed to upload document');
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  // Function to manually retry storage check
-  const handleRetryStorageCheck = async () => {
-    setErrorMessage(null);
-    setIsCheckingStorage(true);
-    
-    try {
-      // Try to initialize storage first
-      await initializeStorage();
-      
-      // Then check availability
-      const isAvailable = await checkStorageAvailability();
-      setStorageAvailable(isAvailable);
-      
-      if (!isAvailable) {
-        setErrorMessage('Document storage is still not available. Please contact your administrator.');
-      }
-    } catch (err) {
-      console.error('Error during manual storage check:', err);
-      setErrorMessage(`Storage check failed: ${(err as Error).message}`);
-    } finally {
-      setIsCheckingStorage(false);
     }
   };
 
@@ -287,81 +203,33 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
         onOpenChange(newOpen);
       }
     }}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-white to-accent/5 border-accent/20 shadow-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Upload className="mr-2 h-5 w-5" />
+          <DialogTitle className="flex items-center text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <Upload className="mr-2 h-6 w-6 text-accent" />
             Upload New Document
           </DialogTitle>
         </DialogHeader>
         
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 shadow-sm animate-fade-in">
             <div className="flex">
               <div className="py-1"><AlertCircle className="h-5 w-5 text-red-500 mr-2" /></div>
               <div className="flex-1">
-                <p className="font-bold">Upload Error</p>
+                <p className="font-bold text-lg">Upload Error</p>
                 <p className="text-sm">{errorMessage}</p>
-                {errorMessage.includes('storage') && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleRetryStorageCheck} 
-                    className="mt-2"
-                    disabled={isCheckingStorage}
-                  >
-                    {isCheckingStorage ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Retrying...
-                      </>
-                    ) : (
-                      'Retry Storage Check'
-                    )}
-                  </Button>
-                )}
               </div>
             </div>
           </div>
         )}
         
-        {storageAvailable === false && !errorMessage && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-md mb-4">
+        {uploadSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md mb-4 shadow-sm animate-fade-in">
             <div className="flex">
-              <div className="py-1"><AlertTriangle className="h-5 w-5 text-amber-500 mr-2" /></div>
+              <div className="py-1"><CheckCircle className="h-5 w-5 text-green-500 mr-2" /></div>
               <div className="flex-1">
-                <p className="font-bold">Storage Unavailable</p>
-                <p className="text-sm">Document storage is not available. Documents cannot be uploaded at this time.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRetryStorageCheck} 
-                  className="mt-2"
-                  disabled={isCheckingStorage}
-                >
-                  {isCheckingStorage ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Retrying...
-                    </>
-                  ) : (
-                    'Retry Storage Check'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {isCheckingStorage && !errorMessage && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md mb-4">
-            <div className="flex">
-              <div className="py-1">
-                <Loader2 className="h-5 w-5 text-blue-500 mr-2 animate-spin" />
-              </div>
-              <div>
-                <p className="font-bold">Checking Storage</p>
-                <p className="text-sm">Verifying document storage availability...</p>
+                <p className="font-bold text-lg">Upload Successful</p>
+                <p className="text-sm">Your document has been uploaded successfully!</p>
               </div>
             </div>
           </div>
@@ -371,42 +239,44 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="col-span-1">
-                <Label htmlFor="title">Document Title *</Label>
+                <Label htmlFor="title" className="text-lg font-medium">Document Title *</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter document title"
                   required
-                  disabled={isUploading || storageAvailable === false}
+                  disabled={isUploading}
+                  className="mt-1 text-base border-border/60 focus:border-accent focus:ring-accent"
                 />
               </div>
               
               <div className="col-span-1">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-lg font-medium">Description</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter document description"
                   rows={3}
-                  disabled={isUploading || storageAvailable === false}
+                  disabled={isUploading}
+                  className="mt-1 text-base border-border/60 focus:border-accent focus:ring-accent"
                 />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category" className="text-lg font-medium">Category *</Label>
                   <Select 
                     value={category} 
                     onValueChange={setCategory} 
                     required
-                    disabled={isUploading || storageAvailable === false}
+                    disabled={isUploading}
                   >
-                    <SelectTrigger id="category">
+                    <SelectTrigger id="category" className="mt-1 text-base border-border/60 focus:border-accent focus:ring-accent">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-border/60">
                       {CATEGORIES.map((category) => (
                         <SelectItem key={category.value} value={category.value}>
                           {category.label}
@@ -417,23 +287,23 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
                 </div>
                 
                 <div>
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
+                  <Label htmlFor="expiryDate" className="text-lg font-medium">Expiry Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal mt-1 text-base border-border/60",
                           !expiryDate && "text-muted-foreground"
                         )}
-                        disabled={isUploading || storageAvailable === false}
+                        disabled={isUploading}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {expiryDate ? format(expiryDate, "PPP") : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0 bg-white border border-border/60">
                       <Calendar
                         mode="single"
                         selected={expiryDate}
@@ -447,14 +317,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
               </div>
               
               <div className="col-span-1">
-                <Label htmlFor="file">File Upload *</Label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 rounded-md">
+                <Label htmlFor="file" className="text-lg font-medium">File Upload *</Label>
+                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-accent/30 rounded-md hover:border-accent/50 transition-colors bg-white/50">
                   <div className="space-y-1 text-center">
                     {file ? (
                       <div className="flex flex-col items-center">
-                        <FileText className="mx-auto h-12 w-12 text-primary" />
-                        <p className="text-sm font-medium">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <FileText className="mx-auto h-16 w-16 text-accent" />
+                        <p className="text-lg font-medium">{file.name}</p>
+                        <p className="text-base text-muted-foreground">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                         <Button 
@@ -462,7 +332,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
                           variant="ghost" 
                           size="sm"
                           onClick={() => setFile(null)}
-                          className="mt-2"
+                          className="mt-2 text-primary hover:text-primary-dark"
                           disabled={isUploading}
                         >
                           Remove
@@ -470,14 +340,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
                       </div>
                     ) : (
                       <>
-                        <Cloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <div className="flex text-sm text-muted-foreground">
+                        <Cloud className="mx-auto h-16 w-16 text-accent/70" />
+                        <div className="flex text-base text-muted-foreground gap-1 justify-center">
                           <label
                             htmlFor="file-upload"
-                            className={cn(
-                              "relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none",
-                              (storageAvailable === false || isUploading) && "opacity-50 pointer-events-none"
-                            )}
+                            className="relative cursor-pointer rounded-md font-medium text-accent hover:text-accent-dark focus-within:outline-none"
                           >
                             <span>Upload a file</span>
                             <Input
@@ -487,12 +354,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
                               className="sr-only"
                               onChange={handleFileChange}
                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png"
-                              disabled={isUploading || storageAvailable === false}
+                              disabled={isUploading}
                             />
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs">
+                        <p className="text-sm mt-1">
                           PDF, Office documents, images up to 50MB
                         </p>
                       </>
@@ -504,12 +371,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
           </div>
           
           {isUploading && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
               <div 
-                className="bg-primary h-2.5 rounded-full transition-all duration-500" 
+                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 animate-pulse" 
                 style={{ width: `${uploadProgress}%` }}
               ></div>
-              <p className="text-xs text-center mt-2">Uploading... {uploadProgress}%</p>
+              <p className="text-sm text-center mt-2">Uploading... {uploadProgress}%</p>
             </div>
           )}
           
@@ -519,22 +386,23 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({ open, onOpe
               variant="outline" 
               onClick={() => onOpenChange(false)}
               disabled={isUploading}
+              className="border-accent/30 text-accent hover:bg-accent/10"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isUploading || !file || !title || !category || storageAvailable === false || isCheckingStorage}
-              className="flex items-center"
+              disabled={isUploading || !file || !title || !category}
+              className="bg-gradient-to-r from-primary to-accent text-white hover:from-primary-dark hover:to-accent-dark font-medium text-base"
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Uploading...
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 h-5 w-5" />
                   Upload Document
                 </>
               )}

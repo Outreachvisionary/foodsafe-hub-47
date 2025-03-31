@@ -11,7 +11,7 @@ import DocumentTemplates from '@/components/documents/DocumentTemplates';
 import DocumentEditor from '@/components/documents/DocumentEditor';
 import DocumentNotificationCenter from '@/components/documents/DocumentNotificationCenter';
 import DocumentRepositoryErrorHandler from '@/components/documents/DocumentRepositoryErrorHandler';
-import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit, AlertTriangle } from 'lucide-react';
+import { FileText, ClipboardCheck, CalendarX, FilePlus, Upload, Edit, AlertTriangle, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
@@ -114,97 +114,141 @@ const DocumentsContent = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-gradient-to-br from-secondary/50 to-white">
       <DashboardHeader 
-        title={t('documents.header.title', 'Document Management')}
-        subtitle={t('documents.header.subtitle', 'Manage and control your documents and approval workflows')}
+        title={
+          <div className="text-gradient-primary text-3xl font-bold">
+            {t('documents.header.title', 'Document Management')}
+          </div>
+        }
+        subtitle={
+          <div className="text-foreground/80 text-lg">
+            {t('documents.header.subtitle', 'Manage and control your documents and approval workflows')}
+          </div>
+        }
+        className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-accent/10"
       />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumbs />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        <Breadcrumbs className="text-lg mb-8" />
         
         {/* Display error handler when there's an error */}
         {error && <DocumentRepositoryErrorHandler />}
         
         <div className="flex justify-between items-center my-6">
-          <h2 className="text-xl font-bold text-charcoal">{t('documents.controlSystem', 'Documents Control System')}</h2>
+          <h2 className="text-2xl font-bold text-gradient-primary">{t('documents.controlSystem', 'Documents Control System')}</h2>
           <div className="flex items-center gap-3">
             <DocumentNotificationCenter 
               notifications={notifications}
               onMarkAsRead={markNotificationAsRead}
               onClearAll={clearAllNotifications}
             />
-            <Button onClick={handleDocumentWorkflow} className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
+            <Button 
+              onClick={handleDocumentWorkflow} 
+              className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary-dark hover:to-accent-dark text-white font-medium text-base py-5 shadow-md hover:shadow-lg transition-all"
+            >
+              <Upload className="h-5 w-5" />
               <span>{t('documents.createNew', 'Upload Document')}</span>
             </Button>
           </div>
         </div>
         
         <Tabs defaultValue="repository" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 bg-white border border-border">
-            <TabsTrigger value="repository" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <FileText className="h-4 w-4" />
+          <TabsList className="mb-6 bg-white border border-border shadow-md p-1 gap-1">
+            <TabsTrigger 
+              value="repository" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"
+            >
+              <FileText className="h-5 w-5" />
               <span>{t('documents.tabs.repository', 'Repository')}</span>
             </TabsTrigger>
             
-            <TabsTrigger value="approvals" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <ClipboardCheck className="h-4 w-4" />
+            <TabsTrigger 
+              value="approvals" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"
+            >
+              <ClipboardCheck className="h-5 w-5" />
               <span>{t('documents.tabs.approvals', 'Approvals')}</span>
               {approvalNotifications > 0 && (
-                <Badge variant="destructive" className="ml-1 bg-destructive text-white">
+                <Badge variant="destructive" className="ml-1 bg-red-500 text-white animate-pulse">
                   {approvalNotifications}
                 </Badge>
               )}
             </TabsTrigger>
             
-            <TabsTrigger value="expired" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <CalendarX className="h-4 w-4" />
+            <TabsTrigger 
+              value="expired" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"
+            >
+              <CalendarX className="h-5 w-5" />
               <span>{t('documents.tabs.expired', 'Expired')}</span>
               {expiryNotifications > 0 && (
-                <Badge variant="destructive" className="ml-1 bg-destructive text-white">
+                <Badge variant="destructive" className="ml-1 bg-red-500 text-white animate-pulse">
                   {expiryNotifications}
                 </Badge>
               )}
             </TabsTrigger>
             
-            <TabsTrigger value="templates" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <FilePlus className="h-4 w-4" />
+            <TabsTrigger 
+              value="templates" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"
+            >
+              <FilePlus className="h-5 w-5" />
               <span>{t('documents.tabs.templates', 'Templates')}</span>
             </TabsTrigger>
             
-            <TabsTrigger value="edit" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Edit className="h-4 w-4" />
+            <TabsTrigger 
+              value="edit" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"
+            >
+              <Edit className="h-5 w-5" />
               <span>{t('documents.tabs.editor', 'Editor')}</span>
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="repository">
-            <div className="bg-white border border-border rounded-lg shadow-sm">
+            <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
+              <div className="flex justify-between items-center p-4 border-b border-accent/10">
+                <div className="relative w-1/3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                  <input 
+                    type="search" 
+                    placeholder="Search documents..." 
+                    className="pl-10 pr-4 py-2 w-full rounded-md border border-border/60 focus:border-accent focus:ring-accent text-base"
+                  />
+                </div>
+                <Button 
+                  onClick={() => setIsUploadOpen(true)}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-base shadow-sm"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>Add Document</span>
+                </Button>
+              </div>
               <DocumentRepository />
             </div>
           </TabsContent>
           
           <TabsContent value="approvals">
-            <div className="bg-white border border-border rounded-lg shadow-sm">
+            <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
               <ApprovalWorkflow />
             </div>
           </TabsContent>
           
           <TabsContent value="expired">
-            <div className="bg-white border border-border rounded-lg shadow-sm">
+            <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
               <ExpiredDocuments />
             </div>
           </TabsContent>
           
           <TabsContent value="templates">
-            <div className="bg-white border border-border rounded-lg shadow-sm">
+            <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
               <DocumentTemplates />
             </div>
           </TabsContent>
           
           <TabsContent value="edit">
-            <div className="bg-white border border-border rounded-lg shadow-sm p-4">
+            <div className="bg-white border border-accent/10 rounded-lg shadow-lg p-4">
               {selectedDocument ? (
                 <DocumentEditor 
                   document={selectedDocument} 
@@ -214,10 +258,13 @@ const DocumentsContent = () => {
                 />
               ) : (
                 <div className="p-8 text-center">
-                  <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-charcoal mb-2">No Document Selected</h3>
-                  <p className="text-charcoal-muted mb-4">Please select a document from the repository to edit.</p>
-                  <Button onClick={() => setActiveTab('repository')}>
+                  <AlertTriangle className="h-16 w-16 text-warning mx-auto mb-3" />
+                  <h3 className="text-xl font-medium text-foreground mb-2">No Document Selected</h3>
+                  <p className="text-foreground/80 mb-4 text-lg">Please select a document from the repository to edit.</p>
+                  <Button 
+                    onClick={() => setActiveTab('repository')}
+                    className="bg-gradient-to-r from-primary to-accent hover:from-primary-dark hover:to-accent-dark text-white font-medium text-base shadow-md"
+                  >
                     Go to Repository
                   </Button>
                 </div>

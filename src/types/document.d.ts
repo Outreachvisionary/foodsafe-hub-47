@@ -1,5 +1,5 @@
 
-export type DocumentStatus = 'Draft' | 'Pending Approval' | 'Approved' | 'Published' | 'Archived' | 'Expired';
+export type DocumentStatus = 'Draft' | 'In Review' | 'Approved' | 'Rejected' | 'Archived' | 'Expired';
 
 export type DocumentCategory = 
   | 'SOP' 
@@ -16,123 +16,85 @@ export type DocumentCategory =
 export interface Document {
   id: string;
   title: string;
+  description?: string;
   file_name: string;
+  file_path?: string;
   file_size: number;
   file_type: string;
   category: DocumentCategory;
   status: DocumentStatus;
   version: number;
+  current_version_id?: string;
   created_by: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  approved_by?: string;
+  approved_at?: string;
   expiry_date?: string;
-  linked_module?: string;
-  tags?: string[];
-  description?: string;
-  is_locked?: boolean;
-  pending_since?: string;
-  custom_notification_days?: number[];
+  is_locked: boolean;
   rejection_reason?: string;
+  last_action?: string;
+  tags?: string[];
 }
 
 export interface DocumentVersion {
   id: string;
   document_id: string;
-  version_number: number;
+  version: number;
   file_name: string;
   file_size: number;
-  file_path: string;
+  file_type?: string;
   created_by: string;
-  created_at: string;
-  change_summary?: string;
-}
-
-export interface DocumentNotification {
-  id: string;
-  documentId: string;
-  documentTitle: string;
-  type: 'approval_request' | 'approval_overdue' | 'expiry_reminder' | 'approval_complete' | 'document_rejected';
-  message: string;
-  createdAt: string;
-  isRead: boolean;
-  targetUserIds: string[];
+  created_at?: string;
+  change_notes?: string;
+  editor_metadata?: any;
 }
 
 export interface DocumentActivity {
   id: string;
-  documentId: string;
-  action: string;
-  performedBy: string;
-  performedAt: string;
-  details?: string;
-}
-
-export interface DocumentStats {
-  totalDocuments: number;
-  pendingApproval: number;
-  expiringSoon: number;
-  expired: number;
-  published: number;
-  archived: number;
-  byCategory: Record<string, number>;
-}
-
-export interface DocumentWorkflow {
-  id: string;
-  name: string;
-  steps: DocumentWorkflowStep[];
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-}
-
-export interface DocumentWorkflowStep {
-  step_number: number;
-  role: string;
-  action: string;
-  description?: string;
-}
-
-export interface DocumentWorkflowInstance {
-  id: string;
   document_id: string;
-  workflow_id: string;
-  current_step: number;
-  status: 'in_progress' | 'completed' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-}
-
-export interface DocumentAccess {
-  id: string;
-  document_id: string;
-  user_id?: string;
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download';
+  user_id: string;
+  user_name?: string;
   user_role?: string;
-  permission_level: string;
-  granted_by: string;
-  granted_at: string;
+  timestamp: string;
+  comments?: string;
+  metadata?: any;
 }
 
-export interface DocumentPreview {
+export interface DocumentComment {
   id: string;
   document_id: string;
-  preview_type: string;
-  content?: string;
-  thumbnail_path?: string;
+  user_id: string;
+  user_name: string;
+  content: string;
   created_at: string;
-  version_id?: string;
+  updated_at?: string;
 }
 
-export interface DocumentAttachment {
+export interface DocumentSearchFilters {
+  categories?: DocumentCategory[];
+  status?: DocumentStatus[];
+  createdStart?: string;
+  createdEnd?: string;
+  updatedStart?: string;
+  updatedEnd?: string;
+  expiryStart?: string;
+  expiryEnd?: string;
+  createdBy?: string[];
+  approvedBy?: string[];
+  tags?: string[];
+  searchTerm?: string;
+}
+
+export interface DocumentNotification {
   id: string;
+  type: 'approval_request' | 'approval_complete' | 'approval_overdue' | 'expiry_reminder' | 'version_update' | 'comment_added';
   document_id: string;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  uploaded_by: string;
-  uploaded_at: string;
-  description?: string;
+  document_title?: string;
+  user_id: string;
+  created_at: string;
+  read: boolean;
+  message: string;
+  action_url?: string;
 }
