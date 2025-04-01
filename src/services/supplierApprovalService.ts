@@ -15,6 +15,7 @@ interface ApprovalWorkflow {
   dueDate?: string;
   completedAt?: string;
   notes?: string;
+  supplierName?: string;
 }
 
 // Fetch an approval workflow for a supplier
@@ -43,8 +44,8 @@ export const fetchApprovalWorkflow = async (supplierId: string): Promise<Approva
     initiatedBy: data.initiated_by,
     initiatedAt: data.initiated_at,
     currentStep: data.current_step,
-    approvers: data.approvers,
-    approvalHistory: data.approval_history,
+    approvers: data.approvers || [],
+    approvalHistory: data.approval_history || {},
     dueDate: data.due_date,
     completedAt: data.completed_at,
     notes: data.notes
@@ -106,8 +107,8 @@ export const createApprovalWorkflow = async (
     initiatedBy: data.initiated_by,
     initiatedAt: data.initiated_at,
     currentStep: data.current_step,
-    approvers: data.approvers,
-    approvalHistory: data.approval_history,
+    approvers: data.approvers || [],
+    approvalHistory: data.approval_history || {},
     dueDate: data.due_date,
     completedAt: data.completed_at,
     notes: data.notes
@@ -193,8 +194,8 @@ export const fetchActiveWorkflows = async (): Promise<ApprovalWorkflow[]> => {
     initiatedBy: workflow.initiated_by,
     initiatedAt: workflow.initiated_at,
     currentStep: workflow.current_step,
-    approvers: workflow.approvers,
-    approvalHistory: workflow.approval_history,
+    approvers: workflow.approvers || [],
+    approvalHistory: workflow.approval_history || {},
     dueDate: workflow.due_date,
     completedAt: workflow.completed_at,
     notes: workflow.notes,

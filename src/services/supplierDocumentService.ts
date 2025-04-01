@@ -37,7 +37,7 @@ export const fetchSupplierDocuments = async (supplierId: string): Promise<Suppli
     status: doc.status,
     fileName: doc.file_name,
     supplier: doc.supplier_id,
-    standard: doc.standard as StandardName
+    standard: doc.standard as StandardName || undefined
   }));
 };
 
@@ -70,7 +70,7 @@ export const fetchAllDocuments = async (standard?: StandardName): Promise<Suppli
     status: doc.status,
     fileName: doc.file_name,
     supplier: doc.suppliers?.name || 'Unknown',
-    standard: doc.standard as StandardName
+    standard: doc.standard as StandardName || undefined
   }));
 };
 
@@ -138,7 +138,7 @@ export const uploadSupplierDocument = async (
     status: data.status,
     fileName: data.file_name,
     supplier: supplierId,
-    standard: data.standard as StandardName
+    standard: data.standard as StandardName || undefined
   };
 };
 

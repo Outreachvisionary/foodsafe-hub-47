@@ -26,6 +26,18 @@ export const fetchSuppliers = async (): Promise<Supplier[]> => {
       console.error(`Error fetching standards for supplier ${supplier.id}:`, standardsError);
       return {
         ...supplier,
+        id: supplier.id,
+        name: supplier.name,
+        category: supplier.category,
+        country: supplier.country,
+        riskScore: supplier.risk_score,
+        complianceStatus: supplier.compliance_status,
+        lastAuditDate: supplier.last_audit_date,
+        contactName: supplier.contact_name,
+        contactEmail: supplier.contact_email,
+        contactPhone: supplier.contact_phone,
+        products: supplier.products || [],
+        status: supplier.status as 'Active' | 'Pending' | 'Suspended' | 'Inactive',
         fsmsStandards: [],
         documents: [] // Will be populated by the document service
       };
@@ -142,14 +154,18 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'documents'
   }
 
   return {
-    ...newSupplier,
     id: newSupplierId,
-    riskScore: newSupplier.risk_score,
-    complianceStatus: newSupplier.compliance_status,
-    lastAuditDate: newSupplier.last_audit_date,
-    contactName: newSupplier.contact_name,
-    contactEmail: newSupplier.contact_email,
-    contactPhone: newSupplier.contact_phone,
+    name: supplier.name,
+    category: supplier.category,
+    country: supplier.country,
+    riskScore: supplier.riskScore,
+    complianceStatus: supplier.complianceStatus,
+    lastAuditDate: supplier.lastAuditDate,
+    contactName: supplier.contactName,
+    contactEmail: supplier.contactEmail,
+    contactPhone: supplier.contactPhone,
+    products: supplier.products,
+    status: supplier.status,
     fsmsStandards: [],
     documents: []
   };

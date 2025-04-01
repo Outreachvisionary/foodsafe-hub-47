@@ -6,7 +6,7 @@ export interface Supplier {
   country: string;
   riskScore: number;
   complianceStatus: string;
-  lastAuditDate: string;
+  lastAuditDate: string | null;
   fsmsStandards: FsmsStandard[];
   contactName: string;
   contactEmail: string;
@@ -20,10 +20,10 @@ export interface Supplier {
 export interface FsmsStandard {
   name: 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP';
   certified: boolean;
-  certificationNumber?: string;
-  expiryDate?: string;
-  level?: string; // For SQF levels
-  scope?: string;
+  certificationNumber?: string | null;
+  expiryDate?: string | null;
+  level?: string | null;
+  scope?: string | null;
 }
 
 export interface SupplierDocument {
@@ -31,11 +31,11 @@ export interface SupplierDocument {
   name: string;
   type: string;
   uploadDate: string;
-  expiryDate: string;
+  expiryDate: string | null;
   status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Pending Review';
   fileName: string;
-  supplier: string; // Added the supplier property
-  standard?: 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP';
+  supplier: string; // Either supplier ID or name depending on context
+  standard?: StandardName;
 }
 
 export interface MonitoringData {
