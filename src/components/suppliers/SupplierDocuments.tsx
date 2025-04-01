@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -97,6 +96,10 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
     setUploadForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleStandardChange = (value: string) => {
+    setSelectedDocStandard(value as StandardName);
+  };
+
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -122,7 +125,6 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
         uploadForm.supplier
       );
       
-      // Reset form and close dialog
       setUploadForm({
         name: '',
         type: 'Certification',
@@ -322,7 +324,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
                     <Label htmlFor="standard" className="text-right">Standard</Label>
                     <StandardSelect
                       value={uploadForm.standard}
-                      onValueChange={value => handleSelectChange('standard', value as StandardName)}
+                      onValueChange={value => handleSelectChange('standard', value)}
                       includeAll={false}
                       triggerClassName="col-span-3"
                       triggerProps={{ id: "standard" }}
@@ -408,7 +410,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
             
             <StandardSelect
               value={selectedDocStandard}
-              onValueChange={setSelectedDocStandard}
+              onValueChange={handleStandardChange}
               placeholder="Filter by Standard"
               triggerClassName="w-[180px]"
             />
