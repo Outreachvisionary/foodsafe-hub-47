@@ -2,9 +2,15 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { BookOpen } from 'lucide-react';
+import NCTrainingIntegration from './NCTrainingIntegration';
 
 interface NCActionsPanelProps {
   id: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  severity?: string;
   capaId?: string;
   onEdit: () => void;
   onGenerateCapa: () => void;
@@ -13,6 +19,10 @@ interface NCActionsPanelProps {
 
 const NCActionsPanel: React.FC<NCActionsPanelProps> = ({
   id,
+  title = '',
+  description = '',
+  category = '',
+  severity = '',
   capaId,
   onEdit,
   onGenerateCapa,
@@ -43,6 +53,15 @@ const NCActionsPanel: React.FC<NCActionsPanelProps> = ({
               Generate CAPA
             </Button>
           )}
+          
+          {/* Add Training Integration Component */}
+          <NCTrainingIntegration 
+            ncId={id}
+            ncTitle={title}
+            ncDescription={description}
+            category={category}
+            severity={severity}
+          />
         </CardContent>
       </Card>
     </div>

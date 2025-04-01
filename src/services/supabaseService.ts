@@ -95,10 +95,56 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
   return data as unknown as TrainingRecord;
 };
 
+// New method to fetch training related to a source (like a non-conformance)
+export const fetchRelatedTraining = async (sourceId: string, sourceType: string = 'non_conformance'): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        *,
+        training_records!target_id (
+          *,
+          training_sessions (*)
+        )
+      `)
+      .eq('source_id', sourceId)
+      .eq('source_type', sourceType)
+      .eq('target_type', 'training');
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching related training:', error);
+    return [];
+  }
+};
+
+// New method to set up real-time updates for training records
+export const subscribeToTrainingUpdates = (
+  callback: (payload: any) => void
+) => {
+  const channel = supabase
+    .channel('public:training_records')
+    .on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'training_records' }, 
+      (payload) => {
+        callback(payload);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};
+
 // Export all functions
 export default {
   fetchTrainingSessions,
   fetchTrainingRecords,
   createTrainingSession,
-  createTrainingRecord
+  createTrainingRecord,
+  fetchRelatedTraining,
+  subscribeToTrainingUpdates
 };

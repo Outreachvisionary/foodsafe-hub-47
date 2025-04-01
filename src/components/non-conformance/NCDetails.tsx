@@ -1,186 +1,224 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { fetchNonConformanceById, updateNCStatus } from '@/services/nonConformanceService';
-import { useState, useEffect } from 'react';
-import { NonConformance, NCStatus } from '@/types/non-conformance';
-import NCActivityTimeline from './NCActivityTimeline';
-import NCAttachmentUploader from './NCAttachmentUploader';
-import NCIntegrationsList from './NCIntegrationsList';
+import { useToast } from '@/components/ui/use-toast';
+import { ArrowLeft } from 'lucide-react';
 import NCDetailsHeader from './NCDetailsHeader';
 import NCItemDetails from './NCItemDetails';
 import NCStatusInfo from './NCStatusInfo';
 import NCActionsPanel from './NCActionsPanel';
+import NCActivityTimeline from './NCActivityTimeline';
+import NCAttachmentUploader from './NCAttachmentUploader';
+import NCIntegrationsList from './NCIntegrationsList';
+import { nonConformanceService } from '@/services/nonConformanceService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface NCDetailsProps {
   id: string;
-  onClose?: () => void;
+  onClose: () => void;
 }
 
 const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
-  const [nonConformance, setNonConformance] = useState<NonConformance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [changingStatus, setChangingStatus] = useState(false);
-  const navigate = useNavigate();
   const { toast: uiToast } = useToast();
-
+  const navigate = useNavigate();
+  
+  const [ncData, setNcData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch the non-conformance data
   useEffect(() => {
-    const loadNonConformance = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching non-conformance details for ID:', id);
-        const ncData = await fetchNonConformanceById(id);
-        console.log('Fetched non-conformance data:', ncData);
-        setNonConformance(ncData);
-      } catch (error) {
-        console.error('Error loading non-conformance:', error);
-        uiToast({
-          title: 'Failed to load data',
-          description: 'There was an error loading the non-conformance details.',
-          variant: 'destructive',
-        });
+        console.log('Fetching NC details for ID:', id);
         
-        if (onClose) {
-          onClose();
-        } else {
-          navigate('/non-conformance');
-        }
+        const { data, error } = await supabase
+          .from('non_conformances')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        
+        console.log('NC data retrieved:', data);
+        setNcData(data);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching non-conformance:', err);
+        setError(err.message || 'Failed to load non-conformance details');
+        toast.error('Failed to load non-conformance details');
       } finally {
         setLoading(false);
       }
     };
-
-    loadNonConformance();
-  }, [id, navigate, onClose, uiToast]);
-
-  const handleStatusChange = async (newStatus: NCStatus) => {
-    if (!nonConformance) return;
     
+    fetchData();
+  }, [id]);
+  
+  const handleEditNC = () => {
+    console.log('Edit NC clicked for ID:', id);
+    navigate(`/non-conformance/edit/${id}`);
+  };
+  
+  const handleGenerateCapa = async () => {
     try {
-      setChangingStatus(true);
-      console.log(`Attempting to change status from ${nonConformance.status} to ${newStatus}`);
+      console.log('Generating CAPA for NC ID:', id);
       
-      await updateNCStatus(
-        id,
-        newStatus,
-        nonConformance.created_by || 'current-user', // This should be the actual user ID in a real app
-        `Status changed to ${newStatus}` // Added comment parameter
-      );
+      // Create new CAPA record
+      const { data: capaData, error: capaError } = await supabase
+        .from('capa_actions')
+        .insert({
+          title: `CAPA for ${ncData?.title || 'Non-Conformance'}`,
+          description: ncData?.description || '',
+          source: 'non_conformance',
+          source_id: id,
+          priority: ncData?.priority || 'medium',
+          created_by: ncData?.created_by || 'system',
+          assigned_to: ncData?.assigned_to || ncData?.created_by || 'system',
+          department: ncData?.department,
+          status: 'Open',
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+        })
+        .select()
+        .single();
       
-      console.log(`Status updated successfully to ${newStatus}`);
+      if (capaError) throw capaError;
+      
+      console.log('CAPA created:', capaData);
+      
+      // Update the non-conformance with the CAPA ID
+      const { error: updateError } = await supabase
+        .from('non_conformances')
+        .update({ capa_id: capaData.id })
+        .eq('id', id);
+      
+      if (updateError) throw updateError;
       
       // Update local state
-      setNonConformance({
-        ...nonConformance,
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-        ...(newStatus === 'Under Review' ? { review_date: new Date().toISOString() } : {}),
-        ...(newStatus === 'Released' || newStatus === 'Disposed' || newStatus === 'Resolved' || newStatus === 'Closed' 
-           ? { resolution_date: new Date().toISOString() } : {})
+      setNcData({
+        ...ncData,
+        capa_id: capaData.id
       });
       
-      toast.success(`Status has been changed to ${newStatus}`);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Status update failed. Please try again later.');
-    } finally {
-      setChangingStatus(false);
+      toast.success('CAPA generated successfully');
+      
+      // Use the nonConformanceService to record this activity
+      await nonConformanceService.addActivity(id, 'CAPA generated', ncData?.assigned_to || 'system');
+      
+      uiToast({
+        title: "CAPA Generated",
+        description: "Corrective and Preventive Action has been created",
+      });
+    } catch (err: any) {
+      console.error('Error generating CAPA:', err);
+      toast.error('Failed to generate CAPA');
+      uiToast({
+        title: "CAPA Generation Failed",
+        description: err.message || "An error occurred",
+        variant: "destructive",
+      });
     }
   };
-
-  const handleGenerateCapa = () => {
-    try {
-      console.log('Navigating to CAPA creation with source:', id);
-      // Navigate to CAPA creation form with source information
-      navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
-    } catch (error) {
-      console.error('Error navigating to CAPA generation:', error);
-      toast.error('Could not navigate to CAPA generation. Please try again.');
+  
+  const handleViewCapa = () => {
+    if (ncData?.capa_id) {
+      console.log('Navigating to CAPA details for ID:', ncData.capa_id);
+      navigate(`/capa/${ncData.capa_id}`);
     }
   };
-
+  
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="p-8 flex justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     );
   }
-
-  if (!nonConformance) {
+  
+  if (error || !ncData) {
     return (
-      <div className="text-center p-10">
-        <h3 className="text-lg font-medium">Non-conformance not found</h3>
-        <p className="text-gray-500 mt-2">
-          The non-conformance item you are looking for does not exist or has been removed.
-        </p>
-        <Button onClick={() => onClose ? onClose() : navigate('/non-conformance')} className="mt-4">
-          Go Back
+      <div className="p-8 text-center">
+        <h3 className="text-lg font-medium text-red-600">Error Loading Details</h3>
+        <p className="mt-2 text-gray-600">{error || 'Failed to load non-conformance details'}</p>
+        <Button onClick={onClose} className="mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to List
         </Button>
       </div>
     );
   }
-
+  
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6">
       <NCDetailsHeader 
-        nonConformance={nonConformance} 
-        onBackClick={() => onClose ? onClose() : navigate('/non-conformance')} 
-        onStatusChange={handleStatusChange}
-        onEdit={() => navigate(`/non-conformance/edit/${id}`)}
-        onViewCapa={nonConformance.capa_id ? () => navigate(`/capa/${nonConformance.capa_id}`) : undefined}
-        onCreateCapa={handleGenerateCapa}
+        title={ncData.title} 
+        itemCategory={ncData.item_category}
+        reportedDate={ncData.reported_date}
+        createdBy={ncData.created_by}
+        onClose={onClose}
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <NCItemDetails nonConformance={nonConformance} />
-          
-          <div className="mt-6">
-            <Tabs defaultValue="activity">
-              <TabsList>
-                <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
-                <TabsTrigger value="attachments">Attachments</TabsTrigger>
-                <TabsTrigger value="integrations">Related Items</TabsTrigger>
-              </TabsList>
-              <TabsContent value="activity" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <NCActivityTimeline nonConformanceId={id} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="attachments" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <NCAttachmentUploader nonConformanceId={id} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="integrations" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <NCIntegrationsList nonConformanceId={id} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs defaultValue="details">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="attachments">Attachments</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="mt-4">
+              <NCItemDetails data={ncData} />
+            </TabsContent>
+            
+            <TabsContent value="timeline" className="mt-4">
+              <NCActivityTimeline nonConformanceId={id} />
+            </TabsContent>
+            
+            <TabsContent value="attachments" className="mt-4">
+              <NCAttachmentUploader nonConformanceId={id} />
+            </TabsContent>
+            
+            <TabsContent value="integrations" className="mt-4">
+              <NCIntegrationsList nonConformanceId={id} />
+            </TabsContent>
+          </Tabs>
         </div>
         
-        <div>
-          <NCStatusInfo nonConformance={nonConformance} />
+        <div className="space-y-6">
+          <NCStatusInfo 
+            status={ncData.status}
+            assignedTo={ncData.assigned_to}
+            reviewer={ncData.reviewer}
+            reviewDate={ncData.review_date}
+            resolutionDate={ncData.resolution_date}
+            nonConformanceId={id}
+            onStatusUpdate={(newStatus) => {
+              setNcData({
+                ...ncData,
+                status: newStatus
+              });
+            }}
+          />
+          
           <NCActionsPanel 
-            id={id} 
-            capaId={nonConformance.capa_id} 
-            onEdit={() => navigate(`/non-conformance/edit/${id}`)} 
-            onGenerateCapa={handleGenerateCapa} 
-            onViewCapa={nonConformance.capa_id ? () => navigate(`/capa/${nonConformance.capa_id}`) : undefined}
+            id={id}
+            title={ncData.title}
+            description={ncData.description}
+            category={ncData.item_category}
+            severity={ncData.risk_level}
+            capaId={ncData.capa_id}
+            onEdit={handleEditNC}
+            onGenerateCapa={handleGenerateCapa}
+            onViewCapa={handleViewCapa}
           />
         </div>
       </div>
