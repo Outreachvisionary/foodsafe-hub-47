@@ -27,12 +27,16 @@ export async function createDocumentComment(comment: Partial<DocumentComment>): 
   const newComment = {
     id: uuidv4(),
     created_at: new Date().toISOString(),
-    ...comment
+    document_id: comment.document_id,
+    user_id: comment.user_id,
+    user_name: comment.user_name,
+    content: comment.content,
+    updated_at: comment.updated_at
   };
 
   const { data, error } = await supabase
     .from('document_comments')
-    .insert([newComment]) // Pass as array to fix TypeScript error
+    .insert(newComment)
     .select()
     .single();
 

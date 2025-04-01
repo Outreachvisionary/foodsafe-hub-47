@@ -1,6 +1,43 @@
 
 // Re-export types from database
-export type { TrainingStatus, TrainingRecord, TrainingSession } from './database';
+export type { TrainingStatus } from './database';
+
+// Define TrainingRecord type directly instead of importing it
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date?: string;
+  due_date: string;
+  completion_date?: string;
+  score?: number;
+  pass_threshold?: number;
+  next_recurrence?: string;
+  last_recurrence?: string;
+  notes?: string;
+}
+
+export interface TrainingSession {
+  id: string;
+  title: string;
+  description?: string;
+  training_type: string;
+  training_category?: string;
+  department?: string;
+  start_date?: string;
+  due_date?: string;
+  assigned_to: string[];
+  materials_id?: string[];
+  required_roles?: string[];
+  is_recurring?: boolean;
+  recurring_interval?: number;
+  completion_status?: TrainingStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface ExtendedTrainingRecord extends TrainingRecord {
   courseName?: string;
@@ -28,6 +65,7 @@ export interface TrainingPlan {
     startDate?: string;
   };
   courses?: string[]; // Add this for backward compatibility
+  targetDepartments?: string[]; // Add this to fix TrainingPlans.tsx errors
 }
 
 export interface EmployeeRole {
@@ -58,6 +96,9 @@ export interface DepartmentTrainingStats {
   compliancePercentage: number;
   department?: string; // Add for compatibility with existing component
   compliance?: number; // Add for compatibility with existing component
+  completedCount?: number; // Add for compatibility with DepartmentComplianceChart
+  overdueCount?: number; // Add for compatibility with DepartmentComplianceChart
+  employeeCount?: number; // Add for compatibility with DepartmentComplianceChart
 }
 
 export interface Employee {

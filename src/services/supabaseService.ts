@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord, TrainingSession, TrainingStatus } from '@/types/database';
+import { TrainingRecord, TrainingSession, TrainingStatus } from '@/types/training';
 import { v4 as uuidv4 } from 'uuid';
 
 // Training services
@@ -15,7 +15,7 @@ export const fetchTrainingSessions = async (): Promise<TrainingSession[]> => {
     throw new Error('Failed to fetch training sessions');
   }
 
-  // Convert the types to match TrainingSession
+  // Cast the data to satisfy TypeScript
   return (data || []) as unknown as TrainingSession[];
 };
 
@@ -30,7 +30,7 @@ export const fetchTrainingRecords = async (): Promise<TrainingRecord[]> => {
     throw new Error('Failed to fetch training records');
   }
 
-  // Convert the types to match TrainingRecord
+  // Cast the data to satisfy TypeScript
   return (data || []) as unknown as TrainingRecord[];
 };
 
@@ -43,12 +43,16 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
   const newSession = {
     id: uuidv4(),
     created_at: new Date().toISOString(),
+    title: session.title,
+    training_type: session.training_type,
+    created_by: session.created_by,
+    assigned_to: session.assigned_to,
     ...session
   };
 
   const { data, error } = await supabase
     .from('training_sessions')
-    .insert([newSession as any])
+    .insert(newSession)
     .select()
     .single();
 
@@ -68,12 +72,17 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
 
   const newRecord = {
     id: uuidv4(),
+    employee_id: record.employee_id,
+    employee_name: record.employee_name,
+    session_id: record.session_id,
+    due_date: record.due_date,
+    status: record.status || 'Not Started' as TrainingStatus,
     ...record
   };
 
   const { data, error } = await supabase
     .from('training_records')
-    .insert([newRecord as any])
+    .insert(newRecord)
     .select()
     .single();
 
