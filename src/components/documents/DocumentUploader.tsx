@@ -1,44 +1,42 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { 
-  Upload, 
-  X, 
-  File, 
-  FileText, 
-  FilePlus, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2,
-  Clock
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useDocumentService } from '@/hooks/useDocumentService';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Document, DocumentCategory } from '@/types/database';
-import { useDocuments } from '@/contexts/DocumentContext';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CalendarIcon, Upload, XCircle, CheckCircle, UserCheck } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Document, DocumentStatus } from '@/types/document';
+import { supabase } from '@/integrations/supabase/client';
+import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;

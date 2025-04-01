@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 
+// This component must be used inside the DocumentProvider
 const DocumentsContent = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -252,6 +253,7 @@ const DocumentsContent = () => {
   );
 };
 
+// The main Documents component wrapped with DocumentProvider
 const Documents = () => (
   <DocumentProvider>
     <DocumentsContent />

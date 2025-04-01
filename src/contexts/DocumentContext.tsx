@@ -66,7 +66,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
   
   // Function for retrying fetch documents (for error handling)
-  const retryFetchDocuments = useCallback(async () => {
+  const retryFetchDocuments = useCallback(async (): Promise<void> => {
     return fetchDocuments();
   }, [fetchDocuments]);
   

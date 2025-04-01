@@ -89,6 +89,9 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
 
   if (!error) return null;
 
+  // Safe error display that handles both string and object errors
+  const errorMessage = typeof error === 'string' ? error : (error?.message || 'An unexpected error occurred');
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -104,7 +107,7 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
         <div className="space-y-4">
           <div className="text-red-600 bg-red-50 p-4 rounded-md">
             <h3 className="font-medium">Error Details</h3>
-            <p className="text-sm mt-1">{typeof error === 'string' ? error : 'An unexpected error occurred'}</p>
+            <p className="text-sm mt-1">{errorMessage}</p>
           </div>
 
           {diagnosisComplete && (
