@@ -6,11 +6,14 @@ import App from './App';
 import './index.css';
 import './services/storageService'; // Initialize storage services
 import './services/databaseInitializer'; // Initialize database tables
+import { UserProvider } from './contexts/UserContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <UserProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </UserProvider>
   </React.StrictMode>
 );
