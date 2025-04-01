@@ -86,7 +86,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Organization routes */}
         <Route path="/organizations" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -109,7 +108,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Facilities routes */}
         <Route path="/facilities" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -132,7 +130,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Admin routes */}
         <Route path="/users" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -158,7 +155,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Other modules */}
         <Route path="/audits" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -171,6 +167,7 @@ function App() {
         <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
         <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
         <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
+        
         <Route path="/capa" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -178,6 +175,21 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
+        <Route path="/capa/new" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <CAPA />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        <Route path="/capa/:id" element={
+          <ProtectedSidebarLayout>
+            <Suspense fallback={<Loading />}>
+              <CAPA />
+            </Suspense>
+          </ProtectedSidebarLayout>
+        } />
+        
         <Route path="/suppliers" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>
@@ -207,7 +219,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Profile routes */}
         <Route path="/profile" element={
           <ProtectedSidebarLayout>
             <Profile />
@@ -227,7 +238,6 @@ function App() {
           </ProtectedSidebarLayout>
         } />
         
-        {/* Catch-all route for 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />

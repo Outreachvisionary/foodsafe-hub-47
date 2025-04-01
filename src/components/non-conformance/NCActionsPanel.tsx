@@ -18,6 +18,11 @@ const NCActionsPanel: React.FC<NCActionsPanelProps> = ({
   onGenerateCapa,
   onViewCapa
 }) => {
+  const handleGenerateCapa = () => {
+    console.log('Generate CAPA button clicked for NC ID:', id);
+    onGenerateCapa();
+  };
+
   return (
     <div className="mt-6">
       <Card>
@@ -34,7 +39,7 @@ const NCActionsPanel: React.FC<NCActionsPanelProps> = ({
               View CAPA
             </Button>
           ) : (
-            <Button className="w-full" variant="outline" onClick={onGenerateCapa}>
+            <Button className="w-full" variant="outline" onClick={handleGenerateCapa}>
               Generate CAPA
             </Button>
           )}

@@ -7,6 +7,7 @@ import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 
 const NonConformanceModule = () => {
   const { id } = useParams();
@@ -18,6 +19,7 @@ const NonConformanceModule = () => {
 
   // Ensure viewingDetails matches with URL
   useEffect(() => {
+    console.log('NonConformance page loaded with ID:', id);
     setViewingDetails(!!id);
   }, [id]);
   
@@ -83,21 +85,24 @@ const NonConformanceModule = () => {
   };
   
   const handleSelectItem = (selectedId: string) => {
+    console.log("Selecting item with ID:", selectedId);
     navigate(`/non-conformance/${selectedId}`);
     setViewingDetails(true);
   };
   
   if (loadError) {
     return (
-      <div className="space-y-6 p-8 text-center">
-        <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
-        <p className="text-gray-700">{loadError}</p>
-        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-      </div>
+      <ProtectedSidebarLayout>
+        <div className="space-y-6 p-8 text-center">
+          <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
+          <p className="text-gray-700">{loadError}</p>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      </ProtectedSidebarLayout>
     );
   }
   
-  return (
+  const moduleContent = (
     <div id="nc-module-container" className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -162,6 +167,12 @@ const NonConformanceModule = () => {
         )}
       </div>
     </div>
+  );
+  
+  return (
+    <ProtectedSidebarLayout>
+      {moduleContent}
+    </ProtectedSidebarLayout>
   );
 };
 

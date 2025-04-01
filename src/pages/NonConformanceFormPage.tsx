@@ -17,6 +17,11 @@ const NonConformanceFormPage: React.FC = () => {
     console.log('Current location:', location.pathname);
   }, [id, location]);
   
+  const handleBackToList = () => {
+    console.log('Navigating back to non-conformance list');
+    navigate('/non-conformance');
+  };
+  
   const formContent = (
     <motion.div 
       className="space-y-6"
@@ -32,7 +37,7 @@ const NonConformanceFormPage: React.FC = () => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => navigate('/non-conformance')}
+          onClick={handleBackToList}
           className="hover:border-accent hover:text-accent transition-colors"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -43,7 +48,7 @@ const NonConformanceFormPage: React.FC = () => {
       <div className="bg-gradient-to-br from-white to-accent/5 border border-accent/20 rounded-lg shadow-lg p-6">
         <NCForm 
           id={id} 
-          onClose={() => navigate('/non-conformance')}
+          onClose={handleBackToList}
         />
       </div>
     </motion.div>

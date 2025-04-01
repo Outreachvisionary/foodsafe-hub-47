@@ -74,10 +74,15 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
       onCreateCAPA();
     } else {
       // Default implementation if no custom handler provided
-      navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
+      try {
+        // Navigate to the CAPA module with source information
+        navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
+        toast.success("Redirecting to CAPA creation");
+      } catch (error) {
+        console.error('Error navigating to CAPA creation:', error);
+        toast.error("Failed to navigate to CAPA creation");
+      }
     }
-    
-    toast.success("CAPA created successfully");
   };
   
   const handleDelete = async () => {
@@ -104,16 +109,26 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   };
   
   const handleChangeStatus = async (newStatus: NCStatus) => {
-    if (!onStatusChange) return;
+    if (!onStatusChange) {
+      console.error('No status change handler provided');
+      toast.error("Status change functionality is not available");
+      return;
+    }
     
     try {
       console.log(`Changing status from ${status} to ${newStatus}`);
       setIsChangingStatus(true);
-      await onStatusChange(newStatus);
+      
+      // Add some defensive code here to prevent errors
+      await onStatusChange(newStatus).catch(error => {
+        console.error('Error in status change handler:', error);
+        throw new Error('Status change failed in handler');
+      });
+      
       toast.success(`Status changed to ${newStatus}`);
     } catch (error) {
       console.error('Error changing status:', error);
-      toast.error("Failed to change status");
+      toast.error("Failed to change status. Please try again later.");
     } finally {
       setIsChangingStatus(false);
     }

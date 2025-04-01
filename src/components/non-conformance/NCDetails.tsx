@@ -1,23 +1,21 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { fetchNonConformanceById, updateNCStatus, updateNCQuantity } from '@/services/nonConformanceService';
+import { fetchNonConformanceById, updateNCStatus } from '@/services/nonConformanceService';
 import { useState, useEffect } from 'react';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCActivityTimeline from './NCActivityTimeline';
 import NCAttachmentUploader from './NCAttachmentUploader';
 import NCIntegrationsList from './NCIntegrationsList';
-import NCQuickActions from './NCQuickActions';
-import NCStatusBadge from './NCStatusBadge';
 import NCDetailsHeader from './NCDetailsHeader';
 import NCItemDetails from './NCItemDetails';
 import NCStatusInfo from './NCStatusInfo';
 import NCActionsPanel from './NCActionsPanel';
+import { toast } from 'sonner';
 
 interface NCDetailsProps {
   id: string;
@@ -29,17 +27,19 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [changingStatus, setChangingStatus] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     const loadNonConformance = async () => {
       try {
         setLoading(true);
+        console.log('Fetching non-conformance details for ID:', id);
         const ncData = await fetchNonConformanceById(id);
+        console.log('Fetched non-conformance data:', ncData);
         setNonConformance(ncData);
       } catch (error) {
         console.error('Error loading non-conformance:', error);
-        toast({
+        uiToast({
           title: 'Failed to load data',
           description: 'There was an error loading the non-conformance details.',
           variant: 'destructive',
@@ -56,20 +56,23 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
     };
 
     loadNonConformance();
-  }, [id, navigate, onClose, toast]);
+  }, [id, navigate, onClose, uiToast]);
 
   const handleStatusChange = async (newStatus: NCStatus) => {
     if (!nonConformance) return;
     
     try {
       setChangingStatus(true);
+      console.log(`Attempting to change status from ${nonConformance.status} to ${newStatus}`);
       
       await updateNCStatus(
         id,
         newStatus,
-        'current-user', // This should be the actual user ID in a real app
+        nonConformance.created_by || 'current-user', // This should be the actual user ID in a real app
         `Status changed to ${newStatus}` // Added comment parameter
       );
+      
+      console.log(`Status updated successfully to ${newStatus}`);
       
       // Update local state
       setNonConformance({
@@ -81,28 +84,24 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
            ? { resolution_date: new Date().toISOString() } : {})
       });
       
-      toast({
-        title: 'Status updated',
-        description: `Status has been changed to ${newStatus}`,
-      });
+      toast.success(`Status has been changed to ${newStatus}`);
     } catch (error) {
       console.error('Error updating status:', error);
-      toast({
-        title: 'Status update failed',
-        description: 'There was an error updating the status.',
-        variant: 'destructive',
-      });
+      toast.error('Status update failed. Please try again later.');
     } finally {
       setChangingStatus(false);
     }
   };
 
   const handleGenerateCapa = () => {
-    // This would be implemented when the CAPA integration is ready
-    toast({
-      title: 'CAPA Integration',
-      description: 'CAPA generation functionality will be implemented soon.',
-    });
+    try {
+      console.log('Navigating to CAPA creation with source:', id);
+      // Navigate to CAPA creation form with source information
+      navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
+    } catch (error) {
+      console.error('Error navigating to CAPA generation:', error);
+      toast.error('Could not navigate to CAPA generation. Please try again.');
+    }
   };
 
   if (loading) {
