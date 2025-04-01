@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Popover,
   PopoverContent,
@@ -12,10 +12,13 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  FileText
+  FileText,
+  Info
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DocumentNotification } from '@/types/document';
+import { useDocuments } from '@/contexts/DocumentContext';
+import { format, formatDistanceToNow } from 'date-fns';
 
 interface DocumentNotificationCenterProps {
   notifications: DocumentNotification[];
@@ -30,6 +33,7 @@ const DocumentNotificationCenter: React.FC<DocumentNotificationCenterProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const { documents } = useDocuments();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -41,9 +45,37 @@ const DocumentNotificationCenter: React.FC<DocumentNotificationCenterProps> = ({
         return <Clock className="h-4 w-4 text-amber-500" />;
       case 'approval_complete':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'approval_rejected':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+        return <Info className="h-4 w-4 text-gray-500" />;
     }
+  };
+  
+  const getFormattedTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      return 'Unknown time';
+    }
+  };
+
+  const handleClickNotification = (notification: DocumentNotification) => {
+    // Mark as read
+    onMarkAsRead(notification.id);
+    
+    // Find the document this notification is about
+    const document = documents.find(doc => doc.id === notification.documentId);
+    
+    // We could navigate to the document details or perform other actions
+    if (document) {
+      console.log('Navigating to document:', document);
+      // Navigation logic would go here
+    }
+    
+    // Close popover
+    setOpen(false);
   };
 
   return (
@@ -74,8 +106,8 @@ const DocumentNotificationCenter: React.FC<DocumentNotificationCenterProps> = ({
               {notifications.map(notification => (
                 <div
                   key={notification.id}
-                  className={`p-3 ${!notification.isRead ? 'bg-muted/30' : ''}`}
-                  onClick={() => onMarkAsRead(notification.id)}
+                  className={`p-3 cursor-pointer hover:bg-muted/50 ${!notification.isRead ? 'bg-muted/30' : ''}`}
+                  onClick={() => handleClickNotification(notification)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
@@ -85,7 +117,7 @@ const DocumentNotificationCenter: React.FC<DocumentNotificationCenterProps> = ({
                       <div className="text-sm font-medium">{notification.documentTitle}</div>
                       <p className="text-sm text-muted-foreground">{notification.message}</p>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {new Date(notification.createdAt).toLocaleString()}
+                        {getFormattedTimestamp(notification.createdAt)}
                       </div>
                     </div>
                   </div>

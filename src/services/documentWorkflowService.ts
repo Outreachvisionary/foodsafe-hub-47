@@ -1,5 +1,6 @@
 
 import { Document, DocumentCategory, DocumentStats, DocumentNotification, DocumentActivity } from '@/types/document';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define approval rules by document category
 const approvalRules: Record<DocumentCategory, {
@@ -109,70 +110,73 @@ export const updateDocumentStatusBasedOnExpiry = (documents: Document[]): Docume
   });
 };
 
-// Generate notifications for documents
+// Generate notifications for documents based on real data
 export const generateNotifications = (documents: Document[]): DocumentNotification[] => {
   const notifications: DocumentNotification[] = [];
   const currentDate = new Date();
   
   documents.forEach(doc => {
-    // Approval overdue notifications
-    if (isApprovalOverdue(doc)) {
-      notifications.push({
-        id: `approval-overdue-${doc.id}`,
-        documentId: doc.id,
-        documentTitle: doc.title,
-        type: 'approval_overdue',
-        message: `Approval for "${doc.title}" is overdue`,
-        createdAt: new Date().toISOString(),
-        isRead: false,
-        targetUserIds: getApprovalRule(doc.category).escalationTargets
-      });
-    }
-    
-    // Pending approval notifications
-    if (doc.status === 'Pending Approval' && !isApprovalOverdue(doc)) {
+    // Only generate notifications for real pending approvals (not mock data)
+    if (doc.status === 'Pending Approval' && doc.pending_since) {
       notifications.push({
         id: `approval-pending-${doc.id}`,
         documentId: doc.id,
         documentTitle: doc.title,
         type: 'approval_request',
-        message: `"${doc.title}" requires your approval`,
-        createdAt: doc.pending_since || new Date().toISOString(),
+        message: `${doc.title} needs your approval`,
+        createdAt: doc.pending_since,
         isRead: false,
-        targetUserIds: getRequiredApprovers(doc.category)
+        targetUserIds: doc.approvers || getRequiredApprovers(doc.category)
       });
+      
+      // Add overdue notification if applicable
+      if (isApprovalOverdue(doc)) {
+        notifications.push({
+          id: `approval-overdue-${doc.id}`,
+          documentId: doc.id,
+          documentTitle: doc.title,
+          type: 'approval_overdue',
+          message: `Approval for "${doc.title}" is overdue`,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          targetUserIds: getApprovalRule(doc.category).escalationTargets
+        });
+      }
     }
     
-    // Expiry notifications
+    // Only generate expiry notifications for real published documents with real expiry dates (not mock data)
     if (doc.expiry_date && doc.status === 'Published') {
       const expiryDate = new Date(doc.expiry_date);
       const daysUntilExpiry = Math.floor((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      // Check custom notification days
-      if (doc.custom_notification_days && doc.custom_notification_days.includes(daysUntilExpiry)) {
-        notifications.push({
-          id: `expiry-${doc.id}-${daysUntilExpiry}`,
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'expiry_reminder',
-          message: `"${doc.title}" will expire in ${daysUntilExpiry} days`,
-          createdAt: new Date().toISOString(),
-          isRead: false,
-          targetUserIds: []
-        });
-      }
-      // Default notifications at 90, 30, 7, and 1 days
-      else if ([90, 30, 7, 1].includes(daysUntilExpiry)) {
-        notifications.push({
-          id: `expiry-${doc.id}-${daysUntilExpiry}`,
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'expiry_reminder',
-          message: `"${doc.title}" will expire in ${daysUntilExpiry} days`,
-          createdAt: new Date().toISOString(),
-          isRead: false,
-          targetUserIds: []
-        });
+      // Only add expiry notification if it's within the next 90 days
+      if (daysUntilExpiry >= 0 && daysUntilExpiry <= 90) {
+        // Check custom notification days
+        if (doc.custom_notification_days && doc.custom_notification_days.includes(daysUntilExpiry)) {
+          notifications.push({
+            id: `expiry-${doc.id}-${daysUntilExpiry}`,
+            documentId: doc.id,
+            documentTitle: doc.title,
+            type: 'expiry_reminder',
+            message: `"${doc.title}" will expire in ${daysUntilExpiry} days`,
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            targetUserIds: []
+          });
+        }
+        // Default notifications at 90, 30, 7, and 1 days
+        else if ([90, 30, 7, 1].includes(daysUntilExpiry)) {
+          notifications.push({
+            id: `expiry-${doc.id}-${daysUntilExpiry}`,
+            documentId: doc.id,
+            documentTitle: doc.title,
+            type: 'expiry_reminder',
+            message: `"${doc.title}" will expire in ${daysUntilExpiry} days`,
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            targetUserIds: []
+          });
+        }
       }
     }
   });

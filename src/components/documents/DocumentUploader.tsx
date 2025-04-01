@@ -1,22 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -24,7 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CalendarIcon, Upload, XCircle, CheckCircle2, UserCheck, FileText, X, Loader2 } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  Upload, 
+  FileText, 
+  X, 
+  Loader,
+  CheckCircle,
+  UserCheck
+} from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -32,7 +30,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Document, DocumentStatus, DocumentCategory } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentService } from '@/hooks/useDocumentService';
@@ -59,7 +56,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>(category);
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(category as DocumentCategory);
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus>('Draft');
   const [isLocked, setIsLocked] = useState(false);
   const [tags, setTags] = useState('');
@@ -167,7 +164,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         file_name: fileName,
         file_size: file.size,
         file_type: file.type,
-        category: selectedCategory as DocumentCategory,
+        category: selectedCategory,
         status: submitForReview ? 'Pending Approval' : selectedStatus,
         version: 1,
         created_by: user.id,
@@ -178,6 +175,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         tags: tagArray,
         folder_id: selectedFolder || null,
         approvers: submitForReview ? approvers : [],
+        pending_since: submitForReview ? new Date().toISOString() : undefined,
       };
       
       const documentData = await documentService.createDocument(newDocument);
@@ -210,6 +208,18 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         comments: 'Document created through file upload'
       });
       
+      // If the document was uploaded to a folder, update folder document count
+      if (selectedFolder) {
+        const { error: folderError } = await supabase
+          .from('folders')
+          .update({ document_count: supabase.sql`document_count + 1` })
+          .eq('id', selectedFolder);
+          
+        if (folderError) {
+          console.error('Error updating folder document count:', folderError);
+        }
+      }
+      
       setUploadProgress(100);
       setUploadSuccess(true);
       
@@ -232,7 +242,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         setFile(null);
         setTitle('');
         setDescription('');
-        setSelectedCategory(category);
+        setSelectedCategory(category as DocumentCategory);
         setIsUploading(false);
         setUploadSuccess(false);
       }, 1500);
@@ -360,7 +370,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 <Label htmlFor="document-category">Category</Label>
                 <Select 
                   value={selectedCategory} 
-                  onValueChange={(value) => setSelectedCategory(value)}
+                  onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
                   disabled={isUploading || uploadSuccess}
                 >
                   <SelectTrigger id="document-category" className="bg-white">
@@ -487,6 +497,15 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   disabled={isUploading || uploadSuccess}
                 />
               </div>
+              
+              {selectedFolder && (
+                <div className="flex items-center p-3 bg-muted/20 rounded-md">
+                  <FileText className="h-4 w-4 mr-2 text-primary" />
+                  <span className="text-sm">
+                    This document will be uploaded to folder: <strong>{selectedFolder}</strong>
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -510,12 +529,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           >
             {isUploading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
                 Uploading...
               </>
             ) : uploadSuccess ? (
               <>
-                <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                 Uploaded
               </>
             ) : submitForReview ? (

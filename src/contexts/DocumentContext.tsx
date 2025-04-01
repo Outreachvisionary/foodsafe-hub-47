@@ -5,6 +5,7 @@ import documentService from '@/services/documentService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import documentWorkflowService from '@/services/documentWorkflowService';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DocumentContextType {
   documents: Document[];
@@ -12,6 +13,8 @@ interface DocumentContextType {
   setSelectedDocument: (document: Document | null) => void;
   notifications: DocumentNotification[];
   folders: Folder[];
+  selectedFolder: Folder | null;
+  setSelectedFolder: (folder: Folder | null) => void;
   fetchDocuments: () => Promise<void>;
   updateDocument: (document: Document) => void;
   submitForApproval: (document: Document) => void;
@@ -24,6 +27,9 @@ interface DocumentContextType {
   setIsLoading: (loading: boolean) => void;
   refreshData: () => void;
   retryFetchDocuments: () => Promise<void>;
+  getDocumentsInFolder: (folderId: string | null) => Document[];
+  createFolder: (name: string, parentId: string | null) => Promise<Folder>;
+  moveDocumentToFolder: (documentId: string, folderId: string | null) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -40,6 +46,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [notifications, setNotifications] = useState<DocumentNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +58,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
     try {
       const fetchedDocuments = await documentService.fetchDocuments();
-      console.log('Documents fetched:', fetchedDocuments);
+      console.log('Fetched documents:', fetchedDocuments);
       setDocuments(fetchedDocuments);
       
       // Also fetch folders when documents are loaded
       fetchFolders();
+      
+      // Generate real notifications based on the current documents
+      const generatedNotifications = documentWorkflowService.generateNotifications(fetchedDocuments);
+      setNotifications(generatedNotifications);
       
     } catch (error: any) {
       console.error('Error fetching documents:', error);
@@ -112,45 +123,22 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       )
       .subscribe();
       
-    // Auto-refresh every minute
-    const refreshInterval = setInterval(() => {
-      refreshData();
-    }, 60000);
-    
+    const folderChanges = supabase
+      .channel('folder-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'folders' }, 
+        () => {
+          console.log('Folders changed, refreshing data...');
+          fetchFolders();
+        }
+      )
+      .subscribe();
+      
     return () => {
       supabase.removeChannel(documentChanges);
-      clearInterval(refreshInterval);
+      supabase.removeChannel(folderChanges);
     };
-  }, [fetchDocuments, refreshData]);
-
-  // Load mock notifications
-  useEffect(() => {
-    // Mock notifications for demonstration purposes
-    const mockNotifications: DocumentNotification[] = [
-      {
-        id: '1',
-        documentId: '123',
-        documentTitle: 'HACCP Plan Review',
-        type: 'approval_request',
-        message: 'HACCP Plan needs your approval',
-        createdAt: new Date().toISOString(),
-        isRead: false,
-        targetUserIds: ['current-user']
-      },
-      {
-        id: '2',
-        documentId: '456',
-        documentTitle: 'SOP-001 Manufacturing Process',
-        type: 'expiry_reminder',
-        message: 'Document expires in 15 days',
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        isRead: false,
-        targetUserIds: ['current-user']
-      }
-    ];
-    
-    setNotifications(mockNotifications);
-  }, []);
+  }, [fetchDocuments, fetchFolders]);
 
   // Function to update a document
   const updateDocument = async (updatedDoc: Document) => {
@@ -184,19 +172,25 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Function to submit a document for approval
   const submitForApproval = async (document: Document) => {
     try {
-      const updatedDoc: Partial<Document> = {
-        ...document,
-        status: 'Pending Approval',
-        pending_since: new Date().toISOString(),
-        is_locked: true
-      };
-      
+      const updatedDoc = documentWorkflowService.submitForApproval(document);
       await documentService.updateDocument(document.id, updatedDoc);
       
       // Update documents list
       setDocuments(docs => 
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
+      
+      // Add a notification for the approval request
+      addNotification({
+        id: uuidv4(),
+        documentId: document.id,
+        documentTitle: document.title,
+        type: 'approval_request',
+        message: `${document.title} needs your approval`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: document.approvers || []
+      });
       
       toast({
         title: 'Success',
@@ -222,6 +216,18 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setDocuments(docs => 
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
+      
+      // Add a notification for the approval
+      addNotification({
+        id: uuidv4(),
+        documentId: document.id,
+        documentTitle: document.title,
+        type: 'approval_complete',
+        message: `${document.title} has been approved`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: [document.created_by]
+      });
       
       toast({
         title: 'Success',
@@ -249,6 +255,18 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
       
+      // Add a notification for the rejection
+      addNotification({
+        id: uuidv4(),
+        documentId: document.id,
+        documentTitle: document.title,
+        type: 'approval_rejected',
+        message: `${document.title} was rejected: ${reason}`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: [document.created_by]
+      });
+      
       toast({
         title: 'Success',
         description: 'Document rejected',
@@ -262,6 +280,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       throw error; // Re-throw to allow component to handle error
     }
+  };
+
+  // Function to add a notification
+  const addNotification = (notification: DocumentNotification) => {
+    setNotifications(prev => [notification, ...prev]);
   };
 
   // Function to mark a notification as read
@@ -280,6 +303,93 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications([]);
   };
 
+  // Function to get documents in a specific folder
+  const getDocumentsInFolder = (folderId: string | null) => {
+    if (!folderId) {
+      return documents; // Return all documents if no folder selected
+    }
+    return documents.filter(doc => doc.folder_id === folderId);
+  };
+
+  // Function to create a new folder
+  const createFolder = async (name: string, parentId: string | null) => {
+    try {
+      // Generate a path for the folder
+      let path = name;
+      if (parentId) {
+        const parentFolder = folders.find(f => f.id === parentId);
+        if (parentFolder) {
+          path = `${parentFolder.path || parentFolder.name}/${name}`;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('folders')
+        .insert({
+          name,
+          parent_id: parentId,
+          path,
+          created_by: 'current_user', // This should be replaced with the actual user ID in a real implementation
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update the folders state
+      setFolders(prev => [...prev, data]);
+      
+      toast({
+        title: 'Success',
+        description: 'Folder created successfully',
+      });
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create folder',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  // Function to move a document to a folder
+  const moveDocumentToFolder = async (documentId: string, folderId: string | null) => {
+    try {
+      const document = documents.find(doc => doc.id === documentId);
+      if (!document) {
+        throw new Error('Document not found');
+      }
+      
+      await documentService.updateDocument(documentId, { folder_id: folderId });
+      
+      // Update the documents state
+      setDocuments(prev => 
+        prev.map(doc => 
+          doc.id === documentId 
+            ? { ...doc, folder_id: folderId } 
+            : doc
+        )
+      );
+      
+      toast({
+        title: 'Success',
+        description: `Document moved to ${folderId ? 'folder' : 'root level'}`,
+      });
+    } catch (error: any) {
+      console.error('Error moving document to folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move document',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return (
     <DocumentContext.Provider
       value={{
@@ -288,6 +398,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSelectedDocument,
         notifications,
         folders,
+        selectedFolder,
+        setSelectedFolder,
         fetchDocuments,
         updateDocument,
         submitForApproval,
@@ -299,7 +411,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLoading,
         setIsLoading,
         refreshData,
-        retryFetchDocuments
+        retryFetchDocuments,
+        getDocumentsInFolder,
+        createFolder,
+        moveDocumentToFolder
       }}
     >
       {children}
