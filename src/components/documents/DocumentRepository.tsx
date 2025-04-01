@@ -2,17 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -25,48 +19,59 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, CheckCircle, Copy, CopyCheck, File, FileText, Filter, FolderPlus, Loader2, MoreHorizontal, Plus, RefreshCw, Search, Trash2, Upload, UploadCloud, Eye, Download, Edit, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentService } from '@/hooks/useDocumentService';
 import { Document, DocumentCategory, DocumentStatus, Folder } from '@/types/database';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import DocumentPreviewDialog from './DocumentPreviewDialog';
-import DocumentVersionHistory from './DocumentVersionHistory';
-import DocumentComments from './DocumentComments';
-import DocumentAccessControl from './DocumentAccessControl';
+import { Filter, Loader2, Search, Trash2, Upload, Eye, Edit, Plus, RefreshCw, Inbox } from 'lucide-react';
+import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
 import DocumentUploader from './DocumentUploader';
+import DocumentFolders from './DocumentFolders';
+import DocumentDashboard from './DocumentDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const createPlaceholderComponent = (name: string) => {
   return () => <div>Placeholder for {name} component</div>;
 };
+
+const DocumentActions = createPlaceholderComponent('DocumentActions');
+const DocumentMetadata = createPlaceholderComponent('DocumentMetadata');
+const DocumentWorkflowManagement = createPlaceholderComponent('DocumentWorkflowManagement');
+const DocumentTrainingIntegration = createPlaceholderComponent('DocumentTrainingIntegration');
+const DocumentReviewSchedule = createPlaceholderComponent('DocumentReviewSchedule');
+const DocumentLinking = createPlaceholderComponent('DocumentLinking');
+const DocumentSecuritySettings = createPlaceholderComponent('DocumentSecuritySettings');
+const DocumentCompliance = createPlaceholderComponent('DocumentCompliance');
+const DocumentTranslations = createPlaceholderComponent('DocumentTranslations');
+const DocumentAnalytics = createPlaceholderComponent('DocumentAnalytics');
+const DocumentTemplates = createPlaceholderComponent('DocumentTemplates');
+const DocumentCollaboration = createPlaceholderComponent('DocumentCollaboration');
+const DocumentCheckinCheckout = createPlaceholderComponent('DocumentCheckinCheckout');
+const DocumentApprovalWorkflow = createPlaceholderComponent('DocumentApprovalWorkflow');
+const DocumentNotifications = createPlaceholderComponent('DocumentNotifications');
+const DocumentAuditTrail = createPlaceholderComponent('DocumentAuditTrail');
+const DocumentRetentionPolicy = createPlaceholderComponent('DocumentRetentionPolicy');
+const DocumentExport = createPlaceholderComponent('DocumentExport');
+const DocumentImport = createPlaceholderComponent('DocumentImport');
+const DocumentSearch = createPlaceholderComponent('DocumentSearch');
+const DocumentTagging = createPlaceholderComponent('DocumentTagging');
+const DocumentCustomFields = createPlaceholderComponent('DocumentCustomFields');
+const DocumentReporting = createPlaceholderComponent('DocumentReporting');
+const DocumentWatermarking = createPlaceholderComponent('DocumentWatermarking');
+const DocumentDigitalSignatures = createPlaceholderComponent('DocumentDigitalSignatures');
+const DocumentOCR = createPlaceholderComponent('DocumentOCR');
+const DocumentAI = createPlaceholderComponent('DocumentAI');
+const DocumentMobileAccess = createPlaceholderComponent('DocumentMobileAccess');
+const DocumentOfflineAccess = createPlaceholderComponent('DocumentOfflineAccess');
+const DocumentIntegration = createPlaceholderComponent('DocumentIntegration');
+const DocumentBranding = createPlaceholderComponent('DocumentBranding');
+const DocumentHelp = createPlaceholderComponent('DocumentHelp');
+const DocumentSettings = createPlaceholderComponent('DocumentSettings');
 
 const DocumentFilters = ({ 
   categoryFilter, statusFilter, dateRangeFilter, isLockedFilter, 
@@ -221,40 +226,36 @@ const DocumentFilters = ({
   );
 };
 
-const DocumentActions = createPlaceholderComponent('DocumentActions');
-const DocumentFolders = createPlaceholderComponent('DocumentFolders');
-const DocumentMetadata = createPlaceholderComponent('DocumentMetadata');
-const DocumentWorkflowManagement = createPlaceholderComponent('DocumentWorkflowManagement');
-const DocumentTrainingIntegration = createPlaceholderComponent('DocumentTrainingIntegration');
-const DocumentReviewSchedule = createPlaceholderComponent('DocumentReviewSchedule');
-const DocumentLinking = createPlaceholderComponent('DocumentLinking');
-const DocumentSecuritySettings = createPlaceholderComponent('DocumentSecuritySettings');
-const DocumentCompliance = createPlaceholderComponent('DocumentCompliance');
-const DocumentTranslations = createPlaceholderComponent('DocumentTranslations');
-const DocumentAnalytics = createPlaceholderComponent('DocumentAnalytics');
-const DocumentTemplates = createPlaceholderComponent('DocumentTemplates');
-const DocumentCollaboration = createPlaceholderComponent('DocumentCollaboration');
-const DocumentCheckinCheckout = createPlaceholderComponent('DocumentCheckinCheckout');
-const DocumentApprovalWorkflow = createPlaceholderComponent('DocumentApprovalWorkflow');
-const DocumentNotifications = createPlaceholderComponent('DocumentNotifications');
-const DocumentAuditTrail = createPlaceholderComponent('DocumentAuditTrail');
-const DocumentRetentionPolicy = createPlaceholderComponent('DocumentRetentionPolicy');
-const DocumentExport = createPlaceholderComponent('DocumentExport');
-const DocumentImport = createPlaceholderComponent('DocumentImport');
-const DocumentSearch = createPlaceholderComponent('DocumentSearch');
-const DocumentTagging = createPlaceholderComponent('DocumentTagging');
-const DocumentCustomFields = createPlaceholderComponent('DocumentCustomFields');
-const DocumentReporting = createPlaceholderComponent('DocumentReporting');
-const DocumentWatermarking = createPlaceholderComponent('DocumentWatermarking');
-const DocumentDigitalSignatures = createPlaceholderComponent('DocumentDigitalSignatures');
-const DocumentOCR = createPlaceholderComponent('DocumentOCR');
-const DocumentAI = createPlaceholderComponent('DocumentAI');
-const DocumentMobileAccess = createPlaceholderComponent('DocumentMobileAccess');
-const DocumentOfflineAccess = createPlaceholderComponent('DocumentOfflineAccess');
-const DocumentIntegration = createPlaceholderComponent('DocumentIntegration');
-const DocumentBranding = createPlaceholderComponent('DocumentBranding');
-const DocumentHelp = createPlaceholderComponent('DocumentHelp');
-const DocumentSettings = createPlaceholderComponent('DocumentSettings');
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import DocumentPreviewDialog from './DocumentPreviewDialog';
+import DocumentVersionHistory from './DocumentVersionHistory';
+import DocumentComments from './DocumentComments';
+import DocumentAccessControl from './DocumentAccessControl';
+import { DateRange } from 'react-day-picker';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
 const documentFormSchema = z.object({
   title: z.string().min(2, {
@@ -272,7 +273,6 @@ type DocumentFormValues = z.infer<typeof documentFormSchema>;
 
 const DocumentRepository: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -282,6 +282,7 @@ const DocumentRepository: React.FC = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | null>(null);
@@ -290,6 +291,7 @@ const DocumentRepository: React.FC = () => {
   const [isLockedFilter, setIsLockedFilter] = useState<boolean | null>(null);
   const [isAscendingSort, setIsAscendingSort] = useState(true);
   const [selectedDocumentToDelete, setSelectedDocumentToDelete] = useState<Document | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('list');
   const { toast } = useToast();
   const documentService = useDocumentService();
 
@@ -305,27 +307,47 @@ const DocumentRepository: React.FC = () => {
       is_locked: false,
     },
   });
+  
+  // Auto refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadDocuments();
-    setFolders([]);
-  }, []);
+  }, [refreshTrigger, selectedFolder]);
 
   const loadDocuments = async () => {
     setLoading(true);
     try {
       const fetchedDocuments = await documentService.fetchDocuments();
-      setDocuments(fetchedDocuments);
+      console.log("Fetched documents:", fetchedDocuments);
+      
+      // Filter by folder if selected
+      const filteredByFolder = selectedFolder 
+        ? fetchedDocuments.filter(doc => doc.folder_id === selectedFolder.id)
+        : fetchedDocuments;
+      
+      setDocuments(filteredByFolder);
     } catch (error: any) {
+      console.error("Error loading documents:", error);
       setError(error.message || 'Failed to load documents');
       toast({
         title: 'Error',
-        description: 'Failed to load documents',
+        description: 'Failed to load documents. Please try again.',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const resetFilters = () => {
@@ -417,17 +439,33 @@ const DocumentRepository: React.FC = () => {
     }
   };
 
+  const handleDocumentUploadSuccess = (uploadedDocument: Document) => {
+    console.log("Document uploaded successfully:", uploadedDocument);
+    setIsUploadDialogOpen(false);
+    
+    // Refresh the document list
+    handleRefresh();
+    
+    toast({
+      title: 'Success',
+      description: 'Document uploaded successfully',
+    });
+  };
+
   const handleDeleteDocument = async () => {
     if (!selectedDocumentToDelete) return;
 
     try {
       await documentService.deleteDocument(selectedDocumentToDelete.id);
+      setIsDeleteDialogOpen(false);
+      
+      // Refresh the document list
+      handleRefresh();
+      
       toast({
         title: 'Success',
         description: 'Document deleted successfully',
       });
-      setIsDeleteDialogOpen(false);
-      loadDocuments();
     } catch (error: any) {
       console.error('Error deleting document:', error);
       toast({
@@ -438,9 +476,8 @@ const DocumentRepository: React.FC = () => {
     }
   };
 
-  const handleDocumentUploadSuccess = () => {
-    setIsUploadDialogOpen(false);
-    loadDocuments();
+  const handleFolderChange = (folder: Folder | null) => {
+    setSelectedFolder(folder);
   };
 
   const filteredDocuments = documents.filter(doc => {
@@ -508,157 +545,215 @@ const DocumentRepository: React.FC = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Document Repository</CardTitle>
-          <CardDescription>Manage and organize your documents</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <div className="relative w-full md:w-1/3">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full rounded-md border"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleSortToggle}>
-                  <span className="mr-1">Sort</span> {isAscendingSort ? '↑' : '↓'}
-                </Button>
-
-                <DocumentFilters
-                  categoryFilter={categoryFilter}
-                  statusFilter={statusFilter}
-                  dateRangeFilter={dateRangeFilter}
-                  isLockedFilter={isLockedFilter}
-                  onCategoryChange={setCategoryFilter}
-                  onStatusChange={setStatusFilter}
-                  onDateRangeChange={setDateRangeFilter}
-                  onIsLockedChange={setIsLockedFilter}
-                  onResetFilters={resetFilters}
-                />
-
-                <Button 
-                  size="sm" 
-                  onClick={() => setIsUploadDialogOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">Upload Document</span>
-                </Button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading documents...
-              </div>
-            ) : error ? (
-              <div className="text-red-500 py-4">Error: {error}</div>
-            ) : (
-              <ScrollArea className="rounded-md border h-[500px]">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-white z-10">
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Updated At</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedDocuments.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <FileText className="h-10 w-10 text-muted-foreground opacity-50" />
-                            <p className="text-muted-foreground">No documents found</p>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => setIsUploadDialogOpen(true)}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Upload Document
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      sortedDocuments.map((document) => (
-                        <TableRow key={document.id}>
-                          <TableCell className="font-medium">{document.title}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-secondary/30">
-                              {document.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={cn(
-                                document.status === 'Draft' && 'bg-slate-200 text-slate-700',
-                                document.status === 'Pending Approval' && 'bg-amber-100 text-amber-700',
-                                document.status === 'Approved' && 'bg-green-100 text-green-700',
-                                document.status === 'Published' && 'bg-blue-100 text-blue-700',
-                                document.status === 'Archived' && 'bg-gray-100 text-gray-700',
-                                document.status === 'Expired' && 'bg-red-100 text-red-700'
-                              )}
-                            >
-                              {document.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {document.updated_at
-                              ? format(new Date(document.updated_at), 'MMM d, yyyy h:mm a')
-                              : 'N/A'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleDocumentSelected(document)}
-                                title="Preview"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleOpenEditDialog(document)}
-                                title="Edit"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleOpenDeleteDialog(document)}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
+      <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="list">Document List</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            
+            <Button 
+              size="sm" 
+              onClick={() => setIsUploadDialogOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Upload</span>
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <TabsContent value="dashboard" className="space-y-4">
+          <DocumentDashboard />
+        </TabsContent>
+
+        <TabsContent value="list" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="md:col-span-1">
+              <DocumentFolders 
+                onSelectFolder={handleFolderChange}
+                selectedFolder={selectedFolder}
+              />
+            </div>
+            
+            <div className="md:col-span-3">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="relative w-full md:w-1/2">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="search"
+                        placeholder="Search documents..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full rounded-md border"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={handleSortToggle}>
+                        <span className="mr-1">Sort</span> {isAscendingSort ? '↑' : '↓'}
+                      </Button>
+
+                      <DocumentFilters
+                        categoryFilter={categoryFilter}
+                        statusFilter={statusFilter}
+                        dateRangeFilter={dateRangeFilter}
+                        isLockedFilter={isLockedFilter}
+                        onCategoryChange={setCategoryFilter}
+                        onStatusChange={setStatusFilter}
+                        onDateRangeChange={setDateRangeFilter}
+                        onIsLockedChange={setIsLockedFilter}
+                        onResetFilters={resetFilters}
+                      />
+                    </div>
+                  </div>
+
+                  {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span className="ml-2 text-lg">Loading documents...</span>
+                    </div>
+                  ) : error ? (
+                    <div className="text-red-500 py-8 text-center">
+                      <div className="mb-2 text-2xl">Error Loading Documents</div>
+                      <div>{error}</div>
+                      <Button 
+                        onClick={handleRefresh} 
+                        variant="outline" 
+                        className="mt-4"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {selectedFolder && (
+                        <div className="mb-4 px-2">
+                          <h2 className="text-lg font-medium flex items-center">
+                            <Inbox className="mr-2 h-5 w-5 text-blue-500" />
+                            Current Folder: <span className="font-bold ml-1">{selectedFolder.name}</span>
+                          </h2>
+                        </div>
+                      )}
+                      
+                      <ScrollArea className="rounded-md border h-[500px]">
+                        <Table>
+                          <TableHeader className="sticky top-0 bg-white z-10">
+                            <TableRow>
+                              <TableHead>Title</TableHead>
+                              <TableHead>Category</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Updated At</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {sortedDocuments.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={5} className="text-center py-16">
+                                  <div className="flex flex-col items-center justify-center gap-2">
+                                    <div className="p-4 rounded-full bg-slate-100">
+                                      <Inbox className="h-12 w-12 text-slate-400" />
+                                    </div>
+                                    <h3 className="text-lg font-medium mt-2">No documents found</h3>
+                                    <p className="text-muted-foreground mb-4">
+                                      {selectedFolder 
+                                        ? `This folder is empty. Upload documents to get started.` 
+                                        : `There are no documents in your repository yet.`}
+                                    </p>
+                                    <Button 
+                                      onClick={() => setIsUploadDialogOpen(true)}
+                                      className="flex items-center"
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Upload Your First Document
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              sortedDocuments.map((document) => (
+                                <TableRow key={document.id}>
+                                  <TableCell className="font-medium">{document.title}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="bg-secondary/30">
+                                      {document.category}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={cn(
+                                        document.status === 'Draft' && 'bg-slate-200 text-slate-700',
+                                        document.status === 'Pending Approval' && 'bg-amber-100 text-amber-700',
+                                        document.status === 'Approved' && 'bg-green-100 text-green-700',
+                                        document.status === 'Published' && 'bg-blue-100 text-blue-700',
+                                        document.status === 'Archived' && 'bg-gray-100 text-gray-700',
+                                        document.status === 'Expired' && 'bg-red-100 text-red-700'
+                                      )}
+                                    >
+                                      {document.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {document.updated_at
+                                      ? format(new Date(document.updated_at), 'MMM d, yyyy h:mm a')
+                                      : 'N/A'}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleDocumentSelected(document)}
+                                        title="Preview"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleOpenEditDialog(document)}
+                                        title="Edit"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleOpenDeleteDialog(document)}
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
@@ -1040,20 +1135,23 @@ const DocumentRepository: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>
-              Upload a new document to the repository.
+              Upload a new document to the repository
+              {selectedFolder && ` in folder "${selectedFolder.name}"`}.
             </DialogDescription>
           </DialogHeader>
-          <DocumentUploader onSuccess={handleDocumentUploadSuccess} onCancel={() => setIsUploadDialogOpen(false)} />
+          <DocumentUploader 
+            onUploadComplete={handleDocumentUploadSuccess} 
+            onCancel={() => setIsUploadDialogOpen(false)}
+            selectedFolder={selectedFolder?.id}
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="sm:max-w-[80%] sm:max-h-[90vh]">
-          {selectedDocument && (
-            <DocumentPreviewDialog document={selectedDocument} onClose={() => setIsPreviewOpen(false)} />
-          )}
-        </DialogContent>
-      </Dialog>
+      <DocumentPreviewDialogWrapper 
+        document={selectedDocument} 
+        open={isPreviewOpen} 
+        onOpenChange={setIsPreviewOpen} 
+      />
 
       <DocumentVersionHistory
         document={selectedDocument}

@@ -15,16 +15,23 @@ const DocumentPreviewDialogWrapper: React.FC<DocumentPreviewDialogWrapperProps> 
   open, 
   onOpenChange 
 }) => {
-  // Early return if there's no document or dialog is not open
-  if (!document || !open) return null;
-
+  // Only render the dialog content if document exists and dialog is open
+  if (!open) return null;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[80vh] p-6 overflow-auto bg-white">
-        <DocumentPreviewDialog 
-          document={document} 
-          onOpenChange={onOpenChange}
-        />
+        {document ? (
+          <DocumentPreviewDialog 
+            document={document} 
+            onOpenChange={onOpenChange}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <h2 className="text-xl font-semibold mb-2">Document Not Found</h2>
+            <p className="text-muted-foreground">The document could not be loaded or doesn't exist.</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

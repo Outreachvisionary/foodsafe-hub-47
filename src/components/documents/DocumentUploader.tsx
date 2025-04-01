@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, File, X, FileText } from 'lucide-react';
+import { Loader2, Upload, File, X, FileText, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentCategory, DocumentStatus } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +17,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -25,6 +35,7 @@ interface DocumentUploaderProps {
   maxSize?: number; // In MB
   onSuccess?: () => void;
   onCancel?: () => void;
+  selectedFolder?: string | null;
 }
 
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({
@@ -33,14 +44,22 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'],
   maxSize = 10, // Default 10MB
   onSuccess,
-  onCancel
+  onCancel,
+  selectedFolder
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(category);
+  const [selectedStatus, setSelectedStatus] = useState<DocumentStatus>('Draft');
+  const [isLocked, setIsLocked] = useState(false);
+  const [tags, setTags] = useState('');
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
+  const [submitForReview, setSubmitForReview] = useState(false);
+  const [approvers, setApprovers] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +120,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadSuccess(false);
     
     // Simulate progress
     const progressInterval = simulateProgress();
@@ -116,6 +136,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           variant: "destructive"
         });
         setIsUploading(false);
+        clearInterval(progressInterval);
         return;
       }
       
@@ -136,6 +157,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       // Create document record in database
+      const tagArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : [];
+      
       const newDocument: Partial<Document> = {
         id: documentId,
         title: title.trim(),
@@ -144,11 +167,16 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         file_size: file.size,
         file_type: file.type,
         category: selectedCategory,
-        status: 'Draft' as DocumentStatus,
+        status: submitForReview ? 'Pending Approval' : selectedStatus,
         version: 1,
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        expiry_date: expiryDate?.toISOString(),
+        is_locked: isLocked,
+        tags: tagArray,
+        folder_id: selectedFolder || null,
+        approvers: submitForReview ? approvers : [],
       };
       
       // Use the documentService to create the document
@@ -187,30 +215,32 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       });
       
       setUploadProgress(100);
+      setUploadSuccess(true);
       
+      clearInterval(progressInterval);
+      
+      toast({
+        title: "Upload successful",
+        description: "Document has been uploaded successfully.",
+      });
+      
+      if (onUploadComplete) {
+        onUploadComplete(documentData);
+      }
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Reset state after a short delay
       setTimeout(() => {
-        clearInterval(progressInterval);
-        
-        toast({
-          title: "Upload successful",
-          description: "Document has been uploaded successfully.",
-        });
-        
-        if (onUploadComplete) {
-          onUploadComplete(documentData);
-        }
-        
-        if (onSuccess) {
-          onSuccess();
-        }
-        
-        // Reset state
         setFile(null);
         setTitle('');
         setDescription('');
         setSelectedCategory(category);
         setIsUploading(false);
-      }, 500);
+        setUploadSuccess(false);
+      }, 1500);
       
     } catch (error) {
       clearInterval(progressInterval);
@@ -276,7 +306,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   </div>
                 </div>
                 
-                {!isUploading && (
+                {!isUploading && !uploadSuccess && (
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -288,16 +318,20 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 )}
               </div>
               
-              {isUploading && (
+              {(isUploading || uploadSuccess) && (
                 <div className="mt-3">
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        uploadSuccess ? "bg-green-500" : "bg-primary"
+                      }`}
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 text-center">
-                    {uploadProgress}% uploaded
+                    {uploadSuccess 
+                      ? "Upload complete!" 
+                      : `${uploadProgress}% uploaded`}
                   </p>
                 </div>
               )}
@@ -311,7 +345,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Document title"
-                  disabled={isUploading}
+                  disabled={isUploading || uploadSuccess}
                   required
                 />
               </div>
@@ -323,7 +357,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of this document"
-                  disabled={isUploading}
+                  disabled={isUploading || uploadSuccess}
                   rows={3}
                 />
               </div>
@@ -333,12 +367,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 <Select 
                   value={selectedCategory} 
                   onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
-                  disabled={isUploading}
+                  disabled={isUploading || uploadSuccess}
                 >
-                  <SelectTrigger id="document-category">
+                  <SelectTrigger id="document-category" className="bg-white">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white">
                     <SelectItem value="SOP">SOP</SelectItem>
                     <SelectItem value="Policy">Policy</SelectItem>
                     <SelectItem value="Form">Form</SelectItem>
@@ -351,6 +385,113 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="document-status">Status</Label>
+                <Select 
+                  value={selectedStatus} 
+                  onValueChange={(value) => setSelectedStatus(value as DocumentStatus)}
+                  disabled={isUploading || uploadSuccess || submitForReview}
+                >
+                  <SelectTrigger id="document-status" className="bg-white">
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Published">Published</SelectItem>
+                    <SelectItem value="Archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="document-expiry">Expiry Date (optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isUploading || uploadSuccess}
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-white",
+                        !expiryDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expiryDate ? format(expiryDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white">
+                    <Calendar
+                      mode="single"
+                      selected={expiryDate}
+                      onSelect={setExpiryDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div>
+                <Label htmlFor="document-tags">Tags (comma separated)</Label>
+                <Input 
+                  id="document-tags" 
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="quality, inspection, compliance"
+                  disabled={isUploading || uploadSuccess}
+                />
+              </div>
+
+              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-base" htmlFor="submit-for-review">Submit for Review</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Send this document for approval
+                  </p>
+                </div>
+                <Switch
+                  id="submit-for-review"
+                  checked={submitForReview}
+                  onCheckedChange={setSubmitForReview}
+                  disabled={isUploading || uploadSuccess}
+                />
+              </div>
+
+              {submitForReview && (
+                <div>
+                  <Label htmlFor="approvers">Approvers</Label>
+                  <Select 
+                    disabled={isUploading || uploadSuccess}
+                    value={approvers[0] || ""}
+                    onValueChange={(value) => setApprovers([value])}
+                  >
+                    <SelectTrigger id="approvers" className="bg-white">
+                      <SelectValue placeholder="Select approver" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="quality_manager">Quality Manager</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-base" htmlFor="document-locked">Lock Document</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Prevent further modifications to this document
+                  </p>
+                </div>
+                <Switch
+                  id="document-locked"
+                  checked={isLocked}
+                  onCheckedChange={setIsLocked}
+                  disabled={isUploading || uploadSuccess}
+                />
               </div>
             </div>
           </>
@@ -370,13 +511,23 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           
           <Button
             onClick={uploadDocument}
-            disabled={!file || isUploading || !title.trim()}
+            disabled={!file || isUploading || !title.trim() || uploadSuccess}
             className="w-full"
           >
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Uploading...
+              </>
+            ) : uploadSuccess ? (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                Uploaded
+              </>
+            ) : submitForReview ? (
+              <>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Submit for Review
               </>
             ) : (
               <>
