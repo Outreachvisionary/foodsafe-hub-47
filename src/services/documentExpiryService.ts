@@ -53,8 +53,25 @@ export const sendDocumentExpiryNotifications = async () => {
           .eq('id', doc.id);
       }
       
-      // Here you would call your edge function to send emails
-      // This is a placeholder for the actual email sending logic
+      // Call the edge function to send the email notification
+      const { data, error: fnError } = await supabase.functions.invoke('document-expiry-notification', {
+        body: {
+          to: email,
+          supplierName: supplierName,
+          documents: docs.map(doc => ({
+            id: doc.id,
+            name: doc.name,
+            type: doc.type,
+            expiryDate: doc.expiry_date
+          }))
+        }
+      });
+      
+      if (fnError) {
+        console.error('Error invoking document-expiry-notification function:', fnError);
+        throw fnError;
+      }
+      
       console.log(`Email notification sent to ${email} for ${docs.length} expiring documents`);
       
       // Record notification in the database
@@ -81,6 +98,47 @@ export const sendDocumentExpiryNotifications = async () => {
   }
 };
 
+// Function to check for documents that have expired and update their status
+export const updateExpiredDocumentStatus = async () => {
+  try {
+    const today = new Date().toISOString();
+    
+    // Get all documents that have expired
+    const { data: documents, error } = await supabase
+      .from('supplier_documents')
+      .select('*')
+      .lt('expiry_date', today)
+      .in('status', ['Valid', 'Expiring Soon']);
+    
+    if (error) throw error;
+    
+    if (!documents || documents.length === 0) {
+      console.log('No newly expired documents found');
+      return { success: true, expiredCount: 0 };
+    }
+    
+    // Update the status of each expired document
+    for (const doc of documents) {
+      await supabase
+        .from('supplier_documents')
+        .update({
+          status: 'Expired',
+          updated_at: today
+        })
+        .eq('id', doc.id);
+    }
+    
+    return {
+      success: true,
+      expiredCount: documents.length
+    };
+  } catch (error) {
+    console.error('Error updating expired document status:', error);
+    throw error;
+  }
+};
+
 export default {
-  sendDocumentExpiryNotifications
+  sendDocumentExpiryNotifications,
+  updateExpiredDocumentStatus
 };

@@ -6,9 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 import { Document } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarRange, AlertCircle, Calendar, Bell, Trash } from 'lucide-react';
+import { CalendarRange, AlertCircle, Calendar as CalendarIcon, Bell, Trash } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DocumentExpirySettingsProps {
   document: Document;
@@ -24,8 +28,8 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
   onUpdate
 }) => {
   const { toast } = useToast();
-  const [expiryDate, setExpiryDate] = useState<string>(
-    document.expiry_date ? new Date(document.expiry_date).toISOString().split('T')[0] : ''
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(
+    document.expiry_date ? new Date(document.expiry_date) : undefined
   );
   const [customNotifications, setCustomNotifications] = useState<boolean>(
     document.custom_notification_days ? document.custom_notification_days.length > 0 : false
@@ -48,7 +52,7 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
     
     const updatedDoc = {
       ...document,
-      expiry_date: expiryDate ? new Date(expiryDate).toISOString() : undefined,
+      expiry_date: expiryDate ? expiryDate.toISOString() : undefined,
       custom_notification_days: customNotifications ? notificationDays : [],
       updated_at: new Date().toISOString()
     };
@@ -59,6 +63,8 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
       title: "Expiry settings saved",
       description: "Document expiry settings have been updated successfully",
     });
+    
+    onOpenChange(false);
   };
 
   const handleRemoveNotification = (day: number) => {
@@ -113,16 +119,29 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
           <div className="grid gap-2">
             <Label htmlFor="expiry-date">Expiry Date</Label>
             <div className="flex gap-2">
-              <div className="relative flex-grow">
-                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  id="expiry-date"
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? format(expiryDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
               <Button
                 variant="outline"
                 className="flex-shrink-0"
@@ -130,7 +149,7 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
                   // Set to 1 year from today
                   const date = new Date();
                   date.setFullYear(date.getFullYear() + 1);
-                  setExpiryDate(date.toISOString().split('T')[0]);
+                  setExpiryDate(date);
                 }}
               >
                 + 1 Year
@@ -155,7 +174,7 @@ const DocumentExpirySettings: React.FC<DocumentExpirySettingsProps> = ({
                   </>
                 ) : (
                   <>
-                    <Calendar className="h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     <span>Expires in {daysUntilExpiry} days</span>
                   </>
                 )}

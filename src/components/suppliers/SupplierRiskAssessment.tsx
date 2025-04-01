@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -8,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useSupplierRiskAssessment } from '@/hooks/useSupplierRiskAssessment';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -17,7 +19,9 @@ import { toast } from 'sonner';
 const SupplierRiskAssessment = () => {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const { assessments, statistics, isLoading, createRiskAssessment } = useSupplierRiskAssessment(selectedSupplierId || undefined);
+  const { suppliers, isLoading: suppliersLoading } = useSuppliers();
   const [selectedTab, setSelectedTab] = useState('dashboard');
+  const [submitting, setSubmitting] = useState(false);
   
   const [formState, setFormState] = useState({
     supplier_id: '',
@@ -44,6 +48,9 @@ const SupplierRiskAssessment = () => {
         return;
       }
       
+      setSubmitting(true);
+      console.log("Submitting assessment:", formState);
+      
       await createRiskAssessment({
         ...formState,
         food_safety_score: Number(formState.food_safety_score),
@@ -52,6 +59,8 @@ const SupplierRiskAssessment = () => {
         delivery_score: Number(formState.delivery_score),
         traceability_score: Number(formState.traceability_score),
       });
+      
+      toast.success('Risk assessment submitted successfully');
       
       setFormState({
         supplier_id: '',
@@ -69,6 +78,8 @@ const SupplierRiskAssessment = () => {
     } catch (error) {
       console.error('Error submitting assessment:', error);
       toast.error('Failed to create risk assessment');
+    } finally {
+      setSubmitting(false);
     }
   };
   
@@ -79,6 +90,12 @@ const SupplierRiskAssessment = () => {
     { name: 'Medium Risk', value: statistics.mediumRiskCount, color: '#f97316' },
     { name: 'Low Risk', value: statistics.lowRiskCount, color: '#22c55e' }
   ].filter(item => item.value > 0);
+  
+  // Get supplier name from id
+  const getSupplierName = (id: string) => {
+    const supplier = suppliers.find(s => s.id === id);
+    return supplier ? supplier.name : 'Unknown Supplier';
+  };
   
   return (
     <div>
@@ -496,10 +513,17 @@ const SupplierRiskAssessment = () => {
                       <SelectValue placeholder="Select a supplier" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="71f0b7c0-8268-4211-b30d-803d7adb535f">Greenfield Organics</SelectItem>
-                      <SelectItem value="f9e33256-c1e8-4dbd-8a42-bb3a20d71254">Pure Valley Farms</SelectItem>
-                      <SelectItem value="3c77e748-ae1b-4552-8834-ad2a78a25349">Sunrise Foods</SelectItem>
-                      <SelectItem value="52f9e3a5-8c8f-4e2e-a210-f497001a5d4a">Taste Makers Inc.</SelectItem>
+                      {suppliersLoading ? (
+                        <div className="p-2 text-center">Loading suppliers...</div>
+                      ) : suppliers.length > 0 ? (
+                        suppliers.map(supplier => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-center">No suppliers found</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -610,8 +634,31 @@ const SupplierRiskAssessment = () => {
                 <Button 
                   onClick={handleSubmitAssessment}
                   className="w-full"
+                  disabled={submitting || !formState.supplier_id}
                 >
-                  Submit Assessment
+                  {submitting ? (
+                    <>
+                      <span className="mr-2">Submitting...</span>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle 
+                          className="opacity-25" 
+                          cx="12" 
+                          cy="12" 
+                          r="10" 
+                          stroke="currentColor" 
+                          strokeWidth="4"
+                          fill="none"
+                        ></circle>
+                        <path 
+                          className="opacity-75" 
+                          fill="currentColor" 
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    </>
+                  ) : (
+                    'Submit Assessment'
+                  )}
                 </Button>
               </div>
             </CardContent>
