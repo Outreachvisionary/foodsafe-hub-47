@@ -1,4 +1,7 @@
 
+// Define the TrainingStatus type directly
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
+
 // Re-export types from database
 export type { TrainingStatus } from './database';
 
@@ -44,7 +47,7 @@ export interface ExtendedTrainingRecord extends TrainingRecord {
   instructorName?: string;
 }
 
-// Training plan interface
+// Training plan interface with ALL needed properties
 export interface TrainingPlan {
   id: string;
   name: string;
@@ -66,6 +69,9 @@ export interface TrainingPlan {
   };
   courses?: string[]; // Add this for backward compatibility
   targetDepartments?: string[]; // Add this to fix TrainingPlans.tsx errors
+  createdBy?: string; // Add this to fix the createdBy property errors
+  createdDate?: string; // Add this for completeness
+  relatedStandards?: string[]; // Add this for completeness
 }
 
 export interface EmployeeRole {
@@ -94,11 +100,11 @@ export interface DepartmentTrainingStats {
   inProgress: number;
   overdue: number;
   compliancePercentage: number;
-  department?: string; // Add for compatibility with existing component
-  compliance?: number; // Add for compatibility with existing component
-  completedCount?: number; // Add for compatibility with DepartmentComplianceChart
-  overdueCount?: number; // Add for compatibility with DepartmentComplianceChart
-  employeeCount?: number; // Add for compatibility with DepartmentComplianceChart
+  department?: string; // For compatibility with existing component
+  compliance?: number; // For compatibility with existing component
+  completedCount?: number; // For compatibility with DepartmentComplianceChart
+  overdueCount?: number; // For compatibility with DepartmentComplianceChart
+  employeeCount?: number; // For compatibility with DepartmentComplianceChart
 }
 
 export interface Employee {

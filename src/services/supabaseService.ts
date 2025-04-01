@@ -43,6 +43,7 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
   const newSession = {
     id: uuidv4(),
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     title: session.title,
     training_type: session.training_type,
     created_by: session.created_by,
@@ -52,7 +53,7 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
 
   const { data, error } = await supabase
     .from('training_sessions')
-    .insert(newSession)
+    .insert(newSession as any)
     .select()
     .single();
 
@@ -82,7 +83,7 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
 
   const { data, error } = await supabase
     .from('training_records')
-    .insert(newRecord)
+    .insert(newRecord as any)
     .select()
     .single();
 

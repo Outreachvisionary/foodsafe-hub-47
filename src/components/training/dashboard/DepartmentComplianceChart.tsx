@@ -9,6 +9,12 @@ const DepartmentComplianceChart: React.FC = () => {
   // Sample department compliance data
   const departmentData: DepartmentTrainingStats[] = [
     { 
+      departmentName: 'Production',
+      totalAssigned: 250,
+      completed: 180,
+      inProgress: 42,
+      overdue: 28,
+      compliancePercentage: 72,
       department: 'Production', 
       compliance: 72, 
       completedCount: 180, 
@@ -16,6 +22,12 @@ const DepartmentComplianceChart: React.FC = () => {
       employeeCount: 45
     },
     { 
+      departmentName: 'Quality',
+      totalAssigned: 150,
+      completed: 120,
+      inProgress: 26,
+      overdue: 4,
+      compliancePercentage: 94,
       department: 'Quality', 
       compliance: 94, 
       completedCount: 120, 
@@ -23,6 +35,12 @@ const DepartmentComplianceChart: React.FC = () => {
       employeeCount: 12
     },
     { 
+      departmentName: 'Maintenance',
+      totalAssigned: 110,
+      completed: 75,
+      inProgress: 20,
+      overdue: 15,
+      compliancePercentage: 68,
       department: 'Maintenance', 
       compliance: 68, 
       completedCount: 75, 
@@ -30,6 +48,12 @@ const DepartmentComplianceChart: React.FC = () => {
       employeeCount: 18
     },
     { 
+      departmentName: 'R&D',
+      totalAssigned: 120,
+      completed: 95,
+      inProgress: 19,
+      overdue: 6,
+      compliancePercentage: 89,
       department: 'R&D', 
       compliance: 89, 
       completedCount: 95, 
@@ -37,6 +61,12 @@ const DepartmentComplianceChart: React.FC = () => {
       employeeCount: 10
     },
     { 
+      departmentName: 'Management',
+      totalAssigned: 50,
+      completed: 42,
+      inProgress: 6,
+      overdue: 2,
+      compliancePercentage: 96,
       department: 'Management', 
       compliance: 96, 
       completedCount: 42, 
@@ -44,6 +74,12 @@ const DepartmentComplianceChart: React.FC = () => {
       employeeCount: 8
     },
     { 
+      departmentName: 'Logistics',
+      totalAssigned: 100,
+      completed: 68,
+      inProgress: 20,
+      overdue: 12,
+      compliancePercentage: 75,
       department: 'Logistics', 
       compliance: 75, 
       completedCount: 68, 
