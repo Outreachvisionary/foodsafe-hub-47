@@ -1,34 +1,24 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search, Truck, Star, Filter, FileCheck } from 'lucide-react';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-
 const SuppliersList: React.FC = () => {
-  const { suppliers, isLoading, error, addSupplier, editSupplier } = useSuppliers();
+  const {
+    suppliers,
+    isLoading,
+    error,
+    addSupplier,
+    editSupplier
+  } = useSuppliers();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -42,20 +32,12 @@ const SuppliersList: React.FC = () => {
     country: '',
     contactName: '',
     contactEmail: '',
-    contactPhone: '',
+    contactPhone: ''
   });
-  
-  const filteredSuppliers = suppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.country.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredSuppliers = suppliers.filter(supplier => supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) || supplier.category.toLowerCase().includes(searchQuery.toLowerCase()) || supplier.country.toLowerCase().includes(searchQuery.toLowerCase()));
   const getRiskBadgeStyle = (riskScore: number) => {
-    const riskLevel = riskScore >= 85 ? 'Low' : 
-                     riskScore >= 70 ? 'Medium' : 'High';
-                     
-    switch(riskLevel.toLowerCase()) {
+    const riskLevel = riskScore >= 85 ? 'Low' : riskScore >= 70 ? 'Medium' : 'High';
+    switch (riskLevel.toLowerCase()) {
       case 'low':
         return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'medium':
@@ -66,9 +48,8 @@ const SuppliersList: React.FC = () => {
         return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
-
   const getStatusBadgeStyle = (status: string) => {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'active':
         return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'pending':
@@ -81,7 +62,6 @@ const SuppliersList: React.FC = () => {
         return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
-
   const resetNewSupplierForm = () => {
     setNewSupplier({
       name: '',
@@ -90,19 +70,13 @@ const SuppliersList: React.FC = () => {
       country: '',
       contactName: '',
       contactEmail: '',
-      contactPhone: '',
+      contactPhone: ''
     });
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
-      const risk_score = 
-        newSupplier.riskLevel === 'Low' ? 90 : 
-        newSupplier.riskLevel === 'Medium' ? 80 : 
-        65;
-      
+      const risk_score = newSupplier.riskLevel === 'Low' ? 90 : newSupplier.riskLevel === 'Medium' ? 80 : 65;
       await addSupplier({
         name: newSupplier.name,
         category: newSupplier.category,
@@ -116,7 +90,6 @@ const SuppliersList: React.FC = () => {
         status: 'Pending',
         last_audit_date: undefined
       });
-      
       setIsDialogOpen(false);
       resetNewSupplierForm();
     } catch (error) {
@@ -124,12 +97,9 @@ const SuppliersList: React.FC = () => {
       toast.error('Failed to add supplier');
     }
   };
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!selectedSupplier) return;
-    
     try {
       await editSupplier(selectedSupplier.id, selectedSupplier);
       setIsEditDialogOpen(false);
@@ -139,45 +109,53 @@ const SuppliersList: React.FC = () => {
       toast.error('Failed to update supplier');
     }
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewSupplier(prev => ({ ...prev, [id]: value }));
+    const {
+      id,
+      value
+    } = e.target;
+    setNewSupplier(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
-
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedSupplier) return;
-    
-    const { id, value } = e.target;
-    setSelectedSupplier(prev => ({ ...prev!, [id]: value }));
+    const {
+      id,
+      value
+    } = e.target;
+    setSelectedSupplier(prev => ({
+      ...prev!,
+      [id]: value
+    }));
   };
-
   const handleSelectChange = (value: string, field: string) => {
-    setNewSupplier(prev => ({ ...prev, [field]: value }));
+    setNewSupplier(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-  
   const handleEditSelectChange = (value: string, field: string) => {
     if (!selectedSupplier) return;
-    
     setSelectedSupplier(prev => {
       if (!prev) return prev;
-      return { ...prev, [field]: value };
+      return {
+        ...prev,
+        [field]: value
+      };
     });
   };
-  
   const handleViewSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setIsViewDialogOpen(true);
   };
-  
   const handleEditSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setIsEditDialogOpen(true);
   };
-
   if (error) {
-    return (
-      <Card className="animate-fade-in">
+    return <Card className="animate-fade-in">
         <CardContent className="p-6">
           <div className="text-center text-red-500">
             <p>Error loading suppliers: {error.message}</p>
@@ -186,12 +164,9 @@ const SuppliersList: React.FC = () => {
             </Button>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card className="animate-fade-in">
+  return <Card className="animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-bold flex items-center">
           <Truck className="mr-2 h-5 w-5" />
@@ -200,13 +175,7 @@ const SuppliersList: React.FC = () => {
         <div className="flex space-x-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search suppliers..."
-              className="pl-8 w-[250px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <Input type="search" placeholder="Search suppliers..." className="pl-8 w-[250px]" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
@@ -228,40 +197,19 @@ const SuppliersList: React.FC = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="name" className="text-right">Name</label>
-                    <Input 
-                      id="name" 
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.name}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="name" className="col-span-3" required value={newSupplier.name} onChange={handleInputChange} />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="category" className="text-right">Category</label>
-                    <Input 
-                      id="category" 
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.category}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="category" className="col-span-3" required value={newSupplier.category} onChange={handleInputChange} />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="country" className="text-right">Country</label>
-                    <Input 
-                      id="country" 
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.country}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="country" className="col-span-3" required value={newSupplier.country} onChange={handleInputChange} />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="riskLevel" className="text-right">Risk Level</label>
-                    <Select 
-                      value={newSupplier.riskLevel} 
-                      onValueChange={(value) => handleSelectChange(value, 'riskLevel')}
-                    >
+                    <Select value={newSupplier.riskLevel} onValueChange={value => handleSelectChange(value, 'riskLevel')}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select risk level" />
                       </SelectTrigger>
@@ -274,34 +222,15 @@ const SuppliersList: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="contactName" className="text-right">Contact Name</label>
-                    <Input 
-                      id="contactName" 
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.contactName}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="contactName" className="col-span-3" required value={newSupplier.contactName} onChange={handleInputChange} />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="contactEmail" className="text-right">Contact Email</label>
-                    <Input 
-                      id="contactEmail" 
-                      type="email"
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.contactEmail}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="contactEmail" type="email" className="col-span-3" required value={newSupplier.contactEmail} onChange={handleInputChange} />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="contactPhone" className="text-right">Contact Phone</label>
-                    <Input 
-                      id="contactPhone" 
-                      className="col-span-3" 
-                      required
-                      value={newSupplier.contactPhone}
-                      onChange={handleInputChange}
-                    />
+                    <Input id="contactPhone" className="col-span-3" required value={newSupplier.contactPhone} onChange={handleInputChange} />
                   </div>
                 </div>
                 <DialogFooter>
@@ -315,13 +244,10 @@ const SuppliersList: React.FC = () => {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center p-8">
+      <CardContent className="py-[4px] px-0">
+        {isLoading ? <div className="flex justify-center p-8">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-          </div>
-        ) : (
-          <Table>
+          </div> : <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Supplier Name</TableHead>
@@ -334,73 +260,45 @@ const SuppliersList: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSuppliers.length > 0 ? (
-                filteredSuppliers.map((supplier) => (
-                  <TableRow key={supplier.id}>
+              {filteredSuppliers.length > 0 ? filteredSuppliers.map(supplier => <TableRow key={supplier.id}>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
                     <TableCell>{supplier.category}</TableCell>
                     <TableCell>
-                      <Badge 
-                        className={getRiskBadgeStyle(supplier.risk_score)} 
-                        variant="outline"
-                      >
-                        {supplier.risk_score >= 85 ? 'Low' : 
-                         supplier.risk_score >= 70 ? 'Medium' : 'High'}
+                      <Badge className={getRiskBadgeStyle(supplier.risk_score)} variant="outline">
+                        {supplier.risk_score >= 85 ? 'Low' : supplier.risk_score >= 70 ? 'Medium' : 'High'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <span className="mr-2">{supplier.risk_score}%</span>
-                        {supplier.risk_score >= 90 && (
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        )}
+                        {supplier.risk_score >= 90 && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {supplier.last_audit_date ? 
-                        new Date(supplier.last_audit_date).toLocaleDateString() : 
-                        'Not audited'}
+                      {supplier.last_audit_date ? new Date(supplier.last_audit_date).toLocaleDateString() : 'Not audited'}
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        className={getStatusBadgeStyle(supplier.status)} 
-                        variant="outline"
-                      >
+                      <Badge className={getStatusBadgeStyle(supplier.status)} variant="outline">
                         {supplier.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewSupplier(supplier)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleViewSupplier(supplier)}>
                           <FileCheck className="h-4 w-4 mr-1" /> View
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditSupplier(supplier)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleEditSupplier(supplier)}>
                           Edit
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
+                  </TableRow>) : <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    {searchQuery ? 
-                      'No suppliers match your search criteria' : 
-                      'No suppliers found. Add your first supplier!'}
+                    {searchQuery ? 'No suppliers match your search criteria' : 'No suppliers found. Add your first supplier!'}
                   </TableCell>
-                </TableRow>
-              )}
+                </TableRow>}
             </TableBody>
-          </Table>
-        )}
+          </Table>}
       </CardContent>
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -412,8 +310,7 @@ const SuppliersList: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           
-          {selectedSupplier && (
-            <div className="space-y-6">
+          {selectedSupplier && <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
@@ -469,8 +366,7 @@ const SuppliersList: React.FC = () => {
                       <span className="col-span-2">
                         {selectedSupplier.risk_score}% - 
                         <Badge className={getRiskBadgeStyle(selectedSupplier.risk_score)} variant="outline">
-                          {selectedSupplier.risk_score >= 85 ? 'Low' : 
-                           selectedSupplier.risk_score >= 70 ? 'Medium' : 'High'} Risk
+                          {selectedSupplier.risk_score >= 85 ? 'Low' : selectedSupplier.risk_score >= 70 ? 'Medium' : 'High'} Risk
                         </Badge>
                       </span>
                     </div>
@@ -481,9 +377,7 @@ const SuppliersList: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Last Audit:</span>
                       <span className="col-span-2">
-                        {selectedSupplier.last_audit_date ? 
-                          new Date(selectedSupplier.last_audit_date).toLocaleDateString() : 
-                          'Not audited'}
+                        {selectedSupplier.last_audit_date ? new Date(selectedSupplier.last_audit_date).toLocaleDateString() : 'Not audited'}
                       </span>
                     </div>
                   </div>
@@ -492,55 +386,38 @@ const SuppliersList: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Standards:</span>
                       <div className="col-span-2">
-                        {selectedSupplier.fsmsStandards && selectedSupplier.fsmsStandards.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {selectedSupplier.fsmsStandards.map((standard, idx) => (
-                              <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700">
+                        {selectedSupplier.fsmsStandards && selectedSupplier.fsmsStandards.length > 0 ? <div className="flex flex-wrap gap-2">
+                            {selectedSupplier.fsmsStandards.map((standard, idx) => <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700">
                                 {standard.name} {standard.certified ? '(Certified)' : ''}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No standards registered</span>
-                        )}
+                              </Badge>)}
+                          </div> : <span className="text-gray-400">No standards registered</span>}
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Products:</span>
                       <div className="col-span-2">
-                        {selectedSupplier.products && selectedSupplier.products.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {selectedSupplier.products.map((product, idx) => (
-                              <Badge key={idx} variant="outline">
+                        {selectedSupplier.products && selectedSupplier.products.length > 0 ? <div className="flex flex-wrap gap-2">
+                            {selectedSupplier.products.map((product, idx) => <Badge key={idx} variant="outline">
                                 {product}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No products listed</span>
-                        )}
+                              </Badge>)}
+                          </div> : <span className="text-gray-400">No products listed</span>}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
               Close
             </Button>
-            {selectedSupplier && (
-              <Button 
-                onClick={() => {
-                  setIsViewDialogOpen(false);
-                  handleEditSupplier(selectedSupplier);
-                }}
-              >
+            {selectedSupplier && <Button onClick={() => {
+            setIsViewDialogOpen(false);
+            handleEditSupplier(selectedSupplier);
+          }}>
                 Edit Supplier
-              </Button>
-            )}
+              </Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -554,45 +431,23 @@ const SuppliersList: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedSupplier && (
-            <form onSubmit={handleEditSubmit}>
+          {selectedSupplier && <form onSubmit={handleEditSubmit}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="name" className="text-right">Name</label>
-                  <Input 
-                    id="name" 
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.name}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="name" className="col-span-3" required value={selectedSupplier.name} onChange={handleEditInputChange} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="category" className="text-right">Category</label>
-                  <Input 
-                    id="category" 
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.category}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="category" className="col-span-3" required value={selectedSupplier.category} onChange={handleEditInputChange} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="country" className="text-right">Country</label>
-                  <Input 
-                    id="country" 
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.country}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="country" className="col-span-3" required value={selectedSupplier.country} onChange={handleEditInputChange} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="status" className="text-right">Status</label>
-                  <Select 
-                    value={selectedSupplier.status} 
-                    onValueChange={(value) => handleEditSelectChange(value, 'status')}
-                  >
+                  <Select value={selectedSupplier.status} onValueChange={value => handleEditSelectChange(value, 'status')}>
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -606,34 +461,15 @@ const SuppliersList: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="contactName" className="text-right">Contact Name</label>
-                  <Input 
-                    id="contactName" 
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.contact_name}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="contactName" className="col-span-3" required value={selectedSupplier.contact_name} onChange={handleEditInputChange} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="contactEmail" className="text-right">Contact Email</label>
-                  <Input 
-                    id="contactEmail" 
-                    type="email"
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.contact_email}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="contactEmail" type="email" className="col-span-3" required value={selectedSupplier.contact_email} onChange={handleEditInputChange} />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="contactPhone" className="text-right">Contact Phone</label>
-                  <Input 
-                    id="contactPhone" 
-                    className="col-span-3" 
-                    required
-                    value={selectedSupplier.contact_phone}
-                    onChange={handleEditInputChange}
-                  />
+                  <Input id="contactPhone" className="col-span-3" required value={selectedSupplier.contact_phone} onChange={handleEditInputChange} />
                 </div>
               </div>
               <DialogFooter>
@@ -642,12 +478,9 @@ const SuppliersList: React.FC = () => {
                 </Button>
                 <Button type="submit">Update Supplier</Button>
               </DialogFooter>
-            </form>
-          )}
+            </form>}
         </DialogContent>
       </Dialog>
-    </Card>
-  );
+    </Card>;
 };
-
 export default SuppliersList;
