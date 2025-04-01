@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
+import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
+import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
 
 interface NCTrainingIntegrationProps {
   ncId: string;
@@ -28,10 +31,11 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
   severity = 'medium',
   category = 'general'
 }) => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [trainingCourse, setTrainingCourse] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [assignees, setAssignees] = useState<string[]>([]);
+  const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,8 +44,7 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
   // Get training-related helpers from the audit training hook
   const { 
     getRecommendedTraining, 
-    getDeadlineByPriority, 
-    assignTraining 
+    getDeadlineByPriority 
   } = useAuditTraining();
 
   // Determine the category based on non-conformance info
@@ -115,42 +118,70 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
 
   const handleAssignTraining = async () => {
     if (!trainingCourse || !dueDate || assignees.length === 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please complete all fields before assigning training",
-        variant: "destructive"
-      });
+      toast.error("Please complete all required fields before assigning training");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Create training assignment using the hook method
-      const trainingResult = assignTraining({
-        auditId: `NC-${ncId}`,
-        findingId: ncId,
-        courseTitle: trainingCourse,
-        assignedTo: assignees,
-        dueDate,
-        category: trainingCategory,
-        priority,
-        notes
+      // 1. Create a training session
+      const sessionId = uuidv4();
+      const newSession = {
+        id: sessionId,
+        title: trainingCourse,
+        description: `Remedial training for NC: ${ncTitle}`,
+        training_type: 'Online',
+        training_category: trainingCategory,
+        assigned_to: assignees.map(id => assigneeNames[id] || id),
+        start_date: new Date().toISOString(),
+        due_date: new Date(dueDate).toISOString(),
+        created_by: 'system',
+        required_roles: [],
+        is_recurring: false
+      };
+
+      await createTrainingSession(newSession);
+      console.log('Created training session with ID:', sessionId);
+
+      // 2. Create training records for each assignee
+      const trainingRecordPromises = assignees.map(async (assigneeId) => {
+        const empName = assigneeNames[assigneeId] || 
+                        employees.find(e => e.id === assigneeId)?.name || 
+                        'Employee';
+        
+        const newRecord = {
+          session_id: sessionId,
+          employee_id: assigneeId,
+          employee_name: empName,
+          status: 'Not Started',
+          assigned_date: new Date().toISOString(),
+          due_date: new Date(dueDate).toISOString(),
+          notes
+        };
+
+        return await createTrainingRecord(newRecord);
       });
 
-      // 2. Create a module relationship to link NC and training
-      if (trainingResult?.id) {
-        await supabase.from('module_relationships').insert({
-          source_id: ncId,
-          source_type: 'non_conformance',
-          target_id: trainingResult.id,
-          target_type: 'training',
-          relationship_type: 'remedial_training',
-          created_by: 'system'
-        });
-      }
+      const createdRecords = await Promise.all(trainingRecordPromises);
+      console.log('Created training records:', createdRecords);
 
-      toast({
+      // 3. Create a module relationship to link NC and training
+      const { error: relationshipError } = await supabase.from('module_relationships').insert({
+        id: uuidv4(),
+        source_id: ncId,
+        source_type: 'non_conformance',
+        target_id: sessionId,
+        target_type: 'training',
+        relationship_type: 'remedial_training',
+        created_by: 'system',
+        created_at: new Date().toISOString()
+      });
+
+      if (relationshipError) throw relationshipError;
+
+      toast.success(`${trainingCourse} has been assigned to ${assignees.length} employee(s)`);
+      uiToast({
         title: "Training Assigned",
         description: `${trainingCourse} has been assigned to ${assignees.length} employee(s)`,
       });
@@ -163,7 +194,8 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
       setShowForm(false);
     } catch (error) {
       console.error('Error assigning training:', error);
-      toast({
+      toast.error("There was an error assigning the training");
+      uiToast({
         title: "Assignment Failed",
         description: "There was an error assigning the training",
         variant: "destructive"
@@ -276,6 +308,10 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
                     onClick={() => {
                       if (!assignees.includes(employee.id)) {
                         setAssignees([...assignees, employee.id]);
+                        setAssigneeNames({
+                          ...assigneeNames,
+                          [employee.id]: employee.name
+                        });
                       }
                     }}
                   >
@@ -296,7 +332,7 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
                     const emp = employees.find(e => e.id === id);
                     return (
                       <Badge key={id} variant="outline" className="flex items-center gap-1">
-                        {emp?.name || id}
+                        {emp?.name || assigneeNames[id] || id}
                         <button
                           onClick={() => setAssignees(assignees.filter(a => a !== id))}
                           className="ml-1 text-xs hover:text-destructive"

@@ -72,7 +72,7 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
   }
 
   const newRecord = {
-    id: uuidv4(),
+    id: uuidv4(), // Use proper UUID format instead of string IDs like 'tr-001-a'
     employee_id: record.employee_id,
     employee_name: record.employee_name,
     session_id: record.session_id,
@@ -113,6 +113,7 @@ export const fetchRelatedTraining = async (sourceId: string, sourceType: string 
 
     if (error) throw error;
 
+    console.log('Related training data:', data);
     return data || [];
   } catch (error) {
     console.error('Error fetching related training:', error);
@@ -139,6 +140,39 @@ export const subscribeToTrainingUpdates = (
   };
 };
 
+// New method to update training record status
+export const updateTrainingStatus = async (
+  recordId: string, 
+  newStatus: TrainingStatus,
+  score?: number,
+  notes?: string
+): Promise<TrainingRecord> => {
+  const updates: Partial<TrainingRecord> = {
+    status: newStatus,
+    notes: notes
+  };
+  
+  // Add completion date if completing the training
+  if (newStatus === 'Completed') {
+    updates.completion_date = new Date().toISOString();
+    if (score !== undefined) updates.score = score;
+  }
+
+  const { data, error } = await supabase
+    .from('training_records')
+    .update(updates)
+    .eq('id', recordId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating training status:', error);
+    throw new Error('Failed to update training status');
+  }
+
+  return data as unknown as TrainingRecord;
+};
+
 // Export all functions
 export default {
   fetchTrainingSessions,
@@ -146,5 +180,6 @@ export default {
   createTrainingSession,
   createTrainingRecord,
   fetchRelatedTraining,
-  subscribeToTrainingUpdates
+  subscribeToTrainingUpdates,
+  updateTrainingStatus
 };

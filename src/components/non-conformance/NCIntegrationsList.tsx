@@ -49,10 +49,11 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
           .eq('target_type', 'document');
           
         if (docError) throw docError;
-        setDocuments(docData?.map(item => item.documents) || []);
+        setDocuments(docData?.map(item => item.documents).filter(Boolean) || []);
         
-        // Fetch training relationships using the new service method
+        // Fetch training relationships using the service method
         const trainingData = await fetchRelatedTraining(nonConformanceId);
+        console.log('Training data from fetchRelatedTraining:', trainingData);
         setTrainingItems(trainingData || []);
         
       } catch (err) {
@@ -101,10 +102,10 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
     
     return {
       id: item.target_id,
-      title: sessionData.title || 'Training Assignment',
+      title: sessionData.title || recordData.title || 'Training Assignment',
       status: recordData.status || 'Not Started',
-      dueDate: recordData.due_date,
-      assignedTo: recordData.employee_name,
+      dueDate: recordData.due_date || sessionData.due_date,
+      assignedTo: recordData.employee_name || (sessionData.assigned_to && sessionData.assigned_to.length > 0 ? sessionData.assigned_to[0] : ''),
       type: 'training' as IntegrationType
     };
   });
@@ -119,7 +120,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
       type: 'capa' as IntegrationType
     })),
     ...formattedTrainingItems,
-    ...documents.filter(Boolean).map(doc => ({
+    ...documents.map(doc => ({
       id: doc.id,
       title: doc.title,
       status: doc.status,
@@ -206,9 +207,9 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
           </TabsContent>
           
           <TabsContent value="documents">
-            {documents.filter(Boolean).length > 0 ? (
+            {documents.length > 0 ? (
               <div className="space-y-3">
-                {documents.filter(Boolean).map(doc => (
+                {documents.map(doc => (
                   <IntegrationItem 
                     key={`doc-${doc.id}`}
                     item={{
