@@ -117,10 +117,14 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
         });
       } else {
         // Create new non-conformance
-        result = await createNonConformance({
+        // Ensure the description has a value even if empty
+        const formattedData = {
           ...data,
+          description: data.description || '',
           reported_date: new Date().toISOString()
-        });
+        };
+        
+        result = await createNonConformance(formattedData);
         
         toast({
           title: 'Created successfully',

@@ -61,9 +61,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
       await updateNCStatus(
         id,
         newStatus,
-        nonConformance.status,
-        'current-user', // This should be the actual user ID in a real app
-        `Status changed to ${newStatus}`
+        'current-user' // This should be the actual user ID in a real app
       );
       
       // Update local state

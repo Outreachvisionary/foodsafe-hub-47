@@ -24,8 +24,8 @@ const DocumentViewDialog: React.FC<DocumentViewDialogProps> = ({
   }
 
   const handleDownload = () => {
-    if (document?.file_path) {
-      window.open(document.file_path, '_blank');
+    if (document?.fileName) {
+      window.open(document.fileName, '_blank');
     }
   };
 
@@ -45,7 +45,7 @@ const DocumentViewDialog: React.FC<DocumentViewDialogProps> = ({
         <DialogHeader>
           <DialogTitle>{document.name}</DialogTitle>
           <DialogDescription>
-            {document.type} - Uploaded on {new Date(document.upload_date || '').toLocaleDateString()}
+            {document.type} - Uploaded on {new Date(document.uploadDate || '').toLocaleDateString()}
           </DialogDescription>
         </DialogHeader>
         
@@ -61,15 +61,15 @@ const DocumentViewDialog: React.FC<DocumentViewDialogProps> = ({
             </div>
           ) : (
             <div className="border rounded-md p-2 min-h-[400px] flex items-center justify-center overflow-hidden">
-              {isPdfFile(document.file_name) ? (
+              {isPdfFile(document.fileName) ? (
                 <iframe 
-                  src={`${document.file_path}#view=FitH`} 
+                  src={`${document.fileName}#view=FitH`} 
                   className="w-full h-[500px]" 
                   title={document.name}
                 />
-              ) : isImageFile(document.file_name) ? (
+              ) : isImageFile(document.fileName) ? (
                 <img 
-                  src={document.file_path} 
+                  src={document.fileName} 
                   alt={document.name} 
                   className="max-w-full max-h-[500px] object-contain"
                   onError={() => setError("Failed to load image")}
@@ -96,7 +96,7 @@ const DocumentViewDialog: React.FC<DocumentViewDialogProps> = ({
           </Button>
           <Button 
             onClick={handleDownload}
-            disabled={!document.file_path}
+            disabled={!document.fileName}
           >
             <Download className="h-4 w-4 mr-2" />
             Download
