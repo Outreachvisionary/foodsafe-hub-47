@@ -29,10 +29,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 
 const SuppliersList: React.FC = () => {
-  const { suppliers, isLoading, error, addSupplier } = useSuppliers();
+  const { suppliers, isLoading, error, addSupplier, editSupplier } = useSuppliers();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
@@ -128,18 +129,54 @@ const SuppliersList: React.FC = () => {
     }
   };
 
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedSupplier) return;
+    
+    try {
+      await editSupplier(selectedSupplier.id, selectedSupplier);
+      setIsEditDialogOpen(false);
+      toast.success('Supplier updated successfully');
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      toast.error('Failed to update supplier');
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setNewSupplier(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedSupplier) return;
+    
+    const { id, value } = e.target;
+    setSelectedSupplier(prev => ({ ...prev!, [id]: value }));
   };
 
   const handleSelectChange = (value: string, field: string) => {
     setNewSupplier(prev => ({ ...prev, [field]: value }));
   };
   
+  const handleEditSelectChange = (value: string, field: string) => {
+    if (!selectedSupplier) return;
+    
+    setSelectedSupplier(prev => {
+      if (!prev) return prev;
+      return { ...prev, [field]: value };
+    });
+  };
+  
   const handleViewSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setIsViewDialogOpen(true);
+  };
+  
+  const handleEditSupplier = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setIsEditDialogOpen(true);
   };
 
   if (error) {
@@ -345,6 +382,13 @@ const SuppliersList: React.FC = () => {
                         >
                           <FileCheck className="h-4 w-4 mr-1" /> View
                         </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditSupplier(supplier)}
+                        >
+                          Edit
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -495,13 +539,117 @@ const SuppliersList: React.FC = () => {
             {selectedSupplier && (
               <Button 
                 onClick={() => {
-                  toast.info(`Edit functionality to be implemented for ${selectedSupplier.name}`);
+                  setIsViewDialogOpen(false);
+                  handleEditSupplier(selectedSupplier);
                 }}
               >
                 Edit Supplier
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Supplier Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Supplier</DialogTitle>
+            <DialogDescription>
+              Update the supplier information
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSupplier && (
+            <form onSubmit={handleEditSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="name" className="text-right">Name</label>
+                  <Input 
+                    id="name" 
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.name}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="category" className="text-right">Category</label>
+                  <Input 
+                    id="category" 
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.category}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="country" className="text-right">Country</label>
+                  <Input 
+                    id="country" 
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.country}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="status" className="text-right">Status</label>
+                  <Select 
+                    value={selectedSupplier.status} 
+                    onValueChange={(value) => handleEditSelectChange(value, 'status')}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Suspended">Suspended</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="contactName" className="text-right">Contact Name</label>
+                  <Input 
+                    id="contactName" 
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.contactName}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="contactEmail" className="text-right">Contact Email</label>
+                  <Input 
+                    id="contactEmail" 
+                    type="email"
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.contactEmail}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="contactPhone" className="text-right">Contact Phone</label>
+                  <Input 
+                    id="contactPhone" 
+                    className="col-span-3" 
+                    required
+                    value={selectedSupplier.contactPhone}
+                    onChange={handleEditInputChange}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Supplier</Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </Card>

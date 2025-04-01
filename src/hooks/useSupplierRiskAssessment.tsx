@@ -94,7 +94,7 @@ export function useSupplierRiskAssessment(supplierId?: string) {
     delivery_score: number;
     traceability_score: number;
     notes?: string;
-    next_assessment_date?: string;
+    next_assessment_date?: string | null;
   }) => {
     try {
       // Calculate overall score as average of the individual scores
@@ -114,10 +114,16 @@ export function useSupplierRiskAssessment(supplierId?: string) {
         riskLevel = 'Medium';
       }
       
+      // Fix: Ensure next_assessment_date is not an empty string
+      const nextAssessmentDate = assessment.next_assessment_date && assessment.next_assessment_date.trim() !== '' 
+        ? assessment.next_assessment_date 
+        : null;
+      
       const { data, error } = await supabase
         .from('supplier_risk_assessments')
         .insert({
           ...assessment,
+          next_assessment_date: nextAssessmentDate,
           overall_score: overallScore,
           risk_level: riskLevel,
           assessed_by: 'Quality Manager', // Hardcoded for now, should come from authentication
