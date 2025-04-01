@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CalendarIcon, Upload, XCircle, CheckCircle, UserCheck } from 'lucide-react';
+import { CalendarIcon, Upload, XCircle, CheckCircle2, UserCheck, FileText, X, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,7 @@ import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
-  category?: DocumentCategory;
+  category?: string;
   allowedTypes?: string[];
   maxSize?: number; // In MB
   onSuccess?: () => void;
@@ -60,7 +61,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(category);
+  const [selectedCategory, setSelectedCategory] = useState<string>(category);
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus>('Draft');
   const [isLocked, setIsLocked] = useState(false);
   const [tags, setTags] = useState('');
@@ -71,6 +72,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { toast } = useToast();
+  const documentService = useDocumentService();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -306,7 +308,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-md">
-                    <File className="h-6 w-6 text-primary" />
+                    <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="font-medium">{file.name}</p>
