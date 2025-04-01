@@ -3,7 +3,7 @@
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
 
 // Re-export types from database
-export type { TrainingStatus } from './database';
+// export type { TrainingStatus } from './database'; // Removing this line to avoid duplicate declaration
 
 // Define TrainingRecord type directly instead of importing it
 export interface TrainingRecord {

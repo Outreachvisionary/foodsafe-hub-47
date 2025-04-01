@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,10 +31,12 @@ const TrainingPlans: React.FC = () => {
       name: 'New Employee Orientation',
       description: 'Basic training for all new employees covering company policies, safety protocols, and quality standards.',
       courses: ['COURSE001', 'COURSE002', 'COURSE003'],
+      coursesIncluded: ['COURSE001', 'COURSE002', 'COURSE003'],
       targetRoles: ['Operator', 'Supervisor', 'Manager'],
       targetDepartments: ['Production', 'Quality', 'Maintenance'],
       durationDays: 5,
       priority: 'High',
+      isRequired: true,
       startDate: '2023-05-01',
       endDate: '2023-05-05',
       status: 'Active',
@@ -50,9 +51,11 @@ const TrainingPlans: React.FC = () => {
       name: 'SPC Fundamentals',
       description: 'Training on Statistical Process Control methods, tools and applications',
       courses: ['COURSE004', 'COURSE005'],
+      coursesIncluded: ['COURSE004', 'COURSE005'],
       targetRoles: ['Operator', 'Supervisor', 'Quality'],
       targetDepartments: ['Production', 'Quality'],
       durationDays: 3,
+      isRequired: false,
       priority: 'Medium',
       startDate: '2023-06-01',
       endDate: '2023-06-03',
@@ -67,9 +70,11 @@ const TrainingPlans: React.FC = () => {
       name: 'Annual GMP Refresher',
       description: 'Mandatory annual refresher training on Good Manufacturing Practices',
       courses: ['COURSE006'],
+      coursesIncluded: ['COURSE006'],
       targetRoles: ['Operator', 'Supervisor', 'Manager', 'Quality'],
       targetDepartments: ['Production', 'Quality', 'R&D', 'Logistics'],
       durationDays: 1,
+      isRequired: true,
       priority: 'High',
       startDate: '2023-07-01',
       endDate: '2023-07-01',
