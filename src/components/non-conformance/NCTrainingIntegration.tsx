@@ -15,6 +15,7 @@ import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
+import { TrainingStatus } from '@/types/training';
 
 interface NCTrainingIntegrationProps {
   ncId: string;
@@ -154,7 +155,7 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
           session_id: sessionId,
           employee_id: assigneeId,
           employee_name: empName,
-          status: 'Not Started',
+          status: 'Not Started' as TrainingStatus, // Explicitly cast to TrainingStatus
           assigned_date: new Date().toISOString(),
           due_date: new Date(dueDate).toISOString(),
           notes
