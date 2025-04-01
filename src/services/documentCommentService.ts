@@ -19,6 +19,11 @@ export async function getDocumentComments(documentId: string): Promise<DocumentC
 }
 
 export async function createDocumentComment(comment: Partial<DocumentComment>): Promise<DocumentComment> {
+  // Ensure all required fields are present
+  if (!comment.document_id || !comment.user_id || !comment.user_name || !comment.content) {
+    throw new Error('Missing required fields for document comment');
+  }
+
   const newComment = {
     id: uuidv4(),
     created_at: new Date().toISOString(),
@@ -27,7 +32,7 @@ export async function createDocumentComment(comment: Partial<DocumentComment>): 
 
   const { data, error } = await supabase
     .from('document_comments')
-    .insert([newComment])
+    .insert(newComment)
     .select()
     .single();
 
@@ -40,6 +45,11 @@ export async function createDocumentComment(comment: Partial<DocumentComment>): 
 }
 
 export async function updateDocumentComment(commentId: string, updates: Partial<DocumentComment>): Promise<DocumentComment> {
+  // Ensure content is provided for the update
+  if (!updates.content) {
+    throw new Error('Comment content is required');
+  }
+  
   const { data, error } = await supabase
     .from('document_comments')
     .update({

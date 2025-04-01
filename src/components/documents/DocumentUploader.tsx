@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -210,7 +209,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       // If the document was uploaded to a folder, update folder document count
       if (selectedFolder) {
-        // Using RPC or direct update instead of supabase.sql
+        // Directly update the folder document count
         const { error: folderError } = await supabase
           .from('folders')
           .update({ document_count: supabase.rpc('increment_counter', { row_id: selectedFolder }) })

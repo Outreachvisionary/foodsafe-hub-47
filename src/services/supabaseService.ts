@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord, TrainingSession } from '@/types/database';
+import { TrainingRecord, TrainingSession } from '@/types/training';
 import { v4 as uuidv4 } from 'uuid';
 
 // Training services
@@ -33,6 +33,11 @@ export const fetchTrainingRecords = async (): Promise<TrainingRecord[]> => {
 };
 
 export const createTrainingSession = async (session: Partial<TrainingSession>): Promise<TrainingSession> => {
+  // Ensure required fields are present
+  if (!session.title || !session.training_type || !session.created_by || !session.assigned_to) {
+    throw new Error('Missing required fields for training session');
+  }
+
   const newSession = {
     id: uuidv4(),
     created_at: new Date().toISOString(),
@@ -54,6 +59,11 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
 };
 
 export const createTrainingRecord = async (record: Partial<TrainingRecord>): Promise<TrainingRecord> => {
+  // Ensure required fields are present
+  if (!record.employee_id || !record.employee_name || !record.session_id || !record.due_date) {
+    throw new Error('Missing required fields for training record');
+  }
+
   const newRecord = {
     id: uuidv4(),
     ...record
