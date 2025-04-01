@@ -1,32 +1,44 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, File, X, FileText, UserCheck } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentCategory, DocumentStatus } from '@/types/database';
-import { v4 as uuidv4 } from 'uuid';
-import documentService from '@/services/documentService';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { 
+  Upload, 
+  X, 
+  File, 
+  FileText, 
+  FilePlus, 
+  Loader2, 
+  AlertCircle, 
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Document, DocumentCategory } from '@/types/database';
+import { useDocuments } from '@/contexts/DocumentContext';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
+import { v4 as uuidv4 } from 'uuid';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -521,7 +533,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               </>
             ) : uploadSuccess ? (
               <>
-                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                 Uploaded
               </>
             ) : submitForReview ? (

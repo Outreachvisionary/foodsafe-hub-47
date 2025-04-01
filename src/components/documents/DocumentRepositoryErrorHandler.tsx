@@ -85,7 +85,7 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
     if (error && !diagnosisComplete && !diagnosisRunning) {
       runDiagnostics();
     }
-  }, [error]);
+  }, [error, diagnosisComplete, diagnosisRunning]);
 
   if (!error) return null;
 
@@ -104,7 +104,7 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
         <div className="space-y-4">
           <div className="text-red-600 bg-red-50 p-4 rounded-md">
             <h3 className="font-medium">Error Details</h3>
-            <p className="text-sm mt-1">{error.message}</p>
+            <p className="text-sm mt-1">{typeof error === 'string' ? error : 'An unexpected error occurred'}</p>
           </div>
 
           {diagnosisComplete && (

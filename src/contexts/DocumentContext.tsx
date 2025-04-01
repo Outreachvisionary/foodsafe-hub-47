@@ -4,6 +4,7 @@ import { Document, DocumentNotification, Folder } from '@/types/document';
 import documentService from '@/services/documentService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import documentWorkflowService from '@/services/documentWorkflowService';
 
 interface DocumentContextType {
   documents: Document[];
@@ -14,12 +15,15 @@ interface DocumentContextType {
   fetchDocuments: () => Promise<void>;
   updateDocument: (document: Document) => void;
   submitForApproval: (document: Document) => void;
+  approveDocument: (document: Document, comment: string) => Promise<void>;
+  rejectDocument: (document: Document, reason: string) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => void;
   clearAllNotifications: () => void;
   error: string | null;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   refreshData: () => void;
+  retryFetchDocuments: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -42,7 +46,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { toast } = useToast();
 
   // Function to fetch documents
-  const fetchDocuments = useCallback(async () => {
+  const fetchDocuments = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -53,15 +57,18 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Also fetch folders when documents are loaded
       fetchFolders();
       
-      return fetchedDocuments;
     } catch (error: any) {
       console.error('Error fetching documents:', error);
       setError('Failed to fetch documents. Please try again.');
-      return [];
     } finally {
       setIsLoading(false);
     }
   }, []);
+  
+  // Function for retrying fetch documents (for error handling)
+  const retryFetchDocuments = useCallback(async () => {
+    return fetchDocuments();
+  }, [fetchDocuments]);
   
   // Function to fetch folders
   const fetchFolders = useCallback(async () => {
@@ -180,7 +187,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedDoc: Partial<Document> = {
         ...document,
         status: 'Pending Approval',
-        updated_at: new Date().toISOString(),
+        pending_since: new Date().toISOString(),
+        is_locked: true
       };
       
       await documentService.updateDocument(document.id, updatedDoc);
@@ -201,6 +209,58 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         description: 'Failed to submit document for approval',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Function to approve a document
+  const approveDocument = async (document: Document, comment: string) => {
+    try {
+      const updatedDoc = documentWorkflowService.approveDocument(document, comment);
+      await documentService.updateDocument(document.id, updatedDoc);
+      
+      // Update documents list
+      setDocuments(docs => 
+        docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Document approved successfully',
+      });
+    } catch (error: any) {
+      console.error('Error approving document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to approve document',
+        variant: 'destructive',
+      });
+      throw error; // Re-throw to allow component to handle error
+    }
+  };
+
+  // Function to reject a document
+  const rejectDocument = async (document: Document, reason: string) => {
+    try {
+      const updatedDoc = documentWorkflowService.rejectDocument(document, reason);
+      await documentService.updateDocument(document.id, updatedDoc);
+      
+      // Update documents list
+      setDocuments(docs => 
+        docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Document rejected',
+      });
+    } catch (error: any) {
+      console.error('Error rejecting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reject document',
+        variant: 'destructive',
+      });
+      throw error; // Re-throw to allow component to handle error
     }
   };
 
@@ -231,12 +291,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fetchDocuments,
         updateDocument,
         submitForApproval,
+        approveDocument,
+        rejectDocument,
         markNotificationAsRead,
         clearAllNotifications,
         error,
         isLoading,
         setIsLoading,
-        refreshData
+        refreshData,
+        retryFetchDocuments
       }}
     >
       {children}

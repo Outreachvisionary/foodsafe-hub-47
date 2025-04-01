@@ -34,6 +34,7 @@ import DocumentUploader from './DocumentUploader';
 import DocumentFolders from './DocumentFolders';
 import DocumentDashboard from './DocumentDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDocuments } from '@/contexts/DocumentContext';
 
 const createPlaceholderComponent = (name: string) => {
   return () => <div>Placeholder for {name} component</div>;
@@ -272,6 +273,7 @@ const documentFormSchema = z.object({
 type DocumentFormValues = z.infer<typeof documentFormSchema>;
 
 const DocumentRepository: React.FC = () => {
+  const { folders } = useDocuments();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -308,7 +310,6 @@ const DocumentRepository: React.FC = () => {
     },
   });
   
-  // Auto refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshTrigger(prev => prev + 1);
@@ -327,7 +328,6 @@ const DocumentRepository: React.FC = () => {
       const fetchedDocuments = await documentService.fetchDocuments();
       console.log("Fetched documents:", fetchedDocuments);
       
-      // Filter by folder if selected
       const filteredByFolder = selectedFolder 
         ? fetchedDocuments.filter(doc => doc.folder_id === selectedFolder.id)
         : fetchedDocuments;
@@ -355,19 +355,6 @@ const DocumentRepository: React.FC = () => {
     setStatusFilter(null);
     setDateRangeFilter(undefined);
     setIsLockedFilter(null);
-  };
-
-  const loadFolders = async () => {
-    try {
-      setFolders([]);
-    } catch (error: any) {
-      console.error('Error loading folders:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load folders',
-        variant: 'destructive',
-      });
-    }
   };
 
   const handleCreateDocument = async (values: DocumentFormValues) => {
@@ -443,7 +430,6 @@ const DocumentRepository: React.FC = () => {
     console.log("Document uploaded successfully:", uploadedDocument);
     setIsUploadDialogOpen(false);
     
-    // Refresh the document list
     handleRefresh();
     
     toast({
@@ -459,7 +445,6 @@ const DocumentRepository: React.FC = () => {
       await documentService.deleteDocument(selectedDocumentToDelete.id);
       setIsDeleteDialogOpen(false);
       
-      // Refresh the document list
       handleRefresh();
       
       toast({

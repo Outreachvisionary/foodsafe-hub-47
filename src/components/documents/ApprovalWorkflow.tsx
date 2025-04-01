@@ -46,15 +46,23 @@ const ApprovalWorkflow: React.FC = () => {
     categoryCount[doc.category]++;
   });
 
-  const handleApprove = (doc: Document, comment: string) => {
-    approveDocument(doc, comment);
-    setSelectedDocument(null);
+  const handleApprove = async (doc: Document, comment: string) => {
+    try {
+      await approveDocument(doc, comment);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error('Error in handleApprove:', error);
+    }
   };
 
-  const handleReject = (doc: Document, reason: string) => {
-    rejectDocument(doc, reason);
-    setSelectedDocument(null);
-    setRejectionDialog({ open: false, document: null, reason: '' });
+  const handleReject = async (doc: Document, reason: string) => {
+    try {
+      await rejectDocument(doc, reason);
+      setSelectedDocument(null);
+      setRejectionDialog({ open: false, document: null, reason: '' });
+    } catch (error) {
+      console.error('Error in handleReject:', error);
+    }
   };
 
   const handleOpenRejectDialog = (doc: Document) => {
