@@ -14,7 +14,8 @@ export interface Supplier {
   products?: string[];
   created_at?: string;
   updated_at?: string;
-  fsmsStandards?: FsmsStandard[]; // Add fsmsStandards property
+  fsmsStandards?: FsmsStandard[];
+  documents?: SupplierDocument[]; // Add documents property
 }
 
 export type StandardName = 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP' | 'all';
