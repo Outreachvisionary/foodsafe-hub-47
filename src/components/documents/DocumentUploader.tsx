@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,10 +31,9 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Document, DocumentStatus } from '@/types/document';
+import { Document, DocumentStatus, DocumentCategory } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentService } from '@/hooks/useDocumentService';
 
@@ -78,7 +76,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
-      // Check file size
       if (selectedFile.size > maxSize * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -88,7 +85,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         return;
       }
       
-      // Check file type
       const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
       if (!allowedTypes.includes(fileExtension)) {
         toast({
@@ -100,7 +96,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       setFile(selectedFile);
-      // Set the default title to the file name without extension
       const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
       setTitle(fileName);
     }
@@ -134,11 +129,9 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     setUploadProgress(0);
     setUploadSuccess(false);
     
-    // Simulate progress
     const progressInterval = simulateProgress();
     
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -152,14 +145,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         return;
       }
       
-      // Generate unique ID for the document
       const documentId = uuidv4();
       
-      // Upload file to Supabase Storage
       const fileName = `${documentId}_${file.name}`;
       const filePath = `documents/${documentId}/${fileName}`;
       
-      // Use upload without progress tracking
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
         .upload(filePath, file);
@@ -168,7 +158,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         throw uploadError;
       }
       
-      // Create document record in database
       const tagArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : [];
       
       const newDocument: Partial<Document> = {
@@ -178,7 +167,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         file_name: fileName,
         file_size: file.size,
         file_type: file.type,
-        category: selectedCategory,
+        category: selectedCategory as DocumentCategory,
         status: submitForReview ? 'Pending Approval' : selectedStatus,
         version: 1,
         created_by: user.id,
@@ -191,10 +180,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         approvers: submitForReview ? approvers : [],
       };
       
-      // Use the documentService to create the document
       const documentData = await documentService.createDocument(newDocument);
       
-      // Create initial version record
       const versionData = {
         document_id: documentId,
         file_name: fileName,
@@ -208,21 +195,18 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         }
       };
       
-      // Use documentService to create the version
-      const versionResponse = await documentService.createDocumentVersion(versionData);
+      const versionResponse = await documentService.createVersion(versionData);
       
-      // Update document with version ID
       await documentService.updateDocument(documentId, { 
         current_version_id: versionResponse.id 
       });
       
-      // Record activity
-      await documentService.createDocumentActivity({
+      await documentService.recordActivity({
         document_id: documentId,
         action: 'create',
         user_id: user.id,
         user_name: user.email || 'Unknown user',
-        user_role: 'User', // Would be populated from user profile in a real app
+        user_role: 'User',
         comments: 'Document created through file upload'
       });
       
@@ -244,7 +228,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         onSuccess();
       }
       
-      // Reset state after a short delay
       setTimeout(() => {
         setFile(null);
         setTitle('');
@@ -266,14 +249,13 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     }
   };
 
-  // Function to simulate upload progress
   const simulateProgress = () => {
     let progress = 0;
     const interval = setInterval(() => {
       progress += 5;
       if (progress > 90) {
         clearInterval(interval);
-        setUploadProgress(90); // Cap at 90% until the upload is actually complete
+        setUploadProgress(90);
       } else {
         setUploadProgress(progress);
       }
@@ -378,7 +360,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 <Label htmlFor="document-category">Category</Label>
                 <Select 
                   value={selectedCategory} 
-                  onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
+                  onValueChange={(value) => setSelectedCategory(value)}
                   disabled={isUploading || uploadSuccess}
                 >
                   <SelectTrigger id="document-category" className="bg-white">
