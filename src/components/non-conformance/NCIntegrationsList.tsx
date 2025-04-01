@@ -13,6 +13,8 @@ interface NCIntegrationsListProps {
   nonConformanceId: string;
 }
 
+type IntegrationType = 'capa' | 'document' | 'training';
+
 const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceId }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
       status: recordData.status || 'Not Started',
       dueDate: recordData.due_date,
       assignedTo: recordData.employee_name,
-      type: 'training'
+      type: 'training' as IntegrationType
     };
   });
   
@@ -114,7 +116,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
       status: item.status,
       dueDate: item.due_date,
       assignedTo: item.assigned_to,
-      type: 'capa'
+      type: 'capa' as IntegrationType
     })),
     ...formattedTrainingItems,
     ...documents.filter(Boolean).map(doc => ({
@@ -122,7 +124,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
       title: doc.title,
       status: doc.status,
       dueDate: doc.expiry_date,
-      type: 'document'
+      type: 'document' as IntegrationType
     }))
   ];
   
@@ -176,7 +178,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
                       status: item.status,
                       dueDate: item.due_date,
                       assignedTo: item.assigned_to,
-                      type: 'capa'
+                      type: 'capa' as IntegrationType
                     }}
                     onClick={() => navigate(`/capa/${item.id}`)}
                   />
@@ -214,7 +216,7 @@ const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceI
                       title: doc.title,
                       status: doc.status,
                       dueDate: doc.expiry_date,
-                      type: 'document'
+                      type: 'document' as IntegrationType
                     }}
                     onClick={() => {/* Navigate to document */}}
                   />
@@ -237,7 +239,7 @@ interface IntegrationItemProps {
     status?: string;
     dueDate?: string;
     assignedTo?: string;
-    type: 'capa' | 'document' | 'training';
+    type: IntegrationType;
   };
   onClick: () => void;
 }

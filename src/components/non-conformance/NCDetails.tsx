@@ -11,10 +11,11 @@ import NCActionsPanel from './NCActionsPanel';
 import NCActivityTimeline from './NCActivityTimeline';
 import NCAttachmentUploader from './NCAttachmentUploader';
 import NCIntegrationsList from './NCIntegrationsList';
-import { nonConformanceService } from '@/services/nonConformanceService';
+import nonConformanceService from '@/services/nonConformanceService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { NonConformance, NCStatus } from '@/types/non-conformance';
 
 interface NCDetailsProps {
   id: string;
@@ -25,7 +26,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   const { toast: uiToast } = useToast();
   const navigate = useNavigate();
   
-  const [ncData, setNcData] = useState<any>(null);
+  const [ncData, setNcData] = useState<NonConformance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -102,7 +103,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
       setNcData({
         ...ncData,
         capa_id: capaData.id
-      });
+      } as NonConformance);
       
       toast.success('CAPA generated successfully');
       
@@ -158,11 +159,22 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   return (
     <div className="p-4 md:p-6">
       <NCDetailsHeader 
-        title={ncData.title} 
-        itemCategory={ncData.item_category}
-        reportedDate={ncData.reported_date}
-        createdBy={ncData.created_by}
-        onClose={onClose}
+        nonConformance={ncData}
+        onBackClick={onClose}
+        onStatusChange={async (newStatus: NCStatus) => {
+          try {
+            await nonConformanceService.updateNCStatus(id, newStatus, ncData.created_by);
+            setNcData({
+              ...ncData,
+              status: newStatus
+            });
+          } catch (error) {
+            console.error('Error updating status:', error);
+          }
+        }}
+        onEdit={handleEditNC}
+        onCreateCapa={handleGenerateCapa}
+        onViewCapa={ncData.capa_id ? handleViewCapa : undefined}
       />
       
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,7 +188,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
             </TabsList>
             
             <TabsContent value="details" className="mt-4">
-              <NCItemDetails data={ncData} />
+              <NCItemDetails nonConformance={ncData} />
             </TabsContent>
             
             <TabsContent value="timeline" className="mt-4">
@@ -194,27 +206,14 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
         </div>
         
         <div className="space-y-6">
-          <NCStatusInfo 
-            status={ncData.status}
-            assignedTo={ncData.assigned_to}
-            reviewer={ncData.reviewer}
-            reviewDate={ncData.review_date}
-            resolutionDate={ncData.resolution_date}
-            nonConformanceId={id}
-            onStatusUpdate={(newStatus) => {
-              setNcData({
-                ...ncData,
-                status: newStatus
-              });
-            }}
-          />
+          <NCStatusInfo nonConformance={ncData} />
           
           <NCActionsPanel 
             id={id}
             title={ncData.title}
-            description={ncData.description}
+            description={ncData.description || ''}
             category={ncData.item_category}
-            severity={ncData.risk_level}
+            severity={ncData.risk_level || ''}
             capaId={ncData.capa_id}
             onEdit={handleEditNC}
             onGenerateCapa={handleGenerateCapa}
