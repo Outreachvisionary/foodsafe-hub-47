@@ -6,7 +6,6 @@ import { PlusCircle, BarChart3, ClipboardList } from 'lucide-react';
 import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
-import { subscribeToNCUpdates } from '@/services/nonConformanceService';
 import { supabase } from '@/integrations/supabase/client';
 
 const NonConformanceModule = () => {
@@ -24,20 +23,6 @@ const NonConformanceModule = () => {
   
   // Set up real-time updates
   useEffect(() => {
-    // Enable realtime for the non_conformances table
-    const enableRealtimeForTable = async () => {
-      try {
-        await supabase.rpc('supabase_realtime', {
-          table: 'non_conformances',
-          action: 'enable'
-        });
-      } catch (error) {
-        console.error('Error enabling realtime:', error);
-      }
-    };
-
-    enableRealtimeForTable();
-
     // Subscribe to updates
     const channel = supabase
       .channel('public:non_conformances')
@@ -56,6 +41,10 @@ const NonConformanceModule = () => {
             toast.info('A new non-conformance record was created');
           } else if (eventType === 'DELETE') {
             toast.info('A non-conformance record was deleted');
+            // If the deleted record is the one being viewed, go back to list
+            if (id && payload.old && payload.old.id === id) {
+              navigate('/non-conformance');
+            }
           }
         }
       )
@@ -64,7 +53,7 @@ const NonConformanceModule = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [id, navigate]);
   
   // Handle errors from the non-conformance module
   useEffect(() => {
@@ -152,10 +141,13 @@ const NonConformanceModule = () => {
       
       <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
         {id && viewingDetails ? (
-          <NCDetails id={id} onClose={() => {
-            navigate('/non-conformance');
-            setViewingDetails(false);
-          }} />
+          <NCDetails 
+            id={id} 
+            onClose={() => {
+              navigate('/non-conformance');
+              setViewingDetails(false);
+            }} 
+          />
         ) : (
           <NCList 
             onSelectItem={handleSelectItem} 

@@ -2414,6 +2414,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      supabase_realtime: {
+        Args: {
+          table_name: string
+          action: string
+        }
+        Returns: undefined
+      }
       update_nc_status: {
         Args: {
           nc_id: string

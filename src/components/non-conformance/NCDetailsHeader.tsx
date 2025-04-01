@@ -24,17 +24,18 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({
   onCreateCapa
 }) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="flex items-center space-x-2">
         <Button 
           variant="ghost" 
           onClick={onBackClick}
+          className="p-2 h-auto"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{nonConformance?.title}</h2>
+        <h2 className="text-lg sm:text-2xl font-bold">{nonConformance?.title}</h2>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 self-end sm:self-auto mt-2 sm:mt-0">
         <NCStatusBadge status={nonConformance?.status || 'On Hold'} />
         <NCQuickActions 
           id={nonConformance?.id || ''}

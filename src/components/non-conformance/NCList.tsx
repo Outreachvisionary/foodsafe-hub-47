@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NonConformance, NCFilter, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
@@ -15,8 +16,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/dropdown-menu";
+import { toast } from 'sonner';
+import NCStatusBadge from './NCStatusBadge';
 
 interface NCListProps {
   onSelectItem?: (selectedId: string) => void;
@@ -32,7 +34,6 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     reason_category: undefined,
   });
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadNonConformances = async () => {
@@ -72,18 +73,14 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
         setNonConformances(filteredItems);
       } catch (error) {
         console.error('Error loading non-conformances:', error);
-        toast({
-          title: 'Failed to load data',
-          description: 'There was an error loading the non-conformance items.',
-          variant: 'destructive',
-        });
+        toast.error('Failed to load data. There was an error loading the non-conformance items.');
       } finally {
         setLoading(false);
       }
     };
 
     loadNonConformances();
-  }, [filters, searchTerm, toast]);
+  }, [filters, searchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,39 +93,6 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
       reason_category: undefined,
     });
     setSearchTerm('');
-  };
-
-  const getStatusBadge = (status: NCStatus) => {
-    switch (status) {
-      case 'On Hold':
-        return (
-          <Badge variant="outline" className="bg-orange-100 text-orange-800 flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            On Hold
-          </Badge>
-        );
-      case 'Under Review':
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Under Review
-          </Badge>
-        );
-      case 'Released':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Released
-          </Badge>
-        );
-      case 'Disposed':
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 flex items-center gap-1">
-            <Trash2 className="h-3 w-3" />
-            Disposed
-          </Badge>
-        );
-    }
   };
 
   const formatQuantity = (item: NonConformance) => {
@@ -155,11 +119,32 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     }
   };
 
+  // Status options for dropdown
+  const statusOptions: NCStatus[] = [
+    'On Hold', 'Under Review', 'Released', 'Disposed', 
+    'Approved', 'Rejected', 'Resolved', 'Closed'
+  ];
+
+  // Item category options
+  const itemCategoryOptions: NCItemCategory[] = [
+    'Processing Equipment', 'Product Storage Tanks', 'Finished Products', 
+    'Raw Products', 'Packaging Materials', 'Other'
+  ];
+
+  // Reason category options
+  const reasonCategoryOptions: NCReasonCategory[] = [
+    'Contamination', 'Quality Issues', 'Regulatory Non-Compliance', 
+    'Equipment Malfunction', 'Documentation Error', 'Process Deviation', 'Other'
+  ];
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-4">
         <CardTitle>Non-Conformance Items</CardTitle>
-        <Button onClick={() => navigate('/non-conformance/new')}>
+        <Button 
+          onClick={() => navigate('/non-conformance/new')}
+          className="bg-gradient-to-r from-accent to-primary text-white"
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Item
         </Button>
@@ -178,7 +163,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
             </Button>
           </form>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -189,7 +174,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {(['On Hold', 'Under Review', 'Released', 'Disposed'] as NCStatus[]).map((status) => (
+                {statusOptions.map((status) => (
                   <DropdownMenuCheckboxItem
                     key={status}
                     checked={filters.status?.includes(status)}
@@ -224,14 +209,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {([
-                  'Processing Equipment',
-                  'Product Storage Tanks',
-                  'Finished Products',
-                  'Raw Products',
-                  'Packaging Materials',
-                  'Other'
-                ] as NCItemCategory[]).map((category) => (
+                {itemCategoryOptions.map((category) => (
                   <DropdownMenuCheckboxItem
                     key={category}
                     checked={filters.item_category?.includes(category)}
@@ -266,15 +244,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by Reason</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {([
-                  'Contamination',
-                  'Quality Issues',
-                  'Regulatory Non-Compliance',
-                  'Equipment Malfunction',
-                  'Documentation Error',
-                  'Process Deviation',
-                  'Other'
-                ] as NCReasonCategory[]).map((reason) => (
+                {reasonCategoryOptions.map((reason) => (
                   <DropdownMenuCheckboxItem
                     key={reason}
                     checked={filters.reason_category?.includes(reason)}
@@ -327,17 +297,17 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
             )}
           </div>
         ) : (
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Item</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Qty On Hold</TableHead>
+                  <TableHead className="hidden md:table-cell">Category</TableHead>
+                  <TableHead className="hidden md:table-cell">Reason</TableHead>
+                  <TableHead className="hidden md:table-cell">Qty On Hold</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Reported Date</TableHead>
+                  <TableHead className="hidden md:table-cell">Reported Date</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -350,9 +320,9 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
                   >
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell>{item.item_name}</TableCell>
-                    <TableCell>{item.item_category}</TableCell>
-                    <TableCell>{item.reason_category}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">{item.item_category}</TableCell>
+                    <TableCell className="hidden md:table-cell">{item.reason_category}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {item.status === 'On Hold' && item.quantity_on_hold ? (
                         <div className="flex items-center">
                           <Package className="h-3 w-3 text-orange-500 mr-1" />
@@ -362,8 +332,8 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
                         '-'
                       )}
                     </TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>{new Date(item.reported_date).toLocaleDateString()}</TableCell>
+                    <TableCell><NCStatusBadge status={item.status} /></TableCell>
+                    <TableCell className="hidden md:table-cell">{new Date(item.reported_date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={(e) => {
                         e.stopPropagation();

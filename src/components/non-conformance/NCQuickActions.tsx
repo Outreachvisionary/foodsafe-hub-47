@@ -37,9 +37,8 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { deleteNonConformance } from '@/services/nonConformanceService';
-import CreateCAPADialog from '../capa/CreateCAPADialog';
 import { NCStatus } from '@/types/non-conformance';
 import { CAPASource } from '@/types/capa';
 
@@ -63,10 +62,10 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   onStatusChange
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGenerateCAPADialog, setShowGenerateCAPADialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
   
   const handleCreateCAPA = () => {
     setShowGenerateCAPADialog(false);
@@ -78,10 +77,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
       navigate(`/capa/new?source=nonconformance&sourceId=${id}`);
     }
     
-    toast({
-      title: "Success",
-      description: "CAPA created successfully",
-    });
+    toast.success("CAPA created successfully");
   };
   
   const handleDelete = async () => {
@@ -96,20 +92,28 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         navigate('/non-conformance');
       }
       
-      toast({
-        title: "Success",
-        description: "Non-conformance deleted successfully"
-      });
+      toast.success("Non-conformance deleted successfully");
     } catch (error) {
       console.error('Error deleting non-conformance:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete non-conformance",
-        variant: "destructive"
-      });
+      toast.error("Failed to delete non-conformance");
     } finally {
       setShowDeleteDialog(false);
       setIsDeleting(false);
+    }
+  };
+  
+  const handleChangeStatus = async (newStatus: NCStatus) => {
+    if (!onStatusChange) return;
+    
+    try {
+      setIsChangingStatus(true);
+      await onStatusChange(newStatus);
+      toast.success(`Status changed to ${newStatus}`);
+    } catch (error) {
+      console.error('Error changing status:', error);
+      toast.error("Failed to change status");
+    } finally {
+      setIsChangingStatus(false);
     }
   };
   
@@ -130,14 +134,28 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     }
   };
   
-  const mockNCData = {
-    id: id,
-    title: "Non-conformance issue requiring corrective action",
-    description: "This non-conformance was identified and requires a CAPA to prevent recurrence",
-    source: 'nonconformance' as CAPASource,
-    sourceId: id,
-    date: new Date().toISOString().split('T')[0],
-    severity: "major"
+  // Define status transitions allowed
+  const getAvailableStatusChanges = (): NCStatus[] => {
+    switch (status as NCStatus) {
+      case 'On Hold':
+        return ['Under Review', 'Released', 'Disposed'];
+      case 'Under Review':
+        return ['On Hold', 'Released', 'Disposed', 'Approved', 'Rejected'];
+      case 'Released':
+        return ['On Hold', 'Closed'];
+      case 'Disposed':
+        return ['Closed'];
+      case 'Approved':
+        return ['Resolved', 'Closed'];
+      case 'Rejected':
+        return ['On Hold'];
+      case 'Resolved':
+        return ['Closed'];
+      case 'Closed':
+        return [];
+      default:
+        return [];
+    }
   };
   
   return (
@@ -178,6 +196,44 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      )}
+      
+      {onStatusChange && getAvailableStatusChanges().length > 0 && (
+        <DropdownMenu>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8"
+                    disabled={isChangingStatus}
+                  >
+                    Change Status
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Change Status</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Change status to:</DropdownMenuLabel>
+            {getAvailableStatusChanges().map((newStatus) => (
+              <DropdownMenuItem 
+                key={newStatus} 
+                onClick={() => handleChangeStatus(newStatus)}
+                disabled={isChangingStatus}
+              >
+                {newStatus}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
       
       <DropdownMenu>
@@ -242,38 +298,21 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setShowDeleteDialog(false)} 
+              onClick={() => setShowDeleteDialog(false)}
               disabled={isDeleting}
             >
               Cancel
             </Button>
             <Button 
               variant="destructive" 
-              onClick={handleDelete} 
+              onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </>
-              )}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <CreateCAPADialog 
-        open={showGenerateCAPADialog}
-        onOpenChange={setShowGenerateCAPADialog}
-        sourceData={mockNCData}
-        onCAPACreated={handleCreateCAPA}
-      />
     </div>
   );
 };
