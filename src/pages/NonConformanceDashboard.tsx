@@ -5,41 +5,44 @@ import { fetchNCStats } from '@/services/nonConformanceService';
 import { NCStats } from '@/types/non-conformance';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, PlusCircle } from 'lucide-react';
+import { ArrowUpRight, PlusCircle, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NCRecentItems from '@/components/non-conformance/NCRecentItems';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { BarChartComponent, PieChartComponent } from '@/components/non-conformance/NCDashboardCharts';
 
 const NonConformanceDashboard: React.FC = () => {
   const [stats, setStats] = useState<NCStats | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   useEffect(() => {
     const loadStats = async () => {
       try {
         setLoading(true);
+        console.log('Fetching NC stats');
         const data = await fetchNCStats();
+        console.log('NC stats loaded:', data);
         setStats(data);
       } catch (error) {
         console.error('Error loading NC stats:', error);
-        toast({
-          title: 'Error loading dashboard',
-          description: 'Could not load non-conformance statistics.',
-          variant: 'destructive',
-        });
+        toast.error('Could not load non-conformance statistics.');
       } finally {
         setLoading(false);
       }
     };
     
     loadStats();
-  }, [toast]);
+  }, []);
   
   const handleCreateNew = () => {
+    console.log('Creating new item from dashboard');
     navigate('/non-conformance/new');
+  };
+  
+  const handleBackToList = () => {
+    console.log('Navigating back to NC list from dashboard');
+    navigate('/non-conformance');
   };
   
   if (loading) {
@@ -86,8 +89,9 @@ const NonConformanceDashboard: React.FC = () => {
           <p className="text-gray-600 mt-1">Overview of non-conformance items and status</p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={() => navigate('/non-conformance')} variant="outline">
-            View All Items
+          <Button onClick={handleBackToList} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to List
           </Button>
           <Button onClick={handleCreateNew}>
             <PlusCircle className="h-4 w-4 mr-2" />

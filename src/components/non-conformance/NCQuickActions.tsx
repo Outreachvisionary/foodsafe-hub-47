@@ -40,7 +40,6 @@ import {
 import { toast } from 'sonner';
 import { deleteNonConformance } from '@/services/nonConformanceService';
 import { NCStatus } from '@/types/non-conformance';
-import { CAPASource } from '@/types/capa';
 
 interface NCQuickActionsProps {
   id: string;
@@ -68,6 +67,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   
   const handleCreateCAPA = () => {
+    console.log('Creating CAPA from NCQuickActions for NC:', id);
     setShowGenerateCAPADialog(false);
     
     if (onCreateCAPA) {
@@ -82,6 +82,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   
   const handleDelete = async () => {
     try {
+      console.log('Deleting NC:', id);
       setIsDeleting(true);
       
       if (onDelete) {
@@ -106,6 +107,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     if (!onStatusChange) return;
     
     try {
+      console.log(`Changing status from ${status} to ${newStatus}`);
       setIsChangingStatus(true);
       await onStatusChange(newStatus);
       toast.success(`Status changed to ${newStatus}`);
@@ -118,15 +120,16 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   };
   
   const handleEdit = () => {
+    console.log('Editing NC:', id);
     if (onEdit) {
       onEdit();
     } else {
-      // Update the route format to match the one defined in App.tsx
       navigate(`/non-conformance/edit/${id}`);
     }
   };
   
   const handleView = () => {
+    console.log('Viewing NC:', id);
     if (onView) {
       onView();
     } else {
@@ -157,6 +160,10 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         return [];
     }
   };
+  
+  // Log for debugging
+  console.log('Quick actions for NC:', id, 'with status:', status);
+  console.log('Available status changes:', getAvailableStatusChanges());
   
   return (
     <div className="flex justify-end items-center gap-2">
@@ -255,7 +262,10 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           
-          <DropdownMenuItem onClick={() => setShowGenerateCAPADialog(true)}>
+          <DropdownMenuItem onClick={() => {
+            console.log('Show generate CAPA dialog');
+            setShowGenerateCAPADialog(true);
+          }}>
             <ClipboardList className="h-4 w-4 mr-2" />
             Generate CAPA
           </DropdownMenuItem>
@@ -277,12 +287,42 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
           
           <DropdownMenuSeparator />
           
-          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
+          <DropdownMenuItem onClick={() => {
+            console.log('Show delete dialog');
+            setShowDeleteDialog(true);
+          }} className="text-red-600">
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      <Dialog open={showGenerateCAPADialog} onOpenChange={setShowGenerateCAPADialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              Generate CAPA
+            </DialogTitle>
+            <DialogDescription>
+              Do you want to generate a Corrective and Preventive Action (CAPA) for this non-conformance?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowGenerateCAPADialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleCreateCAPA}
+            >
+              Create CAPA
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>

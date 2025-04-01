@@ -1,355 +1,276 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NonConformance, NCFilter, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
-import { fetchNonConformances } from '@/services/nonConformanceService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PlusCircle, Search, ChevronDown, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, Clock, CheckCircle, Trash2, Plus, Filter, Search, X, Package } from 'lucide-react';
-import {
+import { 
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from 'sonner';
+} from '@/components/ui/dropdown-menu';
+import { fetchNonConformances } from '@/services/nonConformanceService';
+import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
+import { toast } from 'sonner';
 
 interface NCListProps {
-  onSelectItem?: (selectedId: string) => void;
+  onSelectItem: (id: string) => void;
 }
 
 const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
-  const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<NCFilter>({
-    status: undefined,
-    item_category: undefined,
-    reason_category: undefined,
-  });
   const navigate = useNavigate();
-
+  const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
+  const [filteredNCs, setFilteredNCs] = useState<NonConformance[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [reasonFilter, setReasonFilter] = useState<string[]>([]);
+  
   useEffect(() => {
-    const loadNonConformances = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        
-        const items = await fetchNonConformances();
-        
-        let filteredItems = items;
-        
-        if (searchTerm) {
-          filteredItems = filteredItems.filter(item => 
-            item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-          );
-        }
-        
-        if (filters.status && filters.status.length > 0) {
-          filteredItems = filteredItems.filter(item => 
-            filters.status?.includes(item.status)
-          );
-        }
-        
-        if (filters.item_category && filters.item_category.length > 0) {
-          filteredItems = filteredItems.filter(item => 
-            filters.item_category?.includes(item.item_category)
-          );
-        }
-        
-        if (filters.reason_category && filters.reason_category.length > 0) {
-          filteredItems = filteredItems.filter(item => 
-            filters.reason_category?.includes(item.reason_category)
-          );
-        }
-        
-        setNonConformances(filteredItems);
+        const data = await fetchNonConformances();
+        console.log('Loaded NC data:', data);
+        setNonConformances(data);
+        setFilteredNCs(data);
       } catch (error) {
         console.error('Error loading non-conformances:', error);
-        toast.error('Failed to load data. There was an error loading the non-conformance items.');
+        toast.error('Failed to load non-conformance records');
       } finally {
         setLoading(false);
       }
     };
-
-    loadNonConformances();
-  }, [filters, searchTerm]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      status: undefined,
-      item_category: undefined,
-      reason_category: undefined,
-    });
-    setSearchTerm('');
-  };
-
-  const formatQuantity = (item: NonConformance) => {
-    if (item.quantity_on_hold && item.units) {
-      return `${item.quantity_on_hold} ${item.units}`;
-    } else if (item.quantity_on_hold) {
-      return `${item.quantity_on_hold}`;
+    
+    loadData();
+  }, []);
+  
+  useEffect(() => {
+    if (nonConformances.length === 0) return;
+    
+    let result = [...nonConformances];
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(nc => 
+        nc.title?.toLowerCase().includes(query) ||
+        nc.item_name?.toLowerCase().includes(query) ||
+        nc.description?.toLowerCase().includes(query)
+      );
     }
-    return '-';
-  };
-
-  const hasActiveFilters = Boolean(
-    (filters.status && filters.status.length > 0) ||
-    (filters.item_category && filters.item_category.length > 0) ||
-    (filters.reason_category && filters.reason_category.length > 0) ||
-    searchTerm
-  );
-
-  const handleItemClick = (itemId: string) => {
-    if (onSelectItem) {
-      onSelectItem(itemId);
-    } else {
-      navigate(`/non-conformance/${itemId}`);
+    
+    // Apply status filter
+    if (statusFilter.length > 0) {
+      result = result.filter(nc => statusFilter.includes(nc.status));
     }
+    
+    // Apply category filter
+    if (categoryFilter.length > 0) {
+      result = result.filter(nc => categoryFilter.includes(nc.item_category));
+    }
+    
+    // Apply reason filter
+    if (reasonFilter.length > 0) {
+      result = result.filter(nc => reasonFilter.includes(nc.reason_category));
+    }
+    
+    setFilteredNCs(result);
+  }, [nonConformances, searchQuery, statusFilter, categoryFilter, reasonFilter]);
+  
+  const handleCreateNew = () => {
+    console.log("Creating new item from NCList");
+    navigate('/non-conformance/new');
   };
-
-  // Status options for dropdown
-  const statusOptions: NCStatus[] = [
-    'On Hold', 'Under Review', 'Released', 'Disposed', 
-    'Approved', 'Rejected', 'Resolved', 'Closed'
-  ];
-
-  // Item category options
-  const itemCategoryOptions: NCItemCategory[] = [
-    'Processing Equipment', 'Product Storage Tanks', 'Finished Products', 
-    'Raw Products', 'Packaging Materials', 'Other'
-  ];
-
-  // Reason category options
-  const reasonCategoryOptions: NCReasonCategory[] = [
-    'Contamination', 'Quality Issues', 'Regulatory Non-Compliance', 
-    'Equipment Malfunction', 'Documentation Error', 'Process Deviation', 'Other'
-  ];
-
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Resolved', 'Closed'];
+  const categories = [...new Set(nonConformances.map(nc => nc.item_category))];
+  const reasons = [...new Set(nonConformances.map(nc => nc.reason_category))];
+  
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-4">
-        <CardTitle>Non-Conformance Items</CardTitle>
-        <Button 
-          onClick={() => navigate('/non-conformance/new')}
-          className="bg-gradient-to-r from-accent to-primary text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Item
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <form onSubmit={handleSearch} className="flex w-full md:w-1/3 items-center space-x-2">
-            <Input
-              placeholder="Search non-conformance items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-            <Button type="submit" variant="ghost" size="icon">
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Status
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {statusOptions.map((status) => (
-                  <DropdownMenuCheckboxItem
-                    key={status}
-                    checked={filters.status?.includes(status)}
-                    onCheckedChange={(checked) => {
-                      setFilters(prev => {
-                        const newStatus = prev.status ? [...prev.status] : [];
-                        if (checked) {
-                          newStatus.push(status);
-                        } else {
-                          const index = newStatus.indexOf(status);
-                          if (index > -1) {
-                            newStatus.splice(index, 1);
-                          }
-                        }
-                        return { ...prev, status: newStatus.length > 0 ? newStatus : undefined };
-                      });
-                    }}
-                  >
-                    {status}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Category
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {itemCategoryOptions.map((category) => (
-                  <DropdownMenuCheckboxItem
-                    key={category}
-                    checked={filters.item_category?.includes(category)}
-                    onCheckedChange={(checked) => {
-                      setFilters(prev => {
-                        const newCategory = prev.item_category ? [...prev.item_category] : [];
-                        if (checked) {
-                          newCategory.push(category);
-                        } else {
-                          const index = newCategory.indexOf(category);
-                          if (index > -1) {
-                            newCategory.splice(index, 1);
-                          }
-                        }
-                        return { ...prev, item_category: newCategory.length > 0 ? newCategory : undefined };
-                      });
-                    }}
-                  >
-                    {category}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Reason
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by Reason</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {reasonCategoryOptions.map((reason) => (
-                  <DropdownMenuCheckboxItem
-                    key={reason}
-                    checked={filters.reason_category?.includes(reason)}
-                    onCheckedChange={(checked) => {
-                      setFilters(prev => {
-                        const newReason = prev.reason_category ? [...prev.reason_category] : [];
-                        if (checked) {
-                          newReason.push(reason);
-                        } else {
-                          const index = newReason.indexOf(reason);
-                          if (index > -1) {
-                            newReason.splice(index, 1);
-                          }
-                        }
-                        return { ...prev, reason_category: newReason.length > 0 ? newReason : undefined };
-                      });
-                    }}
-                  >
-                    {reason}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-2" />
-                Clear
-              </Button>
-            )}
-          </div>
+    <div className="overflow-hidden">
+      <div className="p-4 bg-background border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search non-conformance items..."
+            className="pl-8 bg-background"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-          </div>
-        ) : nonConformances.length === 0 ? (
-          <div className="text-center p-10">
-            <h3 className="text-lg font-medium">No items found</h3>
-            <p className="text-gray-500 mt-2">
-              {hasActiveFilters
-                ? "Try adjusting your filters or search criteria."
-                : "There are no non-conformance items yet."}
-            </p>
-            {hasActiveFilters && (
-              <Button onClick={clearFilters} variant="outline" className="mt-4">
-                Clear Filters
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <Filter className="h-3.5 w-3.5 mr-2" />
+                Status
+                <ChevronDown className="h-3.5 w-3.5 ml-1" />
               </Button>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="hidden md:table-cell">Category</TableHead>
-                  <TableHead className="hidden md:table-cell">Reason</TableHead>
-                  <TableHead className="hidden md:table-cell">Qty On Hold</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Reported Date</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {nonConformances.map((item) => (
-                  <TableRow 
-                    key={item.id} 
-                    className="cursor-pointer hover:bg-gray-50" 
-                    onClick={() => handleItemClick(item.id)}
-                  >
-                    <TableCell className="font-medium">{item.title}</TableCell>
-                    <TableCell>{item.item_name}</TableCell>
-                    <TableCell className="hidden md:table-cell">{item.item_category}</TableCell>
-                    <TableCell className="hidden md:table-cell">{item.reason_category}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {item.status === 'On Hold' && item.quantity_on_hold ? (
-                        <div className="flex items-center">
-                          <Package className="h-3 w-3 text-orange-500 mr-1" />
-                          {formatQuantity(item)}
-                        </div>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell><NCStatusBadge status={item.status} /></TableCell>
-                    <TableCell className="hidden md:table-cell">{new Date(item.reported_date).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={(e) => {
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {statuses.map(status => (
+                <DropdownMenuCheckboxItem
+                  key={status}
+                  checked={statusFilter.includes(status)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setStatusFilter(prev => [...prev, status]);
+                    } else {
+                      setStatusFilter(prev => prev.filter(s => s !== status));
+                    }
+                  }}
+                >
+                  {status}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <Filter className="h-3.5 w-3.5 mr-2" />
+                Category
+                <ChevronDown className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {categories.map(category => (
+                <DropdownMenuCheckboxItem
+                  key={category}
+                  checked={categoryFilter.includes(category)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setCategoryFilter(prev => [...prev, category]);
+                    } else {
+                      setCategoryFilter(prev => prev.filter(c => c !== category));
+                    }
+                  }}
+                >
+                  {category}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <Filter className="h-3.5 w-3.5 mr-2" />
+                Reason
+                <ChevronDown className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {reasons.map(reason => (
+                <DropdownMenuCheckboxItem
+                  key={reason}
+                  checked={reasonFilter.includes(reason)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setReasonFilter(prev => [...prev, reason]);
+                    } else {
+                      setReasonFilter(prev => prev.filter(r => r !== reason));
+                    }
+                  }}
+                >
+                  {reason}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button 
+            size="sm"
+            onClick={handleCreateNew}
+            className="h-9 bg-primary hover:bg-primary/90"
+          >
+            <PlusCircle className="h-3.5 w-3.5 mr-1" />
+            New Item
+          </Button>
+        </div>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Item</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Category</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Reason</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Qty On Hold</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Reported Date</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredNCs.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center p-8 text-muted-foreground">
+                  {loading ? 'Loading data...' : 'No non-conformance records found'}
+                </td>
+              </tr>
+            ) : (
+              filteredNCs.map((nc) => (
+                <tr 
+                  key={nc.id} 
+                  className="border-b hover:bg-muted/30 cursor-pointer"
+                  onClick={() => onSelectItem(nc.id)}
+                >
+                  <td className="p-3">{nc.title}</td>
+                  <td className="p-3">{nc.item_name}</td>
+                  <td className="p-3">{nc.item_category}</td>
+                  <td className="p-3">{nc.reason_category}</td>
+                  <td className="p-3 text-center">
+                    {nc.quantity_on_hold ? 
+                      <Badge variant="outline" className="font-mono">
+                        {nc.quantity_on_hold}
+                      </Badge> : 
+                      '-'
+                    }
+                  </td>
+                  <td className="p-3">
+                    <NCStatusBadge status={nc.status} />
+                  </td>
+                  <td className="p-3">
+                    {new Date(nc.reported_date).toLocaleDateString()}
+                  </td>
+                  <td className="p-3 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
                         e.stopPropagation();
-                        handleItemClick(item.id);
-                      }}>
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                        onSelectItem(nc.id);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 

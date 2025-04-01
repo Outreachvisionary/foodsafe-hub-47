@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -33,6 +32,8 @@ import Traceability from '@/pages/Traceability';
 import AuditsModule from '@/pages/AuditsModule';
 import UserManagement from '@/pages/UserManagement';
 import NotFound from '@/pages/NotFound';
+import NonConformanceFormPage from '@/pages/NonConformanceFormPage';
+import NonConformanceDashboard from '@/pages/NonConformanceDashboard';
 
 function App() {
   return (
@@ -165,20 +166,11 @@ function App() {
             </Suspense>
           </ProtectedSidebarLayout>
         } />
-        <Route path="/non-conformance" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <NonConformanceModule />
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
-        <Route path="/non-conformance/:id" element={
-          <ProtectedSidebarLayout>
-            <Suspense fallback={<Loading />}>
-              <NonConformanceModule />
-            </Suspense>
-          </ProtectedSidebarLayout>
-        } />
+        <Route path="/non-conformance" element={<NonConformanceModule />} />
+        <Route path="/non-conformance/:id" element={<NonConformanceModule />} />
+        <Route path="/non-conformance/new" element={<NonConformanceFormPage />} />
+        <Route path="/non-conformance/edit/:id" element={<NonConformanceFormPage />} />
+        <Route path="/non-conformance/dashboard" element={<NonConformanceDashboard />} />
         <Route path="/capa" element={
           <ProtectedSidebarLayout>
             <Suspense fallback={<Loading />}>

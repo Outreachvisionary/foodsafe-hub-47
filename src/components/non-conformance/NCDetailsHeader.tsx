@@ -23,6 +23,8 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({
   onViewCapa,
   onCreateCapa
 }) => {
+  console.log('Rendering NCDetailsHeader with nonConformance:', nonConformance?.id);
+  
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="flex items-center space-x-2">

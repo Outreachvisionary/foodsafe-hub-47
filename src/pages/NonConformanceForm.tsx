@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import NCForm from '@/components/non-conformance/NCForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,12 @@ import { motion } from 'framer-motion';
 const NonConformanceFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  useEffect(() => {
+    console.log('NonConformanceForm rendered with id:', id);
+    console.log('Current location:', location.pathname);
+  }, [id, location]);
   
   return (
     <motion.div 

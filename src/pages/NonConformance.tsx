@@ -73,7 +73,13 @@ const NonConformanceModule = () => {
   }, [id]);
   
   const handleCreateNew = () => {
+    console.log("Creating new non-conformance");
     navigate('/non-conformance/new');
+  };
+  
+  const handleViewDashboard = () => {
+    console.log("Navigating to dashboard");
+    navigate('/non-conformance/dashboard');
   };
   
   const handleSelectItem = (selectedId: string) => {
@@ -121,7 +127,7 @@ const NonConformanceModule = () => {
           {!viewingDetails && (
             <Button 
               variant="outline" 
-              onClick={() => navigate('/non-conformance/dashboard')}
+              onClick={handleViewDashboard}
               className="hover:border-primary hover:text-primary transition-colors"
             >
               <BarChart3 className="mr-2 h-4 w-4" />
