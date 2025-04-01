@@ -41,13 +41,15 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
 
   const handleDownload = () => {
-    if (document.fileName) {
+    if (document.file_path) {
+      window.open(document.file_path, '_blank');
+    } else if (document.fileName) {
       window.open(document.fileName, '_blank');
     }
   };
@@ -77,17 +79,17 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
             <div className="text-gray-500">Upload Date:</div>
             <div className="flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" />
-              {formatDate(document.uploadDate)}
+              {formatDate(document.upload_date || document.uploadDate)}
             </div>
             
             <div className="text-gray-500">Expiry Date:</div>
             <div className="flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" />
-              {formatDate(document.expiryDate)}
+              {formatDate(document.expiry_date || document.expiryDate)}
             </div>
             
             <div className="text-gray-500">Supplier:</div>
-            <div>{document.supplier}</div>
+            <div>{document.supplier_id || document.supplier}</div>
             
             {document.standard && (
               <>
@@ -97,7 +99,7 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
             )}
           </div>
           
-          {document.fileName && (
+          {(document.file_path || document.fileName) && (
             <div className="pt-2">
               <Button 
                 variant="outline" 

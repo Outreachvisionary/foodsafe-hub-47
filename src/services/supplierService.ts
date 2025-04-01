@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Supplier, FsmsStandard } from '@/types/supplier';
 import { v4 as uuidv4 } from 'uuid';
@@ -140,12 +139,12 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'documents'
       name: supplier.name,
       category: supplier.category,
       country: supplier.country,
-      risk_score: supplier.riskScore,
-      compliance_status: supplier.complianceStatus,
-      last_audit_date: supplier.lastAuditDate,
-      contact_name: supplier.contactName,
-      contact_email: supplier.contactEmail,
-      contact_phone: supplier.contactPhone,
+      risk_score: supplier.risk_score,
+      compliance_status: supplier.compliance_status,
+      last_audit_date: supplier.last_audit_date,
+      contact_name: supplier.contact_name,
+      contact_email: supplier.contact_email,
+      contact_phone: supplier.contact_phone,
       products: supplier.products,
       status: supplier.status
     });
@@ -160,16 +159,14 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'documents'
     name: supplier.name,
     category: supplier.category,
     country: supplier.country,
-    riskScore: supplier.riskScore,
-    complianceStatus: supplier.complianceStatus,
-    lastAuditDate: supplier.lastAuditDate,
-    contactName: supplier.contactName,
-    contactEmail: supplier.contactEmail,
-    contactPhone: supplier.contactPhone,
+    risk_score: supplier.risk_score,
+    compliance_status: supplier.compliance_status,
+    last_audit_date: supplier.last_audit_date,
+    contact_name: supplier.contact_name,
+    contact_email: supplier.contact_email,
+    contact_phone: supplier.contact_phone,
     products: supplier.products,
-    status: supplier.status,
-    fsmsStandards: [],
-    documents: []
+    status: supplier.status
   };
 };
 
@@ -181,12 +178,12 @@ export const updateSupplier = async (id: string, supplier: Partial<Supplier>): P
       name: supplier.name,
       category: supplier.category,
       country: supplier.country,
-      risk_score: supplier.riskScore,
-      compliance_status: supplier.complianceStatus,
-      last_audit_date: supplier.lastAuditDate,
-      contact_name: supplier.contactName,
-      contact_email: supplier.contactEmail,
-      contact_phone: supplier.contactPhone,
+      risk_score: supplier.risk_score,
+      compliance_status: supplier.compliance_status,
+      last_audit_date: supplier.last_audit_date,
+      contact_name: supplier.contact_name,
+      contact_email: supplier.contact_email,
+      contact_phone: supplier.contact_phone,
       products: supplier.products,
       status: supplier.status,
       updated_at: new Date().toISOString()

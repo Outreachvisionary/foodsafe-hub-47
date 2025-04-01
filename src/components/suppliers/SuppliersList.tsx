@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -100,7 +99,7 @@ const SuppliersList: React.FC = () => {
     
     try {
       // Calculate initial risk score based on selected risk level
-      const riskScore = 
+      const risk_score = 
         newSupplier.riskLevel === 'Low' ? 90 : 
         newSupplier.riskLevel === 'Medium' ? 80 : 
         65;
@@ -109,15 +108,15 @@ const SuppliersList: React.FC = () => {
       await addSupplier({
         name: newSupplier.name,
         category: newSupplier.category,
-        riskScore,
-        complianceStatus: 'Pending',
+        risk_score,
+        compliance_status: 'Pending',
         country: newSupplier.country,
-        contactName: newSupplier.contactName,
-        contactEmail: newSupplier.contactEmail,
-        contactPhone: newSupplier.contactPhone,
+        contact_name: newSupplier.contactName,
+        contact_email: newSupplier.contactEmail,
+        contact_phone: newSupplier.contactPhone,
         products: [],
         status: 'Pending',
-        lastAuditDate: undefined
+        last_audit_date: undefined
       });
       
       // Close dialog and reset form
@@ -345,24 +344,24 @@ const SuppliersList: React.FC = () => {
                     <TableCell>{supplier.category}</TableCell>
                     <TableCell>
                       <Badge 
-                        className={getRiskBadgeStyle(supplier.riskScore)} 
+                        className={getRiskBadgeStyle(supplier.risk_score)} 
                         variant="outline"
                       >
-                        {supplier.riskScore >= 85 ? 'Low' : 
-                         supplier.riskScore >= 70 ? 'Medium' : 'High'}
+                        {supplier.risk_score >= 85 ? 'Low' : 
+                         supplier.risk_score >= 70 ? 'Medium' : 'High'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <span className="mr-2">{supplier.riskScore}%</span>
-                        {supplier.riskScore >= 90 && (
+                        <span className="mr-2">{supplier.risk_score}%</span>
+                        {supplier.risk_score >= 90 && (
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {supplier.lastAuditDate ? 
-                        new Date(supplier.lastAuditDate).toLocaleDateString() : 
+                      {supplier.last_audit_date ? 
+                        new Date(supplier.last_audit_date).toLocaleDateString() : 
                         'Not audited'}
                     </TableCell>
                     <TableCell>
@@ -451,15 +450,15 @@ const SuppliersList: React.FC = () => {
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Contact:</span>
-                      <span className="col-span-2 font-medium">{selectedSupplier.contactName}</span>
+                      <span className="col-span-2 font-medium">{selectedSupplier.contact_name}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Email:</span>
-                      <span className="col-span-2">{selectedSupplier.contactEmail}</span>
+                      <span className="col-span-2">{selectedSupplier.contact_email}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Phone:</span>
-                      <span className="col-span-2">{selectedSupplier.contactPhone}</span>
+                      <span className="col-span-2">{selectedSupplier.contact_phone}</span>
                     </div>
                   </div>
                 </div>
@@ -472,22 +471,22 @@ const SuppliersList: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Risk Score:</span>
                       <span className="col-span-2">
-                        {selectedSupplier.riskScore}% - 
-                        <Badge className={getRiskBadgeStyle(selectedSupplier.riskScore)} variant="outline">
-                          {selectedSupplier.riskScore >= 85 ? 'Low' : 
-                           selectedSupplier.riskScore >= 70 ? 'Medium' : 'High'} Risk
+                        {selectedSupplier.risk_score}% - 
+                        <Badge className={getRiskBadgeStyle(selectedSupplier.risk_score)} variant="outline">
+                          {selectedSupplier.risk_score >= 85 ? 'Low' : 
+                           selectedSupplier.risk_score >= 70 ? 'Medium' : 'High'} Risk
                         </Badge>
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Compliance:</span>
-                      <span className="col-span-2">{selectedSupplier.complianceStatus}</span>
+                      <span className="col-span-2">{selectedSupplier.compliance_status}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Last Audit:</span>
                       <span className="col-span-2">
-                        {selectedSupplier.lastAuditDate ? 
-                          new Date(selectedSupplier.lastAuditDate).toLocaleDateString() : 
+                        {selectedSupplier.last_audit_date ? 
+                          new Date(selectedSupplier.last_audit_date).toLocaleDateString() : 
                           'Not audited'}
                       </span>
                     </div>
@@ -616,7 +615,7 @@ const SuppliersList: React.FC = () => {
                     id="contactName" 
                     className="col-span-3" 
                     required
-                    value={selectedSupplier.contactName}
+                    value={selectedSupplier.contact_name}
                     onChange={handleEditInputChange}
                   />
                 </div>
@@ -627,7 +626,7 @@ const SuppliersList: React.FC = () => {
                     type="email"
                     className="col-span-3" 
                     required
-                    value={selectedSupplier.contactEmail}
+                    value={selectedSupplier.contact_email}
                     onChange={handleEditInputChange}
                   />
                 </div>
@@ -637,7 +636,7 @@ const SuppliersList: React.FC = () => {
                     id="contactPhone" 
                     className="col-span-3" 
                     required
-                    value={selectedSupplier.contactPhone}
+                    value={selectedSupplier.contact_phone}
                     onChange={handleEditInputChange}
                   />
                 </div>

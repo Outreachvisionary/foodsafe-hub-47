@@ -1,4 +1,3 @@
-
 export interface Supplier {
   id: string;
   name: string;
@@ -16,19 +15,52 @@ export interface Supplier {
   updated_at?: string;
 }
 
+export type StandardName = 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP' | 'all';
+
+export interface StandardRequirement {
+  standard: StandardName;
+  name: string;
+  description: string;
+  category: string;
+}
+
+export interface FsmsStandard {
+  name: string;
+  certified: boolean;
+  certificationNumber?: string;
+  expiryDate?: string;
+  level?: string;
+  scope?: string;
+}
+
+export interface MonitoringData {
+  id: string;
+  timestamp: string;
+  reading: number;
+  parameter: string;
+  unit: string;
+  status: 'normal' | 'warning' | 'critical';
+  sensor_id: string;
+  location: string;
+}
+
 export interface SupplierDocument {
   id: string;
   supplier_id: string;
   name: string;
   type: string;
-  fileName: string;  // Changed from file_path
+  file_path: string;
   file_size: number;
-  uploadDate?: string;  // Changed from upload_date
+  upload_date: string;
   expiry_date?: string;
   status: string;
-  standard?: string;
+  standard?: StandardName;
   created_at?: string;
   updated_at?: string;
+  fileName?: string; // For backward compatibility
+  uploadDate?: string; // For backward compatibility
+  expiryDate?: string; // For backward compatibility
+  supplier?: string; // For backward compatibility
 }
 
 export interface SupplierStandard {

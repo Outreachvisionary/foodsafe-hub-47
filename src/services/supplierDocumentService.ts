@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SupplierDocument, StandardName } from '@/types/supplier';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,14 +29,20 @@ export const fetchSupplierDocuments = async (supplierId: string): Promise<Suppli
 
   return data.map(doc => ({
     id: doc.id,
+    supplier_id: doc.supplier_id,
     name: doc.name,
     type: doc.type,
+    upload_date: doc.upload_date,
+    expiry_date: doc.expiry_date,
+    status: doc.status,
+    file_path: doc.file_path, 
+    file_size: doc.file_size,
+    standard: doc.standard as StandardName || undefined,
+    // For backward compatibility
+    fileName: doc.file_path,
     uploadDate: doc.upload_date,
     expiryDate: doc.expiry_date,
-    status: doc.status,
-    fileName: doc.file_path, // Use file_path for downloadable URL
-    supplier: doc.supplier_id,
-    standard: doc.standard as StandardName || undefined
+    supplier: doc.supplier_id
   }));
 };
 
@@ -63,14 +68,20 @@ export const fetchAllDocuments = async (standard?: StandardName): Promise<Suppli
 
   return data.map(doc => ({
     id: doc.id,
+    supplier_id: doc.supplier_id,
     name: doc.name,
     type: doc.type,
+    upload_date: doc.upload_date,
+    expiry_date: doc.expiry_date,
+    status: doc.status,
+    file_path: doc.file_path,
+    file_size: doc.file_size,
+    standard: doc.standard as StandardName || undefined,
+    // For backward compatibility
+    fileName: doc.file_path,
     uploadDate: doc.upload_date,
     expiryDate: doc.expiry_date,
-    status: doc.status,
-    fileName: doc.file_path, // Use file_path for downloadable URL
-    supplier: doc.suppliers?.name || doc.supplier_id,
-    standard: doc.standard as StandardName || undefined
+    supplier: doc.suppliers?.name || doc.supplier_id
   }));
 };
 
@@ -131,14 +142,20 @@ export const uploadSupplierDocument = async (
   
   return {
     id: data.id,
+    supplier_id: data.supplier_id,
     name: data.name,
     type: data.type,
+    upload_date: data.upload_date,
+    expiry_date: data.expiry_date,
+    status: data.status,
+    file_path: data.file_path,
+    file_size: data.file_size,
+    standard: data.standard as StandardName || undefined,
+    // For backward compatibility
+    fileName: data.file_path,
     uploadDate: data.upload_date,
     expiryDate: data.expiry_date,
-    status: data.status,
-    fileName: data.file_path, // Use file_path for downloadable URL
-    supplier: supplierId,
-    standard: data.standard as StandardName || undefined
+    supplier: supplierId
   };
 };
 

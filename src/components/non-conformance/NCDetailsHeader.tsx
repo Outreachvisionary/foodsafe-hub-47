@@ -9,7 +9,7 @@ import NCQuickActions from './NCQuickActions';
 interface NCDetailsHeaderProps {
   nonConformance: NonConformance;
   onBackClick: () => void;
-  onStatusChange: (status: NCStatus) => void;
+  onStatusChange: (status: NCStatus) => Promise<void>;
   onEdit: () => void;
   onViewCapa?: () => void;
   onCreateCapa: () => void;
