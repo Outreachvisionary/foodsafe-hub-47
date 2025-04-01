@@ -1,4 +1,3 @@
-
 // Define the base document status types
 export type DocumentStatus = 
   | 'Draft'
@@ -68,11 +67,7 @@ export interface Folder {
 }
 
 // Define the training status types
-export type TrainingStatus = 
-  | 'Not Started'
-  | 'In Progress'
-  | 'Completed'
-  | 'Overdue';
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
 
 // Define the TrainingRecord type
 export interface TrainingRecord {
@@ -86,6 +81,8 @@ export interface TrainingRecord {
   completion_date?: string;
   score?: number;
   pass_threshold?: number;
+  next_recurrence?: string;
+  last_recurrence?: string;
   notes?: string;
 }
 
@@ -102,12 +99,12 @@ export interface TrainingSession {
   assigned_to: string[];
   materials_id?: string[];
   required_roles?: string[];
-  completion_status?: TrainingStatus;
   is_recurring?: boolean;
   recurring_interval?: number;
+  completion_status?: TrainingStatus;
   created_by: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Define DocumentComment type

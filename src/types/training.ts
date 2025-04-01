@@ -1,14 +1,13 @@
 
-import { TrainingStatus, TrainingRecord, TrainingSession } from './database';
-
-export type { TrainingStatus, TrainingRecord, TrainingSession };
+// Re-export types from database
+export type { TrainingStatus, TrainingRecord, TrainingSession } from './database';
 
 export interface ExtendedTrainingRecord extends TrainingRecord {
   courseName?: string;
   instructorName?: string;
 }
 
-// Add missing type definitions
+// Training plan interface
 export interface TrainingPlan {
   id: string;
   name: string;
@@ -18,6 +17,17 @@ export interface TrainingPlan {
   durationDays: number;
   isRequired: boolean;
   priority: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  isAutomated?: boolean;
+  automationTrigger?: string;
+  recurringSchedule?: {
+    frequency: string;
+    interval: number;
+    startDate?: string;
+  };
+  courses?: string[]; // Add this for backward compatibility
 }
 
 export interface EmployeeRole {
@@ -46,6 +56,8 @@ export interface DepartmentTrainingStats {
   inProgress: number;
   overdue: number;
   compliancePercentage: number;
+  department?: string; // Add for compatibility with existing component
+  compliance?: number; // Add for compatibility with existing component
 }
 
 export interface Employee {

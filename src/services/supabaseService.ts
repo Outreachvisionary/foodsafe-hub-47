@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord, TrainingSession } from '@/types/training';
+import { TrainingRecord, TrainingSession, TrainingStatus } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
 
 // Training services
@@ -15,7 +15,8 @@ export const fetchTrainingSessions = async (): Promise<TrainingSession[]> => {
     throw new Error('Failed to fetch training sessions');
   }
 
-  return data || [];
+  // Convert the types to match TrainingSession
+  return (data || []) as unknown as TrainingSession[];
 };
 
 export const fetchTrainingRecords = async (): Promise<TrainingRecord[]> => {
@@ -29,7 +30,8 @@ export const fetchTrainingRecords = async (): Promise<TrainingRecord[]> => {
     throw new Error('Failed to fetch training records');
   }
 
-  return data || [];
+  // Convert the types to match TrainingRecord
+  return (data || []) as unknown as TrainingRecord[];
 };
 
 export const createTrainingSession = async (session: Partial<TrainingSession>): Promise<TrainingSession> => {
@@ -46,7 +48,7 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
 
   const { data, error } = await supabase
     .from('training_sessions')
-    .insert([newSession])
+    .insert([newSession as any])
     .select()
     .single();
 
@@ -55,7 +57,7 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
     throw new Error('Failed to create training session');
   }
 
-  return data;
+  return data as unknown as TrainingSession;
 };
 
 export const createTrainingRecord = async (record: Partial<TrainingRecord>): Promise<TrainingRecord> => {
@@ -71,7 +73,7 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
 
   const { data, error } = await supabase
     .from('training_records')
-    .insert([newRecord])
+    .insert([newRecord as any])
     .select()
     .single();
 
@@ -80,7 +82,7 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
     throw new Error('Failed to create training record');
   }
 
-  return data;
+  return data as unknown as TrainingRecord;
 };
 
 // Export all functions

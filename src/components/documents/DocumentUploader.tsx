@@ -209,15 +209,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       // If the document was uploaded to a folder, update folder document count
       if (selectedFolder) {
-        // Directly update the folder document count
-        const { error: folderError } = await supabase
+        // Update folder document count directly
+        await supabase
           .from('folders')
-          .update({ document_count: supabase.rpc('increment_counter', { row_id: selectedFolder }) })
+          .update({ document_count: supabase.from('folders').select('document_count').eq('id', selectedFolder).single().then(res => (res.data?.document_count || 0) + 1) })
           .eq('id', selectedFolder);
-          
-        if (folderError) {
-          console.error('Error updating folder document count:', folderError);
-        }
       }
       
       setUploadProgress(100);

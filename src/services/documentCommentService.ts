@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
-import { DocumentComment } from '@/types/database';
+import { DocumentComment } from '@/types/document-comment';
 
 export async function getDocumentComments(documentId: string): Promise<DocumentComment[]> {
   const { data, error } = await supabase
@@ -32,7 +32,7 @@ export async function createDocumentComment(comment: Partial<DocumentComment>): 
 
   const { data, error } = await supabase
     .from('document_comments')
-    .insert(newComment)
+    .insert([newComment]) // Pass as array to fix TypeScript error
     .select()
     .single();
 
