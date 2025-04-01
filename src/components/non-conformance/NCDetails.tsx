@@ -108,7 +108,11 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
       toast.success('CAPA generated successfully');
       
       // Use the nonConformanceService to record this activity
-      await nonConformanceService.addActivity(id, 'CAPA generated', ncData?.assigned_to || 'system');
+      await nonConformanceService.createNCActivity({
+        non_conformance_id: id,
+        action: 'CAPA generated',
+        performed_by: ncData?.assigned_to || 'system'
+      });
       
       uiToast({
         title: "CAPA Generated",
