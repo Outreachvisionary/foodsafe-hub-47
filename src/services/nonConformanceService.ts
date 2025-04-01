@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
 
 export interface NonConformance {
   id: string;
@@ -8,11 +9,11 @@ export interface NonConformance {
   description: string;
   item_name: string;
   item_id?: string;
-  item_category: string;
-  reason_category: string;
+  item_category: NCItemCategory;
+  reason_category: NCReasonCategory;
   reason_details?: string;
   reported_date: string;
-  status: 'On Hold' | 'Under Review' | 'Rejected' | 'Approved' | 'Resolved' | 'Closed';
+  status: NCStatus;
   assigned_to?: string;
   reviewer?: string;
   location?: string;
@@ -39,8 +40,8 @@ export interface NCActivity {
   comments?: string;
   performed_by: string;
   performed_at?: string;
-  previous_status?: string;
-  new_status?: string;
+  previous_status?: NCStatus;
+  new_status?: NCStatus;
 }
 
 export interface NCAttachment {
@@ -55,6 +56,69 @@ export interface NCAttachment {
   uploaded_at?: string;
 }
 
+export interface NCStats {
+  total: number;
+  totalQuantityOnHold: number;
+  byStatus: Record<NCStatus, number>;
+  byCategory: Record<string, number>;
+  byReason: Record<string, number>;
+  recentItems: NonConformance[];
+}
+
+// Fetch statistics for NC dashboard
+export const fetchNCStats = async (): Promise<NCStats> => {
+  try {
+    const { data: nonConformances, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('reported_date', { ascending: false });
+      
+    if (error) throw error;
+    
+    // Calculate statistics
+    const stats: NCStats = {
+      total: nonConformances.length,
+      totalQuantityOnHold: nonConformances.reduce((sum, nc) => sum + (nc.quantity_on_hold || 0), 0),
+      byStatus: {} as Record<NCStatus, number>,
+      byCategory: {},
+      byReason: {},
+      recentItems: nonConformances.slice(0, 5) as NonConformance[]
+    };
+    
+    // Initialize status counters
+    const statusValues: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed'];
+    statusValues.forEach(status => {
+      stats.byStatus[status] = 0;
+    });
+    
+    // Count items by status, category, and reason
+    nonConformances.forEach(nc => {
+      // Count by status
+      if (stats.byStatus[nc.status as NCStatus] !== undefined) {
+        stats.byStatus[nc.status as NCStatus]++;
+      }
+      
+      // Count by category
+      if (!stats.byCategory[nc.item_category]) {
+        stats.byCategory[nc.item_category] = 0;
+      }
+      stats.byCategory[nc.item_category]++;
+      
+      // Count by reason
+      if (!stats.byReason[nc.reason_category]) {
+        stats.byReason[nc.reason_category] = 0;
+      }
+      stats.byReason[nc.reason_category]++;
+    });
+    
+    return stats;
+  } catch (error) {
+    console.error('Error fetching NC statistics:', error);
+    toast.error('Failed to load non-conformance statistics');
+    throw error;
+  }
+};
+
 // Fetch non-conformances
 export const fetchNonConformances = async (): Promise<NonConformance[]> => {
   try {
@@ -65,7 +129,7 @@ export const fetchNonConformances = async (): Promise<NonConformance[]> => {
       
     if (error) throw error;
     
-    return data || [];
+    return data as NonConformance[] || [];
   } catch (error) {
     console.error('Error fetching non-conformances:', error);
     toast.error('Failed to load non-conformances');
@@ -84,7 +148,7 @@ export const fetchNonConformanceById = async (id: string): Promise<NonConformanc
       
     if (error) throw error;
     
-    return data;
+    return data as NonConformance;
   } catch (error) {
     console.error(`Error fetching non-conformance with ID ${id}:`, error);
     toast.error('Failed to load non-conformance details');
@@ -108,10 +172,10 @@ export const createNonConformance = async (nonConformance: Omit<NonConformance, 
       non_conformance_id: data.id,
       action: 'Created non-conformance record',
       performed_by: nonConformance.created_by,
-      new_status: 'On Hold'
+      new_status: nonConformance.status
     });
     
-    return data;
+    return data as NonConformance;
   } catch (error) {
     console.error('Error creating non-conformance:', error);
     toast.error('Failed to create non-conformance record');
@@ -129,7 +193,7 @@ export const updateNonConformance = async (id: string, updates: Partial<NonConfo
       .eq('id', id)
       .single();
       
-    const previousStatus = current?.status;
+    const previousStatus = current?.status as NCStatus;
     
     // Update the non-conformance
     const { data, error } = await supabase
@@ -155,10 +219,41 @@ export const updateNonConformance = async (id: string, updates: Partial<NonConfo
       });
     }
     
-    return data;
+    return data as NonConformance;
   } catch (error) {
     console.error(`Error updating non-conformance with ID ${id}:`, error);
     toast.error('Failed to update non-conformance record');
+    throw error;
+  }
+};
+
+// Update NC status specifically
+export const updateNCStatus = async (id: string, newStatus: NCStatus, updatedBy: string): Promise<NonConformance> => {
+  try {
+    return await updateNonConformance(id, { 
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+      assigned_to: updatedBy
+    });
+  } catch (error) {
+    console.error(`Error updating status for non-conformance with ID ${id}:`, error);
+    toast.error('Failed to update non-conformance status');
+    throw error;
+  }
+};
+
+// Update NC quantity specifically
+export const updateNCQuantity = async (id: string, quantity: number, quantityOnHold: number, updatedBy: string): Promise<NonConformance> => {
+  try {
+    return await updateNonConformance(id, { 
+      quantity,
+      quantity_on_hold: quantityOnHold,
+      updated_at: new Date().toISOString(),
+      assigned_to: updatedBy
+    });
+  } catch (error) {
+    console.error(`Error updating quantities for non-conformance with ID ${id}:`, error);
+    toast.error('Failed to update non-conformance quantities');
     throw error;
   }
 };
@@ -206,7 +301,7 @@ export const createNCActivity = async (activity: Omit<NCActivity, 'id'>): Promis
       
     if (error) throw error;
     
-    return data;
+    return data as NCActivity;
   } catch (error) {
     console.error('Error creating activity record:', error);
     // Don't show toast for this as it's a background operation
@@ -225,7 +320,7 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
       
     if (error) throw error;
     
-    return data || [];
+    return data as NCActivity[] || [];
   } catch (error) {
     console.error(`Error fetching activities for non-conformance with ID ${nonConformanceId}:`, error);
     toast.error('Failed to load activity history');
@@ -281,7 +376,7 @@ export const uploadNCAttachment = async (
       performed_by: uploadedBy
     });
     
-    return data;
+    return data as NCAttachment;
   } catch (error) {
     console.error('Error uploading attachment:', error);
     toast.error('Failed to upload attachment');
@@ -300,7 +395,7 @@ export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAt
       
     if (error) throw error;
     
-    return data || [];
+    return data as NCAttachment[] || [];
   } catch (error) {
     console.error(`Error fetching attachments for non-conformance with ID ${nonConformanceId}:`, error);
     toast.error('Failed to load attachments');
@@ -354,6 +449,75 @@ export const deleteNCAttachment = async (attachmentId: string, nonConformanceId:
   }
 };
 
+// Get documents related to a non-conformance
+export const getDocumentsRelatedToNC = async (nonConformanceId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        *,
+        documents:target_id (*)
+      `)
+      .eq('source_id', nonConformanceId)
+      .eq('source_type', 'non_conformances')
+      .eq('target_type', 'documents');
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error(`Error fetching documents related to NC ${nonConformanceId}:`, error);
+    toast.error('Failed to load related documents');
+    throw error;
+  }
+};
+
+// Get training sessions related to a non-conformance
+export const getTrainingRelatedToNC = async (nonConformanceId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        *,
+        training_sessions:target_id (*)
+      `)
+      .eq('source_id', nonConformanceId)
+      .eq('source_type', 'non_conformances')
+      .eq('target_type', 'training_sessions');
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error(`Error fetching training related to NC ${nonConformanceId}:`, error);
+    toast.error('Failed to load related training sessions');
+    throw error;
+  }
+};
+
+// Get audits related to a non-conformance
+export const getAuditsRelatedToNC = async (nonConformanceId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        *,
+        audits:target_id (*)
+      `)
+      .eq('source_id', nonConformanceId)
+      .eq('source_type', 'non_conformances')
+      .eq('target_type', 'audits');
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error(`Error fetching audits related to NC ${nonConformanceId}:`, error);
+    toast.error('Failed to load related audits');
+    throw error;
+  }
+};
+
 export default {
   fetchNonConformances,
   fetchNonConformanceById,
@@ -364,5 +528,11 @@ export default {
   fetchNCActivities,
   uploadNCAttachment,
   fetchNCAttachments,
-  deleteNCAttachment
+  deleteNCAttachment,
+  fetchNCStats,
+  updateNCStatus,
+  updateNCQuantity,
+  getDocumentsRelatedToNC,
+  getTrainingRelatedToNC,
+  getAuditsRelatedToNC
 };

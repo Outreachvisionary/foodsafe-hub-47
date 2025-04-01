@@ -1,152 +1,105 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CalendarDays, FileText, Download, ExternalLink } from 'lucide-react';
+import { FileText, Download, AlertCircle } from 'lucide-react';
 import { SupplierDocument } from '@/types/supplier';
-import { useToast } from '@/hooks/use-toast';
 
 interface DocumentViewDialogProps {
+  document: SupplierDocument | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  document: SupplierDocument | null;
 }
 
 const DocumentViewDialog: React.FC<DocumentViewDialogProps> = ({
+  document,
   open,
-  onOpenChange,
-  document
+  onOpenChange
 }) => {
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!document) return null;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Valid':
-        return 'bg-green-100 text-green-800';
-      case 'Expiring Soon':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Expired':
-        return 'bg-red-100 text-red-800';
-      case 'Pending Review':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const handleView = () => {
-    if (document.fileName) {
-      window.open(document.fileName, '_blank');
-    } else {
-      toast({
-        title: "Document Unavailable",
-        description: "The document file is not available for viewing.",
-        variant: "destructive"
-      });
-    }
-  };
+  if (!document) {
+    return null;
+  }
 
   const handleDownload = () => {
-    if (document.fileName) {
-      // Create an anchor element and trigger download
-      const link = document.createElement('a');
-      link.href = document.fileName;
-      link.download = document.name + '.' + document.fileName.split('.').pop();
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      toast({
-        title: "Download Failed",
-        description: "The document file is not available for download.",
-        variant: "destructive"
-      });
+    if (document?.file_path) {
+      window.open(document.file_path, '_blank');
     }
+  };
+
+  const isImageFile = (fileName: string): boolean => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+    return imageExtensions.includes(extension);
+  };
+
+  const isPdfFile = (fileName: string): boolean => {
+    return fileName.toLowerCase().endsWith('.pdf');
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Document Details</DialogTitle>
+          <DialogTitle>{document.name}</DialogTitle>
+          <DialogDescription>
+            {document.type} - Uploaded on {new Date(document.upload_date || '').toLocaleDateString()}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          <div className="flex justify-between items-start">
-            <h3 className="text-xl font-bold">{document.name}</h3>
-            <Badge className={getStatusColor(document.status)}>
-              {document.status}
-            </Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="space-y-1">
-              <p className="text-gray-500">Document Type</p>
-              <p className="font-medium">{document.type}</p>
+        <div className="py-4">
+          {error ? (
+            <div className="flex items-center justify-center p-8 bg-red-50 border border-red-200 rounded-md">
+              <AlertCircle className="h-6 w-6 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
             </div>
-            
-            <div className="space-y-1">
-              <p className="text-gray-500">Supplier</p>
-              <p className="font-medium">{document.supplier}</p>
+          ) : isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-            
-            <div className="space-y-1">
-              <p className="text-gray-500">Upload Date</p>
-              <p className="font-medium flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
-                {formatDate(document.uploadDate)}
-              </p>
+          ) : (
+            <div className="border rounded-md p-2 min-h-[400px] flex items-center justify-center overflow-hidden">
+              {isPdfFile(document.file_name) ? (
+                <iframe 
+                  src={`${document.file_path}#view=FitH`} 
+                  className="w-full h-[500px]" 
+                  title={document.name}
+                />
+              ) : isImageFile(document.file_name) ? (
+                <img 
+                  src={document.file_path} 
+                  alt={document.name} 
+                  className="max-w-full max-h-[500px] object-contain"
+                  onError={() => setError("Failed to load image")}
+                />
+              ) : (
+                <div className="text-center p-8">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium">Preview not available</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    This file type cannot be previewed. Please download to view.
+                  </p>
+                </div>
+              )}
             </div>
-            
-            <div className="space-y-1">
-              <p className="text-gray-500">Expiry Date</p>
-              <p className="font-medium flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
-                {formatDate(document.expiryDate)}
-              </p>
-            </div>
-            
-            {document.standard && (
-              <div className="col-span-2 space-y-1">
-                <p className="text-gray-500">Standard</p>
-                <p className="font-medium">{document.standard}</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="pt-4 flex flex-col space-y-2">
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleView}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              <span>View Document</span>
-              <ExternalLink className="ml-2 h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleDownload}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>Download Document</span>
-            </Button>
-          </div>
+          )}
         </div>
         
         <DialogFooter>
-          <Button variant="default" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+          >
             Close
+          </Button>
+          <Button 
+            onClick={handleDownload}
+            disabled={!document.file_path}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
           </Button>
         </DialogFooter>
       </DialogContent>

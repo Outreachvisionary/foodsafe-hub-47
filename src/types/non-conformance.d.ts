@@ -1,5 +1,5 @@
 
-export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed';
+export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Approved' | 'Rejected' | 'Resolved' | 'Closed';
 
 export type NCItemCategory = 
   | 'Processing Equipment'
@@ -21,7 +21,7 @@ export type NCReasonCategory =
 export interface NonConformance {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   item_name: string;
   item_id?: string;
   item_category: NCItemCategory;
@@ -44,6 +44,8 @@ export interface NonConformance {
   priority?: 'Critical' | 'High' | 'Medium' | 'Low';
   risk_level?: 'High' | 'Medium' | 'Low';
   capa_id?: string;
+  resolution_details?: string;
+  tags?: string[];
 }
 
 export interface NCActivity {
@@ -61,13 +63,18 @@ export interface NCFilter {
   status?: NCStatus[];
   item_category?: NCItemCategory[];
   reason_category?: NCReasonCategory[];
+  date_range?: {
+    start?: string;
+    end?: string;
+  };
+  search?: string;
 }
 
 export interface NCAttachment {
   id: string;
   non_conformance_id: string;
   file_name: string;
-  file_path: string; // Ensuring this field is required
+  file_path: string;
   file_size: number;
   file_type: string;
   description?: string;
@@ -82,4 +89,14 @@ export interface NCStats {
   byCategory: Record<string, number>;
   byReason: Record<string, number>;
   recentItems: NonConformance[];
+}
+
+export interface NCNotification {
+  id: string;
+  non_conformance_id: string;
+  message: string;
+  notification_type: string;
+  target_users?: string[];
+  is_read: boolean;
+  created_at?: string;
 }
