@@ -20,6 +20,9 @@ export interface RiskAssessment {
   risk_factors?: any;
   created_at: string;
   updated_at: string;
+  suppliers?: {
+    name: string;
+  };
 }
 
 export interface RiskStatistics {

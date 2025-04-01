@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,13 +14,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
-// Use our existing hook
 const SupplierRiskAssessment = () => {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const { assessments, statistics, isLoading, createRiskAssessment } = useSupplierRiskAssessment(selectedSupplierId || undefined);
   const [selectedTab, setSelectedTab] = useState('dashboard');
   
-  // Form state for new assessment
   const [formState, setFormState] = useState({
     supplier_id: '',
     food_safety_score: 80,
@@ -56,7 +53,6 @@ const SupplierRiskAssessment = () => {
         traceability_score: Number(formState.traceability_score),
       });
       
-      // Reset form
       setFormState({
         supplier_id: '',
         food_safety_score: 80,
@@ -68,7 +64,6 @@ const SupplierRiskAssessment = () => {
         next_assessment_date: ''
       });
       
-      // Switch to dashboard tab
       setSelectedTab('dashboard');
       
     } catch (error) {
@@ -77,10 +72,8 @@ const SupplierRiskAssessment = () => {
     }
   };
   
-  // Color configuration for pie chart
   const COLORS = ['#ef4444', '#f97316', '#22c55e'];
   
-  // Prepare data for pie chart
   const chartData = [
     { name: 'High Risk', value: statistics.highRiskCount, color: '#ef4444' },
     { name: 'Medium Risk', value: statistics.mediumRiskCount, color: '#f97316' },
@@ -101,10 +94,8 @@ const SupplierRiskAssessment = () => {
           <TabsTrigger value="new">New Assessment</TabsTrigger>
         </TabsList>
         
-        {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Risk Distribution Card */}
             <Card className="col-span-1">
               <CardHeader>
                 <CardTitle className="text-xl">Risk Distribution</CardTitle>
@@ -142,7 +133,6 @@ const SupplierRiskAssessment = () => {
               </CardContent>
             </Card>
             
-            {/* Risk Summary Cards */}
             <div className="col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <Card>
                 <CardHeader className="pb-2">
@@ -203,7 +193,6 @@ const SupplierRiskAssessment = () => {
             </div>
           </div>
           
-          {/* Recent Assessments */}
           <Card>
             <CardHeader>
               <CardTitle className="text-xl">Recent Risk Assessments</CardTitle>
@@ -231,7 +220,7 @@ const SupplierRiskAssessment = () => {
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-sm text-muted-foreground">Overall Score</p>
                             <div className="flex items-center mt-1">
@@ -253,7 +242,7 @@ const SupplierRiskAssessment = () => {
                         
                         <Separator className="my-2" />
                         
-                        <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
                           <div>
                             <p className="text-xs text-muted-foreground">Food Safety</p>
                             <div className="flex items-center mt-1">
@@ -288,6 +277,17 @@ const SupplierRiskAssessment = () => {
                           </div>
                           
                           <div>
+                            <p className="text-xs text-muted-foreground">Delivery</p>
+                            <div className="flex items-center mt-1">
+                              <Progress
+                                value={assessment.delivery_score}
+                                className="h-1.5 w-full bg-gray-200"
+                              />
+                              <span className="ml-2 text-xs">{assessment.delivery_score}%</span>
+                            </div>
+                          </div>
+                          
+                          <div>
                             <p className="text-xs text-muted-foreground">Traceability</p>
                             <div className="flex items-center mt-1">
                               <Progress
@@ -298,6 +298,23 @@ const SupplierRiskAssessment = () => {
                             </div>
                           </div>
                         </div>
+                        
+                        {assessment.notes && (
+                          <div className="mt-4">
+                            <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                            <p className="text-sm bg-gray-50 p-2 rounded">{assessment.notes}</p>
+                          </div>
+                        )}
+                        
+                        {assessment.next_assessment_date && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground">Next Assessment: 
+                              <span className="font-medium ml-1">
+                                {new Date(assessment.next_assessment_date).toLocaleDateString()}
+                              </span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -317,7 +334,6 @@ const SupplierRiskAssessment = () => {
           </Card>
         </TabsContent>
         
-        {/* Assessments List Tab */}
         <TabsContent value="assessments" className="space-y-6">
           <Card>
             <CardHeader>
@@ -460,7 +476,6 @@ const SupplierRiskAssessment = () => {
           </Card>
         </TabsContent>
         
-        {/* New Assessment Tab */}
         <TabsContent value="new" className="space-y-6">
           <Card>
             <CardHeader>
