@@ -33,6 +33,8 @@ const SuppliersList: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     category: '',
@@ -136,9 +138,8 @@ const SuppliersList: React.FC = () => {
   };
   
   const handleViewSupplier = (supplier: Supplier) => {
-    // Navigate to supplier details page
-    // navigate(`/suppliers/${supplier.id}`);
-    toast.info(`Viewing supplier ${supplier.name}`);
+    setSelectedSupplier(supplier);
+    setIsViewDialogOpen(true);
   };
 
   if (error) {
@@ -361,6 +362,148 @@ const SuppliersList: React.FC = () => {
           </Table>
         )}
       </CardContent>
+
+      {/* Add Supplier Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Supplier Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this supplier
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSupplier && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Name:</span>
+                      <span className="col-span-2 font-medium">{selectedSupplier.name}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Category:</span>
+                      <span className="col-span-2">{selectedSupplier.category}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Country:</span>
+                      <span className="col-span-2">{selectedSupplier.country}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Status:</span>
+                      <span className="col-span-2">
+                        <Badge className={getStatusBadgeStyle(selectedSupplier.status)}>
+                          {selectedSupplier.status}
+                        </Badge>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Contact:</span>
+                      <span className="col-span-2 font-medium">{selectedSupplier.contactName}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Email:</span>
+                      <span className="col-span-2">{selectedSupplier.contactEmail}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Phone:</span>
+                      <span className="col-span-2">{selectedSupplier.contactPhone}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Compliance & Risk</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Risk Score:</span>
+                      <span className="col-span-2">
+                        {selectedSupplier.riskScore}% - 
+                        <Badge className={getRiskBadgeStyle(selectedSupplier.riskScore)} variant="outline">
+                          {selectedSupplier.riskScore >= 85 ? 'Low' : 
+                           selectedSupplier.riskScore >= 70 ? 'Medium' : 'High'} Risk
+                        </Badge>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Compliance:</span>
+                      <span className="col-span-2">{selectedSupplier.complianceStatus}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Last Audit:</span>
+                      <span className="col-span-2">
+                        {selectedSupplier.lastAuditDate ? 
+                          new Date(selectedSupplier.lastAuditDate).toLocaleDateString() : 
+                          'Not audited'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Standards:</span>
+                      <div className="col-span-2">
+                        {selectedSupplier.fsmsStandards && selectedSupplier.fsmsStandards.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedSupplier.fsmsStandards.map((standard, idx) => (
+                              <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700">
+                                {standard.name} {standard.certified ? '(Certified)' : ''}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No standards registered</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-gray-500">Products:</span>
+                      <div className="col-span-2">
+                        {selectedSupplier.products && selectedSupplier.products.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedSupplier.products.map((product, idx) => (
+                              <Badge key={idx} variant="outline">
+                                {product}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No products listed</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            {selectedSupplier && (
+              <Button 
+                onClick={() => {
+                  toast.info(`Edit functionality to be implemented for ${selectedSupplier.name}`);
+                }}
+              >
+                Edit Supplier
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

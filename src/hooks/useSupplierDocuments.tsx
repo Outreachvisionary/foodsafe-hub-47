@@ -2,10 +2,9 @@
 import { useState, useEffect } from 'react';
 import { SupplierDocument, StandardName } from '@/types/supplier';
 import { 
-  fetchAllDocuments, 
   fetchSupplierDocuments, 
+  fetchAllDocuments, 
   uploadSupplierDocument, 
-  updateDocumentStatus, 
   deleteSupplierDocument,
   fetchDocumentStatistics
 } from '@/services/supplierDocumentService';
@@ -15,32 +14,29 @@ export function useSupplierDocuments(supplierId?: string, standard?: StandardNam
   const [documents, setDocuments] = useState<SupplierDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statistics, setStatistics] = useState<{
-    validCount: number;
-    expiringCount: number;
-    expiredCount: number;
-    pendingCount: number;
-  }>({
+  const [statistics, setStatistics] = useState({
     validCount: 0,
     expiringCount: 0,
     expiredCount: 0,
     pendingCount: 0
   });
 
-  // Load documents based on whether we're looking at a specific supplier or all documents
+  // Load documents
   const loadDocuments = async () => {
     setIsLoading(true);
     setError(null);
     try {
       let data: SupplierDocument[];
+      
       if (supplierId) {
         data = await fetchSupplierDocuments(supplierId);
       } else {
         data = await fetchAllDocuments(standard);
       }
+      
       setDocuments(data);
       
-      // Also fetch document statistics
+      // Load statistics
       const stats = await fetchDocumentStatistics();
       setStatistics(stats);
     } catch (err) {
@@ -52,37 +48,22 @@ export function useSupplierDocuments(supplierId?: string, standard?: StandardNam
     }
   };
 
-  // Upload a new document
+  // Upload a document
   const uploadDocument = async (
-    documentInfo: {
+    document: {
       name: string;
       type: string;
       expiryDate?: string;
       standard?: StandardName;
       file: File;
     },
-    targetSupplierId: string = supplierId || ''
+    supplierId: string
   ) => {
-    if (!targetSupplierId) {
-      throw new Error('Supplier ID is required for uploading documents');
-    }
-    
     try {
-      const newDocument = await uploadSupplierDocument(targetSupplierId, documentInfo);
+      const newDocument = await uploadSupplierDocument(supplierId, document);
       setDocuments(prev => [...prev, newDocument]);
-      
-      // Update statistics
-      if (newDocument.status === 'Valid') {
-        setStatistics(prev => ({ ...prev, validCount: prev.validCount + 1 }));
-      } else if (newDocument.status === 'Expiring Soon') {
-        setStatistics(prev => ({ ...prev, expiringCount: prev.expiringCount + 1 }));
-      } else if (newDocument.status === 'Expired') {
-        setStatistics(prev => ({ ...prev, expiredCount: prev.expiredCount + 1 }));
-      } else if (newDocument.status === 'Pending Review') {
-        setStatistics(prev => ({ ...prev, pendingCount: prev.pendingCount + 1 }));
-      }
-      
       toast.success('Document uploaded successfully');
+      await loadDocuments(); // Reload to get updated statistics
       return newDocument;
     } catch (err) {
       console.error('Error uploading document:', err);
@@ -91,90 +72,13 @@ export function useSupplierDocuments(supplierId?: string, standard?: StandardNam
     }
   };
 
-  // Update document status
-  const updateStatus = async (
-    documentId: string, 
-    status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Pending Review'
-  ) => {
-    try {
-      await updateDocumentStatus(documentId, status);
-      
-      // Find the current status to update statistics
-      const currentDocument = documents.find(doc => doc.id === documentId);
-      
-      // Update documents list
-      setDocuments(prev => prev.map(doc => 
-        doc.id === documentId ? { ...doc, status } : doc
-      ));
-      
-      // Update statistics
-      if (currentDocument) {
-        setStatistics(prev => {
-          const newStats = { ...prev };
-          
-          // Decrement count for the old status
-          if (currentDocument.status === 'Valid') {
-            newStats.validCount = Math.max(0, newStats.validCount - 1);
-          } else if (currentDocument.status === 'Expiring Soon') {
-            newStats.expiringCount = Math.max(0, newStats.expiringCount - 1);
-          } else if (currentDocument.status === 'Expired') {
-            newStats.expiredCount = Math.max(0, newStats.expiredCount - 1);
-          } else if (currentDocument.status === 'Pending Review') {
-            newStats.pendingCount = Math.max(0, newStats.pendingCount - 1);
-          }
-          
-          // Increment count for the new status
-          if (status === 'Valid') {
-            newStats.validCount++;
-          } else if (status === 'Expiring Soon') {
-            newStats.expiringCount++;
-          } else if (status === 'Expired') {
-            newStats.expiredCount++;
-          } else if (status === 'Pending Review') {
-            newStats.pendingCount++;
-          }
-          
-          return newStats;
-        });
-      }
-      
-      toast.success('Document status updated');
-    } catch (err) {
-      console.error('Error updating document status:', err);
-      toast.error('Failed to update document status');
-      throw err;
-    }
-  };
-
   // Delete a document
   const deleteDocument = async (documentId: string) => {
     try {
-      // Find the current status to update statistics
-      const currentDocument = documents.find(doc => doc.id === documentId);
-      
       await deleteSupplierDocument(documentId);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      
-      // Update statistics
-      if (currentDocument) {
-        setStatistics(prev => {
-          const newStats = { ...prev };
-          
-          if (currentDocument.status === 'Valid') {
-            newStats.validCount = Math.max(0, newStats.validCount - 1);
-          } else if (currentDocument.status === 'Expiring Soon') {
-            newStats.expiringCount = Math.max(0, newStats.expiringCount - 1);
-          } else if (currentDocument.status === 'Expired') {
-            newStats.expiredCount = Math.max(0, newStats.expiredCount - 1);
-          } else if (currentDocument.status === 'Pending Review') {
-            newStats.pendingCount = Math.max(0, newStats.pendingCount - 1);
-          }
-          
-          return newStats;
-        });
-      }
-      
       toast.success('Document deleted successfully');
+      await loadDocuments(); // Reload to get updated statistics
     } catch (err) {
       console.error('Error deleting document:', err);
       toast.error('Failed to delete document');
@@ -182,7 +86,7 @@ export function useSupplierDocuments(supplierId?: string, standard?: StandardNam
     }
   };
 
-  // Load documents when the component mounts or dependencies change
+  // Load documents on mount or when props change
   useEffect(() => {
     loadDocuments();
   }, [supplierId, standard]);
@@ -194,7 +98,6 @@ export function useSupplierDocuments(supplierId?: string, standard?: StandardNam
     statistics,
     loadDocuments,
     uploadDocument,
-    updateStatus,
     deleteDocument
   };
 }
