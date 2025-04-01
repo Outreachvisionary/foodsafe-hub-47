@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Table, 
@@ -26,119 +27,50 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SupplierDocument, StandardName } from '@/types/supplier';
-
-// Sample data for supplier documents
-const sampleDocuments: SupplierDocument[] = [
-  { 
-    id: "1", 
-    name: 'Food Safety Certificate', 
-    supplier: 'Organic Farms Co.', 
-    type: 'Certification',
-    uploadDate: '2023-03-15',
-    expiryDate: '2024-03-15',
-    status: 'Valid',
-    fileName: 'organic_farms_fssc22000.pdf',
-    standard: 'FSSC 22000'
-  },
-  { 
-    id: "2", 
-    name: 'Third-Party Audit Report', 
-    supplier: 'Premium Packaging Inc.', 
-    type: 'Audit',
-    uploadDate: '2023-04-22',
-    expiryDate: '2024-04-22',
-    status: 'Valid',
-    fileName: 'premium_packaging_audit_2023.pdf',
-    standard: 'BRC GS2'
-  },
-  { 
-    id: "3", 
-    name: 'HACCP Plan', 
-    supplier: 'Global Ingredients Ltd.', 
-    type: 'Food Safety Plan',
-    uploadDate: '2023-01-05',
-    expiryDate: '2023-12-31',
-    status: 'Expiring Soon',
-    fileName: 'global_ingredients_haccp.pdf',
-    standard: 'HACCP'
-  },
-  { 
-    id: "4", 
-    name: 'Quality Manual', 
-    supplier: 'EcoClean Solutions', 
-    type: 'Quality Document',
-    uploadDate: '2023-05-12',
-    expiryDate: '2024-05-12',
-    status: 'Valid',
-    fileName: 'ecoclean_quality_manual.pdf',
-    standard: 'ISO 22000'
-  },
-  { 
-    id: "5", 
-    name: 'Temperature Control Records', 
-    supplier: 'QuickShip Logistics', 
-    type: 'Monitoring Records',
-    uploadDate: '2023-06-28',
-    expiryDate: '2023-10-15',
-    status: 'Expired',
-    fileName: 'quickship_temp_records.pdf',
-    standard: 'HACCP'
-  },
-  { 
-    id: "6", 
-    name: 'SQFI Certificate', 
-    supplier: 'Harvest Foods Inc.', 
-    type: 'Certification',
-    uploadDate: '2023-07-10',
-    expiryDate: '2024-07-10',
-    status: 'Valid',
-    fileName: 'harvest_foods_sqf.pdf',
-    standard: 'SQF'
-  },
-  { 
-    id: "7", 
-    name: 'Allergen Control Program', 
-    supplier: 'Bakery Solutions', 
-    type: 'Food Safety Plan',
-    uploadDate: '2023-05-05',
-    expiryDate: '2024-05-05',
-    status: 'Valid',
-    fileName: 'bakery_allergen_program.pdf',
-    standard: 'BRC GS2'
-  },
-  { 
-    id: "8", 
-    name: 'Environmental Monitoring Results', 
-    supplier: 'Fresh Produce Co.', 
-    type: 'Test Results',
-    uploadDate: '2023-09-01',
-    expiryDate: '2024-03-01',
-    status: 'Valid',
-    fileName: 'fresh_produce_env_monitoring.pdf',
-    standard: 'FSSC 22000'
-  },
-];
+import { useSupplierDocuments } from '@/hooks/useSupplierDocuments';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useSuppliers } from '@/hooks/useSuppliers';
 
 interface SupplierDocumentsProps {
   standard?: StandardName;
 }
 
 const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' }) => {
-  const [documents] = useState<SupplierDocument[]>(sampleDocuments);
+  const { documents, isLoading, error, statistics, uploadDocument, deleteDocument } = useSupplierDocuments(undefined, standard);
+  const { suppliers } = useSuppliers();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedDocStandard, setSelectedDocStandard] = useState<string>(standard);
+  const [selectedDocStandard, setSelectedDocStandard] = useState<StandardName>(standard);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadForm, setUploadForm] = useState({
+    name: '',
+    type: 'Certification',
+    supplier: '',
+    expiryDate: '',
+    standard: 'SQF' as StandardName
+  });
   const [isUploading, setIsUploading] = useState(false);
   
-  React.useEffect(() => {
+  useEffect(() => {
     setSelectedDocStandard(standard);
   }, [standard]);
   
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.supplier.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.supplier.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
       
     const matchesType = selectedType === 'all' ? true : doc.type === selectedType;
@@ -147,6 +79,65 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
     
     return matchesSearch && matchesType && matchesStatus && matchesStandard;
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUploadFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setUploadForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setUploadForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+      return;
+    }
+    
+    if (!uploadForm.supplier) {
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      await uploadDocument(
+        {
+          name: uploadForm.name,
+          type: uploadForm.type,
+          expiryDate: uploadForm.expiryDate || undefined,
+          standard: uploadForm.standard,
+          file: selectedFile
+        },
+        uploadForm.supplier
+      );
+      
+      // Reset form and close dialog
+      setUploadForm({
+        name: '',
+        type: 'Certification',
+        supplier: '',
+        expiryDate: '',
+        standard: 'SQF' as StandardName
+      });
+      setSelectedFile(null);
+      setIsUploadDialogOpen(false);
+    } catch (error) {
+      console.error('Error uploading document:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch(status.toLowerCase()) {
@@ -232,16 +223,27 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
     }
   };
 
-  const handleUploadClick = () => {
-    setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-    }, 1500);
-  };
-
-  const validCount = documents.filter(doc => doc.status === 'Valid').length;
-  const expiringCount = documents.filter(doc => doc.status === 'Expiring Soon').length;
-  const expiredCount = documents.filter(doc => doc.status === 'Expired').length;
+  if (error) {
+    return (
+      <Card className="animate-fade-in">
+        <CardHeader>
+          <CardTitle className="flex items-center text-red-600">
+            <FileText className="mr-2 h-5 w-5" />
+            Error Loading Documents
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error.message}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="animate-fade-in">
@@ -251,15 +253,114 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
           Supplier Documents
         </CardTitle>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-          <Button onClick={handleUploadClick} disabled={isUploading}>
-            {isUploading ? (
-              <>Uploading...</>
-            ) : (
-              <>
+          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
                 <Upload className="mr-2 h-4 w-4" /> Upload Document
-              </>
-            )}
-          </Button>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Document</DialogTitle>
+                <DialogDescription>
+                  Upload a new document for a supplier. Required documents vary by standard.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleUploadSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">Document Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={uploadForm.name}
+                      onChange={handleUploadFormChange}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="supplier" className="text-right">Supplier</Label>
+                    <Select 
+                      name="supplier"
+                      value={uploadForm.supplier} 
+                      onValueChange={value => handleSelectChange('supplier', value)}
+                    >
+                      <SelectTrigger id="supplier" className="col-span-3">
+                        <SelectValue placeholder="Select supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map(supplier => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="type" className="text-right">Document Type</Label>
+                    <Select 
+                      name="type"
+                      value={uploadForm.type} 
+                      onValueChange={value => handleSelectChange('type', value)}
+                    >
+                      <SelectTrigger id="type" className="col-span-3">
+                        <SelectValue placeholder="Select document type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Certification">Certification</SelectItem>
+                        <SelectItem value="Audit">Audit</SelectItem>
+                        <SelectItem value="Food Safety Plan">Food Safety Plan</SelectItem>
+                        <SelectItem value="Quality Document">Quality Document</SelectItem>
+                        <SelectItem value="Monitoring Records">Monitoring Records</SelectItem>
+                        <SelectItem value="Test Results">Test Results</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="standard" className="text-right">Standard</Label>
+                    <StandardSelect
+                      value={uploadForm.standard}
+                      onValueChange={value => handleSelectChange('standard', value as StandardName)}
+                      includeAll={false}
+                      triggerClassName="col-span-3"
+                      triggerProps={{ id: "standard" }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="expiryDate" className="text-right">Expiry Date</Label>
+                    <Input
+                      id="expiryDate"
+                      name="expiryDate"
+                      type="date"
+                      value={uploadForm.expiryDate}
+                      onChange={handleUploadFormChange}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="file" className="text-right">File</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      onChange={handleFileChange}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isUploading || !selectedFile}>
+                    {isUploading ? 'Uploading...' : 'Upload'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
@@ -314,67 +415,88 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
           </div>
         </div>
         
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Document Name</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Standard</TableHead>
-                <TableHead>Upload Date</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDocuments.length > 0 ? (
-                filteredDocuments.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>{doc.supplier}</TableCell>
-                    <TableCell>{doc.type}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-gray-100">
-                        {doc.standard}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{doc.uploadDate}</TableCell>
-                    <TableCell>
-                      {doc.status === 'Expired' ? (
-                        <span className="text-red-600 font-medium">{doc.expiryDate}</span>
-                      ) : doc.status === 'Expiring Soon' ? (
-                        <span className="text-yellow-600 font-medium">{doc.expiryDate}</span>
-                      ) : (
-                        doc.expiryDate
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(doc.status)}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        {doc.status === 'Expired' && (
-                          <Button variant="outline" size="sm" className="text-red-600 border-red-200">
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Document Name</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Standard</TableHead>
+                  <TableHead>Upload Date</TableHead>
+                  <TableHead>Expiry Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.length > 0 ? (
+                  filteredDocuments.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">{doc.name}</TableCell>
+                      <TableCell>{typeof doc.supplier === 'string' ? doc.supplier : 'Unknown'}</TableCell>
+                      <TableCell>{doc.type}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-gray-100">
+                          {doc.standard}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(doc.uploadDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {doc.expiryDate ? (
+                          doc.status === 'Expired' ? (
+                            <span className="text-red-600 font-medium">
+                              {new Date(doc.expiryDate).toLocaleDateString()}
+                            </span>
+                          ) : doc.status === 'Expiring Soon' ? (
+                            <span className="text-yellow-600 font-medium">
+                              {new Date(doc.expiryDate).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            new Date(doc.expiryDate).toLocaleDateString()
+                          )
+                        ) : (
+                          'No expiry'
+                        )}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(doc.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button variant="outline" size="sm" onClick={() => window.open(doc.fileName, '_blank')}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-600 border-red-200"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this document?')) {
+                                deleteDocument(doc.id);
+                              }
+                            }}
+                          >
                             <AlertTriangle className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No documents found matching your filters
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No documents found matching your filters
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         
         <div className="mt-6 space-y-4">
           <div className="flex justify-between items-center">
@@ -385,7 +507,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Valid Documents</p>
-                  <p className="text-2xl font-bold text-green-700">{validCount}</p>
+                  <p className="text-2xl font-bold text-green-700">{statistics.validCount}</p>
                 </div>
                 <CheckCircle className="h-10 w-10 text-green-500" />
               </CardContent>
@@ -395,7 +517,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-yellow-600 font-medium">Expiring Soon</p>
-                  <p className="text-2xl font-bold text-yellow-700">{expiringCount}</p>
+                  <p className="text-2xl font-bold text-yellow-700">{statistics.expiringCount}</p>
                 </div>
                 <Clock className="h-10 w-10 text-yellow-500" />
               </CardContent>
@@ -405,7 +527,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-red-600 font-medium">Expired Documents</p>
-                  <p className="text-2xl font-bold text-red-700">{expiredCount}</p>
+                  <p className="text-2xl font-bold text-red-700">{statistics.expiredCount}</p>
                 </div>
                 <AlertTriangle className="h-10 w-10 text-red-500" />
               </CardContent>

@@ -8,36 +8,32 @@ interface StandardSelectProps {
   onValueChange: (value: string) => void;
   placeholder?: string;
   includeAll?: boolean;
-  standards?: StandardName[];
-  className?: string;
   triggerClassName?: string;
+  triggerProps?: React.ComponentPropsWithoutRef<typeof SelectTrigger>;
 }
-
-const defaultStandards: StandardName[] = ['SQF', 'BRC GS2', 'ISO 22000', 'FSSC 22000', 'HACCP'];
 
 const StandardSelect: React.FC<StandardSelectProps> = ({
   value,
   onValueChange,
   placeholder = "Select Standard",
   includeAll = true,
-  standards = defaultStandards,
-  className,
-  triggerClassName,
+  triggerClassName = "",
+  triggerProps = {}
 }) => {
   return (
-    <div className={className}>
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className={triggerClassName}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {includeAll && <SelectItem value="all">All Standards</SelectItem>}
-          {standards.map((standard) => (
-            <SelectItem key={standard} value={standard}>{standard}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className={triggerClassName} {...triggerProps}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {includeAll && <SelectItem value="all">All Standards</SelectItem>}
+        <SelectItem value="SQF">SQF</SelectItem>
+        <SelectItem value="BRC GS2">BRC GS2</SelectItem>
+        <SelectItem value="ISO 22000">ISO 22000</SelectItem>
+        <SelectItem value="FSSC 22000">FSSC 22000</SelectItem>
+        <SelectItem value="HACCP">HACCP</SelectItem>
+      </SelectContent>
+    </Select>
   );
 };
 

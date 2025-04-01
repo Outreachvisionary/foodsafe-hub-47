@@ -10,31 +10,28 @@ interface ApprovalWorkflow {
   initiatedBy: string;
   initiatedAt: string;
   currentStep: number;
-  approvers: string[];
-  approvalHistory: Record<string, any>;
+  approvers?: string[];
+  approvalHistory?: Record<string, any>;
   dueDate?: string;
   completedAt?: string;
   notes?: string;
-  supplierName?: string;
 }
 
-// Fetch an approval workflow for a supplier
-export const fetchApprovalWorkflow = async (supplierId: string): Promise<ApprovalWorkflow | null> => {
+// Fetch supplier approval workflow
+export const fetchSupplierApprovalWorkflow = async (supplierId: string): Promise<ApprovalWorkflow | null> => {
   const { data, error } = await supabase
     .from('supplier_approval_workflows')
     .select('*')
     .eq('supplier_id', supplierId)
-    .order('initiated_at', { ascending: false })
-    .limit(1)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No workflow found
-      return null;
-    }
     console.error(`Error fetching approval workflow for supplier ${supplierId}:`, error);
     throw new Error('Failed to fetch supplier approval workflow');
+  }
+  
+  if (!data) {
+    return null;
   }
   
   return {
@@ -44,8 +41,8 @@ export const fetchApprovalWorkflow = async (supplierId: string): Promise<Approva
     initiatedBy: data.initiated_by,
     initiatedAt: data.initiated_at,
     currentStep: data.current_step,
-    approvers: data.approvers || [],
-    approvalHistory: data.approval_history || {},
+    approvers: data.approvers,
+    approvalHistory: data.approval_history,
     dueDate: data.due_date,
     completedAt: data.completed_at,
     notes: data.notes
@@ -53,24 +50,22 @@ export const fetchApprovalWorkflow = async (supplierId: string): Promise<Approva
 };
 
 // Create a new approval workflow
-export const createApprovalWorkflow = async (
-  workflow: Omit<ApprovalWorkflow, 'id' | 'initiatedAt' | 'currentStep'>
-): Promise<ApprovalWorkflow> => {
+export const createApprovalWorkflow = async (workflow: Omit<ApprovalWorkflow, 'id'>): Promise<ApprovalWorkflow> => {
   const id = uuidv4();
-  const initiatedAt = new Date().toISOString();
   
   const { data, error } = await supabase
     .from('supplier_approval_workflows')
     .insert({
       id,
       supplier_id: workflow.supplierId,
-      status: workflow.status || 'Initiated',
+      status: workflow.status,
       initiated_by: workflow.initiatedBy,
-      initiated_at: initiatedAt,
-      current_step: 1,
-      approvers: workflow.approvers || [],
+      initiated_at: workflow.initiatedAt || new Date().toISOString(),
+      current_step: workflow.currentStep || 1,
+      approvers: workflow.approvers,
       approval_history: workflow.approvalHistory || {},
       due_date: workflow.dueDate,
+      completed_at: workflow.completedAt,
       notes: workflow.notes
     })
     .select()
@@ -81,25 +76,6 @@ export const createApprovalWorkflow = async (
     throw new Error('Failed to create approval workflow');
   }
   
-  // Update the supplier status if needed
-  if (workflow.status === 'Approved') {
-    await supabase
-      .from('suppliers')
-      .update({ 
-        status: 'Active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', workflow.supplierId);
-  } else if (workflow.status === 'Rejected') {
-    await supabase
-      .from('suppliers')
-      .update({ 
-        status: 'Inactive',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', workflow.supplierId);
-  }
-  
   return {
     id: data.id,
     supplierId: data.supplier_id,
@@ -107,8 +83,8 @@ export const createApprovalWorkflow = async (
     initiatedBy: data.initiated_by,
     initiatedAt: data.initiated_at,
     currentStep: data.current_step,
-    approvers: data.approvers || [],
-    approvalHistory: data.approval_history || {},
+    approvers: data.approvers,
+    approvalHistory: data.approval_history,
     dueDate: data.due_date,
     completedAt: data.completed_at,
     notes: data.notes
@@ -116,75 +92,42 @@ export const createApprovalWorkflow = async (
 };
 
 // Update an approval workflow
-export const updateApprovalWorkflow = async (
-  workflowId: string,
-  updates: Partial<ApprovalWorkflow>
-): Promise<void> => {
-  const updateData: Record<string, any> = {
-    updated_at: new Date().toISOString()
-  };
-  
-  if (updates.status) updateData.status = updates.status;
-  if (updates.currentStep) updateData.current_step = updates.currentStep;
-  if (updates.approvers) updateData.approvers = updates.approvers;
-  if (updates.approvalHistory) updateData.approval_history = updates.approvalHistory;
-  if (updates.dueDate) updateData.due_date = updates.dueDate;
-  if (updates.notes) updateData.notes = updates.notes;
-  
-  if (updates.status === 'Approved' || updates.status === 'Rejected') {
-    updateData.completed_at = new Date().toISOString();
-  }
-  
+export const updateApprovalWorkflow = async (id: string, updates: Partial<ApprovalWorkflow>): Promise<void> => {
   const { error } = await supabase
     .from('supplier_approval_workflows')
-    .update(updateData)
-    .eq('id', workflowId);
+    .update({
+      status: updates.status,
+      current_step: updates.currentStep,
+      approvers: updates.approvers,
+      approval_history: updates.approvalHistory,
+      due_date: updates.dueDate,
+      completed_at: updates.completedAt,
+      notes: updates.notes,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id);
   
   if (error) {
-    console.error(`Error updating approval workflow ${workflowId}:`, error);
+    console.error(`Error updating approval workflow ${id}:`, error);
     throw new Error('Failed to update approval workflow');
-  }
-  
-  // If workflow is completed, update the supplier status
-  if (updates.status === 'Approved' || updates.status === 'Rejected') {
-    // First get the supplier ID
-    const { data: workflow, error: fetchError } = await supabase
-      .from('supplier_approval_workflows')
-      .select('supplier_id')
-      .eq('id', workflowId)
-      .single();
-    
-    if (fetchError) {
-      console.error(`Error fetching supplier ID for workflow ${workflowId}:`, fetchError);
-      return;
-    }
-    
-    const newStatus = updates.status === 'Approved' ? 'Active' : 'Inactive';
-    
-    await supabase
-      .from('suppliers')
-      .update({ 
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', workflow.supplier_id);
   }
 };
 
-// Fetch all active approval workflows
-export const fetchActiveWorkflows = async (): Promise<ApprovalWorkflow[]> => {
+// Fetch all approval workflows
+export const fetchAllApprovalWorkflows = async (): Promise<ApprovalWorkflow[]> => {
   const { data, error } = await supabase
     .from('supplier_approval_workflows')
     .select(`
       *,
-      suppliers (name)
+      suppliers (
+        name
+      )
     `)
-    .not('status', 'in', '("Approved", "Rejected")')
     .order('initiated_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching active approval workflows:', error);
-    throw new Error('Failed to fetch active approval workflows');
+    console.error('Error fetching approval workflows:', error);
+    throw new Error('Failed to fetch approval workflows');
   }
   
   return data.map(workflow => ({
@@ -194,8 +137,8 @@ export const fetchActiveWorkflows = async (): Promise<ApprovalWorkflow[]> => {
     initiatedBy: workflow.initiated_by,
     initiatedAt: workflow.initiated_at,
     currentStep: workflow.current_step,
-    approvers: workflow.approvers || [],
-    approvalHistory: workflow.approval_history || {},
+    approvers: workflow.approvers,
+    approvalHistory: workflow.approval_history,
     dueDate: workflow.due_date,
     completedAt: workflow.completed_at,
     notes: workflow.notes,
@@ -203,107 +146,82 @@ export const fetchActiveWorkflows = async (): Promise<ApprovalWorkflow[]> => {
   }));
 };
 
-// Add an approval action to the workflow history
-export const addApprovalAction = async (
-  workflowId: string,
-  action: {
-    user: string;
-    action: 'approve' | 'reject' | 'comment';
-    step: number;
-    notes?: string;
-    timestamp?: string;
+// Get pending approval count
+export const getPendingApprovalCount = async (): Promise<number> => {
+  const { count, error } = await supabase
+    .from('supplier_approval_workflows')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'Pending Approval');
+  
+  if (error) {
+    console.error('Error fetching pending approval count:', error);
+    throw new Error('Failed to fetch pending approval count');
   }
-): Promise<void> => {
-  // First get the current workflow
+  
+  return count || 0;
+};
+
+// Advance an approval workflow to the next step
+export const advanceWorkflow = async (workflowId: string, nextStatus: string, notes?: string): Promise<void> => {
   const { data: workflow, error: fetchError } = await supabase
     .from('supplier_approval_workflows')
-    .select('approval_history')
+    .select('current_step, supplier_id, approval_history')
     .eq('id', workflowId)
     .single();
   
   if (fetchError) {
-    console.error(`Error fetching workflow ${workflowId} for action:`, fetchError);
-    throw new Error('Failed to fetch workflow for action');
+    console.error(`Error fetching approval workflow ${workflowId}:`, fetchError);
+    throw new Error('Failed to fetch approval workflow');
   }
   
-  // Update the approval history
-  const history = workflow.approval_history || {};
-  const timestamp = action.timestamp || new Date().toISOString();
-  const actionId = uuidv4();
-  
-  history[actionId] = {
-    user: action.user,
-    action: action.action,
-    step: action.step,
-    notes: action.notes,
-    timestamp
+  const nextStep = workflow.current_step + 1;
+  const approvalHistory = workflow.approval_history || {};
+  approvalHistory[`step_${workflow.current_step}`] = {
+    completedAt: new Date().toISOString(),
+    notes: notes
   };
   
-  // Determine new status based on action
-  let newStatus;
-  let nextStep;
-  
-  if (action.action === 'approve') {
-    if (action.step === 1) newStatus = 'Document Review';
-    else if (action.step === 2) newStatus = 'Risk Assessment';
-    else if (action.step === 3) newStatus = 'Audit Scheduled';
-    else if (action.step === 4) newStatus = 'Audit Completed';
-    else if (action.step === 5) newStatus = 'Pending Approval';
-    else if (action.step === 6) newStatus = 'Approved';
-    
-    nextStep = action.step + 1;
-  } else if (action.action === 'reject') {
-    newStatus = 'Rejected';
-    nextStep = action.step; // Keep the same step
-  }
-  
-  // Update the workflow
-  const updateData: Record<string, any> = {
-    approval_history: history,
-    updated_at: new Date().toISOString()
-  };
-  
-  if (newStatus) updateData.status = newStatus;
-  if (nextStep) updateData.current_step = nextStep;
-  if (newStatus === 'Approved' || newStatus === 'Rejected') {
-    updateData.completed_at = timestamp;
-  }
-  
-  const { error } = await supabase
+  // Update workflow
+  const { error: updateError } = await supabase
     .from('supplier_approval_workflows')
-    .update(updateData)
+    .update({
+      status: nextStatus,
+      current_step: nextStep,
+      approval_history: approvalHistory,
+      updated_at: new Date().toISOString()
+    })
     .eq('id', workflowId);
   
-  if (error) {
-    console.error(`Error updating workflow ${workflowId} with action:`, error);
-    throw new Error('Failed to update workflow with action');
+  if (updateError) {
+    console.error(`Error updating approval workflow ${workflowId}:`, updateError);
+    throw new Error('Failed to update approval workflow');
   }
   
-  // If workflow is completed, update the supplier status
-  if (newStatus === 'Approved' || newStatus === 'Rejected') {
-    const { data: workflowData } = await supabase
-      .from('supplier_approval_workflows')
-      .select('supplier_id')
-      .eq('id', workflowId)
-      .single();
+  // If approving or rejecting the supplier, also update the supplier status
+  if (nextStatus === 'Approved' || nextStatus === 'Rejected') {
+    const supplierStatus = nextStatus === 'Approved' ? 'Active' : 'Inactive';
     
-    const newSupplierStatus = newStatus === 'Approved' ? 'Active' : 'Inactive';
-    
-    await supabase
+    const { error: supplierError } = await supabase
       .from('suppliers')
-      .update({ 
-        status: newSupplierStatus,
+      .update({
+        status: supplierStatus,
         updated_at: new Date().toISOString()
       })
-      .eq('id', workflowData.supplier_id);
+      .eq('id', workflow.supplier_id);
+    
+    if (supplierError) {
+      console.error(`Error updating supplier ${workflow.supplier_id}:`, supplierError);
+      throw new Error('Failed to update supplier status');
+    }
   }
 };
 
 // Export all functions
 export default {
-  fetchApprovalWorkflow,
+  fetchSupplierApprovalWorkflow,
   createApprovalWorkflow,
   updateApprovalWorkflow,
-  fetchActiveWorkflows,
-  addApprovalAction
+  fetchAllApprovalWorkflows,
+  getPendingApprovalCount,
+  advanceWorkflow
 };

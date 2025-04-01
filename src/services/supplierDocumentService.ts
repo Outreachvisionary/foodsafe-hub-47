@@ -165,25 +165,27 @@ export const deleteSupplierDocument = async (documentId: string): Promise<void> 
     .from('supplier_documents')
     .select('file_path')
     .eq('id', documentId)
-    .single();
+    .maybeSingle();
   
   if (fetchError) {
     console.error(`Error fetching document ${documentId} for deletion:`, fetchError);
     throw new Error('Failed to fetch document for deletion');
   }
   
-  // Extract path from the URL
-  const pathMatch = data.file_path.match(/\/attachments\/([^?]+)/);
-  if (pathMatch && pathMatch[1]) {
-    const storagePath = pathMatch[1];
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from('attachments')
-      .remove([storagePath]);
-    
-    if (storageError) {
-      console.error(`Error deleting file from storage for document ${documentId}:`, storageError);
-      // Continue anyway to delete the database record
+  if (data && data.file_path) {
+    // Extract path from the URL
+    const pathMatch = data.file_path.match(/\/attachments\/([^?]+)/);
+    if (pathMatch && pathMatch[1]) {
+      const storagePath = pathMatch[1];
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('attachments')
+        .remove([storagePath]);
+      
+      if (storageError) {
+        console.error(`Error deleting file from storage for document ${documentId}:`, storageError);
+        // Continue anyway to delete the database record
+      }
     }
   }
   

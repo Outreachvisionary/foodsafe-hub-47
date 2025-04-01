@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Table, 
@@ -26,9 +26,11 @@ import { useSuppliers } from '@/hooks/useSuppliers';
 import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 
 const SuppliersList: React.FC = () => {
   const { suppliers, isLoading, error, addSupplier } = useSuppliers();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
@@ -131,6 +133,12 @@ const SuppliersList: React.FC = () => {
 
   const handleSelectChange = (value: string, field: string) => {
     setNewSupplier(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleViewSupplier = (supplier: Supplier) => {
+    // Navigate to supplier details page
+    // navigate(`/suppliers/${supplier.id}`);
+    toast.info(`Viewing supplier ${supplier.name}`);
   };
 
   if (error) {
@@ -329,7 +337,11 @@ const SuppliersList: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewSupplier(supplier)}
+                        >
                           <FileCheck className="h-4 w-4 mr-1" /> View
                         </Button>
                       </div>

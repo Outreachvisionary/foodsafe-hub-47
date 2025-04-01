@@ -79,10 +79,14 @@ export const fetchSupplierById = async (id: string): Promise<Supplier | null> =>
     .from('suppliers')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error(`Error fetching supplier with ID ${id}:`, error);
+    return null;
+  }
+  
+  if (!supplier) {
     return null;
   }
 
@@ -235,7 +239,8 @@ export const addSupplierStandard = async (
 
 // Update a supplier standard
 export const updateSupplierStandard = async (
-  standardId: string,
+  supplierId: string,
+  standardName: string,
   standard: Partial<FsmsStandard>
 ): Promise<void> => {
   const { error } = await supabase
@@ -248,23 +253,28 @@ export const updateSupplierStandard = async (
       scope: standard.scope,
       updated_at: new Date().toISOString()
     })
-    .eq('id', standardId);
+    .eq('supplier_id', supplierId)
+    .eq('name', standardName);
 
   if (error) {
-    console.error(`Error updating standard with ID ${standardId}:`, error);
+    console.error(`Error updating standard for supplier ${supplierId}:`, error);
     throw new Error('Failed to update supplier standard');
   }
 };
 
 // Delete a supplier standard
-export const deleteSupplierStandard = async (standardId: string): Promise<void> => {
+export const deleteSupplierStandard = async (
+  supplierId: string,
+  standardName: string
+): Promise<void> => {
   const { error } = await supabase
     .from('supplier_standards')
     .delete()
-    .eq('id', standardId);
+    .eq('supplier_id', supplierId)
+    .eq('name', standardName);
 
   if (error) {
-    console.error(`Error deleting standard with ID ${standardId}:`, error);
+    console.error(`Error deleting standard for supplier ${supplierId}:`, error);
     throw new Error('Failed to delete supplier standard');
   }
 };

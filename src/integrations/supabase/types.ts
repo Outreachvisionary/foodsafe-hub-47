@@ -1793,6 +1793,311 @@ export type Database = {
         }
         Relationships: []
       }
+      standard_requirements: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          name: string
+          standard: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          name: string
+          standard: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          name?: string
+          standard?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      supplier_approval_workflows: {
+        Row: {
+          approval_history: Json | null
+          approvers: string[] | null
+          completed_at: string | null
+          created_at: string | null
+          current_step: number
+          due_date: string | null
+          id: string
+          initiated_at: string | null
+          initiated_by: string
+          notes: string | null
+          status: string
+          supplier_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_history?: Json | null
+          approvers?: string[] | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: number
+          due_date?: string | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by: string
+          notes?: string | null
+          status: string
+          supplier_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_history?: Json | null
+          approvers?: string[] | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: number
+          due_date?: string | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by?: string
+          notes?: string | null
+          status?: string
+          supplier_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_approval_workflows_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_documents: {
+        Row: {
+          created_at: string | null
+          expiry_date: string | null
+          file_name: string
+          file_path: string | null
+          file_size: number
+          id: string
+          name: string
+          standard: string | null
+          status: string
+          supplier_id: string
+          type: string
+          updated_at: string | null
+          upload_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expiry_date?: string | null
+          file_name: string
+          file_path?: string | null
+          file_size: number
+          id?: string
+          name: string
+          standard?: string | null
+          status: string
+          supplier_id: string
+          type: string
+          updated_at?: string | null
+          upload_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expiry_date?: string | null
+          file_name?: string
+          file_path?: string | null
+          file_size?: number
+          id?: string
+          name?: string
+          standard?: string | null
+          status?: string
+          supplier_id?: string
+          type?: string
+          updated_at?: string | null
+          upload_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_documents_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_risk_assessments: {
+        Row: {
+          assessed_by: string
+          assessment_date: string | null
+          created_at: string | null
+          delivery_score: number | null
+          food_safety_score: number | null
+          id: string
+          next_assessment_date: string | null
+          notes: string | null
+          overall_score: number
+          quality_system_score: number | null
+          regulatory_score: number | null
+          risk_factors: Json | null
+          risk_level: string
+          supplier_id: string
+          traceability_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assessed_by: string
+          assessment_date?: string | null
+          created_at?: string | null
+          delivery_score?: number | null
+          food_safety_score?: number | null
+          id?: string
+          next_assessment_date?: string | null
+          notes?: string | null
+          overall_score: number
+          quality_system_score?: number | null
+          regulatory_score?: number | null
+          risk_factors?: Json | null
+          risk_level: string
+          supplier_id: string
+          traceability_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assessed_by?: string
+          assessment_date?: string | null
+          created_at?: string | null
+          delivery_score?: number | null
+          food_safety_score?: number | null
+          id?: string
+          next_assessment_date?: string | null
+          notes?: string | null
+          overall_score?: number
+          quality_system_score?: number | null
+          regulatory_score?: number | null
+          risk_factors?: Json | null
+          risk_level?: string
+          supplier_id?: string
+          traceability_score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_risk_assessments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_standards: {
+        Row: {
+          certification_number: string | null
+          certified: boolean
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          level: string | null
+          name: string
+          scope: string | null
+          supplier_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          certification_number?: string | null
+          certified?: boolean
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          level?: string | null
+          name: string
+          scope?: string | null
+          supplier_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          certification_number?: string | null
+          certified?: boolean
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          level?: string | null
+          name?: string
+          scope?: string | null
+          supplier_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_standards_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          category: string
+          compliance_status: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          country: string
+          created_at: string | null
+          id: string
+          last_audit_date: string | null
+          name: string
+          products: string[] | null
+          risk_score: number
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          compliance_status?: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          country: string
+          created_at?: string | null
+          id?: string
+          last_audit_date?: string | null
+          name: string
+          products?: string[] | null
+          risk_score?: number
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          compliance_status?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          country?: string
+          created_at?: string | null
+          id?: string
+          last_audit_date?: string | null
+          name?: string
+          products?: string[] | null
+          risk_score?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       training_records: {
         Row: {
           assigned_date: string | null

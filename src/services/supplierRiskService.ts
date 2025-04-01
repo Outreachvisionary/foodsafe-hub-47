@@ -45,15 +45,15 @@ export const fetchSupplierRiskAssessment = async (supplierId: string): Promise<R
     .eq('supplier_id', supplierId)
     .order('assessment_date', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No risk assessment found
-      return null;
-    }
     console.error(`Error fetching risk assessment for supplier ${supplierId}:`, error);
     throw new Error('Failed to fetch supplier risk assessment');
+  }
+  
+  if (!data) {
+    return null;
   }
   
   return {
@@ -183,15 +183,15 @@ export const getRiskCategoryScores = async (supplierId: string): Promise<RiskCat
     .eq('supplier_id', supplierId)
     .order('assessment_date', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No risk assessment found, return empty array
-      return [];
-    }
     console.error(`Error fetching risk category scores for supplier ${supplierId}:`, error);
     throw new Error('Failed to fetch risk category scores');
+  }
+  
+  if (!data) {
+    return [];
   }
   
   const scores: RiskCategoryScore[] = [];
