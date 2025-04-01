@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Supplier, FsmsStandard } from '@/types/supplier';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,12 +30,12 @@ export const fetchSuppliers = async (): Promise<Supplier[]> => {
         name: supplier.name,
         category: supplier.category,
         country: supplier.country,
-        riskScore: supplier.risk_score,
-        complianceStatus: supplier.compliance_status,
-        lastAuditDate: supplier.last_audit_date,
-        contactName: supplier.contact_name,
-        contactEmail: supplier.contact_email,
-        contactPhone: supplier.contact_phone,
+        risk_score: supplier.risk_score,
+        compliance_status: supplier.compliance_status,
+        last_audit_date: supplier.last_audit_date,
+        contact_name: supplier.contact_name,
+        contact_email: supplier.contact_email,
+        contact_phone: supplier.contact_phone,
         products: supplier.products || [],
         status: supplier.status as 'Active' | 'Pending' | 'Suspended' | 'Inactive',
         fsmsStandards: [],
@@ -56,13 +57,13 @@ export const fetchSuppliers = async (): Promise<Supplier[]> => {
       name: supplier.name,
       category: supplier.category,
       country: supplier.country,
-      riskScore: supplier.risk_score,
-      complianceStatus: supplier.compliance_status,
-      lastAuditDate: supplier.last_audit_date,
+      risk_score: supplier.risk_score,
+      compliance_status: supplier.compliance_status,
+      last_audit_date: supplier.last_audit_date,
       fsmsStandards,
-      contactName: supplier.contact_name,
-      contactEmail: supplier.contact_email,
-      contactPhone: supplier.contact_phone,
+      contact_name: supplier.contact_name,
+      contact_email: supplier.contact_email,
+      contact_phone: supplier.contact_phone,
       products: supplier.products || [],
       status: supplier.status as 'Active' | 'Pending' | 'Suspended' | 'Inactive',
       documents: [] // Will be populated by the document service

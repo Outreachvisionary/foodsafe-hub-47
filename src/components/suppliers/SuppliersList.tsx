@@ -98,13 +98,11 @@ const SuppliersList: React.FC = () => {
     e.preventDefault();
     
     try {
-      // Calculate initial risk score based on selected risk level
       const risk_score = 
         newSupplier.riskLevel === 'Low' ? 90 : 
         newSupplier.riskLevel === 'Medium' ? 80 : 
         65;
       
-      // Create the supplier
       await addSupplier({
         name: newSupplier.name,
         category: newSupplier.category,
@@ -119,7 +117,6 @@ const SuppliersList: React.FC = () => {
         last_audit_date: undefined
       });
       
-      // Close dialog and reset form
       setIsDialogOpen(false);
       resetNewSupplierForm();
     } catch (error) {
@@ -406,7 +403,6 @@ const SuppliersList: React.FC = () => {
         )}
       </CardContent>
 
-      {/* Add Supplier Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -549,7 +545,6 @@ const SuppliersList: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Supplier Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>

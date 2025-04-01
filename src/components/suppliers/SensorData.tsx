@@ -33,8 +33,8 @@ const SensorData: React.FC<SensorDataProps> = ({ data, standard }) => {
     <Card className="border-blue-100">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium flex items-center">
-          Sensor Data - {data.locationName}
-          {data.status !== 'Normal' && (
+          Sensor Data - {data.locationName || data.location}
+          {data.status !== 'normal' && (
             <span className="ml-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
             </span>

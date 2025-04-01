@@ -1,3 +1,4 @@
+
 export interface Supplier {
   id: string;
   name: string;
@@ -13,6 +14,7 @@ export interface Supplier {
   products?: string[];
   created_at?: string;
   updated_at?: string;
+  fsmsStandards?: FsmsStandard[]; // Add fsmsStandards property
 }
 
 export type StandardName = 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP' | 'all';
@@ -42,6 +44,10 @@ export interface MonitoringData {
   status: 'normal' | 'warning' | 'critical';
   sensor_id: string;
   location: string;
+  // Add these properties to match what's used in the SensorData component
+  temperature: number;
+  humidity: number;
+  locationName?: string; // Optional for backward compatibility
 }
 
 export interface SupplierDocument {
@@ -57,10 +63,11 @@ export interface SupplierDocument {
   standard?: StandardName;
   created_at?: string;
   updated_at?: string;
-  fileName?: string; // For backward compatibility
-  uploadDate?: string; // For backward compatibility
-  expiryDate?: string; // For backward compatibility
-  supplier?: string; // For backward compatibility
+  // For backward compatibility
+  fileName?: string;
+  uploadDate?: string;
+  expiryDate?: string;
+  supplier?: string;
 }
 
 export interface SupplierStandard {
