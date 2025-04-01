@@ -7,13 +7,16 @@ import './index.css';
 import './services/storageService'; // Initialize storage services
 import './services/databaseInitializer'; // Initialize database tables
 import { UserProvider } from './contexts/UserContext';
+import { PermissionProvider } from './contexts/PermissionContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <UserProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <PermissionProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </PermissionProvider>
     </UserProvider>
   </React.StrictMode>
 );
