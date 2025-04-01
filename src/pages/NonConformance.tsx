@@ -6,6 +6,8 @@ import { PlusCircle, BarChart3, ClipboardList } from 'lucide-react';
 import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
+import { subscribeToNCUpdates } from '@/services/nonConformanceService';
+import { supabase } from '@/integrations/supabase/client';
 
 const NonConformanceModule = () => {
   const { id } = useParams();
@@ -13,11 +15,56 @@ const NonConformanceModule = () => {
   
   const [viewingDetails, setViewingDetails] = useState(!!id);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   // Ensure viewingDetails matches with URL
   useEffect(() => {
     setViewingDetails(!!id);
   }, [id]);
+  
+  // Set up real-time updates
+  useEffect(() => {
+    // Enable realtime for the non_conformances table
+    const enableRealtimeForTable = async () => {
+      try {
+        await supabase.rpc('supabase_realtime', {
+          table: 'non_conformances',
+          action: 'enable'
+        });
+      } catch (error) {
+        console.error('Error enabling realtime:', error);
+      }
+    };
+
+    enableRealtimeForTable();
+
+    // Subscribe to updates
+    const channel = supabase
+      .channel('public:non_conformances')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'non_conformances' }, 
+        (payload) => {
+          console.log('Realtime update:', payload);
+          // Trigger a refresh of the component
+          setRefreshTrigger(prev => prev + 1);
+          
+          // Show toast notification
+          const eventType = payload.eventType;
+          if (eventType === 'UPDATE') {
+            toast.info('A non-conformance record was updated');
+          } else if (eventType === 'INSERT') {
+            toast.info('A new non-conformance record was created');
+          } else if (eventType === 'DELETE') {
+            toast.info('A non-conformance record was deleted');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   
   // Handle errors from the non-conformance module
   useEffect(() => {
@@ -110,7 +157,10 @@ const NonConformanceModule = () => {
             setViewingDetails(false);
           }} />
         ) : (
-          <NCList onSelectItem={handleSelectItem} />
+          <NCList 
+            onSelectItem={handleSelectItem} 
+            key={`nc-list-${refreshTrigger}`} // Force re-render on updates
+          />
         )}
       </div>
     </div>

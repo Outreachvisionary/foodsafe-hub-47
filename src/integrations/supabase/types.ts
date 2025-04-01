@@ -2364,6 +2364,19 @@ export type Database = {
           version: string | null
         }[]
       }
+      get_related_items: {
+        Args: {
+          p_source_id: string
+          p_source_type: string
+          p_target_type: string
+        }
+        Returns: {
+          target_id: string
+          relationship_type: string
+          created_at: string
+          created_by: string
+        }[]
+      }
       get_user_roles: {
         Args: {
           _user_id: string
@@ -2400,6 +2413,16 @@ export type Database = {
           _department_id?: string
         }
         Returns: boolean
+      }
+      update_nc_status: {
+        Args: {
+          nc_id: string
+          new_status: string
+          user_id: string
+          comment?: string
+          prev_status?: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -2475,7 +2498,15 @@ export type Database = {
         | "Documentation Error"
         | "Process Deviation"
         | "Other"
-      nc_status: "On Hold" | "Under Review" | "Released" | "Disposed"
+      nc_status:
+        | "On Hold"
+        | "Under Review"
+        | "Released"
+        | "Disposed"
+        | "Approved"
+        | "Rejected"
+        | "Resolved"
+        | "Closed"
       role_level: "organization" | "facility" | "department"
       training_status:
         | "Not Started"

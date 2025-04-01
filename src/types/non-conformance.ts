@@ -1,7 +1,15 @@
 
 // Types for Non-Conformance Module
 
-export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed';
+export type NCStatus = 
+  | 'On Hold' 
+  | 'Under Review' 
+  | 'Released' 
+  | 'Disposed'
+  | 'Approved'
+  | 'Rejected'
+  | 'Resolved'
+  | 'Closed';
 
 export type NCItemCategory = 
   | 'Processing Equipment' 

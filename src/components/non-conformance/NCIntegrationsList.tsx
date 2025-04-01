@@ -1,254 +1,336 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { 
   getDocumentsRelatedToNC, 
   getTrainingRelatedToNC, 
-  getAuditsRelatedToNC 
+  getAuditsRelatedToNC,
+  createNCRelationship,
+  removeNCRelationship
 } from '@/services/nonConformanceService';
-import { FileText, FileCheck, Calendar, ArrowUpRight, AlertCircle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
+import { File, BookOpen, Clipboard, Plus, X } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface NCIntegrationsListProps {
   nonConformanceId: string;
 }
 
 const NCIntegrationsList: React.FC<NCIntegrationsListProps> = ({ nonConformanceId }) => {
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [trainings, setTrainings] = useState<any[]>([]);
-  const [audits, setAudits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [relatedDocuments, setRelatedDocuments] = useState<any[]>([]);
+  const [relatedTraining, setRelatedTraining] = useState<any[]>([]);
+  const [relatedAudits, setRelatedAudits] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('documents');
+  const [linkDialogOpen, setLinkDialogOpen] = useState<boolean>(false);
+  const [linkType, setLinkType] = useState<string>('');
+  const [linkId, setLinkId] = useState<string>('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadIntegrations = async () => {
-      if (!nonConformanceId) {
-        setError("No non-conformance ID provided");
-        setLoading(false);
-        return;
-      }
+  const loadRelatedItems = async () => {
+    try {
+      setLoading(true);
+      const [documents, training, audits] = await Promise.all([
+        getDocumentsRelatedToNC(nonConformanceId),
+        getTrainingRelatedToNC(nonConformanceId),
+        getAuditsRelatedToNC(nonConformanceId)
+      ]);
       
-      try {
-        setLoading(true);
-        setError(null);
-        console.log('Loading integrations for NC ID:', nonConformanceId);
-        
-        // Load related documents
-        const docsData = await getDocumentsRelatedToNC(nonConformanceId);
-        setDocuments(Array.isArray(docsData) ? docsData : []);
-        
-        // Load related training
-        const trainingData = await getTrainingRelatedToNC(nonConformanceId);
-        setTrainings(Array.isArray(trainingData) ? trainingData : []);
-        
-        // Load related audits
-        const auditData = await getAuditsRelatedToNC(nonConformanceId);
-        setAudits(Array.isArray(auditData) ? auditData : []);
-      } catch (error) {
-        console.error('Error loading integrations:', error);
-        setError("Failed to load integrated data");
-        toast({
-          title: 'Failed to load integrations',
-          description: 'There was an error loading integrated data.',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      setRelatedDocuments(documents);
+      setRelatedTraining(training);
+      setRelatedAudits(audits);
+    } catch (error) {
+      console.error('Error loading related items:', error);
+      toast({
+        title: 'Error loading related items',
+        description: 'There was an error loading related items.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadIntegrations();
-  }, [nonConformanceId, toast]);
+  useEffect(() => {
+    loadRelatedItems();
+  }, [nonConformanceId]);
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Integrated Modules</CardTitle>
-          <CardDescription>
-            View related documents, training sessions, and audits.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-md">
-            <AlertCircle className="h-10 w-10 text-red-500 mb-2" />
-            <p className="text-gray-700 font-medium">{error}</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => window.location.reload()}
-            >
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleAddLink = async () => {
+    if (!linkId || !linkType) {
+      toast({
+        title: 'Missing information',
+        description: 'Please enter an ID and select a type.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      await createNCRelationship(
+        nonConformanceId,
+        linkId,
+        linkType,
+        'related_to',
+        'current-user' // This should be the actual user ID in a real app
+      );
+      
+      toast({
+        title: 'Link added',
+        description: `Successfully linked to ${linkType} item.`
+      });
+      
+      // Reload related items
+      loadRelatedItems();
+      
+      // Reset form
+      setLinkId('');
+      setLinkDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding link:', error);
+      toast({
+        title: 'Error adding link',
+        description: 'There was an error creating the link.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleRemoveLink = async (id: string, type: string) => {
+    try {
+      await removeNCRelationship(
+        nonConformanceId,
+        id,
+        type,
+        'current-user' // This should be the actual user ID in a real app
+      );
+      
+      toast({
+        title: 'Link removed',
+        description: `Successfully removed link to ${type} item.`
+      });
+      
+      // Reload related items
+      loadRelatedItems();
+    } catch (error) {
+      console.error('Error removing link:', error);
+      toast({
+        title: 'Error removing link',
+        description: 'There was an error removing the link.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const openLinkDialog = (type: string) => {
+    setLinkType(type);
+    setLinkDialogOpen(true);
+  };
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Integrated Modules</CardTitle>
-          <CardDescription>
-            Loading related content...
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
     );
   }
 
-  const hasIntegrations = documents.length > 0 || trainings.length > 0 || audits.length > 0;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Integrated Modules</CardTitle>
-        <CardDescription>
-          View related documents, training sessions, and audits.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!hasIntegrations ? (
-          <div className="text-center p-6 border border-dashed rounded-md">
-            <p className="text-gray-500">No integrations found</p>
-            <p className="text-xs text-gray-400 mt-1">
-              This non-conformance is not currently linked to other modules.
-            </p>
+    <div>
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="audits">Audits</TabsTrigger>
+          </TabsList>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => openLinkDialog(activeTab === 'documents' ? 'documents' : activeTab === 'training' ? 'training_sessions' : 'audits')}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Link {activeTab === 'documents' ? 'Document' : activeTab === 'training' ? 'Training' : 'Audit'}
+          </Button>
+        </div>
+        
+        <TabsContent value="documents">
+          {relatedDocuments.length === 0 ? (
+            <div className="text-center py-8 border rounded-md">
+              <File className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600">No documents linked</h3>
+              <p className="text-sm text-gray-500 mb-4">There are no documents linked to this non-conformance yet</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => openLinkDialog('documents')}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Link Document
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {relatedDocuments.map((item) => (
+                <div key={item.target_id} className="flex justify-between items-center p-3 border rounded-md">
+                  <div className="flex items-center">
+                    <File className="h-5 w-5 text-blue-500 mr-2" />
+                    <div>
+                      <h4 className="font-medium">{item.document?.title || 'Document'}</h4>
+                      <p className="text-sm text-gray-500">
+                        {item.document?.category || 'Unknown'} • 
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Link to={`/documents/${item.target_id}`}>
+                      <Button variant="ghost" size="sm">View</Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveLink(item.target_id, 'documents')}
+                    >
+                      <X className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="training">
+          {relatedTraining.length === 0 ? (
+            <div className="text-center py-8 border rounded-md">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600">No training linked</h3>
+              <p className="text-sm text-gray-500 mb-4">There are no training sessions linked to this non-conformance yet</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => openLinkDialog('training_sessions')}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Link Training
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {relatedTraining.map((item) => (
+                <div key={item.target_id} className="flex justify-between items-center p-3 border rounded-md">
+                  <div className="flex items-center">
+                    <BookOpen className="h-5 w-5 text-green-500 mr-2" />
+                    <div>
+                      <h4 className="font-medium">{item.training_session?.title || 'Training Session'}</h4>
+                      <p className="text-sm text-gray-500">
+                        {item.training_session?.training_type || 'Unknown'} • 
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Link to={`/training/${item.target_id}`}>
+                      <Button variant="ghost" size="sm">View</Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveLink(item.target_id, 'training_sessions')}
+                    >
+                      <X className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="audits">
+          {relatedAudits.length === 0 ? (
+            <div className="text-center py-8 border rounded-md">
+              <Clipboard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600">No audits linked</h3>
+              <p className="text-sm text-gray-500 mb-4">There are no audits linked to this non-conformance yet</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => openLinkDialog('audits')}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Link Audit
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {relatedAudits.map((item) => (
+                <div key={item.target_id} className="flex justify-between items-center p-3 border rounded-md">
+                  <div className="flex items-center">
+                    <Clipboard className="h-5 w-5 text-purple-500 mr-2" />
+                    <div>
+                      <h4 className="font-medium">{item.audit?.title || 'Audit'}</h4>
+                      <p className="text-sm text-gray-500">
+                        {item.audit?.audit_type || 'Unknown'} • 
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Link to={`/audits/${item.target_id}`}>
+                      <Button variant="ghost" size="sm">View</Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveLink(item.target_id, 'audits')}
+                    >
+                      <X className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+      
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link {linkType === 'documents' ? 'Document' : linkType === 'training_sessions' ? 'Training' : 'Audit'}</DialogTitle>
+            <DialogDescription>
+              Enter the ID of the {linkType === 'documents' ? 'document' : linkType === 'training_sessions' ? 'training session' : 'audit'} you want to link.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Input
+              placeholder="Enter ID"
+              value={linkId}
+              onChange={(e) => setLinkId(e.target.value)}
+            />
           </div>
-        ) : (
-          <Tabs defaultValue="documents">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="documents" disabled={documents.length === 0}>
-                Documents ({documents.length})
-              </TabsTrigger>
-              <TabsTrigger value="training" disabled={trainings.length === 0}>
-                Training ({trainings.length})
-              </TabsTrigger>
-              <TabsTrigger value="audits" disabled={audits.length === 0}>
-                Audits ({audits.length})
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="documents" className="mt-4">
-              {documents.length === 0 ? (
-                <div className="text-center p-4">
-                  <p className="text-gray-500">No related documents</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center">
-                        <FileText className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <p className="font-medium text-sm">
-                            {doc.documents?.title || 'Untitled Document'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {doc.documents?.category || 'No category'} · 
-                            {doc.documents?.created_at && new Date(doc.documents.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => navigate(`/documents/${doc.target_id}`)}
-                      >
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="training" className="mt-4">
-              {trainings.length === 0 ? (
-                <div className="text-center p-4">
-                  <p className="text-gray-500">No related training sessions</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {trainings.map((training) => (
-                    <div key={training.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center">
-                        <FileCheck className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <p className="font-medium text-sm">
-                            {training.training_sessions?.title || 'Untitled Training'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {training.training_sessions?.training_type || 'No type'} · 
-                            {training.training_sessions?.due_date && 
-                              `Due: ${new Date(training.training_sessions.due_date).toLocaleDateString()}`}
-                          </p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => navigate(`/training/${training.target_id}`)}
-                      >
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="audits" className="mt-4">
-              {audits.length === 0 ? (
-                <div className="text-center p-4">
-                  <p className="text-gray-500">No related audits</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {audits.map((audit) => (
-                    <div key={audit.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <p className="font-medium text-sm">
-                            {audit.audits?.title || 'Untitled Audit'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {audit.audits?.audit_type || 'No type'} · 
-                            {audit.audits?.status || 'Unknown status'} · 
-                            {audit.audits?.due_date && 
-                              `Due: ${new Date(audit.audits.due_date).toLocaleDateString()}`}
-                          </p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => navigate(`/audits/${audit.target_id}`)}
-                      >
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        )}
-      </CardContent>
-    </Card>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddLink}>
+              Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
