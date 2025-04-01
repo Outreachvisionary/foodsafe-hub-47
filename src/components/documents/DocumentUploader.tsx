@@ -30,7 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Document, DocumentStatus, DocumentCategory } from '@/types/document';
+import { Document, DocumentStatus, DocumentCategory } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentService } from '@/hooks/useDocumentService';
 
@@ -210,9 +210,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       // If the document was uploaded to a folder, update folder document count
       if (selectedFolder) {
+        // Using RPC or direct update instead of supabase.sql
         const { error: folderError } = await supabase
           .from('folders')
-          .update({ document_count: supabase.sql`document_count + 1` })
+          .update({ document_count: supabase.rpc('increment_counter', { row_id: selectedFolder }) })
           .eq('id', selectedFolder);
           
         if (folderError) {

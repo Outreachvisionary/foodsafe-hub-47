@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -9,7 +8,7 @@ import DocumentFolders from '@/components/documents/DocumentFolders';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
-import { Folder, Document as DocumentType } from '@/types/document';
+import { Folder, Document as DocumentType } from '@/types/database';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const DocumentRepository: React.FC = () => {
@@ -29,16 +28,13 @@ const DocumentRepository: React.FC = () => {
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Filter documents based on search query and selected folder
   useEffect(() => {
     let filtered = documents;
     
-    // Filter by folder if one is selected
     if (selectedFolder) {
       filtered = filtered.filter(doc => doc.folder_id === selectedFolder.id);
     }
     
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(doc => 
@@ -49,7 +45,6 @@ const DocumentRepository: React.FC = () => {
       );
     }
     
-    // Sort documents
     filtered = [...filtered].sort((a, b) => {
       if (sortBy === 'title') {
         return sortDirection === 'asc' 
@@ -78,6 +73,22 @@ const DocumentRepository: React.FC = () => {
     setSelectedFolder(folder);
   };
 
+  const handleViewDocument = (document: DocumentType) => {
+    console.log('View document:', document);
+  };
+
+  const handleEditDocument = (document: DocumentType) => {
+    console.log('Edit document:', document);
+  };
+
+  const handleDeleteDocument = (document: DocumentType) => {
+    console.log('Delete document:', document);
+  };
+
+  const handleDownloadDocument = (document: DocumentType) => {
+    console.log('Download document:', document);
+  };
+
   return (
     <div className="p-6 bg-white">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -87,7 +98,6 @@ const DocumentRepository: React.FC = () => {
         </TabsList>
         
         <TabsContent value="dashboard">
-          {/* Dashboard content goes here */}
           <div className="text-center py-8">
             <h3 className="text-xl font-medium mb-4">Document Dashboard</h3>
             <p className="text-muted-foreground mb-4">
@@ -161,7 +171,13 @@ const DocumentRepository: React.FC = () => {
               
               {filteredDocuments.length > 0 ? (
                 <div className="border rounded-md">
-                  <DocumentList documents={filteredDocuments} />
+                  <DocumentList 
+                    documents={filteredDocuments} 
+                    onViewDocument={handleViewDocument}
+                    onEditDocument={handleEditDocument}
+                    onDeleteDocument={handleDeleteDocument}
+                    onDownloadDocument={handleDownloadDocument}
+                  />
                 </div>
               ) : (
                 <div className="border rounded-md p-12 text-center">
@@ -195,7 +211,6 @@ const DocumentRepository: React.FC = () => {
       <UploadDocumentDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen}
-        selectedFolder={selectedFolder?.id || null}
       />
     </div>
   );

@@ -1,11 +1,10 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import documentService from '@/services/documentService';
 import documentCommentService from '@/services/documentCommentService';
 import enhancedDocumentService from '@/services/enhancedDocumentService';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess } from '@/types/document';
-import { DocumentComment } from '@/types/document-comment';
+import { DocumentComment } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 
 export const useDocumentService = () => {
@@ -147,17 +146,15 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // Get storage path for a document file
   const getStoragePath = useCallback((documentId: string, fileName: string) => {
     return `documents/${documentId}/${fileName}`;
   }, []);
 
-  // Get download URL for a file in storage
   const getDownloadUrl = useCallback(async (path: string) => {
     try {
       const { data, error } = await supabase.storage
         .from('attachments')
-        .createSignedUrl(path, 3600); // URL expires in 1 hour
+        .createSignedUrl(path, 3600);
 
       if (error) {
         throw error;
@@ -174,13 +171,11 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // Get file preview URL for specified file types
   const getPreviewUrl = useCallback(async (documentId: string, fileName: string, fileType: string) => {
     try {
       const storagePath = getStoragePath(documentId, fileName);
       const url = await getDownloadUrl(storagePath);
       
-      // Check if the file type is supported for preview
       const previewableTypes = [
         'application/pdf',
         'image/jpeg',
@@ -202,7 +197,6 @@ export const useDocumentService = () => {
     }
   }, [getStoragePath, getDownloadUrl]);
 
-  // Handle document checkout
   const checkoutDocument = useCallback(async (documentId: string, userId: string) => {
     try {
       const updatedDocument = await documentService.updateDocument(documentId, {
@@ -215,8 +209,8 @@ export const useDocumentService = () => {
         document_id: documentId,
         action: 'checkout',
         user_id: userId,
-        user_name: userId, // Should be replaced with actual user name
-        user_role: 'User', // Should be replaced with actual user role
+        user_name: userId,
+        user_role: 'User',
         comments: 'Document checked out for editing'
       });
       
@@ -227,7 +221,6 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // Handle document checkin
   const checkinDocument = useCallback(async (documentId: string, userId: string) => {
     try {
       const updatedDocument = await documentService.updateDocument(documentId, {
@@ -240,8 +233,8 @@ export const useDocumentService = () => {
         document_id: documentId,
         action: 'checkin',
         user_id: userId,
-        user_name: userId, // Should be replaced with actual user name
-        user_role: 'User', // Should be replaced with actual user role
+        user_name: userId,
+        user_role: 'User',
         comments: 'Document checked in after editing'
       });
       
@@ -252,7 +245,6 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // ===== Document Access Control Methods =====
   const fetchAccess = useCallback(async (documentId: string) => {
     setIsLoading(true);
     setError(null);
@@ -294,7 +286,6 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // ===== Document Comments Methods =====
   const getDocumentComments = useCallback(async (documentId: string) => {
     setIsLoading(true);
     setError(null);
@@ -350,7 +341,6 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // ===== Document Versions Methods =====
   const fetchDocumentVersions = useCallback(async (documentId: string) => {
     setIsLoading(true);
     setError(null);
@@ -365,7 +355,6 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  // ===== Storage Check Method =====
   const checkStorageAvailability = useCallback(async () => {
     try {
       const { data, error } = await supabase.storage.getBucket('attachments');
@@ -394,16 +383,13 @@ export const useDocumentService = () => {
     getPreviewUrl,
     checkoutDocument,
     checkinDocument,
-    // Access control methods
     fetchAccess,
     grantAccess,
     revokeAccess,
-    // Comments methods
     getDocumentComments,
     createDocumentComment,
     updateDocumentComment,
     deleteDocumentComment,
-    // Additional methods
     fetchDocumentVersions,
     checkStorageAvailability
   };

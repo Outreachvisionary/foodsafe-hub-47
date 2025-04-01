@@ -1,3 +1,4 @@
+
 // Define the base document status types
 export type DocumentStatus = 
   | 'Draft'
@@ -64,4 +65,58 @@ export interface Folder {
   created_at?: string;
   updated_at?: string;
   document_count?: number;
+}
+
+// Define the training status types
+export type TrainingStatus = 
+  | 'Not Started'
+  | 'In Progress'
+  | 'Completed'
+  | 'Overdue';
+
+// Define the TrainingRecord type
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date?: string;
+  due_date: string;
+  completion_date?: string;
+  score?: number;
+  pass_threshold?: number;
+  notes?: string;
+}
+
+// Define the TrainingSession type
+export interface TrainingSession {
+  id: string;
+  title: string;
+  description?: string;
+  training_type: string;
+  training_category?: string;
+  department?: string;
+  start_date?: string;
+  due_date?: string;
+  assigned_to: string[];
+  materials_id?: string[];
+  required_roles?: string[];
+  completion_status?: TrainingStatus;
+  is_recurring?: boolean;
+  recurring_interval?: number;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Define DocumentComment type
+export interface DocumentComment {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
 }
