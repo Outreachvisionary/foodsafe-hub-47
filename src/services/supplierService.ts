@@ -133,7 +133,7 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'documents'
   const newSupplierId = uuidv4();
   
   // Insert the supplier
-  const { data: newSupplier, error } = await supabase
+  const { error } = await supabase
     .from('suppliers')
     .insert({
       id: newSupplierId,
@@ -148,9 +148,7 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'documents'
       contact_phone: supplier.contactPhone,
       products: supplier.products,
       status: supplier.status
-    })
-    .select()
-    .single();
+    });
 
   if (error) {
     console.error('Error creating supplier:', error);

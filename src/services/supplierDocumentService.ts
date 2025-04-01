@@ -35,7 +35,7 @@ export const fetchSupplierDocuments = async (supplierId: string): Promise<Suppli
     uploadDate: doc.upload_date,
     expiryDate: doc.expiry_date,
     status: doc.status,
-    fileName: doc.file_name,
+    fileName: doc.file_path, // Use file_path for downloadable URL
     supplier: doc.supplier_id,
     standard: doc.standard as StandardName || undefined
   }));
@@ -68,8 +68,8 @@ export const fetchAllDocuments = async (standard?: StandardName): Promise<Suppli
     uploadDate: doc.upload_date,
     expiryDate: doc.expiry_date,
     status: doc.status,
-    fileName: doc.file_name,
-    supplier: doc.suppliers?.name || 'Unknown',
+    fileName: doc.file_path, // Use file_path for downloadable URL
+    supplier: doc.suppliers?.name || doc.supplier_id,
     standard: doc.standard as StandardName || undefined
   }));
 };
@@ -90,7 +90,7 @@ export const uploadSupplierDocument = async (
   const filePath = `${supplierId}/${documentId}.${fileExtension}`;
   
   // First upload the file to storage
-  const { error: storageError } = await supabase.storage
+  const { error: storageError, data: storageData } = await supabase.storage
     .from('attachments')
     .upload(filePath, document.file);
   
@@ -136,7 +136,7 @@ export const uploadSupplierDocument = async (
     uploadDate: data.upload_date,
     expiryDate: data.expiry_date,
     status: data.status,
-    fileName: data.file_name,
+    fileName: data.file_path, // Use file_path for downloadable URL
     supplier: supplierId,
     standard: data.standard as StandardName || undefined
   };
@@ -224,12 +224,14 @@ export const fetchDocumentStatistics = async (): Promise<{
     pendingCount: 0
   };
   
-  data.forEach(doc => {
-    if (doc.status === 'Valid') stats.validCount++;
-    else if (doc.status === 'Expiring Soon') stats.expiringCount++;
-    else if (doc.status === 'Expired') stats.expiredCount++;
-    else if (doc.status === 'Pending Review') stats.pendingCount++;
-  });
+  if (data) {
+    data.forEach(doc => {
+      if (doc.status === 'Valid') stats.validCount++;
+      else if (doc.status === 'Expiring Soon') stats.expiringCount++;
+      else if (doc.status === 'Expired') stats.expiredCount++;
+      else if (doc.status === 'Pending Review') stats.pendingCount++;
+    });
+  }
   
   return stats;
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -69,7 +70,7 @@ const SupplierDocuments: React.FC<SupplierDocumentsProps> = ({ standard = 'all' 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.supplier.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (typeof doc.supplier === 'string' && doc.supplier.toLowerCase().includes(searchQuery.toLowerCase())) ||
       doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
       
     const matchesType = selectedType === 'all' ? true : doc.type === selectedType;
