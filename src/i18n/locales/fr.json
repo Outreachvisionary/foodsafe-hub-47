@@ -45,7 +45,24 @@
     "status": "Statut",
     "version": "Version",
     "actions": "Actions",
-    "lastUpdated": "Dernière Mise à Jour"
+    "lastUpdated": "Dernière Mise à Jour",
+    "controlSystem": "Système de Contrôle des Documents",
+    "createNewDocument": "Créer un Nouveau Document",
+    "currentFolder": "Dossier Actuel",
+    "documentsCount": "documents",
+    "noDocumentsFound": "Aucun document trouvé",
+    "emptyFolder": "Ce dossier est vide. Téléchargez des documents pour commencer.",
+    "noMatchingDocuments": "Aucun document ne correspond à votre recherche.",
+    "uploadFirstDocument": "Télécharger Votre Premier Document",
+    "viewDocuments": "Voir les Documents",
+    "downloadStarted": "Téléchargement commencé",
+    "downloadingFile": "Téléchargement de \"{{title}}\"",
+    "deleteSuccess": "Document supprimé avec succès",
+    "errors": {
+      "invalidDocument": "Document invalide. Impossible de continuer.",
+      "operationNotSupported": "La fonctionnalité de suppression de documents n'est pas encore implémentée.",
+      "deleteFailed": "Échec de la suppression du document. Veuillez réessayer."
+    }
   },
   "status": {
     "draft": "Brouillon",
@@ -63,7 +80,9 @@
     "view": "Voir",
     "download": "Télécharger",
     "upload": "Uploader",
-    "submit": "Soumettre"
+    "submit": "Soumettre",
+    "sort": "Trier",
+    "filter": "Filtrer"
   },
   "notifications": {
     "success": "Succès",

@@ -45,7 +45,24 @@
     "status": "Status",
     "version": "Version",
     "actions": "Aktionen",
-    "lastUpdated": "Zuletzt aktualisiert"
+    "lastUpdated": "Zuletzt aktualisiert",
+    "controlSystem": "Dokumentenkontrollsystem",
+    "createNewDocument": "Neues Dokument erstellen",
+    "currentFolder": "Aktueller Ordner",
+    "documentsCount": "Dokumente",
+    "noDocumentsFound": "Keine Dokumente gefunden",
+    "emptyFolder": "Dieser Ordner ist leer. Laden Sie Dokumente hoch, um zu beginnen.",
+    "noMatchingDocuments": "Keine Dokumente entsprechen Ihrer Suchanfrage.",
+    "uploadFirstDocument": "Laden Sie Ihr erstes Dokument hoch",
+    "viewDocuments": "Dokumente anzeigen",
+    "downloadStarted": "Download gestartet",
+    "downloadingFile": "Herunterladen von \"{{title}}\"",
+    "deleteSuccess": "Dokument erfolgreich gelöscht",
+    "errors": {
+      "invalidDocument": "Ungültiges Dokument. Kann nicht fortfahren.",
+      "operationNotSupported": "Die Dokumentenlöschfunktion ist noch nicht implementiert.",
+      "deleteFailed": "Dokument konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."
+    }
   },
   "status": {
     "draft": "Entwurf",
@@ -63,7 +80,9 @@
     "view": "Ansehen",
     "download": "Herunterladen",
     "upload": "Hochladen",
-    "submit": "Einreichen"
+    "submit": "Einreichen",
+    "sort": "Sortieren",
+    "filter": "Filtern"
   },
   "notifications": {
     "success": "Erfolg",
