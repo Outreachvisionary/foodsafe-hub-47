@@ -36,7 +36,6 @@ const DocumentRepository: React.FC = () => {
   const [previewDocument, setPreviewDocument] = useState<DocumentType | null>(null);
 
   useEffect(() => {
-    // Ensure documents and folders are arrays
     const docArray = Array.isArray(documents) ? documents : [];
     const folderArray = Array.isArray(folders) ? folders : [];
     
