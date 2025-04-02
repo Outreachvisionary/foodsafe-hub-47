@@ -1,116 +1,145 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingAutomationConfig } from '@/types/training';
+import { TrainingAutomationConfig, AutoAssignRule } from '@/types/training';
 
 /**
  * Service for training configuration management
  */
 export const trainingConfigService = {
   /**
-   * Get the automation settings for the organization
+   * Get the current training automation configuration
+   * Creates a default config if none exists
    */
   getAutomationConfig: async (): Promise<TrainingAutomationConfig> => {
     try {
-      // Try to get the configuration from Supabase
+      // Try to fetch existing config
       const { data, error } = await supabase
         .from('training_automation_config')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching training automation config:', error);
+        .limit(1);
         
-        // Return default config if there's an error
-        return {
-          enabled: true,
-          rules: [],
-          documentChangesTrigger: true,
-          newEmployeeTrigger: true,
-          roleCangeTrigger: true,
-        };
-      }
-
-      if (!data) {
-        console.warn('No training configuration found, using default settings');
-        // Return default config if no data is found
-        return {
-          enabled: true,
-          rules: [],
-          documentChangesTrigger: true,
-          newEmployeeTrigger: true,
-          roleCangeTrigger: true,
-        };
-      }
-
-      // Map the database record to our TypeScript interface
-      return {
-        enabled: data.enabled,
-        rules: data.rules || [],
-        documentChangesTrigger: data.document_changes_trigger,
-        newEmployeeTrigger: data.new_employee_trigger,
-        roleCangeTrigger: data.role_change_trigger,
-      };
-    } catch (error) {
-      console.error('Exception fetching training automation config:', error);
+      if (error) throw error;
       
-      // Return default config if there's an exception
-      return {
+      // If we found a config, return it
+      if (data && data.length > 0) {
+        return data[0] as TrainingAutomationConfig;
+      }
+      
+      // Otherwise create a default config
+      const defaultConfig: Partial<TrainingAutomationConfig> = {
         enabled: true,
+        new_employee_trigger: true,
+        role_change_trigger: true,
+        document_changes_trigger: true,
         rules: [],
-        documentChangesTrigger: true,
-        newEmployeeTrigger: true,
-        roleCangeTrigger: true,
+        created_by: 'system'
+      };
+      
+      const { data: newConfig, error: insertError } = await supabase
+        .from('training_automation_config')
+        .insert(defaultConfig)
+        .select()
+        .single();
+        
+      if (insertError) throw insertError;
+      
+      return newConfig as TrainingAutomationConfig;
+    } catch (error) {
+      console.error('Error getting training automation config:', error);
+      // Return a fallback config if DB operations fail
+      return {
+        id: 'fallback',
+        enabled: false,
+        new_employee_trigger: false,
+        role_change_trigger: false,
+        document_changes_trigger: false,
+        rules: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system'
       };
     }
   },
   
   /**
-   * Update the automation settings for the organization
+   * Update the training automation configuration
+   * @param config Updated configuration
    */
   updateAutomationConfig: async (config: TrainingAutomationConfig): Promise<boolean> => {
     try {
-      // Create a database record from our TypeScript interface
-      const record = {
-        enabled: config.enabled,
-        rules: config.rules || [],
-        document_changes_trigger: config.documentChangesTrigger,
-        new_employee_trigger: config.newEmployeeTrigger,
-        role_change_trigger: config.roleCangeTrigger,
-        updated_at: new Date().toISOString()
-      };
-
-      // Check if a record already exists
-      const { data: existingConfig } = await supabase
+      // Ensure we have an ID
+      if (!config.id) {
+        throw new Error('Config ID is required for update');
+      }
+      
+      // Update the config
+      const { error } = await supabase
         .from('training_automation_config')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      let result;
-
-      if (existingConfig && existingConfig.length > 0) {
-        // Update existing record
-        result = await supabase
-          .from('training_automation_config')
-          .update(record)
-          .eq('id', existingConfig[0].id);
-      } else {
-        // Insert new record
-        result = await supabase
-          .from('training_automation_config')
-          .insert(record);
-      }
-
-      if (result.error) {
-        console.error('Error updating training automation config:', result.error);
-        return false;
-      }
-
+        .update({
+          enabled: config.enabled,
+          new_employee_trigger: config.new_employee_trigger,
+          role_change_trigger: config.role_change_trigger,
+          document_changes_trigger: config.document_changes_trigger,
+          rules: config.rules,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', config.id);
+        
+      if (error) throw error;
+      
       return true;
     } catch (error) {
-      console.error('Exception updating training automation config:', error);
+      console.error('Error updating training automation config:', error);
+      return false;
+    }
+  },
+  
+  /**
+   * Add a new auto-assign rule to the configuration
+   * @param rule New rule to add
+   */
+  addAutoAssignRule: async (rule: AutoAssignRule): Promise<boolean> => {
+    try {
+      // Get the current config
+      const config = await trainingConfigService.getAutomationConfig();
+      
+      // Add the new rule to the rules array
+      const updatedRules = [...(config.rules || []), rule];
+      
+      // Update the config with the new rules
+      const success = await trainingConfigService.updateAutomationConfig({
+        ...config,
+        rules: updatedRules
+      });
+      
+      return success;
+    } catch (error) {
+      console.error('Error adding auto-assign rule:', error);
+      return false;
+    }
+  },
+  
+  /**
+   * Remove an auto-assign rule from the configuration
+   * @param ruleId ID of the rule to remove
+   */
+  removeAutoAssignRule: async (ruleId: string): Promise<boolean> => {
+    try {
+      // Get the current config
+      const config = await trainingConfigService.getAutomationConfig();
+      
+      // Filter out the rule to remove
+      const updatedRules = (config.rules || []).filter(r => r.id !== ruleId);
+      
+      // Update the config with the filtered rules
+      const success = await trainingConfigService.updateAutomationConfig({
+        ...config,
+        rules: updatedRules
+      });
+      
+      return success;
+    } catch (error) {
+      console.error('Error removing auto-assign rule:', error);
       return false;
     }
   }

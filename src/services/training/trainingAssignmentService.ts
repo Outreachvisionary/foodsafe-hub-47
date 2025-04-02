@@ -1,159 +1,234 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingPlan, AutoAssignRule, Employee } from '@/types/training';
+import { Employee, TrainingPlan, AutoAssignRule } from '@/types/training';
 
 /**
- * Service for handling training assignments and automatic rule-based assignments
+ * Service for managing training assignments
  */
 const trainingAssignmentService = {
   /**
-   * Assigns a training plan to employees based on roles or departments
+   * Assign a training plan to employees
+   * @param planId Training plan ID
+   * @param employeeIds Array of employee IDs to assign the plan to
+   * @returns Number of successful assignments
    */
-  assignTrainingPlan: async (plan: TrainingPlan, employeeIds: string[]): Promise<boolean> => {
+  assignTrainingPlan: async (planId: string, employeeIds: string[]): Promise<number> => {
     try {
-      // Get the courses associated with this plan
-      const courses = plan.coursesIncluded || plan.courses || [];
-      
-      if (courses.length === 0) {
-        console.error('Cannot assign training plan with no courses');
-        return false;
+      // Get training plan details
+      const { data: plan, error: planError } = await supabase
+        .from('training_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+        
+      if (planError) {
+        console.error('Error fetching training plan:', planError);
+        return 0;
       }
+      
+      if (!plan || !plan.courses || plan.courses.length === 0) {
+        console.error('Training plan not found or has no courses');
+        return 0;
+      }
+      
+      // Get employee details
+      const { data: employees, error: empError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', employeeIds);
+        
+      if (empError) {
+        console.error('Error fetching employees:', empError);
+        return 0;
+      }
+      
+      if (!employees || employees.length === 0) {
+        console.error('No employees found for assignment');
+        return 0;
+      }
+      
+      let assignmentCount = 0;
       
       // Calculate due date based on plan duration
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + (plan.durationDays || 30));
-      
-      // Create a training session for this plan
-      const { data: session, error: sessionError } = await supabase
-        .from('training_sessions')
-        .insert({
-          title: `${plan.name} Training`,
-          description: plan.description,
-          training_type: 'Plan',
-          training_category: 'Required',
-          assigned_to: employeeIds,
-          materials_id: courses,
-          start_date: new Date().toISOString(),
-          due_date: dueDate.toISOString(),
-          is_recurring: plan.isAutomated,
-          recurring_interval: plan.recurringSchedule?.interval || null,
-          created_by: 'system'
-        })
-        .select()
-        .single();
-        
-      if (sessionError) {
-        console.error('Error creating training session:', sessionError);
-        return false;
+      if (plan.duration_days) {
+        dueDate.setDate(dueDate.getDate() + plan.duration_days);
+      } else {
+        dueDate.setDate(dueDate.getDate() + 30); // Default to 30 days
       }
       
-      // For each employee, create a training record
-      const trainingRecords = employeeIds.map(empId => ({
-        session_id: session.id,
-        employee_id: empId,
-        employee_name: empId, // Ideally would be fetched from a users/employees table
-        status: 'Not Started',
-        assigned_date: new Date().toISOString(),
-        due_date: dueDate.toISOString()
-      }));
-      
-      const { error: recordsError } = await supabase
-        .from('training_records')
-        .insert(trainingRecords);
+      // For each course in the plan, create training records for all employees
+      for (const courseId of plan.courses) {
+        // Get session details
+        const { data: session, error: sessionError } = await supabase
+          .from('training_sessions')
+          .select('id, title')
+          .eq('id', courseId)
+          .single();
+          
+        if (sessionError) {
+          console.error(`Error fetching session ${courseId}:`, sessionError);
+          continue;
+        }
         
-      if (recordsError) {
-        console.error('Error creating training records:', recordsError);
-        return false;
+        // Create training records for each employee
+        for (const employee of employees) {
+          // Check if employee already has a record for this session
+          const { data: existingRecords, error: checkError } = await supabase
+            .from('training_records')
+            .select('id')
+            .eq('employee_id', employee.id)
+            .eq('session_id', courseId)
+            .in('status', ['Not Started', 'In Progress'])
+            .limit(1);
+            
+          if (checkError) {
+            console.error('Error checking existing records:', checkError);
+            continue;
+          }
+          
+          // Skip if employee already has an active record
+          if (existingRecords && existingRecords.length > 0) {
+            continue;
+          }
+          
+          // Create new training record
+          const { error: insertError } = await supabase
+            .from('training_records')
+            .insert({
+              employee_id: employee.id,
+              employee_name: employee.full_name,
+              session_id: courseId,
+              status: 'Not Started' as const,
+              assigned_date: new Date().toISOString(),
+              due_date: dueDate.toISOString(),
+              notes: `Assigned as part of training plan: ${plan.name}`
+            });
+            
+          if (insertError) {
+            console.error('Error creating training record:', insertError);
+            continue;
+          }
+          
+          assignmentCount++;
+        }
       }
       
-      return true;
+      return assignmentCount;
     } catch (error) {
       console.error('Error assigning training plan:', error);
-      return false;
+      return 0;
     }
   },
   
   /**
-   * Evaluates assignment rules to determine if an employee should be assigned training
+   * Evaluate auto-assign rules to assign training automatically
+   * @param rules Array of auto-assign rules to evaluate
+   * @param employee Employee to evaluate rules for (if specified)
+   * @returns Number of training assignments created
    */
-  evaluateAutoAssignRules: async (employee: Employee, rules: AutoAssignRule[]): Promise<string[]> => {
+  evaluateAutoAssignRules: async (
+    rules: AutoAssignRule[], 
+    employee?: Employee
+  ): Promise<number> => {
     try {
-      // Array to hold the IDs of plans that should be assigned
-      const matchingPlanIds: string[] = [];
+      let assignmentCount = 0;
       
-      // Check each rule
-      for (const rule of rules) {
-        let ruleMatches = false;
-        
-        switch (rule.type) {
-          case 'Role':
-            // Check if employee's role matches any role conditions
-            ruleMatches = rule.conditions.some(condition => 
-              condition.key === 'role' && 
-              condition.operator === '=' && 
-              condition.value === employee.role
+      // If a specific employee is provided, only evaluate for that employee
+      if (employee) {
+        for (const rule of rules) {
+          if (await evaluateRuleForEmployee(rule, employee)) {
+            // Get the training plan
+            const planId = rule.trainingPlanId;
+            const assignments = await trainingAssignmentService.assignTrainingPlan(
+              planId, 
+              [employee.id]
             );
-            break;
-            
-          case 'Department':
-            // Check if employee's department matches any department conditions
-            ruleMatches = rule.conditions.some(condition => 
-              condition.key === 'department' && 
-              condition.operator === '=' && 
-              condition.value === employee.department
-            );
-            break;
-            
-          case 'NewHire':
-            // Check if employee was hired within the specified timeframe
-            if (employee.hireDate) {
-              const hireDate = new Date(employee.hireDate);
-              const today = new Date();
-              const daysSinceHire = Math.floor((today.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24));
-              
-              ruleMatches = rule.conditions.some(condition => {
-                if (condition.key === 'daysSinceHire') {
-                  if (condition.operator === '<=' && daysSinceHire <= Number(condition.value)) return true;
-                  if (condition.operator === '<' && daysSinceHire < Number(condition.value)) return true;
-                }
-                return false;
-              });
-            }
-            break;
-            
-          case 'CompetencyScore':
-            // Check if employee's competency score meets the criteria
-            if (employee.competencyAssessments && employee.competencyAssessments.length > 0) {
-              const latestAssessment = employee.competencyAssessments[employee.competencyAssessments.length - 1];
-              
-              ruleMatches = rule.conditions.some(condition => {
-                if (condition.key === 'score') {
-                  if (condition.operator === '<=' && latestAssessment.score <= Number(condition.value)) return true;
-                  if (condition.operator === '<' && latestAssessment.score < Number(condition.value)) return true;
-                  if (condition.operator === '>=' && latestAssessment.score >= Number(condition.value)) return true;
-                  if (condition.operator === '>' && latestAssessment.score > Number(condition.value)) return true;
-                  if (condition.operator === '=' && latestAssessment.score === Number(condition.value)) return true;
-                }
-                return false;
-              });
-            }
-            break;
+            assignmentCount += assignments;
+          }
         }
         
-        // If the rule matches, fetch the associated training plan
-        if (ruleMatches) {
-          // This would typically fetch from a mapping table linking rules to plans
-          // For now, we'll return a placeholder plan ID if rule matches
-          matchingPlanIds.push('placeholder-plan-id');
+        return assignmentCount;
+      }
+      
+      // Otherwise, get all active employees and evaluate rules for each
+      const { data: employees, error: empError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('status', 'active');
+        
+      if (empError) {
+        console.error('Error fetching employees:', empError);
+        return 0;
+      }
+      
+      if (!employees || employees.length === 0) {
+        console.log('No active employees found');
+        return 0;
+      }
+      
+      // Evaluate each rule for each employee
+      for (const rule of rules) {
+        const matchingEmployees: string[] = [];
+        
+        for (const emp of employees) {
+          if (await evaluateRuleForEmployee(rule, emp)) {
+            matchingEmployees.push(emp.id);
+          }
+        }
+        
+        // If there are matching employees, assign the training plan
+        if (matchingEmployees.length > 0) {
+          const planId = rule.trainingPlanId;
+          const assignments = await trainingAssignmentService.assignTrainingPlan(
+            planId, 
+            matchingEmployees
+          );
+          assignmentCount += assignments;
         }
       }
       
-      return matchingPlanIds;
+      return assignmentCount;
     } catch (error) {
       console.error('Error evaluating auto-assign rules:', error);
-      return [];
+      return 0;
     }
   }
 };
+
+/**
+ * Helper function to evaluate a rule for a specific employee
+ */
+async function evaluateRuleForEmployee(rule: AutoAssignRule, employee: Employee): Promise<boolean> {
+  // Check department matches if specified
+  if (rule.targetDepartment && employee.department !== rule.targetDepartment) {
+    return false;
+  }
+  
+  // Check role matches if specified
+  if (rule.targetRole && employee.role !== rule.targetRole) {
+    return false;
+  }
+  
+  // Check if employee already has assignments from this rule
+  // This prevents duplicate assignments
+  const { data: existingAssignments, error } = await supabase
+    .from('training_records')
+    .select('id')
+    .eq('employee_id', employee.id)
+    .eq('notes', `Assigned via auto-assign rule: ${rule.id}`)
+    .limit(1);
+    
+  if (error) {
+    console.error('Error checking existing assignments:', error);
+    return false;
+  }
+  
+  // If employee already has assignments from this rule, don't reassign
+  if (existingAssignments && existingAssignments.length > 0) {
+    return false;
+  }
+  
+  return true;
+}
 
 export default trainingAssignmentService;
