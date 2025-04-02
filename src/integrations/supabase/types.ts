@@ -2098,6 +2098,42 @@ export type Database = {
         }
         Relationships: []
       }
+      training_automation_config: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          document_changes_trigger: boolean | null
+          enabled: boolean
+          id: string
+          new_employee_trigger: boolean | null
+          role_change_trigger: boolean | null
+          rules: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          document_changes_trigger?: boolean | null
+          enabled?: boolean
+          id?: string
+          new_employee_trigger?: boolean | null
+          role_change_trigger?: boolean | null
+          rules?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          document_changes_trigger?: boolean | null
+          enabled?: boolean
+          id?: string
+          new_employee_trigger?: boolean | null
+          role_change_trigger?: boolean | null
+          rules?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       training_courses: {
         Row: {
           category: string | null
