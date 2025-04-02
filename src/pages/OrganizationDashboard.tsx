@@ -1,68 +1,40 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getOrganizationById } from '@/services/organizationService';
 import { Organization } from '@/types/organization';
-import { Facility } from '@/types/facility';
-import { getOrganization } from '@/services/organizationService';
-import { fetchFacilities } from '@/services/facilityService';
-import { fetchDepartments } from '@/services/departmentService';
-import { Building2, Users, Factory, FolderTree, BarChart3, AlertTriangle, Loader2, Settings, Plus } from 'lucide-react';
+import { Loader2, Building2, Users, LayoutDashboard } from 'lucide-react';
 
 const OrganizationDashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [departmentCount, setDepartmentCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
-    const loadData = async () => {
-      if (!id) {
-        navigate('/organizations');
-        return;
-      }
+    const fetchOrganization = async () => {
+      if (!id) return;
       
       try {
         setLoading(true);
+        const data = await getOrganizationById(id);
         
-        // Load organization
-        const org = await getOrganization(id);
-        if (!org) {
-          toast({
-            title: 'Error',
-            description: 'Organization not found',
-            variant: 'destructive',
+        // Ensure the organization has all required fields
+        if (data && data.id && data.name) {
+          setOrganization({
+            ...data,
+            status: data.status || 'active'
           });
-          navigate('/organizations');
-          return;
+        } else {
+          throw new Error('Invalid organization data received');
         }
-        setOrganization(org);
-        
-        // Load facilities
-        const facilitiesData = await fetchFacilities(id);
-        setFacilities(facilitiesData);
-        
-        // Load departments
-        const departmentsData = await fetchDepartments(id);
-        setDepartmentCount(departmentsData.length);
-        
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error('Error fetching organization:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load dashboard data',
+          description: 'Failed to load organization details',
           variant: 'destructive',
         });
       } finally {
@@ -70,208 +42,111 @@ const OrganizationDashboard: React.FC = () => {
       }
     };
     
-    loadData();
-  }, [id, navigate, toast]);
+    fetchOrganization();
+  }, [id, toast]);
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading dashboard...</span>
+        <span className="ml-2">Loading organization data...</span>
       </div>
     );
   }
   
   if (!organization) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Organization Not Found</h2>
+          <p className="text-muted-foreground">
+            The requested organization could not be found. It may have been deleted or you may not have permission to view it.
+          </p>
+        </div>
+      </div>
+    );
   }
   
   return (
     <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">{organization.name}</h1>
-          <p className="text-muted-foreground">Organization Dashboard</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            onClick={() => navigate(`/organization/settings/${id}`)}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">{organization.name}</h1>
+        <p className="text-muted-foreground">{organization.description || 'No description provided'}</p>
       </div>
       
-      {/* Organization Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Facilities</CardDescription>
-            <CardTitle className="text-3xl">{facilities.length}</CardTitle>
+            <CardTitle className="text-lg font-medium">Facilities</CardTitle>
           </CardHeader>
           <CardContent>
-            <Factory className="h-8 w-8 text-primary opacity-80" />
+            <div className="flex items-center">
+              <Building2 className="h-10 w-10 text-primary p-2 bg-primary/10 rounded-full mr-3" />
+              <div>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-muted-foreground text-sm">Total Facilities</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Departments</CardDescription>
-            <CardTitle className="text-3xl">{departmentCount}</CardTitle>
+            <CardTitle className="text-lg font-medium">Departments</CardTitle>
           </CardHeader>
           <CardContent>
-            <FolderTree className="h-8 w-8 text-primary opacity-80" />
+            <div className="flex items-center">
+              <Users className="h-10 w-10 text-indigo-500 p-2 bg-indigo-500/10 rounded-full mr-3" />
+              <div>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-muted-foreground text-sm">Total Departments</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Compliance Status</CardDescription>
-            <CardTitle className="text-3xl">85%</CardTitle>
+            <CardTitle className="text-lg font-medium">FSMS Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <BarChart3 className="h-8 w-8 text-primary opacity-80" />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Open Issues</CardDescription>
-            <CardTitle className="text-3xl">12</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AlertTriangle className="h-8 w-8 text-amber-500 opacity-80" />
+            <div className="flex items-center">
+              <LayoutDashboard className="h-10 w-10 text-green-500 p-2 bg-green-500/10 rounded-full mr-3" />
+              <div>
+                <p className="text-2xl font-bold">--</p>
+                <p className="text-muted-foreground text-sm">Coming Soon</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
       
-      {/* Facility Overview */}
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Facilities</CardTitle>
-            <CardDescription>Overview of all facilities in {organization.name}</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/facilities')}
-          >
-            <Factory className="mr-2 h-4 w-4" />
-            Manage
-          </Button>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Organization Information</CardTitle>
         </CardHeader>
         <CardContent>
-          {facilities.length === 0 ? (
-            <div className="text-center py-8">
-              <Building2 className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-              <p className="mt-2 text-muted-foreground">
-                No facilities found for this organization
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-4" 
-                onClick={() => navigate('/facilities')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Facility
-              </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium mb-2">Contact Information</h3>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Email:</span> {organization.contact_email || 'Not specified'}</p>
+                <p><span className="text-muted-foreground">Phone:</span> {organization.contact_phone || 'Not specified'}</p>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {facilities.map((facility) => (
-                <Card key={facility.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{facility.name}</CardTitle>
-                    <CardDescription>
-                      {[facility.city, facility.state, facility.country].filter(Boolean).join(', ')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <p className="text-sm text-muted-foreground">
-                      {facility.description || 'No description available'}
-                    </p>
-                    <div className="mt-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        facility.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        facility.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {facility.status}
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => navigate(`/facilities/${facility.id}`)}
-                      className="w-full"
-                    >
-                      View Details
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+            
+            <div>
+              <h3 className="font-medium mb-2">Location</h3>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Address:</span> {organization.address || 'Not specified'}</p>
+                <p><span className="text-muted-foreground">City:</span> {organization.city || 'Not specified'}</p>
+                <p><span className="text-muted-foreground">State/Country:</span> {`${organization.state || ''} ${organization.country || ''}`.trim() || 'Not specified'}</p>
+              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
-      
-      {/* Recent Activity & Departments Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates and changes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-              <p className="mt-2 text-muted-foreground">
-                Activity tracking will be available soon
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Departments</CardTitle>
-              <CardDescription>Organizational structure</CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/departments')}
-            >
-              <FolderTree className="mr-2 h-4 w-4" />
-              Manage
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <FolderTree className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-              <p className="mt-2 text-muted-foreground">
-                {departmentCount > 0 ? 
-                  `${departmentCount} departments configured` : 
-                  'No departments configured yet'}
-              </p>
-              {departmentCount === 0 && (
-                <Button 
-                  variant="outline" 
-                  className="mt-4" 
-                  onClick={() => navigate('/departments')}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Department
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

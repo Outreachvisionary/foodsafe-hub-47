@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -43,7 +44,13 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             
             {/* Protected Routes with Sidebar */}
-            <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+            <Route element={
+              <ProtectedRoute>
+                <SidebarLayout>
+                  <Outlet />
+                </SidebarLayout>
+              </ProtectedRoute>
+            }>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/documents" element={<Documents />} />

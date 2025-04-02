@@ -1,237 +1,193 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { createOrganization } from '@/services/organizationService';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { createOrganization } from '@/services/organizationService';
+import { OrganizationInput, Organization } from '@/types/organization';
 
-const organizationSchema = z.object({
-  name: z.string().min(2, 'Organization name must be at least 2 characters'),
-  description: z.string().optional(),
-  contact_email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  contact_phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  zipcode: z.string().optional(),
-});
-
-type OrganizationFormValues = z.infer<typeof organizationSchema>;
-
-interface OrganizationRegistrationFormProps {
-  onSuccess?: (organizationId: string) => void;
-}
-
-const OrganizationRegistrationForm: React.FC<OrganizationRegistrationFormProps> = ({ onSuccess }) => {
+const OrganizationRegistrationForm: React.FC = () => {
+  const [formData, setFormData] = useState<OrganizationInput>({
+    name: '',
+    description: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    zipcode: '',
+    contact_email: '',
+    contact_phone: '',
+    status: 'active'
+  });
+  
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const form = useForm<OrganizationFormValues>({
-    resolver: zodResolver(organizationSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      contact_email: '',
-      contact_phone: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
-      zipcode: '',
-    }
-  });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
   
-  const onSubmit = async (values: OrganizationFormValues) => {
-    try {
-      const organization = await createOrganization({
-        ...values,
-        status: 'active'
-      });
-      
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!formData.name) {
       toast({
-        title: 'Organization created',
-        description: 'Your organization has been created successfully.',
+        title: "Error",
+        description: "Organization name is required",
+        variant: "destructive"
       });
-      
-      if (onSuccess) {
-        onSuccess(organization.id);
-      } else {
-        navigate(`/organization/${organization.id}`);
-      }
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const organization = await createOrganization(formData);
+      toast({
+        title: "Success",
+        description: "Organization created successfully"
+      });
+      navigate(`/organization/dashboard/${organization.id}`);
     } catch (error) {
       console.error('Error creating organization:', error);
       toast({
-        title: 'Error',
-        description: 'There was an error creating your organization.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create organization",
+        variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
   
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Organization Name*</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter organization name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle>Register a New Organization</CardTitle>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">Organization Name</label>
+              <Input 
+                id="name" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                placeholder="Enter organization name" 
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="contact_email" className="text-sm font-medium">Contact Email</label>
+              <Input 
+                id="contact_email" 
+                name="contact_email" 
+                type="email" 
+                value={formData.contact_email} 
+                onChange={handleChange} 
+                placeholder="Contact email address" 
+              />
+            </div>
+          </div>
           
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Describe your organization"
-                    {...field}
-                    value={field.value || ''}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Brief description of your organization
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-medium">Description</label>
+            <Textarea 
+              id="description" 
+              name="description" 
+              value={formData.description} 
+              onChange={handleChange} 
+              placeholder="Describe your organization" 
+              rows={3} 
+            />
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="contact_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="contact@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="contact_phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+1 (555) 123-4567" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <label htmlFor="address" className="text-sm font-medium">Address</label>
+              <Input 
+                id="address" 
+                name="address" 
+                value={formData.address} 
+                onChange={handleChange} 
+                placeholder="Street address" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="contact_phone" className="text-sm font-medium">Contact Phone</label>
+              <Input 
+                id="contact_phone" 
+                name="contact_phone" 
+                value={formData.contact_phone} 
+                onChange={handleChange} 
+                placeholder="Contact phone number" 
+              />
+            </div>
           </div>
-          
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="123 Main St" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State/Province</FormLabel>
-                  <FormControl>
-                    <Input placeholder="State" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Country" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="zipcode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Postal/Zip Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Zip code" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <label htmlFor="city" className="text-sm font-medium">City</label>
+              <Input 
+                id="city" 
+                name="city" 
+                value={formData.city} 
+                onChange={handleChange} 
+                placeholder="City" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="state" className="text-sm font-medium">State/Province</label>
+              <Input 
+                id="state" 
+                name="state" 
+                value={formData.state} 
+                onChange={handleChange} 
+                placeholder="State/Province" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="country" className="text-sm font-medium">Country</label>
+              <Input 
+                id="country" 
+                name="country" 
+                value={formData.country} 
+                onChange={handleChange} 
+                placeholder="Country" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="zipcode" className="text-sm font-medium">Postal Code</label>
+              <Input 
+                id="zipcode" 
+                name="zipcode" 
+                value={formData.zipcode} 
+                onChange={handleChange} 
+                placeholder="Postal code" 
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="flex justify-end">
-          <Button type="submit" className="w-full md:w-auto">
-            Create Organization
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate('/organizations')}
+          >
+            Cancel
           </Button>
-        </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Organization'}
+          </Button>
+        </CardFooter>
       </form>
-    </Form>
+    </Card>
   );
 };
 
