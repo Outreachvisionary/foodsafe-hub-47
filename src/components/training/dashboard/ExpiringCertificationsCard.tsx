@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award, AlertCircle, Calendar } from 'lucide-react';
@@ -76,9 +77,14 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
         const diffTime = expiryDate.getTime() - now.getTime();
         const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
+        // Ensure we're accessing the title correctly from the nested relationship
+        const sessionTitle = item.training_sessions ? 
+          (typeof item.training_sessions === 'object' ? item.training_sessions.title : 'Unknown Training') : 
+          'Unknown Training';
+        
         return {
           id: item.id,
-          name: item.training_sessions?.title || 'Unknown Training',
+          name: sessionTitle,
           employee: item.employee_name,
           employeeId: item.employee_id,
           expiryDate: expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
