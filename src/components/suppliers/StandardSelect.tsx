@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StandardName } from '@/types/supplier';
 
 interface StandardSelectProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  value: StandardName;
+  onValueChange: (value: StandardName) => void;
   placeholder?: string;
   includeAll?: boolean;
   triggerClassName?: string;
@@ -21,7 +21,10 @@ const StandardSelect: React.FC<StandardSelectProps> = ({
   triggerProps = {}
 }) => {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select 
+      value={value} 
+      onValueChange={(value) => onValueChange(value as StandardName)}
+    >
       <SelectTrigger className={triggerClassName} {...triggerProps}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
