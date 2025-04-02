@@ -1,16 +1,39 @@
 
 // Re-export our database types to maintain compatibility
-export type { 
-  Document, 
-  DocumentCategory, 
-  DocumentStatus, 
-  Folder, 
-  DocumentVersion, 
-  DocumentActivity, 
-  DocumentComment 
-} from './database';
+export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
 import { Json } from '@/integrations/supabase/types';
+
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version_number?: number;
+  version: number; // This is required by the database
+  file_name: string;
+  file_path?: string;
+  file_size: number;
+  file_type?: string;
+  created_by: string;
+  created_at?: string;
+  change_summary?: string;
+  change_notes?: string; // For database compatibility
+  storage_path?: string;
+  organization_id?: string;
+  facility_id?: string;
+  editor_metadata?: any; // Adding this field
+  is_binary_file?: boolean; // Adding this field
+}
+
+export interface DocumentActivity {
+  id: string;
+  document_id: string;
+  action: string;
+  timestamp?: string;
+  user_id: string;
+  user_name: string;
+  user_role: string;
+  comments?: string;
+}
 
 export interface DocumentPreview {
   id: string;
