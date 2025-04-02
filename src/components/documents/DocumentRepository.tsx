@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
