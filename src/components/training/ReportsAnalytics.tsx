@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -414,4 +415,89 @@ const ReportsAnalytics: React.FC = () => {
                   <div>
                     <h4 className="text-lg font-semibold mb-4">Recommended Courses</h4>
                     <div className="space-y-2">
-                      {recommendedCourses.map((cours
+                      {recommendedCourses.map((course, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <Award className="text-blue-500 h-5 w-5" />
+                          <span>{course.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Implementation Timeline</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="text-indigo-500 h-5 w-5" />
+                        <span>Short-term (30 days)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="text-indigo-500 h-5 w-5" />
+                        <span>Medium-term (90 days)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="text-indigo-500 h-5 w-5" />
+                        <span>Long-term (180 days)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="compliance" className="mt-6">
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Compliance Overview</CardTitle>
+                <CardDescription>
+                  Training compliance by department and requirement
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-8 flex flex-col items-center justify-center">
+                  <p className="text-xl font-semibold mb-4">Compliance Dashboard</p>
+                  <p className="mb-6 text-muted-foreground">
+                    This section will display compliance metrics and trends
+                  </p>
+                  <Button>
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    View Detailed Compliance
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="certifications" className="mt-6">
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Certification Overview</CardTitle>
+                <CardDescription>
+                  Employee certification status and expiration tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-8 flex flex-col items-center justify-center">
+                  <p className="text-xl font-semibold mb-4">Certification Management</p>
+                  <p className="mb-6 text-muted-foreground">
+                    This section will display certification tracking and management tools
+                  </p>
+                  <Button>
+                    <Users className="mr-2 h-4 w-4" />
+                    View Employee Certifications
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default ReportsAnalytics;
