@@ -1,222 +1,177 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DocumentWorkflow, DocumentWorkflowStep } from '@/types/document';
-import { WorkflowStep } from './WorkflowStep';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { WorkflowStep } from '@/components/documents/workflow/WorkflowStep';
+import { DocumentWorkflowStep } from '@/types/document';
+import { Plus, Save, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ApprovalStepEditorProps {
-  workflow?: DocumentWorkflow | null;
-  onSave: (workflow: DocumentWorkflow) => void;
-  onCancel: () => void;
+  steps: DocumentWorkflowStep[];
+  onSave: (steps: DocumentWorkflowStep[]) => void;
 }
 
-export const ApprovalStepEditor: React.FC<ApprovalStepEditorProps> = ({
-  workflow,
-  onSave,
-  onCancel
-}) => {
-  const [name, setName] = useState(workflow?.name || '');
-  const [description, setDescription] = useState(workflow?.description || '');
-  const [steps, setSteps] = useState<DocumentWorkflowStep[]>(workflow?.steps || []);
-  const { toast } = useToast();
+const ApprovalStepEditor: React.FC<ApprovalStepEditorProps> = ({ steps, onSave }) => {
+  const [workflowSteps, setWorkflowSteps] = useState<DocumentWorkflowStep[]>(steps || []);
 
-  // Create a new step
-  const addStep = () => {
+  const handleAddStep = () => {
     const newStep: DocumentWorkflowStep = {
       id: uuidv4(),
-      name: `Step ${steps.length + 1}`,
-      description: '',
+      name: 'New Step',
+      description: 'Step description',
       approvers: [],
       required_approvals: 1,
-      is_final: steps.length === 0, // First step is final by default if no steps exist
-      deadline_days: 7
+      deadline_days: 3,
+      is_final: false
     };
     
-    setSteps([...steps, newStep]);
+    setWorkflowSteps([...workflowSteps, newStep]);
   };
 
-  // Update an existing step
-  const updateStep = (updatedStep: DocumentWorkflowStep) => {
-    setSteps(steps.map(step => step.id === updatedStep.id ? updatedStep : step));
+  const handleStepChange = (updatedStep: DocumentWorkflowStep) => {
+    setWorkflowSteps(workflowSteps.map(step => 
+      step.id === updatedStep.id ? updatedStep : step
+    ));
   };
 
-  // Delete a step
-  const deleteStep = (stepId: string) => {
-    setSteps(steps.filter(step => step.id !== stepId));
+  const handleDeleteStep = (stepId: string) => {
+    setWorkflowSteps(workflowSteps.filter(step => step.id !== stepId));
   };
 
-  // Move a step up or down
-  const moveStep = (stepId: string, direction: 'up' | 'down') => {
-    const currentIndex = steps.findIndex(step => step.id === stepId);
-    if (
-      (direction === 'up' && currentIndex === 0) || 
-      (direction === 'down' && currentIndex === steps.length - 1)
-    ) {
-      return; // Can't move further in this direction
-    }
+  const handleMoveUp = (index: number) => {
+    if (index <= 0) return;
     
-    const newSteps = [...steps];
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const newSteps = [...workflowSteps];
+    const temp = newSteps[index];
+    newSteps[index] = newSteps[index - 1];
+    newSteps[index - 1] = temp;
     
-    // Swap the steps
-    [newSteps[currentIndex], newSteps[targetIndex]] = [newSteps[targetIndex], newSteps[currentIndex]];
-    
-    setSteps(newSteps);
+    setWorkflowSteps(newSteps);
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMoveDown = (index: number) => {
+    if (index >= workflowSteps.length - 1) return;
     
-    if (!name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Workflow name is required",
-        variant: "destructive"
-      });
-      return;
-    }
+    const newSteps = [...workflowSteps];
+    const temp = newSteps[index];
+    newSteps[index] = newSteps[index + 1];
+    newSteps[index + 1] = temp;
     
-    if (steps.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "At least one approval step is required",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newWorkflow: DocumentWorkflow = {
-      id: workflow?.id || uuidv4(),
-      name,
-      description,
-      steps,
-      created_by: 'current_user',
-      created_at: workflow?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    onSave(newWorkflow);
-    toast({
-      title: "Workflow Saved",
-      description: `Workflow "${name}" has been saved successfully`
-    });
+    setWorkflowSteps(newSteps);
+  };
+
+  const handleSave = () => {
+    onSave(workflowSteps);
+  };
+
+  // This method simply handles rendering a workflow step for editing,
+  // not to be confused with the actual WorkflowStep component
+  const renderStepEditor = (step: DocumentWorkflowStep, index: number) => {
+    return (
+      <Card key={step.id} className="mb-4 border-l-4 border-l-primary">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex justify-between items-center">
+            <span>Step {index + 1}</span>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0" 
+                onClick={() => handleMoveUp(index)}
+                disabled={index === 0}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0" 
+                onClick={() => handleMoveDown(index)}
+                disabled={index === workflowSteps.length - 1}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0 text-destructive" 
+                onClick={() => handleDeleteStep(step.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor={`step-name-${step.id}`}>Step Name</Label>
+            <Input 
+              id={`step-name-${step.id}`} 
+              value={step.name} 
+              onChange={(e) => handleStepChange({
+                ...step,
+                name: e.target.value
+              })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`step-desc-${step.id}`}>Description</Label>
+            <Textarea 
+              id={`step-desc-${step.id}`}
+              value={step.description || ''}
+              onChange={(e) => handleStepChange({
+                ...step,
+                description: e.target.value
+              })}
+              className="min-h-[80px] resize-none"
+            />
+          </div>
+          
+          {/* For simplicity, I'm using this to render a preview of the step */}
+          <WorkflowStep
+            key={step.id}
+            step={step}
+            index={index}
+            onChange={handleStepChange}
+            onDelete={handleDeleteStep}
+            onMoveUp={() => handleMoveUp(index)}
+            onMoveDown={() => handleMoveDown(index)}
+            stepNumber={index + 1}
+            title={step.name}
+            description={step.description || ''}
+            role={`${step.required_approvals} Approver(s) Required`}
+            deadline={step.deadline_days || 3}
+            isActive={index === 0}
+          />
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl">
-            {workflow ? 'Edit Approval Workflow' : 'Create New Approval Workflow'}
-          </CardTitle>
-          <CardDescription>
-            Define the approval steps and requirements for document reviews
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="workflow-name" className="text-right">
-                Workflow Name
-              </Label>
-              <Input
-                id="workflow-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-                placeholder="E.g., Standard Document Approval"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="workflow-description" className="text-right self-start pt-2">
-                Description
-              </Label>
-              <Textarea
-                id="workflow-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
-                placeholder="Describe the purpose of this workflow"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Approval Steps</h3>
-          <Button 
-            type="button"
-            onClick={addStep}
-            className="flex items-center gap-1"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Add Step
-          </Button>
-        </div>
-        
-        {steps.length > 0 ? (
-          <ScrollArea className="h-[400px] border rounded-md p-4">
-            <div className="space-y-6">
-              {steps.map((step, index) => (
-                <WorkflowStep
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  onChange={updateStep}
-                  onDelete={deleteStep}
-                  onMoveUp={index > 0 ? () => moveStep(step.id, 'up') : undefined}
-                  onMoveDown={index < steps.length - 1 ? () => moveStep(step.id, 'down') : undefined}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        ) : (
-          <div className="border rounded-md p-8 text-center">
-            <p className="text-muted-foreground mb-4">
-              No approval steps defined yet. Add steps to create your workflow.
-            </p>
-            <Button 
-              type="button"
-              onClick={addStep}
-              className="flex items-center gap-1"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Add First Step
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-3">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel}
-          className="flex items-center gap-1"
-        >
-          <X className="h-4 w-4" />
-          Cancel
-        </Button>
-        <Button 
-          type="submit"
-          className="flex items-center gap-1"
-        >
-          <Save className="h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Workflow Steps</h3>
+        <Button onClick={handleSave} size="sm">
+          <Save className="h-4 w-4 mr-1.5" />
           Save Workflow
         </Button>
       </div>
-    </form>
+      
+      <div className="space-y-4">
+        {workflowSteps.map((step, index) => renderStepEditor(step, index))}
+        
+        <Button variant="outline" onClick={handleAddStep} className="w-full">
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add Step
+        </Button>
+      </div>
+    </div>
   );
 };
+
+export default ApprovalStepEditor;

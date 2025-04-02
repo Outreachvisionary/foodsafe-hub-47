@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, User } from 'lucide-react';
+import { DocumentWorkflowStep } from '@/types/document';
 
-interface WorkflowStepProps {
+export interface WorkflowStepProps {
   stepNumber: number;
   title: string;
   description: string;
@@ -12,6 +13,12 @@ interface WorkflowStepProps {
   deadline: number;
   isCompleted?: boolean;
   isActive?: boolean;
+  step?: DocumentWorkflowStep; // Add this for ApprovalStepEditor compatibility
+  index?: number; // Add this for ApprovalStepEditor compatibility
+  onChange?: (updatedStep: DocumentWorkflowStep) => void; // Add this for ApprovalStepEditor compatibility
+  onDelete?: (stepId: string) => void; // Add this for ApprovalStepEditor compatibility
+  onMoveUp?: () => void; // Add this for ApprovalStepEditor compatibility
+  onMoveDown?: () => void; // Add this for ApprovalStepEditor compatibility
 }
 
 export const WorkflowStep: React.FC<WorkflowStepProps> = ({

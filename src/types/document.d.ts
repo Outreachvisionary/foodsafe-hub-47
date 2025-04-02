@@ -44,6 +44,10 @@ export interface Document {
   checkout_timestamp?: string;
   versions?: DocumentVersion[];
   activity?: DocumentActivity[];
+  pending_since?: string;
+  approvers?: string[];
+  workflow_status?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface DocumentVersion {
@@ -106,4 +110,14 @@ export interface DocumentNotification {
   read: boolean;
   message: string;
   action_url?: string;
+}
+
+export interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description?: string;
+  approvers: string[];
+  required_approvals: number;
+  deadline_days?: number;
+  is_final: boolean;
 }
