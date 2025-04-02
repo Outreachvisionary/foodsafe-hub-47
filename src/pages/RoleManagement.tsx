@@ -159,7 +159,7 @@ const RoleManagement: React.FC = () => {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Role Management</h1>
-        <PermissionGuard permission="roles.create">
+        <PermissionGuard permission="roles:create">
           <Button onClick={() => {
             resetForm();
             setDialogOpen(true);
@@ -206,12 +206,12 @@ const RoleManagement: React.FC = () => {
                     <TableCell className="capitalize">{role.level || 'Organization'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <PermissionGuard permission="roles.update">
+                        <PermissionGuard permission="roles:update">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(role)}>
                             Edit
                           </Button>
                         </PermissionGuard>
-                        <PermissionGuard permission="roles.delete">
+                        <PermissionGuard permission="roles:delete">
                           <Button variant="destructive" size="sm" onClick={() => handleDelete(role.id)}>
                             Delete
                           </Button>

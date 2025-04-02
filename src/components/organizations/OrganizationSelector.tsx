@@ -36,11 +36,19 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
         setError(null);
         
         const data = await getOrganizations();
-        setOrganizations(data);
+        // Ensure data conforms to the Organization type
+        const typedOrgs: Organization[] = data.map(org => ({
+          ...org,
+          id: org.id,
+          name: org.name,
+          status: org.status || 'active'
+        }));
+        
+        setOrganizations(typedOrgs);
         
         // If there's only one organization and no value is selected, select it automatically
-        if (data.length === 1 && !value) {
-          onChange(data[0].id);
+        if (typedOrgs.length === 1 && !value) {
+          onChange(typedOrgs[0].id);
         }
       } catch (err) {
         console.error('Error loading organizations:', err);

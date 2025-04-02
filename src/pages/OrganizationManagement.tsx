@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,10 +79,18 @@ const OrganizationManagement: React.FC = () => {
       const organizationsData = await getOrganizations();
       
       console.log('Loaded organizations:', organizationsData);
-      setOrganizations(organizationsData);
+      // Ensure data conforms to the Organization type
+      const typedOrgs: Organization[] = organizationsData.map(org => ({
+        ...org,
+        id: org.id,
+        name: org.name,
+        status: org.status || 'active'
+      }));
       
-      if (organizationsData.length === 1) {
-        setSelectedOrganization(organizationsData[0]);
+      setOrganizations(typedOrgs);
+      
+      if (typedOrgs.length === 1) {
+        setSelectedOrganization(typedOrgs[0]);
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);

@@ -4,7 +4,7 @@ import { usePermission } from '@/contexts/PermissionContext';
 import { useUser } from '@/contexts/UserContext';
 
 interface PermissionGuardProps {
-  requiredPermission?: string;
+  permission?: string;
   requiredRole?: string;
   orgId?: string;
   facilityId?: string;
@@ -14,7 +14,7 @@ interface PermissionGuardProps {
 }
 
 const PermissionGuard: React.FC<PermissionGuardProps> = ({
-  requiredPermission,
+  permission,
   requiredRole,
   orgId,
   facilityId,
@@ -38,14 +38,14 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
       
       try {
         // If neither permission nor role is specified, default to allowing access
-        if (!requiredPermission && !requiredRole) {
+        if (!permission && !requiredRole) {
           setHasAccess(true);
           return;
         }
         
         // Check permission if specified
-        if (requiredPermission) {
-          const permitted = await hasPermission(requiredPermission, orgId, facilityId, departmentId);
+        if (permission) {
+          const permitted = await hasPermission(permission, orgId, facilityId, departmentId);
           if (permitted) {
             setHasAccess(true);
             return;
@@ -72,7 +72,7 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
     };
     
     checkAccess();
-  }, [hasPermission, hasRole, requiredPermission, requiredRole, orgId, facilityId, departmentId, user, userLoading, isLoading]);
+  }, [hasPermission, hasRole, permission, requiredRole, orgId, facilityId, departmentId, user, userLoading, isLoading]);
   
   if (userLoading || isLoading || checkingAccess) {
     return <div className="flex justify-center p-4">Loading...</div>;
