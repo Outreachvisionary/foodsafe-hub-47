@@ -1,60 +1,59 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { giveUserDeveloperAccess, createQATechnicianRole } from '@/services/userService';
-import { useUser } from '@/contexts/UserContext';
+import { assignRoleToUser } from '@/services/roleService';
 import { usePermission } from '@/contexts/PermissionContext';
 
 interface AssignRoleButtonProps {
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  userId: string;
+  roleId: string;
+  organizationId?: string;
+  facilityId?: string;
+  departmentId?: string;
+  label?: string;
+  onSuccess?: () => void;
 }
 
-const AssignRoleButton: React.FC<AssignRoleButtonProps> = ({ variant = 'default' }) => {
+const AssignRoleButton: React.FC<AssignRoleButtonProps> = ({
+  userId,
+  roleId,
+  organizationId,
+  facilityId,
+  departmentId,
+  label = "Assign Role",
+  onSuccess
+}) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useUser();
   const { refreshPermissions } = usePermission();
-  
-  const handleAssignDeveloperRole = async () => {
-    if (!user) {
-      toast.error('You must be logged in to perform this action');
-      return;
-    }
-    
+
+  const handleAssignRole = async () => {
     setIsLoading(true);
-    toast.info('Processing developer role assignment...');
-    
     try {
-      console.log('Creating QA Technician role');
-      // Create the QA Technician role (but don't assign it)
-      await createQATechnicianRole();
-      
-      console.log('Assigning Developer role to user:', user.id);
-      // Assign Developer role to current user
-      const success = await giveUserDeveloperAccess(user.id);
+      const success = await assignRoleToUser(userId, roleId, organizationId, facilityId, departmentId);
       
       if (success) {
-        toast.success('Developer role assigned successfully');
-        // Refresh the user's permissions
+        // Refresh permissions after role assignment
         await refreshPermissions();
-      } else {
-        toast.error('Failed to assign Developer role. Check console for details.');
+        
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error) {
       console.error('Error assigning role:', error);
-      toast.error('An error occurred while updating roles: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Button 
-      variant={variant}
-      onClick={handleAssignDeveloperRole}
+      onClick={handleAssignRole} 
       disabled={isLoading}
+      variant="outline"
+      size="sm"
     >
-      {isLoading ? 'Updating...' : 'Give Developer Access'}
+      {isLoading ? 'Assigning...' : label}
     </Button>
   );
 };

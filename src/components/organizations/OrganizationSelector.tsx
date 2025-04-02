@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { fetchOrganizations } from '@/services/organizationService';
+import { getOrganizations } from '@/services/organizationService';
 import { Organization } from '@/types/organization';
 
 interface OrganizationSelectorProps {
@@ -35,7 +35,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
         setLoading(true);
         setError(null);
         
-        const data = await fetchOrganizations();
+        const data = await getOrganizations();
         setOrganizations(data);
         
         // If there's only one organization and no value is selected, select it automatically

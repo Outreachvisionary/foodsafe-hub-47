@@ -1,10 +1,12 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { usePermission } from '@/contexts/PermissionContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface PermissionGuardProps {
-  permission: string;
-  organizationId?: string;
+  requiredPermission?: string;
+  requiredRole?: string;
+  orgId?: string;
   facilityId?: string;
   departmentId?: string;
   children: ReactNode;
@@ -12,24 +14,71 @@ interface PermissionGuardProps {
 }
 
 const PermissionGuard: React.FC<PermissionGuardProps> = ({
-  permission,
-  organizationId,
+  requiredPermission,
+  requiredRole,
+  orgId,
   facilityId,
   departmentId,
   children,
-  fallback = null,
+  fallback = null
 }) => {
-  const { hasPermission, loadingPermissions } = usePermission();
+  const { user, loading: userLoading } = useUser();
+  const { hasPermission, hasRole, isLoading } = usePermission();
+  const [hasAccess, setHasAccess] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   
-  if (loadingPermissions) {
-    return null; // Or a subtle loading indicator
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (userLoading || isLoading || !user) {
+        setHasAccess(false);
+        return;
+      }
+      
+      setCheckingAccess(true);
+      
+      try {
+        // If neither permission nor role is specified, default to allowing access
+        if (!requiredPermission && !requiredRole) {
+          setHasAccess(true);
+          return;
+        }
+        
+        // Check permission if specified
+        if (requiredPermission) {
+          const permitted = await hasPermission(requiredPermission, orgId, facilityId, departmentId);
+          if (permitted) {
+            setHasAccess(true);
+            return;
+          }
+        }
+        
+        // Check role if specified
+        if (requiredRole) {
+          const hasRequiredRole = await hasRole(requiredRole, orgId, facilityId, departmentId);
+          if (hasRequiredRole) {
+            setHasAccess(true);
+            return;
+          }
+        }
+        
+        // If we get here, the user doesn't have access
+        setHasAccess(false);
+      } catch (error) {
+        console.error('Error in permission check:', error);
+        setHasAccess(false);
+      } finally {
+        setCheckingAccess(false);
+      }
+    };
+    
+    checkAccess();
+  }, [hasPermission, hasRole, requiredPermission, requiredRole, orgId, facilityId, departmentId, user, userLoading, isLoading]);
+  
+  if (userLoading || isLoading || checkingAccess) {
+    return <div className="flex justify-center p-4">Loading...</div>;
   }
   
-  if (hasPermission(permission, organizationId, facilityId, departmentId)) {
-    return <>{children}</>;
-  }
-  
-  return <>{fallback}</>;
+  return hasAccess ? <>{children}</> : <>{fallback}</>;
 };
 
 export default PermissionGuard;

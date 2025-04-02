@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { Building2, Plus, Users } from 'lucide-react';
 import { Organization } from '@/types/organization';
-import { fetchOrganizations } from '@/services/organizationService';
+import { getOrganizations } from '@/services/organizationService';
 import { useForm } from 'react-hook-form';
 import { 
   Form,
@@ -76,7 +75,7 @@ const OrganizationManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      const organizationsData = await fetchOrganizations();
+      const organizationsData = await getOrganizations();
       
       console.log('Loaded organizations:', organizationsData);
       setOrganizations(organizationsData);

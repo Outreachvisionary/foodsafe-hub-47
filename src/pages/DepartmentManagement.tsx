@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import { Department } from '@/types/department';
 import { fetchDepartments, createDepartment, updateDepartment, deleteDepartment } from '@/services/departmentService';
-import { fetchOrganizations } from '@/services/organizationService';
+import { getOrganizations } from '@/services/organizationService';
 import { fetchFacilities } from '@/services/facilityService';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
 
@@ -48,7 +47,7 @@ const DepartmentManagement: React.FC = () => {
     // Load organizations to check if they exist
     const checkOrganizations = async () => {
       try {
-        const orgs = await fetchOrganizations();
+        const orgs = await getOrganizations();
         setHasOrganizations(orgs.length > 0);
         if (orgs.length > 0) {
           setSelectedOrganizationId(orgs[0].id);

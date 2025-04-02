@@ -37,6 +37,70 @@ export const assignRoleToUser = async (
 };
 
 /**
+ * Creates a new role
+ * @param roleData Role data to create
+ * @returns The created role or null if failed
+ */
+export const createRole = async (roleData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .insert(roleData)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating role:', error);
+    return null;
+  }
+};
+
+/**
+ * Updates an existing role
+ * @param roleId Role ID to update
+ * @param updates Role data updates
+ * @returns The updated role or null if failed
+ */
+export const updateRole = async (roleId: string, updates: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .update(updates)
+      .eq('id', roleId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating role:', error);
+    return null;
+  }
+};
+
+/**
+ * Deletes a role
+ * @param roleId Role ID to delete
+ * @returns Success status
+ */
+export const deleteRole = async (roleId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('roles')
+      .delete()
+      .eq('id', roleId);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting role:', error);
+    return false;
+  }
+};
+
+/**
  * Fetches all available roles
  */
 export const fetchRoles = async () => {

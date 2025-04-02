@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { fetchRoles } from '@/services/roleService';
 import { fetchDepartments } from '@/services/departmentService';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import { fetchOrganizations } from '@/services/organizationService';
+import { getOrganizations } from '@/services/organizationService';
 
 interface UserManagementProps {}
 
@@ -42,7 +41,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
   
   const loadOrganizations = async () => {
     try {
-      const orgsData = await fetchOrganizations();
+      const orgsData = await getOrganizations();
       setOrganizations(orgsData.map(org => ({ id: org.id, name: org.name })));
       
       if (orgsData.length > 0) {
