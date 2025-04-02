@@ -1,62 +1,213 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  BarChart3, 
-  Download, 
-  Calendar, 
-  Users, 
-  Award, 
-  PieChart, 
+import {
+  BarChart3,
+  Download,
+  Calendar,
+  Users,
+  Award,
+  PieChart,
   TrendingUp,
   FileText,
-  BarChart2
+  BarChart2,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+
+// Define types for our data
+interface DepartmentCompliance {
+  name: string;
+  compliance: number;
+}
+
+interface TrainingStatus {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface SPCCompetency {
+  name: string;
+  beginner: number;
+  intermediate: number;
+  advanced: number;
+}
+
+interface QualityMetric {
+  name: string;
+  value: number;
+}
+
+interface TrainingImpact {
+  name: string;
+  improvement: number;
+}
+
+interface SkillGap {
+  area: string;
+  gap: number;
+}
+
+interface RecommendedCourse {
+  title: string;
+  id: string;
+}
 
 const ReportsAnalytics: React.FC = () => {
-  const [dateRange, setDateRange] = useState<string>('90days');
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [dateRange, setDateRange] = useState('90days');
+  const [activeTab, setActiveTab] = useState('overview');
+  const { toast } = useToast();
   
-  // Sample training compliance data
-  const complianceByDepartment = [
-    { name: 'Production', compliance: 82 },
-    { name: 'Quality', compliance: 90 },
-    { name: 'Maintenance', compliance: 76 },
-    { name: 'R&D', compliance: 85 },
-    { name: 'Logistics', compliance: 79 }
-  ];
+  // State for data
+  const [complianceByDepartment, setComplianceByDepartment] = useState<DepartmentCompliance[]>([]);
+  const [trainingStatusData, setTrainingStatusData] = useState<TrainingStatus[]>([]);
+  const [spcCompetencyData, setSpcCompetencyData] = useState<SPCCompetency[]>([]);
+  const [qualityMetrics, setQualityMetrics] = useState<QualityMetric[]>([]);
+  const [trainingImpacts, setTrainingImpacts] = useState<TrainingImpact[]>([]);
+  const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
+  const [recommendedCourses, setRecommendedCourses] = useState<RecommendedCourse[]>([]);
   
-  // Sample training status data
-  const trainingStatusData = [
-    { name: 'Completed', value: 65, color: '#10b981' },
-    { name: 'In Progress', value: 20, color: '#3b82f6' },
-    { name: 'Not Started', value: 10, color: '#9ca3af' },
-    { name: 'Overdue', value: 5, color: '#ef4444' }
-  ];
-  
-  // Sample SPC competency data
-  const spcCompetencyData = [
-    { name: 'Control Charts', beginner: 30, intermediate: 45, advanced: 25 },
-    { name: 'Process Capability', beginner: 40, intermediate: 35, advanced: 25 },
-    { name: 'Root Cause Analysis', beginner: 20, intermediate: 50, advanced: 30 },
-    { name: 'Measurement Systems', beginner: 35, intermediate: 40, advanced: 25 },
-    { name: 'Data Collection', beginner: 25, intermediate: 45, advanced: 30 }
-  ];
-  
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Define status colors for consistency
+  const statusColors = {
+    'Completed': '#10b981',
+    'In Progress': '#3b82f6',
+    'Not Started': '#9ca3af',
+    'Overdue': '#ef4444'
+  };
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch department compliance data
+        const { data: complianceData, error: complianceError } = await supabase
+          .from('department_compliance')
+          .select('name, compliance')
+          .order('compliance', { ascending: false });
+          
+        if (complianceError) throw complianceError;
+        
+        // Fetch training status distribution
+        const { data: statusData, error: statusError } = await supabase
+          .from('training_status_distribution')
+          .select('name, value');
+          
+        if (statusError) throw statusError;
+        
+        // Transform status data to include colors
+        const transformedStatusData = statusData?.map(item => ({
+          ...item,
+          color: statusColors[item.name] || '#9ca3af'
+        })) || [];
+        
+        // Fetch SPC competency data
+        const { data: competencyData, error: competencyError } = await supabase
+          .from('spc_competency')
+          .select('name, beginner, intermediate, advanced');
+          
+        if (competencyError) throw competencyError;
+        
+        // Fetch quality metrics
+        const { data: metricsData, error: metricsError } = await supabase
+          .from('quality_metrics')
+          .select('name, value');
+          
+        if (metricsError) throw metricsError;
+        
+        // Fetch training impacts
+        const { data: impactsData, error: impactsError } = await supabase
+          .from('training_impacts')
+          .select('name, improvement');
+          
+        if (impactsError) throw impactsError;
+        
+        // Fetch skill gaps
+        const { data: gapsData, error: gapsError } = await supabase
+          .from('skill_gaps')
+          .select('area, gap');
+          
+        if (gapsError) throw gapsError;
+        
+        // Fetch recommended courses
+        const { data: coursesData, error: coursesError } = await supabase
+          .from('recommended_courses')
+          .select('title, id');
+          
+        if (coursesError) throw coursesError;
+        
+        // Update state with fetched data
+        setComplianceByDepartment(complianceData || []);
+        setTrainingStatusData(transformedStatusData);
+        setSpcCompetencyData(competencyData || []);
+        setQualityMetrics(metricsData || []);
+        setTrainingImpacts(impactsData || []);
+        setSkillGaps(gapsData || []);
+        setRecommendedCourses(coursesData || []);
+        
+      } catch (err) {
+        console.error('Error fetching analytics data:', err);
+        setError('Failed to load analytics data. Please try again later.');
+        toast({
+          title: 'Error',
+          description: 'Failed to load analytics data.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAnalyticsData();
+  }, [dateRange]); // Refetch when date range changes
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading analytics data...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertCircle className="text-red-500 h-10 w-10 mb-2" />
+        <p className="text-red-500">{error}</p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-        <div className="flex space-x-2">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">Reports & Analytics</h2>
+        <div className="flex items-center space-x-4">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[180px]">
-              <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Select date range" />
+              <SelectValue placeholder="Select Date Range" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="30days">Last 30 Days</SelectItem>
@@ -65,111 +216,70 @@ const ReportsAnalytics: React.FC = () => {
               <SelectItem value="1year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+          <Button>
+            <Download className="mr-2 h-4 w-4" />
             Export Reports
           </Button>
         </div>
       </div>
-      
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
-          <TabsTrigger value="spc">
-            <BarChart2 className="h-4 w-4 mr-1" />
-            SPC Competency
-          </TabsTrigger>
+          <TabsTrigger value="spc">SPC Competency</TabsTrigger>
           <TabsTrigger value="certifications">Certifications</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatsCard 
-              title="Training Compliance" 
-              value="78%" 
-              trend="+3% from last month"
-              icon={<FileText className="h-5 w-5 text-blue-500" />}
-            />
-            
-            <StatsCard 
-              title="Employees Trained" 
-              value="143" 
-              trend="12 new this month"
-              icon={<Users className="h-5 w-5 text-blue-500" />}
-            />
-            
-            <StatsCard 
-              title="Active Courses" 
-              value="26" 
-              trend="3 new courses"
-              icon={<Award className="h-5 w-5 text-blue-500" />}
-            />
-            
-            <StatsCard 
-              title="Avg. Score" 
-              value="82%" 
-              trend="+5% improvement"
-              icon={<TrendingUp className="h-5 w-5 text-blue-500" />}
-            />
-          </div>
-          
+
+        <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 text-blue-500 mr-2" />
-                  Compliance by Department
-                </CardTitle>
+                <CardTitle>Compliance by Department</CardTitle>
                 <CardDescription>
                   Training completion rates across departments
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      width={500}
-                      height={300}
-                      data={complianceByDepartment}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
+                {complianceByDepartment.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={complianceByDepartment}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} />
+                      <YAxis />
                       <Tooltip />
                       <Legend />
                       <Bar dataKey="compliance" name="Compliance %" fill="#3b82f6" />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <p className="text-muted-foreground">No compliance data available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <PieChart className="h-5 w-5 text-blue-500 mr-2" />
-                  Training Status Distribution
-                </CardTitle>
+                <CardTitle>Training Status Distribution</CardTitle>
                 <CardDescription>
                   Current status of assigned training across organization
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RePieChart width={400} height={300}>
+                {trainingStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RePieChart>
                       <Pie
                         data={trainingStatusData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
                         {trainingStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -179,14 +289,16 @@ const ReportsAnalytics: React.FC = () => {
                       <Legend />
                     </RePieChart>
                   </ResponsiveContainer>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <p className="text-muted-foreground">No training status data available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="compliance" className="mt-6">
-          <Card>
+
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle>Compliance Reports</CardTitle>
               <CardDescription>
@@ -194,218 +306,112 @@ const ReportsAnalytics: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="p-8 text-center">
-                <h3 className="text-lg font-medium mb-2">Compliance Reporting</h3>
-                <p className="text-muted-foreground mb-4">This section will display detailed compliance reports</p>
-                <Button>Generate Compliance Report</Button>
+              <div className="p-8 flex flex-col items-center justify-center">
+                <p className="text-xl font-semibold mb-4">Compliance Reporting</p>
+                <p className="mb-6 text-muted-foreground">
+                  This section will display detailed compliance reports
+                </p>
+                <Button>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Compliance Report
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="spc" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart2 className="h-5 w-5 text-blue-500 mr-2" />
-                SPC Training Competency Analysis
-              </CardTitle>
-              <CardDescription>
-                Statistical Process Control knowledge and skill levels across the organization
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    width={500}
-                    height={300}
-                    data={spcCompetencyData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="beginner" name="Beginner" stackId="a" fill="#94a3b8" />
-                    <Bar dataKey="intermediate" name="Intermediate" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="advanced" name="Advanced" stackId="a" fill="#10b981" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <TabsContent value="spc" className="mt-6">
+          <div className="grid grid-cols-1 gap-6">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">SPC Course Effectiveness</CardTitle>
+              <CardHeader>
+                <CardTitle>SPC Training Competency Analysis</CardTitle>
+                <CardDescription>
+                  Statistical Process Control knowledge and skill levels across the organization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {spcCompetencyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={spcCompetencyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="beginner" name="Beginner" fill="#ef4444" />
+                      <Bar dataKey="intermediate" name="Intermediate" fill="#f59e0b" />
+                      <Bar dataKey="advanced" name="Advanced" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[350px]">
+                    <p className="text-muted-foreground">No SPC competency data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>SPC Course Effectiveness</CardTitle>
                 <CardDescription>
                   Impact of SPC training on quality metrics
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Knowledge Retention</span>
-                      <span className="font-medium">86%</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="space-y-4">
+                      {qualityMetrics.map((metric, index) => (
+                        <div key={index}>
+                          <div className="flex justify-between mb-1">
+                            <span className="font-medium">{metric.name}</span>
+                            <span className="text-primary">{metric.value}%</span>
+                          </div>
+                          <Progress value={metric.value} className="h-2" />
+                        </div>
+                      ))}
                     </div>
-                    <Progress value={86} className="h-2" />
                   </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Practical Application</span>
-                      <span className="font-medium">78%</span>
-                    </div>
-                    <Progress value={78} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Problem Solving Capability</span>
-                      <span className="font-medium">82%</span>
-                    </div>
-                    <Progress value={82} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Quality Improvement Success</span>
-                      <span className="font-medium">74%</span>
-                    </div>
-                    <Progress value={74} className="h-2" />
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t">
-                  <h3 className="text-sm font-medium mb-2">Correlation with Quality KPIs</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Defect Rate Reduction</span>
-                      <Badge className="bg-green-50 text-green-700">18% Improvement</Badge>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Process Stability</span>
-                      <Badge className="bg-green-50 text-green-700">32% Improvement</Badge>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">First Pass Yield</span>
-                      <Badge className="bg-green-50 text-green-700">12% Improvement</Badge>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Correlation with Quality KPIs</h4>
+                    <div className="space-y-4">
+                      {trainingImpacts.map((impact, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <TrendingUp className="text-green-500 h-5 w-5" />
+                          <span>{impact.name}</span>
+                          <Badge variant="outline" className="ml-auto">
+                            {impact.improvement}% Improvement
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">SPC Training Recommendations</CardTitle>
+              <CardHeader>
+                <CardTitle>SPC Training Recommendations</CardTitle>
                 <CardDescription>
                   AI-generated recommendations for improving SPC competency
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <h3 className="text-sm font-medium text-blue-700 mb-1">Focus Areas for Improvement</h3>
-                    <ul className="text-sm space-y-1 list-disc list-inside text-blue-700">
-                      <li>Process Capability Analysis (25% skill gap)</li>
-                      <li>Measurement System Analysis (30% skill gap)</li>
-                      <li>Control Chart Selection (20% skill gap)</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="p-3 border rounded-md">
-                    <h3 className="text-sm font-medium mb-1">Recommended Courses</h3>
-                    <ul className="text-sm space-y-2">
-                      <li className="flex justify-between items-center">
-                        <span>Advanced Process Capability</span>
-                        <Button variant="outline" size="sm">Assign</Button>
-                      </li>
-                      <li className="flex justify-between items-center">
-                        <span>Measurement Systems Analysis</span>
-                        <Button variant="outline" size="sm">Assign</Button>
-                      </li>
-                      <li className="flex justify-between items-center">
-                        <span>Control Chart Mastery</span>
-                        <Button variant="outline" size="sm">Assign</Button>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="p-3 border rounded-md">
-                    <h3 className="text-sm font-medium mb-1">Departmental Focus</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Focus Areas for Improvement</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Production Team</span>
-                        <Badge variant="outline">Control Chart Interpretation</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Quality Team</span>
-                        <Badge variant="outline">Process Capability Analysis</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Maintenance Team</span>
-                        <Badge variant="outline">Root Cause Analysis</Badge>
-                      </div>
+                      {skillGaps.map((gap, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <AlertCircle className="text-amber-500 h-5 w-5" />
+                          <span>{gap.area} ({gap.gap}% skill gap)</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="certifications" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Certification Reports</CardTitle>
-              <CardDescription>
-                Certification status and expiry reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-8 text-center">
-                <h3 className="text-lg font-medium mb-2">Certification Reporting</h3>
-                <p className="text-muted-foreground mb-4">This section will display detailed certification reports</p>
-                <Button>Generate Certification Report</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-interface StatsCardProps {
-  title: string;
-  value: string;
-  trend?: string;
-  icon: React.ReactNode;
-}
-
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, icon }) => {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {trend && (
-          <p className="text-xs text-muted-foreground mt-1">{trend}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-export default ReportsAnalytics;
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Recommended Courses</h4>
+                    <div className="space-y-2">
+                      {recommendedCourses.map((cours
