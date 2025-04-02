@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     
     switch (document.approval_status) {
       case 'approved':
-        return <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       case 'pending':

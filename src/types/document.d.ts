@@ -35,6 +35,15 @@ export interface Document {
   rejection_reason?: string;
   last_action?: string;
   tags?: string[];
+  
+  // Adding missing properties
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  is_expired?: boolean;
+  is_checked_out?: boolean;
+  checkout_user_id?: string;
+  checkout_timestamp?: string;
+  versions?: DocumentVersion[];
+  activity?: DocumentActivity[];
 }
 
 export interface DocumentVersion {

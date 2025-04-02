@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import VersionHistoryItem from '@/components/documents/version/VersionHistoryItem';
+import { VersionHistoryItem } from '@/components/documents/version/VersionHistoryItem';
 import { CheckoutStatus } from '@/components/documents/version/CheckoutStatus';
 import { DocumentAuditTrail } from '@/components/documents/version/DocumentAuditTrail';
 import { format } from 'date-fns';
