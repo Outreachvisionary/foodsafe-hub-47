@@ -49,6 +49,13 @@ export interface Document {
   checkout_user_id?: string;
   checkout_timestamp?: string;
   pending_since?: string;
+  
+  // Added missing properties
+  folder_id?: string;
+  versions?: DocumentVersion[];
+  activity?: DocumentActivity[];
+  approvers?: string[];
+  custom_notification_days?: number[];
 }
 
 // Define the Folder interface
@@ -72,4 +79,31 @@ export interface DocumentComment {
   content: string;
   created_at: string;
   updated_at?: string;
+}
+
+// Define document version interface
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version: number;
+  file_name: string;
+  file_size: number;
+  file_type?: string;
+  created_by: string;
+  created_at?: string;
+  change_notes?: string;
+  editor_metadata?: any;
+}
+
+// Define document activity interface
+export interface DocumentActivity {
+  id: string;
+  document_id: string;
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download';
+  user_id: string;
+  user_name?: string;
+  user_role?: string;
+  timestamp: string;
+  comments?: string;
+  metadata?: any;
 }
