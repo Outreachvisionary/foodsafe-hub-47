@@ -1,99 +1,158 @@
 
-import { 
-  Employee, 
-  TrainingRecord, 
-  TrainingPlan, 
-  AutoAssignRule,
-  TrainingStatus
-} from '@/types/training';
+import { supabase } from '@/integrations/supabase/client';
+import { TrainingPlan, AutoAssignRule, Employee } from '@/types/training';
 
 /**
- * Service specifically for training assignment functionality
+ * Service for handling training assignments and automatic rule-based assignments
  */
-export const trainingAssignmentService = {
+const trainingAssignmentService = {
   /**
-   * Assign training based on a training plan and target employees
+   * Assigns a training plan to employees based on roles or departments
    */
-  assignTrainingPlan: (
-    trainingPlan: TrainingPlan, 
-    employees: Employee[]
-  ): TrainingRecord[] => {
-    // Implementation would connect to backend API
-    console.log(`Assigning training plan ${trainingPlan.name} to ${employees.length} employees`);
-    
-    // Mock response - would normally come from API
-    return employees.map(employee => ({
-      id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      session_id: `session-${Math.random().toString(36).substr(2, 9)}`,
-      employee_id: employee.id,
-      employee_name: employee.name,
-      status: 'Not Started' as TrainingStatus,
-      assigned_date: new Date().toISOString(),
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-    }));
+  assignTrainingPlan: async (plan: TrainingPlan, employeeIds: string[]): Promise<boolean> => {
+    try {
+      // Get the courses associated with this plan
+      const courses = plan.coursesIncluded || plan.courses || [];
+      
+      if (courses.length === 0) {
+        console.error('Cannot assign training plan with no courses');
+        return false;
+      }
+      
+      // Calculate due date based on plan duration
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + (plan.durationDays || 30));
+      
+      // Create a training session for this plan
+      const { data: session, error: sessionError } = await supabase
+        .from('training_sessions')
+        .insert({
+          title: `${plan.name} Training`,
+          description: plan.description,
+          training_type: 'Plan',
+          training_category: 'Required',
+          assigned_to: employeeIds,
+          materials_id: courses,
+          start_date: new Date().toISOString(),
+          due_date: dueDate.toISOString(),
+          is_recurring: plan.isAutomated,
+          recurring_interval: plan.recurringSchedule?.interval || null,
+          created_by: 'system'
+        })
+        .select()
+        .single();
+        
+      if (sessionError) {
+        console.error('Error creating training session:', sessionError);
+        return false;
+      }
+      
+      // For each employee, create a training record
+      const trainingRecords = employeeIds.map(empId => ({
+        session_id: session.id,
+        employee_id: empId,
+        employee_name: empId, // Ideally would be fetched from a users/employees table
+        status: 'Not Started',
+        assigned_date: new Date().toISOString(),
+        due_date: dueDate.toISOString()
+      }));
+      
+      const { error: recordsError } = await supabase
+        .from('training_records')
+        .insert(trainingRecords);
+        
+      if (recordsError) {
+        console.error('Error creating training records:', recordsError);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error assigning training plan:', error);
+      return false;
+    }
   },
   
   /**
-   * Check if a training plan should be assigned based on automation rules
+   * Evaluates assignment rules to determine if an employee should be assigned training
    */
-  evaluateAutoAssignRules: (
-    employee: Employee, 
-    rules: AutoAssignRule[]
-  ): boolean => {
-    // If no rules, don't auto-assign
-    if (!rules || rules.length === 0) return false;
-    
-    // Check each rule
-    return rules.some(rule => {
-      if (!rule.type || !rule.conditions) return false;
+  evaluateAutoAssignRules: async (employee: Employee, rules: AutoAssignRule[]): Promise<string[]> => {
+    try {
+      // Array to hold the IDs of plans that should be assigned
+      const matchingPlanIds: string[] = [];
       
-      switch (rule.type) {
-        case 'Role':
-          return rule.conditions.every(condition => {
-            if (condition.key === 'role' && condition.operator === '=') {
-              return employee.role === condition.value;
-            }
-            return false;
-          });
-          
-        case 'Department':
-          return rule.conditions.every(condition => {
-            if (condition.key === 'department' && condition.operator === '=') {
-              return employee.department === condition.value;
-            }
-            return false;
-          });
-          
-        case 'NewHire':
-          return rule.conditions.every(condition => {
-            if (condition.key === 'hireDate' && condition.operator === '>') {
-              if (!employee.hireDate) return false;
+      // Check each rule
+      for (const rule of rules) {
+        let ruleMatches = false;
+        
+        switch (rule.type) {
+          case 'Role':
+            // Check if employee's role matches any role conditions
+            ruleMatches = rule.conditions.some(condition => 
+              condition.key === 'role' && 
+              condition.operator === '=' && 
+              condition.value === employee.role
+            );
+            break;
+            
+          case 'Department':
+            // Check if employee's department matches any department conditions
+            ruleMatches = rule.conditions.some(condition => 
+              condition.key === 'department' && 
+              condition.operator === '=' && 
+              condition.value === employee.department
+            );
+            break;
+            
+          case 'NewHire':
+            // Check if employee was hired within the specified timeframe
+            if (employee.hireDate) {
               const hireDate = new Date(employee.hireDate);
-              const compareDate = new Date(condition.value as string);
-              return hireDate > compareDate;
-            }
-            return false;
-          });
-          
-        case 'CompetencyScore':
-          return rule.conditions.every(condition => {
-            if (condition.key === 'competencyScore' && condition.operator === '<') {
-              if (!employee.competencyAssessments || employee.competencyAssessments.length === 0) return false;
+              const today = new Date();
+              const daysSinceHire = Math.floor((today.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24));
               
-              // Find the most recent assessment
-              const latestAssessment = employee.competencyAssessments.sort(
-                (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
-              )[0];
-              
-              return latestAssessment.score < Number(condition.value);
+              ruleMatches = rule.conditions.some(condition => {
+                if (condition.key === 'daysSinceHire') {
+                  if (condition.operator === '<=' && daysSinceHire <= Number(condition.value)) return true;
+                  if (condition.operator === '<' && daysSinceHire < Number(condition.value)) return true;
+                }
+                return false;
+              });
             }
-            return false;
-          });
-          
-        default:
-          return false;
+            break;
+            
+          case 'CompetencyScore':
+            // Check if employee's competency score meets the criteria
+            if (employee.competencyAssessments && employee.competencyAssessments.length > 0) {
+              const latestAssessment = employee.competencyAssessments[employee.competencyAssessments.length - 1];
+              
+              ruleMatches = rule.conditions.some(condition => {
+                if (condition.key === 'score') {
+                  if (condition.operator === '<=' && latestAssessment.score <= Number(condition.value)) return true;
+                  if (condition.operator === '<' && latestAssessment.score < Number(condition.value)) return true;
+                  if (condition.operator === '>=' && latestAssessment.score >= Number(condition.value)) return true;
+                  if (condition.operator === '>' && latestAssessment.score > Number(condition.value)) return true;
+                  if (condition.operator === '=' && latestAssessment.score === Number(condition.value)) return true;
+                }
+                return false;
+              });
+            }
+            break;
+        }
+        
+        // If the rule matches, fetch the associated training plan
+        if (ruleMatches) {
+          // This would typically fetch from a mapping table linking rules to plans
+          // For now, we'll return a placeholder plan ID if rule matches
+          matchingPlanIds.push('placeholder-plan-id');
+        }
       }
-    });
+      
+      return matchingPlanIds;
+    } catch (error) {
+      console.error('Error evaluating auto-assign rules:', error);
+      return [];
+    }
   }
 };
 

@@ -14,6 +14,7 @@ export function useTrainingConfig() {
     const fetchTrainingConfig = async () => {
       try {
         setLoading(true);
+        setError(null);
         const configData = await trainingConfigService.getAutomationConfig();
         setConfig(configData);
       } catch (err) {
@@ -55,6 +56,7 @@ export function useTrainingConfig() {
       return true;
     } catch (err) {
       console.error('Error updating training config:', err);
+      setError(err instanceof Error ? err : new Error('Failed to update training configuration'));
       toast({
         title: 'Error',
         description: 'Failed to update training configuration. Please try again.',

@@ -17,12 +17,24 @@ export const trainingConfigService = {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching training automation config:', error);
         
         // Return default config if there's an error
+        return {
+          enabled: true,
+          rules: [],
+          documentChangesTrigger: true,
+          newEmployeeTrigger: true,
+          roleCangeTrigger: true,
+        };
+      }
+
+      if (!data) {
+        console.warn('No training configuration found, using default settings');
+        // Return default config if no data is found
         return {
           enabled: true,
           rules: [],

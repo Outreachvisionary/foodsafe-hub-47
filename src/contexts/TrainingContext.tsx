@@ -4,6 +4,7 @@ import { useTrainingRecords } from '@/hooks/useTrainingRecords';
 import { useTrainingPlans } from '@/hooks/useTrainingPlans';
 import { useTrainingSessions } from '@/hooks/useTrainingSessions';
 import { useTrainingConfig } from '@/hooks/useTrainingConfig';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 
 type TrainingContextType = {
   recordsState: ReturnType<typeof useTrainingRecords>;
@@ -11,11 +12,20 @@ type TrainingContextType = {
   sessionsState: ReturnType<typeof useTrainingSessions>;
   configState: ReturnType<typeof useTrainingConfig>;
   isLoading: boolean;
+  hasErrors: boolean;
 };
 
 const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
 
-export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+interface TrainingProviderProps {
+  children: ReactNode;
+  showLoadingOverlay?: boolean;
+}
+
+export const TrainingProvider: React.FC<TrainingProviderProps> = ({ 
+  children, 
+  showLoadingOverlay = false 
+}) => {
   const recordsState = useTrainingRecords();
   const plansState = useTrainingPlans();
   const sessionsState = useTrainingSessions();
@@ -26,6 +36,12 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
                     plansState.loading || 
                     sessionsState.loading || 
                     configState.loading;
+                    
+  // Combined error state
+  const hasErrors = !!(recordsState.error || 
+                     plansState.error || 
+                     sessionsState.error || 
+                     configState.error);
 
   return (
     <TrainingContext.Provider 
@@ -34,10 +50,13 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         plansState, 
         sessionsState, 
         configState,
-        isLoading
+        isLoading,
+        hasErrors
       }}
     >
-      {children}
+      {showLoadingOverlay && isLoading ? (
+        <LoadingOverlay message="Loading training data..." submessage="This may take a moment" />
+      ) : children}
     </TrainingContext.Provider>
   );
 };
