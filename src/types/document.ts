@@ -1,3 +1,4 @@
+
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
@@ -138,6 +139,46 @@ export type DocumentAction =
   | 'checkin'
   | 'revert_version';
 
+// Add DocumentSearchFilters interface
+export interface DocumentSearchFilters {
+  categories?: DocumentCategory[];
+  status?: DocumentStatus[];
+  createdStart?: string;
+  createdEnd?: string;
+  updatedStart?: string;
+  updatedEnd?: string;
+  expiryStart?: string;
+  expiryEnd?: string;
+  createdBy?: string[];
+  approvedBy?: string[];
+  tags?: string[];
+  searchTerm?: string;
+  relatedDocuments?: string[];
+  modules?: ModuleReference[];
+}
+
+// Document relationship mapping types
+export interface DocumentRelationship {
+  id: string;
+  sourceDocumentId: string;
+  targetDocumentId: string;
+  relationshipType: 'references' | 'supersedes' | 'requires' | 'supports' | 'implements';
+  createdBy: string;
+  createdAt: string;
+  notes?: string;
+}
+
+// AI summary types
+export interface DocumentSummary {
+  id: string;
+  documentId: string;
+  versionId?: string;
+  summary: string;
+  keyPoints: string[];
+  generated_at: string;
+  modelUsed: string;
+}
+
 // Translation related types
 export interface Translation {
   id: string;
@@ -164,6 +205,9 @@ declare module './database' {
     organization_id?: string;
     facility_id?: string;
     metadata?: Record<string, any>;
+    related_documents?: string[]; // For document relationships
+    has_ai_summary?: boolean; // Flag for AI summary availability
+    linked_module?: ModuleReference; // Module reference for linking documents to other modules
   }
 }
 
