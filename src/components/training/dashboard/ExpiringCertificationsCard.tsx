@@ -85,11 +85,11 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
         if (item.training_sessions) {
           // For a one-to-one relation it returns an object
           if (!Array.isArray(item.training_sessions)) {
-            sessionTitle = item.training_sessions.title;
+            sessionTitle = (item.training_sessions as { title: string }).title;
           } 
           // For a one-to-many relation it returns an array
           else if (Array.isArray(item.training_sessions) && item.training_sessions.length > 0) {
-            sessionTitle = item.training_sessions[0].title;
+            sessionTitle = (item.training_sessions[0] as { title: string }).title;
           }
         }
         
