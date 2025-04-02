@@ -148,6 +148,19 @@ export interface TranslationNamespace {
   description?: string;
 }
 
+// Extend the Document type from database.ts with additional properties
+declare module './database' {
+  interface Document {
+    checkout_user_id?: string;
+    checkout_timestamp?: string;
+    current_version_id?: string;
+    workflow_status?: string;
+    organization_id?: string;
+    facility_id?: string;
+    metadata?: Record<string, any>;
+  }
+}
+
 // Type guard to check if a value is a DocumentWorkflowStep[]
 export function isDocumentWorkflowSteps(value: any): value is DocumentWorkflowStep[] {
   return Array.isArray(value) && 
