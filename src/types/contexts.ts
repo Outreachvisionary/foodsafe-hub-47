@@ -1,5 +1,5 @@
 
-import { Document, DocumentVersion, DocumentActivity, DocumentNotification } from './document';
+import { Document, DocumentVersion, DocumentActivity, DocumentNotification, DocumentRelationship, DocumentSummary } from './document';
 
 export interface DocumentContextType {
   documents: Document[];
@@ -20,4 +20,10 @@ export interface DocumentContextType {
   clearAllNotifications: () => void;
   checkoutDocument: (document: Document) => Promise<Document>;
   checkinDocument: (document: Document) => Promise<Document>;
+  // New methods for Phase 2 features
+  addDocumentRelationship: (sourceDocId: string, targetDocId: string, relationType: string) => Promise<DocumentRelationship | null>;
+  removeDocumentRelationship: (relationshipId: string) => Promise<void>;
+  getDocumentRelationships: (documentId: string) => Promise<DocumentRelationship[]>;
+  generateDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
+  getDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
 }

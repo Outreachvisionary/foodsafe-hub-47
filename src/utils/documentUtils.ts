@@ -1,5 +1,5 @@
 
-import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity, DocumentRelationship, DocumentSummary } from '@/types/document';
 
 /**
  * Creates a version history item from a document version
@@ -75,5 +75,65 @@ export const createDocumentActivity = (
     user_role: userRole,
     timestamp: new Date().toISOString(),
     comments
+  };
+};
+
+/**
+ * Creates a relationship between two documents
+ */
+export const createDocumentRelationship = (
+  sourceDocId: string,
+  targetDocId: string,
+  relationType: string,
+  createdBy: string
+): DocumentRelationship => {
+  return {
+    id: `rel-${Date.now()}`,
+    sourceDocumentId: sourceDocId,
+    targetDocumentId: targetDocId,
+    relationshipType: relationType as any,
+    createdBy: createdBy,
+    createdAt: new Date().toISOString()
+  };
+};
+
+/**
+ * Get relationship type display name
+ */
+export const getRelationshipTypeDisplay = (relationType: string): string => {
+  switch (relationType) {
+    case 'references':
+      return 'References';
+    case 'supersedes':
+      return 'Supersedes';
+    case 'requires':
+      return 'Requires';
+    case 'supports':
+      return 'Supports';
+    case 'implements':
+      return 'Implements';
+    default:
+      return relationType;
+  }
+};
+
+/**
+ * Get a mock AI summary for a document
+ * In a real implementation, this would call an AI service
+ */
+export const generateMockAISummary = (document: Document): DocumentSummary => {
+  return {
+    id: `summary-${document.id}`,
+    documentId: document.id,
+    versionId: document.current_version_id || '',
+    summary: `This ${document.category} document titled "${document.title}" appears to focus on procedures and guidelines related to document management in the organization.`,
+    keyPoints: [
+      'Defines key roles and responsibilities',
+      'Outlines document creation and approval processes',
+      'Specifies record keeping requirements',
+      'Provides guidance on document revision procedures'
+    ],
+    generated_at: new Date().toISOString(),
+    modelUsed: 'gpt-4'
   };
 };

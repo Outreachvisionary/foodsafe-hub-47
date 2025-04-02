@@ -153,6 +153,30 @@ export interface DocumentSearchFilters {
   approvedBy?: string[];
   tags?: string[];
   searchTerm?: string;
+  relatedDocuments?: string[];
+  modules?: ModuleReference[];
+}
+
+// Document relationship mapping types
+export interface DocumentRelationship {
+  id: string;
+  sourceDocumentId: string;
+  targetDocumentId: string;
+  relationshipType: 'references' | 'supersedes' | 'requires' | 'supports' | 'implements';
+  createdBy: string;
+  createdAt: string;
+  notes?: string;
+}
+
+// AI summary types
+export interface DocumentSummary {
+  id: string;
+  documentId: string;
+  versionId?: string;
+  summary: string;
+  keyPoints: string[];
+  generated_at: string;
+  modelUsed: string;
 }
 
 // Translation related types
@@ -181,6 +205,8 @@ declare module './database' {
     organization_id?: string;
     facility_id?: string;
     metadata?: Record<string, any>;
+    related_documents?: string[]; // For document relationships
+    has_ai_summary?: boolean; // Flag for AI summary availability
   }
 }
 

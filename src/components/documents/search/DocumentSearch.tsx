@@ -1,17 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
-import { Document, DocumentCategory, DocumentSearchFilters } from '@/types/document';
+import { Document, DocumentCategory, DocumentSearchFilters, DocumentStatus } from '@/types/document';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import DocumentList from '@/components/documents/DocumentList';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Search, Filter, Calendar, Tag, User, FileText, RefreshCw, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { DocumentAdvancedFilters } from './DocumentAdvancedFilters';
 
 export const DocumentSearch: React.FC = () => {
   const { documents, isLoading, refreshData } = useDocuments();
@@ -24,6 +22,11 @@ export const DocumentSearch: React.FC = () => {
   // Function to handle search term input
   const handleSearchTermChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    // Update search term in filters
+    setFilters(prev => ({
+      ...prev,
+      searchTerm: e.target.value
+    }));
   };
   
   // Function to handle tab change
@@ -44,55 +47,7 @@ export const DocumentSearch: React.FC = () => {
   // Function to clear all filters
   const clearFilters = () => {
     setFilters({});
-  };
-  
-  // Function to apply date filters
-  const applyDateFilters = (docs: Document[]) => {
-    let filteredDocs = [...docs];
-    
-    if (filters.createdStart) {
-      const startDate = new Date(filters.createdStart);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.created_at && new Date(doc.created_at) >= startDate
-      );
-    }
-    
-    if (filters.createdEnd) {
-      const endDate = new Date(filters.createdEnd);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.created_at && new Date(doc.created_at) <= endDate
-      );
-    }
-    
-    if (filters.updatedStart) {
-      const updatedStartDate = new Date(filters.updatedStart);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.updated_at && new Date(doc.updated_at) >= updatedStartDate
-      );
-    }
-    
-    if (filters.updatedEnd) {
-      const updatedEndDate = new Date(filters.updatedEnd);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.updated_at && new Date(doc.updated_at) <= updatedEndDate
-      );
-    }
-    
-    if (filters.expiryStart) {
-      const expiryStartDate = new Date(filters.expiryStart);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.expiry_date && new Date(doc.expiry_date) >= expiryStartDate
-      );
-    }
-    
-    if (filters.expiryEnd) {
-      const expiryEndDate = new Date(filters.expiryEnd);
-      filteredDocs = filteredDocs.filter(doc => 
-        doc.expiry_date && new Date(doc.expiry_date) <= expiryEndDate
-      );
-    }
-    
-    return filteredDocs;
+    setSearchTerm('');
   };
   
   // Function to filter documents based on selected filters
@@ -100,8 +55,8 @@ export const DocumentSearch: React.FC = () => {
     let filteredDocs = [...docs];
     
     // Apply search term filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
+    if (filters.searchTerm?.trim()) {
+      const term = filters.searchTerm.toLowerCase();
       filteredDocs = filteredDocs.filter(doc => 
         doc.title.toLowerCase().includes(term) || 
         (doc.description && doc.description.toLowerCase().includes(term)) ||
@@ -121,6 +76,18 @@ export const DocumentSearch: React.FC = () => {
       filteredDocs = filteredDocs.filter(doc => 
         filters.status!.includes(doc.status)
       );
+    }
+    
+    // Apply module references filter
+    if (filters.modules && filters.modules.length > 0) {
+      filteredDocs = filteredDocs.filter(doc => {
+        // If 'none' is included in filters and doc has no linked module OR
+        // doc's linked module is in the filter list
+        return (
+          (filters.modules!.includes('none') && !doc.linked_module) ||
+          (doc.linked_module && filters.modules!.includes(doc.linked_module as any))
+        );
+      });
     }
     
     // Apply tab filtering
@@ -184,16 +151,24 @@ export const DocumentSearch: React.FC = () => {
       );
     }
     
+    // Filter by related documents if specified
+    if (filters.relatedDocuments && filters.relatedDocuments.length > 0) {
+      filteredDocs = filteredDocs.filter(doc => 
+        doc.related_documents && 
+        doc.related_documents.some(id => filters.relatedDocuments!.includes(id))
+      );
+    }
+    
     return filteredDocs;
   };
   
-  // Update search results whenever documents or search term changes
+  // Update search results whenever documents or filters change
   useEffect(() => {
     if (!isLoading) {
       const results = filterDocuments(documents);
       setSearchResults(results);
     }
-  }, [documents, searchTerm, filters, activeTab, isLoading]);
+  }, [documents, filters, activeTab, isLoading]);
   
   return (
     <div>
@@ -235,10 +210,11 @@ export const DocumentSearch: React.FC = () => {
             </div>
             
             {showFilters && (
-              <div className="border p-4 rounded-md">
-                {/* Implement filter components here */}
-                <p>Filter options will go here</p>
-              </div>
+              <DocumentAdvancedFilters 
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onClearFilters={clearFilters}
+              />
             )}
             
             <Tabs defaultValue={activeTab} className="space-y-4" onValueChange={handleTabChange}>
