@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -10,142 +9,178 @@ import {
   Calendar, 
   Users, 
   BookOpen, 
-  ClipboardList 
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import OverallComplianceCard from './dashboard/OverallComplianceCard';
 import UpcomingTrainingCard from './dashboard/UpcomingTrainingCard';
 import DepartmentComplianceChart from './dashboard/DepartmentComplianceChart';
 import ExpiringCertificationsCard from './dashboard/ExpiringCertificationsCard';
 import RecentActivitiesCard from './dashboard/RecentActivitiesCard';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+
+// Define type for training stats
+interface TrainingStats {
+  totalAssigned: number;
+  completed: number;
+  inProgress: number;
+  overdue: number;
+  compliance: number;
+  avgScore: number;
+  certExpiringCount: number;
+}
 
 const TrainingDashboard: React.FC = () => {
-  const trainingStats = {
-    totalAssigned: 245,
-    completed: 192,
-    inProgress: 32,
-    overdue: 21,
-    compliance: 78,
-    avgScore: 88,
-    certExpiringCount: 8
-  };
+  // State for training stats
+  const [trainingStats, setTrainingStats] = useState<TrainingStats>({
+    totalAssigned: 0,
+    completed: 0,
+    inProgress: 0,
+    overdue: 0,
+    compliance: 0,
+    avgScore: 0,
+    certExpiringCount: 0
+  });
+  
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Fetch training stats on component mount
+  useEffect(() => {
+    const fetchTrainingStats = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch training stats from Supabase
+        const { data, error } = await supabase
+          .from('training_statistics')
+          .select('*')
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Update state with fetched data
+        if (data) {
+          setTrainingStats(data);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching training statistics:', err);
+        setError('Failed to load training statistics. Please try again later.');
+        toast({
+          title: 'Error',
+          description: 'Failed to load training statistics.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTrainingStats();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading training dashboard...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertCircle className="text-red-500 h-10 w-10 mb-2" />
+        <p className="text-red-500">{error}</p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Top Stats Cards */}
+      <h2 className="text-3xl font-bold">Training Dashboard</h2>
+      
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard 
-          title="Completed Trainings" 
-          value={trainingStats.completed} 
-          description="Total completed" 
-          icon={<BookOpenCheck className="h-5 w-5 text-green-500" />}
-          trend="+3% from last month"
+          title="Assigned Trainings" 
+          value={trainingStats.totalAssigned.toString()} 
+          icon={<BookOpen className="h-4 w-4" />} 
         />
-        
+        <StatsCard 
+          title="Completed" 
+          value={trainingStats.completed.toString()} 
+          icon={<BookOpenCheck className="h-4 w-4" />} 
+        />
         <StatsCard 
           title="In Progress" 
-          value={trainingStats.inProgress} 
-          description="Currently active" 
-          icon={<Clock className="h-5 w-5 text-blue-500" />}
+          value={trainingStats.inProgress.toString()} 
+          icon={<Clock className="h-4 w-4" />} 
         />
-        
         <StatsCard 
-          title="Overdue Trainings" 
-          value={trainingStats.overdue} 
-          description="Require attention" 
-          icon={<AlertCircle className="h-5 w-5 text-red-500" />}
-          trend="+5 in last week"
-          trendNegative
-        />
-        
-        <StatsCard 
-          title="Average Score" 
-          value={`${trainingStats.avgScore}%`} 
-          description="Across all courses" 
-          icon={<Award className="h-5 w-5 text-purple-500" />}
-          trend="+2.5% this quarter"
+          title="Overdue" 
+          value={trainingStats.overdue.toString()} 
+          icon={<AlertCircle className="h-4 w-4" />} 
         />
       </div>
       
-      {/* Main Dashboard Content */}
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Overall Compliance */}
         <div className="lg:col-span-2">
           <OverallComplianceCard 
             compliancePercentage={trainingStats.compliance} 
-            totalAssigned={trainingStats.totalAssigned}
-            completed={trainingStats.completed}
+            avgScore={trainingStats.avgScore}
           />
         </div>
         
-        <div>
-          <UpcomingTrainingCard />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <DepartmentComplianceChart />
-        </div>
-        
+        {/* Expiring Certifications */}
         <div>
           <ExpiringCertificationsCard count={trainingStats.certExpiringCount} />
         </div>
       </div>
       
+      {/* Additional Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentActivitiesCard />
+        {/* Department Compliance */}
+        <DepartmentComplianceChart />
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center">
-              <ClipboardList className="h-5 w-5 text-blue-500 mr-2" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>Common training management tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <QuickActionButton 
-                icon={<BookOpen className="w-4 h-4" />} 
-                label="Assign Training"
-              />
-              <QuickActionButton 
-                icon={<Users className="w-4 h-4" />} 
-                label="Add Employee"
-              />
-              <QuickActionButton 
-                icon={<Award className="w-4 h-4" />} 
-                label="Record Certification"
-              />
-              <QuickActionButton 
-                icon={<Calendar className="w-4 h-4" />} 
-                label="Schedule Assessment"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Upcoming Training */}
+        <UpcomingTrainingCard />
       </div>
+      
+      {/* Recent Activities */}
+      <RecentActivitiesCard />
     </div>
   );
 };
 
-// Helper Components
+// StatsCard Component
 interface StatsCardProps {
   title: string;
-  value: number | string;
-  description: string;
-  icon: React.ReactNode;
+  value: string;
   trend?: string;
-  trendNegative?: boolean;
+  icon: React.ReactNode;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ 
-  title, 
-  value, 
-  description, 
-  icon,
-  trend,
-  trendNegative = false
-}) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, icon }) => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -154,28 +189,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
         {trend && (
-          <p className={`text-xs mt-1 ${trendNegative ? 'text-red-500' : 'text-green-500'}`}>
-            {trend}
-          </p>
+          <p className="text-xs text-muted-foreground">{trend}</p>
         )}
       </CardContent>
     </Card>
-  );
-};
-
-interface QuickActionButtonProps {
-  icon: React.ReactNode;
-  label: string;
-}
-
-const QuickActionButton: React.FC<QuickActionButtonProps> = ({ icon, label }) => {
-  return (
-    <button className="flex items-center justify-center p-3 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors text-sm w-full">
-      {icon}
-      <span className="ml-2">{label}</span>
-    </button>
   );
 };
 
