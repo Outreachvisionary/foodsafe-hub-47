@@ -1,136 +1,98 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { 
-  BookOpen, 
-  Plus, 
-  Search, 
-  Filter, 
-  Video, 
-  FileText, 
-  BarChart2, 
+import {
+  BookOpen,
+  Plus,
+  Search,
+  Filter,
+  Video,
+  FileText,
+  BarChart2,
   BookOpenCheck,
   Calculator,
   Pencil,
-  Trash
+  Trash,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { Course } from '@/types/training'; // Assuming this type exists
+
+// Constants instead of hardcoded arrays
+const TRAINING_ROLES = ['Operator', 'Supervisor', 'Manager', 'Quality', 'Admin'];
+const SPC_TOOLS = ['Control Charts', 'Histograms', 'Pareto Charts', 'Scatter Diagrams', 'Process Capability', 'Fishbone Diagrams'];
 
 const CourseLibrary: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Sample courses data
-  const courses = [
-    {
-      id: 'COURSE001',
-      title: 'Food Safety Management Systems Overview',
-      type: 'Online',
-      category: 'Compliance',
-      duration: 60,
-      materials: 3,
-      assignedCount: 24,
-      completionRate: 78,
-      lastUpdated: '2023-04-15',
-      status: 'Active'
-    },
-    {
-      id: 'COURSE002',
-      title: 'HACCP Principles and Application',
-      type: 'Classroom',
-      category: 'Compliance',
-      duration: 120,
-      materials: 5,
-      assignedCount: 18,
-      completionRate: 65,
-      lastUpdated: '2023-03-20',
-      status: 'Active'
-    },
-    {
-      id: 'COURSE003',
-      title: 'SQF Implementation Training',
-      type: 'Workshop',
-      category: 'Compliance',
-      duration: 240,
-      materials: 8,
-      assignedCount: 12,
-      completionRate: 85,
-      lastUpdated: '2023-05-01',
-      status: 'Active'
-    },
-    {
-      id: 'COURSE004',
-      title: 'SPC Fundamentals',
-      type: 'Online',
-      category: 'SPC',
-      duration: 90,
-      materials: 4,
-      assignedCount: 32,
-      completionRate: 72,
-      lastUpdated: '2023-05-10',
-      status: 'Active'
-    },
-    {
-      id: 'COURSE005',
-      title: 'Control Chart Creation and Analysis',
-      type: 'Online',
-      category: 'SPC',
-      duration: 75,
-      materials: 6,
-      assignedCount: 28,
-      completionRate: 68,
-      lastUpdated: '2023-04-28',
-      status: 'Active'
-    },
-    {
-      id: 'COURSE006',
-      title: 'Process Capability Analysis',
-      type: 'Workshop',
-      category: 'SPC',
-      duration: 180,
-      materials: 7,
-      assignedCount: 15,
-      completionRate: 80,
-      lastUpdated: '2023-05-05',
-      status: 'Draft'
-    },
-    {
-      id: 'COURSE007',
-      title: 'Root Cause Analysis Tools',
-      type: 'Online',
-      category: 'Quality',
-      duration: 120,
-      materials: 5,
-      assignedCount: 45,
-      completionRate: 75,
-      lastUpdated: '2023-04-15',
-      status: 'Active'
-    }
-  ];
-  
+  // State for data fetching
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // State for the new course form
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSpcRelated, setIsSpcRelated] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+
+  // Fetch courses when component mounts
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        setCourses(data || []);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+        setError('Failed to load courses. Please try again later.');
+        toast({
+          title: 'Error',
+          description: 'Failed to load courses.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCourses();
+  }, []);
+
   // Filter courses based on activeTab and searchQuery
   const filteredCourses = courses.filter(course => {
-    const matchesSearch = 
+    const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.id.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesTab = 
-      activeTab === 'all' || 
+    const matchesTab =
+      activeTab === 'all' ||
       (activeTab === 'spc' && course.category === 'SPC') ||
       (activeTab === 'compliance' && course.category === 'Compliance') ||
       (activeTab === 'quality' && course.category === 'Quality') ||
       (activeTab === 'draft' && course.status === 'Draft');
-      
     return matchesSearch && matchesTab;
   });
-  
+
   // Format duration for display
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes}m`;
@@ -138,170 +100,229 @@ const CourseLibrary: React.FC = () => {
     const remainingMinutes = minutes % 60;
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
-  
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
-  
+
+  // Handle role selection
+  const handleRoleToggle = (role: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
+  };
+
+  // Handle tool selection
+  const handleToolToggle = (tool: string) => {
+    setSelectedTools(prev => 
+      prev.includes(tool)
+        ? prev.filter(t => t !== tool)
+        : [...prev, tool]
+    );
+  };
+
+  // Handle form submission
+  const handleCreateCourse = async () => {
+    // Implementation for creating a new course
+    // Would call supabase to insert a new course
+    setIsCreateDialogOpen(false);
+    // Reset form state
+    setIsSpcRelated(false);
+    setSelectedRoles([]);
+    setSelectedTools([]);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading courses...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertCircle className="text-red-500 h-10 w-10 mb-2" />
+        <p className="text-red-500">{error}</p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Course Library</h2>
-        <div className="flex space-x-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Course
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Course</DialogTitle>
-                <DialogDescription>
-                  Add a new course to the training library
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="title" className="text-sm font-medium">Course Title</label>
-                    <Input id="title" placeholder="Enter course title" />
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="description" className="text-sm font-medium">Description</label>
-                    <Input id="description" placeholder="Enter course description" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="type" className="text-sm font-medium">Course Type</label>
-                    <Select>
-                      <SelectTrigger id="type">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="classroom">Classroom</SelectItem>
-                        <SelectItem value="workshop">Workshop</SelectItem>
-                        <SelectItem value="on-the-job">On-the-job</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="category" className="text-sm font-medium">Category</label>
-                    <Select>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="compliance">Compliance</SelectItem>
-                        <SelectItem value="spc">SPC</SelectItem>
-                        <SelectItem value="quality">Quality</SelectItem>
-                        <SelectItem value="safety">Safety</SelectItem>
-                        <SelectItem value="technical">Technical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="duration" className="text-sm font-medium">Duration (minutes)</label>
-                    <Input id="duration" type="number" min="1" placeholder="Enter duration" />
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="passThreshold" className="text-sm font-medium">Pass Threshold (%)</label>
-                    <Input id="passThreshold" type="number" min="1" max="100" placeholder="e.g. 80" />
-                  </div>
-                </div>
-                
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-sm font-medium">Target Roles</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Operator', 'Supervisor', 'Manager', 'Quality', 'Admin'].map(role => (
-                      <div key={role} className="flex items-center">
-                        <input type="checkbox" id={`role-${role}`} className="mr-1" />
-                        <label htmlFor={`role-${role}`} className="text-sm">{role}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch id="spc" />
-                  <label htmlFor="spc" className="text-sm font-medium">This is an SPC-related course</label>
-                </div>
-                
-                <div className="border rounded-md p-3 bg-gray-50">
-                  <h3 className="text-sm font-medium mb-2">SPC Tools Used (if applicable)</h3>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {['Control Charts', 'Histograms', 'Pareto Charts', 'Scatter Diagrams', 'Process Capability', 'Fishbone Diagrams'].map(tool => (
-                      <div key={tool} className="flex items-center">
-                        <input type="checkbox" id={`tool-${tool}`} className="mr-1" />
-                        <label htmlFor={`tool-${tool}`} className="text-sm">{tool}</label>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">Course Library</h2>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Course
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create New Course</DialogTitle>
+              <DialogDescription>
+                Add a new course to the training library
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="title" className="text-right">
+                  Course Title
+                </label>
+                <Input id="title" placeholder="Course Title" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="description" className="text-right">
+                  Description
+                </label>
+                <Textarea id="description" placeholder="Description" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="course-type" className="text-right">
+                  Course Type
+                </label>
+                <Select>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="classroom">Classroom</SelectItem>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="on-the-job">On-the-job</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="category" className="text-right">
+                  Category
+                </label>
+                <Select>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compliance">Compliance</SelectItem>
+                    <SelectItem value="spc">SPC</SelectItem>
+                    <SelectItem value="quality">Quality</SelectItem>
+                    <SelectItem value="safety">Safety</SelectItem>
+                    <SelectItem value="technical">Technical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="duration" className="text-right">
+                  Duration (minutes)
+                </label>
+                <Input id="duration" type="number" min="0" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="pass-threshold" className="text-right">
+                  Pass Threshold (%)
+                </label>
+                <Input id="pass-threshold" type="number" min="0" max="100" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <div className="text-right pt-2">Target Roles</div>
+                <div className="col-span-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {TRAINING_ROLES.map(role => (
+                      <div key={role} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`role-${role}`} 
+                          checked={selectedRoles.includes(role)} 
+                          onCheckedChange={() => handleRoleToggle(role)}
+                        />
+                        <label htmlFor={`role-${role}`}>{role}</label>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline">Cancel</Button>
-                <Button>Create Course</Button>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="text-right">SPC Related</div>
+                <div className="flex items-center space-x-2 col-span-3">
+                  <Switch 
+                    id="spc-related" 
+                    checked={isSpcRelated} 
+                    onCheckedChange={setIsSpcRelated} 
+                  />
+                  <label htmlFor="spc-related">This is an SPC-related course</label>
+                </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              {isSpcRelated && (
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <div className="text-right pt-2">SPC Tools Used</div>
+                  <div className="col-span-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {SPC_TOOLS.map(tool => (
+                        <div key={tool} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`tool-${tool}`} 
+                            checked={selectedTools.includes(tool)} 
+                            onCheckedChange={() => handleToolToggle(tool)}
+                          />
+                          <label htmlFor={`tool-${tool}`}>{tool}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateCourse}>Create Course</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">All Courses</TabsTrigger>
-          <TabsTrigger value="spc">
-            <BarChart2 className="h-4 w-4 mr-1" />
-            SPC Courses
-          </TabsTrigger>
+          <TabsTrigger value="spc">SPC Courses</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="quality">Quality Tools</TabsTrigger>
           <TabsTrigger value="draft">Draft</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value={activeTab} className="mt-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xl font-bold flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-blue-500" />
-                Course Library
-              </CardTitle>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Course Library</CardTitle>
               <CardDescription>
                 Manage your organization's training courses and materials
               </CardDescription>
-              
-              <div className="flex space-x-2 mt-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    placeholder="Search courses..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center space-x-2 mb-4">
+                <Search className="h-4 w-4" />
+                <Input
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -312,7 +333,7 @@ const CourseLibrary: React.FC = () => {
                     <TableHead>Completion Rate</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -320,50 +341,43 @@ const CourseLibrary: React.FC = () => {
                     filteredCourses.map((course) => (
                       <TableRow key={course.id}>
                         <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell>{course.type}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-gray-50">
-                            {course.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            className={
-                              course.category === 'SPC' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                              course.category === 'Compliance' ? 'bg-green-50 text-green-700 border-green-200' :
-                              'bg-purple-50 text-purple-700 border-purple-200'
-                            }
-                          >
-                            {course.category}
-                          </Badge>
+                          <Badge variant="outline">{course.category}</Badge>
                         </TableCell>
                         <TableCell>{formatDuration(course.duration)}</TableCell>
                         <TableCell>
-                          <div className="flex items-center">
-                            <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
-                              <div 
-                                className={`h-2 rounded-full ${
+                          <div className="flex items-center space-x-2">
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div
+                                className={`h-2.5 rounded-full ${
                                   course.completionRate >= 80 ? 'bg-green-500' :
                                   course.completionRate >= 60 ? 'bg-amber-500' : 'bg-red-500'
                                 }`}
                                 style={{ width: `${course.completionRate}%` }}
-                              ></div>
+                              />
                             </div>
-                            <span className="text-xs">{course.completionRate}%</span>
+                            <span>{course.completionRate}%</span>
                           </div>
                         </TableCell>
                         <TableCell>{formatDate(course.lastUpdated)}</TableCell>
                         <TableCell>
-                          <Badge variant={course.status === 'Active' ? 'default' : 'secondary'}>
+                          <Badge 
+                            variant={course.status === 'Active' ? 'default' : 'secondary'}
+                          >
                             {course.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="icon">
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon">
                               <Trash className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <FileText className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -371,7 +385,7 @@ const CourseLibrary: React.FC = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8">
                         No courses found matching your filters
                       </TableCell>
                     </TableRow>
@@ -380,46 +394,37 @@ const CourseLibrary: React.FC = () => {
               </Table>
             </CardContent>
           </Card>
+
+          {activeTab === 'spc' && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold">SPC Training Modules</h3>
+              <p className="text-muted-foreground">
+                Interactive training modules for Statistical Process Control skills
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <SPCTrainingCard
+                  title="Control Chart Builder"
+                  description="Interactive module for learning how to build and interpret control charts"
+                  icon={<BarChart2 className="h-6 w-6" />}
+                  type="Interactive"
+                />
+                <SPCTrainingCard
+                  title="Process Capability Calculator"
+                  description="Tool for calculating Cp, Cpk, Pp, and Ppk"
+                  icon={<Calculator className="h-6 w-6" />}
+                  type="Tool"
+                />
+                <SPCTrainingCard
+                  title="SPC Implementation Guide"
+                  description="Step-by-step guide for implementing SPC in your facility"
+                  icon={<FileText className="h-6 w-6" />}
+                  type="Guide"
+                />
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
-      
-      {activeTab === 'spc' && (
-        <Card className="mt-6 border-blue-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <BarChart2 className="h-5 w-5 text-blue-500 mr-2" />
-              SPC Training Modules
-            </CardTitle>
-            <CardDescription>
-              Interactive training modules for Statistical Process Control skills
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <SPCTrainingCard
-                title="Control Chart Simulator"
-                description="Interactive tool to learn how control charts work with real-time feedback"
-                icon={<BarChart2 className="h-5 w-5" />}
-                type="Interactive"
-              />
-              
-              <SPCTrainingCard
-                title="Process Capability Calculator"
-                description="Learn to calculate and interpret Cp, Cpk, Pp, and Ppk indices"
-                icon={<Calculator className="h-5 w-5" />}
-                type="Tool"
-              />
-              
-              <SPCTrainingCard
-                title="Root Cause Analysis"
-                description="Step-by-step guide to identifying root causes of process variation"
-                icon={<FileText className="h-5 w-5" />}
-                type="Guide"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
@@ -431,33 +436,26 @@ interface SPCTrainingCardProps {
   type: 'Interactive' | 'Tool' | 'Guide' | 'Video';
 }
 
-const SPCTrainingCard: React.FC<SPCTrainingCardProps> = ({ 
-  title, 
+const SPCTrainingCard: React.FC<SPCTrainingCardProps> = ({
+  title,
   description,
   icon,
   type
 }) => {
   return (
-    <Card className="hover:border-blue-300 transition-all">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-base flex items-center">
-            <div className="bg-blue-100 p-1.5 rounded mr-2 text-blue-600">
-              {icon}
-            </div>
-            {title}
-          </CardTitle>
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200">
-            {type}
-          </Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center space-x-2">
+          {icon}
+          <CardTitle>{title}</CardTitle>
         </div>
-        <CardDescription>{description}</CardDescription>
+        <Badge variant="outline">{type}</Badge>
       </CardHeader>
+      <CardContent>
+        <p>{description}</p>
+      </CardContent>
       <CardFooter>
-        <Button variant="outline" size="sm" className="w-full">
-          <BookOpenCheck className="h-4 w-4 mr-2" />
-          Open Module
-        </Button>
+        <Button className="w-full">Open Module</Button>
       </CardFooter>
     </Card>
   );
