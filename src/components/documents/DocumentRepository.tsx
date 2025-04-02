@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -10,6 +11,8 @@ import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
 import { Folder, Document as DocumentType } from '@/types/database';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import DocumentPreviewDialogWrapper from '@/components/documents/DocumentPreviewDialogWrapper';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -18,15 +21,20 @@ const DocumentRepository: React.FC = () => {
     selectedFolder,
     setSelectedFolder,
     isLoading,
-    error
+    error,
+    setSelectedDocument,
+    deleteDocument,
+    refreshData
   } = useDocuments();
 
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('documentList');
   const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [previewDocument, setPreviewDocument] = useState<DocumentType | null>(null);
 
   useEffect(() => {
     let filtered = documents;
@@ -74,19 +82,40 @@ const DocumentRepository: React.FC = () => {
   };
 
   const handleViewDocument = (document: DocumentType) => {
-    console.log('View document:', document);
+    setPreviewDocument(document);
+    setSelectedDocument(document);
   };
 
   const handleEditDocument = (document: DocumentType) => {
-    console.log('Edit document:', document);
+    setSelectedDocument(document);
+    // Navigate to the edit tab in the parent component
+    // This will be handled in Documents.tsx
   };
 
-  const handleDeleteDocument = (document: DocumentType) => {
-    console.log('Delete document:', document);
+  const handleDeleteDocument = async (document: DocumentType) => {
+    try {
+      await deleteDocument(document.id);
+      toast({
+        title: "Document deleted",
+        description: `"${document.title}" has been successfully deleted.`,
+      });
+      refreshData();
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadDocument = (document: DocumentType) => {
-    console.log('Download document:', document);
+    // Implement download logic or open in a new tab
+    toast({
+      title: "Download started",
+      description: `Downloading "${document.title}"`,
+    });
   };
 
   return (
@@ -170,7 +199,7 @@ const DocumentRepository: React.FC = () => {
               )}
               
               {filteredDocuments.length > 0 ? (
-                <div className="border rounded-md">
+                <ScrollArea className="h-[calc(100vh-350px)] border rounded-md">
                   <DocumentList 
                     documents={filteredDocuments} 
                     onViewDocument={handleViewDocument}
@@ -178,7 +207,7 @@ const DocumentRepository: React.FC = () => {
                     onDeleteDocument={handleDeleteDocument}
                     onDownloadDocument={handleDownloadDocument}
                   />
-                </div>
+                </ScrollArea>
               ) : (
                 <div className="border rounded-md p-12 text-center">
                   <div className="mx-auto bg-muted/20 rounded-full w-20 h-20 flex items-center justify-center mb-4">
@@ -212,6 +241,16 @@ const DocumentRepository: React.FC = () => {
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen}
       />
+
+      {previewDocument && (
+        <DocumentPreviewDialogWrapper
+          document={previewDocument}
+          open={!!previewDocument}
+          onOpenChange={(open) => {
+            if (!open) setPreviewDocument(null);
+          }}
+        />
+      )}
     </div>
   );
 };

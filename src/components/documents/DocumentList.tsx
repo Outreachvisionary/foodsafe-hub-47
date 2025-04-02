@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,115 +59,111 @@ const DocumentList: React.FC<DocumentListProps> = ({
   };
   
   return (
-    <div className="overflow-hidden">
-      <div className="rounded-md border">
-        <div className="relative overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b bg-muted/50">
-              <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
-                  Document
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium hidden md:table-cell">
-                  Category
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
-                  Status
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
-                  Last Updated
-                </th>
-                <th className="h-12 px-4 text-right align-middle font-medium min-w-[150px]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {documents.map((document) => (
-                <tr 
-                  key={document.id}
-                  className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                >
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                    <div className="flex items-center gap-3">
-                      {getDocumentIcon(document)}
-                      <div>
-                        <div className="font-medium">{truncateText(document.title, 40)}</div>
-                        <div className="text-xs text-muted-foreground">{document.file_name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 align-middle hidden md:table-cell">
-                    <Badge variant="outline">{document.category}</Badge>
-                  </td>
-                  <td className="p-4 align-middle hidden lg:table-cell">
-                    {getStatusBadge(document)}
-                  </td>
-                  <td className="p-4 align-middle hidden lg:table-cell">
-                    <div className="flex items-center">
-                      <ClockIcon className="mr-1 h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(document.updated_at, true)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 align-middle text-right">
-                    <div className="flex justify-end gap-1">
-                      {onViewDocument && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onViewDocument(document)}
-                          className="h-8 w-8"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      )}
-                      
-                      {onEditDocument && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onEditDocument(document)}
-                          className="h-8 w-8"
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                      )}
-                      
-                      {onDownloadDocument && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onDownloadDocument(document)}
-                          className="h-8 w-8"
-                        >
-                          <Download className="h-4 w-4" />
-                          <span className="sr-only">Download</span>
-                        </Button>
-                      )}
-                      
-                      {onDeleteDocument && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => onDeleteDocument(document)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <div className="overflow-hidden w-full">
+      <table className="w-full caption-bottom text-sm">
+        <thead className="[&_tr]:border-b bg-muted/50">
+          <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+            <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
+              Document
+            </th>
+            <th className="h-12 px-4 text-left align-middle font-medium hidden md:table-cell">
+              Category
+            </th>
+            <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
+              Status
+            </th>
+            <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
+              Last Updated
+            </th>
+            <th className="h-12 px-4 text-right align-middle font-medium min-w-[150px]">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="[&_tr:last-child]:border-0">
+          {documents.map((document) => (
+            <tr 
+              key={document.id}
+              className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+            >
+              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                <div className="flex items-center gap-3">
+                  {getDocumentIcon(document)}
+                  <div>
+                    <div className="font-medium">{truncateText(document.title, 40)}</div>
+                    <div className="text-xs text-muted-foreground">{document.file_name}</div>
+                  </div>
+                </div>
+              </td>
+              <td className="p-4 align-middle hidden md:table-cell">
+                <Badge variant="outline">{document.category}</Badge>
+              </td>
+              <td className="p-4 align-middle hidden lg:table-cell">
+                {getStatusBadge(document)}
+              </td>
+              <td className="p-4 align-middle hidden lg:table-cell">
+                <div className="flex items-center">
+                  <ClockIcon className="mr-1 h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(document.updated_at, true)}
+                  </span>
+                </div>
+              </td>
+              <td className="p-4 align-middle text-right">
+                <div className="flex justify-end gap-1">
+                  {onViewDocument && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onViewDocument(document)}
+                      className="h-8 w-8"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                  )}
+                  
+                  {onEditDocument && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEditDocument(document)}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  )}
+                  
+                  {onDownloadDocument && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDownloadDocument(document)}
+                      className="h-8 w-8"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="sr-only">Download</span>
+                    </Button>
+                  )}
+                  
+                  {onDeleteDocument && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDeleteDocument(document)}
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       
       {documents.length === 0 && (
         <div className="text-center py-8">

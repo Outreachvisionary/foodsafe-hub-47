@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import DocumentUploader from './DocumentUploader';
 import { useDocuments } from '@/contexts/DocumentContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -39,7 +40,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
@@ -48,14 +49,16 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <DocumentUploader
-          onSuccess={handleUploadComplete}
-          onCancel={() => onOpenChange(false)}
-          category={category}
-          allowedTypes={allowedTypes}
-          maxSize={maxSize}
-          selectedFolder={folderToUse}
-        />
+        <ScrollArea className="max-h-[70vh]">
+          <DocumentUploader
+            onSuccess={handleUploadComplete}
+            onCancel={() => onOpenChange(false)}
+            category={category}
+            allowedTypes={allowedTypes}
+            maxSize={maxSize}
+            selectedFolder={folderToUse}
+          />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
