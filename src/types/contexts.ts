@@ -20,6 +20,9 @@ export interface DocumentContextType {
   clearAllNotifications: () => void;
   checkoutDocument: (document: Document) => Promise<Document>;
   checkinDocument: (document: Document) => Promise<Document>;
+  selectedFolder: any;
+  setSelectedFolder: (folder: any) => void;
+  folders: any[];
   // New methods for Phase 2 features
   addDocumentRelationship: (sourceDocId: string, targetDocId: string, relationType: string) => Promise<DocumentRelationship | null>;
   removeDocumentRelationship: (relationshipId: string) => Promise<void>;

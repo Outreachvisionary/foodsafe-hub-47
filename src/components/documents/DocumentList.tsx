@@ -15,7 +15,7 @@ interface DocumentListProps {
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
-  documents,
+  documents = [],
   onViewDocument,
   onEditDocument,
   onDeleteDocument,
@@ -23,6 +23,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
 }) => {
   // Helper function to get status badge
   const getStatusBadge = (document: Document) => {
+    if (!document) return null;
+    
     if (document.is_expired) {
       return <Badge variant="destructive">Expired</Badge>;
     }
@@ -41,6 +43,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
   
   // Helper function to get icon based on document type
   const getDocumentIcon = (document: Document) => {
+    if (!document || !document.file_type) return <FileText className="h-5 w-5 text-gray-500" />;
+    
     switch (document.file_type) {
       case 'pdf':
         return <FileText className="h-5 w-5 text-red-500" />;
@@ -81,7 +85,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </tr>
         </thead>
         <tbody className="[&_tr:last-child]:border-0">
-          {documents.map((document) => (
+          {Array.isArray(documents) && documents.length > 0 ? documents.map((document) => (
             <tr 
               key={document.id}
               className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
@@ -90,13 +94,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <div className="flex items-center gap-3">
                   {getDocumentIcon(document)}
                   <div>
-                    <div className="font-medium">{truncateText(document.title, 40)}</div>
-                    <div className="text-xs text-muted-foreground">{document.file_name}</div>
+                    <div className="font-medium">{truncateText(document.title || 'Untitled Document', 40)}</div>
+                    <div className="text-xs text-muted-foreground">{document.file_name || ''}</div>
                   </div>
                 </div>
               </td>
               <td className="p-4 align-middle hidden md:table-cell">
-                <Badge variant="outline">{document.category}</Badge>
+                <Badge variant="outline">{document.category || 'Uncategorized'}</Badge>
               </td>
               <td className="p-4 align-middle hidden lg:table-cell">
                 {getStatusBadge(document)}
@@ -105,7 +109,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <div className="flex items-center">
                   <ClockIcon className="mr-1 h-3 w-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">
-                    {formatDate(document.updated_at, true)}
+                    {document.updated_at ? formatDate(document.updated_at, true) : 'N/A'}
                   </span>
                 </div>
               </td>
@@ -161,15 +165,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 </div>
               </td>
             </tr>
-          ))}
+          )) : (
+            <tr>
+              <td colSpan={5} className="text-center py-8">
+                <p className="text-muted-foreground">No documents available</p>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
       
-      {documents.length === 0 && (
+      {!Array.isArray(documents) || documents.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No documents available</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

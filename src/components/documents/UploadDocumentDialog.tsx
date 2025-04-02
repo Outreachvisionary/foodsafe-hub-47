@@ -32,7 +32,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   
   const handleUploadComplete = () => {
     onOpenChange(false);
-    refreshData(); // Refresh document list after upload
+    if (typeof refreshData === 'function') {
+      refreshData(); // Refresh document list after upload
+    }
   };
 
   // Use selectedFolder prop if provided, otherwise use the one from context
@@ -40,16 +42,16 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
             Upload a document to the document management system
-            {contextFolder && ` in folder: ${contextFolder.name}`}
+            {contextFolder ? ` in folder: ${contextFolder.name}` : ''}
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[70vh]">
+        <ScrollArea className="max-h-[calc(90vh-10rem)] mt-4 pr-4">
           <DocumentUploader
             onSuccess={handleUploadComplete}
             onCancel={() => onOpenChange(false)}
