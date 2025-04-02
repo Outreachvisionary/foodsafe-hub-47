@@ -77,7 +77,7 @@ export const createTrainingRecord = async (record: Partial<TrainingRecord>): Pro
     employee_name: record.employee_name,
     session_id: record.session_id,
     due_date: record.due_date,
-    status: record.status || 'Not Started' as TrainingStatus,
+    status: (record.status || 'Not Started') as TrainingStatus, // Properly type-cast the status
     ...record
   };
 

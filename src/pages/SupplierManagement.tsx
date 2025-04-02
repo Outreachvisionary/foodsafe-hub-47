@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,15 +9,18 @@ import SupplierRiskAssessment from '@/components/suppliers/SupplierRiskAssessmen
 import StandardSelect from '@/components/suppliers/StandardSelect';
 import StandardRequirements from '@/components/suppliers/StandardRequirements';
 import { StandardName } from '@/types/supplier';
+
 const SupplierManagement = () => {
   const [selectedStandard, setSelectedStandard] = useState<StandardName>('SQF');
-  return <div className="min-h-screen bg-gray-50">
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
       <DashboardHeader title="Supplier Management" subtitle="Manage suppliers, documentation, and compliance" />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
           <div className="flex-1" />
-          
+          <StandardSelect value={selectedStandard} onChange={setSelectedStandard} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -47,8 +51,13 @@ const SupplierManagement = () => {
             </Tabs>
           </div>
           
+          <div className="md:col-span-1">
+            <StandardRequirements standard={selectedStandard} />
+          </div>
         </div>
       </main>
-    </div>;
+    </div>
+  );
 };
+
 export default SupplierManagement;

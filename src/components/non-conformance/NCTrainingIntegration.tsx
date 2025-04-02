@@ -2,20 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/components/ui/use-toast";
-import { BookOpen, Calendar, Users, Clock, FileSpreadsheet, ClipboardList } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { BookOpen, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
 import { TrainingStatus } from '@/types/training';
+import TrainingAssignmentForm from './training/TrainingAssignmentForm';
 
 interface NCTrainingIntegrationProps {
   ncId: string;
@@ -155,7 +150,7 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
           session_id: sessionId,
           employee_id: assigneeId,
           employee_name: empName,
-          status: 'Not Started' as TrainingStatus, // Explicitly cast to TrainingStatus
+          status: 'Not Started' as TrainingStatus,
           assigned_date: new Date().toISOString(),
           due_date: new Date(dueDate).toISOString(),
           notes
@@ -206,6 +201,21 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
     }
   };
 
+  const handleSelectAssignee = (assigneeId: string) => {
+    setAssignees([...assignees, assigneeId]);
+    const employee = employees.find(e => e.id === assigneeId);
+    if (employee) {
+      setAssigneeNames({
+        ...assigneeNames,
+        [assigneeId]: employee.name
+      });
+    }
+  };
+
+  const handleRemoveAssignee = (assigneeId: string) => {
+    setAssignees(assignees.filter(id => id !== assigneeId));
+  };
+
   if (!showForm) {
     return (
       <div className="mt-4">
@@ -234,150 +244,39 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Non-Conformance Issue</Label>
-            <div className="p-3 bg-muted rounded-md">
-              <h4 className="text-sm font-medium">{ncTitle}</h4>
-              <p className="text-xs text-muted-foreground mt-1">{ncDescription}</p>
-            </div>
+          <div className="p-3 bg-muted rounded-md">
+            <h4 className="text-sm font-medium">{ncTitle}</h4>
+            <p className="text-xs text-muted-foreground mt-1">{ncDescription}</p>
           </div>
           
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Training Course</Label>
-            <Select value={trainingCourse} onValueChange={setTrainingCourse}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a course" />
-              </SelectTrigger>
-              <SelectContent>
-                {recommendedCourses.map((course) => (
-                  <SelectItem key={course} value={course}>
-                    {course}
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">Custom Training...</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {trainingCourse === 'custom' && (
-              <Input 
-                className="mt-2"
-                placeholder="Enter custom training course title"
-                onChange={(e) => setTrainingCourse(e.target.value)}
-              />
-            )}
-          </div>
+          <TrainingAssignmentForm
+            recommendedCourses={recommendedCourses}
+            employees={employees}
+            priority={priority}
+            dueDate={dueDate}
+            onDueDateChange={setDueDate}
+            onPriorityChange={setPriority}
+            onAssign={handleAssignTraining}
+            isLoading={isLoading}
+            onSelectCourse={setTrainingCourse}
+            selectedCourse={trainingCourse}
+            notes={notes}
+            onNotesChange={setNotes}
+            assignees={assignees}
+            onSelectAssignee={handleSelectAssignee}
+            onRemoveAssignee={handleRemoveAssignee}
+            assigneeNames={assigneeNames}
+          />
           
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Priority</Label>
-            <Select value={priority} onValueChange={(value) => setPriority(value as 'low' | 'medium' | 'high' | 'critical')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="critical">Critical (24 hours)</SelectItem>
-                <SelectItem value="high">High (3 days)</SelectItem>
-                <SelectItem value="medium">Medium (1 week)</SelectItem>
-                <SelectItem value="low">Low (2 weeks)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Due Date</Label>
-            <div className="relative">
-              <Input 
-                type="date" 
-                value={dueDate} 
-                onChange={(e) => setDueDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
-              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-          
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Assign To</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select employees" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem 
-                    key={employee.id} 
-                    value={employee.id}
-                    onClick={() => {
-                      if (!assignees.includes(employee.id)) {
-                        setAssignees([...assignees, employee.id]);
-                        setAssigneeNames({
-                          ...assigneeNames,
-                          [employee.id]: employee.name
-                        });
-                      }
-                    }}
-                  >
-                    {employee.name} {employee.department ? `- ${employee.department}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {assignees.length > 0 && (
-              <div className="mt-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  <span>{assignees.length} employee(s) selected</span>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {assignees.map(id => {
-                    const emp = employees.find(e => e.id === id);
-                    return (
-                      <Badge key={id} variant="outline" className="flex items-center gap-1">
-                        {emp?.name || assigneeNames[id] || id}
-                        <button
-                          onClick={() => setAssignees(assignees.filter(a => a !== id))}
-                          className="ml-1 text-xs hover:text-destructive"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium mb-1 block">Additional Notes</Label>
-            <Textarea 
-              placeholder="Enter any additional information or instructions..."
-              className="h-24"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              className="flex-1" 
-              onClick={handleAssignTraining}
-              disabled={isLoading}
-            >
-              {isLoading ? <Clock className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-              Assign Training
-            </Button>
-            
-            <Button 
-              className="flex-1" 
-              variant="outline"
-              onClick={() => setShowForm(false)}
-              disabled={isLoading}
-            >
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Back to List
-            </Button>
-          </div>
+          <Button 
+            className="w-full" 
+            variant="outline"
+            onClick={() => setShowForm(false)}
+            disabled={isLoading}
+          >
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Cancel
+          </Button>
         </div>
       </CardContent>
     </Card>

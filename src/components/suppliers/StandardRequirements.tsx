@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { StandardName } from '@/types/supplier';
 import { supabase } from '@/integrations/supabase/client';
+
 interface StandardRequirement {
   id: string;
   standard: string;
@@ -10,14 +12,17 @@ interface StandardRequirement {
   description: string;
   category: string;
 }
+
 interface StandardRequirementsProps {
   standard: StandardName;
 }
+
 const StandardRequirements: React.FC<StandardRequirementsProps> = ({
   standard
 }) => {
   const [requirements, setRequirements] = useState<StandardRequirement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     const fetchRequirements = async () => {
       setIsLoading(true);
@@ -104,10 +109,42 @@ const StandardRequirements: React.FC<StandardRequirementsProps> = ({
         return [];
     }
   };
+  
   const displayRequirements = requirements.length > 0 ? requirements : getFallbackRequirements();
-  return <Card>
-      
-      
-    </Card>;
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl">{standard} Requirements</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center p-4">
+            <div className="animate-spin h-8 w-8 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {displayRequirements.map((req) => (
+              <div key={req.id} className="border rounded-md p-3 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium flex items-center">
+                      <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                      {req.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">{req.description}</p>
+                  </div>
+                  <div className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">
+                    {req.category}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
+
 export default StandardRequirements;
