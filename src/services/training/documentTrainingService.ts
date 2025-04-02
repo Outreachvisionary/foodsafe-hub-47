@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { DocumentControlIntegration } from '@/types/training';
 
 /**
@@ -209,6 +209,9 @@ const documentTrainingService = {
         return {
           documentId: doc.id,
           documentTitle: doc.title,
+          versionNumber: doc.version,
+          changeType: 'Updated', // Default to Updated for existing docs
+          trainingRequired: true,
           updatedAt: doc.updated_at,
           version: doc.version.toString(),
           relatedSessionIds

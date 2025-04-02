@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award, AlertCircle, Calendar } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,7 +49,7 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
           employee_name, 
           next_recurrence,
           session_id,
-          training_sessions!inner(title)
+          training_sessions(title)
         `)
         .eq('status', 'Completed')
         .lt('next_recurrence', expiryDateThreshold.toISOString())
@@ -79,7 +78,7 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
         
         return {
           id: item.id,
-          name: item.training_sessions.title,
+          name: item.training_sessions?.title || 'Unknown Training',
           employee: item.employee_name,
           employeeId: item.employee_id,
           expiryDate: expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),

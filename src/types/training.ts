@@ -131,23 +131,38 @@ export interface Course {
   prerequisiteCourses?: string[];
 }
 
+// Updated to match usage in trainingAssignmentService.ts
 export interface AutoAssignRule {
+  id: string; // Added for the error in trainingConfigService
   type: 'Role' | 'Department' | 'NewHire' | 'CompetencyScore';
   conditions: Array<{
     key: string;
     operator: '=' | '>' | '<' | '>=' | '<=' | '!=';
     value: string | number;
   }>;
+  targetRole?: string; // Added for the error in trainingAssignmentService
+  targetDepartment?: string; // Added for the error in trainingAssignmentService
+  trainingPlanId: string; // Added for the error in trainingAssignmentService
 }
 
+// Updated to match database field names (snake_case)
 export interface TrainingAutomationConfig {
+  id: string; // Added for the error in trainingConfigService
   enabled: boolean;
   rules: AutoAssignRule[];
-  documentChangesTrigger: boolean;
-  newEmployeeTrigger: boolean;
-  roleCangeTrigger: boolean;
+  new_employee_trigger: boolean; // Matching database field name
+  role_change_trigger: boolean; // Matching database field name
+  document_changes_trigger: boolean; // Matching database field name
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Also include camelCase versions for TypeScript code
+  newEmployeeTrigger?: boolean;
+  roleChangeTrigger?: boolean;
+  documentChangesTrigger?: boolean;
 }
 
+// Updated to match usage in documentTrainingService.ts
 export interface DocumentControlIntegration {
   documentId: string;
   documentTitle: string;
@@ -156,4 +171,7 @@ export interface DocumentControlIntegration {
   trainingRequired: boolean;
   trainingDeadlineDays?: number;
   affectedRoles?: string[];
+  version?: string; // For compatibility with existing code
+  updatedAt?: string; // For compatibility with existing code
+  relatedSessionIds?: string[]; // For compatibility with existing code
 }

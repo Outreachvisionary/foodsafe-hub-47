@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
+
+import { supabase } from '@/lib/supabase';
 import { TrainingAutomationConfig, AutoAssignRule } from '@/types/training';
 
 /**
