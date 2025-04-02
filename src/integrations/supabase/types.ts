@@ -2098,6 +2098,108 @@ export type Database = {
         }
         Relationships: []
       }
+      training_courses: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          duration_hours: number | null
+          id: string
+          is_active: boolean | null
+          prerequisite_courses: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          prerequisite_courses?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          prerequisite_courses?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      training_plans: {
+        Row: {
+          automation_trigger: string | null
+          courses: string[] | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          duration_days: number | null
+          end_date: string | null
+          id: string
+          is_automated: boolean | null
+          is_required: boolean | null
+          name: string
+          priority: string | null
+          related_standards: string[] | null
+          start_date: string | null
+          status: string | null
+          target_departments: string[] | null
+          target_roles: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          automation_trigger?: string | null
+          courses?: string[] | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          duration_days?: number | null
+          end_date?: string | null
+          id?: string
+          is_automated?: boolean | null
+          is_required?: boolean | null
+          name: string
+          priority?: string | null
+          related_standards?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_departments?: string[] | null
+          target_roles?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          automation_trigger?: string | null
+          courses?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          duration_days?: number | null
+          end_date?: string | null
+          id?: string
+          is_automated?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          priority?: string | null
+          related_standards?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_departments?: string[] | null
+          target_roles?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       training_records: {
         Row: {
           assigned_date: string | null

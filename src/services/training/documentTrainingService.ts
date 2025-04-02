@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import {
   Employee,
   TrainingRecord,
@@ -13,10 +14,10 @@ export const documentTrainingService = {
   /**
    * Process document control updates and assign training if needed
    */
-  handleDocumentUpdate: (
+  handleDocumentUpdate: async (
     document: DocumentControlIntegration,
     employees: Employee[]
-  ): TrainingRecord[] => {
+  ): Promise<TrainingRecord[]> => {
     // If training is not required for this document, return empty array
     if (!document.trainingRequired) return [];
     
@@ -26,15 +27,30 @@ export const documentTrainingService = {
     );
     
     // Create training records for each employee
-    return targetEmployees.map(employee => ({
-      id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      session_id: `session-${Math.random().toString(36).substr(2, 9)}`,
+    const records: TrainingRecord[] = targetEmployees.map(employee => ({
+      id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       employee_id: employee.id,
       employee_name: employee.name,
       assigned_date: new Date().toISOString(),
       due_date: new Date(Date.now() + (document.trainingDeadlineDays || 14) * 24 * 60 * 60 * 1000).toISOString(),
       status: 'Not Started' as TrainingStatus,
     }));
+
+    // Save the records to Supabase if there are any
+    if (records.length > 0) {
+      const { error } = await supabase
+        .from('training_records')
+        .insert(records);
+
+      if (error) {
+        console.error('Error creating training records for document update:', error);
+        // Return empty array on error
+        return [];
+      }
+    }
+    
+    return records;
   },
   
   /**

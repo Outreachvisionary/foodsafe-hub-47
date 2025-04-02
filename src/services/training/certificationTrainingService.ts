@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import {
   Employee,
   TrainingRecord,
@@ -12,35 +13,51 @@ export const certificationTrainingService = {
   /**
    * Check for expired certifications and create retraining records
    */
-  processExpiringCertifications: (
+  processExpiringCertifications: async (
     employees: Employee[],
     daysBeforeExpiry: number = 30
-  ): TrainingRecord[] => {
+  ): Promise<TrainingRecord[]> => {
     const now = new Date();
     const expiryThreshold = new Date(now.getTime() + daysBeforeExpiry * 24 * 60 * 60 * 1000);
     
     const trainingRecords: TrainingRecord[] = [];
     
-    employees.forEach(employee => {
-      if (!employee.certifications) return;
+    // Process each employee
+    for (const employee of employees) {
+      if (!employee.certifications) continue;
       
-      employee.certifications.forEach(cert => {
+      for (const cert of employee.certifications) {
         const expiryDate = new Date(cert.expiryDate);
         
         // If certification is expiring soon and requires recertification
         if (expiryDate <= expiryThreshold && cert.requiresRecertification) {
-          trainingRecords.push({
-            id: `tr-${Math.random().toString(36).substr(2, 9)}`,
+          const record: TrainingRecord = {
+            id: crypto.randomUUID(),
             session_id: `recert-session-${cert.id}`,
             employee_id: employee.id,
             employee_name: employee.name,
             assigned_date: new Date().toISOString(),
             due_date: new Date(expiryDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days before expiry
             status: 'Not Started' as TrainingStatus,
-          });
+          };
+          
+          trainingRecords.push(record);
         }
-      });
-    });
+      }
+    }
+    
+    // Save the records to Supabase if there are any
+    if (trainingRecords.length > 0) {
+      const { error } = await supabase
+        .from('training_records')
+        .insert(trainingRecords);
+
+      if (error) {
+        console.error('Error creating training records for expiring certifications:', error);
+        // Return empty array on error
+        return [];
+      }
+    }
     
     return trainingRecords;
   },
@@ -48,7 +65,7 @@ export const certificationTrainingService = {
   /**
    * Create remediation training assignments for failed assessments
    */
-  createRemediationTraining: (
+  createRemediationTraining: async (
     failedAssessments: { 
       employeeId: string;
       employeeName: string;
@@ -56,16 +73,31 @@ export const certificationTrainingService = {
       score: number;
       assessmentDate: string;
     }[]
-  ): TrainingRecord[] => {
-    return failedAssessments.map(assessment => ({
-      id: `tr-${Math.random().toString(36).substr(2, 9)}`,
-      session_id: `remed-session-${Math.random().toString(36).substr(2, 9)}`,
+  ): Promise<TrainingRecord[]> => {
+    const records = failedAssessments.map(assessment => ({
+      id: crypto.randomUUID(),
+      session_id: crypto.randomUUID(),
       employee_id: assessment.employeeId,
       employee_name: assessment.employeeName,
       assigned_date: new Date().toISOString(),
       due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
       status: 'Not Started' as TrainingStatus,
     }));
+
+    // Save the records to Supabase if there are any
+    if (records.length > 0) {
+      const { error } = await supabase
+        .from('training_records')
+        .insert(records);
+
+      if (error) {
+        console.error('Error creating remediation training records:', error);
+        // Return empty array on error
+        return [];
+      }
+    }
+    
+    return records;
   }
 };
 
