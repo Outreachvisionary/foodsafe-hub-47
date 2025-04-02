@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import { DocumentProvider } from '@/contexts/DocumentContext';
-import { DocumentRepository } from '@/components/documents/DocumentRepository';
+import DocumentRepository from '@/components/documents/DocumentRepository';
 import { DocumentWorkflowDashboard } from '@/components/documents/workflow/DocumentWorkflowDashboard';
 import { DocumentVersionControl } from '@/components/documents/version/DocumentVersionControl';
 import { DocumentSearch } from '@/components/documents/search/DocumentSearch';
