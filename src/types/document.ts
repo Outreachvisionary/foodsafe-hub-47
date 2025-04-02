@@ -1,4 +1,3 @@
-
 // Re-export our database types to maintain compatibility
 export type { Document, DocumentCategory, DocumentStatus, Folder } from './database';
 
@@ -141,8 +140,8 @@ export type DocumentAction =
 
 // Add DocumentSearchFilters interface
 export interface DocumentSearchFilters {
-  categories?: DocumentCategory[];
-  status?: DocumentStatus[];
+  categories?: string[];
+  status?: string[];
   createdStart?: string;
   createdEnd?: string;
   updatedStart?: string;
