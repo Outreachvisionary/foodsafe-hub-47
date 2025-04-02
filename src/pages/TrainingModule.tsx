@@ -11,6 +11,7 @@ import ReportsAnalytics from '@/components/training/ReportsAnalytics';
 import { useAuditTraining } from '@/hooks/useAuditTraining';
 import AuditTrainingAlert from '@/components/training/AuditTrainingAlert';
 import AuditTrainingTasks from '@/components/training/AuditTrainingTasks';
+import { TrainingProvider } from '@/contexts/TrainingContext';
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -45,40 +46,42 @@ const TrainingModule = () => {
           highPriorityTasks={highPriorityTasks}
         />
         
-        <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
-          <TabsList className="mb-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="records">Training Records</TabsTrigger>
-            <TabsTrigger value="plans">Training Plans</TabsTrigger>
-            <TabsTrigger value="courses">Course Library</TabsTrigger>
-            <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
-            <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dashboard">
-            <TrainingDashboard />
-          </TabsContent>
-          
-          <TabsContent value="records">
-            <TrainingRecords />
-          </TabsContent>
-          
-          <TabsContent value="plans">
-            <TrainingPlans />
-          </TabsContent>
-          
-          <TabsContent value="courses">
-            <CourseLibrary />
-          </TabsContent>
-          
-          <TabsContent value="assessments">
-            <CompetencyAssessments />
-          </TabsContent>
-          
-          <TabsContent value="reports">
-            <ReportsAnalytics />
-          </TabsContent>
-        </Tabs>
+        <TrainingProvider>
+          <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
+            <TabsList className="mb-8">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="records">Training Records</TabsTrigger>
+              <TabsTrigger value="plans">Training Plans</TabsTrigger>
+              <TabsTrigger value="courses">Course Library</TabsTrigger>
+              <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
+              <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dashboard">
+              <TrainingDashboard />
+            </TabsContent>
+            
+            <TabsContent value="records">
+              <TrainingRecords />
+            </TabsContent>
+            
+            <TabsContent value="plans">
+              <TrainingPlans />
+            </TabsContent>
+            
+            <TabsContent value="courses">
+              <CourseLibrary />
+            </TabsContent>
+            
+            <TabsContent value="assessments">
+              <CompetencyAssessments />
+            </TabsContent>
+            
+            <TabsContent value="reports">
+              <ReportsAnalytics />
+            </TabsContent>
+          </Tabs>
+        </TrainingProvider>
       </main>
     </div>
   );

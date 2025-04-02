@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -10,146 +9,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrainingRecord, TrainingStatus } from '@/types/database';
+import { TrainingStatus, ExtendedTrainingRecord } from '@/types/training';
 import { CalendarClock, CheckSquare, Award, Clock, FileText, AlertCircle, BarChart, PlusCircle, Search, CheckCircle2, RotateCcw } from 'lucide-react';
-
-const dummyTrainingRecords: TrainingRecord[] = [
-  {
-    id: "tr-001",
-    session_id: "ts-001",
-    employee_id: "EMP001",
-    employee_name: "John Smith",
-    status: "Completed",
-    assigned_date: "2023-05-10T09:00:00Z",
-    due_date: "2023-05-20T17:00:00Z",
-    completion_date: "2023-05-18T14:30:00Z",
-    score: 92,
-    pass_threshold: 80,
-    notes: "Excellent understanding of HACCP principles"
-  },
-  {
-    id: "tr-002",
-    session_id: "ts-001",
-    employee_id: "EMP002",
-    employee_name: "Jane Doe",
-    status: "Completed",
-    assigned_date: "2023-05-10T09:00:00Z",
-    due_date: "2023-05-20T17:00:00Z",
-    completion_date: "2023-05-19T11:15:00Z",
-    score: 88,
-    pass_threshold: 80,
-    notes: "Good understanding, needs more practice on verification activities"
-  },
-  {
-    id: "tr-003",
-    session_id: "ts-002",
-    employee_id: "EMP003",
-    employee_name: "Michael Brown",
-    status: "In Progress",
-    assigned_date: "2023-06-01T09:00:00Z",
-    due_date: "2023-06-15T17:00:00Z",
-    completion_date: undefined,
-    score: undefined,
-    pass_threshold: 75,
-    notes: "Started online modules"
-  },
-  {
-    id: "tr-004",
-    session_id: "ts-002",
-    employee_id: "EMP004",
-    employee_name: "Sarah Johnson",
-    status: "Not Started",
-    assigned_date: "2023-06-01T09:00:00Z",
-    due_date: "2023-06-15T17:00:00Z",
-    completion_date: undefined,
-    score: undefined,
-    pass_threshold: 75,
-    notes: undefined
-  },
-  {
-    id: "tr-005",
-    session_id: "ts-003",
-    employee_id: "EMP005",
-    employee_name: "David Wilson",
-    status: "Overdue",
-    assigned_date: "2023-04-15T09:00:00Z",
-    due_date: "2023-05-01T17:00:00Z",
-    completion_date: undefined,
-    score: undefined,
-    pass_threshold: 70,
-    notes: "Reminder sent on 2023-05-02"
-  },
-  {
-    id: "tr-006",
-    session_id: "ts-004",
-    employee_id: "EMP001",
-    employee_name: "John Smith",
-    status: "Completed",
-    assigned_date: "2023-02-10T09:00:00Z",
-    due_date: "2023-02-28T17:00:00Z",
-    completion_date: "2023-02-25T10:45:00Z",
-    score: 95,
-    pass_threshold: 80,
-    notes: "Perfect score on practical assessment"
-  },
-  {
-    id: "tr-007",
-    session_id: "ts-005",
-    employee_id: "EMP002",
-    employee_name: "Jane Doe",
-    status: "Completed",
-    assigned_date: "2023-03-05T09:00:00Z",
-    due_date: "2023-03-20T17:00:00Z",
-    completion_date: "2023-03-18T15:30:00Z",
-    score: 85,
-    pass_threshold: 80,
-    notes: undefined
-  }
-];
-
-// Add an interface for the course name since it's not in the base type
-interface ExtendedTrainingRecord extends TrainingRecord {
-  courseName?: string;
-  instructorName?: string;
-}
-
-// Mock extended data
-const extendedRecords: ExtendedTrainingRecord[] = dummyTrainingRecords.map(record => ({
-  ...record,
-  courseName: record.session_id === "ts-001" ? "HACCP Principles" :
-              record.session_id === "ts-002" ? "Food Safety Basics" :
-              record.session_id === "ts-003" ? "GMP Training" :
-              record.session_id === "ts-004" ? "Allergen Control" :
-              record.session_id === "ts-005" ? "Sanitation Procedures" : "Unknown Course",
-  instructorName: record.session_id === "ts-001" || record.session_id === "ts-004" ? "Dr. Robert Chen" :
-                  record.session_id === "ts-002" || record.session_id === "ts-005" ? "Lisa Wong" : "Maria Garcia"
-}));
+import { useTrainingRecords } from '@/hooks/useTrainingRecords';
+import { useToast } from '@/hooks/use-toast';
 
 const TrainingRecords: React.FC = () => {
-  const [records] = useState<ExtendedTrainingRecord[]>(extendedRecords);
+  const { records, loading, updateTrainingRecord, stats } = useTrainingRecords();
+  const { toast } = useToast();
+  
   const [selectedRecord, setSelectedRecord] = useState<ExtendedTrainingRecord | null>(null);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Filter records based on search query and status
-  const filteredRecords = records.filter(record => {
-    const matchesSearch = 
-      record.employee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (record.courseName && record.courseName.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-    const matchesStatus = 
-      filterStatus === 'all' || 
-      record.status.toLowerCase() === filterStatus.toLowerCase();
-      
-    return matchesSearch && matchesStatus;
-  });
-
-  // Count records by status
-  const completedCount = records.filter(r => r.status === "Completed").length;
-  const inProgressCount = records.filter(r => r.status === "In Progress").length;
-  const notStartedCount = records.filter(r => r.status === "Not Started").length;
-  const overdueCount = records.filter(r => r.status === "Overdue").length;
+  const filteredRecords = useMemo(() => {
+    return records.filter(record => {
+      const matchesSearch = 
+        record.employee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.courseName && record.courseName.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+      const matchesStatus = 
+        filterStatus === 'all' || 
+        record.status.toLowerCase() === filterStatus.toLowerCase();
+        
+      return matchesSearch && matchesStatus;
+    });
+  }, [records, searchQuery, filterStatus]);
 
   // Get status badge
   const getStatusBadge = (status: TrainingStatus) => {
@@ -187,6 +74,31 @@ const TrainingRecords: React.FC = () => {
     }
   };
 
+  // Handle sending reminder for overdue training
+  const handleSendReminder = async (record: ExtendedTrainingRecord) => {
+    toast({
+      title: "Reminder Sent",
+      description: `Training reminder sent to ${record.employee_name}`,
+    });
+    
+    // Update the record with a note about the reminder
+    const now = new Date().toISOString();
+    const noteText = record.notes 
+      ? `${record.notes}\nReminder sent on ${new Date().toLocaleDateString()}` 
+      : `Reminder sent on ${new Date().toLocaleDateString()}`;
+      
+    await updateTrainingRecord(record.id, { notes: noteText });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="ml-3">Loading training records...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
@@ -210,7 +122,7 @@ const TrainingRecords: React.FC = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+              <p className="text-2xl font-bold text-green-600">{stats.completedCount}</p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <CheckSquare className="h-5 w-5 text-green-600" />
@@ -222,7 +134,7 @@ const TrainingRecords: React.FC = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">In Progress</p>
-              <p className="text-2xl font-bold text-blue-600">{inProgressCount}</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.inProgressCount}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <Clock className="h-5 w-5 text-blue-600" />
@@ -234,7 +146,7 @@ const TrainingRecords: React.FC = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Not Started</p>
-              <p className="text-2xl font-bold text-gray-600">{notStartedCount}</p>
+              <p className="text-2xl font-bold text-gray-600">{stats.notStartedCount}</p>
             </div>
             <div className="bg-gray-100 p-3 rounded-full">
               <CalendarClock className="h-5 w-5 text-gray-600" />
@@ -246,7 +158,7 @@ const TrainingRecords: React.FC = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-              <p className="text-2xl font-bold text-red-600">{overdueCount}</p>
+              <p className="text-2xl font-bold text-red-600">{stats.overdueCount}</p>
             </div>
             <div className="bg-red-100 p-3 rounded-full">
               <AlertCircle className="h-5 w-5 text-red-600" />
@@ -352,7 +264,7 @@ const TrainingRecords: React.FC = () => {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                          No training records found matching your criteria
+                          {loading ? "Loading training records..." : "No training records found matching your criteria"}
                         </TableCell>
                       </TableRow>
                     )}
@@ -469,7 +381,11 @@ const TrainingRecords: React.FC = () => {
             
             <DialogFooter className="sm:justify-between">
               {selectedRecord.status !== "Completed" && (
-                <Button className="flex items-center" variant="outline">
+                <Button 
+                  className="flex items-center" 
+                  variant="outline"
+                  onClick={() => handleSendReminder(selectedRecord)}
+                >
                   <RotateCcw className="h-4 w-4 mr-1" />
                   Send Reminder
                 </Button>
