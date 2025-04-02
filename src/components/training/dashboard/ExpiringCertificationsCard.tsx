@@ -77,19 +77,21 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
         const diffTime = expiryDate.getTime() - now.getTime();
         const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        // Fix how we access the title from the training_sessions relation
-        // In Supabase, when selecting a foreign table with specific columns,
-        // it returns the related data in a format that depends on the relation cardinality
+        // Extract the title from the training_sessions relation
         let sessionTitle = 'Unknown Training';
         
+        // Handle different formats of the training_sessions data from Supabase
         if (item.training_sessions) {
-          // For a one-to-one relation it returns an object
-          if (!Array.isArray(item.training_sessions)) {
+          // Case 1: training_sessions is an object (one-to-one relation)
+          if (typeof item.training_sessions === 'object' && !Array.isArray(item.training_sessions)) {
             sessionTitle = (item.training_sessions as { title: string }).title;
           } 
-          // For a one-to-many relation it returns an array
+          // Case 2: training_sessions is an array (one-to-many relation)
           else if (Array.isArray(item.training_sessions) && item.training_sessions.length > 0) {
-            sessionTitle = (item.training_sessions[0] as { title: string }).title;
+            const firstSession = item.training_sessions[0];
+            if (firstSession && typeof firstSession === 'object' && 'title' in firstSession) {
+              sessionTitle = firstSession.title as string;
+            }
           }
         }
         

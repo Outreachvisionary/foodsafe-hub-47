@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentControlIntegration } from '@/types/training';
 
@@ -29,6 +28,17 @@ const documentTrainingService = {
       if (!document) {
         console.error('Document not found');
         return false;
+      }
+      
+      // Get document type information to determine training requirements
+      const { data: docTypeInfo, error: typeError } = await supabase 
+        .from('document_category_types')
+        .select('*')
+        .eq('name', document.category)
+        .single();
+        
+      if (typeError) {
+        console.error('Error fetching document type info:', typeError);
       }
       
       // Get training automation config to check if document triggers are enabled
@@ -62,13 +72,27 @@ const documentTrainingService = {
         return false;
       }
       
-      if (!relatedSessions || relatedSessions.length === 0) {
+      let sessionIds = [];
+      
+      // If there are explicit relationships, use those
+      if (relatedSessions && relatedSessions.length > 0) {
+        sessionIds = relatedSessions.map(rel => rel.target_id);
+      } else {
+        // Otherwise, find training sessions that match the document category
+        const { data: categoryTrainings, error: catError } = await supabase
+          .from('training_sessions')
+          .select('id')
+          .eq('training_category', document.category);
+          
+        if (!catError && categoryTrainings) {
+          sessionIds = categoryTrainings.map(session => session.id);
+        }
+      }
+      
+      if (sessionIds.length === 0) {
         console.log('No related training sessions found for document');
         return false;
       }
-      
-      // Get the session IDs
-      const sessionIds = relatedSessions.map(rel => rel.target_id);
       
       // Find employees who should be notified of the document update
       const { data: sessions, error: sessionsError } = await supabase
@@ -165,6 +189,19 @@ const documentTrainingService = {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
+      // Get information about document categories that require training
+      const { data: docTypes, error: typesError } = await supabase
+        .from('document_category_types')
+        .select('name, description')
+        .eq('is_active', true);
+        
+      if (typesError) {
+        console.error('Error fetching document types:', typesError);
+        return [];
+      }
+      
+      const docTypeNames = docTypes?.map(type => type.name) || [];
+      
       const { data: relationships, error: relError } = await supabase
         .from('module_relationships')
         .select('source_id, target_id')
@@ -176,18 +213,14 @@ const documentTrainingService = {
         return [];
       }
       
-      if (!relationships || relationships.length === 0) {
-        return [];
-      }
-      
       // Get unique document IDs
-      const documentIds = [...new Set(relationships.map(rel => rel.source_id))];
+      const relationshipDocIds = relationships?.map(rel => rel.source_id) || [];
       
-      // Get document details
+      // Get recently updated documents (either related through explicit relationships or matching active document types)
       const { data: documents, error: docError } = await supabase
         .from('documents')
-        .select('id, title, updated_at, version')
-        .in('id', documentIds)
+        .select('id, title, updated_at, version, category')
+        .or(`id.in.(${relationshipDocIds.join(',')}),category.in.(${docTypeNames.join(',')})`)
         .gt('updated_at', thirtyDaysAgo.toISOString())
         .order('updated_at', { ascending: false });
         
@@ -203,8 +236,8 @@ const documentTrainingService = {
       // Map documents to notification objects
       const notifications: DocumentControlIntegration[] = documents.map(doc => {
         const relatedSessionIds = relationships
-          .filter(rel => rel.source_id === doc.id)
-          .map(rel => rel.target_id);
+          ?.filter(rel => rel.source_id === doc.id)
+          .map(rel => rel.target_id) || [];
           
         return {
           documentId: doc.id,
@@ -214,13 +247,40 @@ const documentTrainingService = {
           trainingRequired: true,
           updatedAt: doc.updated_at,
           version: doc.version.toString(),
-          relatedSessionIds
+          relatedSessionIds,
+          trainingDeadlineDays: 30, // Default deadline in days
+          affectedRoles: [] // Will be populated by another query if needed
         };
       });
       
       return notifications;
     } catch (error) {
       console.error('Error getting document training notifications:', error);
+      return [];
+    }
+  },
+  
+  /**
+   * Find training sessions appropriate for a specific document category
+   * @param category Document category
+   * @returns Array of session IDs
+   */
+  findTrainingSessionsForDocumentCategory: async (category: string): Promise<string[]> => {
+    try {
+      // Find training sessions explicitly marked for this category
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .select('id')
+        .eq('training_category', category);
+        
+      if (error) {
+        console.error('Error finding training sessions for document category:', error);
+        return [];
+      }
+      
+      return (data || []).map(session => session.id);
+    } catch (error) {
+      console.error('Error in findTrainingSessionsForDocumentCategory:', error);
       return [];
     }
   }
