@@ -1,84 +1,58 @@
 
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from 'react-router-dom';
 import { getOrganizations } from '@/services/organizationService';
 import { Organization } from '@/types/organization';
-import { Loader2 } from 'lucide-react';
 
-interface OrganizationSelectorProps {
+export interface OrganizationSelectorProps {
   value: string;
-  onChange: (organizationId: string) => void;
-  label?: string;
-  placeholder?: string;
-  className?: string;
+  onChange: (...event: any[]) => void;
+  disabled?: boolean;
 }
 
-const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
+const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ 
   value, 
   onChange,
-  label = "Organization",
-  placeholder = "Select an organization",
-  className = ""
+  disabled = false
 }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchOrgs = async () => {
+    const loadOrganizations = async () => {
       try {
         setLoading(true);
         const data = await getOrganizations();
-        
-        // Ensure all organizations have required fields
-        const validOrgs = data.map(org => ({
-          ...org,
-          id: org.id || '',
-          name: org.name || '',
-          status: org.status || 'active'
-        }));
-        
-        setOrganizations(validOrgs);
-      } catch (err) {
-        console.error('Error fetching organizations:', err);
-        setError('Failed to load organizations');
+        setOrganizations(data);
+      } catch (error) {
+        console.error('Failed to load organizations:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrgs();
+    loadOrganizations();
   }, []);
 
-  const handleChange = (newValue: string) => {
-    onChange(newValue);
-  };
-
   return (
-    <div className={className}>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
-      <Select value={value} onValueChange={handleChange}>
-        <SelectTrigger className="w-full">
-          <div className="flex items-center justify-between w-full">
-            <SelectValue placeholder={placeholder} />
-            {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
-          </div>
-        </SelectTrigger>
-        <SelectContent>
-          {error ? (
-            <div className="p-2 text-red-500 text-sm">{error}</div>
-          ) : organizations.length === 0 && !loading ? (
-            <div className="p-2 text-muted-foreground text-sm">No organizations available</div>
-          ) : (
-            organizations.map((org) => (
-              <SelectItem key={org.id} value={org.id}>
-                {org.name}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select 
+      value={value} 
+      onValueChange={onChange}
+      disabled={disabled || loading}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select Organization" />
+      </SelectTrigger>
+      <SelectContent>
+        {organizations.map((org) => (
+          <SelectItem key={org.id} value={org.id}>
+            {org.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

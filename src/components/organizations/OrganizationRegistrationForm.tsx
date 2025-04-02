@@ -1,192 +1,178 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import OrganizationTypeSelector from './OrganizationTypeSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 import { createOrganization } from '@/services/organizationService';
 import { OrganizationInput, Organization } from '@/types/organization';
+import { toast } from 'sonner';
 
-const OrganizationRegistrationForm: React.FC = () => {
-  const [formData, setFormData] = useState<OrganizationInput>({
-    name: '',
-    description: '',
-    address: '',
-    city: '',
-    state: '',
-    country: '',
-    zipcode: '',
-    contact_email: '',
-    contact_phone: '',
-    status: 'active'
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+interface OrganizationRegistrationFormProps {
+  onOrganizationCreated?: (organization: Organization) => void;
+}
+
+const OrganizationRegistrationForm: React.FC<OrganizationRegistrationFormProps> = ({ 
+  onOrganizationCreated 
+}) => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [organizationType, setOrganizationType] = useState("food-manufacturer");
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
     
-    if (!formData.name) {
-      toast({
-        title: "Error",
-        description: "Organization name is required",
-        variant: "destructive"
-      });
-      return;
-    }
+    const formData = new FormData(event.currentTarget);
+    
+    const organizationData: OrganizationInput = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      address: formData.get('address') as string,
+      city: formData.get('city') as string,
+      state: formData.get('state') as string,
+      country: formData.get('country') as string,
+      zipcode: formData.get('zipcode') as string,
+      contact_email: formData.get('contact_email') as string,
+      contact_phone: formData.get('contact_phone') as string,
+      industry_type: organizationType,
+      status: 'active', // Set default status to active
+    };
     
     try {
-      setLoading(true);
-      const organization = await createOrganization(formData);
-      toast({
-        title: "Success",
-        description: "Organization created successfully"
-      });
-      navigate(`/organization/dashboard/${organization.id}`);
+      const newOrganization = await createOrganization(organizationData);
+      
+      toast.success('Organization created successfully');
+      
+      if (onOrganizationCreated) {
+        onOrganizationCreated(newOrganization);
+      }
+      
+      // Redirect to the new organization's dashboard
+      navigate(`/organization/dashboard/${newOrganization.id}`);
     } catch (error) {
       console.error('Error creating organization:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create organization",
-        variant: "destructive"
-      });
+      toast.error('Failed to create organization. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   
   return (
-    <Card className="w-full max-w-3xl mx-auto">
+    <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Register a New Organization</CardTitle>
+        <CardTitle>Register New Organization</CardTitle>
+        <CardDescription>
+          Create a new organization to manage facilities, users, and compliance
+        </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">Organization Name</label>
-              <Input 
-                id="name" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleChange} 
-                placeholder="Enter organization name" 
-                required 
+      <CardContent>
+        <form id="organization-form" onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Organization Name <span className="text-red-500">*</span></Label>
+              <Input id="name" name="name" placeholder="Enter organization name" required />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                placeholder="Brief description of the organization"
               />
             </div>
-            <div className="space-y-2">
-              <label htmlFor="contact_email" className="text-sm font-medium">Contact Email</label>
-              <Input 
-                id="contact_email" 
-                name="contact_email" 
-                type="email" 
-                value={formData.contact_email} 
-                onChange={handleChange} 
-                placeholder="Contact email address" 
+            
+            <div>
+              <Label>Organization Type <span className="text-red-500">*</span></Label>
+              <OrganizationTypeSelector 
+                value={organizationType} 
+                onValueChange={setOrganizationType} 
               />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">Description</label>
-            <Textarea 
-              id="description" 
-              name="description" 
-              value={formData.description} 
-              onChange={handleChange} 
-              placeholder="Describe your organization" 
-              rows={3} 
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="address" className="text-sm font-medium">Address</label>
-              <Input 
-                id="address" 
-                name="address" 
-                value={formData.address} 
-                onChange={handleChange} 
-                placeholder="Street address" 
-              />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" name="address" placeholder="Street address" />
+              </div>
+              
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" placeholder="City" />
+              </div>
+              
+              <div>
+                <Label htmlFor="state">State / Province</Label>
+                <Input id="state" name="state" placeholder="State or province" />
+              </div>
+              
+              <div>
+                <Label htmlFor="zipcode">Postal / Zip Code</Label>
+                <Input id="zipcode" name="zipcode" placeholder="Postal or zip code" />
+              </div>
+              
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Select defaultValue="US" name="country">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="US">United States</SelectItem>
+                    <SelectItem value="CA">Canada</SelectItem>
+                    <SelectItem value="MX">Mexico</SelectItem>
+                    <SelectItem value="GB">United Kingdom</SelectItem>
+                    <SelectItem value="AU">Australia</SelectItem>
+                    <SelectItem value="NZ">New Zealand</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="contact_phone" className="text-sm font-medium">Contact Phone</label>
-              <Input 
-                id="contact_phone" 
-                name="contact_phone" 
-                value={formData.contact_phone} 
-                onChange={handleChange} 
-                placeholder="Contact phone number" 
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="city" className="text-sm font-medium">City</label>
-              <Input 
-                id="city" 
-                name="city" 
-                value={formData.city} 
-                onChange={handleChange} 
-                placeholder="City" 
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="state" className="text-sm font-medium">State/Province</label>
-              <Input 
-                id="state" 
-                name="state" 
-                value={formData.state} 
-                onChange={handleChange} 
-                placeholder="State/Province" 
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="country" className="text-sm font-medium">Country</label>
-              <Input 
-                id="country" 
-                name="country" 
-                value={formData.country} 
-                onChange={handleChange} 
-                placeholder="Country" 
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="zipcode" className="text-sm font-medium">Postal Code</label>
-              <Input 
-                id="zipcode" 
-                name="zipcode" 
-                value={formData.zipcode} 
-                onChange={handleChange} 
-                placeholder="Postal code" 
-              />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contact_email">Contact Email <span className="text-red-500">*</span></Label>
+                <Input 
+                  id="contact_email" 
+                  name="contact_email" 
+                  type="email" 
+                  placeholder="Primary contact email" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="contact_phone">Contact Phone</Label>
+                <Input 
+                  id="contact_phone" 
+                  name="contact_phone" 
+                  placeholder="Contact phone number" 
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => navigate('/organizations')}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Organization'}
-          </Button>
-        </CardFooter>
-      </form>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          form="organization-form" 
+          disabled={loading}
+        >
+          {loading ? 'Creating...' : 'Create Organization'}
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
