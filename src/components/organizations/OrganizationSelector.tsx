@@ -4,17 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from 'react-router-dom';
 import { getOrganizations } from '@/services/organizationService';
 import { Organization } from '@/types/organization';
+import { cn } from '@/lib/utils';
 
 export interface OrganizationSelectorProps {
   value: string;
   onChange: (...event: any[]) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({ 
   value, 
   onChange,
-  disabled = false
+  disabled = false,
+  className
 }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +28,13 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       try {
         setLoading(true);
         const data = await getOrganizations();
-        setOrganizations(data);
+        // Ensure all organizations have required fields
+        const validatedOrgs = data.map(org => ({
+          ...org,
+          id: org.id || '',
+          status: org.status || 'active'
+        }));
+        setOrganizations(validatedOrgs);
       } catch (error) {
         console.error('Failed to load organizations:', error);
       } finally {
@@ -42,7 +51,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       onValueChange={onChange}
       disabled={disabled || loading}
     >
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={cn("w-full", className)}>
         <SelectValue placeholder="Select Organization" />
       </SelectTrigger>
       <SelectContent>

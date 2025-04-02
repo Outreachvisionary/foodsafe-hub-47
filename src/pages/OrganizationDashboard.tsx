@@ -19,7 +19,16 @@ const OrganizationDashboard: React.FC = () => {
       try {
         setLoading(true);
         const data = await getOrganization(id);
-        setOrganization(data);
+        
+        if (data) {
+          // Ensure the organization object has all required fields
+          const validatedOrg: Organization = {
+            ...data,
+            id: data.id || id,
+            status: data.status || 'active'
+          };
+          setOrganization(validatedOrg);
+        }
       } catch (error) {
         console.error('Failed to fetch organization:', error);
       } finally {

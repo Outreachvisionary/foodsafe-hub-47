@@ -14,9 +14,19 @@ export type OrganizationType =
 interface OrganizationTypeSelectorProps {
   value?: string;
   onChange?: (value: string) => void;
+  onValueChange?: (value: string) => void;
 }
 
-const OrganizationTypeSelector: React.FC<OrganizationTypeSelectorProps> = ({ value, onChange }) => {
+const OrganizationTypeSelector: React.FC<OrganizationTypeSelectorProps> = ({ 
+  value, 
+  onChange,
+  onValueChange
+}) => {
+  const handleValueChange = (val: string) => {
+    if (onChange) onChange(val);
+    if (onValueChange) onValueChange(val);
+  };
+
   const organizationTypes: OrganizationType[] = [
     'Food Manufacturer',
     'Distributor',
@@ -28,7 +38,7 @@ const OrganizationTypeSelector: React.FC<OrganizationTypeSelectorProps> = ({ val
   ];
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={handleValueChange}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder="Select organization type" />
       </SelectTrigger>

@@ -48,12 +48,14 @@ const OrganizationRegistrationForm: React.FC<OrganizationRegistrationFormProps> 
       
       toast.success('Organization created successfully');
       
-      if (onOrganizationCreated) {
+      if (onOrganizationCreated && newOrganization) {
         onOrganizationCreated(newOrganization);
       }
       
       // Redirect to the new organization's dashboard
-      navigate(`/organization/dashboard/${newOrganization.id}`);
+      if (newOrganization && newOrganization.id) {
+        navigate(`/organization/dashboard/${newOrganization.id}`);
+      }
     } catch (error) {
       console.error('Error creating organization:', error);
       toast.error('Failed to create organization. Please try again.');
@@ -91,7 +93,7 @@ const OrganizationRegistrationForm: React.FC<OrganizationRegistrationFormProps> 
               <Label>Organization Type <span className="text-red-500">*</span></Label>
               <OrganizationTypeSelector 
                 value={organizationType} 
-                onValueChange={setOrganizationType} 
+                onChange={setOrganizationType} 
               />
             </div>
             
