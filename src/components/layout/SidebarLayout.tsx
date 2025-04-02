@@ -1,16 +1,16 @@
-
 import React, { useState, ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { usePermission } from '@/contexts/PermissionContext';
-import { ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers, Factory, FolderTree } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import ProfileTile from '@/components/profile/ProfileTile';
+import OrganizationSwitcher from '@/components/organizations/OrganizationSwitcher';
 
 interface SidebarLink {
   name: string;
@@ -179,6 +179,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1.5">
+            <div className="px-4 py-2">
+              <OrganizationSwitcher />
+            </div>
+            
             {sidebarLinks.map(link => (
               <React.Fragment key={link.href}>
                 {link.permission ? (
