@@ -1,9 +1,43 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { 
+  AlertCircle,
+  Calendar,
+  Clock,
+  FileCode,
+  FileText,
+  Plus,
+  Settings,
+  Users,
+  Zap,
+  Loader
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TrainingPlan } from '@/types/training';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const TrainingPlans: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -54,7 +88,7 @@ const TrainingPlans: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LoadingSpinner size="lg" />
         <span className="ml-2">Loading training plans...</span>
       </div>
     );
@@ -175,7 +209,7 @@ const TrainingPlans: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2" />
-                        <span>Start: {new Date(plan.startDate).toLocaleDateString()}</span>
+                        <span>Start: {plan.startDate ? new Date(plan.startDate).toLocaleDateString() : 'Not set'}</span>
                       </div>
                       {plan.isAutomated && (
                         <div className="flex items-center">

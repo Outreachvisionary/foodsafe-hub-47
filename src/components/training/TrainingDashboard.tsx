@@ -3,13 +3,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
   AlertCircle,
   Award,
   BarChart2,
   CheckCircle2,
   Clock,
   FileText,
-  Loader2,
+  Loader,
   Users
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -20,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTrainingContext } from '@/contexts/TrainingContext';
 import OverallComplianceCard from './dashboard/OverallComplianceCard';
 import ExpiringCertificationsCard from './dashboard/ExpiringCertificationsCard';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface DepartmentCompliance {
   name: string;
@@ -44,16 +52,13 @@ const TrainingDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { toast } = useToast();
   
-  // State for data
   const [complianceByDepartment, setComplianceByDepartment] = useState<DepartmentCompliance[]>([]);
   const [trainingStatusData, setTrainingStatusData] = useState<TrainingStatus[]>([]);
   const [employeeTrainings, setEmployeeTrainings] = useState<EmployeeTraining[]>([]);
   
-  // Loading and error states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Define status colors for consistency
   const statusColors = {
     'Completed': '#10b981',
     'In Progress': '#3b82f6',
@@ -66,7 +71,6 @@ const TrainingDashboard: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch department compliance data
         const { data: complianceData, error: complianceError } = await supabase
           .from('department_compliance')
           .select('name, compliance')
@@ -74,20 +78,17 @@ const TrainingDashboard: React.FC = () => {
           
         if (complianceError) throw complianceError;
         
-        // Fetch training status distribution
         const { data: statusData, error: statusError } = await supabase
           .from('training_status_distribution')
           .select('name, value');
           
         if (statusError) throw statusError;
         
-        // Transform status data to include colors
         const transformedStatusData = statusData?.map(item => ({
           ...item,
           color: statusColors[item.name] || '#9ca3af'
         })) || [];
         
-        // Fetch employee training data
         const { data: trainingData, error: trainingError } = await supabase
           .from('employee_training')
           .select('employeeName, trainingTitle, dueDate, status')
@@ -95,7 +96,6 @@ const TrainingDashboard: React.FC = () => {
           
         if (trainingError) throw trainingError;
         
-        // Update state with fetched data
         setComplianceByDepartment(complianceData || []);
         setTrainingStatusData(transformedStatusData);
         setEmployeeTrainings(trainingData || []);
@@ -114,23 +114,20 @@ const TrainingDashboard: React.FC = () => {
     };
     
     fetchDashboardData();
-  }, [dateRange]); // Refetch when date range changes
+  }, [dateRange]);
 
-  // Calculate overall compliance percentage (replace with actual calculation)
   const overallCompliancePercentage = 75;
   const avgTrainingScore = 88;
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LoadingSpinner size="lg" />
         <span className="ml-2">Loading dashboard data...</span>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64">

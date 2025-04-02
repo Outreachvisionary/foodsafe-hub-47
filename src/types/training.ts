@@ -1,3 +1,4 @@
+
 // Define the TrainingStatus type directly
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
 
