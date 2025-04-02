@@ -99,10 +99,10 @@ export interface DocumentVersion {
 export interface DocumentActivity {
   id: string;
   document_id: string;
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download';
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download' | 'checkout' | 'checkin' | 'revert';
   user_id: string;
-  user_name?: string;
-  user_role?: string;
+  user_name: string; // Making this required to match document.ts definition
+  user_role: string; // Making this required to match document.ts definition
   timestamp: string;
   comments?: string;
   metadata?: any;
