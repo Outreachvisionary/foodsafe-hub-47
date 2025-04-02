@@ -42,7 +42,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
@@ -51,7 +51,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(90vh-10rem)] mt-4 pr-4">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)] mt-4 pr-4">
           <DocumentUploader
             onSuccess={handleUploadComplete}
             onCancel={() => onOpenChange(false)}

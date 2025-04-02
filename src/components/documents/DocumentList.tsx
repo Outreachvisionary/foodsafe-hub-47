@@ -62,6 +62,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
   
+  // Ensure documents is an array or use an empty array as fallback
+  const safeDocuments = Array.isArray(documents) ? documents : [];
+  
   return (
     <div className="overflow-hidden w-full">
       <table className="w-full caption-bottom text-sm">
@@ -85,7 +88,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </tr>
         </thead>
         <tbody className="[&_tr:last-child]:border-0">
-          {Array.isArray(documents) && documents.length > 0 ? documents.map((document) => (
+          {safeDocuments.length > 0 ? safeDocuments.map((document) => (
             <tr 
               key={document.id}
               className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
@@ -175,7 +178,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </tbody>
       </table>
       
-      {!Array.isArray(documents) || documents.length === 0 ? (
+      {!safeDocuments.length ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No documents available</p>
         </div>

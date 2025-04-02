@@ -23,7 +23,8 @@ const DocumentRepository: React.FC = () => {
     isLoading,
     error,
     setSelectedDocument,
-    refreshData
+    refreshData,
+    deleteDocument
   } = useDocuments();
 
   const { toast } = useToast();
@@ -36,7 +37,11 @@ const DocumentRepository: React.FC = () => {
   const [previewDocument, setPreviewDocument] = useState<DocumentType | null>(null);
 
   useEffect(() => {
-    let filtered = Array.isArray(documents) ? [...documents] : [];
+    // Ensure documents and folders are arrays
+    const docArray = Array.isArray(documents) ? documents : [];
+    const folderArray = Array.isArray(folders) ? folders : [];
+    
+    let filtered = [...docArray];
     
     if (selectedFolder) {
       filtered = filtered.filter(doc => doc.folder_id === selectedFolder.id);
@@ -65,7 +70,7 @@ const DocumentRepository: React.FC = () => {
     });
     
     setFilteredDocuments(filtered);
-  }, [documents, searchQuery, selectedFolder, sortBy, sortDirection]);
+  }, [documents, searchQuery, selectedFolder, sortBy, sortDirection, folders]);
 
   const handleSortChange = (field: 'title' | 'updated_at') => {
     if (sortBy === field) {
@@ -81,41 +86,70 @@ const DocumentRepository: React.FC = () => {
   };
 
   const handleViewDocument = (document: DocumentType) => {
-    setPreviewDocument(document);
-    setSelectedDocument(document);
+    if (document) {
+      setPreviewDocument(document);
+      setSelectedDocument(document);
+    }
   };
 
   const handleEditDocument = (document: DocumentType) => {
-    setSelectedDocument(document);
-    // Navigate to the edit tab in the parent component
-    // This will be handled in Documents.tsx
+    if (document) {
+      setSelectedDocument(document);
+      // Navigate to the edit tab in the parent component
+      // This will be handled in Documents.tsx
+    }
   };
 
   const handleDeleteDocument = async (document: DocumentType) => {
+    if (!document || !document.id) {
+      toast({
+        title: "Error",
+        description: "Invalid document. Cannot delete.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      if (typeof refreshData === 'function') {
-        // Since deleteDocument is not available directly, we can show a toast
-        // and implement the actual deletion feature later
+      if (typeof deleteDocument === 'function') {
+        await deleteDocument(document.id);
+        toast({
+          title: "Success",
+          description: "Document deleted successfully",
+        });
+      } else {
+        // Fallback if deleteDocument is not implemented
         toast({
           title: "Operation not supported",
           description: "Document deletion functionality is not yet implemented.",
           variant: "destructive",
         });
-        
-        // Refresh the documents list to ensure UI is updated
+      }
+      
+      // Refresh the documents list to ensure UI is updated
+      if (typeof refreshData === 'function') {
         await refreshData();
       }
     } catch (error) {
       console.error("Error in delete operation:", error);
       toast({
         title: "Error",
-        description: "Failed to perform operation. Please try again.",
+        description: "Failed to delete document. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   const handleDownloadDocument = (document: DocumentType) => {
+    if (!document || !document.title) {
+      toast({
+        title: "Error",
+        description: "Invalid document. Cannot download.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Implement download logic or open in a new tab
     toast({
       title: "Download started",
@@ -198,7 +232,7 @@ const DocumentRepository: React.FC = () => {
                   <FolderOpen className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Current Folder: {selectedFolder.name}</span>
                   <Badge variant="outline" className="ml-2">
-                    {filteredDocuments.length} documents
+                    {Array.isArray(filteredDocuments) ? filteredDocuments.length : 0} documents
                   </Badge>
                 </div>
               )}

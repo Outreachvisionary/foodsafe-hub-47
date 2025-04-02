@@ -29,4 +29,9 @@ export interface DocumentContextType {
   getDocumentRelationships: (documentId: string) => Promise<DocumentRelationship[]>;
   generateDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
   getDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
+  getDocumentsInFolder?: (folderId: string | null) => Document[];
+  retryFetchDocuments?: () => Promise<void>;
+  createFolder?: (name: string, parentId: string | null) => Promise<any>;
+  moveDocumentToFolder?: (documentId: string, folderId: string | null) => Promise<void>;
+  setIsLoading?: (loading: boolean) => void;
 }
