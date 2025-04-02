@@ -1,27 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { FileText, Plus, Clock, Settings, Users, Calendar, Zap, FileCode, AlertCircle, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { TrainingPlan, EmployeeRole, Department, TrainingPriority } from '@/types/training';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const TrainingPlans: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [automationEnabled, setAutomationEnabled] = useState(false);
-  // Add states for data fetching
   const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Add useEffect to fetch data
   useEffect(() => {
     const fetchTrainingPlans = async () => {
       try {
@@ -51,7 +42,6 @@ const TrainingPlans: React.FC = () => {
     fetchTrainingPlans();
   }, []);
 
-  // Filter training plans based on the active tab
   const filteredPlans = trainingPlans.filter(plan => {
     if (activeTab === 'all') return true;
     if (activeTab === 'automated') return plan.isAutomated;
@@ -61,7 +51,6 @@ const TrainingPlans: React.FC = () => {
     return true;
   });
 
-  // Add loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -71,7 +60,6 @@ const TrainingPlans: React.FC = () => {
     );
   }
 
-  // Add error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -88,7 +76,6 @@ const TrainingPlans: React.FC = () => {
     );
   }
 
-  // Now rebuilding the original return statement based on available information
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -15,12 +14,14 @@ interface OverallComplianceCardProps {
   compliancePercentage?: number;
   totalAssigned?: number;
   completed?: number;
+  avgScore?: number;
 }
 
 const OverallComplianceCard: React.FC<OverallComplianceCardProps> = ({ 
   compliancePercentage: externalPercentage,
   totalAssigned: externalTotal,
-  completed: externalCompleted
+  completed: externalCompleted,
+  avgScore
 }) => {
   const [compliancePercentage, setCompliancePercentage] = useState(externalPercentage || 0);
   const [totalAssigned, setTotalAssigned] = useState(externalTotal || 0);

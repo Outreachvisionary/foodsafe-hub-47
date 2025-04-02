@@ -1,4 +1,3 @@
-
 // Define the TrainingStatus type directly
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
 
@@ -129,40 +128,48 @@ export interface Course {
   description: string;
   durationHours: number;
   prerequisiteCourses?: string[];
+  type: string;
+  category: string;
+  status: string;
+  duration: number; // in minutes
+  completionRate: number;
+  lastUpdated: string;
+  version?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isActive?: boolean;
+  passThreshold?: number;
 }
 
-// Updated to match usage in trainingAssignmentService.ts
 export interface AutoAssignRule {
-  id: string; // Added for the error in trainingConfigService
+  id: string;
   type: 'Role' | 'Department' | 'NewHire' | 'CompetencyScore';
   conditions: Array<{
     key: string;
     operator: '=' | '>' | '<' | '>=' | '<=' | '!=';
     value: string | number;
   }>;
-  targetRole?: string; // Added for the error in trainingAssignmentService
-  targetDepartment?: string; // Added for the error in trainingAssignmentService
-  trainingPlanId: string; // Added for the error in trainingAssignmentService
+  targetRole?: string;
+  targetDepartment?: string;
+  trainingPlanId: string;
 }
 
-// Updated to match database field names (snake_case)
 export interface TrainingAutomationConfig {
-  id: string; // Added for the error in trainingConfigService
+  id: string;
   enabled: boolean;
   rules: AutoAssignRule[];
-  new_employee_trigger: boolean; // Matching database field name
-  role_change_trigger: boolean; // Matching database field name
-  document_changes_trigger: boolean; // Matching database field name
+  new_employee_trigger: boolean;
+  role_change_trigger: boolean;
+  document_changes_trigger: boolean;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
-  // Also include camelCase versions for TypeScript code
   newEmployeeTrigger?: boolean;
   roleChangeTrigger?: boolean;
   documentChangesTrigger?: boolean;
 }
 
-// Updated to match usage in documentTrainingService.ts
 export interface DocumentControlIntegration {
   documentId: string;
   documentTitle: string;
@@ -171,7 +178,7 @@ export interface DocumentControlIntegration {
   trainingRequired: boolean;
   trainingDeadlineDays?: number;
   affectedRoles?: string[];
-  version?: string; // For compatibility with existing code
-  updatedAt?: string; // For compatibility with existing code
-  relatedSessionIds?: string[]; // For compatibility with existing code
+  version?: string;
+  updatedAt?: string;
+  relatedSessionIds?: string[];
 }
