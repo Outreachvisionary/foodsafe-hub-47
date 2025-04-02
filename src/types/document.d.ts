@@ -207,6 +207,7 @@ declare module './database' {
     metadata?: Record<string, any>;
     related_documents?: string[]; // For document relationships
     has_ai_summary?: boolean; // Flag for AI summary availability
+    linked_module?: ModuleReference; // Module reference for linking documents to other modules
   }
 }
 
