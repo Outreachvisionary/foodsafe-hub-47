@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseConfig } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,8 +31,8 @@ const DatabaseConnectionTest = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [supabaseInfo, setSupabaseInfo] = useState({
-    url: supabase.supabaseUrl,
-    key: supabase.supabaseKey ? '***' + supabase.supabaseKey.slice(-6) : 'Not set'
+    url: supabaseConfig.url,
+    key: supabaseConfig.keyPreview
   });
 
   const addResult = (result: TestResult) => {

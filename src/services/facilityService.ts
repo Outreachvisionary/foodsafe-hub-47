@@ -4,6 +4,60 @@ import { Facility } from '@/types/facility';
 import { toast } from '@/hooks/use-toast';
 
 /**
+ * Fetches facilities for an organization
+ * @param organizationId The ID of the organization
+ * @param onlyAssigned Whether to only fetch facilities assigned to the current user
+ * @returns Array of facilities
+ */
+export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching facilities by organization:', error);
+      return [];
+    }
+    
+    return data as Facility[] || [];
+  } catch (error) {
+    console.error('Exception in getFacilitiesByOrganization:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches facilities - can be used with or without organization ID
+ * @param organizationId Optional organization ID to filter by
+ * @param onlyAssigned Whether to only fetch facilities assigned to the current user
+ * @returns Array of facilities
+ */
+export const fetchFacilities = async (organizationId?: string, onlyAssigned: boolean = false): Promise<Facility[]> => {
+  try {
+    // Use the RPC function to get facilities, which handles permissions and filters
+    const { data, error } = await supabase
+      .rpc('get_facilities', {
+        p_organization_id: organizationId || null,
+        p_only_assigned: onlyAssigned
+      });
+    
+    if (error) {
+      console.error('Error fetching facilities:', error);
+      return [];
+    }
+    
+    return data as Facility[] || [];
+  } catch (error) {
+    console.error('Exception in fetchFacilities:', error);
+    return [];
+  }
+};
+
+/**
  * Fetches a facility by ID
  * @param facilityId The ID of the facility to fetch
  * @returns The facility object or null if not found
@@ -26,6 +80,14 @@ export const getFacility = async (facilityId: string): Promise<Facility | null> 
     console.error('Exception in getFacility:', error);
     return null;
   }
+};
+
+/**
+ * Fetches a facility by ID
+ * This is an alias for getFacility to match the naming convention used in imports
+ */
+export const fetchFacilityById = async (facilityId: string): Promise<Facility | null> => {
+  return getFacility(facilityId);
 };
 
 /**
@@ -141,36 +203,12 @@ export const deleteFacility = async (facilityId: string): Promise<boolean> => {
   }
 };
 
-/**
- * Fetches facilities for an organization
- * @param organizationId The ID of the organization
- * @returns Array of facilities
- */
-export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('facilities')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('status', 'active')
-      .order('name');
-    
-    if (error) {
-      console.error('Error fetching facilities by organization:', error);
-      return [];
-    }
-    
-    return data as Facility[] || [];
-  } catch (error) {
-    console.error('Exception in getFacilitiesByOrganization:', error);
-    return [];
-  }
-};
-
 export default {
   getFacility,
   createFacility,
   updateFacility,
   deleteFacility,
-  getFacilitiesByOrganization
+  getFacilitiesByOrganization,
+  fetchFacilities,
+  fetchFacilityById
 };
