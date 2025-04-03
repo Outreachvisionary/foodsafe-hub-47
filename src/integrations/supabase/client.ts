@@ -31,7 +31,8 @@ export const supabaseConfig = {
   keyPreview: supabaseKey ? `***${supabaseKey.slice(-6)}` : '***[fallback key]'
 };
 
-// Test the connection on startup
+// Force a re-connection to ensure we're using the latest config
+console.info('Initializing Supabase connection...');
 supabase.from('organizations').select('count(*)', { count: 'exact', head: true })
   .then(({ error }) => {
     if (error) {

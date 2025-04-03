@@ -34,6 +34,7 @@ const DatabaseConnectionTest = () => {
     url: supabaseConfig.url,
     key: supabaseConfig.keyPreview
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const addResult = (result: TestResult) => {
     setResults(prev => [...prev, result]);
@@ -46,6 +47,16 @@ const DatabaseConnectionTest = () => {
     setUserProfile(null);
   };
 
+  const forceRefresh = () => {
+    console.log('Force refreshing database tests');
+    resetTests();
+    setRefreshTrigger(prev => prev + 1);
+    toast({
+      title: "Refreshing tests",
+      description: "Reconnecting to Supabase and re-running all tests"
+    });
+  };
+
   // Test 1: Table Structure and Access
   const testTableStructure = async () => {
     try {
@@ -55,10 +66,17 @@ const DatabaseConnectionTest = () => {
         message: "Checking connection to Supabase..."
       });
 
+      console.log('Testing connection to Supabase at:', supabaseConfig.url);
+      
       // Test connection
       const { data: connTest, error: connError } = await supabase.from('organizations').select('count(*)', { count: 'exact', head: true });
       
-      if (connError) throw connError;
+      if (connError) {
+        console.error('Connection test failed:', connError);
+        throw connError;
+      }
+      
+      console.log('Connection test succeeded');
       
       addResult({
         name: "Database Connection",
@@ -77,9 +95,15 @@ const DatabaseConnectionTest = () => {
             message: `Checking if ${table} table exists and is accessible...`
           });
           
+          console.log(`Testing access to ${table} table`);
           const { error } = await supabase.from(table).select('count(*)', { count: 'exact', head: true });
           
-          if (error) throw error;
+          if (error) {
+            console.error(`Error accessing ${table} table:`, error);
+            throw error;
+          }
+          
+          console.log(`Successfully accessed ${table} table`);
           
           addResult({
             name: `${table} Table Access`,
@@ -87,6 +111,8 @@ const DatabaseConnectionTest = () => {
             message: `Table '${table}' exists and is accessible`
           });
         } catch (error: any) {
+          console.error(`Failed to access ${table} table:`, error);
+          
           addResult({
             name: `${table} Table Access`,
             status: "error",
@@ -103,9 +129,15 @@ const DatabaseConnectionTest = () => {
           message: "Checking if user_facility_access table exists..."
         });
         
+        console.log('Testing access to user_facility_access table');
         const { error } = await supabase.from('user_facility_access').select('count(*)', { count: 'exact', head: true });
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error accessing user_facility_access table:', error);
+          throw error;
+        }
+        
+        console.log('Successfully accessed user_facility_access table');
         
         addResult({
           name: "user_facility_access Table Access",
@@ -113,6 +145,8 @@ const DatabaseConnectionTest = () => {
           message: "Table 'user_facility_access' exists and is accessible"
         });
       } catch (error: any) {
+        console.error('Failed to access user_facility_access table:', error);
+        
         addResult({
           name: "user_facility_access Table Access",
           status: "warning",
@@ -121,6 +155,8 @@ const DatabaseConnectionTest = () => {
       }
 
     } catch (error: any) {
+      console.error('Database connection test failed:', error);
+      
       addResult({
         name: "Database Connection",
         status: "error",
@@ -518,6 +554,13 @@ const DatabaseConnectionTest = () => {
     });
   };
 
+  // Run tests when component mounts or refreshTrigger changes
+  useEffect(() => {
+    if (user) {
+      runAllTests();
+    }
+  }, [user, refreshTrigger]);
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
@@ -579,6 +622,16 @@ const DatabaseConnectionTest = () => {
                   Run All Tests
                 </>
               )}
+            </Button>
+            
+            <Button 
+              onClick={forceRefresh} 
+              variant="outline" 
+              disabled={isLoading} 
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Force Reconnect
             </Button>
             
             <TooltipProvider>
