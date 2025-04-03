@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +22,7 @@ const MainNavigation = () => {
     <NavigationMenu className="hidden md:flex">
       <NavigationMenuList>
         <NavigationMenuItem>
-          <Link to="/dashboard" legacyBehavior passHref>
+          <Link to="/dashboard">
             <NavigationMenuLink className={navigationMenuTriggerStyle({
               className: location.pathname === '/dashboard' ? 'bg-accent text-accent-foreground' : ''
             })}>
@@ -31,7 +32,7 @@ const MainNavigation = () => {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <Link to="/documents" legacyBehavior passHref>
+          <Link to="/documents">
             <NavigationMenuLink className={navigationMenuTriggerStyle({
               className: location.pathname === '/documents' ? 'bg-accent text-accent-foreground' : ''
             })}>
@@ -43,7 +44,7 @@ const MainNavigation = () => {
         {user && (
           <>
             <NavigationMenuItem>
-              <Link to="/users" legacyBehavior passHref>
+              <Link to="/users">
                 <NavigationMenuLink className={navigationMenuTriggerStyle({
                   className: location.pathname === '/users' ? 'bg-accent text-accent-foreground' : ''
                 })}>
@@ -53,7 +54,7 @@ const MainNavigation = () => {
             </NavigationMenuItem>
             
             <NavigationMenuItem>
-              <Link to="/db-test" legacyBehavior passHref>
+              <Link to="/db-test">
                 <NavigationMenuLink className={navigationMenuTriggerStyle({
                   className: location.pathname === '/db-test' ? 'bg-accent text-accent-foreground' : ''
                 })}>

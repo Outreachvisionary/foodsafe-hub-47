@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserProvider } from './contexts/UserContext';
@@ -15,7 +16,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
-import DatabaseConnectionTest from './pages/DatabaseConnectionTest'; // Add this import
+import DatabaseConnectionTest from './pages/DatabaseConnectionTest';
 
 const queryClient = new QueryClient();
 
@@ -26,11 +27,6 @@ function App() {
         <PermissionProvider>
           <Router>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/users" element={<UserManagement />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/db-test" element={<DatabaseConnectionTest />} /> {/* Add this route */}
               <Route element={<AuthLayout />}>
                 <Route path="/" element={<Home />} />
               </Route>
@@ -38,6 +34,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/db-test" element={<DatabaseConnectionTest />} />
               </Route>
               <Route path="/update-password" element={<UpdatePassword />} />
             </Routes>
