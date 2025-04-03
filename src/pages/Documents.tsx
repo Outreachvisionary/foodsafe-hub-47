@@ -56,7 +56,7 @@ const DocumentsContent = () => {
       setInitialLoadAttempted(true);
       try {
         await fetchDocuments();
-        console.log("Documents loaded successfully");
+        console.log("Documents loaded:", documents);
       } catch (error) {
         console.error("Error loading documents:", error);
         toast({
@@ -68,14 +68,7 @@ const DocumentsContent = () => {
     };
     
     loadData();
-  }, [fetchDocuments, initialLoadAttempted, toast]);
-
-  // Effect to handle selected document changes
-  useEffect(() => {
-    if (selectedDocument && activeTab !== 'edit') {
-      setActiveTab('edit');
-    }
-  }, [selectedDocument]);
+  }, [fetchDocuments, initialLoadAttempted]);
 
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -102,19 +95,11 @@ const DocumentsContent = () => {
 
   const handleSaveDocument = (updatedDoc: DocumentType) => {
     updateDocument(updatedDoc);
-    toast({
-      title: "Document updated",
-      description: "Document has been saved successfully"
-    });
   };
 
   const handleSubmitForReview = (doc: DocumentType) => {
     submitForApproval(doc);
     setActiveTab('approvals');
-    toast({
-      title: "Document submitted",
-      description: "Document has been submitted for approval"
-    });
   };
 
   const approvalNotifications = notifications.filter(n => 
@@ -148,14 +133,6 @@ const DocumentsContent = () => {
         <div className="flex justify-between items-center my-6">
           <h2 className="text-2xl font-bold text-gradient-primary">{t('documents.controlSystem', 'Documents Control System')}</h2>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsUploadOpen(true)}
-              className="gap-2"
-            >
-              <FilePlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Upload Document</span>
-            </Button>
             <DocumentNotificationCenter 
               notifications={notifications}
               onMarkAsRead={markNotificationAsRead}
@@ -165,7 +142,7 @@ const DocumentsContent = () => {
         </div>
         
         <Tabs defaultValue="repository" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 bg-white border border-border shadow-md p-1 gap-1 overflow-x-auto max-w-full flex">
+          <TabsList className="mb-6 bg-white border border-border shadow-md p-1 gap-1">
             <TabsTrigger 
               value="repository" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-md text-base py-2.5 px-4"

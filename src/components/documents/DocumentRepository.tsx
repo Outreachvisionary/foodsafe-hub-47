@@ -10,36 +10,26 @@ import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
 import { Folder, Document as DocumentType } from '@/types/database';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import DocumentPreviewDialogWrapper from '@/components/documents/DocumentPreviewDialogWrapper';
 
 const DocumentRepository: React.FC = () => {
   const {
-    documents = [],
-    folders = [],
+    documents,
+    folders,
     selectedFolder,
     setSelectedFolder,
     isLoading,
-    error,
-    setSelectedDocument,
-    refreshData,
-    deleteDocument
+    error
   } = useDocuments();
 
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('documentList');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [previewDocument, setPreviewDocument] = useState<DocumentType | null>(null);
 
   useEffect(() => {
-    const docArray = Array.isArray(documents) ? documents : [];
-    const folderArray = Array.isArray(folders) ? folders : [];
-    
-    let filtered = [...docArray];
+    let filtered = documents;
     
     if (selectedFolder) {
       filtered = filtered.filter(doc => doc.folder_id === selectedFolder.id);
@@ -48,27 +38,27 @@ const DocumentRepository: React.FC = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(doc => 
-        (doc.title && doc.title.toLowerCase().includes(query)) || 
+        doc.title.toLowerCase().includes(query) || 
         (doc.description && doc.description.toLowerCase().includes(query)) ||
-        (doc.tags && Array.isArray(doc.tags) && doc.tags.some(tag => tag.toLowerCase().includes(query))) ||
-        (doc.category && doc.category.toLowerCase().includes(query))
+        (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(query))) ||
+        doc.category.toLowerCase().includes(query)
       );
     }
     
-    filtered = filtered.sort((a, b) => {
+    filtered = [...filtered].sort((a, b) => {
       if (sortBy === 'title') {
         return sortDirection === 'asc' 
-          ? (a.title || '').localeCompare(b.title || '') 
-          : (b.title || '').localeCompare(a.title || '');
+          ? a.title.localeCompare(b.title) 
+          : b.title.localeCompare(a.title);
       } else {
-        const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-        const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        const dateA = new Date(a.updated_at).getTime();
+        const dateB = new Date(b.updated_at).getTime();
         return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
       }
     });
     
     setFilteredDocuments(filtered);
-  }, [documents, searchQuery, selectedFolder, sortBy, sortDirection, folders]);
+  }, [documents, searchQuery, selectedFolder, sortBy, sortDirection]);
 
   const handleSortChange = (field: 'title' | 'updated_at') => {
     if (sortBy === field) {
@@ -84,75 +74,19 @@ const DocumentRepository: React.FC = () => {
   };
 
   const handleViewDocument = (document: DocumentType) => {
-    if (document) {
-      setPreviewDocument(document);
-      setSelectedDocument(document);
-    }
+    console.log('View document:', document);
   };
 
   const handleEditDocument = (document: DocumentType) => {
-    if (document) {
-      setSelectedDocument(document);
-      // Navigate to the edit tab in the parent component
-      // This will be handled in Documents.tsx
-    }
+    console.log('Edit document:', document);
   };
 
-  const handleDeleteDocument = async (document: DocumentType) => {
-    if (!document || !document.id) {
-      toast({
-        title: "Error",
-        description: "Invalid document. Cannot delete.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      if (typeof deleteDocument === 'function') {
-        await deleteDocument(document.id);
-        toast({
-          title: "Success",
-          description: "Document deleted successfully",
-        });
-      } else {
-        // Fallback if deleteDocument is not implemented
-        toast({
-          title: "Operation not supported",
-          description: "Document deletion functionality is not yet implemented.",
-          variant: "destructive",
-        });
-      }
-      
-      // Refresh the documents list to ensure UI is updated
-      if (typeof refreshData === 'function') {
-        await refreshData();
-      }
-    } catch (error) {
-      console.error("Error in delete operation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete document. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteDocument = (document: DocumentType) => {
+    console.log('Delete document:', document);
   };
 
   const handleDownloadDocument = (document: DocumentType) => {
-    if (!document || !document.title) {
-      toast({
-        title: "Error",
-        description: "Invalid document. Cannot download.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Implement download logic or open in a new tab
-    toast({
-      title: "Download started",
-      description: `Downloading "${document.title}"`,
-    });
+    console.log('Download document:', document);
   };
 
   return (
@@ -230,13 +164,13 @@ const DocumentRepository: React.FC = () => {
                   <FolderOpen className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Current Folder: {selectedFolder.name}</span>
                   <Badge variant="outline" className="ml-2">
-                    {Array.isArray(filteredDocuments) ? filteredDocuments.length : 0} documents
+                    {filteredDocuments.length} documents
                   </Badge>
                 </div>
               )}
               
-              {Array.isArray(filteredDocuments) && filteredDocuments.length > 0 ? (
-                <ScrollArea className="h-[calc(100vh-350px)] border rounded-md">
+              {filteredDocuments.length > 0 ? (
+                <div className="border rounded-md">
                   <DocumentList 
                     documents={filteredDocuments} 
                     onViewDocument={handleViewDocument}
@@ -244,7 +178,7 @@ const DocumentRepository: React.FC = () => {
                     onDeleteDocument={handleDeleteDocument}
                     onDownloadDocument={handleDownloadDocument}
                   />
-                </ScrollArea>
+                </div>
               ) : (
                 <div className="border rounded-md p-12 text-center">
                   <div className="mx-auto bg-muted/20 rounded-full w-20 h-20 flex items-center justify-center mb-4">
@@ -278,16 +212,6 @@ const DocumentRepository: React.FC = () => {
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen}
       />
-
-      {previewDocument && (
-        <DocumentPreviewDialogWrapper
-          document={previewDocument}
-          open={!!previewDocument}
-          onOpenChange={(open) => {
-            if (!open) setPreviewDocument(null);
-          }}
-        />
-      )}
     </div>
   );
 };

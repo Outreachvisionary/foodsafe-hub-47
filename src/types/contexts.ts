@@ -20,18 +20,10 @@ export interface DocumentContextType {
   clearAllNotifications: () => void;
   checkoutDocument: (document: Document) => Promise<Document>;
   checkinDocument: (document: Document) => Promise<Document>;
-  selectedFolder: any;
-  setSelectedFolder: (folder: any) => void;
-  folders: any[];
   // New methods for Phase 2 features
   addDocumentRelationship: (sourceDocId: string, targetDocId: string, relationType: string) => Promise<DocumentRelationship | null>;
   removeDocumentRelationship: (relationshipId: string) => Promise<void>;
   getDocumentRelationships: (documentId: string) => Promise<DocumentRelationship[]>;
   generateDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
   getDocumentSummary: (documentId: string) => Promise<DocumentSummary | null>;
-  getDocumentsInFolder?: (folderId: string | null) => Document[];
-  retryFetchDocuments?: () => Promise<void>;
-  createFolder?: (name: string, parentId: string | null) => Promise<any>;
-  moveDocumentToFolder?: (documentId: string, folderId: string | null) => Promise<void>;
-  setIsLoading?: (loading: boolean) => void;
 }

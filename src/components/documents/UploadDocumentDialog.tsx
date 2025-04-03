@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import DocumentUploader from './DocumentUploader';
 import { useDocuments } from '@/contexts/DocumentContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -32,9 +31,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   
   const handleUploadComplete = () => {
     onOpenChange(false);
-    if (typeof refreshData === 'function') {
-      refreshData(); // Refresh document list after upload
-    }
+    refreshData(); // Refresh document list after upload
   };
 
   // Use selectedFolder prop if provided, otherwise use the one from context
@@ -42,25 +39,23 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
             Upload a document to the document management system
-            {contextFolder ? ` in folder: ${contextFolder.name}` : ''}
+            {contextFolder && ` in folder: ${contextFolder.name}`}
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)] mt-4 pr-4">
-          <DocumentUploader
-            onSuccess={handleUploadComplete}
-            onCancel={() => onOpenChange(false)}
-            category={category}
-            allowedTypes={allowedTypes}
-            maxSize={maxSize}
-            selectedFolder={folderToUse}
-          />
-        </ScrollArea>
+        <DocumentUploader
+          onSuccess={handleUploadComplete}
+          onCancel={() => onOpenChange(false)}
+          category={category}
+          allowedTypes={allowedTypes}
+          maxSize={maxSize}
+          selectedFolder={folderToUse}
+        />
       </DialogContent>
     </Dialog>
   );

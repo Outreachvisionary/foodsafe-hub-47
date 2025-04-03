@@ -8,17 +8,14 @@ import './services/storageService'; // Initialize storage services
 import './services/databaseInitializer'; // Initialize database tables
 import { UserProvider } from './contexts/UserContext';
 import { PermissionProvider } from './contexts/PermissionContext';
-import { LanguageProvider } from './contexts/LanguageContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <UserProvider>
       <PermissionProvider>
-        <LanguageProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </LanguageProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </PermissionProvider>
     </UserProvider>
   </React.StrictMode>
