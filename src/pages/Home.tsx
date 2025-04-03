@@ -7,12 +7,10 @@ import StandardsSection from '@/components/StandardsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import CallToActionSection from '@/components/CallToActionSection';
 import FooterSection from '@/components/FooterSection';
-import { Toaster } from '@/components/ui/toaster';
 
 const Home: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
       <main className="flex-1">
         <HeroSection />
         <StandardsSection />
@@ -21,7 +19,6 @@ const Home: React.FC = () => {
         <CallToActionSection />
       </main>
       <FooterSection />
-      <Toaster />
     </div>
   );
 };
