@@ -11,7 +11,9 @@ import { Facility } from '@/types/facility';
 import { UserProfile } from '@/types/user';
 import { Organization } from '@/types/organization';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 interface TestResult {
   name: string;
@@ -22,11 +24,16 @@ interface TestResult {
 
 const DatabaseConnectionTest = () => {
   const { user } = useUser();
+  const { toast } = useToast();
   const [results, setResults] = useState<TestResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [supabaseInfo, setSupabaseInfo] = useState({
+    url: supabase.supabaseUrl,
+    key: supabase.supabaseKey ? '***' + supabase.supabaseKey.slice(-6) : 'Not set'
+  });
 
   const addResult = (result: TestResult) => {
     setResults(prev => [...prev, result]);
@@ -224,7 +231,7 @@ const DatabaseConnectionTest = () => {
         const testUpdate = {
           ...userProfile,
           // Create a non-destructive update by setting the same values
-          full_name: userProfile.full_name,
+          full_name: userProfile.full_name || 'Test User',
           preferred_language: userProfile.preferred_language || 'en'
         };
         
@@ -236,12 +243,20 @@ const DatabaseConnectionTest = () => {
         
         const updatedProfile = await updateUserProfile(user.id, testUpdate);
         
-        addResult({
-          name: "Profile Update API",
-          status: "success",
-          message: "Successfully updated user profile",
-          details: updatedProfile
-        });
+        if (updatedProfile) {
+          addResult({
+            name: "Profile Update API",
+            status: "success",
+            message: "Successfully updated user profile",
+            details: updatedProfile
+          });
+        } else {
+          addResult({
+            name: "Profile Update API",
+            status: "warning",
+            message: "Profile update completed but no data was returned, check the console for details"
+          });
+        }
       } else {
         addResult({
           name: "Profile Update API",
@@ -496,6 +511,11 @@ const DatabaseConnectionTest = () => {
     await testCrudOperations();
     
     setIsLoading(false);
+    
+    toast({
+      title: "Database tests completed",
+      description: "All tests have been executed. Please review the results."
+    });
   };
 
   const getStatusIcon = (status: string) => {
@@ -525,6 +545,17 @@ const DatabaseConnectionTest = () => {
             This tool will test the connection to your Supabase backend and verify that your tables,
             API endpoints, RLS policies, and CRUD operations are working correctly.
           </p>
+          
+          <div className="bg-slate-50 p-4 rounded-md mb-4">
+            <h3 className="text-sm font-medium mb-2">Supabase Configuration</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-gray-600">URL:</div>
+              <div>{supabaseInfo.url}</div>
+              <div className="text-gray-600">Key:</div>
+              <div>{supabaseInfo.key}</div>
+            </div>
+          </div>
+          
           {!user && (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Authentication Required</AlertTitle>
@@ -535,9 +566,37 @@ const DatabaseConnectionTest = () => {
           )}
         </CardContent>
         <CardFooter>
-          <Button onClick={runAllTests} disabled={isLoading || !user}>
-            {isLoading ? 'Running Tests...' : 'Run All Tests'}
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={runAllTests} disabled={isLoading || !user} className="flex items-center gap-2">
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Running Tests...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Run All Tests
+                </>
+              )}
+            </Button>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    These tests verify your application's connection to Supabase and test various
+                    database operations. If any tests fail, check your Supabase configuration.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardFooter>
       </Card>
 

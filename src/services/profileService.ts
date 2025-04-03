@@ -1,155 +1,148 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/user';
+import { toast } from '@/hooks/use-toast';
 
 /**
- * Updates the user's profile picture, uploading it to storage and updating the profile
- * @param userId The user ID
- * @param base64Image Base64 encoded image data
- * @returns The updated user profile
- */
-export const updateProfilePicture = async (userId: string, base64Image: string): Promise<UserProfile | null> => {
-  try {
-    // Convert base64 to a file
-    const base64Data = base64Image.split(',')[1];
-    const blob = base64ToBlob(base64Data, 'image/jpeg');
-    const fileName = `${userId}_${Date.now()}.jpg`;
-    
-    // Upload to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('profiles')
-      .upload(`avatars/${fileName}`, blob, {
-        contentType: 'image/jpeg',
-        upsert: false,
-      });
-    
-    if (uploadError) {
-      console.error('Error uploading profile picture:', uploadError);
-      throw uploadError;
-    }
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase
-      .storage
-      .from('profiles')
-      .getPublicUrl(`avatars/${fileName}`);
-    
-    // Update user profile
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: publicUrl })
-      .eq('id', userId)
-      .select()
-      .single();
-    
-    if (profileError) {
-      console.error('Error updating profile with new avatar:', profileError);
-      throw profileError;
-    }
-    
-    // Get the user's email from auth session
-    const { data: { session } } = await supabase.auth.getSession();
-    const email = session?.user?.email || '';
-    
-    // Return combined data
-    return {
-      ...profileData,
-      email
-    } as UserProfile;
-  } catch (error) {
-    console.error('Error in updateProfilePicture:', error);
-    throw error;
-  }
-};
-
-/**
- * Helper function to convert base64 to Blob
- */
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const byteCharacters = atob(base64);
-  const byteArrays = [];
-  
-  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-    const slice = byteCharacters.slice(offset, offset + 512);
-    
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i);
-    }
-    
-    const byteArray = new Uint8Array(byteNumbers);
-    byteArrays.push(byteArray);
-  }
-  
-  return new Blob(byteArrays, { type: mimeType });
-}
-
-/**
- * Fetches a user's profile data
- * @param userId The user ID to fetch
- * @returns Promise resolving to the user profile
+ * Fetches user profile by user ID
+ * @param userId User ID to fetch profile for
+ * @returns User profile or null if not found
  */
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    // Get profile data
-    const { data: profileData, error: profileError } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-      
-    if (profileError) throw profileError;
     
-    // Get the user's email from auth session
-    const { data: { session } } = await supabase.auth.getSession();
-    const email = session?.user?.email || '';
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
     
-    // Combine profile data with email
-    return {
-      ...profileData,
-      email
-    } as UserProfile;
+    return data as UserProfile;
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('Exception in fetchUserProfile:', error);
     return null;
   }
 };
 
 /**
- * Updates a user's profile with new information
- * @param userId The user ID to update
- * @param updates The profile updates to apply
- * @returns Promise resolving to the updated profile
+ * Updates a user profile with new data
+ * @param userId User ID of the profile to update
+ * @param updates Update data for the profile
+ * @returns Updated profile or null if update fails
  */
 export const updateUserProfile = async (
   userId: string, 
   updates: Partial<UserProfile>
 ): Promise<UserProfile | null> => {
   try {
-    // Extract email to prevent trying to update it in the profile table
-    const { email, ...profileUpdates } = updates;
+    console.log('Updating profile for user:', userId);
+    console.log('Updates:', JSON.stringify(updates));
+    
+    // Remove any properties that don't belong in the profiles table
+    const cleanUpdates = { ...updates };
+    
+    // Remove email as it's not stored in profiles table
+    if ('email' in cleanUpdates) {
+      delete cleanUpdates.email;
+    }
     
     const { data, error } = await supabase
       .from('profiles')
-      .update(profileUpdates)
+      .update(cleanUpdates)
       .eq('id', userId)
       .select()
       .single();
-      
-    if (error) throw error;
     
-    // Get the user's email from auth session
-    const { data: { session } } = await supabase.auth.getSession();
-    const userEmail = session?.user?.email || email || '';
+    if (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive"
+      });
+      return null;
+    }
     
-    // Return combined data
-    return {
-      ...data,
-      email: userEmail
-    } as UserProfile;
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been successfully updated",
+    });
+    
+    return data as UserProfile;
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    console.error('Exception in updateUserProfile:', error);
+    toast({
+      title: "Update error",
+      description: "An unexpected error occurred while updating your profile",
+      variant: "destructive"
+    });
     return null;
   }
+};
+
+/**
+ * Updates assigned facilities for a user
+ * @param userId User ID to update
+ * @param facilityIds Array of facility IDs to assign to user
+ * @returns Success status
+ */
+export const updateUserFacilities = async (
+  userId: string,
+  facilityIds: string[]
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ assigned_facility_ids: facilityIds })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user facilities:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception in updateUserFacilities:', error);
+    return false;
+  }
+};
+
+/**
+ * Updates user organization
+ * @param userId User ID to update
+ * @param organizationId Organization ID to assign
+ * @returns Success status
+ */
+export const updateUserOrganization = async (
+  userId: string,
+  organizationId: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ organization_id: organizationId })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user organization:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception in updateUserOrganization:', error);
+    return false;
+  }
+};
+
+export default {
+  fetchUserProfile,
+  updateUserProfile,
+  updateUserFacilities,
+  updateUserOrganization
 };
