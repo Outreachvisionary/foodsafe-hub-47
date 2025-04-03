@@ -16,6 +16,7 @@ interface DocumentContextType {
   setSelectedFolder: (folder: Folder | null) => void;
   fetchDocuments: () => Promise<void>;
   updateDocument: (document: Document) => void;
+  deleteDocument: (documentId: string) => Promise<void>;
   submitForApproval: (document: Document) => void;
   approveDocument: (document: Document, comment: string) => Promise<void>;
   rejectDocument: (document: Document, reason: string) => Promise<void>;
@@ -155,6 +156,41 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         description: 'Failed to update document',
         variant: 'destructive',
       });
+    }
+  };
+
+  const deleteDocument = async (documentId: string): Promise<void> => {
+    try {
+      const document = documents.find(doc => doc.id === documentId);
+      if (!document) {
+        throw new Error('Document not found');
+      }
+
+      await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
+
+      setDocuments(prevDocuments => 
+        prevDocuments.filter(doc => doc.id !== documentId)
+      );
+
+      if (selectedDocument && selectedDocument.id === documentId) {
+        setSelectedDocument(null);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive',
+      });
+      throw error;
     }
   };
 
@@ -446,6 +482,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSelectedFolder,
         fetchDocuments,
         updateDocument,
+        deleteDocument,
         submitForApproval,
         approveDocument,
         rejectDocument,
