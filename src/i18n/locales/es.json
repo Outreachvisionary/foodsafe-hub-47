@@ -45,24 +45,7 @@
     "status": "Estado",
     "version": "Versión",
     "actions": "Acciones",
-    "lastUpdated": "Última Actualización",
-    "controlSystem": "Sistema de Control de Documentos",
-    "createNewDocument": "Crear Nuevo Documento",
-    "currentFolder": "Carpeta Actual",
-    "documentsCount": "documentos",
-    "noDocumentsFound": "No se encontraron documentos",
-    "emptyFolder": "Esta carpeta está vacía. Sube documentos para comenzar.",
-    "noMatchingDocuments": "No hay documentos que coincidan con tu búsqueda.",
-    "uploadFirstDocument": "Sube Tu Primer Documento",
-    "viewDocuments": "Ver Documentos",
-    "downloadStarted": "Descarga iniciada",
-    "downloadingFile": "Descargando \"{{title}}\"",
-    "deleteSuccess": "Documento eliminado exitosamente",
-    "errors": {
-      "invalidDocument": "Documento inválido. No se puede proceder.",
-      "operationNotSupported": "La funcionalidad de eliminación de documentos aún no está implementada.",
-      "deleteFailed": "No se pudo eliminar el documento. Por favor, inténtalo de nuevo."
-    }
+    "lastUpdated": "Última Actualización"
   },
   "status": {
     "draft": "Borrador",
@@ -80,9 +63,7 @@
     "view": "Ver",
     "download": "Descargar",
     "upload": "Subir",
-    "submit": "Enviar",
-    "sort": "Ordenar",
-    "filter": "Filtrar"
+    "submit": "Enviar"
   },
   "notifications": {
     "success": "Éxito",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -13,8 +12,6 @@ import { Folder, Document as DocumentType } from '@/types/database';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import DocumentPreviewDialogWrapper from '@/components/documents/DocumentPreviewDialogWrapper';
-import { useTranslation } from 'react-i18next';
-import DocumentRepositoryHeader from './DocumentRepositoryHeader';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -29,7 +26,6 @@ const DocumentRepository: React.FC = () => {
     deleteDocument
   } = useDocuments();
 
-  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -105,8 +101,8 @@ const DocumentRepository: React.FC = () => {
   const handleDeleteDocument = async (document: DocumentType) => {
     if (!document || !document.id) {
       toast({
-        title: t('notifications.error'),
-        description: t('documents.errors.invalidDocument'),
+        title: "Error",
+        description: "Invalid document. Cannot delete.",
         variant: "destructive",
       });
       return;
@@ -116,14 +112,14 @@ const DocumentRepository: React.FC = () => {
       if (typeof deleteDocument === 'function') {
         await deleteDocument(document.id);
         toast({
-          title: t('notifications.success'),
-          description: t('documents.deleteSuccess'),
+          title: "Success",
+          description: "Document deleted successfully",
         });
       } else {
         // Fallback if deleteDocument is not implemented
         toast({
-          title: t('notifications.error'),
-          description: t('documents.errors.operationNotSupported'),
+          title: "Operation not supported",
+          description: "Document deletion functionality is not yet implemented.",
           variant: "destructive",
         });
       }
@@ -135,8 +131,8 @@ const DocumentRepository: React.FC = () => {
     } catch (error) {
       console.error("Error in delete operation:", error);
       toast({
-        title: t('notifications.error'),
-        description: t('documents.errors.deleteFailed'),
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
         variant: "destructive",
       });
     }
@@ -145,8 +141,8 @@ const DocumentRepository: React.FC = () => {
   const handleDownloadDocument = (document: DocumentType) => {
     if (!document || !document.title) {
       toast({
-        title: t('notifications.error'),
-        description: t('documents.errors.invalidDocument'),
+        title: "Error",
+        description: "Invalid document. Cannot download.",
         variant: "destructive",
       });
       return;
@@ -154,29 +150,27 @@ const DocumentRepository: React.FC = () => {
     
     // Implement download logic or open in a new tab
     toast({
-      title: t('documents.downloadStarted'),
-      description: t('documents.downloadingFile', { title: document.title }),
+      title: "Download started",
+      description: `Downloading "${document.title}"`,
     });
   };
 
   return (
     <div className="p-6 bg-white">
-      <DocumentRepositoryHeader />
-      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="dashboard">{t('dashboard.title')}</TabsTrigger>
-          <TabsTrigger value="documentList">{t('documents.repository')}</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="documentList">Document List</TabsTrigger>
         </TabsList>
         
         <TabsContent value="dashboard">
           <div className="text-center py-8">
-            <h3 className="text-xl font-medium mb-4">{t('documents.controlSystem')}</h3>
+            <h3 className="text-xl font-medium mb-4">Document Dashboard</h3>
             <p className="text-muted-foreground mb-4">
-              {t('documents.subtitle')}
+              View and manage your document metrics and statistics here.
             </p>
             <Button onClick={() => setActiveTab('documentList')}>
-              {t('documents.viewDocuments')}
+              View Documents
             </Button>
           </div>
         </TabsContent>
@@ -195,7 +189,7 @@ const DocumentRepository: React.FC = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder={t('documents.search')}
+                    placeholder="Search documents..."
                     className="pl-8"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -209,7 +203,7 @@ const DocumentRepository: React.FC = () => {
                     onClick={() => handleSortChange('updated_at')}
                   >
                     <ArrowUpDown className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('buttons.sort')}</span>
+                    <span className="hidden sm:inline">Sort</span>
                   </Button>
                   
                   <Button
@@ -218,7 +212,7 @@ const DocumentRepository: React.FC = () => {
                     onClick={() => setSortBy(sortBy === 'title' ? 'updated_at' : 'title')}
                   >
                     <Filter className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('buttons.filter')}</span>
+                    <span className="hidden sm:inline">Filter</span>
                   </Button>
                   
                   <Button 
@@ -226,7 +220,7 @@ const DocumentRepository: React.FC = () => {
                     onClick={() => setIsUploadOpen(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('buttons.upload')}</span>
+                    <span className="hidden sm:inline">Upload</span>
                   </Button>
                 </div>
               </div>
@@ -234,9 +228,9 @@ const DocumentRepository: React.FC = () => {
               {selectedFolder && (
                 <div className="flex items-center gap-2 bg-muted/30 rounded-md p-2">
                   <FolderOpen className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">{t('documents.currentFolder')}: {selectedFolder.name}</span>
+                  <span className="text-sm font-medium">Current Folder: {selectedFolder.name}</span>
                   <Badge variant="outline" className="ml-2">
-                    {Array.isArray(filteredDocuments) ? filteredDocuments.length : 0} {t('documents.documentsCount')}
+                    {Array.isArray(filteredDocuments) ? filteredDocuments.length : 0} documents
                   </Badge>
                 </div>
               )}
@@ -256,14 +250,14 @@ const DocumentRepository: React.FC = () => {
                   <div className="mx-auto bg-muted/20 rounded-full w-20 h-20 flex items-center justify-center mb-4">
                     <FolderOpen className="h-10 w-10 text-muted-foreground/60" />
                   </div>
-                  <h3 className="text-lg font-medium">{t('documents.noDocumentsFound')}</h3>
+                  <h3 className="text-lg font-medium">No documents found</h3>
                   {selectedFolder ? (
                     <p className="text-muted-foreground mt-1 mb-4">
-                      {t('documents.emptyFolder')}
+                      This folder is empty. Upload documents to get started.
                     </p>
                   ) : (
                     <p className="text-muted-foreground mt-1 mb-4">
-                      {t('documents.noMatchingDocuments')}
+                      No documents match your search query.
                     </p>
                   )}
                   <Button 
@@ -271,7 +265,7 @@ const DocumentRepository: React.FC = () => {
                     className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    {t('documents.uploadFirstDocument')}
+                    Upload Your First Document
                   </Button>
                 </div>
               )}

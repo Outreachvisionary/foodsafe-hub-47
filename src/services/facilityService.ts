@@ -1,118 +1,152 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Facility } from '@/types/facility';
-import { toast } from '@/hooks/use-toast';
+import { capitalizeLocation } from '@/utils/locationUtils';
 
-/**
- * Fetches facilities for an organization
- * @param organizationId The ID of the organization
- * @param onlyAssigned Whether to only fetch facilities assigned to the current user
- * @returns Array of facilities
- */
-export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
+export const fetchFacilities = async (organizationId?: string, onlyAssigned: boolean = false): Promise<Facility[]> => {
   try {
+    console.log('Fetching facilities for organization:', organizationId, 'onlyAssigned:', onlyAssigned);
     const { data, error } = await supabase
       .from('facilities')
       .select('*')
-      .eq('organization_id', organizationId)
       .eq('status', 'active')
       .order('name');
     
     if (error) {
-      console.error('Error fetching facilities by organization:', error);
-      return [];
+      console.error('Error fetching facilities:', error);
+      throw error;
     }
     
-    return data as Facility[] || [];
+    if (organizationId) {
+      return (data as Facility[]).filter(f => f.organization_id === organizationId);
+    }
+    
+    console.log('Facilities data retrieved:', data);
+    return data as Facility[];
   } catch (error) {
-    console.error('Exception in getFacilitiesByOrganization:', error);
-    return [];
+    console.error('Error fetching facilities:', error);
+    throw error;
   }
 };
 
-/**
- * Fetches facilities - can be used with or without organization ID
- * @param organizationId Optional organization ID to filter by
- * @param onlyAssigned Whether to only fetch facilities assigned to the current user
- * @returns Array of facilities
- */
-export const fetchFacilities = async (organizationId?: string, onlyAssigned: boolean = false): Promise<Facility[]> => {
+export const fetchFacilitiesByLocation = async (
+  organizationId?: string, 
+  country?: string, 
+  state?: string, 
+  city?: string
+): Promise<Facility[]> => {
   try {
-    // Use the RPC function to get facilities, which handles permissions and filters
-    const { data, error } = await supabase
-      .rpc('get_facilities', {
-        p_organization_id: organizationId || null,
-        p_only_assigned: onlyAssigned
-      });
+    console.log('Fetching facilities by location:', { organizationId, country, state, city });
+    let query = supabase
+      .from('facilities')
+      .select('*')
+      .eq('status', 'active');
+    
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId);
+    }
+    
+    if (country) {
+      query = query.eq('country', country);
+    }
+    
+    if (state) {
+      query = query.eq('state', state);
+    }
+    
+    if (city) {
+      query = query.eq('city', city);
+    }
+    
+    const { data, error } = await query.order('name');
     
     if (error) {
-      console.error('Error fetching facilities:', error);
-      return [];
+      console.error('Error fetching facilities by location:', error);
+      throw error;
     }
     
-    return data as Facility[] || [];
+    console.log('Facilities data retrieved by location:', data);
+    return data as Facility[];
   } catch (error) {
-    console.error('Exception in fetchFacilities:', error);
-    return [];
+    console.error('Error fetching facilities by location:', error);
+    throw error;
   }
 };
 
-/**
- * Fetches a facility by ID
- * @param facilityId The ID of the facility to fetch
- * @returns The facility object or null if not found
- */
-export const getFacility = async (facilityId: string): Promise<Facility | null> => {
+export const fetchFacilityById = async (id: string): Promise<Facility> => {
   try {
+    console.log('Fetching facility by ID:', id);
     const { data, error } = await supabase
       .from('facilities')
       .select('*')
-      .eq('id', facilityId)
+      .eq('id', id)
       .single();
     
     if (error) {
       console.error('Error fetching facility:', error);
-      return null;
+      throw error;
     }
     
+    console.log('Facility data retrieved:', data);
     return data as Facility;
   } catch (error) {
-    console.error('Exception in getFacility:', error);
-    return null;
+    console.error('Error fetching facility:', error);
+    throw error;
   }
 };
 
-/**
- * Fetches a facility by ID
- * This is an alias for getFacility to match the naming convention used in imports
- */
-export const fetchFacilityById = async (facilityId: string): Promise<Facility | null> => {
-  return getFacility(facilityId);
-};
-
-/**
- * Creates a new facility
- * @param facilityData The facility data to create
- * @returns The created facility object
- */
-export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
+export const createFacility = async (facility: Partial<Facility>): Promise<Facility> => {
   try {
-    // Ensure required fields are present
-    if (!facilityData.name || !facilityData.organization_id) {
-      throw new Error('Facility name and organization ID are required');
+    console.log('Creating facility with data:', facility);
+    
+    // Ensure organization_id is set
+    if (!facility.organization_id) {
+      throw new Error('Organization ID is required to create a facility');
     }
     
-    // Set default values if not provided
-    const newFacility = {
-      ...facilityData,
-      status: facilityData.status || 'active',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+    // Ensure name is set
+    if (!facility.name) {
+      throw new Error('Facility name is required');
+    }
+    
+    // Create a properly typed facility object with required fields
+    const facilityData: { 
+      name: string;
+      organization_id: string;
+      status: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      description?: string;
+      address?: string;
+      contact_email?: string;
+      contact_phone?: string;
+      zipcode?: string;
+      facility_type?: string;
+      location_data?: Record<string, any>;
+    } = {
+      name: facility.name,
+      organization_id: facility.organization_id,
+      status: facility.status || 'active',
     };
+    
+    // Add optional fields if they exist
+    if (facility.city) facilityData.city = capitalizeLocation(facility.city);
+    if (facility.state) facilityData.state = capitalizeLocation(facility.state);
+    if (facility.country) facilityData.country = facility.country;
+    if (facility.description) facilityData.description = facility.description;
+    if (facility.address) facilityData.address = facility.address;
+    if (facility.contact_email) facilityData.contact_email = facility.contact_email;
+    if (facility.contact_phone) facilityData.contact_phone = facility.contact_phone;
+    if (facility.zipcode) facilityData.zipcode = facility.zipcode;
+    if (facility.facility_type) facilityData.facility_type = facility.facility_type;
+    if (facility.location_data) facilityData.location_data = facility.location_data;
+    
+    console.log('Sending facility data to Supabase:', facilityData);
     
     const { data, error } = await supabase
       .from('facilities')
-      .insert(newFacility)
+      .insert(facilityData)
       .select()
       .single();
     
@@ -121,37 +155,42 @@ export const createFacility = async (facilityData: Partial<Facility>): Promise<F
       throw error;
     }
     
-    console.log('Facility created successfully:', data);
+    console.log('Created facility:', data);
     return data as Facility;
-  } catch (error: any) {
-    console.error('Exception in createFacility:', error);
-    toast({
-      title: "Failed to create facility",
-      description: error.message || "An unknown error occurred",
-      variant: "destructive"
-    });
+  } catch (error) {
+    console.error('Error creating facility:', error);
     throw error;
   }
 };
 
-/**
- * Updates an existing facility
- * @param facilityId The ID of the facility to update
- * @param updates The updates to apply to the facility
- * @returns The updated facility object
- */
-export const updateFacility = async (facilityId: string, updates: Partial<Facility>): Promise<Facility> => {
+export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
   try {
-    // Add the updated_at timestamp
-    const updatedData = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
+    console.log('Updating facility:', id, 'with data:', updates);
+    
+    // Create a new object with only the fields that exist in the database
+    const cleanUpdates: Record<string, any> = {};
+    
+    // Include only the fields that are allowed to be updated
+    if (updates.name !== undefined) cleanUpdates.name = updates.name;
+    if (updates.description !== undefined) cleanUpdates.description = updates.description;
+    if (updates.status !== undefined) cleanUpdates.status = updates.status;
+    if (updates.address !== undefined) cleanUpdates.address = updates.address;
+    if (updates.city !== undefined) cleanUpdates.city = capitalizeLocation(updates.city);
+    if (updates.state !== undefined) cleanUpdates.state = capitalizeLocation(updates.state);
+    if (updates.country !== undefined) cleanUpdates.country = updates.country;
+    if (updates.zipcode !== undefined) cleanUpdates.zipcode = updates.zipcode;
+    if (updates.contact_email !== undefined) cleanUpdates.contact_email = updates.contact_email;
+    if (updates.contact_phone !== undefined) cleanUpdates.contact_phone = updates.contact_phone;
+    if (updates.location_data !== undefined) cleanUpdates.location_data = updates.location_data;
+    if (updates.organization_id !== undefined) cleanUpdates.organization_id = updates.organization_id;
+    if (updates.facility_type !== undefined) cleanUpdates.facility_type = updates.facility_type;
+    
+    console.log('Cleaned updates for Supabase:', cleanUpdates);
     
     const { data, error } = await supabase
       .from('facilities')
-      .update(updatedData)
-      .eq('id', facilityId)
+      .update(cleanUpdates)
+      .eq('id', id)
       .select()
       .single();
     
@@ -160,55 +199,30 @@ export const updateFacility = async (facilityId: string, updates: Partial<Facili
       throw error;
     }
     
-    console.log('Facility updated successfully:', data);
+    console.log('Updated facility:', data);
     return data as Facility;
-  } catch (error: any) {
-    console.error('Exception in updateFacility:', error);
-    toast({
-      title: "Failed to update facility",
-      description: error.message || "An unknown error occurred",
-      variant: "destructive"
-    });
+  } catch (error) {
+    console.error('Error updating facility:', error);
     throw error;
   }
 };
 
-/**
- * Deletes a facility
- * @param facilityId The ID of the facility to delete
- * @returns True if successful, false otherwise
- */
-export const deleteFacility = async (facilityId: string): Promise<boolean> => {
+export const deleteFacility = async (id: string): Promise<void> => {
   try {
+    console.log('Deleting facility:', id);
     const { error } = await supabase
       .from('facilities')
       .delete()
-      .eq('id', facilityId);
+      .eq('id', id);
     
     if (error) {
       console.error('Error deleting facility:', error);
       throw error;
     }
     
-    console.log('Facility deleted successfully:', facilityId);
-    return true;
-  } catch (error: any) {
-    console.error('Exception in deleteFacility:', error);
-    toast({
-      title: "Failed to delete facility",
-      description: error.message || "An unknown error occurred",
-      variant: "destructive"
-    });
+    console.log('Facility deleted successfully');
+  } catch (error) {
+    console.error('Error deleting facility:', error);
     throw error;
   }
-};
-
-export default {
-  getFacility,
-  createFacility,
-  updateFacility,
-  deleteFacility,
-  getFacilitiesByOrganization,
-  fetchFacilities,
-  fetchFacilityById
 };

@@ -45,22 +45,7 @@
     "status": "Status",
     "version": "Version",
     "actions": "Actions",
-    "lastUpdated": "Last Updated",
-    "currentFolder": "Current Folder",
-    "documentsCount": "documents",
-    "noDocumentsFound": "No documents found",
-    "emptyFolder": "This folder is empty. Upload documents to get started.",
-    "noMatchingDocuments": "No documents match your search query.",
-    "uploadFirstDocument": "Upload Your First Document",
-    "viewDocuments": "View Documents",
-    "downloadStarted": "Download started",
-    "downloadingFile": "Downloading \"{{title}}\"",
-    "deleteSuccess": "Document deleted successfully",
-    "errors": {
-      "invalidDocument": "Invalid document. Cannot proceed.",
-      "operationNotSupported": "Document deletion functionality is not yet implemented.",
-      "deleteFailed": "Failed to delete document. Please try again."
-    }
+    "lastUpdated": "Last Updated"
   },
   "status": {
     "draft": "Draft",
@@ -78,9 +63,7 @@
     "view": "View",
     "download": "Download",
     "upload": "Upload",
-    "submit": "Submit",
-    "sort": "Sort",
-    "filter": "Filter"
+    "submit": "Submit"
   },
   "notifications": {
     "success": "Success",

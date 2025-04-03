@@ -45,24 +45,7 @@
     "status": "الحالة",
     "version": "الإصدار",
     "actions": "الإجراءات",
-    "lastUpdated": "آخر تحديث",
-    "controlSystem": "نظام التحكم بالمستندات",
-    "createNewDocument": "إنشاء مستند جديد",
-    "currentFolder": "المجلد الحالي",
-    "documentsCount": "المستندات",
-    "noDocumentsFound": "لم يتم العثور على مستندات",
-    "emptyFolder": "هذا المجلد فارغ. قم بتحميل المستندات للبدء.",
-    "noMatchingDocuments": "لا توجد مستندات تطابق معايير البحث.",
-    "uploadFirstDocument": "تحميل مستندك الأول",
-    "viewDocuments": "عرض المستندات",
-    "downloadStarted": "بدأ التنزيل",
-    "downloadingFile": "جاري تنزيل \"{{title}}\"",
-    "deleteSuccess": "تم حذف المستند بنجاح",
-    "errors": {
-      "invalidDocument": "مستند غير صالح. لا يمكن المتابعة.",
-      "operationNotSupported": "لم يتم تنفيذ وظيفة حذف المستندات بعد.",
-      "deleteFailed": "فشل حذف المستند. يرجى المحاولة مرة أخرى."
-    }
+    "lastUpdated": "آخر تحديث"
   },
   "status": {
     "draft": "مسودة",
@@ -80,9 +63,7 @@
     "view": "عرض",
     "download": "تنزيل",
     "upload": "تحميل",
-    "submit": "إرسال",
-    "sort": "فرز",
-    "filter": "تصفية"
+    "submit": "إرسال"
   },
   "notifications": {
     "success": "نجاح",
