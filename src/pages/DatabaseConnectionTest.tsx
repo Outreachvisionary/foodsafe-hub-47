@@ -268,7 +268,10 @@ const DatabaseConnectionTest = () => {
           message: `Fetching facilities for organization ${orgId}...`
         });
         
+        const startTime = Date.now();
         const facs = await fetchFacilities(orgId);
+        const responseTime = Date.now() - startTime;
+        
         setFacilities(facs);
         
         addResult({
@@ -276,7 +279,7 @@ const DatabaseConnectionTest = () => {
           status: "success",
           message: `Successfully fetched ${facs.length} facilities for organization ${orgId}`,
           details: facs,
-          responseTime: Date.now() - startTime
+          responseTime
         });
       } catch (error: any) {
         addResult({
@@ -301,7 +304,10 @@ const DatabaseConnectionTest = () => {
         message: "Fetching user profile..."
       });
       
+      const startTime = Date.now();
       const profile = await fetchUserProfile(user.id);
+      const responseTime = Date.now() - startTime;
+      
       setUserProfile(profile);
       
       addResult({
@@ -309,7 +315,7 @@ const DatabaseConnectionTest = () => {
         status: "success",
         message: "Successfully fetched user profile",
         details: profile,
-        responseTime: Date.now() - startTime
+        responseTime
       });
     } catch (error: any) {
       addResult({
@@ -335,7 +341,9 @@ const DatabaseConnectionTest = () => {
           message: "Updating user profile (non-destructive test)..."
         });
         
+        const startTime = Date.now();
         const updatedProfile = await updateUserProfile(user.id, testUpdate);
+        const responseTime = Date.now() - startTime;
         
         if (updatedProfile) {
           addResult({
@@ -343,7 +351,7 @@ const DatabaseConnectionTest = () => {
             status: "success",
             message: "Successfully updated user profile",
             details: updatedProfile,
-            responseTime: Date.now() - startTime
+            responseTime
           });
         } else {
           addResult({
@@ -379,10 +387,12 @@ const DatabaseConnectionTest = () => {
       });
       
       // This should be blocked by RLS if properly configured
+      const startTime = Date.now();
       const { data, error } = await supabase
         .from('organizations')
         .select('*')
         .not('id', 'in', organizations.map(o => o.id));
+      const responseTime = Date.now() - startTime;
       
       if (error && error.message.includes('row-level security')) {
         addResult({
@@ -431,10 +441,12 @@ const DatabaseConnectionTest = () => {
         });
         
         // This should be blocked by RLS if properly configured
+        const startTime = Date.now();
         const { data, error } = await supabase
           .from('facilities')
           .select('*')
           .not('organization_id', 'in', organizations.map(o => o.id));
+        const responseTime = Date.now() - startTime;
         
         if (error && error.message.includes('row-level security')) {
           addResult({
@@ -497,6 +509,7 @@ const DatabaseConnectionTest = () => {
         message: "Creating a test facility..."
       });
       
+      const startTime = Date.now();
       const testFacility: Partial<Facility> = {
         name: `Test Facility ${new Date().toISOString()}`,
         description: "Created for connection testing - safe to delete",
@@ -508,6 +521,7 @@ const DatabaseConnectionTest = () => {
       };
       
       const createdFacility = await createFacility(testFacility);
+      const responseTime = Date.now() - startTime;
       testFacilityId = createdFacility.id;
       
       addResult({
@@ -515,7 +529,7 @@ const DatabaseConnectionTest = () => {
         status: "success",
         message: "Successfully created test facility",
         details: createdFacility,
-        responseTime: Date.now() - startTime
+        responseTime
       });
     } catch (error: any) {
       addResult({
@@ -535,19 +549,23 @@ const DatabaseConnectionTest = () => {
           message: `Updating test facility ${testFacilityId}...`
         });
         
+        const startTime = Date.now();
         const updates: Partial<Facility> = {
           description: "Updated for connection testing - safe to delete"
         };
         
         const updatedFacility = await updateFacility(testFacilityId, updates);
+        const responseTime = Date.now() - startTime;
         
-        addResult({
-          name: "Update Operation",
-          status: "success",
-          message: "Successfully updated test facility",
-          details: updatedFacility,
-          responseTime: Date.now() - startTime
-        });
+        if (updatedFacility) {
+          addResult({
+            name: "Update Operation",
+            status: "success",
+            message: "Successfully updated test facility",
+            details: updatedFacility,
+            responseTime
+          });
+        }
       } catch (error: any) {
         addResult({
           name: "Update Operation",
@@ -566,7 +584,9 @@ const DatabaseConnectionTest = () => {
           message: `Deleting test facility ${testFacilityId}...`
         });
         
+        const startTime = Date.now();
         await deleteFacility(testFacilityId);
+        const responseTime = Date.now() - startTime;
         
         // Verify deletion
         const { data, error } = await supabase
@@ -578,7 +598,8 @@ const DatabaseConnectionTest = () => {
           addResult({
             name: "Delete Operation",
             status: "success",
-            message: "Successfully deleted test facility"
+            message: "Successfully deleted test facility",
+            responseTime
           });
         } else {
           addResult({
@@ -586,7 +607,7 @@ const DatabaseConnectionTest = () => {
             status: "warning",
             message: "Facility might not have been deleted properly",
             details: data,
-            responseTime: Date.now() - startTime
+            responseTime
           });
         }
       } catch (error: any) {

@@ -33,7 +33,7 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
     },
     global: {
-      fetch: (...args) => {
+      fetch: (...args: Parameters<typeof fetch>) => {
         // Use a custom fetch with timeout to prevent hanging requests
         const controller = new AbortController();
         const { signal } = controller;
