@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { fetchRoles } from '@/services/roleService';
 import { fetchDepartments } from '@/services/departmentService';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
-import { getOrganizations } from '@/services/organizationService';
+import { fetchOrganizations } from '@/services/organizationService';
 
 interface UserManagementProps {}
 
@@ -41,7 +42,7 @@ const UserManagement: React.FC<UserManagementProps> = () => {
   
   const loadOrganizations = async () => {
     try {
-      const orgsData = await getOrganizations();
+      const orgsData = await fetchOrganizations();
       setOrganizations(orgsData.map(org => ({ id: org.id, name: org.name })));
       
       if (orgsData.length > 0) {
@@ -199,8 +200,9 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         <label className="block text-sm font-medium mb-1">Organization</label>
         <div className="max-w-md">
           <OrganizationSelector 
-            value={selectedOrganizationId || ''}
+            value={selectedOrganizationId}
             onChange={handleOrganizationChange}
+            className="w-full"
           />
         </div>
       </div>
@@ -310,10 +312,11 @@ const UserManagement: React.FC<UserManagementProps> = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Organization</label>
                 <OrganizationSelector 
-                  value={currentUser.organization_id || selectedOrganizationId || ''}
+                  value={currentUser.organization_id || selectedOrganizationId}
                   onChange={(orgId) => {
                     setCurrentUser({...currentUser, organization_id: orgId});
                   }}
+                  className="w-full"
                 />
               </div>
               

@@ -3,30 +3,33 @@ import React, { ReactNode } from 'react';
 import { usePermission } from '@/contexts/PermissionContext';
 
 interface PermissionGuardProps {
-  permissions: string | string[];
+  permission: string;
+  organizationId?: string;
+  facilityId?: string;
+  departmentId?: string;
   children: ReactNode;
   fallback?: ReactNode;
 }
 
-const PermissionGuard: React.FC<PermissionGuardProps> = ({ 
-  permissions, 
-  children, 
-  fallback = null 
+const PermissionGuard: React.FC<PermissionGuardProps> = ({
+  permission,
+  organizationId,
+  facilityId,
+  departmentId,
+  children,
+  fallback = null,
 }) => {
-  const { hasPermission } = usePermission();
+  const { hasPermission, loadingPermissions } = usePermission();
   
-  // Handle array of permissions
-  if (Array.isArray(permissions)) {
-    // Check if user has ANY of the required permissions
-    const hasAnyPermission = permissions.some(permission => 
-      hasPermission(permission)
-    );
-    
-    return hasAnyPermission ? <>{children}</> : <>{fallback}</>;
+  if (loadingPermissions) {
+    return null; // Or a subtle loading indicator
   }
   
-  // Handle single permission
-  return hasPermission(permissions) ? <>{children}</> : <>{fallback}</>;
+  if (hasPermission(permission, organizationId, facilityId, departmentId)) {
+    return <>{children}</>;
+  }
+  
+  return <>{fallback}</>;
 };
 
 export default PermissionGuard;

@@ -2,6 +2,9 @@
 // Define the TrainingStatus type directly
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
 
+// Re-export types from database
+// export type { TrainingStatus } from './database'; // Removing this line to avoid duplicate declaration
+
 // Define TrainingRecord type directly instead of importing it
 export interface TrainingRecord {
   id: string;
@@ -129,46 +132,23 @@ export interface Course {
   description: string;
   durationHours: number;
   prerequisiteCourses?: string[];
-  type: string;
-  category: string;
-  status: string;
-  duration: number; // in minutes
-  completionRate: number;
-  lastUpdated: string;
-  version?: string;
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  isActive?: boolean;
-  passThreshold?: number;
 }
 
 export interface AutoAssignRule {
-  id: string;
   type: 'Role' | 'Department' | 'NewHire' | 'CompetencyScore';
   conditions: Array<{
     key: string;
     operator: '=' | '>' | '<' | '>=' | '<=' | '!=';
     value: string | number;
   }>;
-  targetRole?: string;
-  targetDepartment?: string;
-  trainingPlanId: string;
 }
 
 export interface TrainingAutomationConfig {
-  id: string;
   enabled: boolean;
   rules: AutoAssignRule[];
-  new_employee_trigger: boolean;
-  role_change_trigger: boolean;
-  document_changes_trigger: boolean;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  newEmployeeTrigger?: boolean;
-  roleChangeTrigger?: boolean;
-  documentChangesTrigger?: boolean;
+  documentChangesTrigger: boolean;
+  newEmployeeTrigger: boolean;
+  roleCangeTrigger: boolean;
 }
 
 export interface DocumentControlIntegration {
@@ -179,7 +159,4 @@ export interface DocumentControlIntegration {
   trainingRequired: boolean;
   trainingDeadlineDays?: number;
   affectedRoles?: string[];
-  version?: string;
-  updatedAt?: string;
-  relatedSessionIds?: string[];
 }

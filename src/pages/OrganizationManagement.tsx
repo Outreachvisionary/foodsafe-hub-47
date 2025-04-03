@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { Building2, Plus, Users } from 'lucide-react';
 import { Organization } from '@/types/organization';
-import { getOrganizations } from '@/services/organizationService';
+import { fetchOrganizations } from '@/services/organizationService';
 import { useForm } from 'react-hook-form';
 import { 
   Form,
@@ -76,21 +76,13 @@ const OrganizationManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      const organizationsData = await getOrganizations();
+      const organizationsData = await fetchOrganizations();
       
       console.log('Loaded organizations:', organizationsData);
-      // Ensure data conforms to the Organization type
-      const typedOrgs: Organization[] = organizationsData.map(org => ({
-        ...org,
-        id: org.id,
-        name: org.name,
-        status: org.status || 'active'
-      }));
+      setOrganizations(organizationsData);
       
-      setOrganizations(typedOrgs);
-      
-      if (typedOrgs.length === 1) {
-        setSelectedOrganization(typedOrgs[0]);
+      if (organizationsData.length === 1) {
+        setSelectedOrganization(organizationsData[0]);
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);

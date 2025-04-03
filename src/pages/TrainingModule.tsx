@@ -1,98 +1,88 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Plus, BookOpen, Users, ClipboardCheck, BarChart, Calendar } from 'lucide-react';
 import TrainingDashboard from '@/components/training/TrainingDashboard';
-import CourseLibrary from '@/components/training/CourseLibrary';
 import TrainingRecords from '@/components/training/TrainingRecords';
 import TrainingPlans from '@/components/training/TrainingPlans';
-import ReportsAnalytics from '@/components/training/ReportsAnalytics';
+import CourseLibrary from '@/components/training/CourseLibrary';
 import CompetencyAssessments from '@/components/training/CompetencyAssessments';
-import PermissionGuard from '@/components/auth/PermissionGuard';
+import ReportsAnalytics from '@/components/training/ReportsAnalytics';
+import { useAuditTraining } from '@/hooks/useAuditTraining';
+import AuditTrainingAlert from '@/components/training/AuditTrainingAlert';
+import AuditTrainingTasks from '@/components/training/AuditTrainingTasks';
+import { TrainingProvider } from '@/contexts/TrainingContext';
 
-const TrainingModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+const TrainingModule = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const { trainings, loading } = useAuditTraining();
+  
+  // Filter only non-completed training from audits
+  const auditTrainingTasks = trainings.filter(t => t.status !== 'completed');
+  
+  // Count critical and high priority tasks
+  const criticalTasks = auditTrainingTasks.filter(t => t.priority === 'critical').length;
+  const highPriorityTasks = auditTrainingTasks.filter(t => t.priority === 'high').length;
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Training Management</h1>
-          <p className="text-muted-foreground">Manage training courses, records, and certifications</p>
-        </div>
-        
-        <div className="flex gap-2">
-          <PermissionGuard 
-            permissions="training.create"
-            fallback={
-              <Button variant="outline" disabled>
-                <Plus className="mr-2 h-4 w-4" />
-                New Training
-              </Button>
-            }
-          >
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Training
-            </Button>
-          </PermissionGuard>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader 
+        title="Training Module" 
+        subtitle="Manage employee training, competency and compliance certification." 
+      />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted">
-          <TabsTrigger value="dashboard" className="flex gap-1 items-center">
-            <BarChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </TabsTrigger>
-          <TabsTrigger value="courses" className="flex gap-1 items-center">
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Courses</span>
-          </TabsTrigger>
-          <TabsTrigger value="records" className="flex gap-1 items-center">
-            <ClipboardCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Records</span>
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="flex gap-1 items-center">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Plans</span>
-          </TabsTrigger>
-          <TabsTrigger value="competency" className="flex gap-1 items-center">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Competency</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex gap-1 items-center">
-            <BarChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Reports</span>
-          </TabsTrigger>
-        </TabsList>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Alert for audit-related training */}
+        <AuditTrainingAlert 
+          count={auditTrainingTasks.length} 
+          criticalTasks={criticalTasks} 
+        />
         
-        <TabsContent value="dashboard">
-          <TrainingDashboard />
-        </TabsContent>
+        {/* Audit training tasks */}
+        <AuditTrainingTasks 
+          tasks={auditTrainingTasks}
+          onViewDetails={() => setActiveTab("plans")}
+          criticalTasks={criticalTasks}
+          highPriorityTasks={highPriorityTasks}
+        />
         
-        <TabsContent value="courses">
-          <CourseLibrary />
-        </TabsContent>
-        
-        <TabsContent value="records">
-          <TrainingRecords />
-        </TabsContent>
-        
-        <TabsContent value="plans">
-          <TrainingPlans />
-        </TabsContent>
-        
-        <TabsContent value="competency">
-          <CompetencyAssessments />
-        </TabsContent>
-        
-        <TabsContent value="reports">
-          <ReportsAnalytics />
-        </TabsContent>
-      </Tabs>
+        <TrainingProvider>
+          <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
+            <TabsList className="mb-8">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="records">Training Records</TabsTrigger>
+              <TabsTrigger value="plans">Training Plans</TabsTrigger>
+              <TabsTrigger value="courses">Course Library</TabsTrigger>
+              <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
+              <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dashboard">
+              <TrainingDashboard />
+            </TabsContent>
+            
+            <TabsContent value="records">
+              <TrainingRecords />
+            </TabsContent>
+            
+            <TabsContent value="plans">
+              <TrainingPlans />
+            </TabsContent>
+            
+            <TabsContent value="courses">
+              <CourseLibrary />
+            </TabsContent>
+            
+            <TabsContent value="assessments">
+              <CompetencyAssessments />
+            </TabsContent>
+            
+            <TabsContent value="reports">
+              <ReportsAnalytics />
+            </TabsContent>
+          </Tabs>
+        </TrainingProvider>
+      </main>
     </div>
   );
 };

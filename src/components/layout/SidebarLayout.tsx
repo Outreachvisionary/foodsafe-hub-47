@@ -1,16 +1,16 @@
+
 import React, { useState, ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { usePermission } from '@/contexts/PermissionContext';
-import { ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers, Factory, FolderTree } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, UserCog, Shield, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import ProfileTile from '@/components/profile/ProfileTile';
-import OrganizationSwitcher from '@/components/organizations/OrganizationSwitcher';
 
 interface SidebarLink {
   name: string;
@@ -157,7 +157,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   
   return (
     <div className="flex h-screen">
+      {/* Modernized sidebar */}
       <div className={`bg-gradient-to-b from-white to-secondary/20 border-r border-border/60 h-screen flex flex-col transition-all duration-300 shadow-sm ${collapsed ? 'w-20' : 'w-64'}`}>
+        {/* Logo */}
         <div className={`p-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center border-b border-border/60`}>
           {!collapsed && (
             <Link to="/dashboard" className="flex items-center space-x-2">
@@ -174,16 +176,13 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </Button>
         </div>
 
+        {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1.5">
-            <div className="px-4 py-2">
-              <OrganizationSwitcher />
-            </div>
-            
             {sidebarLinks.map(link => (
               <React.Fragment key={link.href}>
                 {link.permission ? (
-                  <PermissionGuard permissions={link.permission}>
+                  <PermissionGuard permission={link.permission}>
                     <Link 
                       to={link.href} 
                       className={`
@@ -224,6 +223,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </React.Fragment>
             ))}
             
+            {/* Admin Section */}
             {(hasPermission('users:manage') || hasPermission('roles:manage') || hasPermission('departments:manage')) && (
               <>
                 {!collapsed && (
@@ -236,7 +236,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 
                 {adminLinks.map(link => (
                   <React.Fragment key={link.href}>
-                    <PermissionGuard permissions={link.permission || ''}>
+                    <PermissionGuard permission={link.permission || ''}>
                       <Link 
                         to={link.href} 
                         className={`
@@ -262,12 +262,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </div>
         </nav>
 
+        {/* User Section */}
         <div className="border-t border-border/60 p-3">
           <ProfileTile collapsed={collapsed} />
         </div>
       </div>
 
+      {/* Main Content - Light Theme */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Bar */}
         <header className="bg-gradient-to-r from-white to-secondary/30 border-b border-border/60 px-6 py-4 flex justify-between items-center shadow-sm">
           <div>
             <h1 className="text-xl font-semibold mb-1 text-primary">
@@ -284,6 +287,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </div>
         </header>
 
+        {/* Content */}
         <main className="flex-1 overflow-auto bg-secondary/30 p-6">
           {children}
         </main>

@@ -1,146 +1,150 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Organization, OrganizationInput } from '@/types/organization';
+import { Organization } from '@/types/organization';
+import { capitalizeLocation } from '@/utils/locationUtils';
 
-/**
- * Creates a new organization
- * @param organizationData Organization data
- * @returns The created organization
- */
-export const createOrganization = async (organizationData: OrganizationInput): Promise<Organization> => {
+export const fetchOrganizations = async (): Promise<Organization[]> => {
   try {
     const { data, error } = await supabase
-      .from('organizations')
-      .insert(organizationData)
-      .select()
-      .single();
-      
+      .rpc('get_organizations');
+    
     if (error) throw error;
     
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || '',
-      status: data.status || 'active'
+    return data as Organization[];
+  } catch (error) {
+    console.error('Error fetching organizations:', error);
+    throw error;
+  }
+};
+
+export const fetchOrganizationsByLocation = async (
+  country?: string, 
+  state?: string, 
+  city?: string
+): Promise<Organization[]> => {
+  try {
+    console.log('Fetching organizations by location:', { country, state, city });
+    let query = supabase
+      .from('organizations')
+      .select('*')
+      .eq('status', 'active');
+    
+    if (country) {
+      query = query.eq('country', country);
+    }
+    
+    if (state) {
+      query = query.eq('state', state);
+    }
+    
+    if (city) {
+      query = query.eq('city', city);
+    }
+    
+    const { data, error } = await query.order('name');
+    
+    if (error) {
+      console.error('Error fetching organizations by location:', error);
+      throw error;
+    }
+    
+    return data as Organization[];
+  } catch (error) {
+    console.error('Error fetching organizations by location:', error);
+    throw error;
+  }
+};
+
+export const fetchOrganizationById = async (id: string): Promise<Organization> => {
+  const { data, error } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching organization:', error);
+    throw error;
+  }
+  
+  return data as Organization;
+};
+
+export const createOrganization = async (organization: Partial<Organization>): Promise<Organization> => {
+  try {
+    // Capitalize location names if present
+    const processedOrg = {
+      ...organization,
+      city: organization.city ? capitalizeLocation(organization.city) : organization.city,
+      state: organization.state ? capitalizeLocation(organization.state) : organization.state,
     };
     
-    return organization;
+    const { data, error } = await supabase
+      .from('organizations')
+      .insert({
+        name: processedOrg.name,
+        description: processedOrg.description || null,
+        contact_email: processedOrg.contact_email || null,
+        contact_phone: processedOrg.contact_phone || null,
+        logo_url: processedOrg.logo_url || null,
+        status: processedOrg.status || 'active',
+        address: processedOrg.address || null,
+        country: processedOrg.country || null,
+        state: processedOrg.state || null,
+        city: processedOrg.city || null,
+        zipcode: processedOrg.zipcode || null
+      })
+      .select()
+      .single();
+  
+    if (error) {
+      console.error('Error creating organization:', error);
+      throw error;
+    }
+  
+    return data as Organization;
   } catch (error) {
     console.error('Error creating organization:', error);
     throw error;
   }
 };
 
-/**
- * Updates an organization
- * @param id Organization ID
- * @param updates Updates to apply
- * @returns The updated organization
- */
-export const updateOrganization = async (
-  id: string, 
-  updates: Partial<Organization>
-): Promise<Organization> => {
+export const updateOrganization = async (id: string, updates: Partial<Organization>): Promise<Organization> => {
   try {
+    // Capitalize location names if present
+    const processedUpdates = {
+      ...updates,
+      city: updates.city ? capitalizeLocation(updates.city) : updates.city,
+      state: updates.state ? capitalizeLocation(updates.state) : updates.state,
+    };
+    
     const { data, error } = await supabase
       .from('organizations')
-      .update(updates)
+      .update(processedUpdates)
       .eq('id', id)
       .select()
       .single();
-      
-    if (error) throw error;
-    
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || id,
-      status: data.status || 'active'
-    };
-    
-    return organization;
+  
+    if (error) {
+      console.error('Error updating organization:', error);
+      throw error;
+    }
+  
+    return data as Organization;
   } catch (error) {
     console.error('Error updating organization:', error);
     throw error;
   }
 };
 
-/**
- * Fetches an organization by ID
- * @param id Organization ID
- * @returns The organization
- */
-export const getOrganization = async (id: string): Promise<Organization | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error) throw error;
-    
-    if (!data) return null;
-    
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || id,
-      status: data.status || 'active'
-    };
-    
-    return organization;
-  } catch (error) {
-    console.error('Error fetching organization:', error);
-    return null;
-  }
-};
-
-/**
- * Fetches all organizations
- * @returns List of organizations
- */
-export const getOrganizations = async (): Promise<Organization[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('organizations')
-      .select('*')
-      .order('name');
-      
-    if (error) throw error;
-    
-    if (!data) return [];
-    
-    // Ensure all organizations have required fields
-    const organizations: Organization[] = data.map(org => ({
-      ...org,
-      id: org.id || '',
-      status: org.status || 'active'
-    }));
-    
-    return organizations;
-  } catch (error) {
-    console.error('Error fetching organizations:', error);
-    return [];
-  }
-};
-
-/**
- * Deactivates an organization
- * @param id Organization ID
- * @returns Success status
- */
-export const deactivateOrganization = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('organizations')
-      .update({ status: 'inactive' })
-      .eq('id', id);
-      
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deactivating organization:', error);
-    return false;
+export const deleteOrganization = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('organizations')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting organization:', error);
+    throw error;
   }
 };

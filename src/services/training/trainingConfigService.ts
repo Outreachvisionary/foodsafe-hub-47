@@ -3,171 +3,102 @@ import { supabase } from '@/integrations/supabase/client';
 import { TrainingAutomationConfig } from '@/types/training';
 
 /**
- * Service for managing training automation configuration
+ * Service for training configuration management
  */
-const trainingConfigService = {
+export const trainingConfigService = {
   /**
-   * Get the current training automation configuration
-   * @returns The current configuration
+   * Get the automation settings for the organization
    */
-  getAutomationConfig: async (): Promise<TrainingAutomationConfig | null> => {
+  getAutomationConfig: async (): Promise<TrainingAutomationConfig> => {
     try {
+      // Try to get the configuration from Supabase
       const { data, error } = await supabase
         .from('training_automation_config')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
-        
+        .single();
+
       if (error) {
         console.error('Error fetching training automation config:', error);
-        return null;
+        
+        // Return default config if there's an error
+        return {
+          enabled: true,
+          rules: [],
+          documentChangesTrigger: true,
+          newEmployeeTrigger: true,
+          roleCangeTrigger: true,
+        };
       }
-      
-      return data as TrainingAutomationConfig || null;
+
+      // Map the database record to our TypeScript interface
+      return {
+        enabled: data.enabled,
+        rules: data.rules || [],
+        documentChangesTrigger: data.document_changes_trigger,
+        newEmployeeTrigger: data.new_employee_trigger,
+        roleCangeTrigger: data.role_change_trigger,
+      };
     } catch (error) {
-      console.error('Error in getAutomationConfig:', error);
-      return null;
+      console.error('Exception fetching training automation config:', error);
+      
+      // Return default config if there's an exception
+      return {
+        enabled: true,
+        rules: [],
+        documentChangesTrigger: true,
+        newEmployeeTrigger: true,
+        roleCangeTrigger: true,
+      };
     }
   },
   
   /**
-   * Update the training automation configuration
-   * @param config The new configuration
-   * @returns Boolean indicating success
+   * Update the automation settings for the organization
    */
-  updateAutomationConfig: async (config: Partial<TrainingAutomationConfig>): Promise<boolean> => {
+  updateAutomationConfig: async (config: TrainingAutomationConfig): Promise<boolean> => {
     try {
-      // Check if a config exists
-      const { data: existingConfig, error: checkError } = await supabase
+      // Create a database record from our TypeScript interface
+      const record = {
+        enabled: config.enabled,
+        rules: config.rules || [],
+        document_changes_trigger: config.documentChangesTrigger,
+        new_employee_trigger: config.newEmployeeTrigger,
+        role_change_trigger: config.roleCangeTrigger,
+        updated_at: new Date().toISOString()
+      };
+
+      // Check if a record already exists
+      const { data: existingConfig } = await supabase
         .from('training_automation_config')
         .select('id')
+        .order('created_at', { ascending: false })
         .limit(1);
-        
-      if (checkError) {
-        console.error('Error checking existing config:', checkError);
-        return false;
-      }
-      
+
+      let result;
+
       if (existingConfig && existingConfig.length > 0) {
-        // Update existing config
-        const { error } = await supabase
+        // Update existing record
+        result = await supabase
           .from('training_automation_config')
-          .update(config)
+          .update(record)
           .eq('id', existingConfig[0].id);
-          
-        if (error) {
-          console.error('Error updating training automation config:', error);
-          return false;
-        }
       } else {
-        // Create new config
-        const { error } = await supabase
+        // Insert new record
+        result = await supabase
           .from('training_automation_config')
-          .insert({
-            ...config,
-            enabled: config.enabled ?? true,
-            new_employee_trigger: config.new_employee_trigger ?? true,
-            role_change_trigger: config.role_change_trigger ?? true,
-            document_changes_trigger: config.document_changes_trigger ?? true
-          });
-          
-        if (error) {
-          console.error('Error creating training automation config:', error);
-          return false;
-        }
+          .insert(record);
       }
-      
-      return true;
-    } catch (error) {
-      console.error('Error in updateAutomationConfig:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Get document categories from document_category_types table
-   */
-  getDocumentCategories: async (): Promise<{id: number, name: string, description: string}[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('document_category_types')
-        .select('id, name, description')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-        
-      if (error) {
-        console.error('Error fetching document categories:', error);
-        return [];
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error in getDocumentCategories:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Get document status types from document_status_types table
-   */
-  getDocumentStatusTypes: async (): Promise<{id: number, name: string, description: string}[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('document_status_types')
-        .select('id, name, description')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-        
-      if (error) {
-        console.error('Error fetching document status types:', error);
-        return [];
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error in getDocumentStatusTypes:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Set up a training requirement for a document category
-   * @param documentCategoryId The document category ID
-   * @param trainingSessionIds Array of training session IDs to require
-   * @returns Boolean indicating success
-   */
-  setDocumentCategoryTrainingRequirements: async (
-    documentCategoryId: number, 
-    trainingSessionIds: string[]
-  ): Promise<boolean> => {
-    try {
-      // First get the document category details
-      const { data: category, error: catError } = await supabase
-        .from('document_category_types')
-        .select('name')
-        .eq('id', documentCategoryId)
-        .single();
-        
-      if (catError || !category) {
-        console.error('Error fetching document category:', catError);
+
+      if (result.error) {
+        console.error('Error updating training automation config:', result.error);
         return false;
       }
-      
-      // Update relevant training sessions to link to this category
-      const { error: updateError } = await supabase
-        .from('training_sessions')
-        .update({ training_category: category.name })
-        .in('id', trainingSessionIds);
-        
-      if (updateError) {
-        console.error('Error updating training sessions:', updateError);
-        return false;
-      }
-      
+
       return true;
     } catch (error) {
-      console.error('Error in setDocumentCategoryTrainingRequirements:', error);
+      console.error('Exception updating training automation config:', error);
       return false;
     }
   }

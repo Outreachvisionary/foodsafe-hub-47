@@ -1,76 +1,100 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { ShieldCheck } from 'lucide-react';
 
-export interface OverallComplianceCardProps {
+interface OverallComplianceCardProps {
   compliancePercentage: number;
-  avgScore?: number; // Add avgScore as an optional prop
+  totalAssigned: number;
+  completed: number;
 }
 
 const OverallComplianceCard: React.FC<OverallComplianceCardProps> = ({ 
   compliancePercentage,
-  avgScore 
+  totalAssigned,
+  completed
 }) => {
-  // Determine status color based on compliance percentage
-  const getStatusColor = (percent: number) => {
-    if (percent >= 90) return 'text-green-600';
-    if (percent >= 70) return 'text-amber-500';
+  const getComplianceColor = (percentage: number) => {
+    if (percentage >= 85) return 'text-green-500';
+    if (percentage >= 70) return 'text-yellow-500';
     return 'text-red-500';
   };
 
-  // Get progress color based on percentage
-  const getProgressColor = (percent: number) => {
-    if (percent >= 90) return 'bg-green-600';
-    if (percent >= 70) return 'bg-amber-500';
-    return 'bg-red-500';
+  const getComplianceStatus = (percentage: number) => {
+    if (percentage >= 85) return 'Good';
+    if (percentage >= 70) return 'Needs Improvement';
+    return 'Critical';
   };
 
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium flex items-center">
-          <CheckCircle2 className="h-5 w-5 text-green-600 mr-2" />
+          <ShieldCheck className="h-5 w-5 text-green-500 mr-2" />
           Overall Training Compliance
         </CardTitle>
-        <CardDescription>Organization-wide training status</CardDescription>
+        <CardDescription>Training completion across the organization</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center">
-          <div className="text-4xl font-bold mb-2 flex items-center">
-            <span className={getStatusColor(compliancePercentage)}>{compliancePercentage}%</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold">{compliancePercentage}%</span>
+            <span className={`font-medium ${getComplianceColor(compliancePercentage)}`}>
+              {getComplianceStatus(compliancePercentage)}
+            </span>
           </div>
-          <Progress 
-            value={compliancePercentage} 
-            className="h-2 w-full mb-4" 
-            indicatorClassName={getProgressColor(compliancePercentage)}
-          />
           
-          <div className="w-full">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Status</span>
-              <span className={getStatusColor(compliancePercentage)}>
-                {compliancePercentage >= 90 ? 'Compliant' : 
-                 compliancePercentage >= 70 ? 'At Risk' : 'Non-Compliant'}
-              </span>
-            </div>
-            
-            {avgScore !== undefined && (
-              <div className="flex justify-between text-sm mb-1">
-                <span>Avg. Score</span>
-                <span className="font-medium">{avgScore}%</span>
-              </div>
-            )}
-            
-            <div className="flex justify-between text-sm mb-1">
-              <span>Last Updated</span>
-              <span>{new Date().toLocaleDateString()}</span>
-            </div>
+          <Progress value={compliancePercentage} className="h-2" />
+          
+          <div className="flex justify-between text-sm mt-2">
+            <span className="text-muted-foreground">
+              {completed} of {totalAssigned} trainings completed
+            </span>
+            <span className="text-muted-foreground">
+              Target: 90%
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 pt-4">
+            <ComplianceCategory 
+              title="ISO 9001" 
+              percentage={82} 
+            />
+            <ComplianceCategory 
+              title="GMP" 
+              percentage={79} 
+            />
+            <ComplianceCategory 
+              title="HACCP" 
+              percentage={91} 
+            />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+interface ComplianceCategoryProps {
+  title: string;
+  percentage: number;
+}
+
+const ComplianceCategory: React.FC<ComplianceCategoryProps> = ({ title, percentage }) => {
+  const getColorClass = (value: number) => {
+    if (value >= 85) return 'text-green-500';
+    if (value >= 70) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+  
+  return (
+    <div className="text-center">
+      <h4 className="text-sm font-medium mb-1">{title}</h4>
+      <div className={`text-lg font-bold ${getColorClass(percentage)}`}>
+        {percentage}%
+      </div>
+    </div>
   );
 };
 
