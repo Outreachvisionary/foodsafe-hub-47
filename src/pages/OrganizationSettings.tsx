@@ -1,261 +1,237 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { getOrganizationById, updateOrganization } from '@/services/organizationService';
 import { Organization } from '@/types/organization';
-import { getOrganization } from '@/services/organizationService';
 import { Loader2 } from 'lucide-react';
 
 const OrganizationSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
   useEffect(() => {
     const fetchOrganization = async () => {
       if (!id) return;
-
+      
       try {
         setLoading(true);
-        const data = await getOrganization(id);
+        const data = await getOrganizationById(id);
         
-        if (data) {
-          // Ensure the organization object has all required fields
-          const validatedOrg: Organization = {
+        // Ensure the organization has all required fields
+        if (data && data.id && data.name) {
+          setOrganization({
             ...data,
-            id: data.id || id,
             status: data.status || 'active'
-          };
-          setOrganization(validatedOrg);
+          });
+        } else {
+          throw new Error('Invalid organization data received');
         }
       } catch (error) {
-        console.error('Failed to fetch organization:', error);
+        console.error('Error fetching organization:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load organization details',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchOrganization();
-  }, [id]);
-
+  }, [id, toast]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!organization) return;
+    
+    const { name, value } = e.target;
+    setOrganization(prev => {
+      if (!prev) return null;
+      return { ...prev, [name]: value };
+    });
+  };
+  
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!organization || !id) return;
+    
+    try {
+      setSaving(true);
+      await updateOrganization(id, organization);
+      toast({
+        title: 'Success',
+        description: 'Organization settings updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update organization settings',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading organization data...</span>
       </div>
     );
   }
-
+  
   if (!organization) {
     return (
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-red-600">Organization Not Found</h2>
-        <p className="text-gray-600 mt-2">The organization you're looking for doesn't exist or you don't have permission to view it.</p>
+      <div className="text-center py-10">
+        <h2 className="text-2xl font-bold mb-2">Organization Not Found</h2>
+        <p className="text-muted-foreground mb-4">
+          The requested organization could not be found. It may have been deleted or you may not have permission to view it.
+        </p>
+        <Button onClick={() => navigate('/organizations')}>Go to Organizations</Button>
       </div>
     );
   }
-
+  
   return (
-    <div className="container mx-auto p-6">
+    <div className="container py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">{organization.name} Settings</h1>
-        <p className="text-muted-foreground">Manage organization settings and configurations</p>
+        <h1 className="text-3xl font-bold">Organization Settings</h1>
+        <p className="text-muted-foreground">Manage settings for {organization.name}</p>
       </div>
-
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Edit organization details and contact information</p>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Organization Name</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded"
-                      defaultValue={organization.name}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Industry</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded"
-                      defaultValue={organization.industry_type || ''}
-                      disabled
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
-                  <textarea
-                    className="w-full p-2 border rounded"
-                    rows={3}
-                    defaultValue={organization.description || ''}
-                    disabled
-                  />
-                </div>
-                
-                <Button disabled>Save Changes</Button>
+      
+      <form onSubmit={handleSubmit}>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>General Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">Organization Name</label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  value={organization.name} 
+                  onChange={handleChange} 
+                  required 
+                />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Update organization contact details</p>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Contact Email</label>
-                    <input
-                      type="email"
-                      className="w-full p-2 border rounded"
-                      defaultValue={organization.contact_email || ''}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Contact Phone</label>
-                    <input
-                      type="tel"
-                      className="w-full p-2 border rounded"
-                      defaultValue={organization.contact_phone || ''}
-                      disabled
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">Website</label>
-                  <input
-                    type="url"
-                    className="w-full p-2 border rounded"
-                    defaultValue={organization.website || ''}
-                    disabled
-                  />
-                </div>
-                
-                <Button disabled>Save Changes</Button>
+              <div className="space-y-2">
+                <label htmlFor="contact_email" className="text-sm font-medium">Contact Email</label>
+                <Input 
+                  id="contact_email" 
+                  name="contact_email" 
+                  type="email" 
+                  value={organization.contact_email || ''} 
+                  onChange={handleChange} 
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="description" className="text-sm font-medium">Description</label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                value={organization.description || ''} 
+                onChange={handleChange} 
+                rows={3} 
+              />
+            </div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="branding">
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Branding</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Customize your organization's branding and visual identity</p>
-              
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <p className="text-muted-foreground">Drag and drop your logo here or click to upload</p>
-                  <p className="text-xs text-muted-foreground mt-2">Recommended size: 256x256px (PNG or SVG)</p>
-                  <Button className="mt-4" disabled>Upload Logo</Button>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">Primary Color</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      className="h-10 w-10 border rounded cursor-pointer"
-                      defaultValue="#3b82f6"
-                      disabled
-                    />
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded"
-                      defaultValue="#3b82f6"
-                      disabled
-                    />
-                  </div>
-                </div>
-                
-                <Button disabled>Save Branding</Button>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Location Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="address" className="text-sm font-medium">Address</label>
+              <Input 
+                id="address" 
+                name="address" 
+                value={organization.address || ''} 
+                onChange={handleChange} 
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm font-medium">City</label>
+                <Input 
+                  id="city" 
+                  name="city" 
+                  value={organization.city || ''} 
+                  onChange={handleChange} 
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div className="space-y-2">
+                <label htmlFor="state" className="text-sm font-medium">State/Province</label>
+                <Input 
+                  id="state" 
+                  name="state" 
+                  value={organization.state || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="country" className="text-sm font-medium">Country</label>
+                <Input 
+                  id="country" 
+                  name="country" 
+                  value={organization.country || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="zipcode" className="text-sm font-medium">Postal Code</label>
+                <Input 
+                  id="zipcode" 
+                  name="zipcode" 
+                  value={organization.zipcode || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="contact_phone" className="text-sm font-medium">Contact Phone</label>
+              <Input 
+                id="contact_phone" 
+                name="contact_phone" 
+                value={organization.contact_phone || ''} 
+                onChange={handleChange} 
+              />
+            </div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Manage user access and roles within your organization</p>
-              
-              <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">No users found in this organization</p>
-                  <Button className="mt-4" disabled>Invite Users</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="integrations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Integrations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Connect third-party services and applications</p>
-              
-              <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">No integrations are available at this time</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="billing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billing & Subscription</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">Manage your billing information and subscription details</p>
-              
-              <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">Billing functionality is not available at this time</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <div className="flex justify-end gap-3">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate(`/organization/dashboard/${id}`)}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

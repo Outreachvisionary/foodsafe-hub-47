@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,6 +107,7 @@ const DepartmentForm: React.FC<DepartmentFormProps> = ({
         <OrganizationSelector
           value={organizationId}
           onChange={setOrganizationId}
+          className={errors.organizationId ? 'border-destructive' : ''}
         />
         {errors.organizationId && (
           <p className="text-sm text-destructive mt-1">{errors.organizationId}</p>

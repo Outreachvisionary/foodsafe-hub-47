@@ -1,4 +1,3 @@
-
 // Define the base document status types
 export type DocumentStatus = 
   | 'Draft'
@@ -21,56 +20,94 @@ export type DocumentCategory =
   | 'Risk Assessment'
   | 'Other';
 
-// Define basic document structure for use in database interactions
+// Define the Document type
 export interface Document {
   id: string;
   title: string;
   description?: string;
   file_name: string;
-  file_path?: string;
   file_size: number;
   file_type: string;
   category: DocumentCategory;
   status: DocumentStatus;
   version: number;
   created_by: string;
-  created_at?: string;
-  updated_at?: string;
-  approved_by?: string;
-  approved_at?: string;
+  created_at: string;
+  updated_at: string;
   expiry_date?: string;
-  is_locked: boolean;
+  linked_module?: string;
+  linked_item_id?: string;
+  tags?: string[];
+  approvers?: string[];
+  pending_since?: string;
+  custom_notification_days?: number[];
   rejection_reason?: string;
   last_action?: string;
-  tags?: string[];
-  approval_status?: 'pending' | 'approved' | 'rejected';
-  is_expired?: boolean;
-  is_checked_out?: boolean;
+  is_locked: boolean;
+  last_review_date?: string;
+  next_review_date?: string;
+  folder_id?: string | null;
+  current_version_id?: string;
+  is_template?: boolean;
   checkout_user_id?: string;
   checkout_timestamp?: string;
-  pending_since?: string;
-  
-  // Added missing properties
-  folder_id?: string;
-  versions?: DocumentVersion[];
-  activity?: DocumentActivity[];
-  approvers?: string[];
-  custom_notification_days?: number[];
+  workflow_status?: string;
 }
 
-// Define the Folder interface
+// Define the Folder type
 export interface Folder {
   id: string;
   name: string;
-  path: string;
-  parent_id?: string;
+  parent_id?: string | null;
+  path?: string;
   created_by: string;
   created_at?: string;
   updated_at?: string;
   document_count?: number;
 }
 
-// Define the DocumentComment interface
+// Define the training status types
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
+
+// Define the TrainingRecord type
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date?: string;
+  due_date: string;
+  completion_date?: string;
+  score?: number;
+  pass_threshold?: number;
+  next_recurrence?: string;
+  last_recurrence?: string;
+  notes?: string;
+}
+
+// Define the TrainingSession type
+export interface TrainingSession {
+  id: string;
+  title: string;
+  description?: string;
+  training_type: string;
+  training_category?: string;
+  department?: string;
+  start_date?: string;
+  due_date?: string;
+  assigned_to: string[];
+  materials_id?: string[];
+  required_roles?: string[];
+  is_recurring?: boolean;
+  recurring_interval?: number;
+  completion_status?: TrainingStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Define DocumentComment type
 export interface DocumentComment {
   id: string;
   document_id: string;
@@ -79,31 +116,4 @@ export interface DocumentComment {
   content: string;
   created_at: string;
   updated_at?: string;
-}
-
-// Define document version interface
-export interface DocumentVersion {
-  id: string;
-  document_id: string;
-  version: number;
-  file_name: string;
-  file_size: number;
-  file_type?: string;
-  created_by: string;
-  created_at?: string;
-  change_notes?: string;
-  editor_metadata?: any;
-}
-
-// Define document activity interface
-export interface DocumentActivity {
-  id: string;
-  document_id: string;
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download' | 'checkout' | 'checkin' | 'revert';
-  user_id: string;
-  user_name: string; // Making this required to match document.ts definition
-  user_role: string; // Making this required to match document.ts definition
-  timestamp: string;
-  comments?: string;
-  metadata?: any;
 }

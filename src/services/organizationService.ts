@@ -1,13 +1,27 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Organization, OrganizationInput } from '@/types/organization';
+
+interface Organization {
+  id?: string;
+  name: string;
+  description?: string;
+  logo_url?: string;
+  status: 'active' | 'inactive' | 'pending';
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipcode?: string;
+  contact_email?: string;
+  contact_phone?: string;
+}
 
 /**
  * Creates a new organization
  * @param organizationData Organization data
  * @returns The created organization
  */
-export const createOrganization = async (organizationData: OrganizationInput): Promise<Organization> => {
+export const createOrganization = async (organizationData: Organization): Promise<Organization> => {
   try {
     const { data, error } = await supabase
       .from('organizations')
@@ -16,15 +30,7 @@ export const createOrganization = async (organizationData: OrganizationInput): P
       .single();
       
     if (error) throw error;
-    
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || '',
-      status: data.status || 'active'
-    };
-    
-    return organization;
+    return data;
   } catch (error) {
     console.error('Error creating organization:', error);
     throw error;
@@ -50,15 +56,7 @@ export const updateOrganization = async (
       .single();
       
     if (error) throw error;
-    
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || id,
-      status: data.status || 'active'
-    };
-    
-    return organization;
+    return data;
   } catch (error) {
     console.error('Error updating organization:', error);
     throw error;
@@ -79,17 +77,7 @@ export const getOrganization = async (id: string): Promise<Organization | null> 
       .single();
       
     if (error) throw error;
-    
-    if (!data) return null;
-    
-    // Ensure the organization has all required fields
-    const organization: Organization = {
-      ...data,
-      id: data.id || id,
-      status: data.status || 'active'
-    };
-    
-    return organization;
+    return data;
   } catch (error) {
     console.error('Error fetching organization:', error);
     return null;
@@ -108,17 +96,7 @@ export const getOrganizations = async (): Promise<Organization[]> => {
       .order('name');
       
     if (error) throw error;
-    
-    if (!data) return [];
-    
-    // Ensure all organizations have required fields
-    const organizations: Organization[] = data.map(org => ({
-      ...org,
-      id: org.id || '',
-      status: org.status || 'active'
-    }));
-    
-    return organizations;
+    return data || [];
   } catch (error) {
     console.error('Error fetching organizations:', error);
     return [];

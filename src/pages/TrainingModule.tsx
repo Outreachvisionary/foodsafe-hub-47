@@ -1,80 +1,72 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Plus, BookOpen, Users, ClipboardCheck, BarChart, Calendar } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import TrainingDashboard from '@/components/training/TrainingDashboard';
-import CourseLibrary from '@/components/training/CourseLibrary';
 import TrainingRecords from '@/components/training/TrainingRecords';
 import TrainingPlans from '@/components/training/TrainingPlans';
-import ReportsAnalytics from '@/components/training/ReportsAnalytics';
+import CourseLibrary from '@/components/training/CourseLibrary';
 import CompetencyAssessments from '@/components/training/CompetencyAssessments';
+import ReportsAnalytics from '@/components/training/ReportsAnalytics';
+import { useAuditTraining } from '@/hooks/useAuditTraining';
+import AuditTrainingAlert from '@/components/training/AuditTrainingAlert';
+import AuditTrainingTasks from '@/components/training/AuditTrainingTasks';
+import { TrainingProvider, useTrainingContext } from '@/contexts/TrainingContext';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 
-const TrainingModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+// TrainingContent component that uses the context
+const TrainingContent = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const { trainings, loading } = useAuditTraining();
+  const { hasErrors } = useTrainingContext();
+  
+  // Filter only non-completed training from audits
+  const auditTrainingTasks = trainings.filter(t => t.status !== 'completed');
+  
+  // Count critical and high priority tasks
+  const criticalTasks = auditTrainingTasks.filter(t => t.priority === 'critical').length;
+  const highPriorityTasks = auditTrainingTasks.filter(t => t.priority === 'high').length;
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Training Management</h1>
-          <p className="text-muted-foreground">Manage training courses, records, and certifications</p>
-        </div>
-        
-        <div className="flex gap-2">
-          <PermissionGuard 
-            permissions="training.create"
-            fallback={
-              <Button variant="outline" disabled>
-                <Plus className="mr-2 h-4 w-4" />
-                New Training
-              </Button>
-            }
-          >
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Training
-            </Button>
-          </PermissionGuard>
-        </div>
-      </div>
+    <>
+      {hasErrors && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            There was an error loading some training data. You may experience limited functionality.
+          </AlertDescription>
+        </Alert>
+      )}
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted">
-          <TabsTrigger value="dashboard" className="flex gap-1 items-center">
-            <BarChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </TabsTrigger>
-          <TabsTrigger value="courses" className="flex gap-1 items-center">
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Courses</span>
-          </TabsTrigger>
-          <TabsTrigger value="records" className="flex gap-1 items-center">
-            <ClipboardCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Records</span>
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="flex gap-1 items-center">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Plans</span>
-          </TabsTrigger>
-          <TabsTrigger value="competency" className="flex gap-1 items-center">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Competency</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex gap-1 items-center">
-            <BarChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Reports</span>
-          </TabsTrigger>
+      {/* Alert for audit-related training */}
+      <AuditTrainingAlert 
+        count={auditTrainingTasks.length} 
+        criticalTasks={criticalTasks} 
+      />
+      
+      {/* Audit training tasks */}
+      <AuditTrainingTasks 
+        tasks={auditTrainingTasks}
+        onViewDetails={() => setActiveTab("plans")}
+        criticalTasks={criticalTasks}
+        highPriorityTasks={highPriorityTasks}
+      />
+      
+      <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
+        <TabsList className="mb-8">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="records">Training Records</TabsTrigger>
+          <TabsTrigger value="plans">Training Plans</TabsTrigger>
+          <TabsTrigger value="courses">Course Library</TabsTrigger>
+          <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
+          <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
         </TabsList>
         
         <TabsContent value="dashboard">
           <TrainingDashboard />
-        </TabsContent>
-        
-        <TabsContent value="courses">
-          <CourseLibrary />
         </TabsContent>
         
         <TabsContent value="records">
@@ -85,7 +77,11 @@ const TrainingModule: React.FC = () => {
           <TrainingPlans />
         </TabsContent>
         
-        <TabsContent value="competency">
+        <TabsContent value="courses">
+          <CourseLibrary />
+        </TabsContent>
+        
+        <TabsContent value="assessments">
           <CompetencyAssessments />
         </TabsContent>
         
@@ -93,6 +89,37 @@ const TrainingModule: React.FC = () => {
           <ReportsAnalytics />
         </TabsContent>
       </Tabs>
+    </>
+  );
+};
+
+// Main TrainingModule component that wraps everything with the provider
+const TrainingModule = () => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader 
+        title="Training Module" 
+        subtitle="Manage employee training, competency and compliance certification." 
+      />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PermissionGuard 
+          permission="training.view"
+          fallback={
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Access Restricted</AlertTitle>
+              <AlertDescription>
+                You don't have permission to view the training module.
+              </AlertDescription>
+            </Alert>
+          }
+        >
+          <TrainingProvider showLoadingOverlay={true}>
+            <TrainingContent />
+          </TrainingProvider>
+        </PermissionGuard>
+      </main>
     </div>
   );
 };
