@@ -25,6 +25,7 @@ const Traceability = lazy(() => import('@/pages/Traceability'));
 const ComplaintManagement = lazy(() => import('@/pages/ComplaintManagement'));
 const SupplierManagement = lazy(() => import('@/pages/SupplierManagement'));
 const DatabaseConnectionTest = lazy(() => import('@/pages/DatabaseConnectionTest'));
+const RoleManagement = lazy(() => import('@/pages/RoleManagement'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -53,7 +54,7 @@ function App() {
             <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="complaints" element={<ComplaintManagement />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
-            <Route path="roles" element={<DatabaseConnectionTest />} />
+            <Route path="roles" element={<RoleManagement />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
