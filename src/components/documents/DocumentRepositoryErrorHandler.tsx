@@ -6,6 +6,7 @@ import { Loader2, AlertTriangle, RefreshCw, ServerCrash, CheckCircle2 } from 'lu
 import { useDocuments } from '@/contexts/DocumentContext';
 import { useDocumentService } from '@/hooks/useDocumentService';
 import { supabase } from '@/integrations/supabase/client';
+import { checkDatabaseConnection } from '@/utils/supabaseHelpers';
 
 /**
  * This component provides error handling, diagnostics and recovery options for the document repository
@@ -22,6 +23,7 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
   const [diagnosisRunning, setDiagnosisRunning] = useState(false);
   const [diagnosisComplete, setDiagnosisComplete] = useState(false);
   const documentService = useDocumentService();
+  const [connectionResponseTime, setConnectionResponseTime] = useState<number | null>(null);
 
   const runDiagnostics = async () => {
     setDiagnosisRunning(true);
@@ -34,45 +36,68 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
     };
 
     try {
-      // Test Supabase connection - using a safer method
-      const { data: connectionTest } = await supabase.from('documents').select('id').limit(1);
-      results.supabaseConnection = connectionTest !== null;
+      // Test Supabase connection
+      console.log('Testing Supabase connection...');
+      const connectionCheck = await checkDatabaseConnection();
+      results.supabaseConnection = connectionCheck.success;
+      if (connectionCheck.responseTime) {
+        setConnectionResponseTime(connectionCheck.responseTime);
+      }
+      
+      if (!results.supabaseConnection) {
+        console.error('Supabase connection failed:', connectionCheck.error);
+      } else {
+        console.log(`Supabase connection successful (${connectionCheck.responseTime}ms)`);
+      }
     } catch (error) {
       console.error('Error testing Supabase connection:', error);
       results.supabaseConnection = false;
     }
 
-    try {
-      // Test storage access
-      const storageAvailable = await documentService.checkStorageAvailability();
-      results.storageAccess = storageAvailable;
-    } catch (error) {
-      console.error('Error testing storage access:', error);
-      results.storageAccess = false;
-    }
+    // Only run the remaining tests if the connection is working
+    if (results.supabaseConnection) {
+      try {
+        // Test storage access
+        console.log('Testing storage access...');
+        const storageAvailable = await documentService.checkStorageAvailability();
+        results.storageAccess = storageAvailable;
+        console.log('Storage access test result:', storageAvailable);
+      } catch (error) {
+        console.error('Error testing storage access:', error);
+        results.storageAccess = false;
+      }
 
-    try {
-      // Test documents table access
-      const { data: documentsTest, error: documentsError } = await supabase
-        .from('documents')
-        .select('id')
-        .limit(1);
-      results.documentsTableAccess = !documentsError;
-    } catch (error) {
-      console.error('Error testing documents table access:', error);
-      results.documentsTableAccess = false;
-    }
+      try {
+        // Test documents table access
+        console.log('Testing documents table access...');
+        const startTime = Date.now();
+        const { data: documentsTest, error: documentsError } = await supabase
+          .from('documents')
+          .select('id')
+          .limit(1);
+        const responseTime = Date.now() - startTime;
+        results.documentsTableAccess = !documentsError;
+        console.log(`Documents table access test result: ${!documentsError} (${responseTime}ms)`);
+      } catch (error) {
+        console.error('Error testing documents table access:', error);
+        results.documentsTableAccess = false;
+      }
 
-    try {
-      // Test policy access
-      const { data: policyTest, error: policyError } = await supabase
-        .from('document_status_types')
-        .select('id, name')
-        .limit(1);
-      results.policyAccess = !policyError && !!policyTest;
-    } catch (error) {
-      console.error('Error testing policy access:', error);
-      results.policyAccess = false;
+      try {
+        // Test policy access
+        console.log('Testing document status types access...');
+        const startTime = Date.now();
+        const { data: policyTest, error: policyError } = await supabase
+          .from('document_status_types')
+          .select('id, name')
+          .limit(1);
+        const responseTime = Date.now() - startTime;
+        results.policyAccess = !policyError && !!policyTest;
+        console.log(`Document status types access test result: ${!policyError && !!policyTest} (${responseTime}ms)`);
+      } catch (error) {
+        console.error('Error testing policy access:', error);
+        results.policyAccess = false;
+      }
     }
 
     setDiagnosisResults(results);
@@ -119,11 +144,16 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
               <div className="grid gap-2">
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                   <span className="text-sm">Supabase Connection</span>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     {diagnosisResults.supabaseConnection === null ? (
                       <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                     ) : diagnosisResults.supabaseConnection ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        {connectionResponseTime && (
+                          <span className="text-xs text-gray-500">{connectionResponseTime}ms</span>
+                        )}
+                      </>
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-red-500" />
                     )}
@@ -175,7 +205,7 @@ const DocumentRepositoryErrorHandler: React.FC = () => {
                 <p className="text-sm text-yellow-700 mt-1">
                   {Object.values(diagnosisResults).every(val => val) ? 
                     "All systems are operational. Try refreshing the document repository." : 
-                    "Some services appear to be unavailable. Please contact your system administrator or try again later."}
+                    "Some services appear to be unavailable. This could be due to network connectivity issues, database maintenance, or configuration problems. Please try again or contact your system administrator."}
                 </p>
               </div>
             </div>

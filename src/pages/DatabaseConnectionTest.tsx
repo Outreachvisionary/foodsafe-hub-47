@@ -1,17 +1,16 @@
-
-import React, { useState, useEffect } from 'react';
-import { supabase, supabaseConfig } from '@/integrations/supabase/client';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase, supabaseConfig, checkSupabaseConnection } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchOrganizations, fetchFacilities } from '@/utils/supabaseHelpers';
+import { fetchOrganizations, fetchFacilities, checkDatabaseConnection } from '@/utils/supabaseHelpers';
 import { fetchUserProfile, updateUserProfile } from '@/services/profileService';
 import { createFacility, updateFacility, deleteFacility } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
 import { UserProfile } from '@/types/user';
 import { Organization } from '@/types/organization';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, Info } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, Info, Wifi, WifiOff, Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +19,7 @@ interface TestResult {
   status: 'success' | 'error' | 'warning' | 'pending';
   message: string;
   details?: any;
+  responseTime?: number;
 }
 
 const DatabaseConnectionTest = () => {
@@ -32,9 +32,11 @@ const DatabaseConnectionTest = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [supabaseInfo, setSupabaseInfo] = useState({
     url: supabaseConfig.url,
-    key: supabaseConfig.keyPreview
+    key: supabaseConfig.keyPreview,
+    isUsingFallback: supabaseConfig.isUsingFallback
   });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
 
   const addResult = (result: TestResult) => {
     setResults(prev => [...prev, result]);
@@ -45,6 +47,7 @@ const DatabaseConnectionTest = () => {
     setOrganizations([]);
     setFacilities([]);
     setUserProfile(null);
+    setConnectionStatus('unknown');
   };
 
   const forceRefresh = () => {
@@ -55,6 +58,46 @@ const DatabaseConnectionTest = () => {
       title: "Refreshing tests",
       description: "Reconnecting to Supabase and re-running all tests"
     });
+  };
+
+  const reconnectToDatabase = async () => {
+    setIsLoading(true);
+    addResult({
+      name: "Database Reconnection",
+      status: "pending",
+      message: "Attempting to reconnect to the database..."
+    });
+    
+    try {
+      const connectionResult = await checkDatabaseConnection();
+      
+      if (connectionResult.success) {
+        setConnectionStatus('connected');
+        addResult({
+          name: "Database Reconnection",
+          status: "success",
+          message: `Successfully reconnected to the database (${connectionResult.responseTime}ms)`,
+          responseTime: connectionResult.responseTime
+        });
+      } else {
+        setConnectionStatus('disconnected');
+        addResult({
+          name: "Database Reconnection",
+          status: "error",
+          message: `Failed to reconnect: ${connectionResult.error}`,
+          responseTime: connectionResult.responseTime
+        });
+      }
+    } catch (error: any) {
+      setConnectionStatus('disconnected');
+      addResult({
+        name: "Database Reconnection",
+        status: "error",
+        message: `Reconnection attempt failed: ${error.message}`
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Test 1: Table Structure and Access
@@ -69,19 +112,22 @@ const DatabaseConnectionTest = () => {
       console.log('Testing connection to Supabase at:', supabaseConfig.url);
       
       // Test connection
-      const { data: connTest, error: connError } = await supabase.from('organizations').select('count(*)', { count: 'exact', head: true });
+      const connectionCheck = await checkDatabaseConnection();
       
-      if (connError) {
-        console.error('Connection test failed:', connError);
-        throw connError;
+      if (!connectionCheck.success) {
+        console.error('Connection test failed:', connectionCheck.error);
+        setConnectionStatus('disconnected');
+        throw new Error(connectionCheck.error || 'Could not connect to database');
       }
       
-      console.log('Connection test succeeded');
+      console.log(`Connection test succeeded in ${connectionCheck.responseTime}ms`);
+      setConnectionStatus('connected');
       
       addResult({
         name: "Database Connection",
         status: "success",
-        message: "Successfully connected to Supabase"
+        message: `Successfully connected to Supabase (${connectionCheck.responseTime}ms)`,
+        responseTime: connectionCheck.responseTime
       });
 
       // Check tables existence
@@ -96,19 +142,22 @@ const DatabaseConnectionTest = () => {
           });
           
           console.log(`Testing access to ${table} table`);
+          const startTime = Date.now();
           const { error } = await supabase.from(table).select('count(*)', { count: 'exact', head: true });
+          const responseTime = Date.now() - startTime;
           
           if (error) {
             console.error(`Error accessing ${table} table:`, error);
             throw error;
           }
           
-          console.log(`Successfully accessed ${table} table`);
+          console.log(`Successfully accessed ${table} table in ${responseTime}ms`);
           
           addResult({
             name: `${table} Table Access`,
             status: "success",
-            message: `Table '${table}' exists and is accessible`
+            message: `Table '${table}' exists and is accessible (${responseTime}ms)`,
+            responseTime
           });
         } catch (error: any) {
           console.error(`Failed to access ${table} table:`, error);
@@ -130,19 +179,22 @@ const DatabaseConnectionTest = () => {
         });
         
         console.log('Testing access to user_facility_access table');
+        const startTime = Date.now();
         const { error } = await supabase.from('user_facility_access').select('count(*)', { count: 'exact', head: true });
+        const responseTime = Date.now() - startTime;
         
         if (error) {
           console.error('Error accessing user_facility_access table:', error);
           throw error;
         }
         
-        console.log('Successfully accessed user_facility_access table');
+        console.log(`Successfully accessed user_facility_access table in ${responseTime}ms`);
         
         addResult({
           name: "user_facility_access Table Access",
           status: "success",
-          message: "Table 'user_facility_access' exists and is accessible"
+          message: `Table 'user_facility_access' exists and is accessible (${responseTime}ms)`,
+          responseTime
         });
       } catch (error: any) {
         console.error('Failed to access user_facility_access table:', error);
@@ -184,14 +236,18 @@ const DatabaseConnectionTest = () => {
         message: "Fetching organizations..."
       });
       
+      const startTime = Date.now();
       const orgs = await fetchOrganizations();
+      const responseTime = Date.now() - startTime;
+      
       setOrganizations(orgs);
       
       addResult({
         name: "Organizations API",
         status: "success",
-        message: `Successfully fetched ${orgs.length} organizations`,
-        details: orgs
+        message: `Successfully fetched ${orgs.length} organizations (${responseTime}ms)`,
+        details: orgs,
+        responseTime
       });
     } catch (error: any) {
       addResult({
@@ -219,7 +275,8 @@ const DatabaseConnectionTest = () => {
           name: "Facilities API",
           status: "success",
           message: `Successfully fetched ${facs.length} facilities for organization ${orgId}`,
-          details: facs
+          details: facs,
+          responseTime: Date.now() - startTime
         });
       } catch (error: any) {
         addResult({
@@ -251,7 +308,8 @@ const DatabaseConnectionTest = () => {
         name: "User Profile API",
         status: "success",
         message: "Successfully fetched user profile",
-        details: profile
+        details: profile,
+        responseTime: Date.now() - startTime
       });
     } catch (error: any) {
       addResult({
@@ -284,7 +342,8 @@ const DatabaseConnectionTest = () => {
             name: "Profile Update API",
             status: "success",
             message: "Successfully updated user profile",
-            details: updatedProfile
+            details: updatedProfile,
+            responseTime: Date.now() - startTime
           });
         } else {
           addResult({
@@ -455,7 +514,8 @@ const DatabaseConnectionTest = () => {
         name: "Create Operation",
         status: "success",
         message: "Successfully created test facility",
-        details: createdFacility
+        details: createdFacility,
+        responseTime: Date.now() - startTime
       });
     } catch (error: any) {
       addResult({
@@ -485,7 +545,8 @@ const DatabaseConnectionTest = () => {
           name: "Update Operation",
           status: "success",
           message: "Successfully updated test facility",
-          details: updatedFacility
+          details: updatedFacility,
+          responseTime: Date.now() - startTime
         });
       } catch (error: any) {
         addResult({
@@ -524,7 +585,8 @@ const DatabaseConnectionTest = () => {
             name: "Delete Operation",
             status: "warning",
             message: "Facility might not have been deleted properly",
-            details: data
+            details: data,
+            responseTime: Date.now() - startTime
           });
         }
       } catch (error: any) {
@@ -541,10 +603,19 @@ const DatabaseConnectionTest = () => {
     resetTests();
     setIsLoading(true);
     
-    await testTableStructure();
-    await testApiEndpoints();
-    await testRlsPolicies();
-    await testCrudOperations();
+    await reconnectToDatabase();
+    if (connectionStatus === 'connected') {
+      await testTableStructure();
+      await testApiEndpoints();
+      await testRlsPolicies();
+      await testCrudOperations();
+    } else {
+      addResult({
+        name: "Testing Aborted",
+        status: "error",
+        message: "Database connection failed. Cannot proceed with further tests."
+      });
+    }
     
     setIsLoading(false);
     
@@ -569,6 +640,8 @@ const DatabaseConnectionTest = () => {
         return <XCircle className="h-5 w-5 text-red-500" />;
       case 'warning':
         return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-blue-500 animate-pulse" />;
       default:
         return null;
     }
@@ -578,7 +651,23 @@ const DatabaseConnectionTest = () => {
     <div className="container mx-auto py-8">
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Database Connection Test</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Database Connection Test</CardTitle>
+            <div className="flex items-center gap-2">
+              {connectionStatus === 'connected' && (
+                <div className="flex items-center text-green-600 text-sm font-medium">
+                  <Wifi className="h-4 w-4 mr-1" />
+                  Connected
+                </div>
+              )}
+              {connectionStatus === 'disconnected' && (
+                <div className="flex items-center text-red-600 text-sm font-medium">
+                  <WifiOff className="h-4 w-4 mr-1" />
+                  Disconnected
+                </div>
+              )}
+            </div>
+          </div>
           <CardDescription>
             Verify connectivity between the frontend and Supabase backend
           </CardDescription>
@@ -589,13 +678,19 @@ const DatabaseConnectionTest = () => {
             API endpoints, RLS policies, and CRUD operations are working correctly.
           </p>
           
-          <div className="bg-slate-50 p-4 rounded-md mb-4">
+          <div className={`bg-slate-50 p-4 rounded-md mb-4 ${supabaseInfo.isUsingFallback ? 'border border-yellow-300' : ''}`}>
             <h3 className="text-sm font-medium mb-2">Supabase Configuration</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="text-gray-600">URL:</div>
               <div>{supabaseInfo.url}</div>
               <div className="text-gray-600">Key:</div>
               <div>{supabaseInfo.key}</div>
+              {supabaseInfo.isUsingFallback && (
+                <div className="col-span-2 text-yellow-700 text-xs mt-2">
+                  <AlertTriangle className="h-3 w-3 inline mr-1" />
+                  Using fallback configuration because environment variables are not set
+                </div>
+              )}
             </div>
           </div>
           
@@ -610,7 +705,11 @@ const DatabaseConnectionTest = () => {
         </CardContent>
         <CardFooter>
           <div className="flex space-x-2">
-            <Button onClick={runAllTests} disabled={isLoading || !user} className="flex items-center gap-2">
+            <Button 
+              onClick={runAllTests} 
+              disabled={isLoading || !user} 
+              className="flex items-center gap-2"
+            >
               {isLoading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -669,10 +768,15 @@ const DatabaseConnectionTest = () => {
                       result.status === 'success' ? 'bg-green-100 text-green-800' :
                       result.status === 'error' ? 'bg-red-100 text-red-800' :
                       result.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      'bg-blue-100 text-blue-800'
                     }`}>
                       {result.status === 'pending' ? 'In Progress' : result.status}
                     </span>
+                    {result.responseTime && (
+                      <span className="text-xs text-gray-500">
+                        {result.responseTime}ms
+                      </span>
+                    )}
                   </div>
                   <p className="text-gray-700">{result.message}</p>
                   {result.details && (

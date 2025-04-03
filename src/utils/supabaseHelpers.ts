@@ -1,139 +1,205 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, checkSupabaseConnection } from '@/integrations/supabase/client';
 import { Organization } from '@/types/organization';
 import { Facility } from '@/types/facility';
 import { RegulatoryStandard, FacilityStandard } from '@/types/regulatory';
 import { toast } from '@/hooks/use-toast';
 
-// Function to fetch facilities with proper type handling
-export async function fetchFacilities(organizationId?: string, onlyAssigned: boolean = false) {
-  try {
-    console.log('Fetching facilities with params:', { organizationId, onlyAssigned });
-    
-    // Call the RPC function with correct parameters
-    const { data, error } = await supabase
-      .rpc('get_facilities', {
-        p_organization_id: organizationId || null,
-        p_only_assigned: onlyAssigned
-      });
-    
-    if (error) {
-      console.error('Error in fetchFacilities RPC call:', error);
-      toast({
-        title: "Failed to fetch facilities",
-        description: error.message,
-        variant: "destructive"
-      });
-      throw error;
+// Helper to handle fetch errors consistently
+const handleFetchError = (functionName: string, error: any) => {
+  console.error(`Error in ${functionName}:`, error);
+  toast({
+    title: `Failed to fetch ${functionName.replace('fetch', '').toLowerCase()}`,
+    description: error.message || "An unknown error occurred",
+    variant: "destructive"
+  });
+  throw error;
+};
+
+// Function to retry failed supabase queries
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  functionName: string,
+  maxRetries = 2,
+  initialDelay = 500
+): Promise<T> => {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`Retry attempt ${attempt} for ${functionName}...`);
+        // Check connection before retry
+        const connectionStatus = await checkSupabaseConnection();
+        if (!connectionStatus.success) {
+          console.warn(`Connection check failed before retry ${attempt}: ${connectionStatus.error}`);
+        }
+      }
+      
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Attempt ${attempt} failed for ${functionName}:`, error);
+      
+      if (attempt < maxRetries) {
+        // Exponential backoff
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`Waiting ${delay}ms before next retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
+  }
+  
+  console.error(`All ${maxRetries} retries failed for ${functionName}`);
+  throw lastError;
+};
+
+// Function to fetch facilities with proper type handling and retries
+export async function fetchFacilities(organizationId?: string, onlyAssigned: boolean = false) {
+  const functionName = 'fetchFacilities';
+  console.log(`${functionName} called with params:`, { organizationId, onlyAssigned });
+  
+  try {
+    const result = await withRetry(
+      async () => {
+        console.log(`Executing ${functionName} RPC call...`);
+        const { data, error } = await supabase
+          .rpc('get_facilities', {
+            p_organization_id: organizationId || null,
+            p_only_assigned: onlyAssigned
+          });
+          
+        if (error) {
+          console.error(`Error in ${functionName} RPC call:`, error);
+          throw error;
+        }
+        
+        console.log(`${functionName} successful, retrieved ${data?.length || 0} records`);
+        return data as Facility[];
+      },
+      functionName
+    );
     
-    console.log(`Retrieved ${data?.length || 0} facilities`);
-    return data as Facility[];
+    return result;
   } catch (error: any) {
-    console.error('Exception in fetchFacilities:', error);
+    console.error(`Exception in ${functionName}:`, error);
     toast({
       title: "Error fetching facilities",
-      description: error.message || "An unknown error occurred",
+      description: error.message || "A network or server error occurred",
       variant: "destructive"
     });
     return [];
   }
 }
 
-// Function to fetch organizations with proper type handling
+// Function to fetch organizations with proper type handling and retries
 export async function fetchOrganizations() {
+  const functionName = 'fetchOrganizations';
+  console.log(`${functionName} called`);
+  
   try {
-    console.log('Fetching organizations...');
+    const result = await withRetry(
+      async () => {
+        console.log(`Executing ${functionName} RPC call...`);
+        const { data, error } = await supabase
+          .rpc('get_organizations');
+          
+        if (error) {
+          console.error(`Error in ${functionName} RPC call:`, error);
+          throw error;
+        }
+        
+        console.log(`${functionName} successful, retrieved ${data?.length || 0} records`);
+        return data as Organization[];
+      },
+      functionName
+    );
     
-    // Call the RPC function
-    const { data, error } = await supabase
-      .rpc('get_organizations');
-    
-    if (error) {
-      console.error('Error in fetchOrganizations RPC call:', error);
-      toast({
-        title: "Failed to fetch organizations",
-        description: error.message,
-        variant: "destructive"
-      });
-      throw error;
-    }
-    
-    console.log(`Retrieved ${data?.length || 0} organizations`);
-    return data as Organization[];
+    return result;
   } catch (error: any) {
-    console.error('Exception in fetchOrganizations:', error);
+    console.error(`Exception in ${functionName}:`, error);
     toast({
       title: "Error fetching organizations",
-      description: error.message || "An unknown error occurred",
+      description: error.message || "A network or server error occurred",
       variant: "destructive"
     });
     return [];
   }
 }
 
-// Function to fetch regulatory standards
+// Function to fetch regulatory standards with retries
 export async function fetchRegulatoryStandards() {
+  const functionName = 'fetchRegulatoryStandards';
+  console.log(`${functionName} called`);
+  
   try {
-    console.log('Fetching regulatory standards...');
+    const result = await withRetry(
+      async () => {
+        console.log(`Executing ${functionName} RPC call...`);
+        const { data, error } = await supabase
+          .rpc('get_regulatory_standards');
+          
+        if (error) {
+          console.error(`Error in ${functionName} RPC call:`, error);
+          throw error;
+        }
+        
+        console.log(`${functionName} successful, retrieved ${data?.length || 0} records`);
+        return data as RegulatoryStandard[];
+      },
+      functionName
+    );
     
-    // Call the RPC function
-    const { data, error } = await supabase
-      .rpc('get_regulatory_standards');
-    
-    if (error) {
-      console.error('Error in fetchRegulatoryStandards RPC call:', error);
-      toast({
-        title: "Failed to fetch regulatory standards",
-        description: error.message,
-        variant: "destructive"
-      });
-      throw error;
-    }
-    
-    console.log(`Retrieved ${data?.length || 0} regulatory standards`);
-    return data as RegulatoryStandard[];
+    return result;
   } catch (error: any) {
-    console.error('Exception in fetchRegulatoryStandards:', error);
+    console.error(`Exception in ${functionName}:`, error);
     toast({
       title: "Error fetching regulatory standards",
-      description: error.message || "An unknown error occurred",
+      description: error.message || "A network or server error occurred",
       variant: "destructive"
     });
     return [];
   }
 }
 
-// Function to fetch facility standards
+// Function to fetch facility standards with retries
 export async function fetchFacilityStandards(facilityId: string) {
+  const functionName = 'fetchFacilityStandards';
+  console.log(`${functionName} called for facility: ${facilityId}`);
+  
   try {
-    console.log('Fetching facility standards for facility:', facilityId);
+    const result = await withRetry(
+      async () => {
+        console.log(`Executing ${functionName} RPC call...`);
+        const { data, error } = await supabase
+          .rpc('get_facility_standards', {
+            p_facility_id: facilityId
+          });
+          
+        if (error) {
+          console.error(`Error in ${functionName} RPC call:`, error);
+          throw error;
+        }
+        
+        console.log(`${functionName} successful, retrieved ${data?.length || 0} records`);
+        return data as FacilityStandard[];
+      },
+      functionName
+    );
     
-    // Call the RPC function with correct parameter
-    const { data, error } = await supabase
-      .rpc('get_facility_standards', {
-        p_facility_id: facilityId
-      });
-    
-    if (error) {
-      console.error('Error in fetchFacilityStandards RPC call:', error);
-      toast({
-        title: "Failed to fetch facility standards",
-        description: error.message,
-        variant: "destructive"
-      });
-      throw error;
-    }
-    
-    console.log(`Retrieved ${data?.length || 0} facility standards`);
-    return data as FacilityStandard[];
+    return result;
   } catch (error: any) {
-    console.error('Exception in fetchFacilityStandards:', error);
+    console.error(`Exception in ${functionName}:`, error);
     toast({
       title: "Error fetching facility standards",
-      description: error.message || "An unknown error occurred",
+      description: error.message || "A network or server error occurred",
       variant: "destructive"
     });
     return [];
   }
+}
+
+// Export a function to check database connection status
+export async function checkDatabaseConnection() {
+  return await checkSupabaseConnection();
 }
