@@ -1,72 +1,96 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/contexts/UserContext';
 
-// Define types for language context
 interface LanguageContextType {
   currentLanguage: string;
-  changeLanguage: (language: string) => void;
   supportedLanguages: { code: string; name: string }[];
-  loadingTranslations: boolean;
+  changeLanguage: (language: string) => Promise<void>;
 }
 
-// Create the context with a default undefined value
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const defaultLanguage = 'en';
 
-// Available languages in the application
-const SUPPORTED_LANGUAGES = [
+const supportedLanguages = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Español' },
   { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'ar', name: 'العربية' }
 ];
 
-// Provider component that wraps the app and makes language context available
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<string>(i18n.language || 'en');
-  const [loadingTranslations, setLoadingTranslations] = useState<boolean>(false);
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-  // Function to change the current language
-  const changeLanguage = async (language: string) => {
-    setLoadingTranslations(true);
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { i18n } = useTranslation();
+  const { user, updateProfile } = useUser();
+  const [currentLanguage, setCurrentLanguage] = useState(defaultLanguage);
+
+  // Initialize language from user preferences or browser settings
+  useEffect(() => {
+    const initLanguage = async () => {
+      try {
+        // If user has a preferred language in their profile, use that
+        if (user?.preferred_language) {
+          await setUserLanguage(user.preferred_language);
+          return;
+        }
+
+        // Otherwise, check browser language
+        const browserLang = navigator.language.split('-')[0];
+        const isSupported = supportedLanguages.some(lang => lang.code === browserLang);
+
+        if (isSupported) {
+          await setUserLanguage(browserLang);
+        } else {
+          await setUserLanguage(defaultLanguage);
+        }
+      } catch (error) {
+        console.error('Error initializing language:', error);
+        await setUserLanguage(defaultLanguage);
+      }
+    };
+
+    initLanguage();
+  }, [user?.id, user?.preferred_language]);
+
+  const setUserLanguage = async (language: string) => {
     try {
       await i18n.changeLanguage(language);
       setCurrentLanguage(language);
-      // Save language preference to localStorage
-      localStorage.setItem('language', language);
     } catch (error) {
-      console.error('Error changing language:', error);
-    } finally {
-      setLoadingTranslations(false);
+      console.error('Error setting language:', error);
     }
   };
 
-  // Initialize language on component mount
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage && savedLanguage !== currentLanguage) {
-      changeLanguage(savedLanguage);
-    }
-  }, []);
+  const changeLanguage = async (language: string) => {
+    try {
+      await setUserLanguage(language);
 
-  // Context value
-  const value = {
+      // Update user profile if they're logged in
+      if (user?.id) {
+        await updateProfile({ preferred_language: language });
+      }
+
+      // Store in localStorage as fallback
+      localStorage.setItem('preferredLanguage', language);
+    } catch (error) {
+      console.error('Error changing language:', error);
+    }
+  };
+
+  const contextValue: LanguageContextType = {
     currentLanguage,
+    supportedLanguages,
     changeLanguage,
-    supportedLanguages: SUPPORTED_LANGUAGES,
-    loadingTranslations
   };
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-// Custom hook to use the language context
-export const useLanguage = (): LanguageContextType => {
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
     throw new Error('useLanguage must be used within a LanguageProvider');
