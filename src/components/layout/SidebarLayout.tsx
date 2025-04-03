@@ -153,7 +153,7 @@ const SidebarLayout: React.FC = () => {
   
   return (
     <div className="flex h-screen">
-      {/* Modernized sidebar */}
+      {/* Sidebar */}
       <div className={`bg-gradient-to-b from-white to-secondary/20 border-r border-border/60 h-screen flex flex-col transition-all duration-300 shadow-sm ${collapsed ? 'w-20' : 'w-64'}`}>
         {/* Logo */}
         <div className={`p-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center border-b border-border/60`}>
@@ -283,7 +283,7 @@ const SidebarLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Content - Now using Outlet for nested routes */}
+        {/* Content - Using Outlet for nested routes */}
         <main className="flex-1 overflow-auto bg-secondary/30 p-6">
           <Outlet />
         </main>

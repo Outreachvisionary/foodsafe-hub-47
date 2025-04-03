@@ -2,7 +2,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/ui/theme-provider';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import Loading from '@/components/Loading';
@@ -29,39 +28,33 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<UserOnboarding />} />
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/onboarding" element={<UserOnboarding />} />
 
-          {/* Protected routes */}
-          <Route element={
-            <ProtectedRoute>
-              <SidebarLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="documents" element={<Documents />} />
-            <Route path="organizations" element={<OrganizationsList />} />
-            <Route path="organization" element={<OrganizationManagement />} />
-            <Route path="facilities" element={<FacilityManagement />} />
-            <Route path="departments" element={<DepartmentManagement />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="training" element={<TrainingModule />} />
-            <Route path="audits" element={<AuditsModule />} />
-            <Route path="traceability" element={<Traceability />} />
-            <Route path="non-conformance" element={<NonConformance />} />
-            <Route path="suppliers" element={<SupplierManagement />} />
-            <Route path="complaints" element={<ComplaintManagement />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Suspense>
+        {/* Protected routes with SidebarLayout */}
+        <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="documents" element={<Documents />} />
+          <Route path="organizations" element={<OrganizationsList />} />
+          <Route path="organization" element={<OrganizationManagement />} />
+          <Route path="facilities" element={<FacilityManagement />} />
+          <Route path="departments" element={<DepartmentManagement />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="training" element={<TrainingModule />} />
+          <Route path="audits" element={<AuditsModule />} />
+          <Route path="traceability" element={<Traceability />} />
+          <Route path="non-conformance" element={<NonConformance />} />
+          <Route path="suppliers" element={<SupplierManagement />} />
+          <Route path="complaints" element={<ComplaintManagement />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
       <Toaster />
-    </ThemeProvider>
+    </Suspense>
   );
 }
 
