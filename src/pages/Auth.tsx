@@ -1,183 +1,224 @@
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import { useAuthForms } from '@/hooks/useAuthForms';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BrandedButton } from '@/components/ui/branded-button';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
-// Auth Page
 const Auth = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isLoading: userLoading } = useAuthRedirect();
-  const { loginForm, registerForm, onLogin, onRegister, isLoading } = useAuthForms();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>("login");
+  const [activeTab, setActiveTab] = useState('login');
+  
+  // Check if user is already logged in
+  const { isAuthenticated } = useAuthRedirect();
 
-  // Parse URL params to determine initial tab
-  useEffect(() => {
-    if (userLoading) return; // Don't update tabs while checking auth state
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const params = new URLSearchParams(location.search);
-    const mode = params.get('mode');
-    if (mode === 'register') {
-      setActiveTab('register');
-    } else {
-      setActiveTab('login');
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive"
+      });
+      return;
     }
-  }, [location, userLoading]);
+    
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Get return URL from query string or use default
+      const params = new URLSearchParams(location.search);
+      const returnUrl = params.get('returnUrl') || '/dashboard';
+      
+      // Show success message and redirect
+      toast({
+        title: "Login successful",
+        description: "Welcome back!"
+      });
+      
+      navigate(returnUrl);
+      
+    } catch (error: any) {
+      console.error('Login error:', error.message);
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Show a full-page spinner while checking authentication
-  if (userLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-muted-foreground">Checking authentication...</p>
-      </div>
-    );
-  }
-
-  // Handle form submissions
-  const handleRegisterSubmit = async (values) => {
-    const shouldSwitchToLogin = await onRegister(values);
-    if (shouldSwitchToLogin) {
-      setActiveTab('login');
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data.user) {
+        if (data.session) {
+          // User is already confirmed and has a session
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created and you are now logged in!"
+          });
+          navigate('/dashboard');
+        } else {
+          // User needs to confirm their email
+          toast({
+            title: "Registration successful",
+            description: "Please check your email for a confirmation link"
+          });
+          setActiveTab('login');
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('Registration error:', error.message);
+      toast({
+        title: "Registration failed",
+        description: error.message || "An error occurred during registration",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12 animate-fade-in">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Compliance Core</CardTitle>
-          <CardDescription className="text-center">
-            Food safety compliance management platform
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={value => setActiveTab(value as 'login' | 'register')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="register">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login" className="animate-fade-in">
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your@email.com" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <FormField control={loginForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <BrandedButton 
-                    type="submit" 
-                    disabled={isLoading} 
-                    className="w-full" 
-                    variant="primary"
-                  >
-                    {isLoading ? (
-                      <>
-                        <LoadingSpinner size="sm" />
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </BrandedButton>
-                </form>
-              </Form>
-              <div className="mt-4 text-center text-sm">
-                <Link to="#" className="text-accent hover:underline">
-                  Forgot your password?
-                </Link>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="register" className="animate-fade-in">
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="space-y-4">
-                  <FormField control={registerForm.control} name="full_name" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jane Doe" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <FormField control={registerForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your@email.com" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <FormField control={registerForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <FormField control={registerForm.control} name="confirm_password" render={({
-                  field
-                }) => <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                  <BrandedButton 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
-                    variant="primary"
-                  >
-                    {isLoading ? (
-                      <>
-                        <LoadingSpinner size="sm" />
-                        <span>Creating account...</span>
-                      </>
-                    ) : (
-                      "Create Account"
-                    )}
-                  </BrandedButton>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter>
-          <Button variant="ghost" className="w-full" asChild>
-            <Link to="/">Back to Home</Link>
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md p-6">
+        <h1 className="text-3xl font-bold text-center mb-6 text-fsms-blue">CompliancePro</h1>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Login to your account</CardTitle>
+                <CardDescription>Enter your credentials to continue</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleLogin}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="your@email.com" 
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                    </div>
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Logging in..." : "Sign In"}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="register">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Create an account</CardTitle>
+                <CardDescription>Enter your details to get started</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleRegister}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Email</Label>
+                    <Input 
+                      id="register-email" 
+                      type="email" 
+                      placeholder="your@email.com" 
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Password</Label>
+                    <Input 
+                      id="register-password" 
+                      type="password" 
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-gray-500">Password must be at least 6 characters</p>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating Account..." : "Create Account"}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
 
-// Export the component with a Suspense wrapper to support lazy loading
 export default Auth;
