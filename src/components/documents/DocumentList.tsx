@@ -1,18 +1,16 @@
-
 import React from 'react';
-import { Document } from '@/types/document';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, Edit, Trash, Share, Check, XCircle, Clock, FileText, Eye } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Document } from '@/types/document';
+import { formatDate, truncateText } from '@/lib/utils';
+import { Clock, Download, Eye, Pencil, Trash2, FileText, CheckCircle, XCircle, Clock as ClockIcon } from 'lucide-react';
 
 interface DocumentListProps {
   documents: Document[];
-  onViewDocument: (document: Document) => void;
-  onEditDocument: (document: Document) => void;
-  onDeleteDocument: (document: Document) => void;
-  onDownloadDocument: (document: Document) => void;
-  onShareDocument?: (document: Document) => void;
+  onViewDocument?: (document: Document) => void;
+  onEditDocument?: (document: Document) => void;
+  onDeleteDocument?: (document: Document) => void;
+  onDownloadDocument?: (document: Document) => void;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
@@ -20,194 +18,161 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onViewDocument,
   onEditDocument,
   onDeleteDocument,
-  onDownloadDocument,
-  onShareDocument
+  onDownloadDocument
 }) => {
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+  // Helper function to get status badge
+  const getStatusBadge = (document: Document) => {
+    if (document.is_expired) {
+      return <Badge variant="destructive">Expired</Badge>;
+    }
+    
+    switch (document.approval_status) {
       case 'approved':
-        return (
-          <Badge className="bg-success/20 text-success hover:bg-success/30 px-3 py-1 flex items-center gap-1">
-            <Check className="h-3 w-3" /> Approved
-          </Badge>
-        );
-      case 'draft':
-        return (
-          <Badge className="bg-muted/40 text-muted-foreground hover:bg-muted/60 px-3 py-1 flex items-center gap-1">
-            <Clock className="h-3 w-3" /> Draft
-          </Badge>
-        );
-      case 'pending':
-      case 'pending review':
-      case 'in review':
-        return (
-          <Badge className="bg-warning/20 text-warning hover:bg-warning/30 px-3 py-1 flex items-center gap-1">
-            <Clock className="h-3 w-3" /> In Review
-          </Badge>
-        );
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
       case 'rejected':
-        return (
-          <Badge className="bg-destructive/20 text-destructive hover:bg-destructive/30 px-3 py-1 flex items-center gap-1">
-            <XCircle className="h-3 w-3" /> Rejected
-          </Badge>
-        );
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">Pending</Badge>;
       default:
-        return (
-          <Badge variant="outline" className="px-3 py-1">
-            {status}
-          </Badge>
-        );
+        return <Badge variant="outline">Draft</Badge>;
     }
   };
-
+  
+  // Helper function to get icon based on document type
+  const getDocumentIcon = (document: Document) => {
+    switch (document.file_type) {
+      case 'pdf':
+        return <FileText className="h-5 w-5 text-red-500" />;
+      case 'docx':
+      case 'doc':
+        return <FileText className="h-5 w-5 text-blue-500" />;
+      case 'xlsx':
+      case 'xls':
+        return <FileText className="h-5 w-5 text-green-500" />;
+      case 'pptx':
+      case 'ppt':
+        return <FileText className="h-5 w-5 text-orange-500" />;
+      default:
+        return <FileText className="h-5 w-5 text-gray-500" />;
+    }
+  };
+  
   return (
-    <div className="overflow-auto">
-      <table className="min-w-full divide-y divide-border">
-        <thead className="bg-muted/20">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-base font-medium text-foreground tracking-wider">
-              Document
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-base font-medium text-foreground tracking-wider">
-              Category
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-base font-medium text-foreground tracking-wider">
-              Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-base font-medium text-foreground tracking-wider">
-              Updated
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-base font-medium text-foreground tracking-wider">
-              Version
-            </th>
-            <th scope="col" className="px-6 py-3 text-right text-base font-medium text-foreground tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-border">
-          {documents.length > 0 ? (
-            documents.map((document) => (
-              <tr 
-                key={document.id} 
-                className="hover:bg-muted/10 transition-colors cursor-pointer"
-                onClick={() => onViewDocument(document)}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 text-primary">
-                      <FileText className="h-5 w-5" />
+    <div className="overflow-hidden">
+      <div className="rounded-md border">
+        <div className="relative overflow-auto">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b bg-muted/50">
+              <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
+                  Document
+                </th>
+                <th className="h-12 px-4 text-left align-middle font-medium hidden md:table-cell">
+                  Category
+                </th>
+                <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
+                  Status
+                </th>
+                <th className="h-12 px-4 text-left align-middle font-medium hidden lg:table-cell">
+                  Last Updated
+                </th>
+                <th className="h-12 px-4 text-right align-middle font-medium min-w-[150px]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {documents.map((document) => (
+                <tr 
+                  key={document.id}
+                  className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                >
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <div className="flex items-center gap-3">
+                      {getDocumentIcon(document)}
+                      <div>
+                        <div className="font-medium">{truncateText(document.title, 40)}</div>
+                        <div className="text-xs text-muted-foreground">{document.file_name}</div>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <div className="text-base font-medium text-foreground">{document.title}</div>
-                      {document.description && (
-                        <div className="text-sm text-muted-foreground truncate max-w-sm">
-                          {document.description}
-                        </div>
+                  </td>
+                  <td className="p-4 align-middle hidden md:table-cell">
+                    <Badge variant="outline">{document.category}</Badge>
+                  </td>
+                  <td className="p-4 align-middle hidden lg:table-cell">
+                    {getStatusBadge(document)}
+                  </td>
+                  <td className="p-4 align-middle hidden lg:table-cell">
+                    <div className="flex items-center">
+                      <ClockIcon className="mr-1 h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(document.updated_at, true)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4 align-middle text-right">
+                    <div className="flex justify-end gap-1">
+                      {onViewDocument && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onViewDocument(document)}
+                          className="h-8 w-8"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">View</span>
+                        </Button>
+                      )}
+                      
+                      {onEditDocument && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onEditDocument(document)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )}
+                      
+                      {onDownloadDocument && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onDownloadDocument(document)}
+                          className="h-8 w-8"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="sr-only">Download</span>
+                        </Button>
+                      )}
+                      
+                      {onDeleteDocument && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onDeleteDocument(document)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
                       )}
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge variant="outline" className="font-normal bg-muted/10">
-                    {document.category}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(document.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                  {document.updated_at
-                    ? formatDistanceToNow(new Date(document.updated_at), { addSuffix: true })
-                    : 'Unknown'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge className="bg-accent/10 text-accent hover:bg-accent/20 px-2 py-1">
-                    v{document.version || 1}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewDocument(document);
-                      }}
-                      className="text-muted-foreground hover:text-accent hover:bg-accent/10"
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditDocument(document);
-                      }}
-                      className="text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      title="Edit"
-                      disabled={document.is_locked}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDownloadDocument(document);
-                      }}
-                      className="text-muted-foreground hover:text-success hover:bg-success/10"
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {onShareDocument && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onShareDocument(document);
-                        }}
-                        className="text-muted-foreground hover:text-info hover:bg-info/10"
-                        title="Share"
-                      >
-                        <Share className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteDocument(document);
-                      }}
-                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      title="Delete"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
-                <div className="flex flex-col items-center">
-                  <FileText className="h-12 w-12 mb-4 text-muted-foreground/50" />
-                  <p className="text-lg font-medium">No documents found</p>
-                  <p className="text-sm">Upload a document to get started</p>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      {documents.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No documents available</p>
+        </div>
+      )}
     </div>
   );
 };

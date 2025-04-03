@@ -1,8 +1,8 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from "@/components/theme-provider";
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import Loading from '@/components/Loading';
@@ -41,7 +41,15 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           
           {/* Protected routes */}
-          <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+          <Route 
+            element={
+              <ProtectedRoute>
+                <SidebarLayout>
+                  <Outlet />
+                </SidebarLayout>
+              </ProtectedRoute>
+            }
+          >
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/documents" element={<Documents />} />

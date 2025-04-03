@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Document, DocumentNotification, Folder } from '@/types/document';
 import documentService from '@/services/documentService';
@@ -30,6 +29,8 @@ interface DocumentContextType {
   getDocumentsInFolder: (folderId: string | null) => Document[];
   createFolder: (name: string, parentId: string | null) => Promise<Folder>;
   moveDocumentToFolder: (documentId: string, folderId: string | null) => Promise<void>;
+  checkoutDocument: (document: Document) => void;
+  checkinDocument: (document: Document) => void;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -52,7 +53,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Function to fetch documents
   const fetchDocuments = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
@@ -61,10 +61,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.log('Fetched documents:', fetchedDocuments);
       setDocuments(fetchedDocuments);
       
-      // Also fetch folders when documents are loaded
       fetchFolders();
       
-      // Generate real notifications based on the current documents
       const generatedNotifications = documentWorkflowService.generateNotifications(fetchedDocuments);
       setNotifications(generatedNotifications);
       
@@ -75,13 +73,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoading(false);
     }
   }, []);
-  
-  // Function for retrying fetch documents (for error handling)
+
   const retryFetchDocuments = useCallback(async (): Promise<void> => {
     return fetchDocuments();
   }, [fetchDocuments]);
-  
-  // Function to fetch folders
+
   const fetchFolders = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -101,17 +97,13 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [toast]);
 
-  // Function to refresh all data
   const refreshData = useCallback(() => {
     fetchDocuments();
-    // Add any other data refresh calls here
   }, [fetchDocuments]);
 
-  // Initial data load
   useEffect(() => {
     fetchDocuments();
     
-    // Set up real-time subscription for document changes
     const documentChanges = supabase
       .channel('document-changes')
       .on('postgres_changes', 
@@ -140,17 +132,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [fetchDocuments, fetchFolders]);
 
-  // Function to update a document
   const updateDocument = async (updatedDoc: Document) => {
     try {
       await documentService.updateDocument(updatedDoc.id, updatedDoc);
       
-      // Update documents list
       setDocuments(docs => 
         docs.map(doc => doc.id === updatedDoc.id ? updatedDoc : doc)
       );
       
-      // If the updated document is the selected document, update it
       if (selectedDocument && selectedDocument.id === updatedDoc.id) {
         setSelectedDocument(updatedDoc);
       }
@@ -169,18 +158,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Function to submit a document for approval
   const submitForApproval = async (document: Document) => {
     try {
       const updatedDoc = documentWorkflowService.submitForApproval(document);
       await documentService.updateDocument(document.id, updatedDoc);
       
-      // Update documents list
       setDocuments(docs => 
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
       
-      // Add a notification for the approval request
       addNotification({
         id: uuidv4(),
         documentId: document.id,
@@ -206,18 +192,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Function to approve a document
   const approveDocument = async (document: Document, comment: string) => {
     try {
       const updatedDoc = documentWorkflowService.approveDocument(document, comment);
       await documentService.updateDocument(document.id, updatedDoc);
       
-      // Update documents list
       setDocuments(docs => 
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
       
-      // Add a notification for the approval
       addNotification({
         id: uuidv4(),
         documentId: document.id,
@@ -240,22 +223,19 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         description: 'Failed to approve document',
         variant: 'destructive',
       });
-      throw error; // Re-throw to allow component to handle error
+      throw error;
     }
   };
 
-  // Function to reject a document
   const rejectDocument = async (document: Document, reason: string) => {
     try {
       const updatedDoc = documentWorkflowService.rejectDocument(document, reason);
       await documentService.updateDocument(document.id, updatedDoc);
       
-      // Update documents list
       setDocuments(docs => 
         docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
       );
       
-      // Add a notification for the rejection
       addNotification({
         id: uuidv4(),
         documentId: document.id,
@@ -278,16 +258,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         description: 'Failed to reject document',
         variant: 'destructive',
       });
-      throw error; // Re-throw to allow component to handle error
+      throw error;
     }
   };
 
-  // Function to add a notification
   const addNotification = (notification: DocumentNotification) => {
     setNotifications(prev => [notification, ...prev]);
   };
 
-  // Function to mark a notification as read
   const markNotificationAsRead = (notificationId: string) => {
     setNotifications(prevNotifications => 
       prevNotifications.map(notification => 
@@ -298,23 +276,19 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  // Function to clear all notifications
   const clearAllNotifications = () => {
     setNotifications([]);
   };
 
-  // Function to get documents in a specific folder
   const getDocumentsInFolder = (folderId: string | null) => {
     if (!folderId) {
-      return documents; // Return all documents if no folder selected
+      return documents;
     }
     return documents.filter(doc => doc.folder_id === folderId);
   };
 
-  // Function to create a new folder
   const createFolder = async (name: string, parentId: string | null) => {
     try {
-      // Generate a path for the folder
       let path = name;
       if (parentId) {
         const parentFolder = folders.find(f => f.id === parentId);
@@ -329,14 +303,13 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           name,
           parent_id: parentId,
           path,
-          created_by: 'current_user', // This should be replaced with the actual user ID in a real implementation
+          created_by: 'current_user',
         })
         .select()
         .single();
 
       if (error) throw error;
       
-      // Update the folders state
       setFolders(prev => [...prev, data]);
       
       toast({
@@ -356,7 +329,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Function to move a document to a folder
   const moveDocumentToFolder = async (documentId: string, folderId: string | null) => {
     try {
       const document = documents.find(doc => doc.id === documentId);
@@ -366,7 +338,6 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       await documentService.updateDocument(documentId, { folder_id: folderId });
       
-      // Update the documents state
       setDocuments(prev => 
         prev.map(doc => 
           doc.id === documentId 
@@ -389,6 +360,79 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw error;
     }
   };
+
+  const checkoutDocument = useCallback((document: Document) => {
+    try {
+      const updatedDoc = { 
+        ...document, 
+        is_checked_out: true,
+        checkout_user_id: 'current_user',
+        checkout_timestamp: new Date().toISOString() 
+      };
+      
+      setDocuments(docs => 
+        docs.map(doc => doc.id === document.id ? updatedDoc : doc)
+      );
+      
+      if (selectedDocument && selectedDocument.id === document.id) {
+        setSelectedDocument(updatedDoc);
+      }
+      
+      documentService.updateDocument(document.id, updatedDoc)
+        .catch(error => {
+          console.error('Error checking out document:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to check out document',
+            variant: 'destructive',
+          });
+        });
+    } catch (error: any) {
+      console.error('Error checking out document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to check out document',
+        variant: 'destructive',
+      });
+    }
+  }, [selectedDocument, toast]);
+
+  const checkinDocument = useCallback((document: Document) => {
+    try {
+      const updatedDoc = { 
+        ...document, 
+        is_checked_out: false,
+        checkout_user_id: null,
+        checkout_timestamp: null,
+        version: document.version + 1
+      };
+      
+      setDocuments(docs => 
+        docs.map(doc => doc.id === document.id ? updatedDoc : doc)
+      );
+      
+      if (selectedDocument && selectedDocument.id === document.id) {
+        setSelectedDocument(updatedDoc);
+      }
+      
+      documentService.updateDocument(document.id, updatedDoc)
+        .catch(error => {
+          console.error('Error checking in document:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to check in document',
+            variant: 'destructive',
+          });
+        });
+    } catch (error: any) {
+      console.error('Error checking in document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to check in document',
+        variant: 'destructive',
+      });
+    }
+  }, [selectedDocument, toast]);
 
   return (
     <DocumentContext.Provider
@@ -414,7 +458,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         retryFetchDocuments,
         getDocumentsInFolder,
         createFolder,
-        moveDocumentToFolder
+        moveDocumentToFolder,
+        checkoutDocument,
+        checkinDocument
       }}
     >
       {children}

@@ -1,116 +1,109 @@
 
 import React from 'react';
 import { DocumentActivity } from '@/types/document';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { ActivityIcon, CheckCircle, XCircle, Eye, PlusCircle, Pencil, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
+import { Eye, Edit, Trash, CheckCircle, XCircle, Upload, Download, RotateCcw, Lock, Unlock } from 'lucide-react';
 
 interface DocumentAuditTrailProps {
   activities: DocumentActivity[];
 }
 
-export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({
-  activities
-}) => {
-  // Get icon based on activity type
+export const DocumentAuditTrail: React.FC<DocumentAuditTrailProps> = ({ activities }) => {
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'create':
-        return <PlusCircle className="h-4 w-4 text-green-500" />;
+        return <Upload className="h-4 w-4 text-green-500" />;
       case 'update':
-        return <Pencil className="h-4 w-4 text-blue-500" />;
+        return <Edit className="h-4 w-4 text-blue-500" />;
+      case 'delete':
+        return <Trash className="h-4 w-4 text-red-500" />;
       case 'approve':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'reject':
         return <XCircle className="h-4 w-4 text-red-500" />;
       case 'view':
         return <Eye className="h-4 w-4 text-gray-500" />;
-      case 'delete':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'download':
+        return <Download className="h-4 w-4 text-blue-500" />;
       case 'checkout':
-        return <ActivityIcon className="h-4 w-4 text-yellow-500" />;
+        return <Lock className="h-4 w-4 text-amber-500" />;
       case 'checkin':
-        return <ActivityIcon className="h-4 w-4 text-green-500" />;
+        return <Unlock className="h-4 w-4 text-green-500" />;
+      case 'revert':
+        return <RotateCcw className="h-4 w-4 text-purple-500" />;
       default:
-        return <ActivityIcon className="h-4 w-4 text-gray-500" />;
+        return <Eye className="h-4 w-4 text-gray-500" />;
     }
   };
-
-  // Get badge variant based on activity type
-  const getActionBadgeVariant = (action: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (action) {
+  
+  const getActionDescription = (activity: DocumentActivity): string => {
+    const user = activity.user_name || activity.user_id;
+    
+    switch (activity.action) {
       case 'create':
-      case 'approve':
-        return 'default';
+        return `${user} created the document`;
       case 'update':
-      case 'view':
-      case 'checkin':
-        return 'secondary';
-      case 'reject':
+        return `${user} updated the document`;
       case 'delete':
-        return 'destructive';
+        return `${user} deleted the document`;
+      case 'approve':
+        return `${user} approved the document`;
+      case 'reject':
+        return `${user} rejected the document`;
+      case 'view':
+        return `${user} viewed the document`;
+      case 'download':
+        return `${user} downloaded the document`;
       case 'checkout':
+        return `${user} checked out the document`;
+      case 'checkin':
+        return `${user} checked in the document`;
+      case 'revert':
+        return `${user} reverted to a previous version`;
       default:
-        return 'outline';
+        return `${user} performed action: ${activity.action}`;
     }
   };
-
-  // Format action name for display
-  const formatActionName = (action: string): string => {
-    return action.charAt(0).toUpperCase() + action.slice(1);
-  };
-
+  
   return (
-    <div className="relative pl-6 border-l">
+    <div className="space-y-4">
       {activities.length > 0 ? (
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-8">
-            {activities.map((activity) => (
-              <div key={activity.id} className="relative">
-                {/* Timeline dot */}
-                <div className="absolute -left-10 bg-background p-1 rounded-full border">
-                  {getActionIcon(activity.action)}
+        activities.map(activity => (
+          <div key={activity.id} className="flex gap-4 pb-4 border-b last:border-0">
+            <div className="mt-0.5">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                {getActionIcon(activity.action)}
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                <div className="font-medium">
+                  {getActionDescription(activity)}
                 </div>
-
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <Badge variant={getActionBadgeVariant(activity.action)}>
-                      {formatActionName(activity.action)}
-                    </Badge>
-                    <span className="text-sm font-medium">
-                      {activity.timestamp 
-                        ? format(new Date(activity.timestamp), 'PPp')
-                        : 'No timestamp'
-                      }
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center text-sm">
-                      <User className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                      <span className="font-medium">
-                        {activity.user_name}
-                      </span>
-                      <span className="text-muted-foreground ml-1">
-                        ({activity.user_role})
-                      </span>
-                    </div>
-
-                    {activity.comments && (
-                      <p className="text-sm mt-1 text-muted-foreground">
-                        "{activity.comments}"
-                      </p>
-                    )}
-                  </div>
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(activity.timestamp), 'PPp')}
                 </div>
               </div>
-            ))}
+              
+              {activity.comments && (
+                <p className="text-sm text-muted-foreground mt-1 mb-2">
+                  {activity.comments}
+                </p>
+              )}
+              
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+                {activity.user_role && (
+                  <span className="px-2 py-0.5 rounded-full bg-muted">
+                    {activity.user_role}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </ScrollArea>
+        ))
       ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No activities recorded for this document</p>
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No audit trail activities to display</p>
         </div>
       )}
     </div>
