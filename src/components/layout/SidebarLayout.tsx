@@ -1,6 +1,6 @@
 
-import React, { useState, ReactNode } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
@@ -20,11 +20,7 @@ interface SidebarLink {
   permission?: string;
 }
 
-interface SidebarLayoutProps {
-  children: ReactNode;
-}
-
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
+const SidebarLayout: React.FC = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useUser();
@@ -287,9 +283,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Content - Now using Outlet for nested routes */}
         <main className="flex-1 overflow-auto bg-secondary/30 p-6">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

@@ -1,21 +1,19 @@
 
 import React from 'react';
-import { LoadingSpinner } from './loading-spinner';
 
 interface LoadingOverlayProps {
   message?: string;
-  submessage?: string;
 }
 
-export function LoadingOverlay({ 
-  message = "Loading...", 
-  submessage = "Please wait while we prepare your data" 
-}: LoadingOverlayProps) {
+export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
+  message = 'Loading...' 
+}) => {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background/95 z-50">
-      <LoadingSpinner size="lg" className="text-primary mb-4" />
-      <h2 className="text-xl font-medium text-foreground">{message}</h2>
-      <p className="text-muted-foreground mt-2">{submessage}</p>
+    <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-primary border-l-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="mt-4 text-lg font-medium">{message}</p>
+      </div>
     </div>
   );
-}
+};
