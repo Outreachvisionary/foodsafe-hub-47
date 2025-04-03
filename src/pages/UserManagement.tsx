@@ -199,9 +199,8 @@ const UserManagement: React.FC<UserManagementProps> = () => {
         <label className="block text-sm font-medium mb-1">Organization</label>
         <div className="max-w-md">
           <OrganizationSelector 
-            value={selectedOrganizationId}
+            value={selectedOrganizationId || ''}
             onChange={handleOrganizationChange}
-            className="w-full"
           />
         </div>
       </div>
@@ -311,11 +310,10 @@ const UserManagement: React.FC<UserManagementProps> = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Organization</label>
                 <OrganizationSelector 
-                  value={currentUser.organization_id || selectedOrganizationId}
+                  value={currentUser.organization_id || selectedOrganizationId || ''}
                   onChange={(orgId) => {
                     setCurrentUser({...currentUser, organization_id: orgId});
                   }}
-                  className="w-full"
                 />
               </div>
               
