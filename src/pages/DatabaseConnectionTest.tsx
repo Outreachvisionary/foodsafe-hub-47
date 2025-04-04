@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
@@ -1088,20 +1087,27 @@ const DatabaseConnectionTest: React.FC = () => {
 
   const testAuditWorkflow = async (): Promise<Partial<TestResult>> => {
     try {
-      // Check for audits with different statuses
-      const { data, error } = await supabase
+      // Check for audits with different statuses - using a modified approach without group()
+      const { data: statusData, error: statusError } = await supabase
         .from('audits')
-        .select('status, count(*)')
-        .group('status');
-
-      if (error) throw error;
-
-      const statusCounts = data.map(item => `${item.status}: ${item.count}`).join(', ');
+        .select('status');
+      
+      if (statusError) throw statusError;
+      
+      // Process the statuses manually instead of using SQL group by
+      const statusCounts: Record<string, number> = {};
+      statusData.forEach(item => {
+        statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+      });
+      
+      const statusSummary = Object.entries(statusCounts)
+        .map(([status, count]) => `${status}: ${count}`)
+        .join(', ');
 
       return {
         status: 'success',
-        message: `Successfully tested audit workflow. Status distribution: ${statusCounts}`,
-        data,
+        message: `Successfully tested audit workflow. Status distribution: ${statusSummary || 'No audit records found'}`,
+        data: { statusCounts },
       };
     } catch (error) {
       return {
@@ -1505,20 +1511,27 @@ const DatabaseConnectionTest: React.FC = () => {
 
   const testComplaintWorkflow = async (): Promise<Partial<TestResult>> => {
     try {
-      // Check for complaint status distribution
-      const { data, error } = await supabase
+      // Check for complaint status distribution - using a modified approach without group()
+      const { data: statusData, error: statusError } = await supabase
         .from('complaints')
-        .select('status, count(*)')
-        .group('status');
-
-      if (error) throw error;
-
-      const statusCounts = data.map(item => `${item.status}: ${item.count}`).join(', ');
+        .select('status');
+      
+      if (statusError) throw statusError;
+      
+      // Process the statuses manually instead of using SQL group by
+      const statusCounts: Record<string, number> = {};
+      statusData.forEach(item => {
+        statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+      });
+      
+      const statusSummary = Object.entries(statusCounts)
+        .map(([status, count]) => `${status}: ${count}`)
+        .join(', ');
 
       return {
         status: 'success',
-        message: `Successfully tested complaint workflow. Status distribution: ${statusCounts || 'No complaints found'}`,
-        data,
+        message: `Successfully tested complaint workflow. Status distribution: ${statusSummary || 'No complaints found'}`,
+        data: { statusCounts },
       };
     } catch (error) {
       return {
