@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -162,7 +161,7 @@ const CourseDelivery = () => {
       toast({
         title: "Course Completed",
         description: "Congratulations! You've completed all modules in this course.",
-        variant: "success",
+        variant: "default",
       });
     }
   };

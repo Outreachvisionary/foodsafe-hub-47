@@ -9,10 +9,10 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useUser();
+  const { user, loading } = useUser(); // Change isLoading to loading to match UserContext
   const location = useLocation();
 
-  if (isLoading) {
+  if (loading) {
     return <Loading />;
   }
 

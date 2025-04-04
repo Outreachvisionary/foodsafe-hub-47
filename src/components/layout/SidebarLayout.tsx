@@ -1,10 +1,14 @@
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import AppSidebar from '@/components/layout/AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const SidebarLayout: React.FC = () => {
+interface SidebarLayoutProps {
+  children?: ReactNode; // Make children prop optional
+}
+
+const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
@@ -15,7 +19,7 @@ const SidebarLayout: React.FC = () => {
       {/* Main content */}
       <div className="flex-1 overflow-auto">
         <div className="p-4">
-          <Outlet />
+          {children ? children : <Outlet />}
         </div>
       </div>
     </div>
