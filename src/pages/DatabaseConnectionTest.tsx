@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
@@ -49,7 +50,7 @@ const TestResultItem: React.FC<{ result: TestResult }> = ({ result }) => {
 const DatabaseConnectionTest: React.FC = () => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab: React.Dispatch<React.SetStateAction<'db-connection' | 'backend-frontend'>>] = useState<'db-connection' | 'backend-frontend'>('db-connection');
+  const [activeTab, setActiveTab] = useState<'db-connection' | 'backend-frontend'>('db-connection');
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [facilities, setFacilities] = useState<any[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
