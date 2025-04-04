@@ -12,6 +12,11 @@ import { useAuditTraining } from '@/hooks/useAuditTraining';
 import AuditTrainingAlert from '@/components/training/AuditTrainingAlert';
 import AuditTrainingTasks from '@/components/training/AuditTrainingTasks';
 import { TrainingProvider } from '@/contexts/TrainingContext';
+import TrainingMatrix from '@/components/training/TrainingMatrix';
+import CourseCreation from '@/components/training/CourseCreation';
+import UserEnrollment from '@/components/training/UserEnrollment';
+import CourseDelivery from '@/components/training/CourseDelivery';
+import CertificationManagement from '@/components/training/CertificationManagement';
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -48,17 +53,26 @@ const TrainingModule = () => {
         
         <TrainingProvider>
           <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
-            <TabsList className="mb-8">
+            <TabsList className="mb-8 flex flex-wrap">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="matrix">Training Matrix</TabsTrigger>
+              <TabsTrigger value="courses">Course Library</TabsTrigger>
+              <TabsTrigger value="course-creation">Course Creation</TabsTrigger>
+              <TabsTrigger value="enrollment">User Enrollment</TabsTrigger>
+              <TabsTrigger value="delivery">Course Delivery</TabsTrigger>
               <TabsTrigger value="records">Training Records</TabsTrigger>
               <TabsTrigger value="plans">Training Plans</TabsTrigger>
-              <TabsTrigger value="courses">Course Library</TabsTrigger>
+              <TabsTrigger value="certifications">Certification Management</TabsTrigger>
               <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
               <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
             </TabsList>
             
             <TabsContent value="dashboard">
               <TrainingDashboard />
+            </TabsContent>
+            
+            <TabsContent value="matrix">
+              <TrainingMatrix />
             </TabsContent>
             
             <TabsContent value="records">
@@ -72,7 +86,23 @@ const TrainingModule = () => {
             <TabsContent value="courses">
               <CourseLibrary />
             </TabsContent>
+
+            <TabsContent value="course-creation">
+              <CourseCreation />
+            </TabsContent>
+
+            <TabsContent value="enrollment">
+              <UserEnrollment />
+            </TabsContent>
+
+            <TabsContent value="delivery">
+              <CourseDelivery />
+            </TabsContent>
             
+            <TabsContent value="certifications">
+              <CertificationManagement />
+            </TabsContent>
+
             <TabsContent value="assessments">
               <CompetencyAssessments />
             </TabsContent>
