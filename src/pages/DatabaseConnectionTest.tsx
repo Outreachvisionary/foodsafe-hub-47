@@ -137,20 +137,20 @@ const DatabaseConnectionTest: React.FC = () => {
         if (isSuccess) {
           return {
             module: module,
-            status: 'pass',
+            status: 'pass' as const,
             message: `Successfully connected to ${module} module.`,
           };
         } else {
           return {
             module: module,
-            status: 'fail',
+            status: 'fail' as const,
             message: `Failed to connect to ${module} module.`,
           };
         }
       } catch (error: any) {
         return {
           module: module,
-          status: 'fail',
+          status: 'fail' as const,
           message: `Error connecting to ${module} module: ${error.message}`,
         };
       }
