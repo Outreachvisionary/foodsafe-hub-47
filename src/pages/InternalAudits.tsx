@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +11,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useForm } from 'react-hook-form';
+import { format, addDays } from 'date-fns';
 import { 
   FileCheck, CalendarClock, ListChecks, ShieldCheck, Camera, Check, 
   Download, FilePlus, Filter, ClipboardList, FileText, Search, 
-  PlusCircle, Calendar, AlertTriangle, Info, Clock, RefreshCw
+  PlusCircle, Calendar as CalendarIcon, AlertTriangle, Info, Clock, RefreshCw,
+  ChevronDown, Pencil, X
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import AuditDetailsDialog from '@/components/audits/AuditDetailsDialog';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const mockAudits = [
   {
@@ -262,6 +269,14 @@ const InternalAudits = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedAudit, setSelectedAudit] = useState(null);
   const [isAuditDetailsOpen, setIsAuditDetailsOpen] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+  const [auditors, setAuditors] = useState([]);
+  const [isPreparationDialogOpen, setIsPreparationDialogOpen] = useState(false);
+  const [selectedPreparationAudit, setSelectedPreparationAudit] = useState(null);
+  const [preparationChecklist, setPreparationChecklist] = useState([]);
+  const [isExecutionDialogOpen, setIsExecutionDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -275,6 +290,31 @@ const InternalAudits = () => {
     }
   });
 
+  const preparationForm = useForm({
+    defaultValues: {
+      documents: {},
+      equipment: {},
+      notes: '',
+    }
+  });
+
+  const executionForm = useForm({
+    defaultValues: {
+      checkpoints: [],
+      findings: [],
+    }
+  });
+
+  const reportForm = useForm({
+    defaultValues: {
+      title: '',
+      summary: '',
+      findings: [],
+      recommendations: [],
+      signature: '',
+    }
+  });
+
   const watchedTemplate = form.watch('template');
   
   useEffect(() => {
@@ -282,6 +322,30 @@ const InternalAudits = () => {
       form.setValue('recurrence', recommendedRecurrence[watchedTemplate]);
     }
   }, [watchedTemplate, form]);
+
+  useEffect(() => {
+    // Here we would fetch auditors from the database in a real implementation
+    setAuditors([
+      { id: '1', name: 'John Doe', role: 'Lead Auditor' },
+      { id: '2', name: 'Jane Smith', role: 'Quality Auditor' },
+      { id: '3', name: 'Robert Johnson', role: 'Food Safety Auditor' },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    // This would be replaced with a real API call in production
+    if (selectedPreparationAudit) {
+      const checklist = [
+        { id: 'doc1', type: 'document', name: 'HACCP Plan', required: true, completed: false },
+        { id: 'doc2', type: 'document', name: 'Previous Audit Reports', required: true, completed: false },
+        { id: 'doc3', type: 'document', name: 'Process Flow Diagrams', required: true, completed: false },
+        { id: 'eq1', type: 'equipment', name: 'Thermometer', required: true, completed: false },
+        { id: 'eq2', type: 'equipment', name: 'pH Meter', required: false, completed: false },
+        { id: 'eq3', type: 'equipment', name: 'Camera', required: true, completed: false },
+      ];
+      setPreparationChecklist(checklist);
+    }
+  }, [selectedPreparationAudit]);
 
   const filteredAudits = mockAudits.filter(audit => {
     const query = searchQuery.toLowerCase();
@@ -308,6 +372,20 @@ const InternalAudits = () => {
   const onSubmit = (data) => {
     console.log('Form submitted:', data);
     
+    // Here we would save to Supabase in a real implementation
+    // const { data: newAudit, error } = await supabase
+    //   .from('audit_schedules')
+    //   .insert([{
+    //     title: data.title,
+    //     standard: data.standard,
+    //     template: data.template,
+    //     scheduled_date: data.scheduledDate,
+    //     assigned_to: data.assignedTo,
+    //     notes: data.notes,
+    //     recurrence: data.recurrence,
+    //   }])
+    //   .select();
+
     toast({
       title: "Audit Scheduled",
       description: `${data.title} has been scheduled for ${data.scheduledDate}`,
@@ -315,6 +393,42 @@ const InternalAudits = () => {
     
     setIsNewAuditDialogOpen(false);
     form.reset();
+  };
+
+  const handlePreparationSubmit = (data) => {
+    console.log('Preparation form submitted:', data);
+    
+    toast({
+      title: "Preparation Complete",
+      description: "Audit preparation has been saved and marked as complete.",
+    });
+    
+    setIsPreparationDialogOpen(false);
+    preparationForm.reset();
+  };
+
+  const handleExecutionSubmit = (data) => {
+    console.log('Execution form submitted:', data);
+    
+    toast({
+      title: "Audit Execution Updated",
+      description: "Audit checkpoints and findings have been saved.",
+    });
+    
+    setIsExecutionDialogOpen(false);
+    executionForm.reset();
+  };
+
+  const handleReportSubmit = (data) => {
+    console.log('Report form submitted:', data);
+    
+    toast({
+      title: "Audit Report Generated",
+      description: "The audit report has been generated and is ready for review.",
+    });
+    
+    setIsReportDialogOpen(false);
+    reportForm.reset();
   };
 
   const handleStandardChange = (value) => {
@@ -332,6 +446,21 @@ const InternalAudits = () => {
       title: "Audits Auto-Scheduled",
       description: "Required audits have been automatically scheduled based on FSMS requirements",
     });
+  };
+
+  const handleStartPreparation = (audit) => {
+    setSelectedPreparationAudit(audit);
+    setIsPreparationDialogOpen(true);
+  };
+
+  const handleStartExecution = (audit) => {
+    setSelectedAudit(audit);
+    setIsExecutionDialogOpen(true);
+  };
+
+  const handleGenerateReport = (audit) => {
+    setSelectedAudit(audit);
+    setIsReportDialogOpen(true);
   };
 
   const handleViewAuditDetails = (audit) => {
@@ -352,6 +481,12 @@ const InternalAudits = () => {
       default:
         return 'text-gray-600 bg-gray-100';
     }
+  };
+
+  const toggleChecklistItem = (id) => {
+    setPreparationChecklist(prev => prev.map(item => 
+      item.id === id ? { ...item, completed: !item.completed } : item
+    ));
   };
 
   return (
@@ -504,19 +639,74 @@ const InternalAudits = () => {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <FormField
                         control={form.control}
                         name="scheduledDate"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col">
                             <FormLabel>Scheduled Date</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input type="date" {...field} />
-                                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                              </div>
-                            </FormControl>
+                            <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(new Date(field.value), "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value ? new Date(field.value) : undefined}
+                                  onSelect={(date) => {
+                                    field.onChange(date ? format(date, "yyyy-MM-dd") : "");
+                                    setIsDatePopoverOpen(false);
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="assignedTo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Assign To</FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select auditor" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {auditors.map(auditor => (
+                                  <SelectItem key={auditor.id} value={auditor.name}>
+                                    {auditor.name} - {auditor.role}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -524,54 +714,41 @@ const InternalAudits = () => {
                       
                       <FormField
                         control={form.control}
-                        name="assignedTo"
+                        name="recurrence"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Assign To</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter name" {...field} />
-                            </FormControl>
+                            <FormLabel>Recurrence</FormLabel>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select recurrence" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="One-time">One-time</SelectItem>
+                                <SelectItem value="Weekly">Weekly</SelectItem>
+                                <SelectItem value="Monthly">Monthly</SelectItem>
+                                <SelectItem value="Quarterly">Quarterly</SelectItem>
+                                <SelectItem value="Every 6 months">Every 6 months</SelectItem>
+                                <SelectItem value="Annual">Annual</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              {watchedTemplate && recommendedRecurrence[watchedTemplate] && (
+                                <span className="text-amber-600 flex items-center gap-1">
+                                  <Info className="h-3 w-3" />
+                                  {watchedTemplate} is typically {recommendedRecurrence[watchedTemplate].toLowerCase()}
+                                </span>
+                              )}
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="recurrence"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Recurrence</FormLabel>
-                          <Select 
-                            value={field.value} 
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select recurrence" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="One-time">One-time</SelectItem>
-                              <SelectItem value="Every 6 months">Every 6 months</SelectItem>
-                              <SelectItem value="Quarterly">Quarterly</SelectItem>
-                              <SelectItem value="Monthly">Monthly</SelectItem>
-                              <SelectItem value="Annual">Annual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            {watchedTemplate && recommendedRecurrence[watchedTemplate] && (
-                              <span className="text-amber-600 flex items-center gap-1">
-                                <Info className="h-3 w-3" />
-                                {watchedTemplate} is typically {recommendedRecurrence[watchedTemplate].toLowerCase()}
-                              </span>
-                            )}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     
                     <FormField
                       control={form.control}
@@ -665,6 +842,10 @@ const InternalAudits = () => {
               <ClipboardList className="h-4 w-4" />
               <span>Templates</span>
             </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              <span>Calendar</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="upcoming" className="space-y-6">
@@ -685,7 +866,7 @@ const InternalAudits = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Scheduled Date</TableHead>
                       <TableHead>Assigned To</TableHead>
-                      <TableHead>Recurrence</TableHead>
+                      <TableHead>Workflow</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -709,30 +890,70 @@ const InternalAudits = () => {
                           <TableCell>{audit.scheduledDate}</TableCell>
                           <TableCell>{audit.assignedTo || 'Unassigned'}</TableCell>
                           <TableCell>
-                            {audit.recurrence ? (
-                              <span className="text-xs text-gray-500">{audit.recurrence}</span>
-                            ) : (
-                              <span className="text-xs text-gray-500">One-time</span>
-                            )}
+                            <Select defaultValue="preparation">
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue placeholder="Select workflow" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="preparation">Preparation</SelectItem>
+                                <SelectItem value="execution">Execution</SelectItem>
+                                <SelectItem value="findings">Findings</SelectItem>
+                                <SelectItem value="report">Report</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                title="Start Audit"
-                                onClick={() => handleViewAuditDetails(audit)}
-                              >
-                                <ListChecks className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                title="View Details"
-                                onClick={() => handleViewAuditDetails(audit)}
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      onClick={() => handleStartPreparation(audit)}
+                                    >
+                                      <ClipboardList className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Preparation Checklist</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      onClick={() => handleStartExecution(audit)}
+                                    >
+                                      <ListChecks className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Start Execution</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      onClick={() => handleViewAuditDetails(audit)}
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View Details</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -792,17 +1013,35 @@ const InternalAudits = () => {
                           <TableCell>{audit.assignedTo}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                title="View Report"
-                                onClick={() => handleViewAuditDetails(audit)}
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                              <Button variant="outline" size="icon" title="Download Report">
-                                <Download className="h-4 w-4" />
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon"
+                                      onClick={() => handleGenerateReport(audit)}
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View Report</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Download Report</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -893,9 +1132,39 @@ const InternalAudits = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="calendar" className="space-y-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Audit Calendar</CardTitle>
+                <CardDescription>
+                  View and manage scheduled audits in a calendar view
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md p-4">
+                  {/* This would be replaced with an actual calendar component in production */}
+                  <div className="text-center p-10 border-2 border-dashed rounded-md bg-gray-50">
+                    <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-semibold text-gray-900">Calendar View</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      This would be a fully interactive calendar displaying all scheduled audits.
+                    </p>
+                    <div className="mt-6">
+                      <Button>
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add to Calendar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
       
+      {/* Audit Details Dialog */}
       {selectedAudit && (
         <AuditDetailsDialog 
           audit={selectedAudit}
@@ -903,6 +1172,319 @@ const InternalAudits = () => {
           onClose={() => setIsAuditDetailsOpen(false)}
         />
       )}
+
+      {/* Preparation Dialog */}
+      <Dialog open={isPreparationDialogOpen} onOpenChange={setIsPreparationDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Audit Preparation Checklist</DialogTitle>
+            <DialogDescription>
+              Complete all preparation steps before proceeding to audit execution.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...preparationForm}>
+            <form onSubmit={preparationForm.handleSubmit(handlePreparationSubmit)} className="space-y-4">
+              <div className="border rounded-md p-4">
+                <h3 className="text-sm font-semibold mb-2">Required Documents</h3>
+                <div className="space-y-2">
+                  {preparationChecklist
+                    .filter(item => item.type === 'document')
+                    .map(doc => (
+                      <div key={doc.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={doc.id}
+                          checked={doc.completed}
+                          onChange={() => toggleChecklistItem(doc.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <label htmlFor={doc.id} className="text-sm font-medium text-gray-700">
+                          {doc.name}
+                          {doc.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        <Button type="button" variant="ghost" size="sm" className="ml-auto">
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </div>
+                  ))}
+                </div>
+
+                <h3 className="text-sm font-semibold mt-4 mb-2">Required Equipment</h3>
+                <div className="space-y-2">
+                  {preparationChecklist
+                    .filter(item => item.type === 'equipment')
+                    .map(eq => (
+                      <div key={eq.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={eq.id}
+                          checked={eq.completed}
+                          onChange={() => toggleChecklistItem(eq.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <label htmlFor={eq.id} className="text-sm font-medium text-gray-700">
+                          {eq.name}
+                          {eq.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                      </div>
+                  ))}
+                </div>
+              </div>
+              
+              <FormField
+                control={preparationForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Notes</FormLabel>
+                    <FormControl>
+                      <textarea 
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                        placeholder="Any additional preparation notes..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsPreparationDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={preparationChecklist.some(item => item.required && !item.completed)}
+                >
+                  Complete Preparation
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Execution Dialog */}
+      <Dialog open={isExecutionDialogOpen} onOpenChange={setIsExecutionDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Audit Execution</DialogTitle>
+            <DialogDescription>
+              Record checkpoints and findings during the audit execution.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...executionForm}>
+            <form onSubmit={executionForm.handleSubmit(handleExecutionSubmit)} className="space-y-4">
+              <div className="border rounded-md p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-semibold">Audit Checkpoints</h3>
+                  <Button type="button" variant="outline" size="sm">
+                    <PlusCircle className="h-4 w-4 mr-1" />
+                    Add Checkpoint
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* Example checkpoints - would be dynamic in production */}
+                  <div className="border rounded-md p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium">Production Area - Lines 1-3</h4>
+                      <div className="flex space-x-1">
+                        <Button type="button" variant="ghost" size="sm">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm">
+                          <Camera className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                          Finding
+                        </Badge>
+                        <span className="text-xs">Sanitation records incomplete for line 2</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                          Compliant
+                        </Badge>
+                        <span className="text-xs">Temperature logs properly maintained</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium">Storage Area - Cold Room</h4>
+                      <div className="flex space-x-1">
+                        <Button type="button" variant="ghost" size="sm">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm">
+                          <Camera className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                          Critical
+                        </Badge>
+                        <span className="text-xs">Temperature exceeding limits by 3°C</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsExecutionDialogOpen(false)}>
+                  Save Draft
+                </Button>
+                <Button type="submit">
+                  Complete Execution
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Generation Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Audit Report</DialogTitle>
+            <DialogDescription>
+              Review and generate the final audit report.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...reportForm}>
+            <form onSubmit={reportForm.handleSubmit(handleReportSubmit)} className="space-y-4">
+              <FormField
+                control={reportForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Report Title</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., SQF Internal Audit Q2 2023 - Final Report" 
+                        {...field}
+                        defaultValue={selectedAudit ? `${selectedAudit.title} - Final Report` : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={reportForm.control}
+                name="summary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Executive Summary</FormLabel>
+                    <FormControl>
+                      <textarea 
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                        placeholder="Summarize the audit purpose, scope, and key findings..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="border rounded-md p-4">
+                <h3 className="text-sm font-semibold mb-2">Findings Summary</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Area</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                          Critical
+                        </Badge>
+                      </TableCell>
+                      <TableCell>Temperature exceeding limits by 3°C</TableCell>
+                      <TableCell>Cold Room</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                          Major
+                        </Badge>
+                      </TableCell>
+                      <TableCell>Sanitation records incomplete for line 2</TableCell>
+                      <TableCell>Production</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <div className="border rounded-md p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-semibold">Recommendations</h3>
+                  <Button type="button" variant="outline" size="sm">
+                    <PlusCircle className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                <ul className="space-y-2 list-disc list-inside text-sm">
+                  <li>Implement immediate corrective action for cold room temperature control</li>
+                  <li>Provide additional training on sanitation record keeping</li>
+                  <li>Conduct follow-up verification within 7 days</li>
+                </ul>
+              </div>
+              
+              <FormField
+                control={reportForm.control}
+                name="signature"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Digital Signature</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Type your full name to sign" 
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      By typing your name above, you are digitally signing this report.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <div className="flex space-x-2">
+                  <Button type="button" variant="outline">
+                    <Download className="h-4 w-4 mr-1" />
+                    Export PDF
+                  </Button>
+                  <Button type="submit">
+                    Generate Report
+                  </Button>
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

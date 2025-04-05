@@ -11,18 +11,21 @@ interface ExpiringCertification {
   employee: string;
   expiryDate: string;
   daysLeft: number;
+  auditRequired?: boolean;
 }
 
 interface ExpiringCertificationsCardProps {
   count: number;
   certifications?: ExpiringCertification[];
   onViewAll?: () => void;
+  onScheduleAudit?: (certification: ExpiringCertification) => void;
 }
 
 const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({ 
   count, 
   certifications,
-  onViewAll 
+  onViewAll,
+  onScheduleAudit
 }) => {
   // Sample expiring certifications data - show only the next 3
   const expiringCertifications = certifications || [
@@ -31,21 +34,24 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
       name: 'Food Safety Manager Certification', 
       employee: 'Robert Johnson',
       expiryDate: '2025-05-20', 
-      daysLeft: 14
+      daysLeft: 14,
+      auditRequired: true
     },
     { 
       id: '2', 
       name: 'HACCP Certification', 
       employee: 'Maria Garcia',
       expiryDate: '2025-05-28', 
-      daysLeft: 22
+      daysLeft: 22,
+      auditRequired: true
     },
     { 
       id: '3', 
       name: 'ISO 9001 Lead Auditor', 
       employee: 'John Smith',
       expiryDate: '2025-06-05', 
-      daysLeft: 30
+      daysLeft: 30,
+      auditRequired: false
     }
   ];
 
@@ -84,7 +90,7 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
                 ) : (
                   <Calendar className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                 )}
-                <div>
+                <div className="flex-grow">
                   <h4 className="text-sm font-medium">{cert.name}</h4>
                   <p className="text-xs text-muted-foreground">{cert.employee}</p>
                   <div className="flex items-center mt-1">
@@ -98,6 +104,16 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
                     </span>
                   </div>
                 </div>
+                {cert.auditRequired && onScheduleAudit && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs mt-0.5"
+                    onClick={() => onScheduleAudit(cert)}
+                  >
+                    Schedule Audit
+                  </Button>
+                )}
               </div>
             ))
           )}

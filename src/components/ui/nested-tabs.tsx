@@ -17,15 +17,17 @@ interface NestedTabsProps extends React.ComponentPropsWithoutRef<typeof Tabs> {
     }>;
   }[];
   onTabChange?: (value: string) => void;
+  defaultOpenGroups?: string[];
 }
 
 export function NestedTabs({ 
   tabs, 
   onTabChange, 
   className, 
+  defaultOpenGroups = [],
   ...props 
 }: NestedTabsProps) {
-  const [openGroups, setOpenGroups] = React.useState<string[]>([]);
+  const [openGroups, setOpenGroups] = React.useState<string[]>(defaultOpenGroups);
   const [activeTab, setActiveTab] = React.useState<string>(props.defaultValue as string || "");
 
   const toggleGroup = (groupId: string) => {
