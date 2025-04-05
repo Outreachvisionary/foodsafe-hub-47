@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { NestedTabs } from '@/components/ui/nested-tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import TrainingDashboard from '@/components/training/TrainingDashboard';
 import TrainingRecords from '@/components/training/TrainingRecords';
 import TrainingPlans from '@/components/training/TrainingPlans';
@@ -17,6 +18,17 @@ import CourseCreation from '@/components/training/CourseCreation';
 import UserEnrollment from '@/components/training/UserEnrollment';
 import CourseDelivery from '@/components/training/CourseDelivery';
 import CertificationManagement from '@/components/training/CertificationManagement';
+import { 
+  BarChart, 
+  BookOpen, 
+  GraduationCap, 
+  Users, 
+  FileText,
+  Award, 
+  LayoutDashboard, 
+  PieChart, 
+  Lightbulb
+} from 'lucide-react';
 
 const TrainingModule = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -29,6 +41,93 @@ const TrainingModule = () => {
   const criticalTasks = auditTrainingTasks.filter(t => t.priority === 'critical').length;
   const highPriorityTasks = auditTrainingTasks.filter(t => t.priority === 'high').length;
 
+  // Navigation tabs with parent/child relationships
+  const navigationTabs = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <LayoutDashboard className="h-4 w-4" />
+    },
+    {
+      id: "training-management",
+      label: "Training Management",
+      icon: <GraduationCap className="h-4 w-4" />,
+      children: [
+        {
+          id: "matrix",
+          label: "Training Matrix",
+          icon: <BarChart className="h-4 w-4" />
+        },
+        {
+          id: "courses",
+          label: "Course Library",
+          icon: <BookOpen className="h-4 w-4" />
+        },
+        {
+          id: "course-creation",
+          label: "Course Creation",
+          icon: <Lightbulb className="h-4 w-4" />
+        },
+        {
+          id: "delivery",
+          label: "Course Delivery",
+          icon: <BookOpen className="h-4 w-4" />
+        }
+      ]
+    },
+    {
+      id: "user-management",
+      label: "User Management",
+      icon: <Users className="h-4 w-4" />,
+      children: [
+        {
+          id: "enrollment",
+          label: "User Enrollment",
+          icon: <Users className="h-4 w-4" />
+        },
+        {
+          id: "assessments",
+          label: "Competency Assessments",
+          icon: <FileText className="h-4 w-4" />
+        }
+      ]
+    },
+    {
+      id: "compliance-management",
+      label: "Compliance Management",
+      icon: <Award className="h-4 w-4" />,
+      children: [
+        {
+          id: "certifications",
+          label: "Certification Management",
+          icon: <Award className="h-4 w-4" />
+        },
+        {
+          id: "reports",
+          label: "Reports & Analytics",
+          icon: <PieChart className="h-4 w-4" />
+        }
+      ]
+    },
+    {
+      id: "records-group",
+      label: "Records",
+      icon: <FileText className="h-4 w-4" />,
+      children: [
+        {
+          id: "records",
+          label: "Training Records",
+          icon: <FileText className="h-4 w-4" />
+        },
+        {
+          id: "plans",
+          label: "Training Plans",
+          icon: <FileText className="h-4 w-4" />
+        }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 
@@ -38,35 +137,31 @@ const TrainingModule = () => {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Alert for audit-related training */}
-        <AuditTrainingAlert 
-          count={auditTrainingTasks.length} 
-          criticalTasks={criticalTasks} 
-        />
+        {auditTrainingTasks.length > 0 && (
+          <AuditTrainingAlert 
+            count={auditTrainingTasks.length} 
+            criticalTasks={criticalTasks} 
+          />
+        )}
         
         {/* Audit training tasks */}
-        <AuditTrainingTasks 
-          tasks={auditTrainingTasks}
-          onViewDetails={() => setActiveTab("plans")}
-          criticalTasks={criticalTasks}
-          highPriorityTasks={highPriorityTasks}
-        />
+        {auditTrainingTasks.length > 0 && (
+          <AuditTrainingTasks 
+            tasks={auditTrainingTasks}
+            onViewDetails={() => setActiveTab("plans")}
+            criticalTasks={criticalTasks}
+            highPriorityTasks={highPriorityTasks}
+          />
+        )}
         
         <TrainingProvider>
-          <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full animate-fade-in">
-            <TabsList className="mb-8 flex flex-wrap">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="matrix">Training Matrix</TabsTrigger>
-              <TabsTrigger value="courses">Course Library</TabsTrigger>
-              <TabsTrigger value="course-creation">Course Creation</TabsTrigger>
-              <TabsTrigger value="enrollment">User Enrollment</TabsTrigger>
-              <TabsTrigger value="delivery">Course Delivery</TabsTrigger>
-              <TabsTrigger value="records">Training Records</TabsTrigger>
-              <TabsTrigger value="plans">Training Plans</TabsTrigger>
-              <TabsTrigger value="certifications">Certification Management</TabsTrigger>
-              <TabsTrigger value="assessments">Competency Assessments</TabsTrigger>
-              <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
-            </TabsList>
-            
+          <NestedTabs 
+            tabs={navigationTabs} 
+            defaultValue="dashboard" 
+            value={activeTab} 
+            onTabChange={setActiveTab}
+            className="w-full animate-fade-in"
+          >
             <TabsContent value="dashboard">
               <TrainingDashboard />
             </TabsContent>
@@ -110,7 +205,7 @@ const TrainingModule = () => {
             <TabsContent value="reports">
               <ReportsAnalytics />
             </TabsContent>
-          </Tabs>
+          </NestedTabs>
         </TrainingProvider>
       </main>
     </div>
