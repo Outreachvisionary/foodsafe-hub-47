@@ -1,4 +1,3 @@
-
 import { BatchTrace } from '@/types/traceability';
 
 export interface ValidationResult {
@@ -167,7 +166,8 @@ export const validateAllScenarios = (batch: BatchTrace): Record<string, Validati
     }
     
     if (scenario.id === 'recall-readiness') {
-      const recordingIssues = !batch.suppliers || batch.suppliers.some(s => !s.contact_email);
+      // Check for missing contact information in suppliers
+      const recordingIssues = !batch.suppliers || batch.suppliers.some(s => !s.name);
       if (recordingIssues) {
         scenarioResult.issues.push('Missing contact information for rapid recalls');
         scenarioResult.details.recommendedActions.push('Add contact information for all suppliers');

@@ -37,8 +37,13 @@ const ComplianceValidation: React.FC<ComplianceValidationProps> = ({ batch }) =>
   };
 
   const runScenarioTests = () => {
+    if (!batch) {
+      toast.error('No batch selected for validation');
+      return;
+    }
+    
     try {
-      const results = validateAllScenarios();
+      const results = validateAllScenarios(batch);
       setScenarioResults(results);
       toast.success('Scenario tests complete');
     } catch (error) {
