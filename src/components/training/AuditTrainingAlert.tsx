@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AuditTrainingAlertProps {
   count: number;
@@ -10,14 +10,14 @@ interface AuditTrainingAlertProps {
 
 const AuditTrainingAlert: React.FC<AuditTrainingAlertProps> = ({ count, criticalTasks }) => {
   if (count === 0) return null;
-
+  
   return (
-    <Alert className="mb-6 border-amber-200 bg-amber-50">
-      <AlertTriangle className="h-4 w-4 text-amber-600" />
-      <AlertTitle className="text-amber-800">Audit-Related Training</AlertTitle>
-      <AlertDescription className="text-amber-700">
-        There {count === 1 ? 'is' : 'are'} {count} training task{count !== 1 ? 's' : ''} assigned from audit findings.
-        {criticalTasks > 0 && ` ${criticalTasks} ${criticalTasks === 1 ? 'task requires' : 'tasks require'} immediate attention.`}
+    <Alert variant="destructive" className="mb-6">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Audit-Related Training Required</AlertTitle>
+      <AlertDescription>
+        You have {count} training tasks pending from recent audits
+        {criticalTasks > 0 && `, including ${criticalTasks} critical tasks that require immediate attention`}.
       </AlertDescription>
     </Alert>
   );

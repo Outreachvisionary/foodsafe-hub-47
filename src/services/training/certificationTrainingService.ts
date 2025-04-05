@@ -1,104 +1,93 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Employee,
-  TrainingRecord,
-  TrainingStatus
-} from '@/types/training';
 
-/**
- * Service for certification and recertification training
- */
-export const certificationTrainingService = {
+const certificationTrainingService = {
   /**
-   * Check for expired certifications and create retraining records
+   * Process expiring certifications
    */
-  processExpiringCertifications: async (
-    employees: Employee[],
-    daysBeforeExpiry: number = 30
-  ): Promise<TrainingRecord[]> => {
-    const now = new Date();
-    const expiryThreshold = new Date(now.getTime() + daysBeforeExpiry * 24 * 60 * 60 * 1000);
-    
-    const trainingRecords: TrainingRecord[] = [];
-    
-    // Process each employee
-    for (const employee of employees) {
-      if (!employee.certifications) continue;
+  processExpiringCertifications: async (daysThreshold: number = 30): Promise<boolean> => {
+    try {
+      // Get certifications that expire within the threshold
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + daysThreshold);
       
-      for (const cert of employee.certifications) {
-        const expiryDate = new Date(cert.expiryDate);
+      const { data: certifications, error } = await supabase
+        .from('certifications')
+        .select('*')
+        .eq('status', 'Valid')
+        .lt('expiry_date', expiryDate.toISOString())
+        .eq('reminder_sent', false);
         
-        // If certification is expiring soon and requires recertification
-        if (expiryDate <= expiryThreshold && cert.requiresRecertification) {
-          const record: TrainingRecord = {
-            id: crypto.randomUUID(),
-            session_id: `recert-session-${cert.id}`,
-            employee_id: employee.id,
-            employee_name: employee.name,
-            assigned_date: new Date().toISOString(),
-            due_date: new Date(expiryDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days before expiry
-            status: 'Not Started' as TrainingStatus,
-          };
+      if (error) throw error;
+      
+      if (certifications && certifications.length > 0) {
+        // Update reminder_sent flag
+        const { error: updateError } = await supabase
+          .from('certifications')
+          .update({ reminder_sent: true })
+          .in('id', certifications.map(cert => cert.id));
           
-          trainingRecords.push(record);
-        }
+        if (updateError) throw updateError;
+        
+        // In a real app, send notifications here
+        console.log(`Processed ${certifications.length} expiring certifications`);
       }
+      
+      return true;
+    } catch (error) {
+      console.error('Error processing expiring certifications:', error);
+      return false;
     }
-    
-    // Save the records to Supabase if there are any
-    if (trainingRecords.length > 0) {
-      const { error } = await supabase
-        .from('training_records')
-        .insert(trainingRecords);
-
-      if (error) {
-        console.error('Error creating training records for expiring certifications:', error);
-        // Return empty array on error
-        return [];
-      }
-    }
-    
-    return trainingRecords;
   },
   
   /**
-   * Create remediation training assignments for failed assessments
+   * Create remediation training for failed assessments
    */
-  createRemediationTraining: async (
-    failedAssessments: { 
-      employeeId: string;
-      employeeName: string;
-      courseId?: string;
-      score: number;
-      assessmentDate: string;
-    }[]
-  ): Promise<TrainingRecord[]> => {
-    const records = failedAssessments.map(assessment => ({
-      id: crypto.randomUUID(),
-      session_id: crypto.randomUUID(),
-      employee_id: assessment.employeeId,
-      employee_name: assessment.employeeName,
-      assigned_date: new Date().toISOString(),
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-      status: 'Not Started' as TrainingStatus,
-    }));
-
-    // Save the records to Supabase if there are any
-    if (records.length > 0) {
-      const { error } = await supabase
-        .from('training_records')
-        .insert(records);
-
-      if (error) {
-        console.error('Error creating remediation training records:', error);
-        // Return empty array on error
-        return [];
+  createRemediationTraining: async (failedAssessmentIds: string[]): Promise<boolean> => {
+    try {
+      // Get the failed assessments
+      const { data: failedAssessments, error } = await supabase
+        .from('training_progress')
+        .select(`
+          *,
+          assignment:assignment_id(employee_id, employee_name, course_id)
+        `)
+        .in('id', failedAssessmentIds)
+        .eq('pass_fail', false);
+        
+      if (error) throw error;
+      
+      if (failedAssessments && failedAssessments.length > 0) {
+        // Create remediation assignments
+        const remediationAssignments = failedAssessments.map(assessment => {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14); // 2 weeks for remediation
+          
+          return {
+            employee_id: assessment.assignment.employee_id,
+            employee_name: assessment.assignment.employee_name,
+            course_id: assessment.assignment.course_id,
+            due_date: dueDate.toISOString(),
+            status: 'Not Started',
+            assigned_by: 'System',
+            is_remediation: true,
+            original_assessment_id: assessment.id
+          };
+        });
+        
+        const { error: insertError } = await supabase
+          .from('training_records')
+          .insert(remediationAssignments);
+          
+        if (insertError) throw insertError;
       }
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating remediation training:', error);
+      return false;
     }
-    
-    return records;
-  }
+  },
 };
 
 export default certificationTrainingService;

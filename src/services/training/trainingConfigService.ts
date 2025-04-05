@@ -2,106 +2,84 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingAutomationConfig } from '@/types/training';
 
-/**
- * Service for training configuration management
- */
-export const trainingConfigService = {
+const trainingConfigService = {
   /**
-   * Get the automation settings for the organization
+   * Get automation configuration
    */
-  getAutomationConfig: async (): Promise<TrainingAutomationConfig> => {
+  getAutomationConfig: async (): Promise<TrainingAutomationConfig | null> => {
     try {
-      // Try to get the configuration from Supabase
       const { data, error } = await supabase
         .from('training_automation_config')
         .select('*')
-        .order('created_at', { ascending: false })
         .limit(1)
         .single();
-
-      if (error) {
-        console.error('Error fetching training automation config:', error);
         
-        // Return default config if there's an error
-        return {
-          enabled: true,
-          rules: [],
-          documentChangesTrigger: true,
-          newEmployeeTrigger: true,
-          roleCangeTrigger: true,
-        };
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No config found, create default
+          return await trainingConfigService.updateAutomationConfig({
+            enabled: true,
+            rules: [],
+            documentChangesTrigger: true,
+            newEmployeeTrigger: true,
+            roleCangeTrigger: true
+          });
+        }
+        throw error;
       }
-
-      // Map the database record to our TypeScript interface
-      return {
-        enabled: data.enabled,
-        rules: data.rules || [],
-        documentChangesTrigger: data.document_changes_trigger,
-        newEmployeeTrigger: data.new_employee_trigger,
-        roleCangeTrigger: data.role_change_trigger,
-      };
-    } catch (error) {
-      console.error('Exception fetching training automation config:', error);
       
-      // Return default config if there's an exception
-      return {
-        enabled: true,
-        rules: [],
-        documentChangesTrigger: true,
-        newEmployeeTrigger: true,
-        roleCangeTrigger: true,
-      };
+      return data as TrainingAutomationConfig;
+    } catch (error) {
+      console.error('Error getting training automation config:', error);
+      return null;
     }
   },
   
   /**
-   * Update the automation settings for the organization
+   * Update automation configuration
    */
-  updateAutomationConfig: async (config: TrainingAutomationConfig): Promise<boolean> => {
+  updateAutomationConfig: async (config: Partial<TrainingAutomationConfig>): Promise<TrainingAutomationConfig | null> => {
     try {
-      // Create a database record from our TypeScript interface
-      const record = {
-        enabled: config.enabled,
-        rules: config.rules || [],
-        document_changes_trigger: config.documentChangesTrigger,
-        new_employee_trigger: config.newEmployeeTrigger,
-        role_change_trigger: config.roleCangeTrigger,
-        updated_at: new Date().toISOString()
-      };
-
-      // Check if a record already exists
-      const { data: existingConfig } = await supabase
+      // Check if config exists
+      const { data: existingConfig, error: checkError } = await supabase
         .from('training_automation_config')
         .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
+        .limit(1)
+        .single();
+        
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      
       let result;
-
-      if (existingConfig && existingConfig.length > 0) {
-        // Update existing record
-        result = await supabase
+      
+      if (existingConfig) {
+        // Update existing config
+        const { data, error } = await supabase
           .from('training_automation_config')
-          .update(record)
-          .eq('id', existingConfig[0].id);
+          .update(config)
+          .eq('id', existingConfig.id)
+          .select('*')
+          .single();
+          
+        if (error) throw error;
+        result = data;
       } else {
-        // Insert new record
-        result = await supabase
+        // Create new config
+        const { data, error } = await supabase
           .from('training_automation_config')
-          .insert(record);
+          .insert(config)
+          .select('*')
+          .single();
+          
+        if (error) throw error;
+        result = data;
       }
-
-      if (result.error) {
-        console.error('Error updating training automation config:', result.error);
-        return false;
-      }
-
-      return true;
+      
+      return result as TrainingAutomationConfig;
     } catch (error) {
-      console.error('Exception updating training automation config:', error);
-      return false;
+      console.error('Error updating training automation config:', error);
+      return null;
     }
-  }
+  },
 };
 
 export default trainingConfigService;
