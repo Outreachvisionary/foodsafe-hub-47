@@ -2,8 +2,38 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { TrainingRecord, TrainingSession } from '@/types/training';
+import { BatchTrace } from '@/types/traceability';
 
 // This file replaces the old traceabilityService.ts with training functionality
+
+// Add the missing functions that were used in RecallRiskDashboard
+export const evaluateRecallNeed = (batch: BatchTrace): { needed: boolean; reason: string } => {
+  // Mock implementation - in a real app, this would have more logic
+  const ccpFailures = batch.haccpChecks.filter(check => !check.passed).length;
+  const supplierIssues = batch.suppliers.filter(s => s.auditScore !== undefined && s.auditScore < 80).length;
+  
+  const isNeeded = ccpFailures > 0 || supplierIssues > 0;
+  
+  return {
+    needed: isNeeded,
+    reason: isNeeded 
+      ? `Found ${ccpFailures} CCP failures and ${supplierIssues} supplier issues` 
+      : 'No critical failures detected'
+  };
+};
+
+export const getComplaintTrend = (productId: string): number => {
+  // Mock implementation - in a real app, this would query complaint data
+  // and calculate trends
+  const mockTrendData: Record<string, number> = {
+    'prod-123': 25,
+    'prod-124': 5,
+    'prod-125': 18,
+    'prod-126': 12
+  };
+  
+  return mockTrendData[productId] || 0;
+};
 
 // Evaluate if an employee needs training and assign appropriate courses
 export const evaluateTrainingNeeds = async (employeeId: string, employeeName: string) => {

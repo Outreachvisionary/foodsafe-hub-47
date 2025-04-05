@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { TrainingAutomationConfig } from '@/types/training';
-import { trainingConfigService } from '@/services/training/trainingConfigService';
+import trainingConfigService from '@/services/training/trainingConfigService';
 
 export function useTrainingConfig() {
   const [config, setConfig] = useState<TrainingAutomationConfig | null>(null);

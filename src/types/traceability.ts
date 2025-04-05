@@ -75,6 +75,31 @@ export interface FDA204Report {
   regulatoryContact: string;
 }
 
+// Let's add the missing functions that were causing errors in other components
+export const evaluateRecallNeed = (batch: BatchTrace): { needed: boolean; reason: string } => {
+  const isNeeded = isRecallNeeded(batch);
+  
+  return {
+    needed: isNeeded,
+    reason: isNeeded 
+      ? 'Critical failures detected that require recall action' 
+      : 'No critical failures detected'
+  };
+};
+
+export const getComplaintTrend = (productId: string): number => {
+  // Mock implementation - in a real app, this would query complaint data
+  // and calculate trends
+  const mockTrendData: Record<string, number> = {
+    'prod-123': 25,
+    'prod-124': 5,
+    'prod-125': 18,
+    'prod-126': 12
+  };
+  
+  return mockTrendData[productId] || 0;
+};
+
 // Enhanced recall evaluation with FSMA 204 compliance logic
 export const isRecallNeeded = (batch: BatchTrace): boolean => {
   // Check for CCP failures, focusing on critical control points
