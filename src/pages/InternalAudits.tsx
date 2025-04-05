@@ -19,7 +19,7 @@ import {
   FileCheck, CalendarClock, ListChecks, ShieldCheck, Camera, Check, 
   Download, FilePlus, Filter, ClipboardList, FileText, Search, 
   PlusCircle, Calendar as CalendarIcon, AlertTriangle, Info, Clock, RefreshCw,
-  ChevronDown, Pencil, X
+  ChevronDown, Pencil, X, Upload
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import AuditDetailsDialog from '@/components/audits/AuditDetailsDialog';
