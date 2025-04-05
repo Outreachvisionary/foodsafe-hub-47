@@ -1,27 +1,33 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  BarChart3, 
-  CalendarClock, 
-  CheckCircle2, 
   AlertCircle, 
-  Users, 
-  BookOpen, 
   Award, 
-  Clock
+  BarChart3, 
+  Book, 
+  CalendarClock, 
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Users
 } from 'lucide-react';
 import { useTrainingContext } from '@/contexts/TrainingContext';
-import DepartmentComplianceChart from './DepartmentComplianceChart';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import DepartmentComplianceChart from './dashboard/DepartmentComplianceChart';
+import OverallComplianceCard from './dashboard/OverallComplianceCard';
+import UpcomingTrainingCard from './dashboard/UpcomingTrainingCard';
+import ExpiringCertificationsCard from './dashboard/ExpiringCertificationsCard';
 
 const TrainingDashboard = () => {
   const { departmentStats, isLoading } = useTrainingContext();
+  const [showAllMetrics, setShowAllMetrics] = useState(false);
   
-  // Mock data for the charts
+  // Training status data with sample values
   const trainingStatusData = [
     { name: 'Completed', value: 65, color: '#10B981' },
     { name: 'In Progress', value: 25, color: '#3B82F6' },
@@ -29,59 +35,27 @@ const TrainingDashboard = () => {
     { name: 'Overdue', value: 5, color: '#EF4444' },
   ];
   
-  const upcomingTrainings = [
+  // Critical compliance issues - sample data
+  const criticalIssues = [
     { 
-      id: '1', 
-      title: 'Food Safety Basics', 
-      dueDate: '2025-04-15', 
-      assignedTo: 'Production Team', 
-      status: 'upcoming' 
+      title: 'Allergen Control Training', 
+      description: '5 production employees need to complete allergen training by April 15th',
+      priority: 'high'
     },
     { 
-      id: '2', 
-      title: 'HACCP Principles', 
-      dueDate: '2025-04-20', 
-      assignedTo: 'Quality Team', 
-      status: 'upcoming' 
-    },
-    { 
-      id: '3', 
-      title: 'Allergen Management', 
-      dueDate: '2025-05-01', 
-      assignedTo: 'Production Team', 
-      status: 'upcoming' 
-    },
+      title: 'HACCP Certification Expiring', 
+      description: '3 team members have HACCP certifications expiring within 30 days',
+      priority: 'medium'
+    }
   ];
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'upcoming':
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 flex items-center gap-1">
-            <CalendarClock className="h-3 w-3" />
-            Upcoming
-          </Badge>
-        );
-      case 'completed':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            Completed
-          </Badge>
-        );
-      case 'overdue':
-        return (
-          <Badge variant="destructive" className="flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
-            Overdue
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline">{status}</Badge>
-        );
-    }
-  };
+  // Summary metrics for the top cards
+  const summaryMetrics = [
+    { title: 'Total Employees', value: 152, icon: <Users className="h-5 w-5 text-blue-600" />, bgColor: 'bg-blue-100' },
+    { title: 'Active Courses', value: 24, icon: <Book className="h-5 w-5 text-green-600" />, bgColor: 'bg-green-100' },
+    { title: 'Due This Month', value: 15, icon: <Clock className="h-5 w-5 text-amber-600" />, bgColor: 'bg-amber-100' },
+    { title: 'Expiring Certifications', value: 8, icon: <Award className="h-5 w-5 text-purple-600" />, bgColor: 'bg-purple-100' },
+  ];
 
   if (isLoading) {
     return (
@@ -93,224 +67,167 @@ const TrainingDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-              <p className="text-2xl font-bold">152</p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Users className="h-5 w-5 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Courses</p>
-              <p className="text-2xl font-bold">24</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <BookOpen className="h-5 w-5 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Certifications</p>
-              <p className="text-2xl font-bold">38</p>
-            </div>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <Award className="h-5 w-5 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Due This Month</p>
-              <p className="text-2xl font-bold">15</p>
-            </div>
-            <div className="bg-amber-100 p-3 rounded-full">
-              <Clock className="h-5 w-5 text-amber-600" />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-8">
+      {/* Top summary metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryMetrics.map((metric, index) => (
+          <Card key={index}>
+            <CardContent className="p-4 flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                <p className="text-2xl font-bold">{metric.value}</p>
+              </div>
+              <div className={`${metric.bgColor} p-3 rounded-full`}>
+                {metric.icon}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Department Compliance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DepartmentComplianceChart departmentStats={departmentStats} />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Training Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center">
-            <div className="w-48 h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={trainingStatusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {trainingStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value) => [`${value}%`, 'Percentage']} 
-                    labelFormatter={(index) => trainingStatusData[index].name}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+      {/* Critical issues notification */}
+      {criticalIssues.length > 0 && (
+        <Collapsible className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+              <h3 className="font-medium">Critical Training Issues Need Attention</h3>
             </div>
-            <div className="grid grid-cols-2 gap-3 mt-5 w-full">
-              {trainingStatusData.map((status) => (
-                <div key={status.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color }}></div>
-                  <span className="text-sm">{status.name}</span>
-                  <span className="text-sm font-bold ml-auto">{status.value}%</span>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent className="pt-2">
+            <div className="space-y-3">
+              {criticalIssues.map((issue, index) => (
+                <div key={index} className="flex items-start gap-3 border-t border-amber-200 pt-3">
+                  <AlertCircle className={`h-5 w-5 mt-0.5 ${issue.priority === 'high' ? 'text-red-500' : 'text-amber-500'}`} />
+                  <div className="flex-1">
+                    <h4 className="font-medium">{issue.title}</h4>
+                    <p className="text-sm text-muted-foreground">{issue.description}</p>
+                  </div>
+                  <Button size="sm" variant="outline">Take Action</Button>
                 </div>
               ))}
             </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Primary dashboard content */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Overall compliance card */}
+        <OverallComplianceCard 
+          compliancePercentage={84} 
+          totalAssigned={398} 
+          completed={335} 
+        />
+        
+        {/* Department compliance chart */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-500" />
+                Department Compliance
+              </CardTitle>
+              <Button variant="outline" size="sm">View All</Button>
+            </div>
+            <CardDescription>Training compliance by department</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DepartmentComplianceChart />
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" />
-            Upcoming Training Sessions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="pb-2 text-left font-medium">Training</th>
-                  <th className="pb-2 text-left font-medium">Due Date</th>
-                  <th className="pb-2 text-left font-medium">Assigned To</th>
-                  <th className="pb-2 text-left font-medium">Status</th>
-                  <th className="pb-2 text-right font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {upcomingTrainings.map((training) => (
-                  <tr key={training.id} className="border-b">
-                    <td className="py-3 font-medium">{training.title}</td>
-                    <td className="py-3">{new Date(training.dueDate).toLocaleDateString()}</td>
-                    <td className="py-3">{training.assignedTo}</td>
-                    <td className="py-3">{getStatusBadge(training.status)}</td>
-                    <td className="py-3 text-right">
-                      <Button size="sm" variant="outline">View Details</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex justify-center">
-            <Button variant="outline">View All Training</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5" />
-              Overall Training Compliance
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Food Safety Standards</span>
-                <span className="text-sm font-medium">85%</span>
-              </div>
-              <Progress value={85} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">GMP Requirements</span>
-                <span className="text-sm font-medium">92%</span>
-              </div>
-              <Progress value={92} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">HACCP Training</span>
-                <span className="text-sm font-medium">78%</span>
-              </div>
-              <Progress value={78} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">SQF Certification</span>
-                <span className="text-sm font-medium">70%</span>
-              </div>
-              <Progress value={70} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Upcoming training card */}
+        <UpcomingTrainingCard />
         
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Critical Compliance Issues
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-md border p-3">
-                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Allergen Control Training</h4>
-                  <p className="text-sm text-muted-foreground">5 production employees need to complete allergen training by April 15th</p>
-                  <Button size="sm" variant="outline" className="mt-2">Take Action</Button>
+        {/* Expiring certifications card */}
+        <ExpiringCertificationsCard count={8} />
+      </div>
+
+      {/* Optional metrics (hidden by default) */}
+      <Collapsible open={showAllMetrics} className="border rounded-lg p-2">
+        <CollapsibleTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-full flex justify-between items-center" 
+            onClick={() => setShowAllMetrics(!showAllMetrics)}
+          >
+            <span>Additional Training Metrics</span>
+            {showAllMetrics ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Training Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Food Safety Standards</span>
+                    <span className="text-sm font-medium">85%</span>
+                  </div>
+                  <Progress value={85} className="h-2" />
                 </div>
-              </div>
-              
-              <div className="flex items-start gap-3 rounded-md border p-3">
-                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-                <div>
-                  <h4 className="font-medium">HACCP Certification Expiring</h4>
-                  <p className="text-sm text-muted-foreground">3 team members have HACCP certifications expiring within 30 days</p>
-                  <Button size="sm" variant="outline" className="mt-2">Schedule Renewal</Button>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">GMP Requirements</span>
+                    <span className="text-sm font-medium">92%</span>
+                  </div>
+                  <Progress value={92} className="h-2" />
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">HACCP Training</span>
+                    <span className="text-sm font-medium">78%</span>
+                  </div>
+                  <Progress value={78} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5" />
+                  Training Calendar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between border-b pb-2 last:border-0">
+                      <div>
+                        <h4 className="text-sm font-medium">Training Session {i+1}</h4>
+                        <p className="text-xs text-muted-foreground">April {10+i*5}, 2025</p>
+                      </div>
+                      <Badge variant="outline">Scheduled</Badge>
+                    </div>
+                  ))}
+                  <Button variant="outline" className="w-full">View Full Calendar</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      <div className="flex justify-center mt-8">
+        <Button variant="outline" onClick={() => setShowAllMetrics(!showAllMetrics)}>
+          {showAllMetrics ? "Show Less" : "Show More Metrics"}
+        </Button>
       </div>
     </div>
   );

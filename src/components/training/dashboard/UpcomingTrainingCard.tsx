@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { CalendarClock, BookOpen } from 'lucide-react';
 
 const UpcomingTrainingCard: React.FC = () => {
-  // Sample upcoming training data
+  // Sample upcoming training data - show only the next 3
   const upcomingTrainings = [
     { 
       id: '1', 
@@ -26,30 +27,19 @@ const UpcomingTrainingCard: React.FC = () => {
       dueDate: 'May 30', 
       priority: 'High',
       participants: 15
-    },
-    { 
-      id: '4', 
-      title: 'Risk Assessment Workshop', 
-      dueDate: 'Jun 05', 
-      priority: 'Medium',
-      participants: 6
-    },
-    { 
-      id: '5', 
-      title: 'Quality Tools Training', 
-      dueDate: 'Jun 12', 
-      priority: 'Low',
-      participants: 18
     }
   ];
   
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <CalendarClock className="h-5 w-5 text-blue-500 mr-2" />
-          Upcoming Training
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <CalendarClock className="h-5 w-5 text-blue-500 mr-2" />
+            Upcoming Training
+          </CardTitle>
+          <Button variant="outline" size="sm">View All</Button>
+        </div>
         <CardDescription>Training sessions in the next 30 days</CardDescription>
       </CardHeader>
       <CardContent>
@@ -69,9 +59,9 @@ const UpcomingTrainingCard: React.FC = () => {
               <PriorityBadge priority={training.priority} />
             </div>
           ))}
-          <button className="text-sm text-blue-500 hover:text-blue-700 transition-colors w-full text-center mt-2">
+          <Button variant="outline" className="w-full mt-2">
             View all scheduled training
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>

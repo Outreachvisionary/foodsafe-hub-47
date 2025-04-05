@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Award, AlertCircle, Calendar } from 'lucide-react';
 
 interface ExpiringCertificationsCardProps {
@@ -8,7 +9,7 @@ interface ExpiringCertificationsCardProps {
 }
 
 const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({ count }) => {
-  // Sample expiring certifications data
+  // Sample expiring certifications data - show only the next 3
   const expiringCertifications = [
     { 
       id: '1', 
@@ -30,28 +31,24 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
       employee: 'John Smith',
       expiryDate: 'Jun 5, 2023', 
       daysLeft: 30
-    },
-    { 
-      id: '4', 
-      name: 'GMP Certification', 
-      employee: 'Susan Miller',
-      expiryDate: 'Jun 12, 2023', 
-      daysLeft: 37
     }
   ];
   
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <Award className="h-5 w-5 text-amber-500 mr-2" />
-          Expiring Certifications
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <Award className="h-5 w-5 text-amber-500 mr-2" />
+            Expiring Certifications
+          </CardTitle>
+          <Button variant="outline" size="sm">View All</Button>
+        </div>
         <CardDescription>Certifications expiring in the next 45 days</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {expiringCertifications.slice(0, 4).map((cert) => (
+          {expiringCertifications.map((cert) => (
             <div key={cert.id} className="flex items-start space-x-3 border-b pb-3 last:border-0">
               {cert.daysLeft <= 14 ? (
                 <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
@@ -73,10 +70,10 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
             </div>
           ))}
           
-          {count > 4 && (
-            <button className="text-sm text-blue-500 hover:text-blue-700 transition-colors w-full text-center">
+          {count > 3 && (
+            <Button variant="outline" className="w-full">
               View all {count} expiring certifications
-            </button>
+            </Button>
           )}
         </div>
       </CardContent>
