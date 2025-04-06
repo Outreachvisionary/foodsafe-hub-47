@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -12,7 +11,12 @@ import {
   SupplyChainPartner,
   SupplyChainLink,
   TreeNode,
-  GraphData
+  GraphData,
+  NotificationStatus,
+  GraphNode,
+  GraphEdge,
+  PartnerType,
+  LinkType
 } from '@/types/traceability';
 
 // Products CRUD operations

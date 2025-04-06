@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { 
   fetchProducts, 
@@ -771,3 +770,5 @@ export const useTraceability = () => {
     setSelectedSchedule
   };
 };
+
+export default useTraceability;

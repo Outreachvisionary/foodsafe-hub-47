@@ -1,300 +1,308 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { GraphData } from '@/types/traceability';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { Box, Factory, Truck, Store, Download, ZoomIn, ZoomOut, MousePointer } from 'lucide-react';
+import { GraphData, GraphNode, GraphEdge, PartnerType } from '@/types/traceability';
 
 interface SupplyChainVisualizationProps {
   data: GraphData | null;
   onNodeClick?: (nodeId: string) => void;
 }
 
-const SupplyChainVisualization: React.FC<SupplyChainVisualizationProps> = ({ data, onNodeClick }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+// Define colors for different node types
+const nodeColors: Record<string, string> = {
+  'Supplier': '#4ade80',    // Green
+  'Manufacturer': '#3b82f6', // Blue
+  'Distributor': '#f97316',  // Orange
+  'Retailer': '#a855f7'      // Purple
+};
+
+// Define node icon components
+const nodeIcons: Record<string, React.ReactNode> = {
+  'Supplier': <Box size={20} />,
+  'Manufacturer': <Factory size={20} />,
+  'Distributor': <Truck size={20} />,
+  'Retailer': <Store size={20} />
+};
+
+const SupplyChainVisualization: React.FC<SupplyChainVisualizationProps> = ({ 
+  data,
+  onNodeClick
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
   const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
-  // Function to draw the visualization
-  const drawVisualization = () => {
-    if (!data || !containerRef.current) return;
-    
-    const container = containerRef.current;
-    container.innerHTML = '';
-    
-    const width = container.clientWidth;
-    const height = 400;
-    
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    
-    // Create group for zoom and pan
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('transform', `translate(${position.x},${position.y}) scale(${zoom})`);
-    
-    // Create defs for markers (arrows)
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    marker.setAttribute('id', 'arrowhead');
-    marker.setAttribute('viewBox', '0 0 10 10');
-    marker.setAttribute('refX', '8');
-    marker.setAttribute('refY', '5');
-    marker.setAttribute('markerWidth', '6');
-    marker.setAttribute('markerHeight', '6');
-    marker.setAttribute('orient', 'auto');
-    
-    const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    arrowPath.setAttribute('fill', '#888');
-    marker.appendChild(arrowPath);
-    defs.appendChild(marker);
-    svg.appendChild(defs);
-    
-    // Simple force-directed layout
-    const nodeRadius = 30;
-    const nodeSpacing = 150;
-    
-    // Position nodes in a circle
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+
+  // Function to create a simple force-directed layout
+  const createLayout = (
+    nodes: GraphNode[], 
+    edges: GraphEdge[], 
+    width: number, 
+    height: number
+  ) => {
+    // Simple layout - nodes in a circle
+    const radius = Math.min(width, height) * 0.35;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) / 3;
     
-    const nodePositions: { [key: string]: { x: number, y: number } } = {};
-    
-    // Calculate node positions
-    data.nodes.forEach((node, i) => {
-      const angle = (i / data.nodes.length) * 2 * Math.PI;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
-      nodePositions[node.id] = { x, y };
+    // Assign positions to nodes in a circle
+    const positionedNodes = nodes.map((node, index) => {
+      const angle = (index / nodes.length) * 2 * Math.PI;
+      return {
+        ...node,
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle)
+      };
     });
     
-    // Draw edges
-    data.edges.forEach(edge => {
-      const sourcePos = nodePositions[edge.source];
-      const targetPos = nodePositions[edge.target];
-      
-      if (sourcePos && targetPos) {
-        // Calculate angle for the arrow
-        const dx = targetPos.x - sourcePos.x;
-        const dy = targetPos.y - sourcePos.y;
-        const angle = Math.atan2(dy, dx);
-        
-        // Adjust start and end points to be on the circles' edges
-        const startX = sourcePos.x + nodeRadius * Math.cos(angle);
-        const startY = sourcePos.y + nodeRadius * Math.sin(angle);
-        const endX = targetPos.x - nodeRadius * Math.cos(angle);
-        const endY = targetPos.y - nodeRadius * Math.sin(angle);
-        
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', startX.toString());
-        line.setAttribute('y1', startY.toString());
-        line.setAttribute('x2', endX.toString());
-        line.setAttribute('y2', endY.toString());
-        line.setAttribute('stroke', '#888');
-        line.setAttribute('stroke-width', '1.5');
-        line.setAttribute('marker-end', 'url(#arrowhead)');
-        g.appendChild(line);
-        
-        // Edge label
-        const labelX = (startX + endX) / 2;
-        const labelY = (startY + endY) / 2 - 10;
-        
-        const edgeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        edgeLabel.setAttribute('x', labelX.toString());
-        edgeLabel.setAttribute('y', labelY.toString());
-        edgeLabel.setAttribute('text-anchor', 'middle');
-        edgeLabel.setAttribute('font-size', '10');
-        edgeLabel.setAttribute('fill', '#666');
-        edgeLabel.textContent = edge.label;
-        g.appendChild(edgeLabel);
-      }
-    });
-    
-    // Draw nodes
-    data.nodes.forEach(node => {
-      const pos = nodePositions[node.id];
-      
-      if (pos) {
-        const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        nodeGroup.setAttribute('transform', `translate(${pos.x},${pos.y})`);
-        nodeGroup.setAttribute('data-node-id', node.id);
-        nodeGroup.style.cursor = 'pointer';
-        
-        // Node circle
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', nodeRadius.toString());
-        
-        // Set color based on node type
-        let fillColor = '#3b82f6';
-        switch (node.type) {
-          case 'Supplier':
-            fillColor = '#10b981';
-            break;
-          case 'Manufacturer':
-            fillColor = '#3b82f6';
-            break;
-          case 'Distributor':
-            fillColor = '#f59e0b';
-            break;
-          case 'Retailer':
-            fillColor = '#8b5cf6';
-            break;
-        }
-        
-        circle.setAttribute('fill', fillColor);
-        circle.setAttribute('stroke', '#fff');
-        circle.setAttribute('stroke-width', '2');
-        nodeGroup.appendChild(circle);
-        
-        // Node label
-        const nodeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        nodeLabel.setAttribute('text-anchor', 'middle');
-        nodeLabel.setAttribute('dominant-baseline', 'middle');
-        nodeLabel.setAttribute('fill', '#fff');
-        nodeLabel.setAttribute('font-size', '10');
-        nodeLabel.setAttribute('pointer-events', 'none');
-        nodeLabel.textContent = node.label;
-        
-        // Add word wrapping for long names
-        if (node.label.length > 10) {
-          nodeLabel.textContent = '';
-          const words = node.label.split(' ');
-          words.forEach((word, i) => {
-            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-            tspan.setAttribute('x', '0');
-            tspan.setAttribute('dy', i === 0 ? '-0.5em' : '1.2em');
-            tspan.textContent = word;
-            nodeLabel.appendChild(tspan);
-          });
-        }
-        
-        nodeGroup.appendChild(nodeLabel);
-        
-        // Node type label
-        const typeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        typeLabel.setAttribute('text-anchor', 'middle');
-        typeLabel.setAttribute('y', nodeRadius + 15);
-        typeLabel.setAttribute('fill', '#666');
-        typeLabel.setAttribute('font-size', '10');
-        typeLabel.textContent = node.type;
-        nodeGroup.appendChild(typeLabel);
-        
-        // Handle node click
-        nodeGroup.addEventListener('click', () => {
-          if (onNodeClick) {
-            onNodeClick(node.id);
-          }
-        });
-        
-        g.appendChild(nodeGroup);
-      }
-    });
-    
-    svg.appendChild(g);
-    container.appendChild(svg);
+    return { nodes: positionedNodes, edges };
   };
-  
-  // Handle zoom and pan
-  const handleZoomIn = () => {
+
+  // Download SVG function
+  const downloadSVG = () => {
+    if (!svgRef.current) return;
+    
+    const svg = svgRef.current;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+    
+    // Add name spaces
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'supply-chain-visualization.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle zoom functions
+  const zoomIn = () => {
     setZoom(prev => Math.min(prev + 0.2, 3));
   };
   
-  const handleZoomOut = () => {
+  const zoomOut = () => {
     setZoom(prev => Math.max(prev - 0.2, 0.5));
   };
   
-  const handleReset = () => {
-    setZoom(1);
-    setPosition({ x: 0, y: 0 });
-  };
-  
+  // Handle mouse events for panning
   const handleMouseDown = (e: React.MouseEvent) => {
-    setDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    if (e.button === 0) { // Left mouse button
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
   };
   
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragging) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
+    if (isDragging) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
   
   const handleMouseUp = () => {
-    setDragging(false);
+    setIsDragging(false);
   };
   
-  useEffect(() => {
-    drawVisualization();
-  }, [data, zoom, position]);
-  
-  if (!data) {
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNode(nodeId === selectedNode ? null : nodeId);
+    if (onNodeClick) {
+      onNodeClick(nodeId);
+    }
+  };
+
+  // Render the supply chain visualization
+  const renderVisualization = () => {
+    if (!data || !data.nodes.length) {
+      return (
+        <div className="flex justify-center items-center h-80 text-gray-500">
+          No supply chain data available
+        </div>
+      );
+    }
+
+    const width = 800;
+    const height = 500;
+    
+    // Create a simple layout
+    const layout = createLayout(data.nodes, data.edges, width, height);
+    
+    // Create a map for easy node lookup
+    const nodeMap = layout.nodes.reduce((map, node) => {
+      map.set(node.id, node);
+      return map;
+    }, new Map<string, GraphNode & { x: number; y: number }>());
+    
+    // Render nodes
+    const renderedNodes = layout.nodes.map((node) => {
+      const color = nodeColors[node.type] || '#888888';
+      const icon = nodeIcons[node.type] || <Box size={20} />;
+      const isSelected = node.id === selectedNode;
+      
+      return (
+        <g 
+          key={`node-${node.id}`} 
+          transform={`translate(${node.x}, ${node.y})`}
+          className="cursor-pointer"
+          onClick={() => handleNodeClick(node.id)}
+        >
+          <circle 
+            r={isSelected ? 30 : 25} 
+            fill={color} 
+            opacity={0.8}
+            stroke={isSelected ? '#000000' : 'none'}
+            strokeWidth={isSelected ? 2 : 0}
+          />
+          <foreignObject 
+            width="40" 
+            height="40" 
+            x="-20" 
+            y="-20"
+            className="pointer-events-none"
+          >
+            <div className="flex justify-center items-center h-full text-white">
+              {icon}
+            </div>
+          </foreignObject>
+          <text 
+            y="40" 
+            textAnchor="middle" 
+            className="text-xs font-medium"
+          >
+            {node.label}
+          </text>
+        </g>
+      );
+    });
+    
+    // Render edges
+    const renderedEdges = layout.edges.map((edge) => {
+      const sourceNode = nodeMap.get(edge.source);
+      const targetNode = nodeMap.get(edge.target);
+      
+      if (!sourceNode || !targetNode) return null;
+      
+      const strokeDasharray = edge.label === 'Distributes' ? '5,5' : 'none';
+      
+      return (
+        <g key={`edge-${edge.id}`}>
+          <line 
+            x1={sourceNode.x} 
+            y1={sourceNode.y} 
+            x2={targetNode.x} 
+            y2={targetNode.y}
+            stroke="#999999"
+            strokeWidth="1.5"
+            strokeDasharray={strokeDasharray}
+          />
+          <text
+            x={(sourceNode.x + targetNode.x) / 2}
+            y={(sourceNode.y + targetNode.y) / 2 - 5}
+            textAnchor="middle"
+            className="text-xs text-gray-600"
+            fill="#666666"
+          >
+            {edge.label}
+          </text>
+        </g>
+      );
+    });
+    
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Supply Chain Visualization</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-60 text-gray-500">
-            No supply chain data available
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Supply Chain Visualization</CardTitle>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={handleZoomIn}>
-            <ZoomIn size={16} />
+      <div className="w-full overflow-hidden relative">
+        <div className="absolute top-2 right-2 flex space-x-2 z-10">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={zoomIn}
+            title="Zoom In"
+          >
+            <ZoomIn className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleZoomOut}>
-            <ZoomOut size={16} />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={zoomOut}
+            title="Zoom Out"
+          >
+            <ZoomOut className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            <RefreshCw size={16} />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={downloadSVG} 
+            title="Download SVG"
+          >
+            <Download className="h-4 w-4" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
+        
+        <div className="mb-4 text-sm text-center">
+          <span className="inline-flex items-center mr-4">
+            <span className="w-3 h-3 inline-block bg-green-400 rounded-full mr-1"></span> Supplier
+          </span>
+          <span className="inline-flex items-center mr-4">
+            <span className="w-3 h-3 inline-block bg-blue-500 rounded-full mr-1"></span> Manufacturer
+          </span>
+          <span className="inline-flex items-center mr-4">
+            <span className="w-3 h-3 inline-block bg-orange-500 rounded-full mr-1"></span> Distributor
+          </span>
+          <span className="inline-flex items-center">
+            <span className="w-3 h-3 inline-block bg-purple-500 rounded-full mr-1"></span> Retailer
+          </span>
+        </div>
+        
         <div 
-          ref={containerRef} 
-          className="border rounded-md bg-gray-50" 
-          style={{ height: '400px', overflow: 'hidden', position: 'relative' }}
+          className="overflow-hidden border rounded-md bg-gray-50"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-        ></div>
-        
-        <div className="flex justify-center mt-4 text-xs gap-4">
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
-            <span>Supplier</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
-            <span>Manufacturer</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-amber-500 mr-1"></div>
-            <span>Distributor</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-purple-500 mr-1"></div>
-            <span>Retailer</span>
-          </div>
+        >
+          <svg 
+            ref={svgRef} 
+            width="100%" 
+            height="500"
+            viewBox={`0 0 ${width} ${height}`}
+            style={{
+              cursor: isDragging ? 'grabbing' : 'grab',
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: 'center'
+            }}
+          >
+            <g>
+              {renderedEdges}
+              {renderedNodes}
+            </g>
+          </svg>
         </div>
+        
+        <div className="flex justify-center mt-2 text-sm text-gray-500">
+          <MousePointer className="h-4 w-4 mr-1" /> Click and drag to pan, use zoom buttons to zoom in/out
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Supply Chain Visualization</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {renderVisualization()}
       </CardContent>
     </Card>
   );

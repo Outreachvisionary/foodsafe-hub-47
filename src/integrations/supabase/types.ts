@@ -494,6 +494,54 @@ export type Database = {
         }
         Relationships: []
       }
+      components: {
+        Row: {
+          attributes: Json | null
+          batch_lot_number: string
+          category: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          expiry_date: string | null
+          id: string
+          name: string
+          received_date: string
+          status: string | null
+          supplier_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          batch_lot_number: string
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          name: string
+          received_date: string
+          status?: string | null
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          batch_lot_number?: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          name?: string
+          received_date?: string
+          status?: string | null
+          supplier_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string | null
@@ -1664,6 +1712,102 @@ export type Database = {
         }
         Relationships: []
       }
+      product_genealogy: {
+        Row: {
+          component_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          component_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          component_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_genealogy_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_genealogy_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          attributes: Json | null
+          batch_lot_number: string
+          category: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          expiry_date: string | null
+          id: string
+          manufacturing_date: string
+          name: string
+          sku: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          batch_lot_number: string
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          manufacturing_date: string
+          name: string
+          sku?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          batch_lot_number?: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          manufacturing_date?: string
+          name?: string
+          sku?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           assigned_facility_ids: string[] | null
@@ -1726,6 +1870,155 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recall_schedules: {
+        Row: {
+          assigned_users: string[] | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_recurring: boolean | null
+          last_executed_at: string | null
+          next_execution_at: string | null
+          one_time_date: string | null
+          recall_type: Database["public"]["Enums"]["recall_type"]
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_users?: string[] | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          last_executed_at?: string | null
+          next_execution_at?: string | null
+          one_time_date?: string | null
+          recall_type: Database["public"]["Enums"]["recall_type"]
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_users?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          last_executed_at?: string | null
+          next_execution_at?: string | null
+          one_time_date?: string | null
+          recall_type?: Database["public"]["Enums"]["recall_type"]
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recall_simulations: {
+        Row: {
+          bottlenecks: string | null
+          created_at: string | null
+          created_by: string
+          duration: number | null
+          id: string
+          recall_id: string | null
+          results: Json | null
+          simulation_date: string | null
+          success_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bottlenecks?: string | null
+          created_at?: string | null
+          created_by: string
+          duration?: number | null
+          id?: string
+          recall_id?: string | null
+          results?: Json | null
+          simulation_date?: string | null
+          success_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bottlenecks?: string | null
+          created_at?: string | null
+          created_by?: string
+          duration?: number | null
+          id?: string
+          recall_id?: string | null
+          results?: Json | null
+          simulation_date?: string | null
+          success_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recall_simulations_recall_id_fkey"
+            columns: ["recall_id"]
+            isOneToOne: false
+            referencedRelation: "recalls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recalls: {
+        Row: {
+          affected_products: Json | null
+          completed_at: string | null
+          corrective_actions: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          initiated_at: string | null
+          initiated_by: string
+          recall_reason: string
+          recall_type: Database["public"]["Enums"]["recall_type"]
+          status: Database["public"]["Enums"]["recall_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_products?: Json | null
+          completed_at?: string | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by: string
+          recall_reason: string
+          recall_type: Database["public"]["Enums"]["recall_type"]
+          status?: Database["public"]["Enums"]["recall_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_products?: Json | null
+          completed_at?: string | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by?: string
+          recall_reason?: string
+          recall_type?: Database["public"]["Enums"]["recall_type"]
+          status?: Database["public"]["Enums"]["recall_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       regulatory_standards: {
         Row: {
@@ -2098,6 +2391,163 @@ export type Database = {
         }
         Relationships: []
       }
+      supply_chain_links: {
+        Row: {
+          component_id: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          link_type: string
+          product_id: string | null
+          source_id: string
+          target_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          component_id?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          link_type: string
+          product_id?: string | null
+          source_id: string
+          target_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          component_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          link_type?: string
+          product_id?: string | null
+          source_id?: string
+          target_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_chain_links_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_chain_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_chain_links_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "supply_chain_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_chain_links_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "supply_chain_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supply_chain_partners: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          partner_type: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          partner_type: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          partner_type?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      traceability_notifications: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          message: string
+          recall_id: string | null
+          recipient_email: string | null
+          recipient_id: string | null
+          recipient_type: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["notification_status"] | null
+          subject: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          message: string
+          recall_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string | null
+          recipient_type: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"] | null
+          subject: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          message?: string
+          recall_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string | null
+          recipient_type?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"] | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traceability_notifications_recall_id_fkey"
+            columns: ["recall_id"]
+            isOneToOne: false
+            referencedRelation: "recalls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_automation_config: {
         Row: {
           created_at: string | null
@@ -2425,6 +2875,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_affected_products_by_component: {
+        Args: {
+          component_batch_lot: string
+        }
+        Returns: {
+          product_id: string
+          product_name: string
+          product_batch_lot: string
+          manufacturing_date: string
+          expiry_date: string
+        }[]
+      }
+      find_product_components: {
+        Args: {
+          product_batch_lot: string
+        }
+        Returns: {
+          component_id: string
+          component_name: string
+          component_batch_lot: string
+          supplier: string
+          received_date: string
+          expiry_date: string
+        }[]
+      }
       get_facilities: {
         Args: {
           p_organization_id?: string
@@ -2652,6 +3127,9 @@ export type Database = {
         | "Rejected"
         | "Resolved"
         | "Closed"
+      notification_status: "Sent" | "Failed" | "Pending"
+      recall_status: "Scheduled" | "In Progress" | "Completed" | "Cancelled"
+      recall_type: "Mock" | "Actual"
       role_level: "organization" | "facility" | "department"
       training_status:
         | "Not Started"

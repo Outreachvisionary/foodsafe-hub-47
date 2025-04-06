@@ -1,77 +1,61 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Tabs, 
+  TabsList, 
+  TabsTrigger, 
+  TabsContent 
+} from '@/components/ui/tabs';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent 
+} from '@/components/ui/card';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  Button,
+  Input,
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Badge
+} from '@/components/ui/';
+import { Search, Plus, Info, Calendar, AlertCircle, CheckCircle, ChevronRight, RefreshCw } from 'lucide-react';
 import { useTraceability } from '@/hooks/useTraceability';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Plus, 
-  Filter, 
-  Package, 
-  Layers, 
-  AlertTriangle, 
-  Bell, 
-  Calendar,
-  ChevronRight,
-  X,
-  RotateCw,
-  ArrowUpRight,
-  Send,
-  Users,
-  CheckCircle
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
 import ProductForm from '@/components/traceability/ProductForm';
 import ComponentForm from '@/components/traceability/ComponentForm';
 import GenealogyForm from '@/components/traceability/GenealogyForm';
-import RecallForm from '@/components/traceability/RecallForm';
-import RecallScheduleForm from '@/components/traceability/RecallScheduleForm';
 import GenealogyTree from '@/components/traceability/GenealogyTree';
-import SupplyChainVisualization from '@/components/traceability/SupplyChainVisualization';
-import NotificationForm from '@/components/traceability/NotificationForm';
+import RecallForm from '@/components/traceability/RecallForm';
 import RecallSimulationForm from '@/components/traceability/RecallSimulationForm';
-
-import { 
-  Product, 
-  Component, 
-  ProductGenealogy, 
-  Recall,
-  RecallStatus,
-  RecallType,
-  RecallSimulation,
-  RecallSchedule,
-  TraceabilityNotification,
-  SupplyChainPartner,
-  SupplyChainLink,
-  TreeNode,
-  GraphData
-} from '@/types/traceability';
+import RecallScheduleForm from '@/components/traceability/RecallScheduleForm';
+import NotificationForm from '@/components/traceability/NotificationForm';
+import SupplyChainVisualization from '@/components/traceability/SupplyChainVisualization';
+import { format } from 'date-fns';
 
 const Traceability: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const urlParams = new URLSearchParams(location.search);
-  const activeTab = urlParams.get('tab') || 'products';
-  
-  const {
+  const { 
     products,
     components,
     recalls,
@@ -79,6 +63,7 @@ const Traceability: React.FC = () => {
     selectedProduct,
     selectedComponent,
     selectedRecall,
+    selectedSchedule,
     genealogyTree,
     supplyChainData,
     recallSimulations,
@@ -93,9 +78,6 @@ const Traceability: React.FC = () => {
     loadRecalls,
     loadRecallSchedules,
     loadProduct,
-    loadProductByBatchLot,
-    loadComponent,
-    loadRecall,
     loadGenealogyTree,
     loadSupplyChainVisualization,
     loadRecallSimulations,
@@ -104,20 +86,11 @@ const Traceability: React.FC = () => {
     loadAffectedProducts,
     
     addProduct,
-    editProduct,
-    removeProduct,
     addComponent,
-    editComponent,
-    removeComponent,
     addGenealogyLink,
-    removeGenealogyLink,
     addRecall,
-    editRecall,
-    removeRecall,
     addRecallSimulation,
     addRecallSchedule,
-    editRecallSchedule,
-    removeRecallSchedule,
     addNotification,
     sendAllNotifications,
     
@@ -126,36 +99,19 @@ const Traceability: React.FC = () => {
     setSelectedRecall
   } = useTraceability();
   
-  // State for dialogs
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
-  const [componentDialogOpen, setComponentDialogOpen] = useState(false);
-  const [genealogyDialogOpen, setGenealogyDialogOpen] = useState(false);
-  const [recallDialogOpen, setRecallDialogOpen] = useState(false);
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [simulationDialogOpen, setSimulationDialogOpen] = useState(false);
-  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
-  const [bulkNotificationDialogOpen, setBulkNotificationDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showComponentForm, setShowComponentForm] = useState(false);
+  const [showGenealogyForm, setShowGenealogyForm] = useState(false);
+  const [showRecallForm, setShowRecallForm] = useState(false);
+  const [showRecallScheduleForm, setShowRecallScheduleForm] = useState(false);
+  const [showSimulationForm, setShowSimulationForm] = useState(false);
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [trackingQuery, setTrackingQuery] = useState('');
+  const [traceResult, setTraceResult] = useState<'product' | 'component' | null>(null);
   
-  // State for filters
-  const [productSearchTerm, setProductSearchTerm] = useState('');
-  const [componentSearchTerm, setComponentSearchTerm] = useState('');
-  const [recallSearchTerm, setRecallSearchTerm] = useState('');
-  const [scheduleSearchTerm, setScheduleSearchTerm] = useState('');
-  
-  const [statusFilter, setStatusFilter] = useState<RecallStatus[]>([]);
-  const [typeFilter, setTypeFilter] = useState<RecallType[]>([]);
-
-  const [selectedProductBatchLot, setSelectedProductBatchLot] = useState('');
-  const [selectedComponentBatchLot, setSelectedComponentBatchLot] = useState('');
-  
-  // Function to set active tab
-  const setActiveTab = (tab: string) => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('tab', tab);
-    navigate('?' + newUrl.searchParams.toString(), { replace: true });
-  };
-  
-  // Load data on component mount
+  // Initialize data on component mount
   useEffect(() => {
     loadProducts();
     loadComponents();
@@ -163,1297 +119,1161 @@ const Traceability: React.FC = () => {
     loadRecallSchedules();
   }, [loadProducts, loadComponents, loadRecalls, loadRecallSchedules]);
   
-  // Handle product selection
+  // Filter products based on search query
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.batch_lot_number.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Filter components based on search query
+  const filteredComponents = components.filter(component => 
+    component.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    component.batch_lot_number.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Filter recalls based on search query
+  const filteredRecalls = recalls.filter(recall => 
+    recall.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (recall.description && recall.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    recall.recall_reason.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Filter schedules based on search query
+  const filteredSchedules = recallSchedules.filter(schedule => 
+    schedule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (schedule.description && schedule.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+  
+  // Handler for product selection
   const handleProductSelect = async (productId: string) => {
     const product = await loadProduct(productId);
     if (product) {
+      setSelectedProduct(product);
       await loadGenealogyTree(productId);
       await loadSupplyChainVisualization(productId);
     }
   };
   
-  // Handle recall selection
+  // Handler for component selection
+  const handleComponentSelect = async (componentId: string) => {
+    const component = await loadComponent(componentId);
+    if (component) {
+      setSelectedComponent(component);
+      // Load affected products for this component
+      await loadAffectedProducts(component.batch_lot_number);
+    }
+  };
+  
+  // Handler for recall selection
   const handleRecallSelect = async (recallId: string) => {
     const recall = await loadRecall(recallId);
     if (recall) {
+      setSelectedRecall(recall);
       await loadRecallSimulations(recallId);
       await loadNotifications(recallId);
     }
   };
   
-  // Handle form submissions
-  const handleProductSubmit = async (data: Partial<Product>) => {
-    if (selectedProduct && selectedProduct.id) {
-      await editProduct(selectedProduct.id, data);
-    } else {
-      const newProduct = await addProduct({
-        ...data,
-        created_by: 'Current User', // In a real app, get the current user
-      } as Omit<Product, 'id'>);
-      
-      if (newProduct) {
-        setSelectedProduct(newProduct);
-      }
-    }
-    setProductDialogOpen(false);
+  // Handler for product form submission
+  const handleProductSubmit = async (data: any) => {
+    await addProduct(data);
+    setShowProductForm(false);
+    loadProducts();
   };
   
-  const handleComponentSubmit = async (data: Partial<Component>) => {
-    if (selectedComponent && selectedComponent.id) {
-      await editComponent(selectedComponent.id, data);
-    } else {
-      const newComponent = await addComponent({
-        ...data,
-        created_by: 'Current User', // In a real app, get the current user
-      } as Omit<Component, 'id'>);
-      
-      if (newComponent) {
-        setSelectedComponent(newComponent);
-      }
-    }
-    setComponentDialogOpen(false);
+  // Handler for component form submission
+  const handleComponentSubmit = async (data: any) => {
+    await addComponent(data);
+    setShowComponentForm(false);
+    loadComponents();
   };
   
-  const handleGenealogySubmit = async (data: Partial<ProductGenealogy>) => {
-    const newGenealogy = await addGenealogyLink({
-      ...data,
-      created_by: 'Current User', // In a real app, get the current user
-    } as Omit<ProductGenealogy, 'id'>);
-    
-    if (newGenealogy && selectedProduct) {
-      // Reload the genealogy tree
+  // Handler for genealogy form submission
+  const handleGenealogySubmit = async (data: any) => {
+    await addGenealogyLink(data);
+    setShowGenealogyForm(false);
+    if (selectedProduct) {
       await loadGenealogyTree(selectedProduct.id);
     }
-    setGenealogyDialogOpen(false);
   };
   
-  const handleRecallSubmit = async (data: Partial<Recall>) => {
-    if (selectedRecall && selectedRecall.id) {
-      await editRecall(selectedRecall.id, data);
-    } else {
-      const newRecall = await addRecall({
-        ...data,
-        initiated_by: 'Current User', // In a real app, get the current user
-      } as Omit<Recall, 'id'>);
-      
-      if (newRecall) {
-        setSelectedRecall(newRecall);
-      }
-    }
-    setRecallDialogOpen(false);
+  // Handler for recall form submission
+  const handleRecallSubmit = async (data: any) => {
+    await addRecall(data);
+    setShowRecallForm(false);
+    loadRecalls();
   };
   
-  const handleScheduleSubmit = async (data: Partial<RecallSchedule>) => {
-    const newSchedule = await addRecallSchedule({
-      ...data,
-      created_by: 'Current User', // In a real app, get the current user
-    } as Omit<RecallSchedule, 'id'>);
-    
-    setScheduleDialogOpen(false);
+  // Handler for recall schedule form submission
+  const handleRecallScheduleSubmit = async (data: any) => {
+    await addRecallSchedule(data);
+    setShowRecallScheduleForm(false);
+    loadRecallSchedules();
   };
   
-  const handleSimulationSubmit = async (data: Partial<RecallSimulation>) => {
+  // Handler for simulation form submission
+  const handleSimulationSubmit = async (data: any) => {
     if (selectedRecall) {
-      const newSimulation = await addRecallSimulation({
+      await addRecallSimulation({
+        ...data,
+        recall_id: selectedRecall.id
+      });
+      setShowSimulationForm(false);
+      await loadRecallSimulations(selectedRecall.id);
+    }
+  };
+  
+  // Handler for notification form submission
+  const handleNotificationSubmit = async (data: any) => {
+    if (selectedRecall) {
+      await addNotification({
         ...data,
         recall_id: selectedRecall.id,
-        created_by: 'Current User', // In a real app, get the current user
-      } as Omit<RecallSimulation, 'id'>);
-      
-      if (newSimulation) {
-        // Reload simulations
-        await loadRecallSimulations(selectedRecall.id);
-      }
+        created_by: 'Current User' // Replace with actual user info
+      });
+      setShowNotificationForm(false);
+      await loadNotifications(selectedRecall.id);
     }
-    setSimulationDialogOpen(false);
   };
   
-  const handleNotificationSubmit = async (data: Partial<TraceabilityNotification>) => {
-    if (selectedRecall) {
-      const newNotification = await addNotification({
-        ...data,
-        recall_id: selectedRecall.id,
-        created_by: 'Current User', // In a real app, get the current user
-      } as Omit<TraceabilityNotification, 'id' | 'status' | 'sent_at'>);
-      
-      if (newNotification) {
-        // Reload notifications
-        await loadNotifications(selectedRecall.id);
-      }
-    }
-    setNotificationDialogOpen(false);
-  };
-  
-  const handleBulkNotificationSubmit = async (subject: string, message: string) => {
+  // Handler for sending bulk notifications
+  const handleSendAllNotifications = async () => {
     if (selectedRecall) {
       await sendAllNotifications(
         selectedRecall.id,
-        subject,
-        message,
-        'Current User' // In a real app, get the current user
+        `IMPORTANT: Recall Notice - ${selectedRecall.title}`,
+        `This is an official recall notice for products affected by recall: ${selectedRecall.title}. Reason: ${selectedRecall.recall_reason}. Please take immediate action as required.`,
+        'System'
       );
+      await loadNotifications(selectedRecall.id);
     }
-    setBulkNotificationDialogOpen(false);
   };
   
-  // Handle search by batch/lot number
-  const handleProductBatchLotSearch = async () => {
-    if (selectedProductBatchLot) {
-      const product = await loadProductByBatchLot(selectedProductBatchLot);
-      if (product) {
-        await loadGenealogyTree(product.id);
-        await loadSupplyChainVisualization(product.id);
+  // Handler for tracing a product or component by batch/lot number
+  const handleTraceProduct = async () => {
+    // Check if it's a product first
+    const productResult = await loadProductByBatchLot(trackingQuery);
+    
+    if (productResult) {
+      setSelectedProduct(productResult);
+      await loadGenealogyTree(productResult.id);
+      await loadProductComponents(trackingQuery);
+      setTraceResult('product');
+    } else {
+      // Check if it's a component
+      await loadAffectedProducts(trackingQuery);
+      if (affectedProducts.length > 0) {
+        setTraceResult('component');
+      } else {
+        setTraceResult(null);
+        alert('No product or component found with this batch/lot number');
       }
     }
   };
   
-  const handleComponentBatchLotSearch = async () => {
-    if (selectedComponentBatchLot) {
-      const affectedProds = await loadAffectedProducts(selectedComponentBatchLot);
-      // If products are found, you might want to show them in a dialog or a new view
-    }
+  // Reset trace results
+  const handleResetTrace = () => {
+    setTrackingQuery('');
+    setTraceResult(null);
+    setSelectedProduct(null);
+    setSelectedComponent(null);
   };
   
-  // Filter functions
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-    product.batch_lot_number.toLowerCase().includes(productSearchTerm.toLowerCase())
-  );
-  
-  const filteredComponents = components.filter(component => 
-    component.name.toLowerCase().includes(componentSearchTerm.toLowerCase()) ||
-    component.batch_lot_number.toLowerCase().includes(componentSearchTerm.toLowerCase())
-  );
-  
-  const filteredRecalls = recalls.filter(recall => {
-    // Apply text search
-    const matchesSearch = recall.title.toLowerCase().includes(recallSearchTerm.toLowerCase()) ||
-                          recall.recall_reason.toLowerCase().includes(recallSearchTerm.toLowerCase());
-    
-    // Apply status filter if any are selected
-    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(recall.status as RecallStatus);
-    
-    // Apply type filter if any are selected
-    const matchesType = typeFilter.length === 0 || typeFilter.includes(recall.recall_type as RecallType);
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
-  
-  const filteredSchedules = recallSchedules.filter(schedule => 
-    schedule.title.toLowerCase().includes(scheduleSearchTerm.toLowerCase())
-  );
-  
-  // Format date for display
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
-  
-  // Status badge color
-  const getStatusColor = (status: RecallStatus) => {
-    switch (status) {
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'In Progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Completed':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  // Type badge color
-  const getTypeColor = (type: RecallType) => {
-    switch (type) {
-      case 'Mock':
-        return 'bg-purple-100 text-purple-800';
-      case 'Actual':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Traceability Management</h1>
+  // Render the products tab content
+  const renderProductsTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="relative w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Button onClick={() => setShowProductForm(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Product
+        </Button>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="components">Components</TabsTrigger>
-          <TabsTrigger value="recalls">Recalls</TabsTrigger>
-          <TabsTrigger value="schedules">Recall Schedules</TabsTrigger>
-        </TabsList>
-        
-        {/* Products Tab */}
-        <TabsContent value="products">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle>Products</CardTitle>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedProduct(null);
-                      setProductDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> Add Product
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex space-x-2 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        placeholder="Search products..."
-                        className="pl-8"
-                        value={productSearchTerm}
-                        onChange={(e) => setProductSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 mt-4">
-                    {filteredProducts.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No products found</p>
-                    ) : (
-                      filteredProducts.map((product) => (
-                        <div 
-                          key={product.id}
-                          className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedProduct?.id === product.id ? 'bg-gray-50 border-blue-500' : ''
-                          }`}
-                          onClick={() => handleProductSelect(product.id)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{product.name}</h3>
-                              <p className="text-sm text-gray-500">
-                                Batch/Lot: {product.batch_lot_number}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <div className="mt-2 flex items-center text-xs text-gray-500">
-                            <span className="mr-2">Mfg: {formatDate(product.manufacturing_date)}</span>
-                            {product.expiry_date && (
-                              <span>Exp: {formatDate(product.expiry_date)}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <div className="flex items-center w-full">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">
-                        {filteredProducts.length} products
-                      </p>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Input 
-                        placeholder="Search by Batch/Lot..."
-                        className="text-sm"
-                        value={selectedProductBatchLot}
-                        onChange={(e) => setSelectedProductBatchLot(e.target.value)}
-                      />
-                      <Button size="sm" onClick={handleProductBatchLotSearch}>
-                        Search
-                      </Button>
-                    </div>
-                  </div>
-                </CardFooter>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-2">
-              {selectedProduct ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <div>
-                        <CardTitle>{selectedProduct.name}</CardTitle>
-                        <CardDescription>Batch/Lot: {selectedProduct.batch_lot_number}</CardDescription>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setProductDialogOpen(true)}
-                        >
-                          Edit Product
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setGenealogyDialogOpen(true)}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add Component
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Manufacturing Date</h4>
-                          <p>{formatDate(selectedProduct.manufacturing_date)}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Expiry Date</h4>
-                          <p>{formatDate(selectedProduct.expiry_date)}</p>
-                        </div>
-                        {selectedProduct.category && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Category</h4>
-                            <p>{selectedProduct.category}</p>
-                          </div>
-                        )}
-                        {selectedProduct.sku && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">SKU</h4>
-                            <p>{selectedProduct.sku}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {selectedProduct.description && (
-                        <div className="mb-6">
-                          <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                          <p className="text-sm">{selectedProduct.description}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <GenealogyTree data={genealogyTree} />
-                  
-                  <SupplyChainVisualization data={supplyChainData} />
-                </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Products</CardTitle>
+          <CardDescription>
+            View and manage products in the system.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Batch/Lot Number</TableHead>
+                <TableHead>Manufacturing Date</TableHead>
+                <TableHead>Expiry Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Loading products...
+                  </TableCell>
+                </TableRow>
+              ) : filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No products found
+                  </TableCell>
+                </TableRow>
               ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Product Details</CardTitle>
-                    <CardDescription>Select a product to view its details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-60 flex items-center justify-center text-gray-500">
-                    No product selected
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-        
-        {/* Components Tab */}
-        <TabsContent value="components">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle>Components</CardTitle>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedComponent(null);
-                      setComponentDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> Add Component
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex space-x-2 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        placeholder="Search components..."
-                        className="pl-8"
-                        value={componentSearchTerm}
-                        onChange={(e) => setComponentSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 mt-4">
-                    {filteredComponents.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No components found</p>
-                    ) : (
-                      filteredComponents.map((component) => (
-                        <div 
-                          key={component.id}
-                          className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedComponent?.id === component.id ? 'bg-gray-50 border-blue-500' : ''
-                          }`}
-                          onClick={() => loadComponent(component.id)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{component.name}</h3>
-                              <p className="text-sm text-gray-500">
-                                Batch/Lot: {component.batch_lot_number}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <div className="mt-2 flex items-center text-xs text-gray-500">
-                            <span className="mr-2">Received: {formatDate(component.received_date)}</span>
-                            {component.expiry_date && (
-                              <span>Exp: {formatDate(component.expiry_date)}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <div className="flex items-center w-full">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">
-                        {filteredComponents.length} components
-                      </p>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Input 
-                        placeholder="Search by Batch/Lot..."
-                        className="text-sm"
-                        value={selectedComponentBatchLot}
-                        onChange={(e) => setSelectedComponentBatchLot(e.target.value)}
-                      />
-                      <Button size="sm" onClick={handleComponentBatchLotSearch}>
-                        Search
-                      </Button>
-                    </div>
-                  </div>
-                </CardFooter>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-2">
-              {selectedComponent ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <div>
-                        <CardTitle>{selectedComponent.name}</CardTitle>
-                        <CardDescription>Batch/Lot: {selectedComponent.batch_lot_number}</CardDescription>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setComponentDialogOpen(true)}
+                filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{product.batch_lot_number}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(product.manufacturing_date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      {product.expiry_date 
+                        ? format(new Date(product.expiry_date), 'MMM d, yyyy')
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>{product.category || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleProductSelect(product.id)}
                       >
-                        Edit Component
+                        <Info className="h-4 w-4 mr-1" /> Details
                       </Button>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Received Date</h4>
-                          <p>{formatDate(selectedComponent.received_date)}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Expiry Date</h4>
-                          <p>{formatDate(selectedComponent.expiry_date)}</p>
-                        </div>
-                        {selectedComponent.category && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Category</h4>
-                            <p>{selectedComponent.category}</p>
-                          </div>
-                        )}
-                        {selectedComponent.supplier_id && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Supplier</h4>
-                            <p>{selectedComponent.supplier_id}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {selectedComponent.description && (
-                        <div className="mb-6">
-                          <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                          <p className="text-sm">{selectedComponent.description}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  {affectedProducts.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Products Using This Component</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {affectedProducts.map((product) => (
-                            <div 
-                              key={product.id}
-                              className="p-3 border rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => handleProductSelect(product.id)}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h3 className="font-medium">{product.name}</h3>
-                                  <p className="text-sm text-gray-500">
-                                    Batch/Lot: {product.batch_lot_number}
-                                  </p>
-                                </div>
-                                <ArrowUpRight className="h-4 w-4 text-gray-400" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Component Details</CardTitle>
-                    <CardDescription>Select a component to view its details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-60 flex items-center justify-center text-gray-500">
-                    No component selected
-                  </CardContent>
-                </Card>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-            </div>
-          </div>
-        </TabsContent>
-        
-        {/* Recalls Tab */}
-        <TabsContent value="recalls">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle>Recalls</CardTitle>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRecall(null);
-                      setRecallDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> New Recall
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex space-x-2 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        placeholder="Search recalls..."
-                        className="pl-8"
-                        value={recallSearchTerm}
-                        onChange={(e) => setRecallSearchTerm(e.target.value)}
-                      />
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
-                          <Filter className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuCheckboxItem
-                          checked={statusFilter.includes('Scheduled')}
-                          onCheckedChange={(checked) => {
-                            setStatusFilter(prev => 
-                              checked 
-                                ? [...prev, 'Scheduled']
-                                : prev.filter(s => s !== 'Scheduled')
-                            );
-                          }}
-                        >
-                          Scheduled
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                          checked={statusFilter.includes('In Progress')}
-                          onCheckedChange={(checked) => {
-                            setStatusFilter(prev => 
-                              checked 
-                                ? [...prev, 'In Progress']
-                                : prev.filter(s => s !== 'In Progress')
-                            );
-                          }}
-                        >
-                          In Progress
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                          checked={statusFilter.includes('Completed')}
-                          onCheckedChange={(checked) => {
-                            setStatusFilter(prev => 
-                              checked 
-                                ? [...prev, 'Completed']
-                                : prev.filter(s => s !== 'Completed')
-                            );
-                          }}
-                        >
-                          Completed
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                          checked={statusFilter.includes('Cancelled')}
-                          onCheckedChange={(checked) => {
-                            setStatusFilter(prev => 
-                              checked 
-                                ? [...prev, 'Cancelled']
-                                : prev.filter(s => s !== 'Cancelled')
-                            );
-                          }}
-                        >
-                          Cancelled
-                        </DropdownMenuCheckboxItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
-                          <Layers className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuCheckboxItem
-                          checked={typeFilter.includes('Mock')}
-                          onCheckedChange={(checked) => {
-                            setTypeFilter(prev => 
-                              checked 
-                                ? [...prev, 'Mock']
-                                : prev.filter(t => t !== 'Mock')
-                            );
-                          }}
-                        >
-                          Mock
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                          checked={typeFilter.includes('Actual')}
-                          onCheckedChange={(checked) => {
-                            setTypeFilter(prev => 
-                              checked 
-                                ? [...prev, 'Actual']
-                                : prev.filter(t => t !== 'Actual')
-                            );
-                          }}
-                        >
-                          Actual
-                        </DropdownMenuCheckboxItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {selectedProduct && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Details</CardTitle>
+            <CardDescription>
+              {selectedProduct.name} ({selectedProduct.batch_lot_number})
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <span className="font-medium">SKU:</span> {selectedProduct.sku || 'N/A'}
                   </div>
-                  
-                  <div className="space-y-4 mt-4">
-                    {filteredRecalls.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No recalls found</p>
-                    ) : (
-                      filteredRecalls.map((recall) => (
-                        <div 
-                          key={recall.id}
-                          className={`p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedRecall?.id === recall.id ? 'bg-gray-50 border-blue-500' : ''
-                          }`}
-                          onClick={() => handleRecallSelect(recall.id)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium">{recall.title}</h3>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                <Badge variant="secondary" className={getStatusColor(recall.status as RecallStatus)}>
-                                  {recall.status}
-                                </Badge>
-                                <Badge variant="secondary" className={getTypeColor(recall.recall_type as RecallType)}>
-                                  {recall.recall_type}
-                                </Badge>
-                              </div>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <div className="mt-2 text-xs text-gray-500">
-                            Initiated: {formatDate(recall.initiated_at)}
-                          </div>
-                        </div>
-                      ))
-                    )}
+                  <div>
+                    <span className="font-medium">Category:</span> {selectedProduct.category || 'N/A'}
                   </div>
-                </CardContent>
-                <CardFooter>
-                  <p className="text-sm text-gray-500">
-                    {filteredRecalls.length} recalls
-                  </p>
-                </CardFooter>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-2">
-              {selectedRecall ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <CardTitle>{selectedRecall.title}</CardTitle>
-                          <Badge variant="secondary" className={getTypeColor(selectedRecall.recall_type as RecallType)}>
-                            {selectedRecall.recall_type}
-                          </Badge>
-                        </div>
-                        <CardDescription>Status: {selectedRecall.status}</CardDescription>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRecallDialogOpen(true)}
-                        >
-                          Edit Recall
-                        </Button>
-                        {selectedRecall.recall_type === 'Mock' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSimulationDialogOpen(true)}
-                          >
-                            <RotateCw className="mr-1 h-4 w-4" /> Run Simulation
-                          </Button>
-                        )}
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => setBulkNotificationDialogOpen(true)}
-                        >
-                          <Send className="mr-1 h-4 w-4" /> Notify All
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Initiated By</h4>
-                          <p>{selectedRecall.initiated_by}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Initiated On</h4>
-                          <p>{formatDate(selectedRecall.initiated_at)}</p>
-                        </div>
-                        {selectedRecall.completed_at && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Completed On</h4>
-                            <p>{formatDate(selectedRecall.completed_at)}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Separator className="my-4" />
-                      
-                      <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-500">Recall Reason</h4>
-                        <p className="text-sm mt-1">{selectedRecall.recall_reason}</p>
-                      </div>
-                      
-                      {selectedRecall.description && (
-                        <div className="mb-6">
-                          <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                          <p className="text-sm mt-1">{selectedRecall.description}</p>
-                        </div>
-                      )}
-                      
-                      {selectedRecall.corrective_actions && (
-                        <div className="mb-6">
-                          <h4 className="text-sm font-medium text-gray-500">Corrective Actions</h4>
-                          <p className="text-sm mt-1">{selectedRecall.corrective_actions}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Simulations Card */}
-                  {recallSimulations.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recall Simulations</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {recallSimulations.map((simulation) => (
-                            <div key={simulation.id} className="p-3 border rounded-md">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-medium">
-                                    Simulation from {formatDate(simulation.simulation_date)}
-                                  </h3>
-                                  <div className="flex items-center mt-1">
-                                    <Badge className="bg-blue-100 text-blue-800">
-                                      Success Rate: {simulation.success_rate}%
-                                    </Badge>
-                                    <span className="text-sm text-gray-500 ml-3">
-                                      Duration: {simulation.duration}s
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              {simulation.bottlenecks && (
-                                <div className="mt-2">
-                                  <h4 className="text-xs font-medium text-gray-500">Bottlenecks/Issues</h4>
-                                  <p className="text-sm">{simulation.bottlenecks}</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSimulationDialogOpen(true)}
-                        >
-                          <RotateCw className="mr-1 h-4 w-4" /> Run New Simulation
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  )}
-                  
-                  {/* Notifications Card */}
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle>Notifications</CardTitle>
-                      <Button
-                        size="sm"
-                        onClick={() => setNotificationDialogOpen(true)}
-                      >
-                        <Bell className="mr-1 h-4 w-4" /> Send Notification
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {notifications.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">No notifications sent yet</p>
-                      ) : (
-                        <div className="space-y-4">
-                          {notifications.map((notification) => (
-                            <div key={notification.id} className="p-3 border rounded-md">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-medium">{notification.subject}</h3>
-                                  <div className="flex items-center mt-1">
-                                    <Badge className={
-                                      notification.status === 'Sent' 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : notification.status === 'Failed'
-                                        ? 'bg-red-100 text-red-800'
-                                        : 'bg-yellow-100 text-yellow-800'
-                                    }>
-                                      {notification.status}
-                                    </Badge>
-                                    <span className="text-sm text-gray-500 ml-3">
-                                      To: {notification.recipient_type}
-                                      {notification.recipient_email && ` (${notification.recipient_email})`}
-                                    </span>
-                                  </div>
-                                </div>
-                                {notification.sent_at && (
-                                  <span className="text-xs text-gray-500">
-                                    {formatDate(notification.sent_at)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-2">
-                                <p className="text-sm">{notification.message}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                    <CardFooter>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setBulkNotificationDialogOpen(true)}
-                      >
-                        <Users className="mr-1 h-4 w-4" /> Notify All Stakeholders
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recall Details</CardTitle>
-                    <CardDescription>Select a recall to view its details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-60 flex items-center justify-center text-gray-500">
-                    No recall selected
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-        
-        {/* Recall Schedules Tab */}
-        <TabsContent value="schedules">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle>Recall Schedules</CardTitle>
-                <Button
-                  size="sm"
-                  onClick={() => setScheduleDialogOpen(true)}
-                >
-                  <Plus className="mr-1 h-4 w-4" /> Schedule Recall
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2 mb-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      placeholder="Search schedules..."
-                      className="pl-8"
-                      value={scheduleSearchTerm}
-                      onChange={(e) => setScheduleSearchTerm(e.target.value)}
-                    />
+                  <div>
+                    <span className="font-medium">Manufacturing Date:</span> {
+                      format(new Date(selectedProduct.manufacturing_date), 'MMM d, yyyy')
+                    }
+                  </div>
+                  <div>
+                    <span className="font-medium">Expiry Date:</span> {
+                      selectedProduct.expiry_date 
+                        ? format(new Date(selectedProduct.expiry_date), 'MMM d, yyyy')
+                        : 'N/A'
+                    }
+                  </div>
+                  <div>
+                    <span className="font-medium">Created By:</span> {selectedProduct.created_by}
                   </div>
                 </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium">Description</h3>
+                <p className="mt-2 text-sm">
+                  {selectedProduct.description || 'No description available.'}
+                </p>
                 
-                {filteredSchedules.length === 0 ? (
-                  <div className="text-center py-10">
-                    <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium text-gray-900">No recall schedules</h3>
-                    <p className="text-gray-500 mt-1">
-                      Schedule your first mock or actual recall
-                    </p>
-                    <Button
-                      className="mt-3"
-                      onClick={() => setScheduleDialogOpen(true)}
-                    >
-                      <Plus className="mr-1 h-4 w-4" /> Schedule Recall
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {filteredSchedules.map((schedule) => (
-                      <div key={schedule.id} className="py-4 first:pt-0 last:pb-0">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium">{schedule.title}</h3>
-                            <div className="flex items-center mt-1">
-                              <Badge className={
-                                schedule.recall_type === 'Mock' 
-                                  ? 'bg-purple-100 text-purple-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }>
-                                {schedule.recall_type}
-                              </Badge>
-                              <Badge className="ml-2 bg-blue-100 text-blue-800">
-                                {schedule.is_recurring ? 'Recurring' : 'One-time'}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      // Implement edit logic
-                                    }}
-                                  >
-                                    Edit
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Edit this schedule</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      // Implement delete logic
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Delete this schedule</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
-                          <div>
-                            <h4 className="text-xs font-medium text-gray-500">Next Execution</h4>
-                            <p className="text-sm">
-                              {schedule.next_execution_at 
-                                ? formatDate(schedule.next_execution_at)
-                                : 'Not scheduled'}
-                            </p>
-                          </div>
-                          {schedule.is_recurring && (
-                            <div>
-                              <h4 className="text-xs font-medium text-gray-500">Recurrence</h4>
-                              <p className="text-sm capitalize">
-                                {schedule.recurrence_pattern} 
-                                {schedule.recurrence_interval && schedule.recurrence_interval > 1 
-                                  ? ` (every ${schedule.recurrence_interval} ${schedule.recurrence_pattern}s)`
-                                  : ''}
-                              </p>
-                            </div>
-                          )}
-                          {schedule.last_executed_at && (
-                            <div>
-                              <h4 className="text-xs font-medium text-gray-500">Last Executed</h4>
-                              <p className="text-sm">{formatDate(schedule.last_executed_at)}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {schedule.description && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-600">{schedule.description}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Recalls</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="divide-y">
-                  {filteredSchedules
-                    .filter(schedule => schedule.next_execution_at)
-                    .sort((a, b) => new Date(a.next_execution_at || '').getTime() - new Date(b.next_execution_at || '').getTime())
-                    .slice(0, 5)
-                    .map((schedule) => (
-                      <div key={schedule.id} className="flex items-center py-3 first:pt-0 last:pb-0">
-                        <div className={`w-2 h-2 rounded-full mr-3 ${
-                          schedule.recall_type === 'Mock' ? 'bg-purple-500' : 'bg-red-500'
-                        }`} />
-                        <div className="flex-1">
-                          <p className="font-medium">{schedule.title}</p>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(schedule.next_execution_at)}
-                          </p>
-                        </div>
-                        <Badge>
-                          {schedule.recall_type}
-                        </Badge>
-                      </div>
-                    ))}
-                  
-                  {filteredSchedules.filter(schedule => schedule.next_execution_at).length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No upcoming recalls scheduled</p>
-                  )}
+                <div className="mt-4 flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setShowGenealogyForm(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Add Component
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setShowRecallForm(true)}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-1" /> Initiate Recall
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+            
+            {genealogyTree && (
+              <GenealogyTree 
+                data={genealogyTree} 
+                onNodeClick={(node) => {
+                  if (node.type === 'component') {
+                    handleComponentSelect(node.id);
+                  }
+                }}
+              />
+            )}
+            
+            {supplyChainData && (
+              <SupplyChainVisualization 
+                data={supplyChainData} 
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
       
-      {/* Dialogs */}
-      <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+      <Dialog open={showProductForm} onOpenChange={setShowProductForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{selectedProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogTitle>Add New Product</DialogTitle>
             <DialogDescription>
-              {selectedProduct ? 'Update the product details' : 'Create a new product entry'}
+              Enter the details of the new product to add to the system.
             </DialogDescription>
           </DialogHeader>
-          <ProductForm 
-            initialData={selectedProduct || undefined}
-            onSubmit={handleProductSubmit}
-            loading={loading}
-          />
+          <ProductForm onSubmit={handleProductSubmit} onCancel={() => setShowProductForm(false)} />
         </DialogContent>
       </Dialog>
       
-      <Dialog open={componentDialogOpen} onOpenChange={setComponentDialogOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{selectedComponent ? 'Edit Component' : 'Add New Component'}</DialogTitle>
-            <DialogDescription>
-              {selectedComponent ? 'Update the component details' : 'Create a new component entry'}
-            </DialogDescription>
-          </DialogHeader>
-          <ComponentForm 
-            initialData={selectedComponent || undefined}
-            onSubmit={handleComponentSubmit}
-            loading={loading}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={genealogyDialogOpen} onOpenChange={setGenealogyDialogOpen}>
+      <Dialog open={showGenealogyForm} onOpenChange={setShowGenealogyForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add Component to Product</DialogTitle>
             <DialogDescription>
-              Link a component to a product to build its genealogy
+              Link a component to this product to build the genealogy.
             </DialogDescription>
           </DialogHeader>
           <GenealogyForm 
-            products={products}
-            components={components}
-            preselectedProductId={selectedProduct?.id}
-            onSubmit={handleGenealogySubmit}
-            loading={loading}
+            productId={selectedProduct?.id || ''} 
+            onSubmit={handleGenealogySubmit} 
+            onCancel={() => setShowGenealogyForm(false)} 
           />
         </DialogContent>
       </Dialog>
+    </div>
+  );
+  
+  // Render the components tab content
+  const renderComponentsTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="relative w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search components..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Button onClick={() => setShowComponentForm(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Component
+        </Button>
+      </div>
       
-      <Dialog open={recallDialogOpen} onOpenChange={setRecallDialogOpen}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Components</CardTitle>
+          <CardDescription>
+            View and manage components (raw materials, ingredients, etc.).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Batch/Lot Number</TableHead>
+                <TableHead>Received Date</TableHead>
+                <TableHead>Expiry Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Loading components...
+                  </TableCell>
+                </TableRow>
+              ) : filteredComponents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No components found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredComponents.map((component) => (
+                  <TableRow key={component.id}>
+                    <TableCell>{component.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{component.batch_lot_number}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(component.received_date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      {component.expiry_date 
+                        ? format(new Date(component.expiry_date), 'MMM d, yyyy')
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>{component.category || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleComponentSelect(component.id)}
+                      >
+                        <Info className="h-4 w-4 mr-1" /> Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {selectedComponent && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Component Details</CardTitle>
+            <CardDescription>
+              {selectedComponent.name} ({selectedComponent.batch_lot_number})
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <span className="font-medium">Category:</span> {selectedComponent.category || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Received Date:</span> {
+                      format(new Date(selectedComponent.received_date), 'MMM d, yyyy')
+                    }
+                  </div>
+                  <div>
+                    <span className="font-medium">Expiry Date:</span> {
+                      selectedComponent.expiry_date 
+                        ? format(new Date(selectedComponent.expiry_date), 'MMM d, yyyy')
+                        : 'N/A'
+                    }
+                  </div>
+                  <div>
+                    <span className="font-medium">Created By:</span> {selectedComponent.created_by}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium">Description</h3>
+                <p className="mt-2 text-sm">
+                  {selectedComponent.description || 'No description available.'}
+                </p>
+              </div>
+            </div>
+            
+            {affectedProducts.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-2">Affected Products</h3>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product Name</TableHead>
+                        <TableHead>Batch/Lot Number</TableHead>
+                        <TableHead>Manufacturing Date</TableHead>
+                        <TableHead>Expiry Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {affectedProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{product.batch_lot_number}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(product.manufacturing_date), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            {product.expiry_date 
+                              ? format(new Date(product.expiry_date), 'MMM d, yyyy')
+                              : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      <Dialog open={showComponentForm} onOpenChange={setShowComponentForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{selectedRecall ? 'Edit Recall' : 'Create New Recall'}</DialogTitle>
+            <DialogTitle>Add New Component</DialogTitle>
             <DialogDescription>
-              {selectedRecall ? 'Update the recall details' : 'Create a new product recall'}
+              Enter the details of the new component to add to the system.
             </DialogDescription>
           </DialogHeader>
-          <RecallForm 
-            initialData={selectedRecall || undefined}
-            onSubmit={handleRecallSubmit}
-            loading={loading}
+          <ComponentForm onSubmit={handleComponentSubmit} onCancel={() => setShowComponentForm(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+  
+  // Render the recalls tab content
+  const renderRecallsTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="relative w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search recalls..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={() => setShowRecallScheduleForm(true)}>
+            <Calendar className="mr-2 h-4 w-4" /> Schedule Recall
+          </Button>
+          <Button onClick={() => setShowRecallForm(true)}>
+            <Plus className="mr-2 h-4 w-4" /> New Recall
+          </Button>
+        </div>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Recalls</CardTitle>
+          <CardDescription>
+            View and manage product recalls.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Initiated</TableHead>
+                <TableHead>Reason</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Loading recalls...
+                  </TableCell>
+                </TableRow>
+              ) : filteredRecalls.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No recalls found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredRecalls.map((recall) => (
+                  <TableRow key={recall.id}>
+                    <TableCell>{recall.title}</TableCell>
+                    <TableCell>
+                      <Badge variant={recall.recall_type === 'Mock' ? 'outline' : 'destructive'}>
+                        {recall.recall_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        recall.status === 'Completed' ? 'success' :
+                        recall.status === 'In Progress' ? 'warning' :
+                        recall.status === 'Cancelled' ? 'secondary' : 'default'
+                      }>
+                        {recall.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(recall.initiated_at || ''), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {recall.recall_reason}
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRecallSelect(recall.id)}
+                      >
+                        <Info className="h-4 w-4 mr-1" /> Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {selectedRecall && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recall Details</CardTitle>
+            <CardDescription>
+              {selectedRecall.title} ({selectedRecall.recall_type} Recall)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <span className="font-medium">Status:</span> 
+                    <Badge className="ml-2" variant={
+                      selectedRecall.status === 'Completed' ? 'success' :
+                      selectedRecall.status === 'In Progress' ? 'warning' :
+                      selectedRecall.status === 'Cancelled' ? 'secondary' : 'default'
+                    }>
+                      {selectedRecall.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium">Initiated By:</span> {selectedRecall.initiated_by}
+                  </div>
+                  <div>
+                    <span className="font-medium">Initiated At:</span> {
+                      format(new Date(selectedRecall.initiated_at || ''), 'MMM d, yyyy h:mm a')
+                    }
+                  </div>
+                  {selectedRecall.completed_at && (
+                    <div>
+                      <span className="font-medium">Completed At:</span> {
+                        format(new Date(selectedRecall.completed_at), 'MMM d, yyyy h:mm a')
+                      }
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium">Recall Reason</h3>
+                <p className="mt-2 text-sm">
+                  {selectedRecall.recall_reason}
+                </p>
+                
+                <h4 className="font-medium mt-4">Corrective Actions</h4>
+                <p className="mt-1 text-sm">
+                  {selectedRecall.corrective_actions || 'No corrective actions specified.'}
+                </p>
+                
+                <div className="mt-4 flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setShowSimulationForm(true)}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" /> Run Simulation
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setShowNotificationForm(true)}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-1" /> Send Notification
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleSendAllNotifications}
+                  >
+                    Notify All Stakeholders
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {recallSimulations.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-2">Recall Simulations</h3>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Duration (sec)</TableHead>
+                        <TableHead>Success Rate</TableHead>
+                        <TableHead>Bottlenecks</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recallSimulations.map((simulation) => (
+                        <TableRow key={simulation.id}>
+                          <TableCell>
+                            {format(new Date(simulation.simulation_date || ''), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>{simulation.duration || 'N/A'}</TableCell>
+                          <TableCell>
+                            {simulation.success_rate ? `${simulation.success_rate}%` : 'N/A'}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {simulation.bottlenecks || 'None reported'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            
+            {notifications.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-2">Notifications</h3>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Sent At</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {notifications.map((notification) => (
+                        <TableRow key={notification.id}>
+                          <TableCell>
+                            {notification.recipient_email || notification.recipient_type}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {notification.subject}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              notification.status === 'Sent' ? 'success' :
+                              notification.status === 'Failed' ? 'destructive' : 'default'
+                            }>
+                              {notification.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {notification.sent_at 
+                              ? format(new Date(notification.sent_at), 'MMM d, yyyy h:mm a') 
+                              : 'Not sent yet'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      <Dialog open={showRecallForm} onOpenChange={setShowRecallForm}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Initiate New Recall</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new recall.
+            </DialogDescription>
+          </DialogHeader>
+          <RecallForm onSubmit={handleRecallSubmit} onCancel={() => setShowRecallForm(false)} />
         </DialogContent>
       </Dialog>
       
-      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+      <Dialog open={showRecallScheduleForm} onOpenChange={setShowRecallScheduleForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Schedule a Recall</DialogTitle>
             <DialogDescription>
-              Set up a one-time or recurring recall schedule
+              Set up a one-time or recurring mock recall.
             </DialogDescription>
           </DialogHeader>
           <RecallScheduleForm 
-            onSubmit={handleScheduleSubmit}
-            loading={loading}
+            onSubmit={handleRecallScheduleSubmit} 
+            onCancel={() => setShowRecallScheduleForm(false)} 
           />
         </DialogContent>
       </Dialog>
       
-      <Dialog open={simulationDialogOpen} onOpenChange={setSimulationDialogOpen}>
+      <Dialog open={showSimulationForm} onOpenChange={setShowSimulationForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Run Mock Recall Simulation</DialogTitle>
+            <DialogTitle>Run Recall Simulation</DialogTitle>
             <DialogDescription>
-              Simulate a recall to test your readiness
+              Configure this simulation run for the recall.
             </DialogDescription>
           </DialogHeader>
           {selectedRecall && (
             <RecallSimulationForm 
-              recallId={selectedRecall.id}
-              onSubmit={handleSimulationSubmit}
-              loading={loading}
+              recallId={selectedRecall.id} 
+              onSubmit={handleSimulationSubmit} 
+              onCancel={() => setShowSimulationForm(false)} 
             />
           )}
         </DialogContent>
       </Dialog>
       
-      <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
+      <Dialog open={showNotificationForm} onOpenChange={setShowNotificationForm}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Send Notification</DialogTitle>
+            <DialogTitle>Send Recall Notification</DialogTitle>
             <DialogDescription>
-              Send a notification to a specific stakeholder
+              Send a notification to a specific recipient.
             </DialogDescription>
           </DialogHeader>
-          {selectedRecall && (
-            <NotificationForm 
-              recallId={selectedRecall.id}
-              onSubmit={handleNotificationSubmit}
-              loading={loading}
-            />
-          )}
+          <NotificationForm 
+            onSubmit={handleNotificationSubmit} 
+            onCancel={() => setShowNotificationForm(false)} 
+          />
         </DialogContent>
       </Dialog>
+    </div>
+  );
+  
+  // Render the schedules tab content
+  const renderSchedulesTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="relative w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search schedules..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Button onClick={() => setShowRecallScheduleForm(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Schedule
+        </Button>
+      </div>
       
-      <Dialog open={bulkNotificationDialogOpen} onOpenChange={setBulkNotificationDialogOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Notify All Stakeholders</DialogTitle>
-            <DialogDescription>
-              Send a notification to all stakeholders with a single click
-            </DialogDescription>
-          </DialogHeader>
-          {selectedRecall && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Recall Schedules</CardTitle>
+          <CardDescription>
+            View and manage scheduled recalls.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Frequency</TableHead>
+                <TableHead>Next Execution</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Loading schedules...
+                  </TableCell>
+                </TableRow>
+              ) : filteredSchedules.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No schedules found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredSchedules.map((schedule) => (
+                  <TableRow key={schedule.id}>
+                    <TableCell>{schedule.title}</TableCell>
+                    <TableCell>
+                      <Badge variant={schedule.recall_type === 'Mock' ? 'outline' : 'destructive'}>
+                        {schedule.recall_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {schedule.is_recurring 
+                        ? `${schedule.recurrence_pattern || 'Custom'} (every ${schedule.recurrence_interval || 1})`
+                        : 'One-time'}
+                    </TableCell>
+                    <TableCell>
+                      {schedule.next_execution_at 
+                        ? format(new Date(schedule.next_execution_at), 'MMM d, yyyy')
+                        : 'Not scheduled'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={schedule.status === 'active' ? 'success' : 'secondary'}>
+                        {schedule.status || 'Unknown'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{schedule.created_by}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  // Render the tracing tab content
+  const renderTracingTab = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Product & Component Tracing</CardTitle>
+          <CardDescription>
+            Trace a product or component through the supply chain using its batch/lot number.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex space-x-2">
+              <div className="flex-1">
+                <Input
+                  placeholder="Enter batch/lot number to trace..."
+                  value={trackingQuery}
+                  onChange={(e) => setTrackingQuery(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleTraceProduct} disabled={!trackingQuery}>
+                Trace
+              </Button>
+              {traceResult && (
+                <Button variant="outline" onClick={handleResetTrace}>
+                  Reset
+                </Button>
+              )}
+            </div>
+            
+            {loading && (
+              <div className="text-center py-4">
+                Searching for batch/lot number...
+              </div>
+            )}
+            
+            {traceResult === 'product' && selectedProduct && (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <h3 className="text-lg font-medium flex items-center text-green-800">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Product Found
+                  </h3>
+                  <p className="mt-1 text-sm text-green-700">
+                    Found product "{selectedProduct.name}" with batch/lot number "{selectedProduct.batch_lot_number}".
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="text-sm font-medium">Subject</h3>
-                    <Input 
-                      placeholder="Enter notification subject"
-                      defaultValue={`Recall Notice: ${selectedRecall.title}`}
-                      className="mt-1"
-                      id="bulk-notification-subject"
-                    />
+                    <h3 className="text-lg font-medium">Product Details</h3>
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <span className="font-medium">Name:</span> {selectedProduct.name}
+                      </div>
+                      <div>
+                        <span className="font-medium">Batch/Lot:</span> {selectedProduct.batch_lot_number}
+                      </div>
+                      <div>
+                        <span className="font-medium">Manufacturing Date:</span> {
+                          format(new Date(selectedProduct.manufacturing_date), 'MMM d, yyyy')
+                        }
+                      </div>
+                      <div>
+                        <span className="font-medium">Expiry Date:</span> {
+                          selectedProduct.expiry_date 
+                            ? format(new Date(selectedProduct.expiry_date), 'MMM d, yyyy')
+                            : 'N/A'
+                        }
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Message</h3>
-                    <Textarea 
-                      placeholder="Enter notification message"
-                      defaultValue={`Dear Stakeholder,\n\nThis is to inform you about a ${selectedRecall.recall_type.toLowerCase()} recall for products related to "${selectedRecall.title}".\n\nReason for recall: ${selectedRecall.recall_reason}\n\nPlease take appropriate action immediately.\n\nRegards,\nQuality Assurance Team`}
-                      className="mt-1 min-h-32"
-                      id="bulk-notification-message"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBulkNotificationDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="default"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        const subject = (document.getElementById('bulk-notification-subject') as HTMLInputElement)?.value || '';
-                        const message = (document.getElementById('bulk-notification-message') as HTMLTextAreaElement)?.value || '';
-                        handleBulkNotificationSubmit(subject, message);
-                      }}
-                    >
-                      <Send className="mr-1 h-4 w-4" /> Send to All Stakeholders
-                    </Button>
+                  
+                  {productComponents.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium">Components Used</h3>
+                      <div className="mt-2 space-y-1">
+                        {productComponents.map((component, index) => (
+                          <div key={index} className="flex items-center">
+                            <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />
+                            <span>
+                              {component.component_name} ({component.component_batch_lot})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {genealogyTree && (
+                  <GenealogyTree 
+                    data={genealogyTree} 
+                    onNodeClick={(node) => {
+                      if (node.type === 'component') {
+                        handleComponentSelect(node.id);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            
+            {traceResult === 'component' && affectedProducts.length > 0 && (
+              <div className="space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                  <h3 className="text-lg font-medium flex items-center text-amber-800">
+                    <AlertCircle className="h-5 w-5 mr-2" />
+                    Component Found in Products
+                  </h3>
+                  <p className="mt-1 text-sm text-amber-700">
+                    The component with batch/lot number "{trackingQuery}" was found in {affectedProducts.length} product(s).
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Affected Products</h3>
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product Name</TableHead>
+                          <TableHead>Batch/Lot Number</TableHead>
+                          <TableHead>Manufacturing Date</TableHead>
+                          <TableHead>Expiry Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {affectedProducts.map((product) => (
+                          <TableRow key={product.id}>
+                            <TableCell>{product.name}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{product.batch_lot_number}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(product.manufacturing_date), 'MMM d, yyyy')}
+                            </TableCell>
+                            <TableCell>
+                              {product.expiry_date 
+                                ? format(new Date(product.expiry_date), 'MMM d, yyyy')
+                                : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleProductSelect(product.id)}
+                              >
+                                <Info className="h-4 w-4 mr-1" /> Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </DialogContent>
-      </Dialog>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <h3 className="text-md font-medium text-blue-800">Consider a Recall?</h3>
+                  <p className="mt-1 text-sm text-blue-700">
+                    If this component has an issue, you may need to recall the affected products.
+                  </p>
+                  <Button 
+                    className="mt-2" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setActiveTab('recalls');
+                      setShowRecallForm(true);
+                    }}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-1" /> Initiate Recall
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {traceResult === null && trackingQuery && !loading && (
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
+                No product or component found with this batch/lot number.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  return (
+    <div className="container py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Traceability</h1>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-5 w-[600px]">
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="components">Components</TabsTrigger>
+          <TabsTrigger value="recalls">Recalls</TabsTrigger>
+          <TabsTrigger value="schedules">Schedules</TabsTrigger>
+          <TabsTrigger value="tracing">Tracing</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="products" className="mt-6">
+          {renderProductsTab()}
+        </TabsContent>
+        
+        <TabsContent value="components" className="mt-6">
+          {renderComponentsTab()}
+        </TabsContent>
+        
+        <TabsContent value="recalls" className="mt-6">
+          {renderRecallsTab()}
+        </TabsContent>
+        
+        <TabsContent value="schedules" className="mt-6">
+          {renderSchedulesTab()}
+        </TabsContent>
+        
+        <TabsContent value="tracing" className="mt-6">
+          {renderTracingTab()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
