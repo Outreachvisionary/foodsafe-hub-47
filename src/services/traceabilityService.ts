@@ -1,5 +1,4 @@
 
-import { supabase } from '@/lib/supabase';
 import { 
   Product, 
   Component, 
@@ -12,6 +11,7 @@ import {
   TreeNode,
   SupplyChainPartner
 } from '@/types/traceability';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Fetch all products

@@ -25,13 +25,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem
-} from '@/components/ui';
+} from '@/components/ui/index';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Search, Filter, ChevronDown, PlusCircle, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useAudits } from '@/hooks/useAudits';
 
-// Import types from the appropriate location if needed
+// Define a local Audit type that matches the component expectations
 type Audit = {
   id: string;
   title: string;
@@ -45,7 +45,7 @@ type Audit = {
 
 const InternalAudits: React.FC = () => {
   const navigate = useNavigate();
-  const { audits, loading, error, loadAudits } = useAudits();
+  const { audits: serviceAudits, loading, error, loadAudits } = useAudits();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -57,6 +57,18 @@ const InternalAudits: React.FC = () => {
   const [highRiskOnly, setHighRiskOnly] = useState(false);
   const [myAuditsOnly, setMyAuditsOnly] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
+
+  // Transform service audits to component-expected format
+  const audits: Audit[] = serviceAudits?.map(audit => ({
+    id: audit.id,
+    title: audit.title,
+    status: audit.status,
+    start_date: audit.scheduledDate,
+    due_date: audit.scheduledDate, // Using scheduled date as due date
+    audit_type: audit.audit_type || '',
+    assigned_to: audit.assignedTo,
+    findings_count: audit.findings || 0
+  })) || [];
 
   useEffect(() => {
     loadAudits();
