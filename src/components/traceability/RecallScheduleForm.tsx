@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RecallSchedule, RecallType } from '@/types/traceability';
+import { RecallSchedule } from '@/types/traceability';
 import {
   Form,
   FormControl,
@@ -11,11 +11,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -23,9 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
-const recallScheduleSchema = z.object({
+const scheduleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   recall_type: z.enum(['Mock', 'Actual']),
@@ -33,14 +34,14 @@ const recallScheduleSchema = z.object({
   one_time_date: z.string().optional(),
   recurrence_pattern: z.string().optional(),
   recurrence_interval: z.coerce.number().optional(),
-  assigned_users: z.array(z.string()).optional(),
+  created_by: z.string().min(1, 'Creator is required'),
 });
 
-type RecallScheduleFormValues = z.infer<typeof recallScheduleSchema>;
+type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 interface RecallScheduleFormProps {
   initialData?: Partial<RecallSchedule>;
-  onSubmit: (data: RecallScheduleFormValues) => void;
+  onSubmit: (data: ScheduleFormValues) => void;
   onCancel?: () => void;
   loading?: boolean;
 }
@@ -51,32 +52,29 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
   onCancel,
   loading = false,
 }) => {
-  const form = useForm<RecallScheduleFormValues>({
-    resolver: zodResolver(recallScheduleSchema),
+  const form = useForm<ScheduleFormValues>({
+    resolver: zodResolver(scheduleSchema),
     defaultValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
-      recall_type: (initialData?.recall_type as RecallType) || 'Mock',
+      recall_type: (initialData?.recall_type as any) || 'Mock',
       is_recurring: initialData?.is_recurring || false,
       one_time_date: initialData?.one_time_date ? new Date(initialData.one_time_date).toISOString().split('T')[0] : '',
-      recurrence_pattern: initialData?.recurrence_pattern || '',
+      recurrence_pattern: initialData?.recurrence_pattern || 'monthly',
       recurrence_interval: initialData?.recurrence_interval || 1,
-      assigned_users: initialData?.assigned_users || [],
+      created_by: initialData?.created_by || 'Current User',
     },
   });
 
   const isRecurring = form.watch('is_recurring');
 
-  const handleSubmit = (values: RecallScheduleFormValues) => {
+  const handleSubmit = (values: ScheduleFormValues) => {
     onSubmit(values);
   };
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{initialData?.id ? 'Edit Recall Schedule' : 'Create New Recall Schedule'}</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -84,7 +82,7 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Schedule Title</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter schedule title" {...field} />
                   </FormControl>
@@ -99,15 +97,18 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recall Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select recall type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Mock">Mock</SelectItem>
-                      <SelectItem value="Actual">Actual</SelectItem>
+                      <SelectItem value="Mock">Mock (Simulation)</SelectItem>
+                      <SelectItem value="Actual">Actual (Real Recall)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -119,21 +120,19 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
               control={form.control}
               name="is_recurring"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Recurring Schedule</FormLabel>
+                    <FormDescription>
+                      Should this recall be scheduled on a recurring basis?
+                    </FormDescription>
+                  </div>
                   <FormControl>
-                    <Checkbox
+                    <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Recurring Schedule
-                    </FormLabel>
-                    <p className="text-sm text-muted-foreground">
-                      Set this recall to repeat automatically
-                    </p>
-                  </div>
                 </FormItem>
               )}
             />
@@ -146,10 +145,13 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Recurrence Pattern</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select pattern" />
+                            <SelectValue placeholder="Select frequency" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -170,10 +172,19 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
                   name="recurrence_interval"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recurrence Interval</FormLabel>
+                      <FormLabel>Interval</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input 
+                          type="number" 
+                          min="1"
+                          max="12"
+                          placeholder="How often to repeat"
+                          {...field} 
+                        />
                       </FormControl>
+                      <FormDescription>
+                        E.g., every 1, 2, or 3 months
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -200,9 +211,30 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Description (optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter detailed description (optional)" {...field} />
+                    <Textarea 
+                      placeholder="Enter additional details about this schedule" 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="created_by"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Created By</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter your name" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -211,7 +243,12 @@ const RecallScheduleForm: React.FC<RecallScheduleFormProps> = ({
 
             <div className="flex justify-end space-x-2 pt-4">
               {onCancel && (
-                <Button variant="outline" onClick={onCancel} disabled={loading}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onCancel} 
+                  disabled={loading}
+                >
                   Cancel
                 </Button>
               )}

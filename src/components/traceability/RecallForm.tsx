@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Recall, RecallType, RecallStatus } from '@/types/traceability';
+import { Recall } from '@/types/traceability';
 import {
   Form,
   FormControl,
@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -28,10 +28,9 @@ const recallSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   recall_type: z.enum(['Mock', 'Actual']),
-  status: z.enum(['Scheduled', 'In Progress', 'Completed', 'Cancelled']),
   recall_reason: z.string().min(1, 'Recall reason is required'),
   corrective_actions: z.string().optional(),
-  affected_products: z.any().optional(),
+  initiated_by: z.string().min(1, 'Initiator is required'),
 });
 
 type RecallFormValues = z.infer<typeof recallSchema>;
@@ -54,11 +53,10 @@ const RecallForm: React.FC<RecallFormProps> = ({
     defaultValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
-      recall_type: (initialData?.recall_type as RecallType) || 'Mock',
-      status: (initialData?.status as RecallStatus) || 'Scheduled',
+      recall_type: (initialData?.recall_type as any) || 'Mock',
       recall_reason: initialData?.recall_reason || '',
       corrective_actions: initialData?.corrective_actions || '',
-      affected_products: initialData?.affected_products || {},
+      initiated_by: initialData?.initiated_by || 'Current User',
     },
   });
 
@@ -68,10 +66,7 @@ const RecallForm: React.FC<RecallFormProps> = ({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{initialData?.id ? 'Edit Recall' : 'Create New Recall'}</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -79,7 +74,7 @@ const RecallForm: React.FC<RecallFormProps> = ({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Recall Title</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter recall title" {...field} />
                   </FormControl>
@@ -88,53 +83,30 @@ const RecallForm: React.FC<RecallFormProps> = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="recall_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recall Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select recall type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Mock">Mock</SelectItem>
-                        <SelectItem value="Actual">Actual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Scheduled">Scheduled</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="recall_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recall Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select recall type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Mock">Mock (Simulation)</SelectItem>
+                      <SelectItem value="Actual">Actual (Real Recall)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -143,7 +115,11 @@ const RecallForm: React.FC<RecallFormProps> = ({
                 <FormItem>
                   <FormLabel>Recall Reason</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter reason for recall" {...field} />
+                    <Textarea 
+                      placeholder="Enter the reason for this recall" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -155,9 +131,13 @@ const RecallForm: React.FC<RecallFormProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Description (optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter detailed description (optional)" {...field} />
+                    <Textarea 
+                      placeholder="Enter additional details about this recall" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,9 +149,30 @@ const RecallForm: React.FC<RecallFormProps> = ({
               name="corrective_actions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Corrective Actions</FormLabel>
+                  <FormLabel>Corrective Actions (optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter corrective actions (optional)" {...field} />
+                    <Textarea 
+                      placeholder="Describe any corrective actions to be taken" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="initiated_by"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Initiated By</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter your name" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,12 +181,17 @@ const RecallForm: React.FC<RecallFormProps> = ({
 
             <div className="flex justify-end space-x-2 pt-4">
               {onCancel && (
-                <Button variant="outline" onClick={onCancel} disabled={loading}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onCancel} 
+                  disabled={loading}
+                >
                   Cancel
                 </Button>
               )}
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : initialData?.id ? 'Update Recall' : 'Create Recall'}
+                {loading ? 'Initiating...' : initialData?.id ? 'Update Recall' : 'Initiate Recall'}
               </Button>
             </div>
           </form>

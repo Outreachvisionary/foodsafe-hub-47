@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -24,7 +25,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem
-} from '@/components/ui/';
+} from '@/components/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Search, Filter, ChevronDown, PlusCircle, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
@@ -44,7 +45,7 @@ type Audit = {
 
 const InternalAudits: React.FC = () => {
   const navigate = useNavigate();
-  const { audits, loading, error, fetchAudits } = useAudits();
+  const { audits, loading, error, loadAudits } = useAudits();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -58,8 +59,8 @@ const InternalAudits: React.FC = () => {
   const [overdueOnly, setOverdueOnly] = useState(false);
 
   useEffect(() => {
-    fetchAudits();
-  }, [fetchAudits]);
+    loadAudits();
+  }, [loadAudits]);
 
   const handleStatusChange = (status: string | null) => {
     setSelectedStatus(status);

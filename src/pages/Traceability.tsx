@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge
-} from '@/components/ui/';
+} from '@/components/ui';
 import { Search, Plus, Info, Calendar, AlertCircle, CheckCircle, ChevronRight, RefreshCw } from 'lucide-react';
 import { useTraceability } from '@/hooks/useTraceability';
 import ProductForm from '@/components/traceability/ProductForm';
@@ -78,12 +78,15 @@ const Traceability: React.FC = () => {
     loadRecalls,
     loadRecallSchedules,
     loadProduct,
+    loadComponent,
+    loadRecall,
     loadGenealogyTree,
     loadSupplyChainVisualization,
     loadRecallSimulations,
     loadNotifications,
     loadProductComponents,
     loadAffectedProducts,
+    loadProductByBatchLot,
     
     addProduct,
     addComponent,
@@ -464,7 +467,9 @@ const Traceability: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <GenealogyForm 
-            productId={selectedProduct?.id || ''} 
+            products={[selectedProduct as any]} 
+            components={components}
+            preselectedProductId={selectedProduct?.id}
             onSubmit={handleGenealogySubmit} 
             onCancel={() => setShowGenealogyForm(false)} 
           />
@@ -956,6 +961,7 @@ const Traceability: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <NotificationForm 
+            recallId={selectedRecall?.id || ''}
             onSubmit={handleNotificationSubmit} 
             onCancel={() => setShowNotificationForm(false)} 
           />
@@ -1130,7 +1136,7 @@ const Traceability: React.FC = () => {
                           <div key={index} className="flex items-center">
                             <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />
                             <span>
-                              {component.component_name} ({component.component_batch_lot})
+                              {component.name} ({component.batch_lot_number})
                             </span>
                           </div>
                         ))}
