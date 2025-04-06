@@ -722,7 +722,7 @@ const Traceability: React.FC = () => {
                     <TableCell>
                       <Badge variant={
                         recall.status === 'Completed' ? 'success' :
-                        recall.status === 'In Progress' ? 'warning' :
+                        recall.status === 'In Progress' ? 'secondary' : // Changed from 'warning' to 'secondary'
                         recall.status === 'Cancelled' ? 'secondary' : 'default'
                       }>
                         {recall.status}
@@ -768,7 +768,7 @@ const Traceability: React.FC = () => {
                     <span className="font-medium">Status:</span> 
                     <Badge className="ml-2" variant={
                       selectedRecall.status === 'Completed' ? 'success' :
-                      selectedRecall.status === 'In Progress' ? 'warning' :
+                      selectedRecall.status === 'In Progress' ? 'secondary' : // Changed from 'warning' to 'secondary'
                       selectedRecall.status === 'Cancelled' ? 'secondary' : 'default'
                     }>
                       {selectedRecall.status}
