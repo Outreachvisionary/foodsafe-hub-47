@@ -1,35 +1,35 @@
 
+# This is the main configuration file for Supabase CLI
 project_id = "vngmjjvfofoggfqgpizo"
 
 [api]
-enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemes = ["http", "https"]
+version = 1
 
 [db]
 port = 54322
 
 [studio]
-enabled = true
 port = 54323
-api_url = "http://localhost:54321"
 
 [inbucket]
-enabled = true
 port = 54324
+smtp_port = 54325
+pop3_port = 54326
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-
-[storage]
-enabled = true
-
-[realtime]
-enabled = true
+site_url = "https://app.example.com"
+additional_redirect_urls = ["https://example.com"]
+jwt_expiry = 3600
+enable_signup = true
 
 [functions]
-[functions.serve]
+[functions.traceability-notifications]
+verify_jwt = true
+[functions.recall-schedule-processor]
+verify_jwt = false
+
+[realtime]
 enabled = true
