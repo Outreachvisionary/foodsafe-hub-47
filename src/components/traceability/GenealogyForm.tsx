@@ -26,8 +26,9 @@ import { Textarea } from '@/components/ui/textarea';
 
 const genealogySchema = z.object({
   product_id: z.string().min(1, 'Product is required'),
-  component_id: z.string().min(1, 'Component is required'),
+  component_id: z.string().min(1, 'Raw Material is required'),
   quantity: z.coerce.number().optional(),
+  units: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -58,6 +59,7 @@ const GenealogyForm: React.FC<GenealogyFormProps> = ({
       product_id: preselectedProductId || initialData?.product_id || '',
       component_id: initialData?.component_id || '',
       quantity: initialData?.quantity || undefined,
+      units: initialData?.units || '',
       notes: initialData?.notes || '',
     },
   });
@@ -69,7 +71,7 @@ const GenealogyForm: React.FC<GenealogyFormProps> = ({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>{initialData?.id ? 'Edit Genealogy Link' : 'Add Component to Product'}</CardTitle>
+        <CardTitle>{initialData?.id ? 'Edit Genealogy Link' : 'Add Raw Material to Product'}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -104,11 +106,11 @@ const GenealogyForm: React.FC<GenealogyFormProps> = ({
               name="component_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Component</FormLabel>
+                  <FormLabel>Raw Material</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a component" />
+                        <SelectValue placeholder="Select a raw material" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -124,19 +126,35 @@ const GenealogyForm: React.FC<GenealogyFormProps> = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Enter quantity (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Enter quantity" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="units"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Units</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., kg, liters, pieces" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -159,7 +177,7 @@ const GenealogyForm: React.FC<GenealogyFormProps> = ({
                 </Button>
               )}
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : initialData?.id ? 'Update Link' : 'Add Component to Product'}
+                {loading ? 'Saving...' : initialData?.id ? 'Update Link' : 'Add Raw Material to Product'}
               </Button>
             </div>
           </form>

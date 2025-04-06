@@ -21,9 +21,11 @@ export interface Product {
   created_by: string;
   status?: string;
   attributes?: Record<string, any>;
+  quantity?: number;
+  units?: string;
 }
 
-// Component interface
+// Component interface (renamed to RawMaterial in UI)
 export interface Component {
   id: string;
   name: string;
@@ -38,6 +40,8 @@ export interface Component {
   created_by: string;
   status?: string;
   attributes?: Record<string, any>;
+  quantity?: number;
+  units?: string;
 }
 
 // ProductGenealogy interface
@@ -46,6 +50,7 @@ export interface ProductGenealogy {
   product_id: string;
   component_id: string;
   quantity?: number;
+  units?: string;
   created_at?: string;
   updated_at?: string;
   created_by: string;
@@ -81,6 +86,10 @@ export interface RecallSimulation {
   created_by: string;
   created_at?: string;
   updated_at?: string;
+  quantity_recovered?: number;
+  units?: string;
+  recovery_percentage?: number;
+  notes?: string;
 }
 
 // RecallSchedule interface

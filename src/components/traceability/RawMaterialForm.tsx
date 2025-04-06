@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Product } from '@/types/traceability';
+import { Component } from '@/types/traceability';
 import {
   Form,
   FormControl,
@@ -17,43 +17,41 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
+const rawMaterialSchema = z.object({
+  name: z.string().min(1, 'Raw material name is required'),
   description: z.string().optional(),
   category: z.string().optional(),
-  sku: z.string().optional(),
   batch_lot_number: z.string().min(1, 'Batch/Lot number is required'),
-  manufacturing_date: z.string().min(1, 'Manufacturing date is required'),
+  received_date: z.string().min(1, 'Received date is required'),
   expiry_date: z.string().optional(),
   created_by: z.string().min(1, 'Creator is required'),
   quantity: z.coerce.number().optional(),
   units: z.string().optional(),
 });
 
-type ProductFormValues = z.infer<typeof productSchema>;
+type RawMaterialFormValues = z.infer<typeof rawMaterialSchema>;
 
-interface ProductFormProps {
-  initialData?: Partial<Product>;
-  onSubmit: (data: ProductFormValues) => void;
+interface RawMaterialFormProps {
+  initialData?: Partial<Component>;
+  onSubmit: (data: RawMaterialFormValues) => void;
   onCancel?: () => void;
   loading?: boolean;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({
+const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
   initialData,
   onSubmit,
   onCancel,
   loading = false,
 }) => {
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<RawMaterialFormValues>({
+    resolver: zodResolver(rawMaterialSchema),
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
       category: initialData?.category || '',
-      sku: initialData?.sku || '',
       batch_lot_number: initialData?.batch_lot_number || '',
-      manufacturing_date: initialData?.manufacturing_date ? new Date(initialData.manufacturing_date).toISOString().split('T')[0] : '',
+      received_date: initialData?.received_date ? new Date(initialData.received_date).toISOString().split('T')[0] : '',
       expiry_date: initialData?.expiry_date ? new Date(initialData.expiry_date).toISOString().split('T')[0] : '',
       created_by: initialData?.created_by || 'Current User',
       quantity: initialData?.quantity || undefined,
@@ -61,7 +59,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     },
   });
 
-  const handleSubmit = (values: ProductFormValues) => {
+  const handleSubmit = (values: RawMaterialFormValues) => {
     onSubmit(values);
   };
 
@@ -75,9 +73,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Product Name</FormLabel>
+                  <FormLabel>Raw Material Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter product name" {...field} />
+                    <Input placeholder="Enter raw material name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -101,12 +99,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
               <FormField
                 control={form.control}
-                name="sku"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU (optional)</FormLabel>
+                    <FormLabel>Category</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter SKU" {...field} />
+                      <Input placeholder="Enter category (optional)" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,10 +145,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="manufacturing_date"
+                name="received_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Manufacturing Date</FormLabel>
+                    <FormLabel>Received Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -176,27 +174,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
             <FormField
               control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category (optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter product category" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description (optional)</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter product description" 
+                      placeholder="Enter raw material description" 
                       className="min-h-[100px]"
                       {...field} 
                     />
@@ -235,7 +219,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 </Button>
               )}
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : initialData?.id ? 'Update Product' : 'Add Product'}
+                {loading ? 'Saving...' : initialData?.id ? 'Update Raw Material' : 'Add Raw Material'}
               </Button>
             </div>
           </form>
@@ -245,4 +229,4 @@ const ProductForm: React.FC<ProductFormProps> = ({
   );
 };
 
-export default ProductForm;
+export default RawMaterialForm;
