@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -109,7 +108,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
         result = await updateNonConformance(id, {
           ...data,
           updated_at: new Date().toISOString()
-        });
+        }, data.created_by); // Added the missing third argument - created_by as the userId
         
         toast({
           title: 'Updated successfully',
