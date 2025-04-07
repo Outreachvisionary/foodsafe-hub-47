@@ -7,7 +7,7 @@ import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { AppLayout } from '@/components/layout/AppLayout';
+import AppLayout from '@/components/layout/AppLayout';
 
 const NonConformanceModule = () => {
   const { id } = useParams();

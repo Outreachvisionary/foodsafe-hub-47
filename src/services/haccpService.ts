@@ -1,38 +1,38 @@
 
 /**
- * Mock Traceability Service
+ * Mock HACCP Service
  * This is a placeholder to support testing.
  */
 
-export const fetchProducts = async () => {
+export const fetchHACCPPlans = async () => {
   // In a real implementation, this would interact with the database
   return [];
 };
 
-export const createProduct = async (product: any) => {
+export const createHACCPPlan = async (plan: any) => {
   // In a real implementation, this would interact with the database
-  return { id: 'mock-product-id', ...product };
+  return { id: 'mock-haccp-id', ...plan };
 };
 
-export const fetchProductById = async (id: string) => {
+export const fetchHACCPPlanById = async (id: string) => {
   // In a real implementation, this would interact with the database
   return { id };
 };
 
-export const updateProduct = async (id: string, updates: any) => {
+export const updateHACCPPlan = async (id: string, updates: any) => {
   // In a real implementation, this would interact with the database
   return { id, ...updates };
 };
 
-export const deleteProduct = async (id: string) => {
+export const deleteHACCPPlan = async (id: string) => {
   // In a real implementation, this would interact with the database
   return true;
 };
 
 export default {
-  fetchProducts,
-  createProduct,
-  fetchProductById,
-  updateProduct,
-  deleteProduct
+  fetchHACCPPlans,
+  createHACCPPlan,
+  fetchHACCPPlanById,
+  updateHACCPPlan,
+  deleteHACCPPlan
 };

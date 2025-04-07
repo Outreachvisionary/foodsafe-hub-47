@@ -231,8 +231,6 @@ describe('Application Modules Database Integration Tests', () => {
   describe('Database Integration Tests', () => {
     it('should have proper error handling for database operations', async () => {
       // Test that errors are properly caught and handled
-      (supabase.from().select().then as jest.Mock) = jest.fn().mockRejectedValue(new Error('Database connection error'));
-      
       (nonConformanceService.fetchNonConformances as jest.Mock).mockRejectedValue(new Error('Database connection error'));
       
       await expect(nonConformanceService.fetchNonConformances()).rejects.toThrow('Database connection error');

@@ -62,7 +62,7 @@ describe('Non-Conformance Service Tests', () => {
   describe('fetchNonConformances', () => {
     it('should fetch all non-conformances successfully', async () => {
       const mockData = [{ ...mockNC, id: mockId }];
-      (supabase.from().select().order().then as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().order().then as jest.Mock).mockResolvedValue({ 
         data: mockData, 
         error: null 
       });
@@ -75,7 +75,7 @@ describe('Non-Conformance Service Tests', () => {
     });
 
     it('should throw an error when fetching fails', async () => {
-      (supabase.from().select().order().then as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().order().then as jest.Mock).mockResolvedValue({ 
         data: null, 
         error: { message: 'Database error' } 
       });
@@ -87,7 +87,7 @@ describe('Non-Conformance Service Tests', () => {
   describe('fetchNonConformanceById', () => {
     it('should fetch a non-conformance by ID successfully', async () => {
       const mockData = { ...mockNC, id: mockId };
-      (supabase.from().select().eq().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().eq().single as jest.Mock).mockResolvedValue({ 
         data: mockData, 
         error: null 
       });
@@ -101,7 +101,7 @@ describe('Non-Conformance Service Tests', () => {
     });
 
     it('should throw an error when fetching by ID fails', async () => {
-      (supabase.from().select().eq().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().eq().single as jest.Mock).mockResolvedValue({ 
         data: null, 
         error: { message: 'Not found' } 
       });
@@ -113,13 +113,13 @@ describe('Non-Conformance Service Tests', () => {
   describe('createNonConformance', () => {
     it('should create a non-conformance successfully', async () => {
       const mockCreatedNC = { ...mockNC, id: mockId };
-      (supabase.from().insert().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().insert().select().single as jest.Mock).mockResolvedValue({ 
         data: mockCreatedNC, 
         error: null 
       });
       
       // Mock activity creation
-      (supabase.from().insert().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().insert().select().single as jest.Mock).mockResolvedValue({ 
         data: { id: 'activity-id' }, 
         error: null 
       });
@@ -132,7 +132,7 @@ describe('Non-Conformance Service Tests', () => {
     });
 
     it('should throw an error when creation fails', async () => {
-      (supabase.from().insert().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().insert().select().single as jest.Mock).mockResolvedValue({ 
         data: null, 
         error: { message: 'Insertion error' } 
       });
@@ -147,20 +147,20 @@ describe('Non-Conformance Service Tests', () => {
     
     it('should update a non-conformance successfully', async () => {
       // Mock current record fetch
-      (supabase.from().select().eq().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().eq().single as jest.Mock).mockResolvedValue({ 
         data: { ...mockNC, id: mockId }, 
         error: null 
       });
       
       // Mock update
       const mockUpdatedNC = { ...mockNC, id: mockId, ...updates };
-      (supabase.from().update().eq().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().update().eq().select().single as jest.Mock).mockResolvedValue({ 
         data: mockUpdatedNC, 
         error: null 
       });
       
       // Mock activity creation
-      (supabase.from().insert().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().insert().select().single as jest.Mock).mockResolvedValue({ 
         data: { id: 'activity-id' }, 
         error: null 
       });
@@ -175,13 +175,13 @@ describe('Non-Conformance Service Tests', () => {
 
     it('should throw an error when update fails', async () => {
       // Mock current record fetch
-      (supabase.from().select().eq().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().eq().single as jest.Mock).mockResolvedValue({ 
         data: { ...mockNC, id: mockId }, 
         error: null 
       });
       
       // Mock update failure
-      (supabase.from().update().eq().select().single as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().update().eq().select().single as jest.Mock).mockResolvedValue({ 
         data: null, 
         error: { message: 'Update error' } 
       });
@@ -204,7 +204,7 @@ describe('Non-Conformance Service Tests', () => {
       };
       
       // Mock data fetch
-      (supabase.from().select().order().then as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().order().then as jest.Mock).mockResolvedValue({ 
         data: [
           { ...mockNC, id: '1', status: 'On Hold', quantity_on_hold: 20, item_category: 'Processing Equipment', reason_category: 'Equipment Malfunction' },
           { ...mockNC, id: '2', status: 'On Hold', quantity_on_hold: 30, item_category: 'Processing Equipment', reason_category: 'Equipment Malfunction' },
@@ -226,7 +226,7 @@ describe('Non-Conformance Service Tests', () => {
     });
 
     it('should throw an error when stats fetch fails', async () => {
-      (supabase.from().select().order().then as jest.Mock).mockResolvedValueOnce({ 
+      (supabase.from().select().order().then as jest.Mock).mockResolvedValue({ 
         data: null, 
         error: { message: 'Stats fetch error' } 
       });

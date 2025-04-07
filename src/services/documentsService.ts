@@ -1,38 +1,38 @@
 
 /**
- * Mock Traceability Service
+ * Mock Documents Service
  * This is a placeholder to support testing.
  */
 
-export const fetchProducts = async () => {
+export const fetchDocuments = async () => {
   // In a real implementation, this would interact with the database
   return [];
 };
 
-export const createProduct = async (product: any) => {
+export const createDocument = async (document: any) => {
   // In a real implementation, this would interact with the database
-  return { id: 'mock-product-id', ...product };
+  return { id: 'mock-doc-id', ...document };
 };
 
-export const fetchProductById = async (id: string) => {
+export const fetchDocumentById = async (id: string) => {
   // In a real implementation, this would interact with the database
   return { id };
 };
 
-export const updateProduct = async (id: string, updates: any) => {
+export const updateDocument = async (id: string, updates: any) => {
   // In a real implementation, this would interact with the database
   return { id, ...updates };
 };
 
-export const deleteProduct = async (id: string) => {
+export const deleteDocument = async (id: string) => {
   // In a real implementation, this would interact with the database
   return true;
 };
 
 export default {
-  fetchProducts,
-  createProduct,
-  fetchProductById,
-  updateProduct,
-  deleteProduct
+  fetchDocuments,
+  createDocument,
+  fetchDocumentById,
+  updateDocument,
+  deleteDocument
 };
