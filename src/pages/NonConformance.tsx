@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, BarChart3, ClipboardList } from 'lucide-react';
+import { PlusCircle, BarChart3 } from 'lucide-react';
 import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 const NonConformanceModule = () => {
   const { id } = useParams();
@@ -92,58 +92,54 @@ const NonConformanceModule = () => {
   
   if (loadError) {
     return (
-      <ProtectedSidebarLayout>
-        <div className="space-y-6 p-8 text-center">
-          <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
-          <p className="text-gray-700">{loadError}</p>
-          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-        </div>
-      </ProtectedSidebarLayout>
+      <div className="space-y-6 p-8 text-center">
+        <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
+        <p className="text-gray-700">{loadError}</p>
+        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+      </div>
     );
   }
   
   return (
-    <ProtectedSidebarLayout>
-      <div id="nc-module-container" className="space-y-6 p-6 animate-fade-in">
-        {!viewingDetails && (
-          <div className="flex justify-between items-center mb-4">
-            <Button 
-              variant="outline" 
-              onClick={handleViewDashboard}
-              className="hover:border-primary hover:text-primary transition-colors"
-            >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              View Dashboard
-            </Button>
-            
-            <Button 
-              onClick={handleCreateNew}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white shadow-sm"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Non-Conformance
-            </Button>
-          </div>
-        )}
-        
-        <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
-          {id && viewingDetails ? (
-            <NCDetails 
-              id={id} 
-              onClose={() => {
-                navigate('/non-conformance');
-                setViewingDetails(false);
-              }} 
-            />
-          ) : (
-            <NCList 
-              onSelectItem={handleSelectItem} 
-              key={`nc-list-${refreshTrigger}`} // Force re-render on updates
-            />
-          )}
+    <div id="nc-module-container" className="space-y-6 p-6 animate-fade-in">
+      {!viewingDetails && (
+        <div className="flex justify-between items-center mb-4">
+          <Button 
+            variant="outline" 
+            onClick={handleViewDashboard}
+            className="hover:border-primary hover:text-primary transition-colors"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            View Dashboard
+          </Button>
+          
+          <Button 
+            onClick={handleCreateNew}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white shadow-sm"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Non-Conformance
+          </Button>
         </div>
+      )}
+      
+      <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
+        {id && viewingDetails ? (
+          <NCDetails 
+            id={id} 
+            onClose={() => {
+              navigate('/non-conformance');
+              setViewingDetails(false);
+            }} 
+          />
+        ) : (
+          <NCList 
+            onSelectItem={handleSelectItem} 
+            key={`nc-list-${refreshTrigger}`} // Force re-render on updates
+          />
+        )}
       </div>
-    </ProtectedSidebarLayout>
+    </div>
   );
 };
 

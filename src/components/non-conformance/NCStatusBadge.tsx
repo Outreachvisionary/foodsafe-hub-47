@@ -8,7 +8,7 @@ interface NCStatusBadgeProps {
 }
 
 const NCStatusBadge: React.FC<NCStatusBadgeProps> = ({ status }) => {
-  const getVariant = () => {
+  const getVariant = (): "default" | "destructive" | "outline" | "secondary" | "success" => {
     switch (status) {
       case 'Released':
         return 'success';

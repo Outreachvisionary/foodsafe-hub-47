@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NCRecentItems from '@/components/non-conformance/NCRecentItems';
 import { toast } from 'sonner';
 import { BarChartComponent, PieChartComponent } from '@/components/non-conformance/NCDashboardCharts';
-import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 
 const NonConformanceDashboard: React.FC = () => {
   const [stats, setStats] = useState<NCStats | null>(null);
@@ -47,7 +46,7 @@ const NonConformanceDashboard: React.FC = () => {
     navigate('/non-conformance');
   };
   
-  const dashboardContent = (
+  return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -199,12 +198,6 @@ const NonConformanceDashboard: React.FC = () => {
         </>
       )}
     </div>
-  );
-  
-  return (
-    <ProtectedSidebarLayout>
-      {dashboardContent}
-    </ProtectedSidebarLayout>
   );
 };
 

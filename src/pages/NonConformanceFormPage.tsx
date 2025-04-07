@@ -5,7 +5,6 @@ import NCForm from '@/components/non-conformance/NCForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 
 const NonConformanceFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +21,7 @@ const NonConformanceFormPage: React.FC = () => {
     navigate('/non-conformance');
   };
   
-  const formContent = (
+  return (
     <motion.div 
       className="space-y-6"
       initial={{ opacity: 0 }}
@@ -52,12 +51,6 @@ const NonConformanceFormPage: React.FC = () => {
         />
       </div>
     </motion.div>
-  );
-  
-  return (
-    <ProtectedSidebarLayout>
-      {formContent}
-    </ProtectedSidebarLayout>
   );
 };
 
