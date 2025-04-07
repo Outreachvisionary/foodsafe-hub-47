@@ -93,10 +93,10 @@ export interface NCNotification {
 
 export interface NCStats {
   total: number;
-  totalQuantityOnHold?: number;
+  totalQuantityOnHold: number;
   byStatus: Record<NCStatus, number>;
-  byCategory: Record<NCItemCategory, number>;
-  byReason: Record<NCReasonCategory, number>;
+  byCategory: Record<string, number>;
+  byReason: Record<string, number>;
   recentItems: NonConformance[];
 }
 

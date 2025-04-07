@@ -3,7 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, ChevronDown, Filter } from 'lucide-react';
+import { Search, Filter, ChevronDown, PlusCircle } from 'lucide-react';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu,
@@ -12,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { fetchNonConformances } from '@/services/nonConformanceService';
-import { NonConformance, NCStatus } from '@/types/non-conformance';
+import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
 import { toast } from 'sonner';
 
@@ -96,24 +104,49 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
   }
   
   const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Resolved', 'Closed'];
-  const categories = [...new Set(nonConformances.map(nc => nc.item_category))];
-  const reasons = [...new Set(nonConformances.map(nc => nc.reason_category))];
+  const categories: NCItemCategory[] = ['Processing Equipment', 'Product Storage Tanks', 'Finished Products', 'Raw Products', 'Packaging Materials', 'Other'];
+  const reasons: NCReasonCategory[] = ['Contamination', 'Quality Issues', 'Regulatory Non-Compliance', 'Equipment Malfunction', 'Documentation Error', 'Process Deviation', 'Other'];
   
   return (
-    <div className="overflow-hidden">
-      <div className="p-4 bg-background border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col">
+        <div>
+          <h1 className="text-2xl font-semibold text-primary">Non-Conformance Management</h1>
+          <p className="text-muted-foreground">Track, manage, and resolve product and process non-conformances</p>
+        </div>
+        
+        <div className="flex justify-between my-4">
+          <Button 
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => navigate('/non-conformance/dashboard')}
+          >
+            <span className="hidden md:inline">View Dashboard</span>
+          </Button>
+          
+          <Button 
+            onClick={handleCreateNew}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Non-Conformance
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search non-conformance items..."
-            className="pl-8 bg-background"
+            className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9">
@@ -194,82 +227,71 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <Button 
-            size="sm"
-            onClick={handleCreateNew}
-            className="h-9 bg-primary hover:bg-primary/90"
-          >
-            <PlusCircle className="h-3.5 w-3.5 mr-1" />
-            New Item
-          </Button>
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Item</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Category</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Reason</th>
-              <th className="text-center p-3 font-medium text-muted-foreground">Qty On Hold</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Reported Date</th>
-              <th className="text-center p-3 font-medium text-muted-foreground">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredNCs.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center p-8 text-muted-foreground">
-                  {loading ? 'Loading data...' : 'No non-conformance records found'}
-                </td>
-              </tr>
-            ) : (
-              filteredNCs.map((nc) => (
-                <tr 
-                  key={nc.id} 
-                  className="border-b hover:bg-muted/30 cursor-pointer"
-                  onClick={() => onSelectItem(nc.id)}
-                >
-                  <td className="p-3">{nc.title}</td>
-                  <td className="p-3">{nc.item_name}</td>
-                  <td className="p-3">{nc.item_category}</td>
-                  <td className="p-3">{nc.reason_category}</td>
-                  <td className="p-3 text-center">
-                    {nc.quantity_on_hold ? 
-                      <Badge variant="outline" className="font-mono">
-                        {nc.quantity_on_hold}
-                      </Badge> : 
-                      '-'
-                    }
-                  </td>
-                  <td className="p-3">
-                    <NCStatusBadge status={nc.status} />
-                  </td>
-                  <td className="p-3">
-                    {new Date(nc.reported_date).toLocaleDateString()}
-                  </td>
-                  <td className="p-3 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectItem(nc.id);
-                      }}
-                    >
-                      View
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Item</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Reason</TableHead>
+            <TableHead className="text-center">Qty On Hold</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Reported Date</TableHead>
+            <TableHead className="text-center">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredNCs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                {loading ? 'Loading data...' : 'No non-conformance records found'}
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredNCs.map((nc) => (
+              <TableRow 
+                key={nc.id}
+                className="cursor-pointer"
+                onClick={() => onSelectItem(nc.id)}
+              >
+                <TableCell>{nc.title}</TableCell>
+                <TableCell>{nc.item_name}</TableCell>
+                <TableCell>{nc.item_category}</TableCell>
+                <TableCell>{nc.reason_category}</TableCell>
+                <TableCell className="text-center">
+                  {nc.quantity_on_hold ? 
+                    <Badge variant="outline" className="font-mono">
+                      {nc.quantity_on_hold}
+                    </Badge> : 
+                    '-'
+                  }
+                </TableCell>
+                <TableCell>
+                  <NCStatusBadge status={nc.status} />
+                </TableCell>
+                <TableCell>
+                  {new Date(nc.reported_date).toLocaleDateString()}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectItem(nc.id);
+                    }}
+                  >
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

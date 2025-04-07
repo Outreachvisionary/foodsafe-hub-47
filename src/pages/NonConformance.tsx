@@ -102,34 +102,11 @@ const NonConformanceModule = () => {
     );
   }
   
-  const moduleContent = (
-    <div id="nc-module-container" className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Non-Conformance Management
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Track, manage, and resolve product and process non-conformances
-        </p>
-      </div>
-
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          {viewingDetails && (
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                navigate('/non-conformance');
-                setViewingDetails(false);
-              }}
-              className="hover:border-accent hover:text-accent transition-colors"
-            >
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Back to List
-            </Button>
-          )}
-          
-          {!viewingDetails && (
+  return (
+    <ProtectedSidebarLayout>
+      <div id="nc-module-container" className="space-y-6 p-6 animate-fade-in">
+        {!viewingDetails && (
+          <div className="flex justify-between items-center mb-4">
             <Button 
               variant="outline" 
               onClick={handleViewDashboard}
@@ -138,40 +115,34 @@ const NonConformanceModule = () => {
               <BarChart3 className="mr-2 h-4 w-4" />
               View Dashboard
             </Button>
+            
+            <Button 
+              onClick={handleCreateNew}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white shadow-sm"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Non-Conformance
+            </Button>
+          </div>
+        )}
+        
+        <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
+          {id && viewingDetails ? (
+            <NCDetails 
+              id={id} 
+              onClose={() => {
+                navigate('/non-conformance');
+                setViewingDetails(false);
+              }} 
+            />
+          ) : (
+            <NCList 
+              onSelectItem={handleSelectItem} 
+              key={`nc-list-${refreshTrigger}`} // Force re-render on updates
+            />
           )}
         </div>
-        
-        <Button 
-          onClick={handleCreateNew}
-          className="bg-gradient-to-r from-accent to-primary text-white shadow-md hover:shadow-lg hover:opacity-90 transition-all"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Non-Conformance
-        </Button>
       </div>
-      
-      <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
-        {id && viewingDetails ? (
-          <NCDetails 
-            id={id} 
-            onClose={() => {
-              navigate('/non-conformance');
-              setViewingDetails(false);
-            }} 
-          />
-        ) : (
-          <NCList 
-            onSelectItem={handleSelectItem} 
-            key={`nc-list-${refreshTrigger}`} // Force re-render on updates
-          />
-        )}
-      </div>
-    </div>
-  );
-  
-  return (
-    <ProtectedSidebarLayout>
-      {moduleContent}
     </ProtectedSidebarLayout>
   );
 };
