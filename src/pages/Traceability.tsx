@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useTraceability } from '@/hooks/useTraceability';
 import {
@@ -509,7 +508,7 @@ const Traceability = () => {
   };
 
   const renderStatusBadge = (status) => {
-    let variant = "secondary";
+    let variant: "default" | "destructive" | "outline" | "secondary" | "success" = "secondary";
     
     if (typeof status === 'string') {
       switch (status.toLowerCase()) {

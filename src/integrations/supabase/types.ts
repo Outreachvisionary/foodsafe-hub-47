@@ -2876,9 +2876,7 @@ export type Database = {
     }
     Functions: {
       find_affected_products_by_component: {
-        Args: {
-          component_batch_lot: string
-        }
+        Args: { component_batch_lot: string }
         Returns: {
           product_id: string
           product_name: string
@@ -2888,9 +2886,7 @@ export type Database = {
         }[]
       }
       find_product_components: {
-        Args: {
-          product_batch_lot: string
-        }
+        Args: { product_batch_lot: string }
         Returns: {
           component_id: string
           component_name: string
@@ -2901,10 +2897,7 @@ export type Database = {
         }[]
       }
       get_facilities: {
-        Args: {
-          p_organization_id?: string
-          p_only_assigned?: boolean
-        }
+        Args: { p_organization_id?: string; p_only_assigned?: boolean }
         Returns: {
           address: string | null
           city: string | null
@@ -2924,9 +2917,7 @@ export type Database = {
         }[]
       }
       get_facility_standards: {
-        Args: {
-          p_facility_id: string
-        }
+        Args: { p_facility_id: string }
         Returns: {
           id: string
           facility_id: string
@@ -2991,9 +2982,7 @@ export type Database = {
         }[]
       }
       get_user_roles: {
-        Args: {
-          _user_id: string
-        }
+        Args: { _user_id: string }
         Returns: {
           role_id: string
           role_name: string
@@ -3028,10 +3017,7 @@ export type Database = {
         Returns: boolean
       }
       supabase_realtime: {
-        Args: {
-          table_name: string
-          action: string
-        }
+        Args: { table_name: string; action: string }
         Returns: undefined
       }
       update_nc_status: {
@@ -3144,27 +3130,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -3172,20 +3160,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -3193,20 +3183,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -3214,21 +3206,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -3237,6 +3231,116 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      audit_status: [
+        "Scheduled",
+        "In Progress",
+        "Completed",
+        "Cancelled",
+        "Overdue",
+      ],
+      capa_effectiveness_rating: [
+        "Effective",
+        "Partially Effective",
+        "Not Effective",
+      ],
+      capa_priority: ["critical", "high", "medium", "low"],
+      capa_source: [
+        "audit",
+        "haccp",
+        "supplier",
+        "complaint",
+        "traceability",
+        "nonconformance",
+      ],
+      capa_status: [
+        "Open",
+        "In Progress",
+        "Pending Verification",
+        "Closed",
+        "Overdue",
+      ],
+      complaint_category: [
+        "Product Quality",
+        "Foreign Material",
+        "Packaging",
+        "Labeling",
+        "Customer Service",
+        "Other",
+      ],
+      complaint_status: [
+        "New",
+        "Under Investigation",
+        "Resolved",
+        "Closed",
+        "Escalated",
+      ],
+      document_category: [
+        "SOP",
+        "Policy",
+        "Form",
+        "Certificate",
+        "Audit Report",
+        "HACCP Plan",
+        "Training Material",
+        "Supplier Documentation",
+        "Risk Assessment",
+        "Other",
+      ],
+      document_status: [
+        "Draft",
+        "Pending Approval",
+        "Approved",
+        "Published",
+        "Archived",
+        "Expired",
+      ],
+      finding_severity: ["Critical", "Major", "Minor", "Observation"],
+      finding_status: ["Open", "In Progress", "Closed", "Verified"],
+      nc_item_category: [
+        "Processing Equipment",
+        "Product Storage Tanks",
+        "Finished Products",
+        "Raw Products",
+        "Packaging Materials",
+        "Other",
+      ],
+      nc_reason_category: [
+        "Contamination",
+        "Quality Issues",
+        "Regulatory Non-Compliance",
+        "Equipment Malfunction",
+        "Documentation Error",
+        "Process Deviation",
+        "Other",
+      ],
+      nc_status: [
+        "On Hold",
+        "Under Review",
+        "Released",
+        "Disposed",
+        "Approved",
+        "Rejected",
+        "Resolved",
+        "Closed",
+      ],
+      notification_status: ["Sent", "Failed", "Pending"],
+      recall_status: ["Scheduled", "In Progress", "Completed", "Cancelled"],
+      recall_type: ["Mock", "Actual"],
+      role_level: ["organization", "facility", "department"],
+      training_status: [
+        "Not Started",
+        "In Progress",
+        "Completed",
+        "Overdue",
+        "Cancelled",
+      ],
+    },
+  },
+} as const
