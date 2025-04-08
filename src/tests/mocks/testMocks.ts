@@ -62,13 +62,13 @@ jest.mock('@/contexts/UserContext', () => ({
     signIn: jest.fn(),
     signOut: jest.fn(),
   }),
-  UserProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  UserProvider: ({ children }) => <>{children}</>,
 }));
 
 // Mock i18n
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key) => key,
     i18n: {
       changeLanguage: jest.fn(),
     },
@@ -77,11 +77,11 @@ jest.mock('react-i18next', () => ({
     type: '3rdParty',
     init: jest.fn(),
   },
-  Trans: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Trans: ({ children }) => <>{children}</>,
 }));
 
 // Utility to render components with router
-export const renderWithRouter = (ui: React.ReactElement, { route = '/' } = {}) => {
+export const renderWithRouter = (ui, { route = '/' } = {}) => {
   window.history.pushState({}, 'Test page', route);
   
   return {
