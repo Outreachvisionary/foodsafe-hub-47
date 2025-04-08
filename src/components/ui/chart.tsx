@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
 import { ChartData } from '@/types/traceability';
 
 interface ChartProps {
@@ -83,7 +83,15 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
   children, 
   content 
 }) => {
-  return <Tooltip content={content}>{children}</Tooltip>;
+  // This component is a wrapper around Recharts' Tooltip component
+  // We need to modify how we pass the content to make TypeScript happy
+  return (
+    <>
+      {React.cloneElement(children as React.ReactElement, {
+        tooltip: <Tooltip content={content as any} />
+      })}
+    </>
+  );
 };
 
 interface ChartTooltipContentProps {

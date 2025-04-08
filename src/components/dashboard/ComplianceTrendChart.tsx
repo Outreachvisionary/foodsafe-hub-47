@@ -70,6 +70,23 @@ const chartConfig = {
 const ComplianceTrendChart: React.FC = () => {
   const isMobile = useIsMobile();
   
+  // Custom tooltip content for the Recharts Tooltip
+  const CustomTooltipContent = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-2 border rounded shadow-md">
+          <p className="font-medium text-xs mb-1">{`Month: ${label}`}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={`item-${index}`} className="text-xs" style={{ color: entry.color }}>
+              {`${entry.name}: ${entry.value}%`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+  
   return (
     <Card className="lg:col-span-2 animate-fade-in delay-300">
       <CardHeader>
@@ -109,14 +126,7 @@ const ComplianceTrendChart: React.FC = () => {
                 fontSize={12}
                 tickMargin={5}
               />
-              <ChartTooltip 
-                content={
-                  <ChartTooltipContent 
-                    formatter={(value) => [`${value}%`, '']}
-                    labelFormatter={(label) => `Month: ${label}`}
-                  />
-                }
-              />
+              <Tooltip content={<CustomTooltipContent />} />
               <Legend 
                 verticalAlign="bottom" 
                 height={36} 
