@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNCStats } from '@/services/nonConformanceService';
-import { NCStats } from '@/types/non-conformance';
+import { NCStats } from '@/services/nonConformanceService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, PlusCircle, ArrowLeft } from 'lucide-react';

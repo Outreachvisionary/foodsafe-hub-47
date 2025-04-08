@@ -21,6 +21,38 @@ export interface NonConformance {
   [key: string]: any; // Allow additional properties
 }
 
+export interface NCAttachment {
+  id: string;
+  non_conformance_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  description?: string;
+  uploaded_by: string;
+  uploaded_at: string;
+}
+
+export interface NCActivity {
+  id: string;
+  non_conformance_id: string;
+  action: string;
+  performed_by: string;
+  performed_at: string;
+  previous_status?: string;
+  new_status?: string;
+  comments?: string;
+}
+
+export interface NCStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byReason: Record<string, number>;
+  totalQuantityOnHold: number;
+  recentItems: NonConformance[];
+}
+
 // Basic CRUD operations
 export const fetchNonConformances = async (): Promise<NonConformance[]> => {
   try {
@@ -233,6 +265,199 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<any[]
   }
 };
 
+// Attachment handling
+export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('nc_attachments')
+      .select('*')
+      .eq('non_conformance_id', nonConformanceId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching NC attachments:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in fetchNCAttachments:', error);
+    throw error;
+  }
+};
+
+export const uploadNCAttachment = async (
+  nonConformanceId: string,
+  file: File,
+  description: string,
+  userId: string
+): Promise<NCAttachment> => {
+  try {
+    // Upload file to storage
+    const filePath = `non-conformance/${nonConformanceId}/${file.name}`;
+    const { data: storageData, error: storageError } = await supabase.storage
+      .from('attachments')
+      .upload(filePath, file);
+
+    if (storageError) {
+      console.error('Error uploading file to storage:', storageError);
+      throw storageError;
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('attachments')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    // Create attachment record
+    const { data, error } = await supabase
+      .from('nc_attachments')
+      .insert([
+        {
+          non_conformance_id: nonConformanceId,
+          file_name: file.name,
+          file_path: publicUrl,
+          file_type: file.type,
+          file_size: file.size,
+          description: description,
+          uploaded_by: userId,
+          uploaded_at: new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating attachment record:', error);
+      throw error;
+    }
+
+    // Create activity for the file upload
+    await createNCActivity({
+      non_conformance_id: nonConformanceId,
+      action: 'File uploaded',
+      performed_by: userId,
+      comments: `File "${file.name}" was uploaded`
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error in uploadNCAttachment:', error);
+    throw error;
+  }
+};
+
+export const deleteNCAttachment = async (attachmentId: string, userId: string): Promise<boolean> => {
+  try {
+    // Get attachment details
+    const { data: attachmentData, error: fetchError } = await supabase
+      .from('nc_attachments')
+      .select('*')
+      .eq('id', attachmentId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching attachment details:', fetchError);
+      throw fetchError;
+    }
+
+    // Delete file from storage
+    const filePath = attachmentData.file_path.split('/').slice(-3).join('/');
+    const { error: storageError } = await supabase.storage
+      .from('attachments')
+      .remove([filePath]);
+
+    if (storageError) {
+      console.warn('Error removing file from storage:', storageError);
+      // Continue with record deletion even if storage delete fails
+    }
+
+    // Delete attachment record
+    const { error } = await supabase
+      .from('nc_attachments')
+      .delete()
+      .eq('id', attachmentId);
+
+    if (error) {
+      console.error('Error deleting attachment record:', error);
+      throw error;
+    }
+
+    // Create activity for the file deletion
+    await createNCActivity({
+      non_conformance_id: attachmentData.non_conformance_id,
+      action: 'File deleted',
+      performed_by: userId,
+      comments: `File "${attachmentData.file_name}" was deleted`
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteNCAttachment:', error);
+    throw error;
+  }
+};
+
+// Statistics and dashboard data
+export const fetchNCStats = async (): Promise<NCStats> => {
+  try {
+    // Fetch all non-conformances
+    const { data: nonConformances, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching non-conformances for stats:', error);
+      throw error;
+    }
+
+    // Count by status
+    const byStatus: Record<string, number> = {};
+    // Count by category
+    const byCategory: Record<string, number> = {};
+    // Count by reason
+    const byReason: Record<string, number> = {};
+    // Calculate total quantity on hold
+    let totalQuantityOnHold = 0;
+
+    nonConformances.forEach((nc) => {
+      // Count by status
+      byStatus[nc.status] = (byStatus[nc.status] || 0) + 1;
+
+      // Count by category
+      const category = nc.item_category || 'Uncategorized';
+      byCategory[category] = (byCategory[category] || 0) + 1;
+
+      // Count by reason
+      const reason = nc.reason_category || 'Unspecified';
+      byReason[reason] = (byReason[reason] || 0) + 1;
+
+      // Add to quantity on hold if status is 'On Hold'
+      if (nc.status === 'On Hold' && nc.quantity) {
+        totalQuantityOnHold += parseFloat(nc.quantity) || 0;
+      }
+    });
+
+    // Get 5 most recent items
+    const recentItems = nonConformances.slice(0, 5);
+
+    return {
+      total: nonConformances.length,
+      byStatus,
+      byCategory,
+      byReason,
+      totalQuantityOnHold,
+      recentItems,
+    };
+  } catch (error) {
+    console.error('Error in fetchNCStats:', error);
+    throw error;
+  }
+};
+
 // CAPA Integration
 export const generateCAPAFromNC = async (nonConformanceId: string): Promise<any> => {
   try {
@@ -297,5 +522,9 @@ export default {
   deleteNonConformance,
   createNCActivity,
   fetchNCActivities,
-  generateCAPAFromNC
+  generateCAPAFromNC,
+  fetchNCAttachments,
+  uploadNCAttachment,
+  deleteNCAttachment,
+  fetchNCStats
 };

@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchNCStats } from '@/services/nonConformanceService';
-import { NCStats } from '@/types/non-conformance';
+import { NCStats } from '@/services/nonConformanceService';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { AlertTriangle, PackageCheck, PackageX, Ban, Clock, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
