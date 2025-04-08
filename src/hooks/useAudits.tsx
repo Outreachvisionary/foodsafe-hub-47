@@ -43,7 +43,8 @@ export const useAudits = () => {
     try {
       const data = await fetchAuditById(auditId);
       if (data) {
-        setSelectedAudit(data);
+        // Fixed: Using the full Audit object instead of just the ID
+        setSelectedAudit(data as Audit);
         // Also load findings for this audit
         loadFindings(auditId);
       }
