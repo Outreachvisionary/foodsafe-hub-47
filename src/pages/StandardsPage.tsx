@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Navigate, Outlet } from 'react-router-dom';
 import StandardSidebar from '@/components/standards/StandardSidebar';
@@ -20,13 +19,13 @@ const StandardsPage: React.FC = () => {
   
   // Redirect to SQF standard by default if no standard is selected
   if (!standardId) {
-    return <Navigate to="/standards-modules/sqf" replace />;
+    return <Navigate to="/standards/sqf" replace />;
   }
   
   // Validate the standardId against our known standards
   const validStandards = ['sqf', 'iso22000', 'fssc22000', 'haccp', 'brcgs2'];
   if (!validStandards.includes(standardId)) {
-    return <Navigate to="/standards-modules/sqf" replace />;
+    return <Navigate to="/standards/sqf" replace />;
   }
   
   // Format the standard name for display

@@ -42,7 +42,7 @@ const AppSidebar = () => {
       gradientTo: 'to-green-600'
     }, {
       name: 'Standards',
-      href: '/standards-modules',
+      href: '/standards',
       icon: BookOpen,
       color: 'text-purple-500',
       gradientFrom: 'from-purple-500',

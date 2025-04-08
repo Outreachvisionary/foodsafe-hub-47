@@ -26,6 +26,7 @@ const ComplaintManagement = lazy(() => import('@/pages/ComplaintManagement'));
 const SupplierManagement = lazy(() => import('@/pages/SupplierManagement'));
 const DatabaseConnectionTest = lazy(() => import('@/pages/DatabaseConnectionTest'));
 const RoleManagement = lazy(() => import('@/pages/RoleManagement'));
+const StandardsPage = lazy(() => import('@/pages/StandardsPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -53,6 +54,9 @@ function App() {
             <Route path="non-conformance" element={<NonConformance />} />
             <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="complaints" element={<ComplaintManagement />} />
+            <Route path="standards/*" element={<StandardsPage />} />
+            <Route path="haccp" element={<NotFound />} />
+            <Route path="capa" element={<NotFound />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
             <Route path="roles" element={<RoleManagement />} />
             <Route path="*" element={<NotFound />} />
