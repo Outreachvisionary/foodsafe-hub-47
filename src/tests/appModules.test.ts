@@ -1,4 +1,7 @@
 import jest from '../mocks/jest.mock';
+import nonConformanceService from '../services/nonConformanceService';
+
+jest.mock('@/services/nonConformanceService');
 
 // Import services
 import auditService from '../services/auditService';

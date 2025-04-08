@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { fetchNCAttachments, uploadNCAttachment } from '@/services/nonConformanceService';
 import { Paperclip, Upload, X, FileText, Download, AlertCircle } from 'lucide-react';
-import { NCAttachment } from '@/services/nonConformanceService';
+import { NCAttachment } from '@/types/non-conformance';
 import { useFileUpload } from '@/hooks/use-file-upload';
 
 interface NCAttachmentUploaderProps {

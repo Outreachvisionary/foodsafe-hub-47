@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   NonConformance, 
@@ -127,6 +126,99 @@ export const updateNonConformance = async (
     return data;
   } catch (error) {
     console.error(`Error in updateNonConformance for ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Delete a non-conformance
+export const deleteNonConformance = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('non_conformances')
+      .delete()
+      .eq('id', id);
+      
+    if (error) {
+      console.error(`Error deleting non-conformance with ID ${id}:`, error);
+      throw error;
+    }
+  } catch (error) {
+    console.error(`Error in deleteNonConformance for ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Update NC status
+export const updateNCStatus = async (
+  id: string,
+  newStatus: string,
+  userId: string
+): Promise<NonConformance> => {
+  try {
+    // Get current NC to store previous status
+    const current = await fetchNonConformanceById(id);
+    
+    // Update the status
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error updating status for non-conformance with ID ${id}:`, error);
+      throw error;
+    }
+    
+    if (!data) {
+      throw new Error(`Failed to update status for non-conformance with ID ${id}`);
+    }
+    
+    // Log the status change
+    await logNCActivity({
+      non_conformance_id: id,
+      action: `Status changed from ${current.status} to ${newStatus}`,
+      performed_by: userId,
+      previous_status: current.status,
+      new_status: newStatus,
+    });
+    
+    return data;
+  } catch (error) {
+    console.error(`Error in updateNCStatus for ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Create NC activity
+export const createNCActivity = async (activity: {
+  non_conformance_id: string;
+  action: string;
+  performed_by: string;
+}): Promise<NCActivity> => {
+  try {
+    const { data, error } = await supabase
+      .from('nc_activities')
+      .insert([activity])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating NC activity:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      throw new Error('Failed to create NC activity');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in createNCActivity:', error);
     throw error;
   }
 };
@@ -376,3 +468,23 @@ export const deleteNCAttachment = async (attachmentId: string): Promise<void> =>
     throw error;
   }
 };
+
+// Create a default export for compatibility
+const nonConformanceService = {
+  fetchNonConformances,
+  fetchNonConformanceById,
+  createNonConformance,
+  updateNonConformance,
+  deleteNonConformance,
+  logNCActivity,
+  fetchNCActivities,
+  filterNonConformances,
+  fetchNCStats,
+  fetchNCAttachments,
+  uploadNCAttachment,
+  deleteNCAttachment,
+  updateNCStatus,
+  createNCActivity
+};
+
+export default nonConformanceService;

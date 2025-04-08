@@ -15,7 +15,7 @@ const createMockFn = () => {
   };
 
   mockFn.mockImplementation = (implementation: (...args: any[]) => any) => {
-    mockFn.implementation = implementation;
+    mockFn._implementation = implementation;
     mockFn.mock.results.push({ type: 'return', value: implementation });
     return mockFn;
   };
@@ -35,11 +35,17 @@ const createMockFn = () => {
   return mockFn;
 };
 
-export default {
+const jestMock = {
   fn: createMockFn,
   spyOn: (_obj: any, _method: string) => createMockFn(),
   mock: (_moduleName: string) => ({
     __esModule: true,
     default: createMockFn()
-  })
+  }),
+  resetAllMocks: () => {
+    // Reset functionality would be implemented here
+    console.log('Mock reset');
+  }
 };
+
+export default jestMock;

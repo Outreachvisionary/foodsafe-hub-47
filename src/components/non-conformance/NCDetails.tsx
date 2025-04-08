@@ -11,7 +11,7 @@ import NCActionsPanel from './NCActionsPanel';
 import NCActivityTimeline from './NCActivityTimeline';
 import NCAttachmentUploader from './NCAttachmentUploader';
 import NCIntegrationsList from './NCIntegrationsList';
-import nonConformanceService from '@/services/nonConformanceService';
+import nonConformanceService, { updateNCStatus, logNCActivity } from '@/services/nonConformanceService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

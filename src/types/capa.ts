@@ -11,6 +11,7 @@ export interface SourceReference {
   url?: string;
   date?: string;
   description?: string;
+  status?: string;
 }
 
 export interface CAPAEffectivenessMetrics {
@@ -71,13 +72,16 @@ export interface CAPAActivity {
 }
 
 export interface CAPAFetchParams {
-  status?: string[];
-  priority?: string[];
-  source?: string[];
+  status?: string | string[];
+  priority?: string | string[];
+  source?: string | string[];
   searchQuery?: string;
   dueDate?: string;
   limit?: number;
   page?: number;
+  sourceId?: string;
+  assignedTo?: string;
+  department?: string;
 }
 
 export interface CAPAStats {
@@ -95,6 +99,8 @@ export interface CAPAStats {
     notEvaluated: number;
   };
   averageTimeToClose: number;
+  averageClosureTime?: number;
+  fsma204ComplianceRate?: number;
 }
 
 export interface CAPAFilters {

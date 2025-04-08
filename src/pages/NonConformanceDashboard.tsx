@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNCStats } from '@/services/nonConformanceService';
-import { NCStats } from '@/services/nonConformanceService';
+import { NCStats, NonConformance } from '@/types/non-conformance';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, PlusCircle, ArrowLeft } from 'lucide-react';
@@ -9,6 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NCRecentItems from '@/components/non-conformance/NCRecentItems';
 import { toast } from 'sonner';
 import { BarChartComponent, PieChartComponent } from '@/components/non-conformance/NCDashboardCharts';
+
+interface ChartData {
+  name: string;
+  value: number;
+  fill?: string;
+}
 
 const NonConformanceDashboard: React.FC = () => {
   const [stats, setStats] = useState<NCStats | null>(null);
@@ -145,7 +151,7 @@ const NonConformanceDashboard: React.FC = () => {
               <CardContent>
                 <PieChartComponent data={Object.entries(stats.byStatus).map(([name, value]) => ({ 
                   name, 
-                  value,
+                  value: value as number,
                   fill: name === 'On Hold' ? '#f59e0b' : 
                         name === 'Under Review' ? '#3b82f6' :
                         name === 'Released' ? '#10b981' : '#6b7280'
@@ -169,7 +175,7 @@ const NonConformanceDashboard: React.FC = () => {
                     <BarChartComponent 
                       data={Object.entries(stats.byCategory).map(([name, value]) => ({
                         name: name.length > 15 ? name.substring(0, 12) + '...' : name,
-                        value
+                        value: value as number
                       }))} 
                     />
                   </TabsContent>
@@ -177,7 +183,7 @@ const NonConformanceDashboard: React.FC = () => {
                     <BarChartComponent 
                       data={Object.entries(stats.byReason).map(([name, value]) => ({
                         name: name.length > 15 ? name.substring(0, 12) + '...' : name,
-                        value
+                        value: value as number
                       }))} 
                     />
                   </TabsContent>
@@ -191,7 +197,7 @@ const NonConformanceDashboard: React.FC = () => {
               <CardTitle>Recent Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <NCRecentItems items={stats.recentItems as unknown as NonConformance[]} />
+              <NCRecentItems items={stats.recentItems} />
             </CardContent>
           </Card>
         </>

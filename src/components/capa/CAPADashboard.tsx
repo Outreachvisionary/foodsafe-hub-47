@@ -45,12 +45,16 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       nonconformance: 0
     },
     overdue: 0,
-    averageClosureTime: 0,
-    effectivenessRating: {
+    recentItems: [],
+    completionRates: {},
+    effectivenessStats: {
       effective: 0,
       partiallyEffective: 0,
-      notEffective: 0
+      ineffective: 0,
+      notEvaluated: 0
     },
+    averageTimeToClose: 0,
+    averageClosureTime: 0,
     fsma204ComplianceRate: 0
   });
 

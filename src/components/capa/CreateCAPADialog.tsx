@@ -19,6 +19,9 @@ interface SourceDataType {
   sourceId?: string;
   priority?: string;
   sourceReference?: SourceReference;
+  type?: string;
+  id?: string;
+  date?: string;
 }
 
 interface CreateCAPADialogProps {
@@ -90,12 +93,12 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      const sourceReference = sourceData ? {
-        type: sourceData.type,
-        title: sourceData.title,
-        id: sourceData.id,
-        url: `/non-conformance/${sourceData.id}`,
-        date: sourceData.date,
+      const sourceReference = sourceData?.sourceReference ? {
+        type: sourceData.type || sourceData.sourceReference.type,
+        title: sourceData.title || sourceData.sourceReference.title,
+        id: sourceData.id || sourceData.sourceReference.id,
+        url: `/non-conformance/${sourceData.id || sourceData.sourceReference.id}`,
+        date: sourceData.date || sourceData.sourceReference.date,
       } : undefined;
       
       const formData = {
@@ -112,7 +115,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         correctiveAction: '',
         preventiveAction: '',
         sourceReference,
-        fsma204Compliant: false
+        fsma204Compliant: false,
+        createdBy: user?.full_name || 'System'
       };
       
       const newCAPA = await createCAPA(formData);
