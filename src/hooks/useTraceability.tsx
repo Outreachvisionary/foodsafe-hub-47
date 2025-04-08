@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Product, 
@@ -194,7 +193,7 @@ export const useTraceability = () => {
     try {
       const data = await fetchProductGenealogy(productId);
       if (data) {
-        setGenealogyTree(data);
+        setGenealogyTree(data as TreeNode);
       }
       return data;
     } catch (err) {
@@ -211,9 +210,19 @@ export const useTraceability = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchSupplyChainData(productId);
+      const data = await fetchSupplyChainData();
       if (data) {
-        setSupplyChainData(data);
+        const graphData: GraphData = {
+          nodes: data.nodes,
+          edges: data.links ? data.links.map((link: any) => ({
+            source: link.source,
+            target: link.target,
+            type: link.type,
+            id: `${link.source}-${link.target}`,
+            label: link.type || 'connects to'
+          })) : []
+        };
+        setSupplyChainData(graphData);
       }
       return data;
     } catch (err) {
@@ -230,7 +239,7 @@ export const useTraceability = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchRecallSimulations(recallId);
+      const data = await fetchRecallSimulations();
       setRecallSimulations(data || []);
       return data;
     } catch (err) {
@@ -247,7 +256,7 @@ export const useTraceability = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchNotifications(recallId);
+      const data = await fetchNotifications();
       setNotifications(data || []);
       return data;
     } catch (err) {
@@ -428,7 +437,13 @@ export const useTraceability = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await sendBulkNotifications(recallId, subject, message, createdBy);
+      const notificationParams = {
+        recallId,
+        subject,
+        message,
+        createdBy
+      };
+      const data = await sendBulkNotifications([notificationParams]);
       return data;
     } catch (err) {
       setError(err);

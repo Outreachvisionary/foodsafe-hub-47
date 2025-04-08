@@ -28,6 +28,10 @@ export const mapDatabaseValueToStatus = (dbStatus: DbCAPAStatus): CAPAStatus => 
   return dbToStatusMap[dbStatus] || 'Open';
 };
 
+// Export the mapping functions with alias names for backward compatibility
+export const mapStatusToDb = mapStatusToDatabaseValue;
+export const mapStatusFromDb = mapDatabaseValueToStatus;
+
 // Get the next status in the workflow 
 export const getNextStatus = (currentStatus: CAPAStatus): CAPAStatus => {
   switch (currentStatus) {

@@ -42,9 +42,9 @@ export const useAudits = () => {
     setError(null);
     try {
       const data = await fetchAuditById(auditId);
-      setSelectedAudit(data);
-      // Also load findings for this audit
       if (data) {
+        setSelectedAudit(data);
+        // Also load findings for this audit
         loadFindings(auditId);
       }
       return data;

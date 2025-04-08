@@ -23,7 +23,7 @@ import { Search, PlusCircle, ArrowRight, AlertTriangle, Mail, Send } from 'lucid
 import { useTraceability } from '@/hooks/useTraceability';
 import { Product, Component, Recall, TreeNode, GraphData } from '@/types/traceability';
 import { toast } from 'sonner';
-import { Chart } from "@/components/ui/chart"
+import { Chart } from "@/components/ui/chart";
 
 const Traceability = () => {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ const Traceability = () => {
     addRecallSchedule,
     addNotification,
     sendAllNotifications,
-    selectedProduct,
+    selectedProduct: traceabilitySelectedProduct,
     setSelectedProduct,
     genealogyTree,
     supplyChainData,
@@ -57,7 +57,7 @@ const Traceability = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProductState] = useState<Product | null>(null);
+  const [localSelectedProduct, setLocalSelectedProduct] = useState<Product | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [selectedRecall, setSelectedRecall] = useState<Recall | null>(null);
   const [newProductName, setNewProductName] = useState('');
@@ -83,11 +83,11 @@ const Traceability = () => {
   }, [loadProducts, loadComponents, loadRecalls]);
 
   useEffect(() => {
-    if (selectedProduct) {
-      loadGenealogyTree(selectedProduct.id);
-      loadSupplyChainVisualization(selectedProduct.id);
+    if (traceabilitySelectedProduct) {
+      loadGenealogyTree(traceabilitySelectedProduct.id);
+      loadSupplyChainVisualization(traceabilitySelectedProduct.id);
     }
-  }, [selectedProduct, loadGenealogyTree, loadSupplyChainVisualization]);
+  }, [traceabilitySelectedProduct, loadGenealogyTree, loadSupplyChainVisualization]);
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
@@ -97,10 +97,11 @@ const Traceability = () => {
     console.log("Searching for:", searchQuery);
   };
 
-  const handleSelectProduct = (product: any) => {
+  const handleSelectProduct = (product: Product) => {
     if (!product) return;
     console.log("Selected product:", product);
     setSelectedProduct(product);
+    setLocalSelectedProduct(product);
     loadGenealogyTree(product.id);
   };
 
@@ -146,14 +147,18 @@ const Traceability = () => {
   const handleLoadProductComponents = async () => {
     if (batchLotNumber) {
       const components = await loadProductComponents(batchLotNumber);
-      setProductComponents(components || []);
+      if (components) {
+        setProductComponents(components);
+      }
     }
   };
 
   const handleLoadAffectedProducts = async () => {
     if (batchLotNumber) {
       const products = await loadAffectedProducts(batchLotNumber);
-      setAffectedProducts(products || []);
+      if (products) {
+        setAffectedProducts(products);
+      }
     }
   };
 

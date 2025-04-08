@@ -2,6 +2,7 @@
 export type RecallStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
 export type RecallType = 'Mock' | 'Actual' | 'Test';
 export type NotificationStatus = 'Pending' | 'Sent' | 'Failed' | 'Delivered' | 'Read';
+export type PartnerType = 'Supplier' | 'Manufacturer' | 'Distributor' | 'Retailer';
 
 export interface Product {
   id: string;
@@ -17,6 +18,8 @@ export interface Product {
   created_by: string;
   created_at?: string;
   updated_at?: string;
+  quantity?: number;
+  units?: string;
 }
 
 export interface Component {
@@ -33,6 +36,8 @@ export interface Component {
   created_by: string;
   created_at?: string;
   updated_at?: string;
+  quantity?: number;
+  units?: string;
 }
 
 export interface Recall {
@@ -74,6 +79,7 @@ export interface ProductGenealogy {
   product_id: string;
   component_id: string;
   quantity?: number;
+  units?: string;
   notes?: string;
   created_by: string;
   created_at?: string;
@@ -92,6 +98,7 @@ export interface GraphNode {
   id: string;
   name: string;
   type: string;
+  label?: string;
   data?: any;
 }
 
@@ -99,6 +106,8 @@ export interface GraphEdge {
   source: string;
   target: string;
   type?: string;
+  id?: string;
+  label?: string;
   data?: any;
 }
 

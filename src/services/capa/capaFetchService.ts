@@ -1,6 +1,33 @@
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAFetchParams, CAPASource, CAPAStatus } from '@/types/capa';
-import { mapStatusToDatabaseValue } from './capaStatusService';
+import { CAPA, CAPAStatus, CAPAEffectivenessRating, CAPASource, CAPAPriority, CAPAFetchParams, SourceReference } from '@/types/capa';
+import { mapStatusFromDb } from './capaStatusService';
+
+// Map database result to CAPA type
+export const mapDbResultToCapa = (dbResult: any): CAPA => {
+  return {
+    id: dbResult.id,
+    title: dbResult.title,
+    description: dbResult.description || '',
+    status: mapStatusFromDb(dbResult.status),
+    source: dbResult.source as CAPASource,
+    sourceId: dbResult.source_id,
+    priority: dbResult.priority as CAPAPriority,
+    assignedTo: dbResult.assigned_to,
+    department: dbResult.department || '',
+    dueDate: dbResult.due_date,
+    completedDate: dbResult.completion_date || null,
+    rootCause: dbResult.root_cause || '',
+    correctiveAction: dbResult.corrective_action || '',
+    preventiveAction: dbResult.preventive_action || '',
+    verificationDate: dbResult.verification_date || null,
+    effectivenessCriteria: dbResult.effectiveness_criteria || '',
+    createdBy: dbResult.created_by,
+    lastUpdated: dbResult.updated_at,
+    fsma204Compliant: dbResult.fsma204_compliant || false,
+    createdDate: dbResult.created_at,
+    // You can add more fields as needed
+  };
+};
 
 export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   try {
@@ -32,10 +59,10 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     // Convert status filter to match CAPAStatus type
     if (params?.status) {
       if (Array.isArray(params.status)) {
-        const statuses = params.status.map(s => mapStatusToDatabaseValue(s as CAPAStatus));
+        const statuses = params.status.map(s => mapStatusFromDb(s as CAPAStatus));
         query = query.in('status', statuses);
       } else {
-        query = query.eq('status', mapStatusToDatabaseValue(params.status as CAPAStatus));
+        query = query.eq('status', mapStatusFromDb(params.status as CAPAStatus));
       }
     }
 

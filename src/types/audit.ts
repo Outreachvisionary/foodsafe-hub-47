@@ -1,5 +1,5 @@
 
-export type AuditStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled' | 'On Hold';
+export type AuditStatus = 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled' | 'On Hold' | 'Open';
 export type AuditType = 'Internal' | 'External' | 'Supplier' | 'Regulatory' | 'Gap Analysis';
 export type FindingSeverity = 'Critical' | 'Major' | 'Minor' | 'Observation';
 export type FindingStatus = 'Open' | 'In Progress' | 'Closed' | 'Verified';
@@ -21,6 +21,9 @@ export interface Audit {
   department?: string;
   createdAt?: string;
   updatedAt?: string;
+  // For backward compatibility
+  scheduledDate?: string;
+  audit_type?: string;
 }
 
 export interface AuditFinding {
@@ -35,4 +38,6 @@ export interface AuditFinding {
   capaId?: string;
   createdAt?: string;
   updatedAt?: string;
+  // For backward compatibility
+  audit_id?: string;
 }

@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Box, Factory, Truck, Store, Download, ZoomIn, ZoomOut, MousePointer } from 'lucide-react';
-import { GraphData, GraphNode, GraphEdge, PartnerType } from '@/types/traceability';
+import { GraphData, GraphNode, GraphEdge } from '@/types/traceability';
 
 interface SupplyChainVisualizationProps {
   data: GraphData | null;
@@ -150,6 +150,7 @@ const SupplyChainVisualization: React.FC<SupplyChainVisualizationProps> = ({
       const color = nodeColors[node.type] || '#888888';
       const icon = nodeIcons[node.type] || <Box size={20} />;
       const isSelected = node.id === selectedNode;
+      const nodeLabel = node.label || node.name;
       
       return (
         <g 
@@ -181,23 +182,25 @@ const SupplyChainVisualization: React.FC<SupplyChainVisualizationProps> = ({
             textAnchor="middle" 
             className="text-xs font-medium"
           >
-            {node.label}
+            {nodeLabel}
           </text>
         </g>
       );
     });
     
     // Render edges
-    const renderedEdges = layout.edges.map((edge) => {
+    const renderedEdges = layout.edges.map((edge, index) => {
       const sourceNode = nodeMap.get(edge.source);
       const targetNode = nodeMap.get(edge.target);
       
       if (!sourceNode || !targetNode) return null;
       
-      const strokeDasharray = edge.label === 'Distributes' ? '5,5' : 'none';
+      const strokeDasharray = edge.type === 'Distributes' ? '5,5' : 'none';
+      const edgeId = edge.id || `edge-${index}`;
+      const edgeLabel = edge.label || edge.type || 'connects to';
       
       return (
-        <g key={`edge-${edge.id}`}>
+        <g key={edgeId}>
           <line 
             x1={sourceNode.x} 
             y1={sourceNode.y} 
@@ -214,7 +217,7 @@ const SupplyChainVisualization: React.FC<SupplyChainVisualizationProps> = ({
             className="text-xs text-gray-600"
             fill="#666666"
           >
-            {edge.label}
+            {edgeLabel}
           </text>
         </g>
       );
