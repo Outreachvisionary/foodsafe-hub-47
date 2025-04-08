@@ -44,7 +44,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     preventiveMeasuresImplemented: false,
     documentationComplete: false,
     recurrenceCheck: 'Failed',
-    score: 0
+    score: 0,
+    checkedDate: new Date().toISOString()
   });
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
@@ -104,7 +105,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
         ...metrics, 
         score: finalScore,
         notes: notes,
-        assessmentDate: assessmentDate || currentDate
+        assessmentDate: assessmentDate || currentDate,
+        checkedDate: currentDate
       };
       
       setMetrics(updatedMetrics);
@@ -128,7 +130,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   const getEffectivenessRating = (score: number) => {
     if (score >= 85) return 'Effective';
     if (score >= 60) return 'Partially Effective';
-    return 'Not Effective';
+    return 'Ineffective';
   };
   
   const getScoreColor = (score: number) => {

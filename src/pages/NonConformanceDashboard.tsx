@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNCStats } from '@/services/nonConformanceService';
@@ -192,7 +191,7 @@ const NonConformanceDashboard: React.FC = () => {
               <CardTitle>Recent Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <NCRecentItems items={stats.recentItems} />
+              <NCRecentItems items={stats.recentItems as unknown as NonConformance[]} />
             </CardContent>
           </Card>
         </>

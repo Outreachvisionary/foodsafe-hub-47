@@ -90,26 +90,21 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      let sourceReference: SourceReference | undefined = sourceData?.sourceReference;
+      const sourceReference = sourceData ? {
+        type: sourceData.type,
+        title: sourceData.title,
+        id: sourceData.id,
+        url: `/non-conformance/${sourceData.id}`,
+        date: sourceData.date,
+      } : undefined;
       
-      if (auditFinding && !sourceReference) {
-        sourceReference = {
-          id: auditFinding.id,
-          type: 'audit',
-          title: `Audit Finding: ${auditFinding.description.substring(0, 50)}...`,
-          description: auditFinding.description,
-          date: auditFinding.created_at,
-          status: auditFinding.status
-        };
-      }
-      
-      const newCAPA = await createCAPA({
+      const formData = {
         title,
         description,
         source,
         sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
         priority: priority as any,
-        status: 'open',
+        status: 'Open' as const,
         assignedTo: assignedTo || user?.full_name || 'Unassigned',
         department: '',
         dueDate,
@@ -118,7 +113,9 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         preventiveAction: '',
         sourceReference,
         fsma204Compliant: false
-      });
+      };
+      
+      const newCAPA = await createCAPA(formData);
       
       toast.success('CAPA created successfully');
       

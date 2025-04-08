@@ -1,11 +1,4 @@
-
-import { 
-  describe, 
-  it, 
-  expect, 
-  beforeEach, 
-  jest 
-} from '../mocks/jest.mock';
+import jest from '../mocks/jest.mock';
 
 // Import services
 import auditService from '../services/auditService';

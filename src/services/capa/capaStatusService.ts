@@ -8,10 +8,10 @@ export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pend
 // Map frontend status values to database status values
 export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
   const statusMap: Record<CAPAStatus, DbCAPAStatus> = {
-    'open': 'Open',
-    'in-progress': 'In Progress',
-    'closed': 'Closed',
-    'verified': 'Pending Verification' // Map 'verified' to 'Pending Verification' to track verification status
+    'Open': 'Open',
+    'In Progress': 'In Progress',
+    'Closed': 'Closed',
+    'Verified': 'Pending Verification' // Map 'verified' to 'Pending Verification' to track verification status
   };
   return statusMap[status] || 'Open';
 };
@@ -20,16 +20,16 @@ export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
 export const mapStatusFromDb = (dbStatus: string): CAPAStatus => {
   const dbStatusLower = dbStatus.toLowerCase();
   
-  if (dbStatusLower === 'in progress') return 'in-progress';
-  if (dbStatusLower === 'pending verification') return 'verified';
-  // We map 'overdue' to 'open' in the UI but with a different display treatment
-  if (dbStatusLower === 'overdue') return 'open';
+  if (dbStatusLower === 'in progress') return 'In Progress';
+  if (dbStatusLower === 'pending verification') return 'Verified';
+  // We map 'overdue' to 'Open' in the UI but with a different display treatment
+  if (dbStatusLower === 'overdue') return 'Open';
   
   if (['open', 'closed'].includes(dbStatusLower)) {
-    return dbStatusLower as CAPAStatus;
+    return dbStatusLower.charAt(0).toUpperCase() + dbStatusLower.slice(1) as CAPAStatus;
   }
   
-  return 'open';
+  return 'Open';
 };
 
 // Helper function to determine if a CAPA is overdue based on its due date

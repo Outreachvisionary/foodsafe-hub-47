@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +33,7 @@ const CAPADetailsPage = () => {
         setCapa(capaData);
         
         // Show effectiveness monitor for closed CAPAs
-        if (capaData.status === 'closed' || capaData.status === 'verified') {
+        if (capaData.status === 'Closed' || capaData.status === 'Verified') {
           setShowEffectivenessMonitor(true);
         }
       } catch (err) {
@@ -61,7 +60,7 @@ const CAPADetailsPage = () => {
     setCapa(updatedCAPA);
     
     // Show effectiveness monitor if status changed to closed or verified
-    if (updatedCAPA.status === 'closed' || updatedCAPA.status === 'verified') {
+    if (updatedCAPA.status === 'Closed' || updatedCAPA.status === 'Verified') {
       setShowEffectivenessMonitor(true);
     }
     
@@ -76,10 +75,10 @@ const CAPADetailsPage = () => {
     
     try {
       // Update CAPA status to verified if effectiveness score is sufficient
-      if (effectivenessData.score >= 85 && capa.status !== 'verified') {
+      if (effectivenessData.score >= 85 && capa.status !== 'Verified') {
         const updatedCAPA = await updateCAPA(id, {
           ...capa,
-          status: 'verified'
+          status: 'Verified'
         });
         
         setCapa(updatedCAPA);

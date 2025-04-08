@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -44,8 +43,8 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
         setLoading(true);
         const data = await fetchNonConformances();
         console.log('Loaded NC data:', data);
-        setNonConformances(data);
-        setFilteredNCs(data);
+        setNonConformances(data as unknown as NonConformance[]);
+        setFilteredNCs(data as unknown as NonConformance[]);
       } catch (error) {
         console.error('Error loading non-conformances:', error);
         toast.error('Failed to load non-conformance records');
@@ -103,9 +102,24 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     );
   }
   
-  const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Resolved', 'Closed'];
-  const categories: NCItemCategory[] = ['Processing Equipment', 'Product Storage Tanks', 'Finished Products', 'Raw Products', 'Packaging Materials', 'Other'];
-  const reasons: NCReasonCategory[] = ['Contamination', 'Quality Issues', 'Regulatory Non-Compliance', 'Equipment Malfunction', 'Documentation Error', 'Process Deviation', 'Other'];
+  const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Approved', 'Rejected', 'Resolved', 'Closed'];
+  const categories: NCItemCategory[] = [
+    'Processing Equipment', 
+    'Product Storage Tanks', 
+    'Finished Products', 
+    'Raw Products', 
+    'Packaging Materials', 
+    'Other'
+  ];
+  const reasons: NCReasonCategory[] = [
+    'Contamination', 
+    'Quality Issues', 
+    'Regulatory Non-Compliance', 
+    'Equipment Malfunction', 
+    'Documentation Error', 
+    'Process Deviation', 
+    'Other'
+  ];
   
   return (
     <div className="space-y-4">

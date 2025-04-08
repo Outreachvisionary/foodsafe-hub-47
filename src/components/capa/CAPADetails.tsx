@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -313,7 +312,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                       <p className="mt-1 flex items-center">
                         <Calendar className="h-3.5 w-3.5 text-gray-500 mr-1.5" />
                         {formatDate(capa.dueDate)}
-                        {new Date(capa.dueDate) < new Date() && capa.status !== 'closed' && capa.status !== 'verified' && (
+                        {new Date(capa.dueDate) < new Date() && capa.status !== 'Closed' && capa.status !== 'Verified' && (
                           <Badge className="ml-2 bg-red-100 text-red-800">Overdue</Badge>
                         )}
                       </p>
@@ -447,7 +446,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
                       {capa.effectivenessRating === 'Partially Effective' && (
                         <Badge className="bg-yellow-100 text-yellow-800">Partially Effective</Badge>
                       )}
-                      {capa.effectivenessRating === 'Not Effective' && (
+                      {capa.effectivenessRating === 'Ineffective' && (
                         <Badge className="bg-red-100 text-red-800">Not Effective</Badge>
                       )}
                     </div>
@@ -461,7 +460,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
             <div className="space-y-6">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Related Documents</h4>
-                {capa.relatedDocuments && capa.relatedDocuments.length > 0 ? (
+                {(capa.relatedDocuments && capa.relatedDocuments.length > 0) ? (
                   <div className="mt-2 space-y-2">
                     {capa.relatedDocuments.map((doc, index) => (
                       <div key={index} className="flex items-center p-2 bg-gray-50 rounded-md border">
@@ -477,7 +476,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({
               
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Related Training</h4>
-                {capa.relatedTraining && capa.relatedTraining.length > 0 ? (
+                {(capa.relatedTraining && capa.relatedTraining.length > 0) ? (
                   <div className="mt-2 space-y-2">
                     {capa.relatedTraining.map((training, index) => (
                       <div key={index} className="flex items-center p-2 bg-gray-50 rounded-md border">
