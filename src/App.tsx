@@ -29,6 +29,7 @@ const DatabaseConnectionTest = lazy(() => import('@/pages/DatabaseConnectionTest
 const RoleManagement = lazy(() => import('@/pages/RoleManagement'));
 const StandardsPage = lazy(() => import('@/pages/StandardsPage'));
 const ModuleContent = lazy(() => import('@/components/standards/ModuleContent'));
+const TestingVerification = lazy(() => import('@/pages/TestingVerification'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -68,6 +69,9 @@ function App() {
             <Route path="standards/:standardId/:moduleId" element={<StandardsPage />}>
               <Route index element={<ModuleContent />} />
             </Route>
+            
+            {/* Testing and Verification routes */}
+            <Route path="testing" element={<TestingVerification />} />
             
             <Route path="haccp" element={<NotFound />} />
             <Route path="capa" element={<NotFound />} />

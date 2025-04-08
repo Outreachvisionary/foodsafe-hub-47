@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Settings, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, BookOpen, ChevronLeft, ChevronRight, TestTube2 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -110,6 +109,13 @@ const AppSidebar = () => {
       color: 'text-cyan-500',
       gradientFrom: 'from-cyan-500',
       gradientTo: 'to-cyan-600'
+    }, {
+      name: 'Testing',
+      href: '/testing',
+      icon: TestTube2,
+      color: 'text-violet-500',
+      gradientFrom: 'from-violet-500',
+      gradientTo: 'to-violet-600'
     }
   ];
   
