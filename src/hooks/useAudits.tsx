@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { 
   fetchAudits, 
@@ -42,7 +43,21 @@ export const useAudits = () => {
     try {
       const data = await fetchAuditById(auditId);
       if (data) {
-        setSelectedAudit(data);
+        // Create a fully compliant Audit object by ensuring all required properties exist
+        const completeAudit: Audit = {
+          id: data.id,
+          title: data.title || 'Untitled Audit',
+          status: data.status || 'Open',
+          startDate: data.startDate || new Date().toISOString(),
+          dueDate: data.dueDate || new Date().toISOString(),
+          auditType: data.auditType || 'Internal',
+          assignedTo: data.assignedTo || '',
+          createdBy: data.createdBy || '',
+          // Include any other properties that might be in the data
+          ...data 
+        };
+        
+        setSelectedAudit(completeAudit);
         loadFindings(auditId);
       }
       return data;
