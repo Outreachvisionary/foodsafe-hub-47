@@ -41,23 +41,45 @@ export const useAudits = () => {
     setLoading(true);
     setError(null);
     try {
-      // We're expecting an Audit object but might get partial data
-      const data = await fetchAuditById(auditId);
+      // Define an interface that assumes all properties may or may not exist
+      interface PartialAuditResponse {
+        id?: string;
+        title?: string;
+        status?: string;
+        startDate?: string;
+        dueDate?: string;
+        completionDate?: string;
+        auditType?: string;
+        assignedTo?: string;
+        createdBy?: string;
+        description?: string;
+        findings?: number;
+        relatedStandard?: string;
+        location?: string;
+        department?: string;
+        createdAt?: string;
+        updatedAt?: string;
+        scheduledDate?: string;
+        audit_type?: string;
+      }
+      
+      // Cast the response to our partial type
+      const data = await fetchAuditById(auditId) as PartialAuditResponse;
       
       if (data) {
         // Create a complete Audit object with default values for missing properties
         const completeAudit: Audit = {
           id: data.id || auditId,
-          title: typeof data.title === 'string' ? data.title : 'Untitled Audit',
-          status: typeof data.status === 'string' ? data.status : 'Open',
-          startDate: typeof data.startDate === 'string' ? data.startDate : new Date().toISOString(),
-          dueDate: typeof data.dueDate === 'string' ? data.dueDate : new Date().toISOString(),
-          auditType: typeof data.auditType === 'string' ? data.auditType : 'Internal',
-          assignedTo: typeof data.assignedTo === 'string' ? data.assignedTo : '',
-          createdBy: typeof data.createdBy === 'string' ? data.createdBy : '',
+          title: data.title || 'Untitled Audit',
+          status: data.status as Audit['status'] || 'Open',
+          startDate: data.startDate || new Date().toISOString(),
+          dueDate: data.dueDate || new Date().toISOString(),
+          auditType: data.auditType || 'Internal',
+          assignedTo: data.assignedTo || '',
+          createdBy: data.createdBy || '',
         };
         
-        // Add any additional properties from data that weren't explicitly defined above
+        // Add optional properties if they exist in the response
         if (data.description) completeAudit.description = data.description;
         if (data.completionDate) completeAudit.completionDate = data.completionDate;
         if (data.findings !== undefined) completeAudit.findings = data.findings;
