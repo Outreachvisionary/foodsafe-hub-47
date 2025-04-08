@@ -41,21 +41,33 @@ export const useAudits = () => {
     setLoading(true);
     setError(null);
     try {
+      // We're expecting an Audit object but might get partial data
       const data = await fetchAuditById(auditId);
+      
       if (data) {
-        // Create a fully compliant Audit object by ensuring all required properties exist
+        // Create a complete Audit object with default values for missing properties
         const completeAudit: Audit = {
-          id: data.id,
-          title: data.title || 'Untitled Audit',
-          status: data.status || 'Open',
-          startDate: data.startDate || new Date().toISOString(),
-          dueDate: data.dueDate || new Date().toISOString(),
-          auditType: data.auditType || 'Internal',
-          assignedTo: data.assignedTo || '',
-          createdBy: data.createdBy || '',
-          // Include any other properties that might be in the data
-          ...data 
+          id: data.id || auditId,
+          title: typeof data.title === 'string' ? data.title : 'Untitled Audit',
+          status: typeof data.status === 'string' ? data.status : 'Open',
+          startDate: typeof data.startDate === 'string' ? data.startDate : new Date().toISOString(),
+          dueDate: typeof data.dueDate === 'string' ? data.dueDate : new Date().toISOString(),
+          auditType: typeof data.auditType === 'string' ? data.auditType : 'Internal',
+          assignedTo: typeof data.assignedTo === 'string' ? data.assignedTo : '',
+          createdBy: typeof data.createdBy === 'string' ? data.createdBy : '',
         };
+        
+        // Add any additional properties from data that weren't explicitly defined above
+        if (data.description) completeAudit.description = data.description;
+        if (data.completionDate) completeAudit.completionDate = data.completionDate;
+        if (data.findings !== undefined) completeAudit.findings = data.findings;
+        if (data.relatedStandard) completeAudit.relatedStandard = data.relatedStandard;
+        if (data.location) completeAudit.location = data.location;
+        if (data.department) completeAudit.department = data.department;
+        if (data.createdAt) completeAudit.createdAt = data.createdAt;
+        if (data.updatedAt) completeAudit.updatedAt = data.updatedAt;
+        if (data.scheduledDate) completeAudit.scheduledDate = data.scheduledDate;
+        if (data.audit_type) completeAudit.audit_type = data.audit_type;
         
         setSelectedAudit(completeAudit);
         loadFindings(auditId);
