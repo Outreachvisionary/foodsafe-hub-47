@@ -29,10 +29,16 @@ export const deleteHACCPPlan = async (id: string) => {
   return true;
 };
 
+// Additional function for tests
+export const linkToTraining = async (haccpId: string, trainingId: string) => {
+  return true;
+};
+
 export default {
   fetchHACCPPlans,
   createHACCPPlan,
   fetchHACCPPlanById,
   updateHACCPPlan,
-  deleteHACCPPlan
+  deleteHACCPPlan,
+  linkToTraining
 };

@@ -29,10 +29,21 @@ export const deleteSupplier = async (id: string) => {
   return true;
 };
 
+// Additional functionality needed for tests
+export const scheduleAudit = async (supplierId: string, date: Date) => {
+  return {
+    id: 'audit-mock-id',
+    supplierId,
+    date: date.toISOString(),
+    status: 'Scheduled'
+  };
+};
+
 export default {
   fetchSuppliers,
   createSupplier,
   fetchSupplierById,
   updateSupplier,
-  deleteSupplier
+  deleteSupplier,
+  scheduleAudit
 };

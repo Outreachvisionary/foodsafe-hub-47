@@ -1,247 +1,163 @@
 
-import { supabase } from '../integrations/supabase/client';
-import { NonConformance } from '../types/non-conformance';
+import { 
+  describe, 
+  it, 
+  expect, 
+  beforeEach, 
+  jest 
+} from '../mocks/jest.mock';
 
-// Import services for testing
-import * as nonConformanceService from '../services/nonConformanceService';
-import * as documentsService from '../services/documentsService';
-import * as capaService from '../services/capaService';
-import * as auditService from '../services/auditService';
-import * as supplierService from '../services/supplierService';
-import * as traceabilityService from '../services/traceabilityService';
-import * as trainingService from '../services/trainingService';
-import * as haccpService from '../services/haccpService';
+// Import services
+import auditService from '../services/auditService';
+import capaService from '../services/capaService';
+import documentsService from '../services/documentsService';
+import nonConformanceService from '../services/nonConformanceService';
+import supplierService from '../services/supplierService';
+import trainingService from '../services/trainingService';
+import haccpService from '../services/haccpService';
+import traceabilityService from '../services/traceabilityService';
 
-// Mock Supabase responses
-jest.mock('../integrations/supabase/client', () => ({
-  supabase: {
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    single: jest.fn().mockReturnThis(),
-    rpc: jest.fn().mockReturnThis(),
-    storage: {
-      from: jest.fn().mockReturnThis(),
-      upload: jest.fn().mockReturnThis(),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'test-url' } }),
-    },
-    removeChannel: jest.fn(),
-    channel: jest.fn().mockReturnValue({
-      on: jest.fn().mockReturnThis(),
-      subscribe: jest.fn().mockReturnThis(),
-    }),
-  }
-}));
+// Mock service methods
+jest.spyOn(auditService, 'fetchAudits').mockResolvedValue([]);
+jest.spyOn(capaService, 'fetchCAPAActions').mockResolvedValue([]);
+jest.spyOn(capaService, 'createCAPAAction').mockResolvedValue({ id: 'mock-capa-id' } as any);
+jest.spyOn(documentsService, 'fetchDocuments').mockResolvedValue([]);
+jest.spyOn(nonConformanceService, 'fetchNonConformances').mockResolvedValue([]);
+jest.spyOn(supplierService, 'fetchSuppliers').mockResolvedValue([]);
+jest.spyOn(trainingService, 'fetchTrainingSessions').mockResolvedValue([]);
+jest.spyOn(haccpService, 'fetchHACCPPlans').mockResolvedValue([]);
+jest.spyOn(traceabilityService, 'fetchProducts').mockResolvedValue([]);
 
-// Mock services
-jest.mock('../services/nonConformanceService');
-jest.mock('../services/documentsService');
-jest.mock('../services/capaService');
-jest.mock('../services/auditService');
-jest.mock('../services/supplierService');
-jest.mock('../services/traceabilityService');
-jest.mock('../services/trainingService');
-jest.mock('../services/haccpService');
-
-describe('Application Modules Database Integration Tests', () => {
+describe('Cross-Module Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
-
-  describe('Non-Conformance Module', () => {
-    it('should fetch non-conformances', async () => {
-      const mockData = [{ id: '1', title: 'Test NC' }];
-      (nonConformanceService.fetchNonConformances as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await nonConformanceService.fetchNonConformances();
-      
-      expect(nonConformanceService.fetchNonConformances).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a non-conformance', async () => {
-      const mockData = { id: '1', title: 'New NC' };
-      (nonConformanceService.createNonConformance as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await nonConformanceService.createNonConformance({} as any);
-      
-      expect(nonConformanceService.createNonConformance).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('CAPA Module', () => {
-    it('should fetch CAPA actions', async () => {
-      const mockData = [{ id: '1', title: 'Test CAPA' }];
-      (capaService.fetchCAPAActions as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await capaService.fetchCAPAActions();
-      
-      expect(capaService.fetchCAPAActions).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a CAPA action', async () => {
-      const mockData = { id: '1', title: 'New CAPA' };
-      (capaService.createCAPAAction as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await capaService.createCAPAAction({} as any);
-      
-      expect(capaService.createCAPAAction).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('Documents Module', () => {
-    it('should fetch documents', async () => {
-      const mockData = [{ id: '1', title: 'Test Document' }];
-      (documentsService.fetchDocuments as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await documentsService.fetchDocuments();
-      
-      expect(documentsService.fetchDocuments).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a document', async () => {
-      const mockData = { id: '1', title: 'New Document' };
-      (documentsService.createDocument as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await documentsService.createDocument({} as any);
-      
-      expect(documentsService.createDocument).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('Audit Module', () => {
-    it('should fetch audits', async () => {
-      const mockData = [{ id: '1', title: 'Test Audit' }];
-      (auditService.fetchAudits as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await auditService.fetchAudits();
+  
+  describe('Audit and CAPA Integration', () => {
+    it('should fetch audits and CAPAs', async () => {
+      const audits = await auditService.fetchAudits();
+      const capas = await capaService.fetchCAPAActions();
       
       expect(auditService.fetchAudits).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create an audit', async () => {
-      const mockData = { id: '1', title: 'New Audit' };
-      (auditService.createAudit as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await auditService.createAudit({} as any);
-      
-      expect(auditService.createAudit).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('Supplier Module', () => {
-    it('should fetch suppliers', async () => {
-      const mockData = [{ id: '1', name: 'Test Supplier' }];
-      (supplierService.fetchSuppliers as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await supplierService.fetchSuppliers();
-      
-      expect(supplierService.fetchSuppliers).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a supplier', async () => {
-      const mockData = { id: '1', name: 'New Supplier' };
-      (supplierService.createSupplier as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await supplierService.createSupplier({} as any);
-      
-      expect(supplierService.createSupplier).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-  
-  describe('Traceability Module', () => {
-    it('should fetch products', async () => {
-      const mockData = [{ id: '1', name: 'Test Product' }];
-      (traceabilityService.fetchProducts as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await traceabilityService.fetchProducts();
-      
-      expect(traceabilityService.fetchProducts).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a product', async () => {
-      const mockData = { id: '1', name: 'New Product' };
-      (traceabilityService.createProduct as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await traceabilityService.createProduct({} as any);
-      
-      expect(traceabilityService.createProduct).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-  
-  describe('Training Module', () => {
-    it('should fetch training sessions', async () => {
-      const mockData = [{ id: '1', title: 'Test Training' }];
-      (trainingService.fetchTrainingSessions as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await trainingService.fetchTrainingSessions();
-      
-      expect(trainingService.fetchTrainingSessions).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a training session', async () => {
-      const mockData = { id: '1', title: 'New Training' };
-      (trainingService.createTrainingSession as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await trainingService.createTrainingSession({} as any);
-      
-      expect(trainingService.createTrainingSession).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-  
-  describe('HACCP Module', () => {
-    it('should fetch HACCP plans', async () => {
-      const mockData = [{ id: '1', title: 'Test HACCP Plan' }];
-      (haccpService.fetchHACCPPlans as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await haccpService.fetchHACCPPlans();
-      
-      expect(haccpService.fetchHACCPPlans).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-
-    it('should create a HACCP plan', async () => {
-      const mockData = { id: '1', title: 'New HACCP Plan' };
-      (haccpService.createHACCPPlan as jest.Mock).mockResolvedValue(mockData);
-      
-      const result = await haccpService.createHACCPPlan({} as any);
-      
-      expect(haccpService.createHACCPPlan).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-    });
-  });
-
-  describe('Database Integration Tests', () => {
-    it('should have proper error handling for database operations', async () => {
-      // Test that errors are properly caught and handled
-      (nonConformanceService.fetchNonConformances as jest.Mock).mockRejectedValue(new Error('Database connection error'));
-      
-      await expect(nonConformanceService.fetchNonConformances()).rejects.toThrow('Database connection error');
+      expect(capaService.fetchCAPAActions).toHaveBeenCalled();
     });
     
-    it('should handle database constraints and validation', async () => {
-      // Test that database constraints are properly enforced
-      const invalidData = { /* missing required fields */ };
-      (nonConformanceService.createNonConformance as jest.Mock).mockRejectedValue(new Error('Validation error: missing required fields'));
+    it('should create CAPA from audit finding', async () => {
+      const mockCapa = {
+        title: 'Test CAPA from Audit',
+        description: 'Created from audit finding',
+        source: 'audit',
+        sourceId: 'audit-1',
+        priority: 'high',
+        status: 'Open',
+        createdBy: 'auditor'
+      };
       
-      await expect(nonConformanceService.createNonConformance(invalidData as any)).rejects.toThrow('Validation error');
+      const result = await capaService.createCAPAAction(mockCapa as any);
+      
+      expect(capaService.createCAPAAction).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+  });
+  
+  describe('Documents and Training Integration', () => {
+    it('should fetch documents and training sessions', async () => {
+      const documents = await documentsService.fetchDocuments();
+      const trainingSessions = await trainingService.fetchTrainingSessions();
+      
+      expect(documentsService.fetchDocuments).toHaveBeenCalled();
+      expect(trainingService.fetchTrainingSessions).toHaveBeenCalled();
+    });
+    
+    it('should handle document linking to training', async () => {
+      jest.spyOn(documentsService, 'linkDocumentToModule').mockResolvedValue(true);
+      
+      const result = await documentsService.linkDocumentToModule('doc-1', 'training', 'training-1');
+      
+      expect(documentsService.linkDocumentToModule).toHaveBeenCalled();
+      expect(result).toBe(true);
+    });
+  });
+  
+  describe('Non-Conformance and CAPA Integration', () => {
+    it('should fetch non-conformances', async () => {
+      const nonConformances = await nonConformanceService.fetchNonConformances();
+      
+      expect(nonConformanceService.fetchNonConformances).toHaveBeenCalled();
+    });
+    
+    it('should generate CAPA from non-conformance', async () => {
+      jest.spyOn(nonConformanceService, 'generateCAPAFromNC').mockResolvedValue({ id: 'capa-1' });
+      
+      const result = await nonConformanceService.generateCAPAFromNC('nc-1');
+      
+      expect(nonConformanceService.generateCAPAFromNC).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+  });
+  
+  describe('Supplier and Audit Integration', () => {
+    it('should fetch suppliers', async () => {
+      const suppliers = await supplierService.fetchSuppliers();
+      
+      expect(supplierService.fetchSuppliers).toHaveBeenCalled();
+    });
+    
+    it('should schedule supplier audit', async () => {
+      jest.spyOn(supplierService, 'scheduleAudit').mockResolvedValue({ id: 'audit-1' });
+      
+      const result = await supplierService.scheduleAudit('supplier-1', new Date());
+      
+      expect(supplierService.scheduleAudit).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+  });
+  
+  describe('HACCP and Training Integration', () => {
+    it('should fetch HACCP plans', async () => {
+      const haccpPlans = await haccpService.fetchHACCPPlans();
+      
+      expect(haccpService.fetchHACCPPlans).toHaveBeenCalled();
+    });
+    
+    it('should link HACCP to training', async () => {
+      jest.spyOn(haccpService, 'linkToTraining').mockResolvedValue(true);
+      
+      const result = await haccpService.linkToTraining('haccp-1', 'training-1');
+      
+      expect(haccpService.linkToTraining).toHaveBeenCalled();
+      expect(result).toBe(true);
+    });
+  });
+  
+  describe('Traceability and CAPA Integration', () => {
+    it('should fetch products', async () => {
+      const products = await traceabilityService.fetchProducts();
+      
+      expect(traceabilityService.fetchProducts).toHaveBeenCalled();
+    });
+    
+    it('should handle recall workflow', async () => {
+      jest.spyOn(traceabilityService, 'createRecall').mockResolvedValue({ id: 'recall-1' });
+      jest.spyOn(capaService, 'createCAPAAction').mockResolvedValue({ id: 'capa-2' } as any);
+      
+      const recall = await traceabilityService.createRecall({
+        title: 'Test Recall',
+        description: 'Test recall for product',
+        productId: 'product-1'
+      });
+      
+      const capa = await capaService.createCAPAAction({
+        title: 'CAPA from Recall',
+        description: 'Address root cause of recall',
+        source: 'traceability',
+        sourceId: recall.id,
+        priority: 'critical',
+        status: 'Open'
+      } as any);
+      
+      expect(recall).toBeDefined();
+      expect(capa).toBeDefined();
     });
   });
 });

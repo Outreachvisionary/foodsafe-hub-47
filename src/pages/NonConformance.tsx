@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import NCList from '@/components/non-conformance/NCList';
 import NCDetails from '@/components/non-conformance/NCDetails';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import AppLayout from '@/components/layout/AppLayout';
 
 const NonConformanceModule = () => {
   const { id } = useParams();
@@ -17,25 +15,20 @@ const NonConformanceModule = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
-  // Ensure viewingDetails matches with URL
   useEffect(() => {
     console.log('NonConformance page loaded with ID:', id);
     setViewingDetails(!!id);
   }, [id]);
   
-  // Set up real-time updates
   useEffect(() => {
-    // Subscribe to updates
     const channel = supabase
       .channel('public:non_conformances')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'non_conformances' }, 
         (payload) => {
           console.log('Realtime update:', payload);
-          // Trigger a refresh of the component
           setRefreshTrigger(prev => prev + 1);
           
-          // Show toast notification
           const eventType = payload.eventType;
           if (eventType === 'UPDATE') {
             toast.info('A non-conformance record was updated');
@@ -43,7 +36,6 @@ const NonConformanceModule = () => {
             toast.info('A new non-conformance record was created');
           } else if (eventType === 'DELETE') {
             toast.info('A non-conformance record was deleted');
-            // If the deleted record is the one being viewed, go back to list
             if (id && payload.old && payload.old.id === id) {
               navigate('/non-conformance');
             }
@@ -57,10 +49,8 @@ const NonConformanceModule = () => {
     };
   }, [id, navigate]);
   
-  // Handle errors from the non-conformance module
   useEffect(() => {
     try {
-      // This is a simple check to ensure the module loads properly
       console.log('Loading non-conformance module, ID:', id);
       
       if (document.getElementById('nc-module-container')) {

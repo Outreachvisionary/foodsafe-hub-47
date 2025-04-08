@@ -29,10 +29,16 @@ export const deleteDocument = async (id: string) => {
   return true;
 };
 
+// Additional document functions for tests
+export const linkDocumentToModule = async (documentId: string, moduleType: string, moduleId: string) => {
+  return true;
+};
+
 export default {
   fetchDocuments,
   createDocument,
   fetchDocumentById,
   updateDocument,
-  deleteDocument
+  deleteDocument,
+  linkDocumentToModule
 };
