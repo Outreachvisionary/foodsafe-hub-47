@@ -56,13 +56,27 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
       .select('*')
       .order('dueDate', { ascending: false });
 
-    // Convert status filter to match CAPAStatus type
+    // Convert status filter to match database representation
     if (params?.status) {
       if (Array.isArray(params.status)) {
-        const statuses = params.status.map(s => mapStatusFromDb(s as CAPAStatus));
-        query = query.in('status', statuses);
+        // Use mapStatusToDb for each status in the array when converting to DB values
+        const dbStatuses = params.status.map(s => {
+          // Convert from UI status (like "In Progress") to DB status (like "in_progress")
+          if (s === 'Open') return 'open';
+          if (s === 'In Progress') return 'in_progress';
+          if (s === 'Closed') return 'closed'; 
+          if (s === 'Verified') return 'verified';
+          return 'open'; // Default
+        });
+        query = query.in('status', dbStatuses);
       } else {
-        query = query.eq('status', mapStatusFromDb(params.status as CAPAStatus));
+        // Handle single status
+        let dbStatus = 'open'; // Default
+        if (params.status === 'Open') dbStatus = 'open';
+        if (params.status === 'In Progress') dbStatus = 'in_progress';
+        if (params.status === 'Closed') dbStatus = 'closed';
+        if (params.status === 'Verified') dbStatus = 'verified';
+        query = query.eq('status', dbStatus);
       }
     }
 

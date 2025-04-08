@@ -44,3 +44,65 @@ export const Chart: React.FC<ChartProps> = ({
     </div>
   );
 };
+
+// Add the missing exports that are being used by ComplianceTrendChart
+interface ChartConfig {
+  [key: string]: {
+    label: string;
+    theme: {
+      light: string;
+      dark: string;
+    }
+  }
+}
+
+interface ChartContainerProps {
+  children: React.ReactNode;
+  config?: ChartConfig;
+  className?: string;
+}
+
+export const ChartContainer: React.FC<ChartContainerProps> = ({ 
+  children, 
+  config, 
+  className = "" 
+}) => {
+  return (
+    <div className={`chart-container ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+interface ChartTooltipProps {
+  children: React.ReactNode;
+  content: React.ReactNode;
+}
+
+export const ChartTooltip: React.FC<ChartTooltipProps> = ({ 
+  children, 
+  content 
+}) => {
+  return <Tooltip content={content}>{children}</Tooltip>;
+};
+
+interface ChartTooltipContentProps {
+  formatter?: (value: any, name?: string, props?: any) => [string, string];
+  labelFormatter?: (label: string) => string;
+}
+
+export const ChartTooltipContent: React.FC<ChartTooltipContentProps> = ({ 
+  formatter, 
+  labelFormatter 
+}) => {
+  return (
+    <div className="bg-white rounded-md shadow-md p-2 border border-gray-200">
+      {labelFormatter && <div className="font-medium text-sm">
+        {/* Content would be provided by Recharts */}
+      </div>}
+      <div className="text-xs">
+        {/* Content would be provided by Recharts */}
+      </div>
+    </div>
+  );
+};

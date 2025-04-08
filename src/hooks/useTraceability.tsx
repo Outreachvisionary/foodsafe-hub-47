@@ -193,7 +193,17 @@ export const useTraceability = () => {
     try {
       const data = await fetchProductGenealogy(productId);
       if (data) {
-        setGenealogyTree(data as TreeNode);
+        const treeNode: TreeNode = {
+          id: productId,
+          name: "Product Root",
+          type: "product",
+          children: Array.isArray(data) ? data.map(item => ({
+            id: item.id || `node-${Math.random()}`,
+            name: item.name || "Unknown",
+            type: item.type || "component"
+          })) : []
+        };
+        setGenealogyTree(treeNode);
       }
       return data;
     } catch (err) {
@@ -213,8 +223,8 @@ export const useTraceability = () => {
       const data = await fetchSupplyChainData();
       if (data) {
         const graphData: GraphData = {
-          nodes: data.nodes,
-          edges: data.links ? data.links.map((link: any) => ({
+          nodes: Array.isArray(data.nodes) ? data.nodes : [],
+          edges: Array.isArray(data.links) ? data.links.map((link: any) => ({
             source: link.source,
             target: link.target,
             type: link.type,

@@ -314,16 +314,16 @@ const Traceability = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {selectedProduct && (
+        {localSelectedProduct && (
           <Card>
             <CardHeader>
               <CardTitle>Product Details</CardTitle>
-              <CardDescription>Details for {selectedProduct.name}</CardDescription>
+              <CardDescription>Details for {localSelectedProduct.name}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Name: {selectedProduct.name}</p>
-              <p>Batch/Lot: {selectedProduct.batch_lot_number}</p>
-              <p>Manufacturing Date: {selectedProduct.manufacturing_date}</p>
+              <p>Name: {localSelectedProduct.name}</p>
+              <p>Batch/Lot: {localSelectedProduct.batch_lot_number}</p>
+              <p>Manufacturing Date: {localSelectedProduct.manufacturing_date}</p>
             </CardContent>
           </Card>
         )}
