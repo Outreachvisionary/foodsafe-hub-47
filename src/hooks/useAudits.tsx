@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { 
   fetchAudits, 
@@ -43,9 +42,7 @@ export const useAudits = () => {
     try {
       const data = await fetchAuditById(auditId);
       if (data) {
-        // Fixed: Using the full Audit object instead of just the ID
-        setSelectedAudit(data as Audit);
-        // Also load findings for this audit
+        setSelectedAudit(data);
         loadFindings(auditId);
       }
       return data;
@@ -148,7 +145,6 @@ export const useAudits = () => {
       const data = await createFinding(finding);
       if (data) {
         setFindings(prev => [data as AuditFinding, ...prev]);
-        // Update the findings count in the selected audit
         if (selectedAudit && selectedAudit.id === finding.auditId) {
           setSelectedAudit(prev => {
             if (!prev) return prev;
@@ -158,7 +154,6 @@ export const useAudits = () => {
             };
           });
         }
-        // Also update the findings count in the audits list
         setAudits(prev => prev.map(audit => 
           audit.id === finding.auditId 
             ? {...audit, findings: (audit.findings || 0) + 1} 
@@ -204,7 +199,6 @@ export const useAudits = () => {
       const success = await deleteFinding(findingId);
       if (success) {
         setFindings(prev => prev.filter(finding => finding.id !== findingId));
-        // Update the findings count in the selected audit
         if (selectedAudit && selectedAudit.id === auditId) {
           setSelectedAudit(prev => {
             if (!prev) return prev;
@@ -214,7 +208,6 @@ export const useAudits = () => {
             };
           });
         }
-        // Also update the findings count in the audits list
         setAudits(prev => prev.map(audit => 
           audit.id === auditId 
             ? {...audit, findings: Math.max(0, (audit.findings || 0) - 1)} 

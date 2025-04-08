@@ -19,6 +19,7 @@ const FacilityManagement = lazy(() => import('@/pages/FacilityManagement'));
 const DepartmentManagement = lazy(() => import('@/pages/DepartmentManagement'));
 const TrainingModule = lazy(() => import('@/pages/TrainingModule'));
 const NonConformance = lazy(() => import('@/pages/NonConformance'));
+const NonConformanceFormPage = lazy(() => import('@/pages/NonConformanceFormPage'));
 const UserManagement = lazy(() => import('@/pages/UserManagement'));
 const AuditsModule = lazy(() => import('@/pages/AuditsModule'));
 const Traceability = lazy(() => import('@/pages/Traceability'));
@@ -27,6 +28,7 @@ const SupplierManagement = lazy(() => import('@/pages/SupplierManagement'));
 const DatabaseConnectionTest = lazy(() => import('@/pages/DatabaseConnectionTest'));
 const RoleManagement = lazy(() => import('@/pages/RoleManagement'));
 const StandardsPage = lazy(() => import('@/pages/StandardsPage'));
+const ModuleContent = lazy(() => import('@/components/standards/ModuleContent'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -51,10 +53,22 @@ function App() {
             <Route path="training" element={<TrainingModule />} />
             <Route path="audits" element={<AuditsModule />} />
             <Route path="traceability" element={<Traceability />} />
+            
+            {/* Non-conformance routes */}
             <Route path="non-conformance" element={<NonConformance />} />
+            <Route path="non-conformance/new" element={<NonConformanceFormPage />} />
+            <Route path="non-conformance/:id" element={<NonConformanceFormPage />} />
+            
             <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="complaints" element={<ComplaintManagement />} />
-            <Route path="standards/*" element={<StandardsPage />} />
+            
+            {/* Standards routes */}
+            <Route path="standards" element={<StandardsPage />} />
+            <Route path="standards/:standardId" element={<StandardsPage />} />
+            <Route path="standards/:standardId/:moduleId" element={<StandardsPage />}>
+              <Route index element={<ModuleContent />} />
+            </Route>
+            
             <Route path="haccp" element={<NotFound />} />
             <Route path="capa" element={<NotFound />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
