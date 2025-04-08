@@ -10,10 +10,9 @@ import {
   createFinding,
   updateFinding,
   deleteFinding,
-  exportAuditReport,
-  Audit,
-  AuditFinding
+  exportAuditReport
 } from '@/services/auditService';
+import { Audit, AuditFinding } from '@/types/audit';
 
 export const useAudits = () => {
   const [audits, setAudits] = useState<Audit[]>([]);
@@ -82,7 +81,7 @@ export const useAudits = () => {
     try {
       const data = await createAudit(auditData);
       if (data) {
-        setAudits(prev => [data as unknown as Audit, ...prev]);
+        setAudits(prev => [data as Audit, ...prev]);
       }
       return data;
     } catch (err) {
@@ -149,15 +148,18 @@ export const useAudits = () => {
       if (data) {
         setFindings(prev => [data as AuditFinding, ...prev]);
         // Update the findings count in the selected audit
-        if (selectedAudit && selectedAudit.id === finding.audit_id) {
-          setSelectedAudit(prev => prev ? {
-            ...prev, 
-            findings: (prev.findings || 0) + 1
-          } : prev);
+        if (selectedAudit && selectedAudit.id === finding.auditId) {
+          setSelectedAudit(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev, 
+              findings: (prev.findings || 0) + 1
+            };
+          });
         }
         // Also update the findings count in the audits list
         setAudits(prev => prev.map(audit => 
-          audit.id === finding.audit_id 
+          audit.id === finding.auditId 
             ? {...audit, findings: (audit.findings || 0) + 1} 
             : audit
         ));
@@ -198,15 +200,18 @@ export const useAudits = () => {
     setLoading(true);
     setError(null);
     try {
-      const success = await deleteFinding(findingId, auditId);
+      const success = await deleteFinding(findingId);
       if (success) {
         setFindings(prev => prev.filter(finding => finding.id !== findingId));
         // Update the findings count in the selected audit
         if (selectedAudit && selectedAudit.id === auditId) {
-          setSelectedAudit(prev => prev ? {
-            ...prev, 
-            findings: Math.max(0, (prev.findings || 0) - 1)
-          } : prev);
+          setSelectedAudit(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev, 
+              findings: Math.max(0, (prev.findings || 0) - 1)
+            };
+          });
         }
         // Also update the findings count in the audits list
         setAudits(prev => prev.map(audit => 

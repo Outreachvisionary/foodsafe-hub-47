@@ -193,7 +193,9 @@ export const useTraceability = () => {
     setError(null);
     try {
       const data = await fetchProductGenealogy(productId);
-      setGenealogyTree(data);
+      if (data) {
+        setGenealogyTree(data);
+      }
       return data;
     } catch (err) {
       setError(err);
@@ -210,7 +212,9 @@ export const useTraceability = () => {
     setError(null);
     try {
       const data = await fetchSupplyChainData(productId);
-      setSupplyChainData(data);
+      if (data) {
+        setSupplyChainData(data);
+      }
       return data;
     } catch (err) {
       setError(err);

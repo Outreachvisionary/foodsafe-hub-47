@@ -3,7 +3,8 @@
 const createMockFn = () => {
   const mockFn = (...args: any[]) => {
     mockFn.mock.calls.push(args);
-    return mockFn.mock.results[mockFn.mock.calls.length - 1]?.value;
+    const result = mockFn._implementation ? mockFn._implementation(...args) : undefined;
+    return result;
   };
 
   mockFn.mock = {
@@ -13,6 +14,8 @@ const createMockFn = () => {
     results: [],
     contexts: []
   };
+
+  mockFn._implementation = null;
 
   mockFn.mockImplementation = (implementation: (...args: any[]) => any) => {
     mockFn._implementation = implementation;

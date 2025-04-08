@@ -4,8 +4,12 @@ import {
   NCActivity, 
   NCFilter, 
   NCStats,
-  NCAttachment 
+  NCAttachment,
+  NCStatus
 } from '@/types/non-conformance';
+
+// Re-export types for components to use
+export type { NonConformance, NCActivity, NCFilter, NCStats, NCAttachment };
 
 // Fetch all non-conformances
 export const fetchNonConformances = async (): Promise<NonConformance[]> => {
@@ -151,7 +155,7 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
 // Update NC status
 export const updateNCStatus = async (
   id: string,
-  newStatus: string,
+  newStatus: NCStatus,
   userId: string
 ): Promise<NonConformance> => {
   try {
@@ -469,6 +473,50 @@ export const deleteNCAttachment = async (attachmentId: string): Promise<void> =>
   }
 };
 
+// Generate CAPA from non-conformance
+export const generateCAPAFromNC = async (nonConformanceId: string): Promise<{ id: string }> => {
+  try {
+    const nc = await fetchNonConformanceById(nonConformanceId);
+    
+    // Create a CAPA based on the nonconformance
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .insert({
+        title: `CAPA for ${nc.title}`,
+        description: nc.description || '',
+        source: 'non_conformance',
+        sourceId: nonConformanceId,
+        priority: nc.priority || 'medium',
+        status: 'Open',
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        assignedTo: nc.assigned_to || nc.created_by,
+        department: nc.department,
+        rootCause: '',
+        correctiveAction: '',
+        preventiveAction: '',
+        createdBy: nc.created_by
+      })
+      .select('id')
+      .single();
+      
+    if (error) {
+      console.error('Error generating CAPA from non-conformance:', error);
+      throw error;
+    }
+    
+    // Update the non-conformance with the new CAPA ID
+    await supabase
+      .from('non_conformances')
+      .update({ capa_id: data.id })
+      .eq('id', nonConformanceId);
+      
+    return { id: data.id };
+  } catch (error) {
+    console.error('Error in generateCAPAFromNC:', error);
+    throw error;
+  }
+};
+
 // Create a default export for compatibility
 const nonConformanceService = {
   fetchNonConformances,
@@ -484,7 +532,8 @@ const nonConformanceService = {
   uploadNCAttachment,
   deleteNCAttachment,
   updateNCStatus,
-  createNCActivity
+  createNCActivity,
+  generateCAPAFromNC
 };
 
 export default nonConformanceService;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -30,18 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Search, Filter, ChevronDown, PlusCircle, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useAudits } from '@/hooks/useAudits';
-
-// Define a local Audit type that matches the component expectations
-type Audit = {
-  id: string;
-  title: string;
-  status: string;
-  start_date: string;
-  due_date: string;
-  audit_type: string;
-  assigned_to: string;
-  findings_count: number;
-};
+import { Audit } from '@/types/audit';
 
 const InternalAudits: React.FC = () => {
   const navigate = useNavigate();
@@ -58,16 +46,20 @@ const InternalAudits: React.FC = () => {
   const [myAuditsOnly, setMyAuditsOnly] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
 
-  // Transform service audits to component-expected format
   const audits: Audit[] = serviceAudits?.map(audit => ({
     id: audit.id,
     title: audit.title,
     status: audit.status,
-    start_date: audit.scheduledDate,
-    due_date: audit.scheduledDate, // Using scheduled date as due date
-    audit_type: audit.audit_type || '',
-    assigned_to: audit.assignedTo,
-    findings_count: audit.findings || 0
+    startDate: audit.startDate,
+    dueDate: audit.dueDate,
+    auditType: audit.auditType,
+    assignedTo: audit.assignedTo,
+    findings: audit.findings || 0,
+    createdBy: audit.createdBy,
+    description: audit.description,
+    department: audit.department,
+    location: audit.location,
+    relatedStandard: audit.relatedStandard
   })) || [];
 
   useEffect(() => {
@@ -90,7 +82,7 @@ const InternalAudits: React.FC = () => {
         const statusMatch =
           selectedStatus === null || audit.status === selectedStatus;
         const typeMatch =
-          selectedType === null || audit.audit_type === selectedType;
+          selectedType === null || audit.auditType === selectedType;
         const completedMatch = showCompleted || audit.status !== 'Completed';
         const cancelledMatch = hideCancelled || audit.status !== 'Cancelled';
         return (
@@ -190,7 +182,6 @@ const InternalAudits: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* This is where the filter dropdown was causing issues */}
       <div className="flex items-center space-x-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -274,11 +265,11 @@ const AuditList: React.FC<AuditListProps> = ({ audits, loading, error }) => {
             <TableCell>
               <Badge>{audit.status}</Badge>
             </TableCell>
-            <TableCell>{audit.start_date}</TableCell>
-            <TableCell>{audit.due_date}</TableCell>
-            <TableCell>{audit.audit_type}</TableCell>
-            <TableCell>{audit.assigned_to}</TableCell>
-            <TableCell>{audit.findings_count}</TableCell>
+            <TableCell>{audit.startDate}</TableCell>
+            <TableCell>{audit.dueDate}</TableCell>
+            <TableCell>{audit.auditType}</TableCell>
+            <TableCell>{audit.assignedTo}</TableCell>
+            <TableCell>{audit.findings}</TableCell>
           </TableRow>
         ))}
       </TableBody>

@@ -1,13 +1,13 @@
 import jest from '../mocks/jest.mock';
-import nonConformanceService from '../services/nonConformanceService';
+import * as nonConformanceServiceModule from '../services/nonConformanceService';
 
+// Mock the service
 jest.mock('@/services/nonConformanceService');
 
-// Import services
+// Import other services
 import auditService from '../services/auditService';
 import capaService from '../services/capaService';
 import documentsService from '../services/documentsService';
-import nonConformanceService from '../services/nonConformanceService';
 import supplierService from '../services/supplierService';
 import trainingService from '../services/trainingService';
 import haccpService from '../services/haccpService';
@@ -18,7 +18,7 @@ jest.spyOn(auditService, 'fetchAudits').mockResolvedValue([]);
 jest.spyOn(capaService, 'fetchCAPAActions').mockResolvedValue([]);
 jest.spyOn(capaService, 'createCAPAAction').mockResolvedValue({ id: 'mock-capa-id' } as any);
 jest.spyOn(documentsService, 'fetchDocuments').mockResolvedValue([]);
-jest.spyOn(nonConformanceService, 'fetchNonConformances').mockResolvedValue([]);
+jest.spyOn(nonConformanceServiceModule, 'fetchNonConformances').mockResolvedValue([]);
 jest.spyOn(supplierService, 'fetchSuppliers').mockResolvedValue([]);
 jest.spyOn(trainingService, 'fetchTrainingSessions').mockResolvedValue([]);
 jest.spyOn(haccpService, 'fetchHACCPPlans').mockResolvedValue([]);
@@ -77,17 +77,17 @@ describe('Cross-Module Integration Tests', () => {
   
   describe('Non-Conformance and CAPA Integration', () => {
     it('should fetch non-conformances', async () => {
-      const nonConformances = await nonConformanceService.fetchNonConformances();
+      const nonConformances = await nonConformanceServiceModule.fetchNonConformances();
       
-      expect(nonConformanceService.fetchNonConformances).toHaveBeenCalled();
+      expect(nonConformanceServiceModule.fetchNonConformances).toHaveBeenCalled();
     });
     
     it('should generate CAPA from non-conformance', async () => {
-      jest.spyOn(nonConformanceService, 'generateCAPAFromNC').mockResolvedValue({ id: 'capa-1' });
+      jest.spyOn(nonConformanceServiceModule, 'generateCAPAFromNC').mockResolvedValue({ id: 'capa-1' });
       
-      const result = await nonConformanceService.generateCAPAFromNC('nc-1');
+      const result = await nonConformanceServiceModule.generateCAPAFromNC('nc-1');
       
-      expect(nonConformanceService.generateCAPAFromNC).toHaveBeenCalled();
+      expect(nonConformanceServiceModule.generateCAPAFromNC).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
   });

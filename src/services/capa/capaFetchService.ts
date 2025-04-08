@@ -1,251 +1,175 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAFetchParams, CAPASource, CAPAPriority, SourceReference } from '@/types/capa';
-import { mapStatusFromDb, DbCAPAStatus } from './capaStatusService';
+import { CAPA, CAPAFetchParams, CAPASource, CAPAStatus } from '@/types/capa';
+import { mapStatusToDatabaseValue } from './capaStatusService';
 
-/**
- * Map database result to CAPA object
- */
-export const mapDbResultToCapa = (data: any): CAPA => {
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    source: data.source as CAPASource,
-    sourceId: data.source_id,
-    priority: data.priority as CAPAPriority,
-    status: mapStatusFromDb(data.status),
-    assignedTo: data.assigned_to,
-    department: data.department || '',
-    dueDate: data.due_date,
-    createdDate: data.created_at,
-    lastUpdated: data.updated_at,
-    completedDate: data.completion_date,
-    rootCause: data.root_cause || '',
-    correctiveAction: data.corrective_action || '',
-    preventiveAction: data.preventive_action || '',
-    verificationMethod: data.verification_method || undefined,
-    verificationDate: data.verification_date,
-    verifiedBy: data.assigned_to,
-    effectivenessRating: data.effectiveness_verified ? 'Effective' : undefined,
-    effectivenessScore: data.effectiveness_criteria 
-      ? (typeof data.effectiveness_criteria === 'string' 
-          ? JSON.parse(data.effectiveness_criteria).score 
-          : data.effectiveness_criteria.score)
-      : undefined,
-    fsma204Compliant: false
-  };
-};
-
-/**
- * Fetch CAPAs with optional filtering
- */
-export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
-  try {
-    // Start building the query with a type declaration to avoid excessive type instantiation
-    const baseQuery = supabase.from('capa_actions').select('*');
-    let query = baseQuery;
-    
-    // Apply filters if provided
-    if (params) {
-      if (params.status && params.status !== 'all') {
-        // Map frontend status to database status values
-        const dbStatus: DbCAPAStatus[] = 
-          params.status === 'open' ? ['Open', 'Overdue'] as DbCAPAStatus[] : 
-          params.status === 'in-progress' ? ['In Progress'] as DbCAPAStatus[] : 
-          params.status === 'closed' ? ['Closed'] as DbCAPAStatus[] : 
-          ['Pending Verification'] as DbCAPAStatus[];
-        
-        // Use typed array for status values
-        query = query.in('status', dbStatus);
-      }
-      
-      // Apply other filters
-      if (params.priority && params.priority !== 'all') {
-        query = query.eq('priority', params.priority);
-      }
-      
-      if (params.source && params.source !== 'all') {
-        query = query.eq('source', params.source);
-      }
-      
-      if (params.sourceId) {
-        query = query.eq('source_id', params.sourceId);
-      }
-      
-      if (params.dueDate && params.dueDate !== 'all') {
-        const now = new Date();
-        
-        if (params.dueDate === 'overdue') {
-          query = query.lt('due_date', now.toISOString());
-        } else if (params.dueDate === 'today') {
-          const today = new Date();
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          
-          query = query
-            .gte('due_date', today.toISOString().split('T')[0])
-            .lt('due_date', tomorrow.toISOString().split('T')[0]);
-        } else if (params.dueDate === 'this-week') {
-          const today = new Date();
-          const endOfWeek = new Date(today);
-          endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
-          
-          query = query
-            .gte('due_date', today.toISOString().split('T')[0])
-            .lt('due_date', endOfWeek.toISOString().split('T')[0]);
-        } else if (params.dueDate === 'this-month') {
-          const today = new Date();
-          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-          
-          query = query
-            .gte('due_date', today.toISOString().split('T')[0])
-            .lt('due_date', endOfMonth.toISOString().split('T')[0]);
-        }
-      }
-      
-      if (params.assignedTo) {
-        query = query.eq('assigned_to', params.assignedTo);
-      }
-      
-      if (params.department) {
-        query = query.eq('department', params.department);
-      }
-      
-      // Handle search query - use simpler approach to avoid type recursion
-      if (params.searchQuery) {
-        // Instead of using string interpolation with .or method which causes type issues,
-        // create a simpler filter with explicit ilike calls
-        const searchTerm = `%${params.searchQuery}%`;
-        query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
-      }
-      
-      // Apply pagination if specified
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
-    }
-    
-    // Execute the query
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching CAPAs:', error);
-      throw error;
-    }
-    
-    // Map the database results to the CAPA interface
-    return data.map(item => mapDbResultToCapa(item));
-    
-  } catch (err) {
-    console.error('Error in fetchCAPAs function:', err);
-    throw err;
-  }
-};
-
-/**
- * Fetch CAPA by ID
- */
-export const fetchCAPAById = async (capaId: string): Promise<CAPA> => {
+export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   try {
     const { data, error } = await supabase
       .from('capa_actions')
       .select('*')
-      .eq('id', capaId)
+      .eq('id', id)
       .single();
-    
+
     if (error) {
-      console.error('Error fetching CAPA by ID:', error);
-      throw error;
+      console.error('Error fetching CAPA:', error);
+      return null;
     }
-    
-    // Get source reference data if available
-    const sourceReference = await getSourceReference(data.source, data.source_id);
-    
-    // Map the database result to the CAPA interface and include the source reference
-    const capa = mapDbResultToCapa(data);
-    capa.sourceReference = sourceReference;
-    return capa;
-    
-  } catch (err) {
-    console.error('Error in fetchCAPAById function:', err);
-    throw err;
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching CAPA:', error);
+    return null;
   }
 };
 
-/**
- * Get details about the source of a CAPA
- */
-async function getSourceReference(sourceType: string, sourceId: string): Promise<SourceReference | undefined> {
-  if (!sourceId || !sourceType) return undefined;
-  
+export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    switch (sourceType) {
-      case 'complaint': {
-        const { data, error } = await supabase
-          .from('complaints')
-          .select('id, title, description, reported_date, status')
-          .eq('id', sourceId)
-          .single();
-        
-        if (error || !data) return undefined;
-        
-        return {
-          id: data.id,
-          type: 'complaint' as CAPASource,
-          title: data.title,
-          description: data.description,
-          date: data.reported_date,
-          status: data.status,
-          url: `/complaint-management/${data.id}`
-        };
+    let query = supabase
+      .from('capa_actions')
+      .select('*')
+      .order('dueDate', { ascending: false });
+
+    // Convert status filter to match CAPAStatus type
+    if (params?.status) {
+      if (Array.isArray(params.status)) {
+        const statuses = params.status.map(s => mapStatusToDatabaseValue(s as CAPAStatus));
+        query = query.in('status', statuses);
+      } else {
+        query = query.eq('status', mapStatusToDatabaseValue(params.status as CAPAStatus));
       }
-      
-      case 'audit': {
-        const { data, error } = await supabase
-          .from('audit_findings')
-          .select('id, description, audit_id, severity, created_at, status')
-          .eq('id', sourceId)
-          .single();
-        
-        if (error || !data) return undefined;
-        
-        return {
-          id: data.id,
-          type: 'audit' as CAPASource,
-          title: `Audit Finding: ${data.description.substring(0, 50)}...`,
-          description: data.description,
-          date: data.created_at,
-          status: data.status,
-          url: `/internal-audits/${data.audit_id}`
-        };
-      }
-      
-      case 'nonconformance': {
-        const { data, error } = await supabase
-          .from('non_conformances')
-          .select('id, title, description, reported_date, status')
-          .eq('id', sourceId)
-          .single();
-        
-        if (error || !data) return undefined;
-        
-        return {
-          id: data.id,
-          type: 'nonconformance' as CAPASource,
-          title: data.title,
-          description: data.description,
-          date: data.reported_date,
-          status: data.status,
-          url: `/non-conformance/${data.id}`
-        };
-      }
-      
-      default:
-        return undefined;
     }
-  } catch (err) {
-    console.error('Error getting source reference:', err);
-    return undefined;
+
+    // Convert source filter to match CAPASource type
+    if (params?.source) {
+      if (Array.isArray(params.source)) {
+        query = query.in('source', params.source);
+      } else {
+        query = query.eq('source', params.source);
+      }
+    }
+
+    // Convert priority filter
+    if (params?.priority) {
+      if (Array.isArray(params.priority)) {
+        query = query.in('priority', params.priority);
+      } else {
+        query = query.eq('priority', params.priority);
+      }
+    }
+
+    // Handle sourceId parameter
+    if (params?.sourceId) {
+      query = query.eq('source_id', params.sourceId);
+    }
+
+    // Handle assigned_to parameter
+    if (params?.assignedTo) {
+      query = query.eq('assigned_to', params.assignedTo);
+    }
+
+    // Handle department parameter
+    if (params?.department) {
+      query = query.eq('department', params.department);
+    }
+
+    // Handle search query
+    if (params?.searchQuery) {
+      const searchQuery = params.searchQuery.toLowerCase();
+      query = query.ilike('title', `%${searchQuery}%`);
+    }
+
+    // Handle due date filter
+    if (params?.dueDate) {
+      query = query.eq('dueDate', params.dueDate);
+    }
+
+    // Handle pagination
+    if (params?.limit && params?.page) {
+      const startIndex = (params.page - 1) * params.limit;
+      const endIndex = startIndex + params.limit - 1;
+      query = query.range(startIndex, endIndex);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching CAPAs:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching CAPAs:', error);
+    return [];
   }
-}
+};
+
+export const createCAPA = async (capaData: Omit<CAPA, 'id'>): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .insert([capaData])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error creating CAPA:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating CAPA:', error);
+    return null;
+  }
+};
+
+export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating CAPA:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error updating CAPA:', error);
+    return null;
+  }
+};
+
+export const deleteCAPA = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting CAPA:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting CAPA:', error);
+    return false;
+  }
+};
+
+const capaFetchService = {
+  fetchCAPAById,
+  fetchCAPAs,
+  createCAPA,
+  updateCAPA,
+  deleteCAPA
+};
+
+export default capaFetchService;

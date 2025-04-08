@@ -1,61 +1,77 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { CAPAStatus } from '@/types/capa';
 
-// These are the actual status values allowed in the database table
-export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification';
+// Define database values for statuses
+type DbCAPAStatus = 'open' | 'in_progress' | 'closed' | 'verified';
 
-// Map frontend status values to database status values
-export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
-  const statusMap: Record<CAPAStatus, DbCAPAStatus> = {
-    'Open': 'Open',
-    'In Progress': 'In Progress',
-    'Closed': 'Closed',
-    'Verified': 'Pending Verification' // Map 'verified' to 'Pending Verification' to track verification status
-  };
-  return statusMap[status] || 'Open';
+// Map from UI to Database values
+const statusToDbMap: Record<CAPAStatus, DbCAPAStatus> = {
+  'Open': 'open',
+  'In Progress': 'in_progress',
+  'Closed': 'closed',
+  'Verified': 'verified'
 };
 
-// Map database status values to frontend status values
-export const mapStatusFromDb = (dbStatus: string): CAPAStatus => {
-  const dbStatusLower = dbStatus.toLowerCase();
-  
-  if (dbStatusLower === 'in progress') return 'In Progress';
-  if (dbStatusLower === 'pending verification') return 'Verified';
-  // We map 'overdue' to 'Open' in the UI but with a different display treatment
-  if (dbStatusLower === 'overdue') return 'Open';
-  
-  if (['open', 'closed'].includes(dbStatusLower)) {
-    return dbStatusLower.charAt(0).toUpperCase() + dbStatusLower.slice(1) as CAPAStatus;
+// Map from Database to UI values
+const dbToStatusMap: Record<DbCAPAStatus, CAPAStatus> = {
+  'open': 'Open',
+  'in_progress': 'In Progress',
+  'closed': 'Closed',
+  'verified': 'Verified'
+};
+
+export const mapStatusToDatabaseValue = (status: CAPAStatus): DbCAPAStatus => {
+  return statusToDbMap[status] || 'open';
+};
+
+export const mapDatabaseValueToStatus = (dbStatus: DbCAPAStatus): CAPAStatus => {
+  return dbToStatusMap[dbStatus] || 'Open';
+};
+
+// Get the next status in the workflow 
+export const getNextStatus = (currentStatus: CAPAStatus): CAPAStatus => {
+  switch (currentStatus) {
+    case 'Open':
+      return 'In Progress';
+    case 'In Progress':
+      return 'Closed';
+    case 'Closed':
+      return 'Verified';
+    default:
+      return 'Open';
   }
+};
+
+// Check if a status transition is valid
+export const isValidStatusTransition = (currentStatus: CAPAStatus, newStatus: CAPAStatus): boolean => {
+  if (currentStatus === newStatus) return true;
   
-  return 'Open';
+  switch (currentStatus) {
+    case 'Open':
+      return newStatus === 'In Progress' || newStatus === 'Closed';
+    case 'In Progress':
+      return newStatus === 'Open' || newStatus === 'Closed';
+    case 'Closed':
+      return newStatus === 'Verified' || newStatus === 'In Progress';
+    case 'Verified':
+      return newStatus === 'Closed';
+    default:
+      return false;
+  }
 };
 
-// Helper function to determine if a CAPA is overdue based on its due date
-export const isOverdue = (dueDate: string | undefined): boolean => {
-  if (!dueDate) return false;
-  const today = new Date();
-  const dueDateObj = new Date(dueDate);
-  return dueDateObj < today;
-};
-
-// Function to check and update overdue status for CAPAs
-export const updateOverdueStatus = async (): Promise<void> => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Update the status of overdue open and in-progress CAPAs
-    const { error } = await supabase
-      .from('capa_actions')
-      .update({ status: 'Overdue' })
-      .lte('due_date', today)
-      .in('status', ['Open', 'In Progress']);
-      
-    if (error) {
-      console.error('Error updating overdue status:', error);
-    }
-  } catch (err) {
-    console.error('Error in updateOverdueStatus function:', err);
+// Get all possible transitions for a status
+export const getPossibleStatusTransitions = (currentStatus: CAPAStatus): CAPAStatus[] => {
+  switch (currentStatus) {
+    case 'Open':
+      return ['In Progress', 'Closed'];
+    case 'In Progress':
+      return ['Open', 'Closed'];
+    case 'Closed':
+      return ['Verified', 'In Progress'];
+    case 'Verified':
+      return ['Closed'];
+    default:
+      return ['Open'];
   }
 };
