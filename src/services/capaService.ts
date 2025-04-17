@@ -1,5 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAEffectivenessMetrics, CAPAAction } from '@/types/capa';
+import { mapStatusFromDb, mapStatusToDb } from './capaStatusService';
 
 // Original functions
 export const fetchCAPAActions = async (): Promise<CAPAAction[]> => {
@@ -14,7 +16,13 @@ export const fetchCAPAActions = async (): Promise<CAPAAction[]> => {
       throw error;
     }
 
-    return data || [];
+    // Map the database status values to UI status values
+    const mappedData = data?.map(item => ({
+      ...item,
+      status: mapStatusFromDb(item.status as string)
+    })) || [];
+
+    return mappedData;
   } catch (error) {
     console.error('Error in fetchCAPAActions:', error);
     throw error;
@@ -23,9 +31,15 @@ export const fetchCAPAActions = async (): Promise<CAPAAction[]> => {
 
 export const createCAPAAction = async (capaAction: Omit<CAPAAction, 'id' | 'created_at' | 'updated_at'>): Promise<CAPAAction> => {
   try {
+    // Map UI status to DB status before saving
+    const dbCAPAAction = {
+      ...capaAction,
+      status: mapStatusToDb(capaAction.status)
+    };
+
     const { data, error } = await supabase
       .from('capa_actions')
-      .insert([capaAction])
+      .insert([dbCAPAAction])
       .select()
       .single();
 
@@ -34,7 +48,11 @@ export const createCAPAAction = async (capaAction: Omit<CAPAAction, 'id' | 'crea
       throw error;
     }
 
-    return data;
+    // Map the database status back to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in createCAPAAction:', error);
     throw error;
@@ -54,7 +72,13 @@ export const fetchCAPAActionById = async (id: string): Promise<CAPAAction | null
       throw error;
     }
 
-    return data;
+    if (!data) return null;
+
+    // Map the database status to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in fetchCAPAActionById:', error);
     throw error;
@@ -63,9 +87,15 @@ export const fetchCAPAActionById = async (id: string): Promise<CAPAAction | null
 
 export const updateCAPAAction = async (id: string, updates: Partial<CAPAAction>): Promise<CAPAAction> => {
   try {
+    // Map UI status to DB status if status is being updated
+    const dbUpdates = {
+      ...updates,
+      status: updates.status ? mapStatusToDb(updates.status) : undefined
+    };
+
     const { data, error } = await supabase
       .from('capa_actions')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -75,7 +105,11 @@ export const updateCAPAAction = async (id: string, updates: Partial<CAPAAction>)
       throw error;
     }
 
-    return data;
+    // Map the database status back to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in updateCAPAAction:', error);
     throw error;
@@ -84,9 +118,12 @@ export const updateCAPAAction = async (id: string, updates: Partial<CAPAAction>)
 
 export const updateCAPAStatus = async (id: string, newStatus: CAPAStatus): Promise<void> => {
   try {
+    // Map UI status to DB status
+    const dbStatus = mapStatusToDb(newStatus);
+
     const { error } = await supabase
       .from('capa_actions')
-      .update({ status: newStatus })
+      .update({ status: dbStatus })
       .eq('id', id);
 
     if (error) {
@@ -125,7 +162,8 @@ export const fetchCAPAs = async (filters?: any): Promise<CAPA[]> => {
     
     if (filters) {
       if (filters.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+        // Map UI status to DB status for filtering
+        query = query.eq('status', mapStatusToDb(filters.status));
       }
       if (filters.priority && filters.priority !== 'all') {
         query = query.eq('priority', filters.priority);
@@ -142,7 +180,13 @@ export const fetchCAPAs = async (filters?: any): Promise<CAPA[]> => {
       throw error;
     }
 
-    return data || [];
+    // Map the database status values to UI status values
+    const mappedData = data?.map(item => ({
+      ...item,
+      status: mapStatusFromDb(item.status as string)
+    })) || [];
+
+    return mappedData;
   } catch (error) {
     console.error('Error in fetchCAPAs:', error);
     throw error;
@@ -162,7 +206,11 @@ export const fetchCAPAById = async (id: string): Promise<CAPA> => {
       throw error;
     }
 
-    return data;
+    // Map the database status to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in fetchCAPAById:', error);
     throw error;
@@ -171,12 +219,16 @@ export const fetchCAPAById = async (id: string): Promise<CAPA> => {
 
 export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'created_at' | 'updated_at' | 'lastUpdated'>): Promise<CAPA> => {
   try {
+    // Map UI status to DB status before saving
+    const dbCAPAData = {
+      ...capaData,
+      status: mapStatusToDb(capaData.status),
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('capa_actions')
-      .insert([{
-        ...capaData,
-        updated_at: new Date().toISOString()
-      }])
+      .insert([dbCAPAData])
       .select()
       .single();
 
@@ -185,7 +237,11 @@ export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'created_at' | 'upd
       throw error;
     }
 
-    return data;
+    // Map the database status back to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in createCAPA:', error);
     throw error;
@@ -194,12 +250,16 @@ export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'created_at' | 'upd
 
 export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
   try {
+    // Map UI status to DB status if status is being updated
+    const dbUpdates = {
+      ...updates,
+      status: updates.status ? mapStatusToDb(updates.status) : undefined,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('capa_actions')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -209,7 +269,11 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
       throw error;
     }
 
-    return data;
+    // Map the database status back to UI status
+    return {
+      ...data,
+      status: mapStatusFromDb(data.status as string)
+    };
   } catch (error) {
     console.error('Error in updateCAPA:', error);
     throw error;
