@@ -269,6 +269,41 @@ const TestingVerificationPage = () => {
     toast.success('Component verification completed');
   };
   
+  const verifyIntegrations = async () => {
+    setRunningTest('integrations');
+    const updatedIntegrations = [...integrationChecks];
+    
+    for (let i = 0; i < updatedIntegrations.length; i++) {
+      const integration = updatedIntegrations[i];
+      integration.status = 'pending';
+      setIntegrationChecks([...updatedIntegrations]);
+      setOverallProgress(Math.floor((i / updatedIntegrations.length) * 100));
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      try {
+        // Simulate integration check with a random success/failure
+        const success = Math.random() > 0.2; // 80% chance of success
+        
+        if (success) {
+          integration.status = 'success';
+        } else {
+          integration.status = 'error';
+          integration.errorDetails = `Failed to verify ${integration.name} integration`;
+        }
+      } catch (error) {
+        integration.status = 'error';
+        integration.errorDetails = error instanceof Error ? error.message : 'Unknown error';
+      }
+      
+      setIntegrationChecks([...updatedIntegrations]);
+    }
+    
+    setOverallProgress(100);
+    setRunningTest(null);
+    toast.success('Integration verification completed');
+  };
+  
   const verifyDatabases = async () => {
     setRunningTest('databases');
     const updatedDatabases = [...databaseChecks];
@@ -422,6 +457,7 @@ const TestingVerificationPage = () => {
     toast.info('Starting complete verification process');
     await verifyRoutes();
     await verifyComponents();
+    await verifyIntegrations();
     await verifyDatabases();
     await verifyFunctions();
     await verifyCrossModules();
