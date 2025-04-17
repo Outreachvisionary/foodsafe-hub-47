@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAEffectivenessMetrics, CAPAAction } from '@/types/capa';
 
@@ -117,7 +116,6 @@ export const deleteCAPAAction = async (id: string): Promise<void> => {
   }
 };
 
-// New functions required by components
 export const fetchCAPAs = async (filters?: any): Promise<CAPA[]> => {
   try {
     let query = supabase
@@ -246,23 +244,133 @@ export const getCAPAStats = async (): Promise<any> => {
       throw error;
     }
     
-    // Process and return stats
-    const total = capaData?.length || 0;
-    const open = capaData?.filter(c => c.status === 'Open').length || 0;
-    const inProgress = capaData?.filter(c => c.status === 'In Progress').length || 0;
-    const closed = capaData?.filter(c => c.status === 'Closed').length || 0;
-    const verified = capaData?.filter(c => c.status === 'Verified').length || 0;
-    const byPriority = {
-      critical: capaData?.filter(c => c.priority === 'critical').length || 0,
-      high: capaData?.filter(c => c.priority === 'high').length || 0,
-      medium: capaData?.filter(c => c.priority === 'medium').length || 0,
-      low: capaData?.filter(c => c.priority === 'low').length || 0,
+    // Initialize default structure to ensure all expected properties exist
+    const statsResult = {
+      total: capaData?.length || 0,
+      byStatus: {
+        open: 0,
+        'in-progress': 0,
+        closed: 0,
+        verified: 0
+      },
+      byPriority: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      },
+      bySource: {
+        audit: 0,
+        haccp: 0,
+        supplier: 0,
+        complaint: 0,
+        traceability: 0,
+        nonconformance: 0
+      },
+      overdue: 0,
+      recentItems: [],
+      completionRates: {},
+      effectivenessStats: {
+        effective: 0,
+        partiallyEffective: 0,
+        ineffective: 0,
+        notEvaluated: 0
+      },
+      averageTimeToClose: 0,
+      averageClosureTime: 0,
+      fsma204ComplianceRate: 0
     };
     
-    return { total, open, inProgress, closed, verified, byPriority };
+    // Process data to populate the stats
+    if (capaData && capaData.length > 0) {
+      // Calculate status counts
+      capaData.forEach(capa => {
+        // Status counts
+        const statusKey = capa.status?.toLowerCase() || 'open';
+        const status = statusKey === 'in progress' ? 'in-progress' : statusKey;
+        if (statsResult.byStatus.hasOwnProperty(status)) {
+          statsResult.byStatus[status]++;
+        }
+        
+        // Priority counts
+        const priority = capa.priority?.toLowerCase() || 'medium';
+        if (statsResult.byPriority.hasOwnProperty(priority)) {
+          statsResult.byPriority[priority]++;
+        }
+        
+        // Source counts
+        const source = capa.source?.toLowerCase() || 'audit';
+        if (statsResult.bySource.hasOwnProperty(source)) {
+          statsResult.bySource[source]++;
+        }
+        
+        // Calculate overdue items
+        const dueDate = capa.due_date ? new Date(capa.due_date) : null;
+        const now = new Date();
+        if (dueDate && dueDate < now && capa.status !== 'Closed' && capa.status !== 'Verified') {
+          statsResult.overdue++;
+        }
+      });
+      
+      // Get the most recent 5 items
+      statsResult.recentItems = capaData
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
+      
+      // Calculate average time to close
+      const closedCapas = capaData.filter(capa => capa.status === 'Closed' || capa.status === 'Verified');
+      if (closedCapas.length > 0) {
+        const totalDays = closedCapas.reduce((sum, capa) => {
+          const createdDate = new Date(capa.created_at);
+          const completedDate = capa.completion_date ? new Date(capa.completion_date) : new Date();
+          const daysToClose = Math.ceil((completedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+          return sum + daysToClose;
+        }, 0);
+        
+        statsResult.averageTimeToClose = Math.round(totalDays / closedCapas.length);
+        statsResult.averageClosureTime = Math.round(totalDays / closedCapas.length);
+      }
+    }
+    
+    return statsResult;
   } catch (error) {
     console.error('Error in getCAPAStats:', error);
-    throw error;
+    // Return default structure even if there's an error to prevent undefined errors
+    return {
+      total: 0,
+      byStatus: {
+        open: 0,
+        'in-progress': 0,
+        closed: 0,
+        verified: 0
+      },
+      byPriority: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      },
+      bySource: {
+        audit: 0,
+        haccp: 0,
+        supplier: 0,
+        complaint: 0,
+        traceability: 0,
+        nonconformance: 0
+      },
+      overdue: 0,
+      recentItems: [],
+      completionRates: {},
+      effectivenessStats: {
+        effective: 0,
+        partiallyEffective: 0,
+        ineffective: 0,
+        notEvaluated: 0
+      },
+      averageTimeToClose: 0,
+      averageClosureTime: 0,
+      fsma204ComplianceRate: 0
+    };
   }
 };
 
@@ -356,7 +464,6 @@ export const getEffectivenessMetrics = async (capaId: string): Promise<CAPAEffec
   }
 };
 
-// Default export for compatibility
 export default {
   fetchCAPAActions,
   createCAPAAction,

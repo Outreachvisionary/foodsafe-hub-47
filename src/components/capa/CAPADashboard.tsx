@@ -110,27 +110,27 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     }
   };
 
-  const statusData = stats ? [
-    { name: 'Open', value: stats.byStatus.open },
-    { name: 'In Progress', value: stats.byStatus['in-progress'] },
-    { name: 'Closed', value: stats.byStatus.closed },
-    { name: 'Verified', value: stats.byStatus.verified }
+  const statusData = stats && stats.byStatus ? [
+    { name: 'Open', value: stats.byStatus.open || 0 },
+    { name: 'In Progress', value: stats.byStatus['in-progress'] || 0 },
+    { name: 'Closed', value: stats.byStatus.closed || 0 },
+    { name: 'Verified', value: stats.byStatus.verified || 0 }
   ] : [];
 
-  const priorityData = stats ? [
-    { name: 'Critical', value: stats.byPriority.critical },
-    { name: 'High', value: stats.byPriority.high },
-    { name: 'Medium', value: stats.byPriority.medium },
-    { name: 'Low', value: stats.byPriority.low }
+  const priorityData = stats && stats.byPriority ? [
+    { name: 'Critical', value: stats.byPriority.critical || 0 },
+    { name: 'High', value: stats.byPriority.high || 0 },
+    { name: 'Medium', value: stats.byPriority.medium || 0 },
+    { name: 'Low', value: stats.byPriority.low || 0 }
   ] : [];
 
-  const sourceData = stats ? [
-    { name: 'Audit', value: stats.bySource.audit },
-    { name: 'HACCP', value: stats.bySource.haccp },
-    { name: 'Supplier', value: stats.bySource.supplier },
-    { name: 'Complaint', value: stats.bySource.complaint },
-    { name: 'Traceability', value: stats.bySource.traceability },
-    { name: 'Non-Conformance', value: stats.bySource.nonconformance }
+  const sourceData = stats && stats.bySource ? [
+    { name: 'Audit', value: stats.bySource.audit || 0 },
+    { name: 'HACCP', value: stats.bySource.haccp || 0 },
+    { name: 'Supplier', value: stats.bySource.supplier || 0 },
+    { name: 'Complaint', value: stats.bySource.complaint || 0 },
+    { name: 'Traceability', value: stats.bySource.traceability || 0 },
+    { name: 'Non-Conformance', value: stats.bySource.nonconformance || 0 }
   ] : [];
 
   const getMonthlyTrendData = () => {
@@ -225,7 +225,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
             />
             <StatCard 
               title="Open CAPAs" 
-              value={stats ? stats.byStatus.open + stats.byStatus['in-progress'] : 0} 
+              value={stats && stats.byStatus ? stats.byStatus.open + stats.byStatus['in-progress'] : 0} 
               description="CAPAs in progress or not started"
             />
             <StatCard 
@@ -236,7 +236,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
             />
             <StatCard 
               title="Closed Rate" 
-              value={`${stats && stats.total > 0 ? Math.round((stats.byStatus.closed + stats.byStatus.verified) / stats.total * 100) : 0}%`} 
+              value={`${stats && stats.total > 0 && stats.byStatus ? Math.round((stats.byStatus.closed + stats.byStatus.verified) / stats.total * 100) : 0}%`} 
               description="Percentage of CAPAs that are closed"
             />
           </div>
