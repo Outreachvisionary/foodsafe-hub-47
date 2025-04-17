@@ -31,6 +31,7 @@ const StandardsPage = lazy(() => import('@/pages/StandardsPage'));
 const ModuleContent = lazy(() => import('@/components/standards/ModuleContent'));
 const TestingVerification = lazy(() => import('@/pages/TestingVerification'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const CAPA = lazy(() => import('@/pages/CAPA'));
 
 function App() {
   return (
@@ -60,6 +61,10 @@ function App() {
             <Route path="non-conformance/new" element={<NonConformanceFormPage />} />
             <Route path="non-conformance/:id" element={<NonConformanceFormPage />} />
             
+            {/* CAPA routes */}
+            <Route path="capa" element={<CAPA />} />
+            <Route path="capa/:id" element={<CAPA />} />
+            
             <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="complaints" element={<ComplaintManagement />} />
             
@@ -74,7 +79,6 @@ function App() {
             <Route path="testing" element={<TestingVerification />} />
             
             <Route path="haccp" element={<NotFound />} />
-            <Route path="capa" element={<NotFound />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
             <Route path="roles" element={<RoleManagement />} />
             <Route path="*" element={<NotFound />} />
