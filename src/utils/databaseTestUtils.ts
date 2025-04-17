@@ -73,6 +73,89 @@ export async function testDatabaseFunction(
   }
 }
 
+export async function testSupabaseAuth(): Promise<{
+  status: 'success' | 'error' | 'pending';
+  details: string;
+  error?: string;
+}> {
+  try {
+    // Test if Supabase auth is initialized properly
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) throw error;
+    
+    return {
+      status: 'success',
+      details: 'Successfully connected to Supabase Authentication'
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      details: 'Failed to connect to Supabase Authentication',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+export async function testSupabaseDatabase(): Promise<{
+  status: 'success' | 'error' | 'pending';
+  details: string;
+  error?: string;
+}> {
+  try {
+    // Test if Supabase database is accessible by querying a simple table
+    const { data, error } = await supabase.from('organizations').select('count(*)', { count: 'exact' });
+    
+    if (error) throw error;
+    
+    return {
+      status: 'success',
+      details: 'Successfully connected to Supabase Database'
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      details: 'Failed to connect to Supabase Database',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+export async function testRouterNavigation(): Promise<{
+  status: 'success' | 'error' | 'pending';
+  details: string;
+  error?: string;
+}> {
+  try {
+    // In a real implementation, we would check if routes are properly configured
+    // For now, we'll use a simple check to see if a valid path can be accessed
+    const response = await fetch('/src/App.tsx');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch App.tsx: ${response.status}`);
+    }
+    
+    const appContent = await response.text();
+    const hasRoutes = appContent.includes('Routes') && 
+                     (appContent.includes('Route') || appContent.includes('<Route'));
+    
+    if (!hasRoutes) {
+      throw new Error('Router configuration not found in App.tsx');
+    }
+    
+    return {
+      status: 'success',
+      details: 'Router navigation is properly configured'
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      details: 'Failed to verify router navigation',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
 export async function testServiceIntegration(serviceName: string): Promise<{
   service: string;
   status: 'success' | 'error' | 'pending';

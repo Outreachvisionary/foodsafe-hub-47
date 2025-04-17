@@ -16,6 +16,9 @@ import {
   testDatabaseFunction,
   testServiceIntegration,
   testCrossModuleIntegration,
+  testSupabaseAuth,
+  testSupabaseDatabase,
+  testRouterNavigation,
   DatabaseTestResult,
   FunctionTestResult
 } from '@/utils/databaseTestUtils';
@@ -282,14 +285,25 @@ const TestingVerificationPage = () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       
       try {
-        // Simulate integration check with a random success/failure
-        const success = Math.random() > 0.2; // 80% chance of success
+        let result;
         
-        if (success) {
-          integration.status = 'success';
-        } else {
-          integration.status = 'error';
-          integration.errorDetails = `Failed to verify ${integration.name} integration`;
+        switch (integration.name) {
+          case 'Supabase Authentication':
+            result = await testSupabaseAuth();
+            break;
+          case 'Supabase Database':
+            result = await testSupabaseDatabase();
+            break;
+          case 'Router Navigation':
+            result = await testRouterNavigation();
+            break;
+          default:
+            result = await testServiceIntegration(integration.name);
+        }
+        
+        integration.status = result.status as 'success' | 'error' | 'pending' | 'warning';
+        if (result.error) {
+          integration.errorDetails = result.error;
         }
       } catch (error) {
         integration.status = 'error';
