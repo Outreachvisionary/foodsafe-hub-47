@@ -1,418 +1,213 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/contexts/UserContext';
-import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import BackendFrontendTests from '@/components/BackendFrontendTests';
+import { useUser } from '@/contexts/UserContext';
+import { 
+  testDatabaseTable, 
+  testDatabaseFunction, 
+  testSupabaseAuth, 
+  testSupabaseDatabase 
+} from '@/utils/databaseTestUtils';
 
-// Interface for test result
-interface TestResult {
-  module: string;
-  status: 'pass' | 'fail' | 'pending';
-  message?: string;
-}
-
-// Component for displaying a single test result
-const TestResultItem: React.FC<{ result: TestResult }> = ({ result }) => {
-  let icon;
-  let colorClass;
-
-  switch (result.status) {
-    case 'pass':
-      icon = <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />;
-      colorClass = "text-green-500";
-      break;
-    case 'fail':
-      icon = <XCircle className="h-4 w-4 mr-2 text-red-500" />;
-      colorClass = "text-red-500";
-      break;
-    default:
-      icon = <AlertCircle className="h-4 w-4 mr-2 text-yellow-500" />;
-      colorClass = "text-yellow-500";
-  }
-
-  return (
-    <div className="flex items-center py-2">
-      {icon}
-      <span className={colorClass}>{result.module}</span>
-      {result.message && <span className="ml-2 text-sm text-gray-500">{result.message}</span>}
-    </div>
-  );
-};
-
-// Component for the entire database connection test page
+// Component for the database connection test page
 const DatabaseConnectionTest: React.FC = () => {
-  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'db-connection' | 'backend-frontend'>('db-connection');
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [facilities, setFacilities] = useState<any[]>([]);
-  const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
-  const [selectedFacility, setSelectedFacility] = useState<string | null>(null);
-  const [moduleFilters, setModuleFilters] = useState({
-    users: true,
-    roles: true,
-    permissions: true,
-    organizations: true,
-    facilities: true,
-    documents: true,
-    training: true,
-    nonConformances: true,
-    capa: true,
-    audits: true,
-  });
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [selectAllModules, setSelectAllModules] = useState(true);
+  const [databaseResults, setDatabaseResults] = useState<any[]>([]);
+  const [tablesChecked, setTablesChecked] = useState<string[]>([]);
+  const { user } = useUser();
 
   useEffect(() => {
-    const fetchOrganizationsAndFacilities = async () => {
-      setIsLoading(true);
-      try {
-        const { data: orgs, error: orgError } = await supabase
-          .from('organizations')
-          .select('*');
-        if (orgError) throw orgError;
-        setOrganizations(orgs || []);
-
-        const { data: facs, error: facError } = await supabase
-          .from('facilities')
-          .select('*');
-        if (facError) throw facError;
-        setFacilities(facs || []);
-      } catch (error: any) {
-        toast.error(`Error fetching data: ${error.message}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizationsAndFacilities();
+    // Automatically run a basic connection check on component mount
+    runBasicConnectionCheck();
   }, []);
 
-  const handleOrganizationChange = (orgId: string) => {
-    setSelectedOrganization(orgId);
-  };
-
-  const handleFacilityChange = (facilityId: string) => {
-    setSelectedFacility(facilityId);
-  };
-
-  const handleModuleFilterChange = (module: string) => {
-    setModuleFilters(prev => ({
-      ...prev,
-      [module]: !prev[module],
-    }));
-  };
-
-  const handleSelectAllModules = () => {
-    setSelectAllModules(!selectAllModules);
-    setModuleFilters(prev => {
-      const newState = { ...prev };
-      for (const key in newState) {
-        newState[key] = !selectAllModules;
-      }
-      return newState;
-    });
-  };
-
-  const handleRunTests = async () => {
+  const runBasicConnectionCheck = async () => {
     setIsLoading(true);
-    setTestResults([]);
+    try {
+      // Test basic database connection
+      const basicDbTest = await testSupabaseDatabase();
+      
+      // Test auth connection
+      const authTest = await testSupabaseAuth();
 
-    const modulesToTest = Object.keys(moduleFilters).filter(module => moduleFilters[module]);
-
-    const testPromises = modulesToTest.map(async module => {
-      try {
-        // Simulate a database query
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Simulate success or failure based on module
-        const isSuccess = Math.random() > 0.2; // 80% chance of success
-        if (isSuccess) {
-          return {
-            module: module,
-            status: 'pass' as const,
-            message: `Successfully connected to ${module} module.`,
-          };
-        } else {
-          return {
-            module: module,
-            status: 'fail' as const,
-            message: `Failed to connect to ${module} module.`,
-          };
-        }
-      } catch (error: any) {
-        return {
-          module: module,
-          status: 'fail' as const,
-          message: `Error connecting to ${module} module: ${error.message}`,
-        };
+      setDatabaseResults([basicDbTest, authTest]);
+      
+      if (basicDbTest.status === 'success' && authTest.status === 'success') {
+        toast.success("Successfully connected to Supabase");
+      } else {
+        toast.error("Some connection tests failed. See details below.");
       }
-    });
+    } catch (error) {
+      toast.error("Error testing database connection");
+      console.error("Database connection test error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    Promise.all(testPromises)
-      .then(results => {
-        setTestResults(results);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const runTableTests = async () => {
+    setIsLoading(true);
+    try {
+      // Define core tables to test
+      const coreTables = [
+        'organizations', 
+        'facilities', 
+        'departments', 
+        'documents', 
+        'non_conformances',
+        'profiles'
+      ];
+      
+      setTablesChecked(coreTables);
+      
+      // Run tests for each table
+      const tableTests = await Promise.all(
+        coreTables.map(table => testDatabaseTable(table))
+      );
+      
+      setDatabaseResults(prev => [...prev, ...tableTests]);
+      
+      const failedTables = tableTests.filter(test => test.status === 'error');
+      if (failedTables.length > 0) {
+        toast.error(`Failed to connect to ${failedTables.length} tables`);
+      } else {
+        toast.success("Successfully connected to all core tables");
+      }
+    } catch (error) {
+      toast.error("Error testing table connections");
+      console.error("Table connection test error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderTestResult = (result: any) => {
+    let icon;
+    let statusColor;
+    
+    switch (result.status) {
+      case 'success':
+        icon = <CheckCircle2 className="h-5 w-5 text-green-500" />;
+        statusColor = "text-green-500";
+        break;
+      case 'error':
+        icon = <XCircle className="h-5 w-5 text-red-500" />;
+        statusColor = "text-red-500";
+        break;
+      default:
+        icon = <AlertCircle className="h-5 w-5 text-yellow-500" />;
+        statusColor = "text-yellow-500";
+    }
+    
+    return (
+      <Card key={result.tableName || result.details} className="mb-4">
+        <CardHeader className="pb-2">
+          <div className="flex items-center space-x-2">
+            {icon}
+            <CardTitle className={statusColor}>
+              {result.tableName ? `Table: ${result.tableName}` : 'Connection Test'}
+            </CardTitle>
+          </div>
+          {result.details && <CardDescription>{result.details}</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          {result.recordCount !== undefined && (
+            <p className="text-sm">Record count: {result.recordCount}</p>
+          )}
+          {result.duration && (
+            <p className="text-sm text-gray-500">Duration: {result.duration.toFixed(2)}ms</p>
+          )}
+          {result.error && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded">
+              <p className="text-sm font-medium text-red-800">Error:</p>
+              <p className="text-sm text-red-700">{result.error}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Database Connection Testing</h1>
-        <div className="flex space-x-2">
+      <h1 className="text-2xl font-bold mb-6">Database Connection Test</h1>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Connection Status</CardTitle>
+          <CardDescription>
+            Test your connection to the Supabase database
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2 mb-4">
+            <div className={`w-3 h-3 rounded-full ${databaseResults.some(r => r.status === 'error') ? 'bg-red-500' : 'bg-green-500'}`}></div>
+            <span className="font-medium">
+              {databaseResults.some(r => r.status === 'error') 
+                ? 'Some connection issues detected' 
+                : 'Connected to Supabase'}
+            </span>
+          </div>
+          
+          <p className="text-sm mb-4">
+            Project ID: <code className="bg-gray-100 p-1 rounded">vngmjjvfofoggfqgpizo</code>
+          </p>
+          
+          {user && (
+            <p className="text-sm mb-4">
+              Current user: {user.email} (ID: {user.id?.substring(0, 8)}...)
+            </p>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
           <Button 
-            variant={activeTab === 'db-connection' ? 'default' : 'outline'} 
-            onClick={() => setActiveTab('db-connection')}
+            onClick={runBasicConnectionCheck} 
+            disabled={isLoading}
+            variant="outline"
           >
-            Database Connectivity
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              'Test Basic Connection'
+            )}
           </Button>
+          
           <Button 
-            variant={activeTab === 'backend-frontend' ? 'default' : 'outline'} 
-            onClick={() => setActiveTab('backend-frontend')}
+            onClick={runTableTests} 
+            disabled={isLoading}
           >
-            Backend-Frontend Integration
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              'Test Core Tables'
+            )}
           </Button>
-        </div>
+        </CardFooter>
+      </Card>
+      
+      <div className="space-y-4">
+        {databaseResults.map(result => renderTestResult(result))}
+        
+        {databaseResults.length === 0 && !isLoading && (
+          <Card>
+            <CardContent className="py-4">
+              <p className="text-center text-gray-500">
+                No tests run yet. Click one of the test buttons above to begin.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-      
-      {activeTab === 'db-connection' ? (
-        <>
-          {/* Database connection testing UI section */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Select Organization</CardTitle>
-                <CardDescription>Choose an organization to test its database connection.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select onValueChange={handleOrganizationChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {organizations.map(org => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-      
-            <Card>
-              <CardHeader>
-                <CardTitle>Select Facility</CardTitle>
-                <CardDescription>Choose a facility to test its database connection.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select onValueChange={handleFacilityChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a facility" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {facilities.map(facility => (
-                        <SelectItem key={facility.id} value={facility.id}>
-                          {facility.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          </div>
-      
-          <div className="flex items-center mb-6">
-            <h2 className="text-xl font-semibold">Module Tests</h2>
-            <div className="ml-4 text-sm">
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectAllModules}
-                  onChange={handleSelectAllModules}
-                  className="mr-2"
-                />
-                Select All
-              </label>
-            </div>
-          </div>
-      
-          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 mb-6">
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.users}
-                    onChange={() => handleModuleFilterChange('users')}
-                    className="mr-2"
-                  />
-                  Users
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.roles}
-                    onChange={() => handleModuleFilterChange('roles')}
-                    className="mr-2"
-                  />
-                  Roles
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.permissions}
-                    onChange={() => handleModuleFilterChange('permissions')}
-                    className="mr-2"
-                  />
-                  Permissions
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.organizations}
-                    onChange={() => handleModuleFilterChange('organizations')}
-                    className="mr-2"
-                  />
-                  Organizations
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.facilities}
-                    onChange={() => handleModuleFilterChange('facilities')}
-                    className="mr-2"
-                  />
-                  Facilities
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.documents}
-                    onChange={() => handleModuleFilterChange('documents')}
-                    className="mr-2"
-                  />
-                  Documents
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.training}
-                    onChange={() => handleModuleFilterChange('training')}
-                    className="mr-2"
-                  />
-                  Training
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.nonConformances}
-                    onChange={() => handleModuleFilterChange('nonConformances')}
-                    className="mr-2"
-                  />
-                  Non-Conformances
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.capa}
-                    onChange={() => handleModuleFilterChange('capa')}
-                    className="mr-2"
-                  />
-                  CAPA
-                </label>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={moduleFilters.audits}
-                    onChange={() => handleModuleFilterChange('audits')}
-                    className="mr-2"
-                  />
-                  Audits
-                </label>
-              </CardContent>
-            </Card>
-          </div>
-      
-          <div className="flex justify-end mb-6">
-            <Button onClick={handleRunTests} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running Tests...
-                </>
-              ) : (
-                'Run Tests'
-              )}
-            </Button>
-          </div>
-      
-          <div className="grid grid-cols-1 gap-6">
-            {testResults.map((result, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle>Test Result: {result.module}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TestResultItem result={result} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      ) : (
-        <BackendFrontendTests />
-      )}
     </div>
   );
 };
