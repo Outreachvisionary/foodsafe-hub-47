@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -9,7 +8,6 @@ import {
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -37,10 +35,10 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     documentationComplete: false,
     preventionMeasureEffective: false,
     recurrenceCheck: false,
+    recurrenceChecked: 0,
     rootCauseEliminated: 0,
     documentationComplete: 0,
     preventionMeasureEffective: 0,
-    recurrenceChecked: 0,
     overall: 0,
     score: 0,
     assessmentDate: new Date().toISOString(),
@@ -64,7 +62,13 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
         
         if (report) {
           setExistingReport(report);
-          setMetrics(report);
+          setMetrics({
+            ...report,
+            rootCauseEliminated: Boolean(report.rootCauseEliminated),
+            documentationComplete: Boolean(report.documentationComplete),
+            preventionMeasureEffective: Boolean(report.preventionMeasureEffective),
+            recurrenceCheck: Boolean(report.recurrenceCheck)
+          });
           setNotes(report.notes || '');
         }
       } catch (error) {
@@ -128,10 +132,15 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     try {
       setSubmitting(true);
       
-      const updatedMetrics = {
+      const updatedMetrics: CAPAEffectivenessMetrics = {
         ...metrics,
         notes,
-        assessmentDate: new Date().toISOString()
+        assessmentDate: new Date().toISOString(),
+        recurrenceChecked: metrics.recurrenceCheck ? 1 : 0,
+        rootCauseEliminated: metrics.rootCauseEliminated ? 1 : 0,
+        documentationComplete: metrics.documentationComplete ? 1 : 0,
+        preventionMeasureEffective: metrics.preventionMeasureEffective ? 1 : 0,
+        overall: metrics.score
       };
       
       let result;

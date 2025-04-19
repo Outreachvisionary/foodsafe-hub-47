@@ -9,7 +9,7 @@ import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
-import { TrainingStatus } from '@/types/training';
+import { TrainingStatus, TrainingType } from '@/types/training';
 import TrainingAssignmentForm from './training/TrainingAssignmentForm';
 
 interface NCTrainingIntegrationProps {
@@ -127,8 +127,8 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
         id: sessionId,
         title: trainingCourse,
         description: `Remedial training for NC: ${ncTitle}`,
-        training_type: 'Online',
-        training_category: trainingCategory,
+        training_type: 'compliance' as TrainingType,
+        training_category: trainingCategory as unknown as TrainingCategory,
         assigned_to: assignees.map(id => assigneeNames[id] || id),
         start_date: new Date().toISOString(),
         due_date: new Date(dueDate).toISOString(),

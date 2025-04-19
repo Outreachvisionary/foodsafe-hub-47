@@ -1,7 +1,7 @@
 
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Canceled';
 export type TrainingPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TrainingType = 'compliance' | 'onboarding' | 'skills' | 'safety' | 'food-safety' | 'technical' | 'management';
+export type TrainingType = 'compliance' | 'onboarding' | 'skills' | 'safety' | 'food-safety' | 'technical' | 'management' | 'Online' | 'In-person' | 'Video' | 'Document';
 export type TrainingCategory = 'haccp' | 'gmp' | 'fsma' | 'safety' | 'quality' | 'operations' | 'maintenance' | 'regulatory' | 'other';
 export type TrainingCompletionStatus = 'completed' | 'in-progress' | 'not-started' | 'canceled';
 export type EmployeeRole = 'admin' | 'manager' | 'supervisor' | 'line-worker' | 'quality' | 'maintenance' | 'operations' | 'hr';

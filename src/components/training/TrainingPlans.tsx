@@ -32,19 +32,24 @@ const TrainingPlans: React.FC = () => {
       description: 'Basic training for all new employees covering company policies, safety protocols, and quality standards.',
       courses: ['COURSE001', 'COURSE002', 'COURSE003'],
       coursesIncluded: ['COURSE001', 'COURSE002', 'COURSE003'],
-      targetRoles: ['Operator', 'Supervisor', 'Manager'],
-      targetDepartments: ['Production', 'Quality', 'Maintenance'],
+      targetRoles: ['line-worker', 'supervisor', 'manager'],
+      targetDepartments: ['production', 'quality', 'maintenance'],
       durationDays: 5,
-      priority: 'High',
+      priority: 'high',
       isRequired: true,
       startDate: '2023-05-01',
       endDate: '2023-05-05',
       status: 'Active',
-      createdBy: 'admin',
+      created_by: 'admin',
       createdDate: '2023-04-15',
       relatedStandards: ['ISO 9001', 'GMP'],
       isAutomated: true,
-      automationTrigger: 'NewHire'
+      automationTrigger: 'NewHire',
+      recurringSchedule: {
+        frequency: 'annual',
+        interval: 1,
+        startDate: '2023-07-01'
+      }
     },
     {
       id: '2',
@@ -52,15 +57,15 @@ const TrainingPlans: React.FC = () => {
       description: 'Training on Statistical Process Control methods, tools and applications',
       courses: ['COURSE004', 'COURSE005'],
       coursesIncluded: ['COURSE004', 'COURSE005'],
-      targetRoles: ['Operator', 'Supervisor', 'Quality'],
-      targetDepartments: ['Production', 'Quality'],
+      targetRoles: ['line-worker', 'supervisor', 'quality'],
+      targetDepartments: ['production', 'quality'],
       durationDays: 3,
       isRequired: false,
-      priority: 'Medium',
+      priority: 'medium',
       startDate: '2023-06-01',
       endDate: '2023-06-03',
       status: 'Draft',
-      createdBy: 'admin',
+      created_by: 'admin',
       createdDate: '2023-05-10',
       relatedStandards: ['ISO 9001'],
       isAutomated: false
@@ -71,21 +76,21 @@ const TrainingPlans: React.FC = () => {
       description: 'Mandatory annual refresher training on Good Manufacturing Practices',
       courses: ['COURSE006'],
       coursesIncluded: ['COURSE006'],
-      targetRoles: ['Operator', 'Supervisor', 'Manager', 'Quality'],
-      targetDepartments: ['Production', 'Quality', 'R&D', 'Logistics'],
+      targetRoles: ['line-worker', 'supervisor', 'manager', 'quality'],
+      targetDepartments: ['production', 'quality', 'operations', 'administration'],
       durationDays: 1,
       isRequired: true,
-      priority: 'High',
+      priority: 'high',
       startDate: '2023-07-01',
       endDate: '2023-07-01',
       status: 'Active',
-      createdBy: 'admin',
+      created_by: 'admin',
       createdDate: '2023-06-15',
       relatedStandards: ['ISO 9001', 'GMP', 'FSSC 22000'],
       isAutomated: true,
       automationTrigger: 'RecurringTraining',
       recurringSchedule: {
-        frequency: 'Annually',
+        frequency: 'annual',
         interval: 1,
         startDate: '2023-07-01'
       }
@@ -247,7 +252,7 @@ const TrainingPlans: React.FC = () => {
                 <div className="flex flex-col space-y-1.5">
                   <label className="text-sm font-medium">Target Roles</label>
                   <div className="flex flex-wrap gap-2">
-                    {['Operator', 'Supervisor', 'Manager', 'Quality'].map(role => (
+                    {['line-worker', 'supervisor', 'manager'].map(role => (
                       <div key={role} className="flex items-center">
                         <input type="checkbox" id={`role-${role}`} className="mr-1" />
                         <label htmlFor={`role-${role}`} className="text-sm">{role}</label>

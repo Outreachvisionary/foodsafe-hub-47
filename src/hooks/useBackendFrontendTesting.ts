@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,6 +7,9 @@ export interface ModuleTestResult {
   status: 'success' | 'error' | 'pending';
   tests: DatabaseTestResult[];
   error?: string;
+  moduleName: string;
+  timestamp: Date;
+  details: TestResultDetail[];
 }
 
 export interface TestResultDetail {
@@ -17,6 +19,10 @@ export interface TestResultDetail {
   status: 'success' | 'error' | 'pending';
   duration?: number;
   error?: string;
+  message: string;
+  responseTime?: number;
+  errorDetails?: string;
+  actionRequired?: string;
   additionalInfo?: Record<string, any>;
 }
 
@@ -60,15 +66,14 @@ export interface TestSummary {
   overallHealth: number;
 }
 
-// Define the test modules
 const testModules = [
-  { id: 'tables', name: 'Database Tables' },
-  { id: 'functions', name: 'Database Functions' },
-  { id: 'auth', name: 'Authentication' },
-  { id: 'storage', name: 'Storage' },
-  { id: 'api', name: 'API Integration' },
-  { id: 'routing', name: 'Routing' },
-  { id: 'components', name: 'Component Rendering' },
+  { id: 'tables', name: 'Database Tables', moduleName: 'Database Tables', enabled: true },
+  { id: 'functions', name: 'Database Functions', moduleName: 'Database Functions', enabled: true },
+  { id: 'auth', name: 'Authentication', moduleName: 'Authentication', enabled: true },
+  { id: 'storage', name: 'Storage', moduleName: 'Storage', enabled: true },
+  { id: 'api', name: 'API Integration', moduleName: 'API Integration', enabled: true },
+  { id: 'routing', name: 'Routing', moduleName: 'Routing', enabled: true },
+  { id: 'components', name: 'Component Rendering', moduleName: 'Component Rendering', enabled: true },
 ];
 
 export function useBackendFrontendTesting() {
@@ -87,13 +92,14 @@ export function useBackendFrontendTesting() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<ModuleTestResult[]>([]);
-  const [activeModules, setActiveModules] = useState<string[]>(testModules.map(m => m.id));
+  const [activeModules, setActiveModules] = useState<{moduleName: string; enabled: boolean}[]>(
+    testModules.map(m => ({ moduleName: m.moduleName, enabled: true }))
+  );
 
   const fetchDatabaseInfo = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      // Fetch tables info
       const { data: tablesData, error: tablesError } = await supabase
         .from('pg_tables')
         .select('schemaname, tablename, rowcount')
@@ -114,7 +120,6 @@ export function useBackendFrontendTesting() {
 
       setTables(mockTables);
 
-      // Fetch functions info
       const mockFunctions: FunctionInfo[] = [
         { name: 'get_organizations', parameters: ['user_id'], returnType: 'json', status: 'active' },
         { name: 'get_facilities', parameters: ['org_id'], returnType: 'json', status: 'active' },
@@ -131,7 +136,6 @@ export function useBackendFrontendTesting() {
 
       setFunctions(mockFunctions);
 
-      // Fetch storage info
       const mockStorage: StorageInfo[] = [
         { bucket: 'documents', fileCount: 378, size: 541012345, status: 'active' },
         { bucket: 'images', fileCount: 195, size: 982345678, status: 'active' },
@@ -141,7 +145,6 @@ export function useBackendFrontendTesting() {
 
       setStorage(mockStorage);
 
-      // Calculate summary
       const tableSuccessCount = mockTables.filter(t => t.status === 'active').length;
       const functionSuccessCount = mockFunctions.filter(f => f.status === 'active').length;
       const storageSuccessCount = mockStorage.filter(s => s.status === 'active').length;
@@ -168,18 +171,15 @@ export function useBackendFrontendTesting() {
     return fetchDatabaseInfo();
   };
 
-  // Initialize database info on component mount
   useEffect(() => {
     fetchDatabaseInfo();
   }, [fetchDatabaseInfo]);
 
-  const toggleModule = (moduleId: string) => {
+  const toggleModule = (moduleName: string) => {
     setActiveModules(prev => {
-      if (prev.includes(moduleId)) {
-        return prev.filter(id => id !== moduleId);
-      } else {
-        return [...prev, moduleId];
-      }
+      return prev.map(module => 
+        module.moduleName === moduleName ? { ...module, enabled: !module.enabled } : module
+      );
     });
   };
 
@@ -187,20 +187,20 @@ export function useBackendFrontendTesting() {
     setIsRunning(true);
 
     try {
-      // Reset results
       setResults(testModules.map(module => ({
         id: module.id,
         name: module.name,
+        moduleName: module.moduleName,
         status: 'pending',
         tests: [],
+        timestamp: new Date(),
+        details: []
       })));
 
-      // Simulate running tests with different timing to make it look realistic
-      for (const moduleId of activeModules) {
-        const moduleIndex = testModules.findIndex(m => m.id === moduleId);
+      for (const module of activeModules.filter(m => m.enabled)) {
+        const moduleIndex = testModules.findIndex(m => m.moduleName === module.moduleName);
         if (moduleIndex === -1) continue;
 
-        // Update status to running
         setResults(prev => {
           const updated = [...prev];
           updated[moduleIndex] = {
@@ -210,15 +210,16 @@ export function useBackendFrontendTesting() {
           return updated;
         });
 
-        // Simulate test execution
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 2000));
 
-        // Generate random test results
         const testResults: DatabaseTestResult[] = [];
+        const detailResults: TestResultDetail[] = [];
         const testCount = Math.floor(Math.random() * 5) + 2;
 
         for (let i = 0; i < testCount; i++) {
           const success = Math.random() > 0.2;
+          const testId = `test-${i + 1}`;
+          
           testResults.push({
             success,
             message: success ? `Test ${i + 1} passed` : `Test ${i + 1} failed`,
@@ -226,9 +227,20 @@ export function useBackendFrontendTesting() {
             duration: Math.floor(Math.random() * 500) + 100,
             error: success ? undefined : 'Mock error message for testing purposes',
           });
+          
+          detailResults.push({
+            id: testId,
+            name: `Test ${i + 1}`,
+            description: `Test case for ${module.moduleName}`,
+            status: success ? 'success' : 'error',
+            message: success ? `Successfully completed test ${i + 1}` : `Failed to complete test ${i + 1}`,
+            responseTime: Math.floor(Math.random() * 500) + 100,
+            errorDetails: success ? undefined : 'Detailed error information would appear here',
+            actionRequired: success ? undefined : 'Recommended action to fix this issue',
+            duration: Math.floor(Math.random() * 500) + 100,
+          });
         }
 
-        // Update results
         const allPassed = testResults.every(r => r.success);
 
         setResults(prev => {
@@ -237,7 +249,9 @@ export function useBackendFrontendTesting() {
             ...updated[moduleIndex],
             status: allPassed ? 'success' : 'error',
             tests: testResults,
+            details: detailResults,
             error: allPassed ? undefined : 'Some tests failed',
+            timestamp: new Date()
           };
           return updated;
         });
