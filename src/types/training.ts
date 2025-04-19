@@ -20,11 +20,14 @@ export interface TrainingRecord {
   notes?: string;
   created_at: string;
   updated_at: string;
+  assigned_date: string;
 }
 
 export interface ExtendedTrainingRecord extends TrainingRecord {
   courseName: string;
   instructorName: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TrainingSession {
@@ -75,4 +78,35 @@ export interface TrainingPlan {
   updated_at: string;
   target_departments: string[];
   related_standards: string[];
+}
+
+export interface TrainingAutomationConfig {
+  id: string;
+  enabled: boolean;
+  rules: any[];
+  documentChangesTrigger: boolean;
+  newEmployeeTrigger: boolean;
+  roleCangeTrigger: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
+export interface AutoAssignRule {
+  id: string;
+  name: string;
+  conditions: {
+    key: string;
+    operator: string;
+    value: any;
+  }[];
+  training_plan_id: string;
+}
+
+export interface DocumentControlIntegration {
+  enabled: boolean;
+  documentTypes: string[];
+  assignToViewers: boolean;
+  assignToEditors: boolean;
+  assignToApprovers: boolean;
 }

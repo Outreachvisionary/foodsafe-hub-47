@@ -1,104 +1,81 @@
-import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { TrainingPlan, TrainingPriority } from '@/types/training';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  mapToTrainingPriority, 
-  mapToRecurrencePattern, 
-  ensureStringArray 
-} from '@/utils/trainingTypeMapper';
 
-export function useTrainingPlans() {
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { TrainingPlan, TrainingPriority } from '@/types/training';
+import { useToast } from '@/hooks/use-toast';
+
+const useTrainingPlans = () => {
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchTrainingPlans = async () => {
-      try {
-        setLoading(true);
-        
-        const { data, error } = await supabase
-          .from('training_plans')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        // Transform database data to match our TrainingPlan interface
-        const transformedPlans: TrainingPlan[] = (data || []).map(plan => ({
-          id: plan.id,
-          name: plan.name,
-          description: plan.description,
-          target_roles: ensureStringArray(plan.target_roles || []),
-          courses: ensureStringArray(plan.courses || []),
-          duration_days: plan.duration_days || 0,
-          is_required: plan.is_required || false,
-          priority: mapToTrainingPriority(plan.priority || 'medium'),
-          status: plan.status,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          is_automated: plan.is_automated,
-          automation_trigger: plan.automation_trigger,
-          created_by: plan.created_by,
-          created_at: plan.created_at,
-          updated_at: plan.updated_at,
-          target_departments: ensureStringArray(plan.target_departments || []),
-          related_standards: ensureStringArray(plan.related_standards || []),
-          // Set legacy fields to keep compatibility
-          targetRoles: ensureStringArray(plan.target_roles || []),
-          coursesIncluded: ensureStringArray(plan.courses || []),
-          durationDays: plan.duration_days || 0,
-          isRequired: plan.is_required || false,
-          startDate: plan.start_date,
-          endDate: plan.end_date,
-          isAutomated: plan.is_automated,
-          automationTrigger: plan.automation_trigger,
-          createdBy: plan.created_by,
-          createdDate: plan.created_at,
-          targetDepartments: ensureStringArray(plan.target_departments || []),
-          relatedStandards: ensureStringArray(plan.related_standards || [])
-        }));
-        
-        setPlans(transformedPlans);
-      } catch (err) {
-        console.error('Error fetching training plans:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch training plans'));
-        toast({
-          title: 'Error',
-          description: 'Failed to load training plans. Please try again later.',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrainingPlans();
-  }, [toast]);
-
-  const createTrainingPlan = async (planData: Partial<TrainingPlan>): Promise<TrainingPlan | null> => {
+  
+  const fetchPlans = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      setError(null);
       
+      const { data, error: fetchError } = await supabase
+        .from('training_plans')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) throw fetchError;
+
+      // Map database response to TrainingPlan interface
+      const mappedPlans: TrainingPlan[] = (data || []).map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        target_roles: Array.isArray(plan.target_roles) ? plan.target_roles : [],
+        courses: Array.isArray(plan.courses) ? plan.courses : [],
+        duration_days: plan.duration_days || 0,
+        is_required: Boolean(plan.is_required),
+        priority: (plan.priority || 'medium') as TrainingPriority,
+        status: plan.status,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        is_automated: Boolean(plan.is_automated),
+        automation_trigger: plan.automation_trigger,
+        created_by: plan.created_by,
+        created_at: plan.created_at,
+        updated_at: plan.updated_at,
+        target_departments: Array.isArray(plan.target_departments) ? plan.target_departments : [],
+        related_standards: Array.isArray(plan.related_standards) ? plan.related_standards : []
+      }));
+      
+      setPlans(mappedPlans);
+    } catch (err) {
+      console.error('Error fetching training plans:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch training plans'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+  
+  const createPlan = async (planData: Partial<TrainingPlan>): Promise<TrainingPlan | null> => {
+    try {
       // Convert from our interface to the database schema
       const dbPlan = {
         name: planData.name,
         description: planData.description,
-        target_roles: planData.targetRoles || planData.target_roles || [],
-        courses: planData.coursesIncluded || planData.courses || [],
-        duration_days: planData.durationDays || planData.duration_days || 0,
-        is_required: planData.isRequired || planData.is_required || false,
+        target_roles: planData.target_roles || [],
+        courses: planData.courses || [],
+        duration_days: planData.duration_days || 0,
+        is_required: planData.is_required || false,
         priority: planData.priority || 'medium',
         status: planData.status || 'Active',
-        start_date: planData.startDate || planData.start_date,
-        end_date: planData.endDate || planData.end_date,
-        is_automated: planData.isAutomated || planData.is_automated || false,
-        automation_trigger: planData.automationTrigger || planData.automation_trigger,
-        target_departments: planData.targetDepartments || planData.target_departments || [],
-        related_standards: planData.relatedStandards || planData.related_standards || [],
-        created_by: planData.createdBy || planData.created_by || 'Current User'
+        start_date: planData.start_date,
+        end_date: planData.end_date,
+        is_automated: planData.is_automated || false,
+        automation_trigger: planData.automation_trigger,
+        target_departments: planData.target_departments || [],
+        related_standards: planData.related_standards || [],
+        created_by: planData.created_by || 'Current User'
       };
       
       const { data, error } = await supabase
@@ -106,129 +83,173 @@ export function useTrainingPlans() {
         .insert(dbPlan)
         .select()
         .single();
-        
+      
       if (error) throw error;
       
-      // Transform database response to match our TrainingPlan interface
+      // Transform to our TrainingPlan type
       const newPlan: TrainingPlan = {
         id: data.id,
         name: data.name,
         description: data.description,
-        target_roles: ensureStringArray(data.target_roles || []),
-        courses: ensureStringArray(data.courses || []),
+        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        courses: Array.isArray(data.courses) ? data.courses : [],
         duration_days: data.duration_days || 0,
-        is_required: data.is_required || false,
-        priority: mapToTrainingPriority(data.priority || 'medium'),
+        is_required: Boolean(data.is_required),
+        priority: (data.priority || 'medium') as TrainingPriority,
         status: data.status,
         start_date: data.start_date,
         end_date: data.end_date,
-        is_automated: data.is_automated,
+        is_automated: Boolean(data.is_automated),
         automation_trigger: data.automation_trigger,
         created_by: data.created_by,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        target_departments: ensureStringArray(data.target_departments || []),
-        related_standards: ensureStringArray(data.related_standards || []),
-        
-        // Legacy fields for compatibility
-        targetRoles: ensureStringArray(data.target_roles || []),
-        coursesIncluded: ensureStringArray(data.courses || []),
-        durationDays: data.duration_days || 0,
-        isRequired: data.is_required || false,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        isAutomated: data.is_automated,
-        automationTrigger: data.automation_trigger,
-        createdBy: data.created_by,
-        createdDate: data.created_at,
-        targetDepartments: ensureStringArray(data.target_departments || []),
-        relatedStandards: ensureStringArray(data.related_standards || [])
+        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
+        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
       };
       
       setPlans(prev => [newPlan, ...prev]);
       
       toast({
-        title: 'Success',
-        description: 'Training plan created successfully.',
+        title: 'Training Plan Created',
+        description: `${newPlan.name} has been successfully created.`,
+        variant: 'default'
       });
       
       return newPlan;
     } catch (err) {
       console.error('Error creating training plan:', err);
+      
       toast({
         title: 'Error',
         description: 'Failed to create training plan. Please try again.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
+      
       return null;
-    } finally {
-      setLoading(false);
     }
   };
-
-  const updateTrainingPlan = async (
-    planId: string,
-    updates: Partial<TrainingPlan>
-  ): Promise<boolean> => {
+  
+  const updatePlan = async (id: string, planData: Partial<TrainingPlan>): Promise<TrainingPlan | null> => {
     try {
-      setLoading(true);
-      
       // Convert from our interface to the database schema
-      const dbUpdates = {
-        name: updates.name,
-        description: updates.description,
-        target_roles: updates.targetRoles || updates.target_roles,
-        courses: updates.coursesIncluded || updates.courses,
-        duration_days: updates.durationDays || updates.duration_days,
-        is_required: updates.isRequired || updates.is_required,
-        priority: updates.priority,
-        status: updates.status,
-        start_date: updates.startDate || updates.start_date,
-        end_date: updates.endDate || updates.end_date,
-        is_automated: updates.isAutomated || updates.is_automated,
-        automation_trigger: updates.automationTrigger || updates.automation_trigger,
-        target_departments: updates.targetDepartments || updates.target_departments,
-        related_standards: updates.relatedStandards || updates.related_standards
+      const dbPlan = {
+        name: planData.name,
+        description: planData.description,
+        target_roles: planData.target_roles || [],
+        courses: planData.courses || [],
+        duration_days: planData.duration_days || 0,
+        is_required: planData.is_required || false,
+        priority: planData.priority || 'medium',
+        status: planData.status,
+        start_date: planData.start_date,
+        end_date: planData.end_date,
+        is_automated: planData.is_automated || false,
+        automation_trigger: planData.automation_trigger,
+        target_departments: planData.target_departments || [],
+        related_standards: planData.related_standards || [],
+        updated_at: new Date().toISOString()
       };
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('training_plans')
-        .update(dbUpdates)
-        .eq('id', planId);
-        
+        .update(dbPlan)
+        .eq('id', id)
+        .select()
+        .single();
+      
       if (error) throw error;
       
-      // Update the local state
-      setPlans(prevPlans => 
-        prevPlans.map(plan => 
-          plan.id === planId ? { ...plan, ...updates } : plan
+      // Transform database response to our TrainingPlan interface
+      const updatedPlan: TrainingPlan = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        courses: Array.isArray(data.courses) ? data.courses : [],
+        duration_days: data.duration_days || 0,
+        is_required: Boolean(data.is_required),
+        priority: (data.priority || 'medium') as TrainingPriority,
+        status: data.status,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        is_automated: Boolean(data.is_automated),
+        automation_trigger: data.automation_trigger,
+        created_by: data.created_by,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
+        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
+      };
+      
+      // Update plans in state
+      setPlans(prev => 
+        prev.map(plan => 
+          plan.id === id ? updatedPlan : plan
         )
       );
       
       toast({
-        title: 'Success',
-        description: 'Training plan updated successfully.',
+        title: 'Training Plan Updated',
+        description: `${updatedPlan.name} has been successfully updated.`,
+        variant: 'default'
+      });
+      
+      return updatedPlan;
+    } catch (err) {
+      console.error('Error updating training plan:', err);
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to update training plan. Please try again.',
+        variant: 'destructive'
+      });
+      
+      return null;
+    }
+  };
+  
+  const deletePlan = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('training_plans')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Remove from state
+      setPlans(prev => prev.filter(plan => plan.id !== id));
+      
+      toast({
+        title: 'Training Plan Deleted',
+        description: 'The training plan has been successfully deleted.',
+        variant: 'default'
       });
       
       return true;
     } catch (err) {
-      console.error('Error updating training plan:', err);
+      console.error('Error deleting training plan:', err);
+      
       toast({
         title: 'Error',
-        description: 'Failed to update training plan. Please try again.',
-        variant: 'destructive',
+        description: 'Failed to delete training plan. Please try again.',
+        variant: 'destructive'
       });
+      
       return false;
-    } finally {
-      setLoading(false);
     }
   };
-
+  
   return {
     plans,
-    loading,
+    isLoading,
     error,
-    createTrainingPlan,
-    updateTrainingPlan
+    fetchPlans,
+    createPlan,
+    updatePlan,
+    deletePlan
   };
-}
+};
+
+export default useTrainingPlans;

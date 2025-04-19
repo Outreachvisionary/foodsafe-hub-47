@@ -1,179 +1,278 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Clock, Calendar, User, Tag, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
+import { Complaint } from '@/types/complaint';
+import { format } from 'date-fns';
+import { ArrowLeft, AlertTriangle, FileCheck, MessageSquare, ClipboardList, CalendarCheck } from 'lucide-react';
+import { Timeline, TimelineItem, TimelineContent, TimelineSeparator, TimelineDot, TimelineConnector } from '@/components/ui/timeline';
 
 interface ComplaintDetailsProps {
-  complaint: any;
-  onBack?: () => void;
+  complaint: Complaint;
+  onBack: () => void;
 }
 
 const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }) => {
-  const [showCAPADialog, setShowCAPADialog] = useState(false);
-  
+  const [currentTab, setCurrentTab] = useState('details');
+
   const handleCAPACreated = (capaData: any) => {
     console.log('CAPA created:', capaData);
-    // Handle the newly created CAPA
-    // For example, update UI, show notification, etc.
+    // In a real implementation, you would update the UI or state to show the CAPA is linked
   };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Resolved': return 'bg-green-100 text-green-800';
-      case 'In Progress': return 'bg-blue-100 text-blue-800';
-      case 'Under Investigation': return 'bg-amber-100 text-amber-800';
-      case 'Closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'new':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800">New</Badge>;
+      case 'investigating':
+        return <Badge className="bg-amber-100 text-amber-800">Investigating</Badge>;
+      case 'resolved':
+        return <Badge className="bg-green-100 text-green-800">Resolved</Badge>;
+      case 'closed':
+        return <Badge className="bg-gray-100 text-gray-800">Closed</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
   };
-  
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Critical': return 'bg-red-100 text-red-800';
-      case 'High': return 'bg-orange-100 text-orange-800';
-      case 'Medium': return 'bg-amber-100 text-amber-800';
-      case 'Low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+
+  const getCategoryBadge = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'product_quality':
+        return <Badge className="bg-purple-100 text-purple-800">Product Quality</Badge>;
+      case 'foreign_material':
+        return <Badge className="bg-red-100 text-red-800">Foreign Material</Badge>;
+      case 'packaging':
+        return <Badge className="bg-blue-100 text-blue-800">Packaging</Badge>;
+      case 'service':
+        return <Badge className="bg-green-100 text-green-800">Service</Badge>;
+      default:
+        return <Badge>{category}</Badge>;
     }
   };
-  
+
   return (
     <div className="space-y-6">
-      {onBack && (
-        <Button 
-          variant="outline" 
-          onClick={onBack}
-          className="mb-4 flex items-center gap-1"
-        >
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={onBack} className="flex items-center gap-1">
           <ArrowLeft className="h-4 w-4" />
           Back to Complaints
         </Button>
-      )}
-      
+        
+        <div className="flex items-center gap-2">
+          {getStatusBadge(complaint.status)}
+          {getCategoryBadge(complaint.category)}
+        </div>
+      </div>
+
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-xl">{complaint?.title}</CardTitle>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Badge className={getStatusColor(complaint?.status)}>
-                  {complaint?.status}
-                </Badge>
-                <Badge variant="outline" className={getPriorityColor(complaint?.priority)}>
-                  {complaint?.priority} Priority
-                </Badge>
-                <Badge variant="outline">
-                  {complaint?.category}
-                </Badge>
+              <CardTitle className="text-xl">{complaint.title}</CardTitle>
+              <div className="text-sm text-muted-foreground mt-1">
+                Reported on {format(new Date(complaint.reported_date), 'PP')} by {complaint.created_by}
               </div>
+            </div>
+            <div className="flex gap-2">
+              <CreateCAPADialog 
+                onCAPACreated={handleCAPACreated}
+                initialData={{
+                  title: complaint.title,
+                  description: complaint.description,
+                  source: 'complaint',
+                  sourceId: complaint.id,
+                  priority: complaint.priority || 'high'
+                }}
+              >
+                <Button variant="outline" className="flex gap-1 items-center">
+                  <FileCheck className="h-4 w-4" />
+                  Create CAPA
+                </Button>
+              </CreateCAPADialog>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium mb-1">Description</h3>
-                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md border">
-                  {complaint?.description || 'No description provided'}
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                  <span className="text-gray-700 font-medium">Date Reported:</span>
-                  <span className="ml-2 text-gray-600">
-                    {complaint?.date ? new Date(complaint.date).toLocaleDateString() : 'N/A'}
-                  </span>
-                </div>
-                
-                <div className="flex items-center text-sm">
-                  <User className="h-4 w-4 text-gray-500 mr-2" />
-                  <span className="text-gray-700 font-medium">Assigned To:</span>
-                  <span className="ml-2 text-gray-600">{complaint?.assignedTo || 'Unassigned'}</span>
-                </div>
-                
-                <div className="flex items-center text-sm">
-                  <MessageCircle className="h-4 w-4 text-gray-500 mr-2" />
-                  <span className="text-gray-700 font-medium">Source:</span>
-                  <span className="ml-2 text-gray-600">{complaint?.source || 'Unknown'}</span>
-                </div>
-              </div>
-            </div>
+        
+        <CardContent>
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="grid grid-cols-4 mb-4">
+              <TabsTrigger value="details" className="flex items-center gap-1">
+                <ClipboardList className="h-4 w-4" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="investigation" className="flex items-center gap-1">
+                <AlertTriangle className="h-4 w-4" />
+                Investigation
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="flex items-center gap-1">
+                <CalendarCheck className="h-4 w-4" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger value="communication" className="flex items-center gap-1">
+                <MessageSquare className="h-4 w-4" />
+                Communication
+              </TabsTrigger>
+            </TabsList>
             
-            <div className="space-y-4">
-              {complaint?.product_involved && (
-                <div>
-                  <h3 className="text-sm font-medium mb-1">Product Information</h3>
-                  <div className="bg-gray-50 p-3 rounded-md border">
-                    <div className="flex items-start">
-                      <Tag className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
-                      <div>
-                        <span className="text-sm text-gray-700 font-medium">Product: </span>
-                        <span className="text-sm text-gray-600">{complaint.product_involved}</span>
-                      </div>
+            <TabsContent value="details">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium">Description</h3>
+                    <p className="mt-1 text-sm text-gray-700">{complaint.description}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium">Customer Information</h3>
+                    <div className="mt-1 text-sm">
+                      <p><span className="font-medium">Name:</span> {complaint.customer_name || 'N/A'}</p>
+                      <p><span className="font-medium">Contact:</span> {complaint.customer_contact || 'N/A'}</p>
                     </div>
-                    
-                    {complaint?.lot_number && (
-                      <div className="flex items-start mt-2">
-                        <Tag className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
-                        <div>
-                          <span className="text-sm text-gray-700 font-medium">Lot Number: </span>
-                          <span className="text-sm text-gray-600">{complaint.lot_number}</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
-              )}
-              
-              {complaint?.customer_name && (
-                <div>
-                  <h3 className="text-sm font-medium mb-1">Customer Information</h3>
-                  <div className="bg-gray-50 p-3 rounded-md border">
-                    <div className="flex items-start">
-                      <User className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
-                      <div>
-                        <span className="text-sm text-gray-700 font-medium">Name: </span>
-                        <span className="text-sm text-gray-600">{complaint.customer_name}</span>
-                      </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium">Product Information</h3>
+                    <div className="mt-1 text-sm">
+                      <p><span className="font-medium">Product:</span> {complaint.product_involved || 'N/A'}</p>
+                      <p><span className="font-medium">Lot Number:</span> {complaint.lot_number || 'N/A'}</p>
                     </div>
-                    
-                    {complaint?.customer_contact && (
-                      <div className="flex items-start mt-2">
-                        <MessageCircle className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
-                        <div>
-                          <span className="text-sm text-gray-700 font-medium">Contact: </span>
-                          <span className="text-sm text-gray-600">{complaint.customer_contact}</span>
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium">Assigned To</h3>
+                    <p className="mt-1 text-sm">{complaint.assigned_to || 'Unassigned'}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium">Resolution Date</h3>
+                    <p className="mt-1 text-sm">
+                      {complaint.resolution_date 
+                        ? format(new Date(complaint.resolution_date), 'PP') 
+                        : 'Not resolved yet'}
+                    </p>
                   </div>
                 </div>
-              )}
-              
-              <div className="mt-6">
-                <CreateCAPADialog
-                  onCAPACreated={handleCAPACreated}
-                  initialData={{
-                    title: complaint?.title,
-                    description: complaint?.description,
-                    source: 'complaint',
-                    sourceId: complaint?.id,
-                    priority: complaint?.priority || 'medium'
-                  }}
-                  trigger={
-                    <Button>Create CAPA from Complaint</Button>
-                  }
-                />
               </div>
-            </div>
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="investigation">
+              {complaint.capa_id ? (
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <div className="flex items-center">
+                    <FileCheck className="h-5 w-5 text-green-600 mr-2" />
+                    <div>
+                      <h3 className="font-medium">CAPA Created</h3>
+                      <p className="text-sm">This complaint has a CAPA associated with it.</p>
+                      <Button variant="link" className="p-0 h-auto mt-1">View CAPA Details</Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium">No investigation data</h3>
+                  <p className="text-muted-foreground">
+                    There is no CAPA or investigation associated with this complaint yet.
+                  </p>
+                  <div className="mt-4">
+                    <CreateCAPADialog
+                      onCAPACreated={handleCAPACreated}
+                      initialData={{
+                        title: complaint.title,
+                        description: complaint.description,
+                        source: 'complaint',
+                        sourceId: complaint.id,
+                        priority: complaint.priority || 'high'
+                      }}
+                    >
+                      <Button>Start Investigation / Create CAPA</Button>
+                    </CreateCAPADialog>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="timeline">
+              <Timeline>
+                <TimelineItem>
+                  <TimelineSeparator>
+                    <TimelineDot />
+                    <TimelineConnector />
+                  </TimelineSeparator>
+                  <TimelineContent>
+                    <h3 className="font-medium">Complaint Received</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(complaint.reported_date), 'PPp')}
+                    </p>
+                    <p className="text-sm mt-1">
+                      Complaint was recorded in the system by {complaint.created_by}
+                    </p>
+                  </TimelineContent>
+                </TimelineItem>
+                
+                <TimelineItem>
+                  <TimelineSeparator>
+                    <TimelineDot />
+                    <TimelineConnector />
+                  </TimelineSeparator>
+                  <TimelineContent>
+                    <h3 className="font-medium">Assigned for Investigation</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(complaint.reported_date), 'PPp')}
+                    </p>
+                    <p className="text-sm mt-1">
+                      Complaint was assigned to {complaint.assigned_to || 'Quality Team'}
+                    </p>
+                  </TimelineContent>
+                </TimelineItem>
+                
+                {complaint.resolution_date && (
+                  <TimelineItem>
+                    <TimelineSeparator>
+                      <TimelineDot />
+                    </TimelineSeparator>
+                    <TimelineContent>
+                      <h3 className="font-medium">Complaint Resolved</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(complaint.resolution_date), 'PPp')}
+                      </p>
+                      <p className="text-sm mt-1">
+                        Resolution: Issue addressed and customer notified
+                      </p>
+                    </TimelineContent>
+                  </TimelineItem>
+                )}
+              </Timeline>
+            </TabsContent>
+            
+            <TabsContent value="communication">
+              <div className="text-center py-8">
+                <MessageSquare className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium">No communication records</h3>
+                <p className="text-muted-foreground">
+                  There are no customer communication records associated with this complaint.
+                </p>
+                <Button className="mt-4">Add Communication Record</Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
+        
+        <CardFooter className="border-t pt-4 flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Last updated: {format(new Date(complaint.updated_at), 'PPp')}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button variant="outline">Update Status</Button>
+            <Button>Close Complaint</Button>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );

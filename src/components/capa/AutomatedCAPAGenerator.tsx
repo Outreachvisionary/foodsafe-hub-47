@@ -25,6 +25,7 @@ const AutomatedCAPAGenerator: React.FC<AutomatedCAPAGeneratorProps> = ({ onCAPAC
   const [potentialCAPAs, setPotentialCAPAs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const loadPotentialCAPAs = async () => {
@@ -51,7 +52,7 @@ const AutomatedCAPAGenerator: React.FC<AutomatedCAPAGeneratorProps> = ({ onCAPAC
     if (onCAPACreated) {
       onCAPACreated(data);
     }
-    useToast().toast({
+    toast({
       title: "Auto-generated CAPA created successfully",
       description: `CAPA ${data.id || ''} has been created based on auto-detection`
     });
@@ -59,7 +60,7 @@ const AutomatedCAPAGenerator: React.FC<AutomatedCAPAGeneratorProps> = ({ onCAPAC
 
   const handleReject = (id: string) => {
     setPotentialCAPAs(prev => prev.filter(item => item.id !== id));
-    useToast().toast({
+    toast({
       title: "Auto-generated CAPA suggestion rejected",
       description: "The suggestion has been removed from the list"
     });
@@ -279,14 +280,11 @@ const AutomatedCAPAGenerator: React.FC<AutomatedCAPAGeneratorProps> = ({ onCAPAC
           </p>
         </div>
         
-        <CreateCAPADialog 
-          onCAPACreated={onCAPACreated}
-          trigger={
-            <Button>
-              Create Manual CAPA
-            </Button>
-          }
-        />
+        <CreateCAPADialog onCAPACreated={onCAPACreated}>
+          <Button>
+            Create Manual CAPA
+          </Button>
+        </CreateCAPADialog>
       </CardFooter>
     </Card>
   );

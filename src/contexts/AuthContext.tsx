@@ -1,85 +1,128 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
+  email: string;
   name?: string;
-  email?: string;
   role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  loading: boolean;
+  error: Error | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-// Default values for the context
-const defaultAuthContext: AuthContextType = {
+export const AuthContext = createContext<AuthContextType>({
   user: null,
-  isLoading: false,
+  loading: true,
   error: null,
-  login: async () => {},
-  logout: async () => {},
-};
+  signIn: async () => {},
+  signOut: async () => {},
+});
 
-// Create the context with default values
-export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-// Auth provider component
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // For now, we'll use a mock user since we don't have real authentication
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
   useEffect(() => {
-    setUser({
-      id: 'mock-user-id',
-      name: 'Mock User',
-      email: 'user@example.com',
-      role: 'admin'
-    });
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            // In a real app, you would fetch more user details from profiles table
+          });
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+        console.error('Error fetching initial session:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Subscribe to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setLoading(true);
+        
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            // In a real app, you would fetch more user details from profiles table
+          });
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
+  const signIn = async (email: string, password: string) => {
     try {
-      // Mock login functionality
-      setUser({
-        id: 'mock-user-id',
-        name: 'Mock User',
-        email,
-        role: 'admin'
-      });
-      setError(null);
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        throw error;
+      }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
-      console.error('Login error:', err);
+      setError(err instanceof Error ? err : new Error('Sign in failed'));
+      console.error('Error signing in:', err);
+      throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const logout = async () => {
-    setIsLoading(true);
+  const signOut = async () => {
     try {
-      // Mock logout
-      setUser(null);
-      setError(null);
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
     } catch (err) {
-      setError('Logout failed.');
-      console.error('Logout error:', err);
+      setError(err instanceof Error ? err : new Error('Sign out failed'));
+      console.error('Error signing out:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

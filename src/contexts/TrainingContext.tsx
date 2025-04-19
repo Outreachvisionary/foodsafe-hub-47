@@ -7,7 +7,8 @@ import {
   TrainingStatus, 
   TrainingType, 
   TrainingCategory, 
-  TrainingCompletionStatus
+  TrainingCompletionStatus,
+  TrainingPriority
 } from '@/types/training';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,6 +46,26 @@ const mapDbToCompletionStatus = (status: string): TrainingCompletionStatus => {
   return validStatuses.includes(status as TrainingCompletionStatus) 
     ? status as TrainingCompletionStatus 
     : 'not-started';
+};
+
+const mapDbToTrainingPriority = (priority: string): TrainingPriority => {
+  const validPriorities: TrainingPriority[] = [
+    'critical', 'high', 'medium', 'low'
+  ];
+  return validPriorities.includes(priority as TrainingPriority)
+    ? priority as TrainingPriority
+    : 'medium';
+};
+
+const mapTrainingStatus = (status: string): TrainingStatus => {
+  switch(status.toLowerCase()) {
+    case 'not-started': return 'Not Started';
+    case 'in-progress': return 'In Progress';
+    case 'completed': return 'Completed';
+    case 'overdue': return 'Overdue';
+    case 'cancelled': return 'Cancelled';
+    default: return 'Not Started';
+  }
 };
 
 const TrainingContext = createContext<TrainingContextType>({
@@ -113,7 +134,7 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
           courses: Array.isArray(plan.courses) ? plan.courses : [],
           duration_days: plan.duration_days || 0,
           is_required: Boolean(plan.is_required),
-          priority: plan.priority || 'medium',
+          priority: mapDbToTrainingPriority(plan.priority || 'medium'),
           status: plan.status,
           start_date: plan.start_date,
           end_date: plan.end_date,
@@ -197,9 +218,24 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         created_by: sessionData.created_by || 'Current User'
       };
       
+      // Map completion_status from our app format to DB format
+      const completionStatusForDb = (status: TrainingCompletionStatus): string => {
+        switch(status) {
+          case 'not-started': return 'Not Started';
+          case 'in-progress': return 'In Progress';
+          case 'completed': return 'Completed';
+          case 'overdue': return 'Overdue';
+          case 'cancelled': return 'Cancelled';
+          default: return 'Not Started';
+        }
+      };
+      
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(dbSession)
+        .insert({
+          ...dbSession,
+          completion_status: completionStatusForDb(dbSession.completion_status as TrainingCompletionStatus)
+        })
         .select()
         .single();
         
@@ -277,7 +313,7 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         courses: Array.isArray(data.courses) ? data.courses : [],
         duration_days: data.duration_days || 0,
         is_required: Boolean(data.is_required),
-        priority: data.priority || 'medium',
+        priority: mapDbToTrainingPriority(data.priority || 'medium'),
         status: data.status,
         start_date: data.start_date,
         end_date: data.end_date,
