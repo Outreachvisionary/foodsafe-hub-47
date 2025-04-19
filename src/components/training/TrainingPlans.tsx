@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +21,7 @@ const TrainingPlans = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const [formData, setFormData] = useState<Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>>({
+  const [planForm, setPlanForm] = useState<Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: '',
     description: '',
     priority: 'medium',
@@ -40,19 +39,34 @@ const TrainingPlans = () => {
     related_standards: []
   });
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setPlanForm({
+      ...planForm,
+      [name]: value
+    });
   };
   
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setPlanForm({
+      ...planForm,
+      [name]: checked
+    });
+  };
+  
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPlanForm({
+      ...planForm,
+      [name]: parseInt(value, 10) || 0
+    });
   };
   
   const handleSubmit = async () => {
     try {
       // Ensure all required fields are present
-      if (!formData.name || !formData.description) {
+      if (!planForm.name || !planForm.description) {
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields",
@@ -62,25 +76,25 @@ const TrainingPlans = () => {
       }
       
       await createPlan({
-        name: formData.name,
-        description: formData.description,
-        priority: formData.priority,
-        is_required: formData.is_required,
-        target_roles: formData.target_roles,
-        courses: formData.courses,
-        duration_days: formData.duration_days,
-        target_departments: formData.target_departments,
-        status: formData.status,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_automated: formData.is_automated,
-        automation_trigger: formData.automation_trigger,
+        name: planForm.name,
+        description: planForm.description,
+        priority: planForm.priority,
+        is_required: planForm.is_required,
+        target_roles: planForm.target_roles,
+        courses: planForm.courses,
+        duration_days: planForm.duration_days,
+        target_departments: planForm.target_departments,
+        status: planForm.status,
+        start_date: planForm.start_date,
+        end_date: planForm.end_date,
+        is_automated: planForm.is_automated,
+        automation_trigger: planForm.automation_trigger,
         created_by: user?.id || 'system',
-        related_standards: formData.related_standards || []
+        related_standards: planForm.related_standards || []
       });
       
       setIsDialogOpen(false);
-      setFormData({
+      setPlanForm({
         name: '',
         description: '',
         priority: 'medium',
@@ -143,7 +157,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="name"
-                  value={formData.name}
+                  value={planForm.name}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -154,7 +168,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={planForm.description}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -164,8 +178,8 @@ const TrainingPlans = () => {
                   Priority
                 </Label>
                 <Select
-                  value={formData.priority as string}
-                  onValueChange={(value) => handleSelectChange('priority', value)}
+                  value={planForm.priority as string}
+                  onValueChange={(value) => handleInputChange({ target: { name: 'priority', value } })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select priority" />
@@ -179,15 +193,16 @@ const TrainingPlans = () => {
                 </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="durationDays" className="text-right">
+                <Label htmlFor="duration_days" className="text-right">
                   Duration (days)
                 </Label>
                 <Input
-                  id="durationDays"
                   type="number"
-                  value={formData.duration_days}
-                  onChange={(e) => handleInputChange({ target: { name: 'duration_days', value: parseInt(e.target.value) } })}
-                  className="col-span-3"
+                  id="duration_days"
+                  name="duration_days"
+                  value={String(planForm.duration_days || '')}
+                  onChange={handleNumberChange}
+                  className="border p-2 rounded-md w-full"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -197,7 +212,7 @@ const TrainingPlans = () => {
                 <Input
                   id="start_date"
                   type="date"
-                  value={formData.start_date}
+                  value={planForm.start_date}
                   onChange={(e) => handleInputChange({ target: { name: 'start_date', value: e.target.value } })}
                   className="col-span-3"
                 />
@@ -209,7 +224,7 @@ const TrainingPlans = () => {
                 <Input
                   id="end_date"
                   type="date"
-                  value={formData.end_date}
+                  value={planForm.end_date}
                   onChange={(e) => handleInputChange({ target: { name: 'end_date', value: e.target.value } })}
                   className="col-span-3"
                 />
@@ -220,8 +235,8 @@ const TrainingPlans = () => {
                 </Label>
                 <Checkbox
                   id="is_required"
-                  checked={formData.is_required}
-                  onChange={(e) => handleInputChange({ target: { name: 'is_required', value: e.target.checked } })}
+                  checked={planForm.is_required}
+                  onCheckedChange={(checked) => handleCheckboxChange({ target: { name: 'is_required', checked } })}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -230,7 +245,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="target_roles"
-                  value={formData.target_roles.join(', ')}
+                  value={planForm.target_roles.join(', ')}
                   onChange={(e) => handleInputChange({ target: { name: 'target_roles', value: e.target.value } })}
                   className="col-span-3"
                 />
@@ -241,7 +256,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="courses"
-                  value={formData.courses.join(', ')}
+                  value={planForm.courses.join(', ')}
                   onChange={(e) => handleInputChange({ target: { name: 'courses', value: e.target.value } })}
                   className="col-span-3"
                 />
@@ -252,7 +267,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="target_departments"
-                  value={formData.target_departments.join(', ')}
+                  value={planForm.target_departments.join(', ')}
                   onChange={(e) => handleInputChange({ target: { name: 'target_departments', value: e.target.value } })}
                   className="col-span-3"
                 />
@@ -263,7 +278,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="automation_trigger"
-                  value={formData.automation_trigger}
+                  value={planForm.automation_trigger}
                   onChange={handleInputChange}
                   className="col-span-3"
                 />
@@ -338,7 +353,7 @@ const TrainingPlans = () => {
               <Input
                 id="name"
                 name="name"
-                value={formData.name}
+                value={planForm.name}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
@@ -350,7 +365,7 @@ const TrainingPlans = () => {
               <Textarea
                 id="description"
                 name="description"
-                value={formData.description}
+                value={planForm.description}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
@@ -360,8 +375,8 @@ const TrainingPlans = () => {
                 Priority
               </Label>
               <Select
-                value={formData.priority as string}
-                onValueChange={(value) => handleSelectChange('priority', value)}
+                value={planForm.priority as string}
+                onValueChange={(value) => handleInputChange({ target: { name: 'priority', value } })}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select priority" />
@@ -379,12 +394,12 @@ const TrainingPlans = () => {
                 Duration (days)
               </Label>
               <Input
+                type="number"
                 id="duration_days"
                 name="duration_days"
-                type="number"
-                value={formData.duration_days.toString()}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration_days: parseInt(e.target.value) }))}
-                className="col-span-3"
+                value={String(planForm.duration_days || '')}
+                onChange={handleNumberChange}
+                className="border p-2 rounded-md w-full"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -395,8 +410,8 @@ const TrainingPlans = () => {
                 id="start_date"
                 name="start_date"
                 type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                value={planForm.start_date}
+                onChange={(e) => handleInputChange({ target: { name: 'start_date', value: e.target.value } })}
                 className="col-span-3"
               />
             </div>
@@ -408,8 +423,8 @@ const TrainingPlans = () => {
                 id="end_date"
                 name="end_date"
                 type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                value={planForm.end_date}
+                onChange={(e) => handleInputChange({ target: { name: 'end_date', value: e.target.value } })}
                 className="col-span-3"
               />
             </div>
@@ -419,8 +434,8 @@ const TrainingPlans = () => {
               </Label>
               <Checkbox
                 id="is_required"
-                checked={formData.is_required}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: checked === true }))}
+                checked={planForm.is_required}
+                onCheckedChange={(checked) => handleCheckboxChange({ target: { name: 'is_required', checked } })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -430,8 +445,8 @@ const TrainingPlans = () => {
               <Input
                 id="target_roles"
                 name="target_roles"
-                value={formData.target_roles.join(', ')}
-                onChange={(e) => setFormData(prev => ({ ...prev, target_roles: e.target.value.split(', ').filter(Boolean) }))}
+                value={planForm.target_roles.join(', ')}
+                onChange={(e) => handleInputChange({ target: { name: 'target_roles', value: e.target.value } })}
                 className="col-span-3"
               />
             </div>
@@ -442,8 +457,8 @@ const TrainingPlans = () => {
               <Input
                 id="courses"
                 name="courses"
-                value={formData.courses.join(', ')}
-                onChange={(e) => setFormData(prev => ({ ...prev, courses: e.target.value.split(', ').filter(Boolean) }))}
+                value={planForm.courses.join(', ')}
+                onChange={(e) => handleInputChange({ target: { name: 'courses', value: e.target.value } })}
                 className="col-span-3"
               />
             </div>
@@ -454,8 +469,8 @@ const TrainingPlans = () => {
               <Input
                 id="target_departments"
                 name="target_departments"
-                value={formData.target_departments.join(', ')}
-                onChange={(e) => setFormData(prev => ({ ...prev, target_departments: e.target.value.split(', ').filter(Boolean) }))}
+                value={planForm.target_departments.join(', ')}
+                onChange={(e) => handleInputChange({ target: { name: 'target_departments', value: e.target.value } })}
                 className="col-span-3"
               />
             </div>
@@ -466,7 +481,7 @@ const TrainingPlans = () => {
               <Input
                 id="automation_trigger"
                 name="automation_trigger"
-                value={formData.automation_trigger}
+                value={planForm.automation_trigger}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
