@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingPlan, TrainingPriority } from '@/types/training';
@@ -21,6 +20,9 @@ export interface TrainingContextType {
     totalAssigned: number;
     complianceRate: number;
   }[];
+  plans: TrainingPlan[];
+  createPlan: (planData: Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>) => Promise<TrainingPlan>;
+  deletePlan: (id: string) => Promise<void>;
 }
 
 const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
@@ -215,7 +217,10 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
         updateTrainingPlan,
         deleteTrainingPlan,
         sessions: mockSessions,
-        departmentStats: mockDepartmentStats
+        departmentStats: mockDepartmentStats,
+        plans: trainingPlans,
+        createPlan: handleCreateTrainingPlan,
+        deletePlan: deleteTrainingPlan
       }}
     >
       {children}

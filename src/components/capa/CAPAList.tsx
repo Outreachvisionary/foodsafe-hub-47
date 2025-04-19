@@ -57,9 +57,9 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
         
         // Convert filter to fetch parameters
         const fetchParams: CAPAFetchParams = {
-          status: capaFilter.status,
-          priority: capaFilter.priority,
-          source: capaFilter.source,
+          status: capaFilter.status as CAPAStatus,
+          priority: capaFilter.priority as CAPAPriority,
+          source: capaFilter.source as string,
           searchQuery: capaFilter.searchTerm,
           // Convert dateRange if needed
           ...(capaFilter.dateRange && {

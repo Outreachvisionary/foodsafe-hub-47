@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -320,6 +321,165 @@ const TrainingPlans = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Training Plan</DialogTitle>
+            <DialogDescription>
+              Define a new training plan for your organization
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="priority" className="text-right">
+                Priority
+              </Label>
+              <Select
+                value={formData.priority as string}
+                onValueChange={(value) => handleSelectChange('priority', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="duration_days" className="text-right">
+                Duration (days)
+              </Label>
+              <Input
+                id="duration_days"
+                name="duration_days"
+                type="number"
+                value={formData.duration_days.toString()}
+                onChange={(e) => setFormData(prev => ({ ...prev, duration_days: parseInt(e.target.value) }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="start_date" className="text-right">
+                Start Date
+              </Label>
+              <Input
+                id="start_date"
+                name="start_date"
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="end_date" className="text-right">
+                End Date
+              </Label>
+              <Input
+                id="end_date"
+                name="end_date"
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="is_required" className="text-right">
+                Is Required
+              </Label>
+              <Checkbox
+                id="is_required"
+                checked={formData.is_required}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: checked === true }))}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="target_roles" className="text-right">
+                Target Roles
+              </Label>
+              <Input
+                id="target_roles"
+                name="target_roles"
+                value={formData.target_roles.join(', ')}
+                onChange={(e) => setFormData(prev => ({ ...prev, target_roles: e.target.value.split(', ').filter(Boolean) }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="courses" className="text-right">
+                Courses
+              </Label>
+              <Input
+                id="courses"
+                name="courses"
+                value={formData.courses.join(', ')}
+                onChange={(e) => setFormData(prev => ({ ...prev, courses: e.target.value.split(', ').filter(Boolean) }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="target_departments" className="text-right">
+                Target Departments
+              </Label>
+              <Input
+                id="target_departments"
+                name="target_departments"
+                value={formData.target_departments.join(', ')}
+                onChange={(e) => setFormData(prev => ({ ...prev, target_departments: e.target.value.split(', ').filter(Boolean) }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="automation_trigger" className="text-right">
+                Automation Trigger
+              </Label>
+              <Input
+                id="automation_trigger"
+                name="automation_trigger"
+                value={formData.automation_trigger}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Create Plan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

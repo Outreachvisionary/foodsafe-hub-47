@@ -2,384 +2,506 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, AlertTriangle, Clock, Database, Server, ArrowRight, RefreshCw } from 'lucide-react';
-import { testDatabase, testDatabaseTable, testSupabaseAuth, testSupabaseDatabase, testServiceIntegration, testRouterNavigation, testCrossModuleIntegration, FunctionTestResult, DatabaseTestResult } from '@/utils/databaseTestUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader, CheckCircle2, XCircle, AlertTriangle, Database, Server, Link2, ArrowRight } from 'lucide-react';
+import {
+  runTest,
+  testDatabase,
+  testDatabaseTable,
+  testDatabaseFunction,
+  testSupabaseAuth,
+  testSupabaseDatabase,
+  testServiceIntegration,
+  testRouterNavigation,
+  testCrossModuleIntegration,
+  FunctionTestResult,
+  DatabaseTestResult
+} from '@/utils/databaseTestUtils';
 
-interface TestStatusProps {
-  status: 'pending' | 'passing' | 'failing' | 'partial' | 'success' | 'error';
-}
-
-const TestStatus: React.FC<TestStatusProps> = ({ status }) => {
-  switch (status) {
-    case 'passing':
-    case 'success':
-      return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle className="h-3.5 w-3.5 mr-1" />Passing</Badge>;
-    case 'failing':
-    case 'error':
-      return <Badge className="bg-red-100 text-red-800 border-red-200"><XCircle className="h-3.5 w-3.5 mr-1" />Failing</Badge>;
-    case 'partial':
-      return <Badge className="bg-amber-100 text-amber-800 border-amber-200"><AlertTriangle className="h-3.5 w-3.5 mr-1" />Partial</Badge>;
-    default:
-      return <Badge className="bg-gray-100 text-gray-800 border-gray-200"><Clock className="h-3.5 w-3.5 mr-1" />Pending</Badge>;
-  }
-};
-
-const TestingVerification = () => {
-  const [databaseTests, setDatabaseTests] = useState<FunctionTestResult[]>([]);
-  const [tableTests, setTableTests] = useState<DatabaseTestResult[]>([]);
-  const [integrationTests, setIntegrationTests] = useState<FunctionTestResult[]>([]);
-  const [uiTests, setUiTests] = useState<FunctionTestResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [overallProgress, setOverallProgress] = useState(0);
-
+const TestingVerification: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('database');
+  const [databaseStatus, setDatabaseStatus] = useState<FunctionTestResult>({
+    name: 'Database Connection',
+    status: 'pending',
+    message: 'Test not run yet'
+  });
+  
+  const [databaseTableResults, setDatabaseTableResults] = useState<DatabaseTestResult[]>([]);
+  const [authResults, setAuthResults] = useState<DatabaseTestResult>({
+    tableName: 'Auth System',
+    status: 'error',
+    details: 'Test not run yet'
+  });
+  
+  const [functionResults, setFunctionResults] = useState<FunctionTestResult[]>([]);
+  const [integrationResults, setIntegrationResults] = useState<FunctionTestResult[]>([]);
+  const [navigationResults, setNavigationResults] = useState<FunctionTestResult[]>([]);
+  
+  const [loading, setLoading] = useState<{
+    database: boolean;
+    tables: boolean;
+    functions: boolean;
+    integrations: boolean;
+    navigation: boolean;
+  }>({
+    database: false,
+    tables: false,
+    functions: false,
+    integrations: false,
+    navigation: false
+  });
+  
+  const { toast } = useToast();
+  
+  // Run database connection test on initial load
   useEffect(() => {
-    runTests();
+    handleTestDatabase();
   }, []);
-
-  const runTests = async () => {
-    setLoading(true);
-    setDatabaseTests([
-      { name: 'Database Connection', status: 'pending' },
-      { name: 'Supabase Auth', status: 'pending' },
-      { name: 'Supabase Database', status: 'pending' }
-    ]);
-    
-    setTableTests([]);
-    
-    setIntegrationTests([
-      { name: 'Service Integration: Documents', status: 'pending' },
-      { name: 'Service Integration: CAPA', status: 'pending' },
-      { name: 'Service Integration: Training', status: 'pending' },
-      { name: 'Service Integration: Complaints', status: 'pending' },
-      { name: 'Cross-Module Integration', status: 'pending' }
-    ]);
-    
-    setUiTests([
-      { name: 'Router Navigation: CAPA', status: 'pending' },
-      { name: 'Router Navigation: Training', status: 'pending' },
-      { name: 'Router Navigation: Document Control', status: 'pending' },
-      { name: 'Router Navigation: Complaints', status: 'pending' }
-    ]);
-    
+  
+  const handleTestDatabase = async () => {
     try {
-      // Run database tests
-      const dbConnectionResult = await testDatabase();
-      updateDatabaseTests(0, dbConnectionResult);
+      setLoading(prev => ({ ...prev, database: true }));
+      const result = await testDatabase();
+      setDatabaseStatus(result);
       
-      const supabaseAuthResult = await testSupabaseAuth();
-      updateDatabaseTests(1, { 
-        name: 'Supabase Auth', 
-        status: supabaseAuthResult.status === 'success' ? 'passing' : 'failing',
-        message: supabaseAuthResult.details,
-        details: supabaseAuthResult.error
-      });
-      
-      const supabaseDbResult = await testSupabaseDatabase();
-      updateDatabaseTests(2, { 
-        name: 'Supabase Database', 
-        status: supabaseDbResult.status === 'success' ? 'passing' : 'failing',
-        message: supabaseDbResult.details,
-        details: supabaseDbResult.error
-      });
-      
-      // Run table tests
-      const tables = [
-        'complaints', 'capa_actions', 'training_records', 
-        'training_sessions', 'training_plans', 'documents'
-      ];
-      
-      for (const table of tables) {
-        try {
-          const tableResult = await testDatabaseTable(table);
-          addTableTest(tableResult);
-        } catch (error) {
-          console.error(`Error testing table ${table}:`, error);
-        }
+      // If database test passes, also test auth
+      if (result.status === 'passing') {
+        const authResult = await testSupabaseAuth();
+        setAuthResults(authResult);
       }
       
-      // Run integration tests
-      const capaIntegration = await testServiceIntegration('CAPA');
-      updateIntegrationTests(1, capaIntegration);
-      
-      const docIntegration = await testServiceIntegration('Documents');
-      updateIntegrationTests(0, docIntegration);
-      
-      const trainingIntegration = await testServiceIntegration('Training');
-      updateIntegrationTests(2, trainingIntegration);
-      
-      const complaintIntegration = await testServiceIntegration('Complaints');
-      updateIntegrationTests(3, complaintIntegration);
-      
-      const crossModuleIntegration = await testCrossModuleIntegration();
-      updateIntegrationTests(4, crossModuleIntegration);
-      
-      // Run UI tests
-      const capaNav = await testRouterNavigation('/capa');
-      updateUiTests(0, capaNav);
-      
-      const trainingNav = await testRouterNavigation('/training');
-      updateUiTests(1, trainingNav);
-      
-      const docNav = await testRouterNavigation('/documents');
-      updateUiTests(2, docNav);
-      
-      const complaintNav = await testRouterNavigation('/complaints');
-      updateUiTests(3, complaintNav);
-      
+      toast({
+        title: `Database Test ${result.status === 'passing' ? 'Passed' : 'Failed'}`,
+        description: result.message,
+        variant: result.status === 'passing' ? 'default' : 'destructive'
+      });
     } catch (error) {
-      console.error('Error running tests:', error);
+      console.error('Error testing database:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while testing the database connection',
+        variant: 'destructive'
+      });
     } finally {
-      setLoading(false);
-      calculateOverallProgress();
+      setLoading(prev => ({ ...prev, database: false }));
     }
   };
-
-  const updateDatabaseTests = (index: number, result: FunctionTestResult) => {
-    setDatabaseTests(prev => {
-      const newTests = [...prev];
-      newTests[index] = result;
-      return newTests;
-    });
+  
+  const handleTestDatabaseTables = async () => {
+    try {
+      setLoading(prev => ({ ...prev, tables: true }));
+      setDatabaseTableResults([]);
+      
+      // Test common tables
+      const tablesPromises = [
+        testDatabaseTable('documents'),
+        testDatabaseTable('training_records'),
+        testDatabaseTable('suppliers'),
+        testDatabaseTable('capa_actions'),
+        testDatabaseTable('complaints'),
+        testDatabaseTable('audits'),
+        testDatabaseTable('non_conformances'),
+        testDatabaseTable('profiles')
+      ];
+      
+      const results = await Promise.all(tablesPromises);
+      setDatabaseTableResults(results);
+      
+      const failedTables = results.filter(r => r.status === 'error').length;
+      
+      toast({
+        title: failedTables > 0 ? `${failedTables} Table Tests Failed` : 'All Table Tests Passed',
+        description: failedTables > 0 
+          ? `${results.length - failedTables} of ${results.length} tables are accessible`
+          : `Successfully tested ${results.length} database tables`,
+        variant: failedTables > 0 ? 'destructive' : 'default'
+      });
+    } catch (error) {
+      console.error('Error testing database tables:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while testing database tables',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, tables: false }));
+    }
   };
-
-  const addTableTest = (result: DatabaseTestResult) => {
-    setTableTests(prev => [...prev, result]);
+  
+  const handleTestFunctions = async () => {
+    try {
+      setLoading(prev => ({ ...prev, functions: true }));
+      setFunctionResults([]);
+      
+      // Test database functions - implement these in databaseTestUtils.ts
+      const functionsPromises = [
+        testDatabaseFunction('get_user_profile'),
+        testDatabaseFunction('get_document_count'),
+        testDatabaseFunction('get_training_status')
+      ];
+      
+      const results = await Promise.all(functionsPromises);
+      setFunctionResults(results);
+      
+      const failedFunctions = results.filter(r => r.status === 'failing').length;
+      
+      toast({
+        title: failedFunctions > 0 ? `${failedFunctions} Function Tests Failed` : 'All Function Tests Passed',
+        description: failedFunctions > 0 
+          ? `${results.length - failedFunctions} of ${results.length} functions are working`
+          : `Successfully tested ${results.length} database functions`,
+        variant: failedFunctions > 0 ? 'destructive' : 'default'
+      });
+    } catch (error) {
+      console.error('Error testing database functions:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while testing database functions',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, functions: false }));
+    }
   };
-
-  const updateIntegrationTests = (index: number, result: FunctionTestResult) => {
-    setIntegrationTests(prev => {
-      const newTests = [...prev];
-      newTests[index] = result;
-      return newTests;
-    });
+  
+  const handleTestIntegrations = async () => {
+    try {
+      setLoading(prev => ({ ...prev, integrations: true }));
+      setIntegrationResults([]);
+      
+      // Test various service integrations
+      const integrationsPromises = [
+        testServiceIntegration('Email Service'),
+        testServiceIntegration('Storage Service'),
+        testServiceIntegration('Notification Service'),
+        testCrossModuleIntegration()
+      ];
+      
+      const results = await Promise.all(integrationsPromises);
+      setIntegrationResults(results);
+      
+      const failedIntegrations = results.filter(r => r.status === 'failing').length;
+      
+      toast({
+        title: failedIntegrations > 0 ? `${failedIntegrations} Integration Tests Failed` : 'All Integration Tests Passed',
+        description: failedIntegrations > 0 
+          ? `${results.length - failedIntegrations} of ${results.length} integrations are working`
+          : `Successfully tested ${results.length} service integrations`,
+        variant: failedIntegrations > 0 ? 'destructive' : 'default'
+      });
+    } catch (error) {
+      console.error('Error testing integrations:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while testing integrations',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, integrations: false }));
+    }
   };
-
-  const updateUiTests = (index: number, result: FunctionTestResult) => {
-    setUiTests(prev => {
-      const newTests = [...prev];
-      newTests[index] = result;
-      return newTests;
-    });
+  
+  const handleTestNavigation = async () => {
+    try {
+      setLoading(prev => ({ ...prev, navigation: true }));
+      setNavigationResults([]);
+      
+      // Test various routes
+      const navigationPromises = [
+        testRouterNavigation('/dashboard'),
+        testRouterNavigation('/documents'),
+        testRouterNavigation('/training'),
+        testRouterNavigation('/capa'),
+        testRouterNavigation('/suppliers')
+      ];
+      
+      const results = await Promise.all(navigationPromises);
+      setNavigationResults(results);
+      
+      const failedRoutes = results.filter(r => r.status === 'failing').length;
+      
+      toast({
+        title: failedRoutes > 0 ? `${failedRoutes} Route Tests Failed` : 'All Route Tests Passed',
+        description: failedRoutes > 0 
+          ? `${results.length - failedRoutes} of ${results.length} routes are working`
+          : `Successfully tested ${results.length} application routes`,
+        variant: failedRoutes > 0 ? 'destructive' : 'default'
+      });
+    } catch (error) {
+      console.error('Error testing navigation:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while testing navigation',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, navigation: false }));
+    }
   };
-
-  const calculateOverallProgress = () => {
-    const totalTests = databaseTests.length + tableTests.length + integrationTests.length + uiTests.length;
-    const passedTests = [
-      ...databaseTests,
-      ...integrationTests,
-      ...uiTests
-    ].filter(test => test.status === 'passing').length;
-    
-    const tablePassedTests = tableTests.filter(test => test.status === 'success').length;
-    
-    const progress = Math.round(((passedTests + tablePassedTests) / totalTests) * 100);
-    setOverallProgress(progress);
+  
+  const renderStatusIcon = (status: string) => {
+    if (status === 'pending') {
+      return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+    } else if (status === 'passing') {
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    } else if (status === 'failing') {
+      return <XCircle className="h-5 w-5 text-red-500" />;
+    } else if (status === 'partial') {
+      return <AlertTriangle className="h-5 w-5 text-orange-500" />;
+    } else if (status === 'success') {
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    } else {
+      return <XCircle className="h-5 w-5 text-red-500" />;
+    }
   };
-
+  
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Testing and Verification</h1>
-        <Button onClick={runTests} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Running Tests...' : 'Run Tests'}
-        </Button>
-      </div>
-      
-      <div className="mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex justify-between items-center">
-              <span>Overall Test Progress</span>
-              <Badge>{overallProgress}% Complete</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Progress value={overallProgress} className="h-3" />
+    <div className="container mx-auto p-4">
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>System Verification & Testing</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="database">Database</TabsTrigger>
+              <TabsTrigger value="functions">Functions</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+              <TabsTrigger value="navigation">Navigation</TabsTrigger>
+            </TabsList>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-              <div className="p-3 bg-gray-50 rounded-md text-center">
-                <div className="text-sm text-gray-500">Database Tests</div>
-                <div className="font-semibold mt-1">
-                  {databaseTests.filter(test => test.status === 'passing').length} / {databaseTests.length}
+            <TabsContent value="database">
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={handleTestDatabase} 
+                    disabled={loading.database}
+                    className="flex items-center"
+                  >
+                    {loading.database ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <Database className="h-4 w-4 mr-2" />}
+                    Test Database Connection
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleTestDatabaseTables} 
+                    disabled={loading.tables || databaseStatus.status !== 'passing'}
+                    className="flex items-center"
+                    variant="outline"
+                  >
+                    {loading.tables ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <Server className="h-4 w-4 mr-2" />}
+                    Test Database Tables
+                  </Button>
                 </div>
-              </div>
-              
-              <div className="p-3 bg-gray-50 rounded-md text-center">
-                <div className="text-sm text-gray-500">Table Tests</div>
-                <div className="font-semibold mt-1">
-                  {tableTests.filter(test => test.status === 'success').length} / {tableTests.length}
-                </div>
-              </div>
-              
-              <div className="p-3 bg-gray-50 rounded-md text-center">
-                <div className="text-sm text-gray-500">Integration Tests</div>
-                <div className="font-semibold mt-1">
-                  {integrationTests.filter(test => test.status === 'passing').length} / {integrationTests.length}
-                </div>
-              </div>
-              
-              <div className="p-3 bg-gray-50 rounded-md text-center">
-                <div className="text-sm text-gray-500">UI Tests</div>
-                <div className="font-semibold mt-1">
-                  {uiTests.filter(test => test.status === 'passing').length} / {uiTests.length}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <Database className="h-5 w-5 mr-2 text-primary" />
-              Database Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {databaseTests.map((test, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{test.name}</TableCell>
-                    <TableCell>
-                      <TestStatus status={test.status} />
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {test.message}
-                      {test.status === 'failing' && test.details && (
-                        <p className="text-red-600 text-xs mt-1">{test.details}</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <Server className="h-5 w-5 mr-2 text-primary" />
-              Database Table Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Table</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Records</TableHead>
-                  <TableHead>Time (ms)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableTests.map((test, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{test.tableName}</TableCell>
-                    <TableCell>
-                      <TestStatus status={test.status} />
-                    </TableCell>
-                    <TableCell>{test.recordCount || 0}</TableCell>
-                    <TableCell>{test.duration || '-'}</TableCell>
-                  </TableRow>
-                ))}
-                {tableTests.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-gray-500">No table tests run yet</TableCell>
-                  </TableRow>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Connection Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 border rounded">
+                        <div className="flex items-center">
+                          <div className="mr-3">
+                            {renderStatusIcon(databaseStatus.status)}
+                          </div>
+                          <div>
+                            <div className="font-medium">{databaseStatus.name}</div>
+                            <div className="text-sm text-gray-500">{databaseStatus.message}</div>
+                          </div>
+                        </div>
+                        <div className="capitalize font-medium text-sm">
+                          {databaseStatus.status}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 border rounded">
+                        <div className="flex items-center">
+                          <div className="mr-3">
+                            {renderStatusIcon(authResults.status)}
+                          </div>
+                          <div>
+                            <div className="font-medium">{authResults.tableName}</div>
+                            <div className="text-sm text-gray-500">{authResults.details}</div>
+                          </div>
+                        </div>
+                        <div className="capitalize font-medium text-sm">
+                          {authResults.status}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {databaseTableResults.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Database Tables</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {databaseTableResults.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded">
+                            <div className="flex items-center">
+                              <div className="mr-3">
+                                {renderStatusIcon(result.status)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{result.tableName}</div>
+                                <div className="text-sm text-gray-500">
+                                  {result.status === 'success' 
+                                    ? `${result.recordCount || 0} records (${result.duration || 0}ms)`
+                                    : result.details
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                            <div className="capitalize font-medium text-sm">
+                              {result.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <ArrowRight className="h-5 w-5 mr-2 text-primary" />
-              Service Integration Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {integrationTests.map((test, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{test.name}</TableCell>
-                    <TableCell>
-                      <TestStatus status={test.status} />
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {test.message}
-                      {test.status === 'failing' && test.details && (
-                        <p className="text-red-600 text-xs mt-1">{test.details}</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center">
-              <Server className="h-5 w-5 mr-2 text-primary" />
-              UI Navigation Tests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {uiTests.map((test, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{test.name}</TableCell>
-                    <TableCell>
-                      <TestStatus status={test.status} />
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {test.message}
-                      {test.status === 'failing' && test.details && (
-                        <p className="text-red-600 text-xs mt-1">{test.details}</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="functions">
+              <div className="space-y-4">
+                <Button 
+                  onClick={handleTestFunctions} 
+                  disabled={loading.functions}
+                  className="flex items-center"
+                >
+                  {loading.functions ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <Server className="h-4 w-4 mr-2" />}
+                  Test Database Functions
+                </Button>
+                
+                {functionResults.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Function Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {functionResults.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded">
+                            <div className="flex items-center">
+                              <div className="mr-3">
+                                {renderStatusIcon(result.status)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{result.name}</div>
+                                <div className="text-sm text-gray-500">{result.message}</div>
+                                {result.details && (
+                                  <div className="text-xs text-gray-400">{result.details}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="capitalize font-medium text-sm">
+                              {result.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="integrations">
+              <div className="space-y-4">
+                <Button 
+                  onClick={handleTestIntegrations} 
+                  disabled={loading.integrations}
+                  className="flex items-center"
+                >
+                  {loading.integrations ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                  Test Service Integrations
+                </Button>
+                
+                {integrationResults.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Integration Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {integrationResults.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded">
+                            <div className="flex items-center">
+                              <div className="mr-3">
+                                {renderStatusIcon(result.status)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{result.name}</div>
+                                <div className="text-sm text-gray-500">{result.message}</div>
+                                {result.details && (
+                                  <div className="text-xs text-gray-400">{result.details}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="capitalize font-medium text-sm">
+                              {result.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="navigation">
+              <div className="space-y-4">
+                <Button 
+                  onClick={handleTestNavigation} 
+                  disabled={loading.navigation}
+                  className="flex items-center"
+                >
+                  {loading.navigation ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRight className="h-4 w-4 mr-2" />}
+                  Test Navigation Routes
+                </Button>
+                
+                {navigationResults.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Navigation Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {navigationResults.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded">
+                            <div className="flex items-center">
+                              <div className="mr-3">
+                                {renderStatusIcon(result.status)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{result.name}</div>
+                                <div className="text-sm text-gray-500">{result.message}</div>
+                                {result.details && (
+                                  <div className="text-xs text-gray-400">{result.details}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="capitalize font-medium text-sm">
+                              {result.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

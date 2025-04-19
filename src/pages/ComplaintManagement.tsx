@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,10 @@ import { Plus } from 'lucide-react';
 // Define the database schema compatible types
 type DbComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
 type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
+
+// Define values for select inputs
+const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
+const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
 
 // Map for converting between UI and DB values
 const categoryMap: Record<ComplaintCategory, DbComplaintCategory> = {

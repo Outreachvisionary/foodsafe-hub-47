@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAEffectivenessRating, CAPASource, CAPAPriority, CAPAFetchParams, SourceReference } from '@/types/capa';
 import { mapStatusFromDb } from './capaStatusService';
@@ -24,13 +23,12 @@ export const mapDbResultToCapa = (dbResult: any): CAPA => {
     effectivenessCriteria: dbResult.effectiveness_criteria || '',
     createdBy: dbResult.created_by,
     lastUpdated: dbResult.updated_at,
-    fsma204Compliant: dbResult.fsma204_compliant || false,
+    isFsma204Compliant: dbResult.fsma204_compliant || false,
     createdDate: dbResult.created_at,
     effectivenessVerified: dbResult.effectiveness_verified || false,
     effectivenessRating: dbResult.effectiveness_rating as CAPAEffectivenessRating || undefined,
     verificationMethod: dbResult.verification_method || '',
     verifiedBy: dbResult.verified_by || '',
-    isFsma204Compliant: dbResult.fsma204_compliant || false,
     // You can add more fields as needed
   };
 };
@@ -64,72 +62,51 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
 
     // Convert status filter to match database representation
     if (params?.status) {
-      if (Array.isArray(params.status)) {
-        // Use mapStatusToDb for each status in the array when converting to DB values
-        const dbStatuses = params.status.map(s => {
-          // Convert from UI status (like "in-progress") to DB status (like "in_progress")
-          if (s === 'open') return 'open';
-          if (s === 'in-progress') return 'in_progress';
-          if (s === 'closed') return 'closed'; 
-          if (s === 'verified') return 'verified';
-          if (s === 'pending-verification') return 'pending_verification';
-          if (s === 'cancelled') return 'cancelled';
-          return 'open'; // Default
+      // Use string representation for status to avoid type issues
+      const dbStatus = typeof params.status === 'string' ? 
+        params.status.replace(/-/g, '_') : 
+        params.status;
+
+      if (Array.isArray(dbStatus)) {
+        // Handle array of statuses
+        const dbStatuses = dbStatus.map(s => {
+          if (typeof s === 'string') {
+            return s.replace(/-/g, '_');
+          }
+          return s;
         });
         query = query.in('status', dbStatuses);
       } else {
         // Handle single status
-        let dbStatus = 'open'; // Default
-        if (params.status === 'open') dbStatus = 'open';
-        if (params.status === 'in-progress') dbStatus = 'in_progress';
-        if (params.status === 'closed') dbStatus = 'closed';
-        if (params.status === 'verified') dbStatus = 'verified';
-        if (params.status === 'pending-verification') dbStatus = 'pending_verification';
-        if (params.status === 'cancelled') dbStatus = 'cancelled';
         query = query.eq('status', dbStatus);
       }
     }
 
-    // Convert source filter to match CAPASource type
+    // Handle other filter parameters
     if (params?.source) {
-      if (Array.isArray(params.source)) {
-        query = query.in('source', params.source);
-      } else {
-        query = query.eq('source', params.source);
-      }
+      query = query.eq('source', params.source);
     }
 
-    // Convert priority filter
     if (params?.priority) {
-      if (Array.isArray(params.priority)) {
-        query = query.in('priority', params.priority);
-      } else {
-        query = query.eq('priority', params.priority);
-      }
+      query = query.eq('priority', params.priority);
     }
 
-    // Handle sourceId parameter
     if (params?.sourceId) {
       query = query.eq('source_id', params.sourceId);
     }
 
-    // Handle assigned_to parameter
     if (params?.assignedTo) {
       query = query.eq('assigned_to', params.assignedTo);
     }
 
-    // Handle department parameter
     if (params?.department) {
       query = query.eq('department', params.department);
     }
 
-    // Handle search query
     if (params?.searchQuery) {
-      const searchQuery = params.searchQuery.toLowerCase();
-      query = query.ilike('title', `%${searchQuery}%`);
+      query = query.ilike('title', `%${params.searchQuery}%`);
     }
 
-    // Handle due date filter
     if (params?.dueDate) {
       query = query.eq('due_date', params.dueDate);
     }
@@ -176,7 +153,7 @@ export const createCAPA = async (capaData: Omit<CAPA, 'id'>): Promise<CAPA | nul
       verification_date: capaData.verificationDate,
       effectiveness_criteria: capaData.effectivenessCriteria,
       created_by: capaData.createdBy,
-      fsma204_compliant: capaData.fsma204Compliant || false,
+      fsma204_compliant: capaData.isFsma204Compliant || false,
       effectiveness_verified: capaData.effectivenessVerified || false,
       effectiveness_rating: capaData.effectivenessRating,
       verification_method: capaData.verificationMethod,

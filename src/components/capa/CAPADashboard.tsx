@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAFilter, CAPAStats } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAFilter, CAPAStats, CAPAFetchParams } from '@/types/capa';
 import { Loader } from 'lucide-react';
 
 // Placeholders for the chart components
@@ -49,8 +48,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
         // Get CAPA statistics
         const capaStats = await getCAPAStats();
         
-        // Ensure we have a proper CAPAStats object
-        const typedStats: CAPAStats = {
+        setStats({
           total: capaStats.total || 0,
           openCount: capaStats.openCount || 0,
           inProgressCount: capaStats.inProgressCount || 0,
@@ -63,9 +61,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
           bySource: capaStats.bySource || [],
           fsma204ComplianceRate: capaStats.fsma204ComplianceRate,
           effectivenessStats: capaStats.effectivenessStats
-        };
-        
-        setStats(typedStats);
+        });
         
         // Get recent CAPAs with filters
         const capaFilter: CAPAFilter = {};
@@ -87,10 +83,10 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
         }
         
         // Convert filter to fetch parameters
-        const fetchParams = {
-          status: capaFilter.status,
-          priority: capaFilter.priority,
-          source: capaFilter.source,
+        const fetchParams: CAPAFetchParams = {
+          status: capaFilter.status as CAPAStatus,
+          priority: capaFilter.priority as CAPAPriority,
+          source: capaFilter.source as string,
           searchQuery: capaFilter.searchTerm,
           limit: 5,
           page: 1
