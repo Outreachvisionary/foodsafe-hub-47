@@ -42,6 +42,23 @@ export const fetchFacilities = async (): Promise<Facility[]> => {
   }
 };
 
+// Export fetchFacilities as getFacilities for backward compatibility
+export const getFacilities = async (organizationId?: string): Promise<Facility[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching facilities by organization:', error);
+    throw error;
+  }
+};
+
 // Function to fetch facilities by organization ID
 export const fetchFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
   try {

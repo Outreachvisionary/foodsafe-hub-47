@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facility } from '@/types/facility';
-import { getFacilities, deleteFacility } from '@/services/facilityService';
+import { fetchFacilitiesByOrganization, deleteFacility } from '@/services/facilityService';
 import FacilityList from '@/components/facilities/FacilityList';
 import FacilityAddDialog from '@/components/facilities/FacilityAddDialog';
 
@@ -18,7 +19,7 @@ const FacilitiesTab = ({ organizationId }: { organizationId: string }) => {
     
     try {
       setLoading(true);
-      const facilitiesData = await getFacilities(organizationId);
+      const facilitiesData = await fetchFacilitiesByOrganization(organizationId);
       setFacilities(facilitiesData as any);
     } catch (error) {
       console.error('Error loading facilities:', error);

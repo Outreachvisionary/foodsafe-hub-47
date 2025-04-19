@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -69,10 +70,10 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
         {/* Scrollable Area for Form */}
         <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
           <FacilityForm 
-            initialData={{ organization_id: organizationId }}
-            onSuccess={handleSuccess}
+            defaultValues={{ organization_id: organizationId, status: 'active' } as any}
+            onSubmitSuccess={handleSuccess}
+            isNewFacility={true}
             onCancel={() => setOpen(false)}
-            isDialog={true}
           />
         </ScrollArea>
       </DialogContent>
