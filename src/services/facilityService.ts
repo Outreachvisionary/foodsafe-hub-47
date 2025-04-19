@@ -1,24 +1,39 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Facility } from '@/types/facility';
+import { toast } from 'sonner';
 
-// Get facilities - Renamed from fetchFacilities for compatibility
-export const getFacilities = async (organizationId?: string, onlyAssigned?: boolean): Promise<Facility[]> => {
+export interface Facility {
+  id: string;
+  name: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipcode?: string;
+  country?: string;
+  status: 'active' | 'inactive';
+  organization_id: string; // Make this required like in the database
+}
+
+export const getFacilities = async (organizationId?: string): Promise<Facility[]> => {
   try {
-    // Call the RPC function which handles permissions and filtering
-    const { data, error } = await supabase.rpc('get_facilities', {
-      p_organization_id: organizationId || null,
-      p_only_assigned: onlyAssigned || false
-    });
+    let query = supabase
+      .from('facilities')
+      .select('*')
+      .order('name', { ascending: true });
     
-    if (error) {
-      console.error('Error fetching facilities:', error);
-      return [];
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId);
     }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
     
     return data || [];
   } catch (error) {
-    console.error('Error in getFacilities:', error);
+    console.error('Error fetching facilities:', error);
+    toast.error('Failed to fetch facilities');
     return [];
   }
 };
@@ -26,8 +41,28 @@ export const getFacilities = async (organizationId?: string, onlyAssigned?: bool
 // Alias for backward compatibility
 export const fetchFacilities = getFacilities;
 
-// Create a new facility
-export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
+export const getFacilityById = async (id: string): Promise<Facility | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching facility by ID:', error);
+    toast.error('Failed to fetch facility details');
+    return null;
+  }
+};
+
+// Alias for backward compatibility
+export const fetchFacilityById = getFacilityById;
+
+export const createFacility = async (facilityData: Omit<Facility, 'id'>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
@@ -35,19 +70,17 @@ export const createFacility = async (facilityData: Partial<Facility>): Promise<F
       .select()
       .single();
     
-    if (error) {
-      console.error('Error creating facility:', error);
-      throw error;
-    }
+    if (error) throw error;
     
+    toast.success('Facility created successfully');
     return data;
   } catch (error) {
-    console.error('Error in createFacility:', error);
+    console.error('Error creating facility:', error);
+    toast.error('Failed to create facility');
     throw error;
   }
 };
 
-// Update an existing facility
 export const updateFacility = async (id: string, facilityData: Partial<Facility>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
@@ -57,42 +90,35 @@ export const updateFacility = async (id: string, facilityData: Partial<Facility>
       .select()
       .single();
     
-    if (error) {
-      console.error(`Error updating facility with ID ${id}:`, error);
-      throw error;
-    }
+    if (error) throw error;
     
+    toast.success('Facility updated successfully');
     return data;
   } catch (error) {
-    console.error(`Error in updateFacility for ID ${id}:`, error);
+    console.error('Error updating facility:', error);
+    toast.error('Failed to update facility');
     throw error;
   }
 };
 
-// Delete a facility
-export const deleteFacility = async (id: string): Promise<boolean> => {
+export const deleteFacility = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('facilities')
       .delete()
       .eq('id', id);
     
-    if (error) {
-      console.error(`Error deleting facility with ID ${id}:`, error);
-      throw error;
-    }
+    if (error) throw error;
     
-    return true;
+    toast.success('Facility deleted successfully');
   } catch (error) {
-    console.error(`Error in deleteFacility for ID ${id}:`, error);
+    console.error('Error deleting facility:', error);
+    toast.error('Failed to delete facility');
     throw error;
   }
 };
 
-export default {
-  getFacilities,
-  fetchFacilities,
-  createFacility,
-  updateFacility,
-  deleteFacility
+// Export a type that contains both property versions for compatibility
+export type FacilityData = Facility & {
+  organizationId?: string; // For UI components expecting camelCase
 };

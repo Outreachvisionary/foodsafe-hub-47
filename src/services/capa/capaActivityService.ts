@@ -1,33 +1,40 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPAActivity } from '@/types/capa';
-import { mapStatusFromDb, mapStatusToDb } from './capaStatusService';
+import { CAPAActivity, CAPAStatus } from '@/types/capa';
+import { mapStatusToDb } from './capaStatusService';
 
-/**
- * Log a CAPA activity
- */
-export const logCAPAActivity = async (activity: Omit<CAPAActivity, 'id' | 'performedAt'>): Promise<CAPAActivity> => {
+// Table name used for CAPA activities
+const TABLE_NAME = 'capa_activities';
+
+export const logCAPAActivity = async (
+  capaId: string,
+  actionType: string,
+  actionDescription: string,
+  performedBy: string,
+  oldStatus?: CAPAStatus,
+  newStatus?: CAPAStatus,
+  metadata?: Record<string, any>
+): Promise<CAPAActivity> => {
   try {
-    // Convert frontend status to database status format if provided
-    const oldStatus = activity.oldStatus ? mapStatusToDb(activity.oldStatus) : undefined;
-    const newStatus = activity.newStatus ? mapStatusToDb(activity.newStatus) : undefined;
-    
+    // Format the data for Supabase
+    const activityData = {
+      capa_id: capaId,
+      action_type: actionType,
+      action_description: actionDescription,
+      performed_by: performedBy,
+      old_status: oldStatus ? mapStatusToDb(oldStatus) : undefined,
+      new_status: newStatus ? mapStatusToDb(newStatus) : undefined,
+      metadata: metadata || undefined
+    };
+
     const { data, error } = await supabase
-      .from('capa_activities')
-      .insert({
-        capa_id: activity.capaId,
-        action_type: activity.actionType,
-        action_description: activity.actionDescription,
-        performed_by: activity.performedBy,
-        old_status: oldStatus,
-        new_status: newStatus,
-        metadata: activity.metadata || {}
-      })
-      .select('*')
+      .from(TABLE_NAME)
+      .insert(activityData)
+      .select()
       .single();
-    
+
     if (error) throw error;
-    
+
     return {
       id: data.id,
       capaId: data.capa_id,
@@ -35,42 +42,39 @@ export const logCAPAActivity = async (activity: Omit<CAPAActivity, 'id' | 'perfo
       actionDescription: data.action_description,
       performedBy: data.performed_by,
       performedAt: data.performed_at,
-      oldStatus: data.old_status ? mapStatusFromDb(data.old_status) : undefined,
-      newStatus: data.new_status ? mapStatusFromDb(data.new_status) : undefined,
+      oldStatus: data.old_status as CAPAStatus,
+      newStatus: data.new_status as CAPAStatus,
       metadata: data.metadata
     };
-  } catch (err) {
-    console.error('Error logging CAPA activity:', err);
-    throw err;
+  } catch (error) {
+    console.error('Error logging CAPA activity:', error);
+    throw error;
   }
 };
 
-/**
- * Get CAPA activities for a specific CAPA
- */
 export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
   try {
     const { data, error } = await supabase
-      .from('capa_activities')
+      .from(TABLE_NAME)
       .select('*')
       .eq('capa_id', capaId)
       .order('performed_at', { ascending: false });
-    
+
     if (error) throw error;
-    
-    return data.map(item => ({
+
+    return (data || []).map(item => ({
       id: item.id,
       capaId: item.capa_id,
       actionType: item.action_type,
       actionDescription: item.action_description,
       performedBy: item.performed_by,
       performedAt: item.performed_at,
-      oldStatus: item.old_status ? mapStatusFromDb(item.old_status) : undefined,
-      newStatus: item.new_status ? mapStatusFromDb(item.new_status) : undefined,
+      oldStatus: item.old_status as CAPAStatus,
+      newStatus: item.new_status as CAPAStatus,
       metadata: item.metadata
     }));
-  } catch (err) {
-    console.error('Error fetching CAPA activities:', err);
-    throw err;
+  } catch (error) {
+    console.error('Error fetching CAPA activities:', error);
+    throw error;
   }
 };

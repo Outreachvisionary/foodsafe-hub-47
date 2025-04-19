@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import CAPADetails from '@/components/capa/CAPADetails';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
+import { mapInternalToStatus, mapStatusToInternal } from '@/services/capa/capaStatusService';
 
 const CAPADetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +35,7 @@ const CAPADetailsPage = () => {
         setCapa(capaData);
         
         // Show effectiveness monitor for closed CAPAs
-        if (capaData.status === 'Closed' || capaData.status === 'Verified') {
+        if (capaData.status === 'closed' || capaData.status === 'verified') {
           setShowEffectivenessMonitor(true);
         }
       } catch (err) {
@@ -60,7 +62,7 @@ const CAPADetailsPage = () => {
     setCapa(updatedCAPA);
     
     // Show effectiveness monitor if status changed to closed or verified
-    if (updatedCAPA.status === 'Closed' || updatedCAPA.status === 'Verified') {
+    if (updatedCAPA.status === 'closed' || updatedCAPA.status === 'verified') {
       setShowEffectivenessMonitor(true);
     }
     
@@ -75,10 +77,10 @@ const CAPADetailsPage = () => {
     
     try {
       // Update CAPA status to verified if effectiveness score is sufficient
-      if (effectivenessData.score >= 85 && capa.status !== 'Verified') {
+      if (effectivenessData.score >= 85 && capa.status !== 'verified') {
         const updatedCAPA = await updateCAPA(id, {
           ...capa,
-          status: 'Verified'
+          status: 'verified'
         });
         
         setCapa(updatedCAPA);
@@ -193,7 +195,7 @@ const CAPADetailsPage = () => {
               <CAPAEffectivenessMonitor
                 capaId={capa.id}
                 title={capa.title}
-                implementationDate={capa.completedDate || capa.lastUpdated}
+                implementationDate={capa.completionDate || capa.lastUpdated}
                 onEffectivenessUpdate={handleEffectivenessUpdate}
               />
             )}

@@ -1,565 +1,225 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { PostgrestError } from '@supabase/supabase-js';
 
-// Type definitions
-export interface TestResultDetail {
+export interface TableInfo {
   name: string;
-  status: 'success' | 'error' | 'partial' | 'pending';
-  message: string;
-  responseTime?: number;
-  errorDetails?: string;
-  actionRequired?: string;
+  rowCount: number;
+  hasError: boolean;
+  error?: PostgrestError | Error | null;
 }
 
-export interface ModuleTestResult {
-  moduleName: string;
-  status: 'success' | 'error' | 'partial' | 'pending';
-  timestamp: Date;
-  details: TestResultDetail[];
+export interface FunctionInfo {
+  name: string;
+  params?: Record<string, any>;
+  result?: any;
+  hasError: boolean;
+  error?: PostgrestError | Error | null;
 }
 
-interface ModuleConfig {
-  moduleName: string;
-  enabled: boolean;
-  tests: (() => Promise<TestResultDetail>)[];
+export interface StorageInfo {
+  bucket: string;
+  files: number;
+  hasError: boolean;
+  error?: Error | null;
 }
 
-export const useBackendFrontendTesting = () => {
-  const [results, setResults] = useState<ModuleTestResult[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [activeModules, setActiveModules] = useState<ModuleConfig[]>([
-    {
-      moduleName: 'Authentication',
-      enabled: true,
-      tests: [
-        testAuthenticationSession,
-        testUserRoles
-      ]
-    },
-    {
-      moduleName: 'Database',
-      enabled: true,
-      tests: [
-        testDatabaseConnection,
-        testTableAccess
-      ]
-    },
-    {
-      moduleName: 'Organizations',
-      enabled: true,
-      tests: [
-        testOrganizationsFetch
-      ]
-    },
-    {
-      moduleName: 'Facilities',
-      enabled: true,
-      tests: [
-        testFacilitiesFetch
-      ]
-    },
-    {
-      moduleName: 'Documents',
-      enabled: true,
-      tests: [
-        testDocumentsFetch
-      ]
-    },
-    {
-      moduleName: 'CAPA',
-      enabled: true,
-      tests: [
-        testCAPAFetch
-      ]
-    },
-    {
-      moduleName: 'Non-Conformance',
-      enabled: true,
-      tests: [
-        testNonConformanceFetch
-      ]
-    },
-    {
-      moduleName: 'Integration',
-      enabled: true,
-      tests: [
-        testModuleRelationships
-      ]
+export interface TestSummary {
+  tables: {
+    total: number;
+    success: number;
+    failed: number;
+  };
+  functions: {
+    total: number;
+    success: number;
+    failed: number;
+  };
+  storage: {
+    total: number;
+    success: number;
+    failed: number;
+  };
+}
+
+export function useBackendFrontendTesting() {
+  const [tables, setTables] = useState<TableInfo[]>([]);
+  const [functions, setFunctions] = useState<FunctionInfo[]>([]);
+  const [storage, setStorage] = useState<StorageInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [summary, setSummary] = useState<TestSummary>({
+    tables: { total: 0, success: 0, failed: 0 },
+    functions: { total: 0, success: 0, failed: 0 },
+    storage: { total: 0, success: 0, failed: 0 }
+  });
+
+  // Define tables to test
+  const tablesToTest = [
+    'organizations',
+    'facilities',
+    'departments',
+    'documents',
+    'non_conformances',
+    'capa_actions',
+    'training_records',
+    'training_sessions',
+    'training_plans',
+    'suppliers',
+    'profiles',
+    'audits'
+  ];
+
+  // Define functions to test
+  const functionsToTest = [
+    { name: 'get_organizations', params: {} },
+    { name: 'get_facilities', params: {} },
+    { name: 'get_regulatory_standards', params: {} },
+    { name: 'find_product_components', params: { product_batch_lot: 'TEST-001' } }
+  ];
+
+  // Define storage buckets to test
+  const bucketsToTest = [
+    'documents',
+    'attachments',
+    'profile-images'
+  ];
+
+  const testTables = async () => {
+    const tableResults: TableInfo[] = [];
+    
+    for (const tableName of tablesToTest) {
+      try {
+        // We need to try/catch here since we can't do dynamic type checking
+        // at compile time for table names
+        const { count, error } = await supabase
+          .from(tableName as any)
+          .select('*', { count: 'exact', head: true });
+          
+        tableResults.push({
+          name: tableName,
+          rowCount: count || 0,
+          hasError: !!error,
+          error
+        });
+      } catch (err) {
+        tableResults.push({
+          name: tableName,
+          rowCount: 0,
+          hasError: true,
+          error: err instanceof Error ? err : new Error(String(err))
+        });
+      }
     }
-  ]);
-
-  // Toggle module selection
-  const toggleModule = (moduleName: string) => {
-    setActiveModules(prevModules => 
-      prevModules.map(module => 
-        module.moduleName === moduleName 
-          ? { ...module, enabled: !module.enabled } 
-          : module
-      )
-    );
+    
+    setTables(tableResults);
+    return tableResults;
   };
 
-  // Reset test results
-  const resetResults = () => {
-    setResults([]);
+  const testFunctions = async () => {
+    const functionResults: FunctionInfo[] = [];
+    
+    for (const func of functionsToTest) {
+      try {
+        const { data, error } = await supabase.rpc(func.name, func.params || {});
+        
+        functionResults.push({
+          name: func.name,
+          params: func.params,
+          result: data,
+          hasError: !!error,
+          error
+        });
+      } catch (err) {
+        functionResults.push({
+          name: func.name,
+          params: func.params,
+          hasError: true,
+          error: err instanceof Error ? err : new Error(String(err))
+        });
+      }
+    }
+    
+    setFunctions(functionResults);
+    return functionResults;
   };
 
-  // Run tests for all selected modules
-  const runAllTests = async () => {
-    setIsRunning(true);
-    const newResults: ModuleTestResult[] = [];
+  const testStorage = async () => {
+    const storageResults: StorageInfo[] = [];
+    
+    for (const bucket of bucketsToTest) {
+      try {
+        const { data, error } = await supabase.storage.from(bucket).list();
+        
+        storageResults.push({
+          bucket,
+          files: data?.length || 0,
+          hasError: !!error,
+          error: error || null
+        });
+      } catch (err) {
+        storageResults.push({
+          bucket,
+          files: 0,
+          hasError: true,
+          error: err instanceof Error ? err : new Error(String(err))
+        });
+      }
+    }
+    
+    setStorage(storageResults);
+    return storageResults;
+  };
+
+  const calculateSummary = (tableData: TableInfo[], functionData: FunctionInfo[], storageData: StorageInfo[]) => {
+    const tableSummary = {
+      total: tableData.length,
+      success: tableData.filter(t => !t.hasError).length,
+      failed: tableData.filter(t => t.hasError).length
+    };
+    
+    const functionSummary = {
+      total: functionData.length,
+      success: functionData.filter(f => !f.hasError).length,
+      failed: functionData.filter(f => f.hasError).length
+    };
+    
+    const storageSummary = {
+      total: storageData.length,
+      success: storageData.filter(s => !s.hasError).length,
+      failed: storageData.filter(s => s.hasError).length
+    };
+    
+    return {
+      tables: tableSummary,
+      functions: functionSummary,
+      storage: storageSummary
+    };
+  };
+
+  const runTests = async () => {
+    setIsLoading(true);
     
     try {
-      // Get only enabled modules
-      const enabledModules = activeModules.filter(module => module.enabled);
+      const tableResults = await testTables();
+      const functionResults = await testFunctions();
+      const storageResults = await testStorage();
       
-      // For each enabled module, run all its tests
-      for (const module of enabledModules) {
-        const moduleResult: ModuleTestResult = {
-          moduleName: module.moduleName,
-          status: 'pending',
-          timestamp: new Date(),
-          details: []
-        };
-        
-        // Run all tests for this module
-        for (const testFn of module.tests) {
-          try {
-            const testResult = await testFn();
-            moduleResult.details.push(testResult);
-          } catch (error) {
-            moduleResult.details.push({
-              name: 'Error running test',
-              status: 'error',
-              message: 'An unexpected error occurred while running the test',
-              errorDetails: error instanceof Error ? error.message : String(error)
-            });
-          }
-        }
-        
-        // Determine overall module status based on test results
-        if (moduleResult.details.every(d => d.status === 'success')) {
-          moduleResult.status = 'success';
-        } else if (moduleResult.details.some(d => d.status === 'error')) {
-          moduleResult.status = 'error';
-        } else if (moduleResult.details.some(d => d.status === 'partial')) {
-          moduleResult.status = 'partial';
-        } else {
-          moduleResult.status = 'pending';
-        }
-        
-        newResults.push(moduleResult);
-      }
-      
-      setResults(newResults);
-      toast.success(`Testing completed for ${enabledModules.length} modules`);
-    } catch (error) {
-      console.error('Error running tests:', error);
-      toast.error('Testing failed: ' + (error instanceof Error ? error.message : String(error)));
+      const testSummary = calculateSummary(tableResults, functionResults, storageResults);
+      setSummary(testSummary);
+    } catch (err) {
+      console.error('Error running tests:', err);
     } finally {
-      setIsRunning(false);
+      setIsLoading(false);
     }
   };
-
-  // Individual test functions
-  async function testAuthenticationSession(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Authentication Session',
-        status: 'success',
-        message: 'Successfully verified authentication session',
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Authentication Session',
-        status: 'error',
-        message: 'Failed to verify authentication session',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime,
-        actionRequired: 'Check if you are logged in and if Supabase authentication is properly configured'
-      };
-    }
-  }
-
-  async function testUserRoles(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        throw new Error('No active session found');
-      }
-      
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .limit(1);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        return {
-          name: 'User Roles',
-          status: 'partial',
-          message: 'User authenticated but no roles assigned',
-          responseTime,
-          actionRequired: 'Assign a role to this user in the admin panel'
-        };
-      }
-      
-      return {
-        name: 'User Roles',
-        status: 'success',
-        message: `User has ${data.length} role(s) assigned`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'User Roles',
-        status: 'error',
-        message: 'Failed to retrieve user roles',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testDatabaseConnection(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      // Simple query to verify database connection
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('count(*)', { count: 'exact' });
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Database Connection',
-        status: 'success',
-        message: 'Successfully connected to the database',
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Database Connection',
-        status: 'error',
-        message: 'Failed to connect to the database',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testTableAccess(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      // Test access to a few key tables
-      const tables = ['organizations', 'facilities', 'documents', 'capa_actions', 'non_conformances'];
-      const results = [];
-      
-      for (const table of tables) {
-        const { error } = await supabase
-          .from(table)
-          .select('id')
-          .limit(1);
-        
-        if (error) {
-          results.push({ table, success: false, error });
-        } else {
-          results.push({ table, success: true });
-        }
-      }
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      const failedTables = results.filter(r => !r.success);
-      
-      if (failedTables.length > 0) {
-        return {
-          name: 'Table Access Check',
-          status: 'partial',
-          message: `Access denied to ${failedTables.length} of ${tables.length} tables`,
-          errorDetails: failedTables.map(ft => `${ft.table}: ${ft.error.message}`).join('\n'),
-          responseTime,
-          actionRequired: 'Check RLS policies and permissions for these tables'
-        };
-      }
-      
-      return {
-        name: 'Table Access Check',
-        status: 'success',
-        message: `Successfully accessed all ${tables.length} tables`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Table Access Check',
-        status: 'error',
-        message: 'Failed to test table access',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testOrganizationsFetch(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Fetch Organizations',
-        status: 'success',
-        message: `Successfully fetched ${data.length} organizations`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Fetch Organizations',
-        status: 'error',
-        message: 'Failed to fetch organizations',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testFacilitiesFetch(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase
-        .from('facilities')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Fetch Facilities',
-        status: 'success',
-        message: `Successfully fetched ${data.length} facilities`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Fetch Facilities',
-        status: 'error',
-        message: 'Failed to fetch facilities',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testDocumentsFetch(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Fetch Documents',
-        status: 'success',
-        message: `Successfully fetched ${data.length} documents`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Fetch Documents',
-        status: 'error',
-        message: 'Failed to fetch documents',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testCAPAFetch(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase
-        .from('capa_actions')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Fetch CAPA Actions',
-        status: 'success',
-        message: `Successfully fetched ${data.length} CAPA actions`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Fetch CAPA Actions',
-        status: 'error',
-        message: 'Failed to fetch CAPA actions',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testNonConformanceFetch(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      const { data, error } = await supabase
-        .from('non_conformances')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      return {
-        name: 'Fetch Non-Conformances',
-        status: 'success',
-        message: `Successfully fetched ${data.length} non-conformances`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Fetch Non-Conformances',
-        status: 'error',
-        message: 'Failed to fetch non-conformances',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
-
-  async function testModuleRelationships(): Promise<TestResultDetail> {
-    const start = performance.now();
-    try {
-      // Test a specific relationship between modules
-      const { data, error } = await supabase
-        .from('module_relationships')
-        .select('*')
-        .limit(10);
-      
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      if (error) throw error;
-      
-      // Check for specific relationships
-      const ncToCapaRelations = data.filter(
-        rel => rel.source_type === 'non_conformance' && rel.target_type === 'capa'
-      );
-      
-      const suppliersToDocsRelations = data.filter(
-        rel => rel.source_type === 'supplier' && rel.target_type === 'document'
-      );
-      
-      if (ncToCapaRelations.length === 0 && suppliersToDocsRelations.length === 0) {
-        return {
-          name: 'Module Relationships',
-          status: 'partial',
-          message: 'No specific module relationships found',
-          responseTime,
-          actionRequired: 'Create test relationships between modules'
-        };
-      }
-      
-      return {
-        name: 'Module Relationships',
-        status: 'success',
-        message: `Found ${data.length} module relationships`,
-        responseTime
-      };
-    } catch (error) {
-      const end = performance.now();
-      const responseTime = end - start;
-      
-      return {
-        name: 'Module Relationships',
-        status: 'error',
-        message: 'Failed to test module relationships',
-        errorDetails: error instanceof Error ? error.message : String(error),
-        responseTime
-      };
-    }
-  }
 
   return {
-    results,
-    isRunning,
-    activeModules,
-    toggleModule,
-    runAllTests,
-    resetResults
+    tables,
+    functions,
+    storage,
+    summary,
+    isLoading,
+    runTests
   };
-};
-
-export default useBackendFrontendTesting;
+}

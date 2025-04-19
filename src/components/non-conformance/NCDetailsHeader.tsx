@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
