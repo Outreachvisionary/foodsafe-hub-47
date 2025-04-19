@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,11 +159,11 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   };
   
   const getEffectivenessRatingColor = (rating: CAPAEffectivenessRating) => {
-    if (rating === 'excellent' || rating === 'effective') {
+    if (rating === 'effective') {
       return 'bg-green-100 text-green-800 border-green-200';
-    } else if (rating === 'good' || rating === 'partially-effective' || rating === 'adequate') {
+    } else if (rating === 'partially-effective') {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    } else if (rating === 'poor' || rating === 'ineffective' || rating === 'inadequate') {
+    } else if (rating === 'ineffective') {
       return 'bg-red-100 text-red-800 border-red-200';
     } else {
       return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -190,8 +189,8 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
     return now > dueDate;
   };
   
-  const hasRelatedDocuments = Array.isArray(capa.relatedDocuments) && capa.relatedDocuments.length > 0;
-  const hasRelatedTraining = Array.isArray(capa.relatedTraining) && capa.relatedTraining.length > 0;
+  const hasRelatedDocuments = capa.relatedDocuments && Array.isArray(capa.relatedDocuments) && capa.relatedDocuments.length > 0;
+  const hasRelatedTraining = capa.relatedTraining && Array.isArray(capa.relatedTraining) && capa.relatedTraining.length > 0;
   
   return (
     <div className="space-y-6">
@@ -570,7 +569,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                 <div>
                   <h3 className="text-lg font-medium">Related Documents</h3>
                   <div className="mt-3 space-y-2">
-                    {capa.relatedDocuments.map(doc => (
+                    {capa.relatedDocuments?.map(doc => (
                       <div key={doc.id} className="flex items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100">
                         <FileText className="h-5 w-5 mr-3 text-blue-500" />
                         <div>
@@ -597,7 +596,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                 <div>
                   <h3 className="text-lg font-medium">Related Training</h3>
                   <div className="mt-3 space-y-2">
-                    {capa.relatedTraining.map(training => (
+                    {capa.relatedTraining?.map(training => (
                       <div key={training.id} className="flex items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100">
                         <NotebookPen className="h-5 w-5 mr-3 text-green-500" />
                         <div>

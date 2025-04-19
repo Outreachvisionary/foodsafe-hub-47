@@ -10,11 +10,11 @@ interface DepartmentComplianceChartProps {
 const DepartmentComplianceChart: React.FC<DepartmentComplianceChartProps> = ({ departmentStats }) => {
   // Transform data for the chart
   const chartData = departmentStats.map(dept => ({
-    name: dept.departmentName,
-    Completed: dept.completedCount || dept.completed,
-    Overdue: dept.overdueCount || dept.overdue,
-    Total: dept.employeeCount || dept.totalAssigned,
-    ComplianceRate: dept.compliancePercentage
+    name: dept.name || dept.department,
+    Completed: dept.completed,
+    Overdue: dept.overdue,
+    Total: dept.totalAssigned,
+    ComplianceRate: dept.complianceRate
   }));
 
   return (

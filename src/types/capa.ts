@@ -14,6 +14,23 @@ export interface CAPASourceReference {
   url?: string;
 }
 
+export interface CAPARelatedDocument {
+  id: string;
+  documentId: string;
+  title?: string;
+  type?: string;
+  documentType?: string;
+  addedAt: string;
+}
+
+export interface CAPARelatedTraining {
+  id: string;
+  trainingId: string;
+  title?: string;
+  type?: string;
+  addedAt: string;
+}
+
 export interface CAPA {
   id: string;
   title: string;
@@ -26,6 +43,7 @@ export interface CAPA {
   rootCause?: string;
   correctiveAction?: string;
   preventiveAction?: string;
+  verificationMethod?: string;
   dueDate: string;
   completionDate?: string;
   verificationDate?: string;
@@ -38,6 +56,9 @@ export interface CAPA {
   effectivenessCriteria?: string;
   effectivenessRating?: CAPAEffectivenessRating;
   isFsma204Compliant: boolean;
+  verifiedBy?: string;
+  relatedDocuments?: CAPARelatedDocument[];
+  relatedTraining?: CAPARelatedTraining[];
 }
 
 export interface CAPAFilter {
