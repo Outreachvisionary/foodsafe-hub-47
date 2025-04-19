@@ -48,3 +48,29 @@ interface TimelineProps {
 export const Timeline: React.FC<TimelineProps> = ({ children, className }) => {
   return <div className={cn("flex flex-col", className)}>{children}</div>;
 };
+
+// Additional components for backward compatibility
+export const TimelineContent: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  return <div className="mt-1 text-sm text-muted-foreground">{children}</div>;
+};
+
+export const TimelineSeparator: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  return <div className="flex flex-col items-center">{children}</div>;
+};
+
+export const TimelineDot: React.FC<{color?: string; className?: string}> = ({ 
+  color = "primary", 
+  className 
+}) => {
+  return (
+    <div className={cn(
+      "flex h-8 w-8 items-center justify-center rounded-full border bg-background z-10",
+      color === "primary" && "border-primary",
+      className
+    )}/>
+  );
+};
+
+export const TimelineConnector: React.FC<{className?: string}> = ({ className }) => {
+  return <div className={cn("h-full w-px bg-border -mt-2", className)}/>;
+};

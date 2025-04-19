@@ -16,7 +16,7 @@ const useTrainingRecords = (employeeId?: string) => {
         .from('training_records')
         .select(`
           *,
-          training_sessions(title, instructor_name)
+          training_sessions(title, department, training_type, training_category)
         `)
         .order('due_date', { ascending: false });
       
@@ -44,7 +44,7 @@ const useTrainingRecords = (employeeId?: string) => {
           notes: record.notes,
           assigned_date: record.assigned_date,
           courseName: sessionInfo.title || 'Unknown Course',
-          instructorName: sessionInfo.instructor_name || 'Not Assigned',
+          instructorName: 'Not Assigned', // This field may need to be added to the training_sessions table
           created_at: record.created_at || new Date().toISOString(),
           updated_at: record.updated_at || new Date().toISOString()
         };

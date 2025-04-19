@@ -103,9 +103,20 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
+      // Ensure required fields are present
+      const completeData = {
+        ...planData,
+        name: planData.name || 'Unnamed Plan',
+        description: planData.description || '',
+        target_roles: planData.target_roles || [],
+        courses: planData.courses || [],
+        priority: planData.priority || 'medium' as TrainingPriority,
+        status: planData.status || 'Active'
+      };
+
       const { data, error } = await supabase
         .from('training_plans')
-        .insert([planData])
+        .insert([completeData])
         .select()
         .single();
 
