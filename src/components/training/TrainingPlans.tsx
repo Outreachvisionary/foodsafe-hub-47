@@ -392,6 +392,25 @@ const TrainingPlanCard: React.FC<TrainingPlanCardProps> = ({ plan }) => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
   
+  const renderRecurringInfo = (plan: TrainingPlan) => {
+    if (plan.recurringSchedule) {
+      return (
+        <div className="text-sm">
+          <span>Repeats: </span>
+          {plan.recurringSchedule.frequency === 'annual' ? (
+            <span>Annually</span>
+          ) : plan.recurringSchedule.frequency === 'monthly' ? (
+            <span>Monthly (every {plan.recurringSchedule.interval} month{plan.recurringSchedule.interval > 1 ? 's' : ''})</span>
+          ) : (
+            <span>{plan.recurringSchedule.frequency} (every {plan.recurringSchedule.interval} {plan.recurringSchedule.frequency})</span>
+          )}
+        </div>
+      );
+    }
+    
+    return null;
+  };
+  
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -451,17 +470,7 @@ const TrainingPlanCard: React.FC<TrainingPlanCardProps> = ({ plan }) => {
             </div>
           )}
           
-          {plan.recurringSchedule && (
-            <div className="flex items-center mt-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3 mr-1" />
-              <span>
-                {plan.recurringSchedule.frequency}: Every {plan.recurringSchedule.interval} 
-                {plan.recurringSchedule.frequency === 'Annually' ? ' year' : 
-                 plan.recurringSchedule.frequency === 'Monthly' ? ' month' : 
-                 ' time(s)'}
-              </span>
-            </div>
-          )}
+          {renderRecurringInfo(plan)}
         </div>
       </CardContent>
       <CardFooter className="pt-2">

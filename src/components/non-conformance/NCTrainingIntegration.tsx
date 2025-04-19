@@ -9,7 +9,7 @@ import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
-import { TrainingStatus, TrainingType } from '@/types/training';
+import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/training';
 import TrainingAssignmentForm from './training/TrainingAssignmentForm';
 
 interface NCTrainingIntegrationProps {

@@ -1,118 +1,115 @@
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DepartmentTrainingStats } from '@/types/training';
 
-const DepartmentComplianceChart: React.FC = () => {
-  // Sample department compliance data - show only top departments
-  const departmentData: DepartmentTrainingStats[] = [
-    { 
-      departmentName: 'Quality',
-      totalAssigned: 150,
-      completed: 120,
-      inProgress: 26,
-      overdue: 4,
-      compliancePercentage: 94,
-      department: 'Quality', 
-      compliance: 94, 
-      completedCount: 120, 
-      overdueCount: 4,
-      employeeCount: 12
-    },
-    { 
-      departmentName: 'Management',
-      totalAssigned: 50,
-      completed: 42,
-      inProgress: 6,
-      overdue: 2,
-      compliancePercentage: 96,
-      department: 'Management', 
-      compliance: 96, 
-      completedCount: 42, 
-      overdueCount: 2,
-      employeeCount: 8
-    },
-    { 
-      departmentName: 'R&D',
-      totalAssigned: 120,
-      completed: 95,
-      inProgress: 19,
-      overdue: 6,
-      compliancePercentage: 89,
-      department: 'R&D', 
-      compliance: 89, 
-      completedCount: 95, 
-      overdueCount: 6,
-      employeeCount: 10
-    },
-    { 
-      departmentName: 'Production',
-      totalAssigned: 250,
-      completed: 180,
-      inProgress: 42,
-      overdue: 28,
-      compliancePercentage: 72,
-      department: 'Production', 
-      compliance: 72, 
-      completedCount: 180, 
-      overdueCount: 28,
-      employeeCount: 45
-    }
-  ];
+const sampleData: DepartmentTrainingStats[] = [
+  {
+    departmentName: 'Production',
+    totalAssigned: 56,
+    completed: 42,
+    inProgress: 10,
+    overdue: 4,
+    compliancePercentage: 75,
+    completedCount: 42,
+    overdueCount: 4,
+    employeeCount: 20
+  },
+  {
+    departmentName: 'Quality',
+    totalAssigned: 32,
+    completed: 28,
+    inProgress: 4,
+    overdue: 0,
+    compliancePercentage: 87.5,
+    completedCount: 28,
+    overdueCount: 0,
+    employeeCount: 8
+  },
+  {
+    departmentName: 'Maintenance',
+    totalAssigned: 24,
+    completed: 18,
+    inProgress: 4,
+    overdue: 2,
+    compliancePercentage: 75,
+    completedCount: 18,
+    overdueCount: 2,
+    employeeCount: 6
+  },
+  {
+    departmentName: 'Management',
+    totalAssigned: 16,
+    completed: 16,
+    inProgress: 0,
+    overdue: 0,
+    compliancePercentage: 100,
+    completedCount: 16,
+    overdueCount: 0,
+    employeeCount: 4
+  }
+];
 
-  const getBarColor = (compliance: number) => {
-    if (compliance >= 90) return '#22c55e'; // green
-    if (compliance >= 75) return '#eab308'; // yellow
-    return '#ef4444'; // red
-  };
+interface DepartmentComplianceChartProps {
+  data?: DepartmentTrainingStats[];
+}
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 border rounded shadow-sm">
-          <p className="font-medium">{data.department}</p>
-          <p className="text-sm text-gray-600">{`Compliance: ${data.compliance}%`}</p>
-          <p className="text-sm text-gray-600">{`${data.completedCount} trainings completed`}</p>
-          <p className="text-sm text-gray-600">{`${data.overdueCount} trainings overdue`}</p>
-          <p className="text-sm text-gray-600">{`${data.employeeCount} employees`}</p>
-        </div>
-      );
-    }
-    return null;
+const DepartmentComplianceChart: React.FC<DepartmentComplianceChartProps> = ({ data = sampleData }) => {
+  const getBarColor = (percentage: number) => {
+    if (percentage >= 90) return '#22c55e';  // Green
+    if (percentage >= 70) return '#f59e0b';  // Amber
+    return '#ef4444';                        // Red
   };
 
   return (
-    <div className="h-80">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={departmentData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="department" 
-            tick={{ fontSize: 12 }}
-            interval={0}
-          />
-          <YAxis 
-            domain={[0, 100]}
-            label={{ 
-              value: 'Compliance %', 
-              angle: -90, 
-              position: 'insideLeft',
-              style: { textAnchor: 'middle' }
-            }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="compliance" fill="#4f46e5">
-            {departmentData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={getBarColor(entry.compliance)} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Department Training Compliance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 60,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="departmentName" 
+                angle={-45} 
+                textAnchor="end" 
+                tick={{ fontSize: 12 }}
+                height={60}
+              />
+              <YAxis 
+                label={{ value: 'Completion %', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} 
+                domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
+              />
+              <Tooltip 
+                formatter={(value: number, name: string) => [`${value}%`, 'Compliance']}
+                labelFormatter={(label: string) => `Department: ${label}`}
+              />
+              <Bar 
+                dataKey="compliancePercentage" 
+                name="Compliance" 
+                radius={[4, 4, 0, 0]}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarColor(entry.compliancePercentage)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

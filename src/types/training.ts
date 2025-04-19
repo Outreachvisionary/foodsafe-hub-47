@@ -1,11 +1,11 @@
 
-export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Canceled';
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
 export type TrainingPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TrainingType = 'compliance' | 'onboarding' | 'skills' | 'safety' | 'food-safety' | 'technical' | 'management' | 'Online' | 'In-person' | 'Video' | 'Document';
 export type TrainingCategory = 'haccp' | 'gmp' | 'fsma' | 'safety' | 'quality' | 'operations' | 'maintenance' | 'regulatory' | 'other';
 export type TrainingCompletionStatus = 'completed' | 'in-progress' | 'not-started' | 'canceled';
-export type EmployeeRole = 'admin' | 'manager' | 'supervisor' | 'line-worker' | 'quality' | 'maintenance' | 'operations' | 'hr';
-export type Department = 'production' | 'quality' | 'maintenance' | 'operations' | 'management' | 'hr' | 'sales' | 'administration';
+export type EmployeeRole = 'admin' | 'manager' | 'supervisor' | 'line-worker' | 'quality' | 'maintenance' | 'operations' | 'hr' | 'operator';
+export type Department = 'production' | 'quality' | 'maintenance' | 'operations' | 'management' | 'hr' | 'sales' | 'administration' | 'r&d' | 'logistics';
 
 export interface TrainingRecord {
   id: string;
@@ -52,32 +52,32 @@ export interface TrainingPlan {
   id: string;
   name: string;
   description?: string;
-  targetRoles?: EmployeeRole[];
   target_roles?: EmployeeRole[];
-  coursesIncluded?: string[];
+  targetRoles?: EmployeeRole[];
   courses?: string[];
-  durationDays?: number;
+  coursesIncluded?: string[];
   duration_days?: number;
-  isRequired?: boolean;
+  durationDays?: number;
   is_required?: boolean;
+  isRequired?: boolean;
   priority?: TrainingPriority;
   status?: string;
-  startDate?: string;
   start_date?: string;
-  endDate?: string;
+  startDate?: string;
   end_date?: string;
-  isAutomated?: boolean;
+  endDate?: string;
   is_automated?: boolean;
-  automationTrigger?: string;
+  isAutomated?: boolean;
   automation_trigger?: string;
+  automationTrigger?: string;
   created_by?: string;
-  createdDate?: string;
+  createdBy?: string;
   created_at?: string;
   updated_at?: string;
-  targetDepartments?: Department[];
   target_departments?: Department[];
-  relatedStandards?: string[];
+  targetDepartments?: Department[];
   related_standards?: string[];
+  relatedStandards?: string[];
   recurringSchedule?: {
     frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
     interval: number;

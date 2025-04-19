@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
@@ -43,7 +44,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint }) => {
         <DialogContent className="sm:max-w-[800px]">
           <CreateCAPADialog
             onCAPACreated={handleCAPACreated}
-            sourceData={sourceData}
+            initialData={sourceData}
           />
         </DialogContent>
       </Dialog>

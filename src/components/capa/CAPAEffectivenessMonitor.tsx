@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,9 +37,10 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     preventionMeasureEffective: false,
     recurrenceCheck: false,
     recurrenceChecked: 0,
-    rootCauseEliminated: 0,
-    documentationComplete: 0,
-    preventionMeasureEffective: 0,
+    // Use different property names to avoid duplication
+    rootCauseValue: 0,
+    documentationValue: 0,
+    preventionValue: 0,
     overall: 0,
     score: 0,
     assessmentDate: new Date().toISOString(),
@@ -67,7 +69,11 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
             rootCauseEliminated: Boolean(report.rootCauseEliminated),
             documentationComplete: Boolean(report.documentationComplete),
             preventionMeasureEffective: Boolean(report.preventionMeasureEffective),
-            recurrenceCheck: Boolean(report.recurrenceCheck)
+            recurrenceCheck: Boolean(report.recurrenceCheck),
+            // Assign numeric values to different property names
+            rootCauseValue: report.rootCauseEliminated ? 1 : 0,
+            documentationValue: report.documentationComplete ? 1 : 0,
+            preventionValue: report.preventionMeasureEffective ? 1 : 0
           });
           setNotes(report.notes || '');
         }
@@ -220,14 +226,14 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Root Cause Eliminated</span>
-              <span className={metrics.rootCauseEliminated ? 'text-green-600' : 'text-red-600'}>
-                {metrics.rootCauseEliminated ? 'Yes' : 'No'}
+              <span className={Boolean(metrics.rootCauseEliminated) ? 'text-green-600' : 'text-red-600'}>
+                {Boolean(metrics.rootCauseEliminated) ? 'Yes' : 'No'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm font-medium">Documentation Complete</span>
-              <span className={metrics.documentationComplete ? 'text-green-600' : 'text-red-600'}>
-                {metrics.documentationComplete ? 'Yes' : 'No'}
+              <span className={Boolean(metrics.documentationComplete) ? 'text-green-600' : 'text-red-600'}>
+                {Boolean(metrics.documentationComplete) ? 'Yes' : 'No'}
               </span>
             </div>
           </div>
@@ -235,14 +241,14 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Prevention Effective</span>
-              <span className={metrics.preventionMeasureEffective ? 'text-green-600' : 'text-red-600'}>
-                {metrics.preventionMeasureEffective ? 'Yes' : 'No'}
+              <span className={Boolean(metrics.preventionMeasureEffective) ? 'text-green-600' : 'text-red-600'}>
+                {Boolean(metrics.preventionMeasureEffective) ? 'Yes' : 'No'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm font-medium">Recurrence Checked</span>
-              <span className={metrics.recurrenceCheck ? 'text-green-600' : 'text-red-600'}>
-                {metrics.recurrenceCheck ? 'Yes' : 'No'}
+              <span className={Boolean(metrics.recurrenceCheck) ? 'text-green-600' : 'text-red-600'}>
+                {Boolean(metrics.recurrenceCheck) ? 'Yes' : 'No'}
               </span>
             </div>
           </div>
@@ -304,7 +310,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
                   </div>
                   <Switch
                     id="rootCause"
-                    checked={metrics.rootCauseEliminated}
+                    checked={Boolean(metrics.rootCauseEliminated)}
                     onCheckedChange={(checked) => handleCriteriaChange('rootCauseEliminated', checked)}
                   />
                 </div>
@@ -316,7 +322,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
                   </div>
                   <Switch
                     id="documentation"
-                    checked={metrics.documentationComplete}
+                    checked={Boolean(metrics.documentationComplete)}
                     onCheckedChange={(checked) => handleCriteriaChange('documentationComplete', checked)}
                   />
                 </div>
@@ -328,7 +334,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
                   </div>
                   <Switch
                     id="prevention"
-                    checked={metrics.preventionMeasureEffective}
+                    checked={Boolean(metrics.preventionMeasureEffective)}
                     onCheckedChange={(checked) => handleCriteriaChange('preventionMeasureEffective', checked)}
                   />
                 </div>
@@ -340,7 +346,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
                   </div>
                   <Switch
                     id="recurrence"
-                    checked={metrics.recurrenceCheck}
+                    checked={Boolean(metrics.recurrenceCheck)}
                     onCheckedChange={(checked) => handleCriteriaChange('recurrenceCheck', checked)}
                   />
                 </div>

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAEffectivenessMetrics } from '@/types/capa';
+import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAFilter } from '@/types/capa';
 import { mapStatusToDb, mapStatusFromDb, mapEffectivenessRatingToDb, mapEffectivenessRatingFromDb } from './capa/capaStatusService';
 
 // Fetch CAPA by ID
@@ -143,9 +143,9 @@ export const createCAPAEffectivenessReport = async (data: CAPAEffectivenessMetri
   const dbData = {
     capa_id: data.capaId,
     assessment_date: data.assessmentDate,
-    root_cause_eliminated: data.rootCauseEliminated === true ? true : false,
-    preventive_measures_implemented: data.preventionMeasureEffective === true ? true : false,
-    documentation_complete: data.documentationComplete === true ? true : false,
+    root_cause_eliminated: data.rootCauseEliminated === true,
+    preventive_measures_implemented: data.preventionMeasureEffective === true,
+    documentation_complete: data.documentationComplete === true,
     recurrence_check: data.recurrenceCheck ? 'Yes' : 'No',
     score: data.score,
     rating: mapEffectivenessRatingToDb(data.rating),
@@ -165,9 +165,9 @@ export const createCAPAEffectivenessReport = async (data: CAPAEffectivenessMetri
   return {
     id: result.id,
     capaId: result.capa_id,
-    rootCauseEliminated: result.root_cause_eliminated,
-    documentationComplete: result.documentation_complete,
-    preventionMeasureEffective: result.preventive_measures_implemented,
+    rootCauseEliminated: Boolean(result.root_cause_eliminated),
+    documentationComplete: Boolean(result.documentation_complete),
+    preventionMeasureEffective: Boolean(result.preventive_measures_implemented),
     recurrenceCheck: result.recurrence_check === 'Yes',
     recurrenceChecked: result.recurrence_check === 'Yes' ? 1 : 0,
     rootCauseEliminated: result.root_cause_eliminated ? 1 : 0,
@@ -187,9 +187,9 @@ export const updateCAPAEffectivenessReport = async (id: string, data: CAPAEffect
   // Convert boolean to numeric values where needed for database
   const dbData = {
     assessment_date: data.assessmentDate,
-    root_cause_eliminated: data.rootCauseEliminated === true ? true : false,
-    preventive_measures_implemented: data.preventionMeasureEffective === true ? true : false,
-    documentation_complete: data.documentationComplete === true ? true : false,
+    root_cause_eliminated: Boolean(data.rootCauseEliminated),
+    preventive_measures_implemented: Boolean(data.preventionMeasureEffective),
+    documentation_complete: Boolean(data.documentationComplete),
     recurrence_check: data.recurrenceCheck ? 'Yes' : 'No',
     score: data.score,
     rating: mapEffectivenessRatingToDb(data.rating),
@@ -209,9 +209,9 @@ export const updateCAPAEffectivenessReport = async (id: string, data: CAPAEffect
   return {
     id: result.id,
     capaId: result.capa_id,
-    rootCauseEliminated: result.root_cause_eliminated,
-    documentationComplete: result.documentation_complete,
-    preventionMeasureEffective: result.preventive_measures_implemented,
+    rootCauseEliminated: Boolean(result.root_cause_eliminated),
+    documentationComplete: Boolean(result.documentation_complete),
+    preventionMeasureEffective: Boolean(result.preventive_measures_implemented),
     recurrenceCheck: result.recurrence_check === 'Yes',
     recurrenceChecked: result.recurrence_check === 'Yes' ? 1 : 0,
     rootCauseEliminated: result.root_cause_eliminated ? 1 : 0,
@@ -242,9 +242,9 @@ export const getCAPAEffectivenessReport = async (capaId: string): Promise<CAPAEf
   return {
     id: data.id,
     capaId: data.capa_id,
-    rootCauseEliminated: data.root_cause_eliminated,
-    documentationComplete: data.documentation_complete,
-    preventionMeasureEffective: data.preventive_measures_implemented,
+    rootCauseEliminated: Boolean(data.root_cause_eliminated),
+    documentationComplete: Boolean(data.documentation_complete),
+    preventionMeasureEffective: Boolean(data.preventive_measures_implemented),
     recurrenceCheck: data.recurrence_check === 'Yes',
     recurrenceChecked: data.recurrence_check === 'Yes' ? 1 : 0,
     rootCauseEliminated: data.root_cause_eliminated ? 1 : 0,
@@ -259,11 +259,259 @@ export const getCAPAEffectivenessReport = async (capaId: string): Promise<CAPAEf
   };
 };
 
+// Add these missing functions to fix the errors:
+
+// Fetch CAPAs with optional filtering
+export const fetchCAPAs = async (filters?: CAPAFilter): Promise<CAPA[]> => {
+  let query = supabase.from('capa_actions').select('*');
+  
+  // Apply filters if provided
+  if (filters) {
+    if (filters.status && filters.status.length > 0) {
+      const dbStatuses = filters.status.map(status => mapStatusToDb(status));
+      query = query.in('status', dbStatuses);
+    }
+    
+    if (filters.priority && filters.priority.length > 0) {
+      query = query.in('priority', filters.priority);
+    }
+    
+    if (filters.source && filters.source.length > 0) {
+      query = query.in('source', filters.source);
+    }
+    
+    if (filters.dueDate) {
+      // Handle due date filtering logic
+      const now = new Date().toISOString();
+      
+      if (filters.dueDate === 'overdue') {
+        query = query.lt('due_date', now).not('status', 'in', ['Closed', 'Verified']);
+      } else if (filters.dueDate === 'upcoming') {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 7);
+        query = query.gt('due_date', now).lt('due_date', futureDate.toISOString());
+      }
+    }
+  }
+  
+  const { data, error } = await query.order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  // Map DB responses to CAPA interface
+  return data.map(item => mapDBResponseToCAPA(item));
+};
+
+// Get CAPA statistics
+export const getCAPAStats = async (): Promise<CAPAStats> => {
+  // Fetch all CAPAs to calculate stats
+  const { data, error } = await supabase
+    .from('capa_actions')
+    .select('*');
+  
+  if (error) throw error;
+  
+  const capas = data.map(item => mapDBResponseToCAPA(item));
+  
+  // Calculate stats
+  const stats: CAPAStats = {
+    total: capas.length,
+    openCount: 0,
+    closedCount: 0,
+    overdueCount: 0,
+    verifiedCount: 0,
+    inProgressCount: 0,
+    pendingVerificationCount: 0,
+    byPriority: {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0
+    },
+    bySource: {
+      audit: 0,
+      complaint: 0,
+      'non-conformance': 0,
+      internal: 0,
+      customer: 0,
+      regulatory: 0,
+      supplier: 0,
+      haccp: 0,
+      traceability: 0
+    },
+    byStatus: {
+      open: 0,
+      'in-progress': 0,
+      closed: 0,
+      verified: 0,
+      overdue: 0,
+      'pending-verification': 0
+    },
+    effectivenessStats: {
+      verified: 0,
+      effective: 0,
+      partiallyEffective: 0,
+      ineffective: 0,
+      notEvaluated: 0
+    },
+    overdue: 0,
+    recentItems: [],
+    averageTimeToClose: 0,
+    averageClosureTime: 0,
+    fsma204ComplianceRate: 0,
+    completionRates: {}
+  };
+  
+  // Calculate stats based on CAPAs
+  const now = new Date();
+  
+  capas.forEach(capa => {
+    // Status counts
+    switch (capa.status) {
+      case 'open':
+        stats.openCount++;
+        stats.byStatus.open++;
+        break;
+      case 'in-progress':
+        stats.inProgressCount++;
+        stats.byStatus['in-progress']++;
+        break;
+      case 'closed':
+        stats.closedCount++;
+        stats.byStatus.closed++;
+        break;
+      case 'verified':
+        stats.verifiedCount++;
+        stats.byStatus.verified++;
+        break;
+      case 'pending-verification':
+        stats.pendingVerificationCount++;
+        stats.byStatus['pending-verification']++;
+        break;
+    }
+    
+    // Priority counts
+    if (capa.priority) {
+      stats.byPriority[capa.priority as keyof typeof stats.byPriority]++;
+    }
+    
+    // Source counts
+    if (capa.source) {
+      stats.bySource[capa.source as keyof typeof stats.bySource]++;
+    }
+    
+    // Check if overdue
+    if (capa.dueDate && new Date(capa.dueDate) < now && 
+        (capa.status === 'open' || capa.status === 'in-progress')) {
+      stats.overdueCount++;
+      stats.byStatus.overdue++;
+    }
+    
+    // Add to recent items (limit to 5)
+    if (stats.recentItems.length < 5) {
+      stats.recentItems.push({
+        id: capa.id,
+        title: capa.title,
+        status: capa.status,
+        dueDate: capa.dueDate,
+        priority: capa.priority,
+        createdDate: capa.createdDate
+      });
+    }
+    
+    // Effectiveness stats
+    if (capa.effectivenessRating) {
+      switch (capa.effectivenessRating) {
+        case 'effective':
+          stats.effectivenessStats.effective++;
+          break;
+        case 'partially-effective':
+          stats.effectivenessStats.partiallyEffective++;
+          break;
+        case 'ineffective':
+          stats.effectivenessStats.ineffective++;
+          break;
+      }
+      
+      if (capa.effectivenessVerified) {
+        stats.effectivenessStats.verified++;
+      }
+    } else {
+      stats.effectivenessStats.notEvaluated++;
+    }
+    
+    // FSMA 204 compliance
+    if (capa.isFsma204Compliant) {
+      stats.fsma204ComplianceRate++;
+    }
+  });
+  
+  // Calculate percentages and averages
+  if (capas.length > 0) {
+    stats.fsma204ComplianceRate = Math.round((stats.fsma204ComplianceRate / capas.length) * 100);
+    
+    // Calculate average closure time
+    const closedCapas = capas.filter(capa => capa.status === 'closed' || capa.status === 'verified');
+    if (closedCapas.length > 0) {
+      let totalDays = 0;
+      closedCapas.forEach(capa => {
+        if (capa.createdDate && capa.completionDate) {
+          const startDate = new Date(capa.createdDate);
+          const endDate = new Date(capa.completionDate);
+          const days = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          totalDays += days;
+        }
+      });
+      stats.averageClosureTime = Math.round(totalDays / closedCapas.length);
+    }
+  }
+  
+  return stats;
+};
+
+// Get potential CAPAs
+export const getPotentialCAPAs = async (): Promise<any[]> => {
+  // In a real implementation, this would analyze various data sources
+  // to suggest potential CAPAs. For now, return mock data.
+  
+  return [
+    {
+      id: 'auto-1',
+      title: 'Critical temperature deviation in cold storage',
+      description: 'Temperature logs show repeated deviations above 5°C in cold storage unit #3',
+      source: 'haccp',
+      sourceId: 'ccplog-123',
+      severity: 'critical',
+      suggestedPriority: 'high',
+      detectedDate: new Date().toISOString(),
+      suggestedActions: 'Investigate cooling system malfunction and implement temperature monitoring alerts',
+      relatedIncidents: 2,
+      confidence: 0.95
+    },
+    {
+      id: 'auto-2',
+      title: 'Multiple foreign material complaints from retail customers',
+      description: 'Three customer complaints reporting plastic fragments in product batch #A2245',
+      source: 'complaint',
+      sourceId: 'comp-456',
+      severity: 'high',
+      suggestedPriority: 'high',
+      detectedDate: new Date().toISOString(),
+      suggestedActions: 'Investigate manufacturing process for potential plastic contamination points',
+      relatedIncidents: 3,
+      confidence: 0.82
+    }
+  ];
+};
+
 export default {
   fetchCAPAById,
   updateCAPA,
   createCAPA,
   createCAPAEffectivenessReport,
   updateCAPAEffectivenessReport,
-  getCAPAEffectivenessReport
+  getCAPAEffectivenessReport,
+  fetchCAPAs,
+  getCAPAStats,
+  getPotentialCAPAs
 };
