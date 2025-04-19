@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader, AlertCircle, ClipboardList, ArrowUpRight } from 'lucide-react';
-import { CAPA } from '@/types/capa';
+import { CAPA, CAPASource } from '@/types/capa';
 import { fetchCAPAs } from '@/services/capaService';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -33,11 +32,14 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
       try {
         setLoading(true);
         // Fetch CAPAs linked to this source
-        const capas = await fetchCAPAs({ 
-          sourceId: sourceId,
-          source: sourceType
-        });
-        setLinkedCAPAs(capas);
+        // For now, we'll filter on the frontend since we don't have a direct sourceId filter
+        const allCapas = await fetchCAPAs();
+        // Match by sourceId and sourceType
+        const filtered = allCapas.filter(capa => 
+          capa.sourceId === sourceId && 
+          capa.source === sourceType as CAPASource
+        );
+        setLinkedCAPAs(filtered);
       } catch (err) {
         console.error('Error loading linked CAPAs:', err);
         setError('Failed to load linked CAPAs');

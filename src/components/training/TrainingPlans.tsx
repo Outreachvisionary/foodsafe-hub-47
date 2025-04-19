@@ -1,516 +1,302 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { 
-  FileText, 
-  Plus, 
-  Clock, 
-  Settings, 
-  Users, 
-  Calendar, 
-  Zap,
-  FileCode,
-  AlertCircle 
-} from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { TrainingPlan, EmployeeRole, Department, TrainingPriority } from '@/types/training';
 import { Badge } from '@/components/ui/badge';
+import { PlusCircle, CalendarRange, Users, Trash2, Edit, Pencil, Save, X } from 'lucide-react';
+import { TrainingPlan, EmployeeRole, Department, TrainingPriority } from '@/types/training';
+import { useTrainingPlans } from '@/hooks/useTrainingPlans';
+import { toast } from '@/components/ui/use-toast';
 
-const TrainingPlans: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [automationEnabled, setAutomationEnabled] = useState(false);
-  
-  // Sample training plans
-  const trainingPlans: TrainingPlan[] = [
-    {
-      id: '1',
-      name: 'New Employee Orientation',
-      description: 'Basic training for all new employees covering company policies, safety protocols, and quality standards.',
-      courses: ['COURSE001', 'COURSE002', 'COURSE003'],
-      coursesIncluded: ['COURSE001', 'COURSE002', 'COURSE003'],
-      targetRoles: ['line-worker', 'supervisor', 'manager'],
-      targetDepartments: ['production', 'quality', 'maintenance'],
-      durationDays: 5,
-      priority: 'high',
-      isRequired: true,
-      startDate: '2023-05-01',
-      endDate: '2023-05-05',
-      status: 'Active',
-      created_by: 'admin',
-      createdDate: '2023-04-15',
-      relatedStandards: ['ISO 9001', 'GMP'],
-      isAutomated: true,
-      automationTrigger: 'NewHire',
-      recurringSchedule: {
-        frequency: 'annual',
-        interval: 1,
-        startDate: '2023-07-01'
-      }
-    },
-    {
-      id: '2',
-      name: 'SPC Fundamentals',
-      description: 'Training on Statistical Process Control methods, tools and applications',
-      courses: ['COURSE004', 'COURSE005'],
-      coursesIncluded: ['COURSE004', 'COURSE005'],
-      targetRoles: ['line-worker', 'supervisor', 'quality'],
-      targetDepartments: ['production', 'quality'],
-      durationDays: 3,
-      isRequired: false,
-      priority: 'medium',
-      startDate: '2023-06-01',
-      endDate: '2023-06-03',
-      status: 'Draft',
-      created_by: 'admin',
-      createdDate: '2023-05-10',
-      relatedStandards: ['ISO 9001'],
-      isAutomated: false
-    },
-    {
-      id: '3',
-      name: 'Annual GMP Refresher',
-      description: 'Mandatory annual refresher training on Good Manufacturing Practices',
-      courses: ['COURSE006'],
-      coursesIncluded: ['COURSE006'],
-      targetRoles: ['line-worker', 'supervisor', 'manager', 'quality'],
-      targetDepartments: ['production', 'quality', 'operations', 'administration'],
-      durationDays: 1,
-      isRequired: true,
-      priority: 'high',
-      startDate: '2023-07-01',
-      endDate: '2023-07-01',
-      status: 'Active',
-      created_by: 'admin',
-      createdDate: '2023-06-15',
-      relatedStandards: ['ISO 9001', 'GMP', 'FSSC 22000'],
-      isAutomated: true,
-      automationTrigger: 'RecurringTraining',
-      recurringSchedule: {
-        frequency: 'annual',
-        interval: 1,
-        startDate: '2023-07-01'
-      }
+// Fix property names and types in the mock data
+const mockPlans: TrainingPlan[] = [
+  {
+    id: '1',
+    name: 'Food Safety Fundamentals',
+    description: 'Core training for all food handling staff',
+    targetRoles: ['operator', 'supervisor', 'manager'],
+    target_roles: ['operator', 'supervisor', 'manager'],
+    targetDepartments: ['production', 'quality', 'maintenance'],
+    target_departments: ['production', 'quality', 'maintenance'],
+    coursesIncluded: ['course-1', 'course-2', 'course-3'],
+    courses: ['course-1', 'course-2', 'course-3'],
+    durationDays: 14,
+    duration_days: 14,
+    isRequired: true,
+    is_required: true,
+    priority: 'high',
+    status: 'Active',
+    startDate: '2023-01-01',
+    start_date: '2023-01-01',
+    endDate: '2023-12-31',
+    end_date: '2023-12-31',
+    isAutomated: false,
+    is_automated: false,
+    automationTrigger: null,
+    automation_trigger: null,
+    createdBy: 'Admin',
+    created_by: 'Admin',
+    created_at: '2023-01-01T08:00:00Z',
+    updated_at: '2023-01-15T10:30:00Z',
+    relatedStandards: ['ISO 22000', 'HACCP'],
+    related_standards: ['ISO 22000', 'HACCP']
+  },
+  {
+    id: '2',
+    name: 'GMP Training Program',
+    description: 'Good Manufacturing Practices training for production personnel',
+    targetRoles: ['operator', 'supervisor', 'quality'],
+    target_roles: ['operator', 'supervisor', 'quality'],
+    targetDepartments: ['production', 'quality'],
+    target_departments: ['production', 'quality'],
+    coursesIncluded: ['course-4', 'course-5'],
+    courses: ['course-4', 'course-5'],
+    durationDays: 7,
+    duration_days: 7,
+    isRequired: true,
+    is_required: true,
+    priority: 'medium',
+    status: 'Active',
+    startDate: '2023-02-01',
+    start_date: '2023-02-01',
+    endDate: '2023-12-31',
+    end_date: '2023-12-31',
+    isAutomated: true,
+    is_automated: true,
+    automationTrigger: 'onboarding',
+    automation_trigger: 'onboarding',
+    createdBy: 'Admin',
+    created_by: 'Admin',
+    created_at: '2023-01-15T08:00:00Z',
+    updated_at: '2023-01-20T14:15:00Z',
+    relatedStandards: ['FDA Part 117', 'FSMA'],
+    related_standards: ['FDA Part 117', 'FSMA']
+  },
+  {
+    id: '3',
+    name: 'FSMA Compliance Training',
+    description: 'Comprehensive FSMA compliance training for all personnel',
+    targetRoles: ['operator', 'supervisor', 'manager', 'quality'],
+    target_roles: ['operator', 'supervisor', 'manager', 'quality'],
+    targetDepartments: ['production', 'quality', 'r&d', 'logistics'],
+    target_departments: ['production', 'quality', 'r&d', 'logistics'],
+    coursesIncluded: ['course-7', 'course-8', 'course-9'],
+    courses: ['course-7', 'course-8', 'course-9'],
+    durationDays: 21,
+    duration_days: 21,
+    isRequired: true,
+    is_required: true,
+    priority: 'high',
+    status: 'Active',
+    startDate: '2023-03-01',
+    start_date: '2023-03-01',
+    endDate: '2023-12-31',
+    end_date: '2023-12-31',
+    isAutomated: false,
+    is_automated: false,
+    automationTrigger: null,
+    automation_trigger: null,
+    createdBy: 'Admin',
+    created_by: 'Admin',
+    created_at: '2023-02-15T09:30:00Z',
+    updated_at: '2023-03-01T11:45:00Z',
+    relatedStandards: ['FSMA', 'Preventive Controls'],
+    related_standards: ['FSMA', 'Preventive Controls'],
+    recurringSchedule: {
+      frequency: 'annual',
+      interval: 1,
+      startDate: '2023-03-01'
     }
-  ];
-  
-  // Filter training plans based on the active tab
-  const filteredPlans = trainingPlans.filter(plan => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'automated') return plan.isAutomated;
-    if (activeTab === 'manual') return !plan.isAutomated;
-    if (activeTab === 'active') return plan.status === 'Active';
-    if (activeTab === 'draft') return plan.status === 'Draft';
-    return true;
-  });
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Training Plans</h2>
-        <div className="flex space-x-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Automation Settings
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Training Automation Settings</DialogTitle>
-                <DialogDescription>
-                  Configure automated training assignments and notifications
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Enable Training Automation</h3>
-                    <p className="text-sm text-muted-foreground">Automatically assign training based on triggers</p>
-                  </div>
-                  <Switch 
-                    checked={automationEnabled} 
-                    onCheckedChange={setAutomationEnabled} 
-                  />
-                </div>
-                
-                <div className="space-y-4 mt-2">
-                  <h3 className="font-medium">Automation Triggers</h3>
-                  
-                  <div className="grid grid-cols-1 gap-2">
-                    <AutomationTriggerOption 
-                      title="New Hire Onboarding" 
-                      description="Automatically assign onboarding training to new employees"
-                      icon={<Users className="h-4 w-4" />}
-                    />
-                    
-                    <AutomationTriggerOption 
-                      title="Role Changes" 
-                      description="Assign training when employee roles or departments change"
-                      icon={<Users className="h-4 w-4" />}
-                    />
-                    
-                    <AutomationTriggerOption 
-                      title="Document Updates" 
-                      description="Trigger training when SOPs or work instructions are updated"
-                      icon={<FileCode className="h-4 w-4" />}
-                    />
-                    
-                    <AutomationTriggerOption 
-                      title="Recurring Training" 
-                      description="Schedule recurring training based on certification validity"
-                      icon={<Calendar className="h-4 w-4" />}
-                    />
-                    
-                    <AutomationTriggerOption 
-                      title="Remediation" 
-                      description="Auto-assign retraining when employees fail assessments"
-                      icon={<AlertCircle className="h-4 w-4" />}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mt-2">
-                  <h3 className="font-medium">Notification Settings</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Email Notifications</span>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">In-App Notifications</span>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Manager Escalation for Overdue Training</span>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline">Cancel</Button>
-                <Button>Save Settings</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Plan
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Training Plan</DialogTitle>
-                <DialogDescription>
-                  Design a new training plan and set up automation rules
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="name" className="text-sm font-medium">Plan Name</label>
-                    <Input id="name" placeholder="Enter training plan name" />
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="description" className="text-sm font-medium">Description</label>
-                    <Input id="description" placeholder="Describe the purpose of this training plan" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="priority" className="text-sm font-medium">Priority</label>
-                    <Select>
-                      <SelectTrigger id="priority">
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <label htmlFor="duration" className="text-sm font-medium">Duration (Days)</label>
-                    <Input id="duration" type="number" min="1" placeholder="Enter duration" />
-                  </div>
-                </div>
-                
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-sm font-medium">Target Roles</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['line-worker', 'supervisor', 'manager'].map(role => (
-                      <div key={role} className="flex items-center">
-                        <input type="checkbox" id={`role-${role}`} className="mr-1" />
-                        <label htmlFor={`role-${role}`} className="text-sm">{role}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-sm font-medium">Courses</label>
-                  <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
-                    <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                      <span>Food Safety Management Systems Overview</span>
-                      <input type="checkbox" />
-                    </div>
-                    <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                      <span>HACCP Principles and Application</span>
-                      <input type="checkbox" />
-                    </div>
-                    <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                      <span>SQF Implementation Training</span>
-                      <input type="checkbox" />
-                    </div>
-                    <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                      <span>SPC Fundamentals</span>
-                      <input type="checkbox" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch id="automation" />
-                  <label htmlFor="automation" className="text-sm font-medium">Enable Automation</label>
-                </div>
-                
-                <div className="border rounded-md p-3 bg-gray-50">
-                  <h3 className="text-sm font-medium mb-2">Automation Settings</h3>
-                  
-                  <div className="grid gap-2">
-                    <div className="flex flex-col space-y-1.5">
-                      <label htmlFor="trigger" className="text-sm">Trigger</label>
-                      <Select>
-                        <SelectTrigger id="trigger">
-                          <SelectValue placeholder="Select trigger" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="newhire">New Hire</SelectItem>
-                          <SelectItem value="rolechange">Role Change</SelectItem>
-                          <SelectItem value="docupdate">Document Update</SelectItem>
-                          <SelectItem value="recurring">Recurring Training</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex flex-col space-y-1.5">
-                      <label htmlFor="frequency" className="text-sm">Recurrence (if applicable)</label>
-                      <Select>
-                        <SelectTrigger id="frequency">
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                          <SelectItem value="quarterly">Quarterly</SelectItem>
-                          <SelectItem value="biannually">Biannually</SelectItem>
-                          <SelectItem value="annually">Annually</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline">Cancel</Button>
-                <Button>Create Plan</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-      
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Plans</TabsTrigger>
-          <TabsTrigger value="automated">
-            <Zap className="h-4 w-4 mr-1" />
-            Automated
-          </TabsTrigger>
-          <TabsTrigger value="manual">Manual</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeTab} className="mt-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPlans.map(plan => (
-              <TrainingPlanCard key={plan.id} plan={plan} />
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
+  }
+];
 
-interface AutomationTriggerOptionProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
+const TrainingPlans = () => {
+  const [plans, setPlans] = useState<TrainingPlan[]>(mockPlans);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedPlan, setEditedPlan] = useState<TrainingPlan | null>(null);
+  const { createTrainingPlan, updateTrainingPlan } = useTrainingPlans();
+  const { toast } = useToast();
 
-const AutomationTriggerOption: React.FC<AutomationTriggerOptionProps> = ({ 
-  title, 
-  description, 
-  icon 
-}) => {
-  return (
-    <div className="flex items-start space-x-2 border rounded-md p-2">
-      <div className="pt-0.5">{icon}</div>
-      <div className="flex-1">
-        <h4 className="text-sm font-medium">{title}</h4>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <Switch />
-    </div>
-  );
-};
-
-interface TrainingPlanCardProps {
-  plan: TrainingPlan;
-}
-
-const TrainingPlanCard: React.FC<TrainingPlanCardProps> = ({ plan }) => {
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const handleEdit = (plan: TrainingPlan) => {
+    setIsEditing(true);
+    setEditedPlan({ ...plan });
   };
-  
-  const renderRecurringInfo = (plan: TrainingPlan) => {
-    if (plan.recurringSchedule) {
-      return (
-        <div className="text-sm">
-          <span>Repeats: </span>
-          {plan.recurringSchedule.frequency === 'annual' ? (
-            <span>Annually</span>
-          ) : plan.recurringSchedule.frequency === 'monthly' ? (
-            <span>Monthly (every {plan.recurringSchedule.interval} month{plan.recurringSchedule.interval > 1 ? 's' : ''})</span>
-          ) : (
-            <span>{plan.recurringSchedule.frequency} (every {plan.recurringSchedule.interval} {plan.recurringSchedule.frequency})</span>
-          )}
-        </div>
-      );
+
+  const handleSave = async () => {
+    if (!editedPlan) return;
+
+    // Update the training plan using the hook
+    const success = await updateTrainingPlan(editedPlan.id, editedPlan);
+
+    if (success) {
+      // Update local state
+      setPlans(plans.map(plan => plan.id === editedPlan.id ? editedPlan : plan));
+      setIsEditing(false);
+      setEditedPlan(null);
+      toast({
+        title: 'Success',
+        description: 'Training plan updated successfully.',
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to update training plan. Please try again.',
+        variant: 'destructive',
+      });
     }
-    
-    return null;
   };
-  
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedPlan(null);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditedPlan(prev => ({
+      ...prev,
+      [name]: value
+    } as TrainingPlan));
+  };
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{plan.name}</CardTitle>
-          <div className="flex space-x-1">
-            {plan.isAutomated && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                <Zap className="h-3 w-3 mr-1" />
-                Auto
-              </Badge>
-            )}
-            <StatusBadge status={plan.status} />
-          </div>
-        </div>
-        <CardDescription>{plan.description}</CardDescription>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Training Plans</CardTitle>
       </CardHeader>
-      <CardContent className="pb-2">
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-muted-foreground">Start:</span> {formatDate(plan.startDate)}
-            </div>
-            <div>
-              <span className="text-muted-foreground">End:</span> {formatDate(plan.endDate)}
-            </div>
-          </div>
-          
-          <div className="flex items-center text-sm">
-            <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-            <span>{plan.durationDays} day{plan.durationDays !== 1 ? 's' : ''}</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-1 mt-2">
-            {plan.targetRoles.slice(0, 3).map((role, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {role}
-              </Badge>
-            ))}
-            {plan.targetRoles.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{plan.targetRoles.length - 3} more
-              </Badge>
-            )}
-          </div>
-          
-          {plan.isAutomated && plan.automationTrigger && (
-            <div className="flex items-center mt-1 text-xs text-muted-foreground">
-              <span>Trigger: </span>
-              <span className="ml-1 font-medium">
-                {plan.automationTrigger === 'NewHire' ? 'New Hire' : 
-                 plan.automationTrigger === 'RoleChange' ? 'Role Change' : 
-                 plan.automationTrigger === 'DocumentUpdate' ? 'Document Update' : 
-                 plan.automationTrigger === 'RecurringTraining' ? 'Recurring Training' : 
-                 'Custom'}
-              </span>
-            </div>
-          )}
-          
-          {renderRecurringInfo(plan)}
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Target Roles
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Priority
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {plans.map((plan) => (
+                <tr key={plan.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <input
+                        type="text"
+                        name="name"
+                        value={editedPlan.name}
+                        onChange={handleChange}
+                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium text-gray-900">{plan.name}</div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <textarea
+                        name="description"
+                        value={editedPlan.description || ''}
+                        onChange={handleChange}
+                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    ) : (
+                      <div className="text-sm text-gray-500">{plan.description}</div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <input
+                        type="text"
+                        name="targetRoles"
+                        value={(editedPlan.targetRoles || []).join(', ')}
+                        onChange={handleChange}
+                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
+                      />
+                    ) : (
+                      <div className="text-sm text-gray-500">{(plan.targetRoles || []).join(', ')}</div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <select
+                        name="priority"
+                        value={editedPlan.priority}
+                        onChange={handleChange}
+                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    ) : (
+                      <Badge
+                        className="ml-2 text-xs"
+                        variant={
+                          plan.priority === 'high' ? 'destructive' : plan.priority === 'medium' ? 'secondary' : 'outline'
+                        }
+                      >
+                        {plan.priority}
+                      </Badge>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <select
+                        name="status"
+                        value={editedPlan.status}
+                        onChange={handleChange}
+                        className="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Draft">Draft</option>
+                      </select>
+                    ) : (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {plan.status}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {isEditing && editedPlan?.id === plan.id ? (
+                      <>
+                        <Button size="sm" onClick={handleSave}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancel}>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(plan)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </CardContent>
-      <CardFooter className="pt-2">
-        <div className="flex justify-between w-full">
-          <Button variant="ghost" size="sm">Details</Button>
-          <Button variant="outline" size="sm">Edit</Button>
-        </div>
-      </CardFooter>
     </Card>
-  );
-};
-
-interface StatusBadgeProps {
-  status: string;
-}
-
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  let bgColor = 'bg-gray-100 text-gray-700 border-gray-200';
-  
-  switch (status) {
-    case 'Active':
-      bgColor = 'bg-green-50 text-green-700 border-green-200';
-      break;
-    case 'Draft':
-      bgColor = 'bg-amber-50 text-amber-700 border-amber-200';
-      break;
-    case 'Completed':
-      bgColor = 'bg-blue-50 text-blue-700 border-blue-200';
-      break;
-    case 'Cancelled':
-      bgColor = 'bg-red-50 text-red-700 border-red-200';
-      break;
-    default:
-      break;
-  }
-  
-  return (
-    <Badge variant="outline" className={bgColor}>
-      {status}
-    </Badge>
   );
 };
 

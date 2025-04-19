@@ -259,7 +259,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
             </div>
             
             {metrics.score < 70 && (
-              <Alert variant="warning" className="bg-amber-50 border-amber-200">
+              <Alert variant="destructive" className="bg-amber-50 border-amber-200">
                 <AlertDescription className="text-amber-800">
                   This CAPA's effectiveness is below the acceptable threshold. Additional corrective actions may be required.
                 </AlertDescription>

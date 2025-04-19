@@ -1,50 +1,84 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type AuthContextType = {
-  isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  user: { id: string; username: string; role: string } | null;
-};
+interface User {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+}
 
-const defaultContext: AuthContextType = {
-  isAuthenticated: false,
-  login: async () => false,
-  logout: () => {},
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+// Default values for the context
+const defaultAuthContext: AuthContextType = {
   user: null,
+  isLoading: false,
+  error: null,
+  login: async () => {},
+  logout: async () => {},
 };
 
-const AuthContext = createContext<AuthContextType>(defaultContext);
+// Create the context with default values
+export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export const useAuth = () => useContext(AuthContext);
+// Auth provider component
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // For now, we'll use a mock user since we don't have real authentication
+  useEffect(() => {
+    setUser({
+      id: 'mock-user-id',
+      name: 'Mock User',
+      email: 'user@example.com',
+      role: 'admin'
+    });
+  }, []);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ id: string; username: string; role: string } | null>(null);
-
-  const login = async (username: string, password: string) => {
-    // In a real app, this would call an API endpoint
-    // For now, we'll simulate a successful login with hardcoded values
-    if (username && password) {
-      setIsAuthenticated(true);
-      setUser({ 
-        id: 'user-123', 
-        username, 
-        role: 'admin' 
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      // Mock login functionality
+      setUser({
+        id: 'mock-user-id',
+        name: 'Mock User',
+        email,
+        role: 'admin'
       });
-      return true;
+      setError(null);
+    } catch (err) {
+      setError('Login failed. Please check your credentials.');
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
     }
-    return false;
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      // Mock logout
+      setUser(null);
+      setError(null);
+    } catch (err) {
+      setError('Logout failed.');
+      console.error('Logout error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
+    <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

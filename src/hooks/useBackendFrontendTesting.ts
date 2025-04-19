@@ -1,285 +1,291 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
-export interface ModuleTestResult {
-  id: string;
-  name: string;
-  status: 'success' | 'error' | 'pending';
-  tests: DatabaseTestResult[];
-  error?: string;
-  moduleName: string;
-  timestamp: Date;
-  details: TestResultDetail[];
-}
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TestResultDetail {
   id: string;
   name: string;
-  description: string;
   status: 'success' | 'error' | 'pending';
-  duration?: number;
-  error?: string;
-  message: string;
+  message?: string;
   responseTime?: number;
   errorDetails?: string;
   actionRequired?: string;
-  additionalInfo?: Record<string, any>;
 }
 
-export interface DatabaseTestResult {
-  success: boolean;
-  message: string;
-  status: 'success' | 'error' | 'pending';
-  duration?: number;
-  recordCount?: number;
-  error?: string;
+export interface ModuleTestResult {
+  id: string;
+  moduleName: string;
+  status: 'passing' | 'failing' | 'partial' | 'pending';
+  details: TestResultDetail[];
+  timestamp: string;
 }
 
-export interface TableInfo {
-  name: string;
-  rowCount: number;
-  lastUpdated: string;
-  status: 'active' | 'error' | 'empty';
+export interface TestingModule {
+  id: string;
+  moduleName: string;
+  enabled: boolean;
+  description: string;
+  lastRun?: string;
+  lastStatus?: 'passing' | 'failing' | 'partial' | 'pending';
 }
 
-export interface FunctionInfo {
-  name: string;
-  parameters: string[];
-  returnType: string;
-  status: 'active' | 'error';
-}
-
-export interface StorageInfo {
-  bucket: string;
-  fileCount: number;
-  size: number;
-  status: 'active' | 'error';
-}
-
-export interface TestSummary {
-  tablesCount: number;
-  functionsCount: number;
-  storageCount: number;
-  tablesSuccessRate: number;
-  functionsSuccessRate: number;
-  storageSuccessRate: number;
-  overallHealth: number;
-}
-
-const testModules = [
-  { id: 'tables', name: 'Database Tables', moduleName: 'Database Tables', enabled: true },
-  { id: 'functions', name: 'Database Functions', moduleName: 'Database Functions', enabled: true },
-  { id: 'auth', name: 'Authentication', moduleName: 'Authentication', enabled: true },
-  { id: 'storage', name: 'Storage', moduleName: 'Storage', enabled: true },
-  { id: 'api', name: 'API Integration', moduleName: 'API Integration', enabled: true },
-  { id: 'routing', name: 'Routing', moduleName: 'Routing', enabled: true },
-  { id: 'components', name: 'Component Rendering', moduleName: 'Component Rendering', enabled: true },
-];
-
-export function useBackendFrontendTesting() {
-  const [tables, setTables] = useState<TableInfo[]>([]);
-  const [functions, setFunctions] = useState<FunctionInfo[]>([]);
-  const [storage, setStorage] = useState<StorageInfo[]>([]);
-  const [summary, setSummary] = useState<TestSummary>({
-    tablesCount: 0,
-    functionsCount: 0,
-    storageCount: 0,
-    tablesSuccessRate: 0,
-    functionsSuccessRate: 0,
-    storageSuccessRate: 0,
-    overallHealth: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
+function useBackendFrontendTesting() {
+  const [modules, setModules] = useState<TestingModule[]>([]);
   const [results, setResults] = useState<ModuleTestResult[]>([]);
-  const [activeModules, setActiveModules] = useState<{moduleName: string; enabled: boolean}[]>(
-    testModules.map(m => ({ moduleName: m.moduleName, enabled: true }))
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchDatabaseInfo = useCallback(async () => {
-    try {
-      setIsLoading(true);
-
-      const { data: tablesData, error: tablesError } = await supabase
-        .from('pg_tables')
-        .select('schemaname, tablename, rowcount')
-        .eq('schemaname', 'public');
-
-      if (tablesError) throw tablesError;
-
-      const mockTables: TableInfo[] = [
-        { name: 'users', rowCount: 152, lastUpdated: '2023-05-15T10:30:00Z', status: 'active' },
-        { name: 'organizations', rowCount: 25, lastUpdated: '2023-05-10T14:22:00Z', status: 'active' },
-        { name: 'facilities', rowCount: 78, lastUpdated: '2023-05-12T09:15:00Z', status: 'active' },
-        { name: 'equipment', rowCount: 215, lastUpdated: '2023-05-14T16:45:00Z', status: 'active' },
-        { name: 'audits', rowCount: 95, lastUpdated: '2023-05-13T11:30:00Z', status: 'active' },
-        { name: 'product_lots', rowCount: 423, lastUpdated: '2023-05-15T08:20:00Z', status: 'active' },
-        { name: 'suppliers', rowCount: 48, lastUpdated: '2023-05-11T13:10:00Z', status: 'active' },
-        { name: 'traces', rowCount: 1205, lastUpdated: '2023-05-15T09:45:00Z', status: 'active' },
-      ];
-
-      setTables(mockTables);
-
-      const mockFunctions: FunctionInfo[] = [
-        { name: 'get_organizations', parameters: ['user_id'], returnType: 'json', status: 'active' },
-        { name: 'get_facilities', parameters: ['org_id'], returnType: 'json', status: 'active' },
-        { name: 'get_facility_standards', parameters: ['facility_id'], returnType: 'json', status: 'active' },
-        { name: 'get_regulatory_standards', parameters: [], returnType: 'json', status: 'active' },
-        { name: 'find_product_components', parameters: ['product_id'], returnType: 'json', status: 'active' },
-        { name: 'find_affected_products_by_component', parameters: ['component_id'], returnType: 'json', status: 'active' },
-        { name: 'get_related_items', parameters: ['item_id', 'item_type'], returnType: 'json', status: 'active' },
-        { name: 'has_role', parameters: ['user_id', 'role'], returnType: 'boolean', status: 'active' },
-        { name: 'has_permission', parameters: ['user_id', 'permission'], returnType: 'boolean', status: 'active' },
-        { name: 'update_nc_status', parameters: ['nc_id', 'status'], returnType: 'boolean', status: 'active' },
-        { name: 'update_recall_schedule_next_execution', parameters: ['schedule_id', 'next_date'], returnType: 'boolean', status: 'active' },
-      ];
-
-      setFunctions(mockFunctions);
-
-      const mockStorage: StorageInfo[] = [
-        { bucket: 'documents', fileCount: 378, size: 541012345, status: 'active' },
-        { bucket: 'images', fileCount: 195, size: 982345678, status: 'active' },
-        { bucket: 'audit_files', fileCount: 89, size: 123456789, status: 'active' },
-        { bucket: 'reports', fileCount: 156, size: 245678901, status: 'active' },
-      ];
-
-      setStorage(mockStorage);
-
-      const tableSuccessCount = mockTables.filter(t => t.status === 'active').length;
-      const functionSuccessCount = mockFunctions.filter(f => f.status === 'active').length;
-      const storageSuccessCount = mockStorage.filter(s => s.status === 'active').length;
-
-      setSummary({
-        tablesCount: mockTables.length,
-        functionsCount: mockFunctions.length,
-        storageCount: mockStorage.length,
-        tablesSuccessRate: (tableSuccessCount / mockTables.length) * 100,
-        functionsSuccessRate: (functionSuccessCount / mockFunctions.length) * 100,
-        storageSuccessRate: (storageSuccessCount / mockStorage.length) * 100,
-        overallHealth: ((tableSuccessCount / mockTables.length) * 0.4 +
-          (functionSuccessCount / mockFunctions.length) * 0.4 +
-          (storageSuccessCount / mockStorage.length) * 0.2) * 100,
-      });
-    } catch (error) {
-      console.error('Error fetching database info:', error);
-    } finally {
-      setIsLoading(false);
+  // Mock data for demonstration
+  const mockModules: TestingModule[] = [
+    {
+      id: '1',
+      moduleName: 'API Connectivity',
+      enabled: true,
+      description: 'Tests connectivity to critical external APIs',
+      lastRun: new Date().toISOString(),
+      lastStatus: 'passing'
+    },
+    {
+      id: '2',
+      moduleName: 'Database Connection',
+      enabled: true,
+      description: 'Verifies connection to database and permissions',
+      lastRun: new Date().toISOString(),
+      lastStatus: 'passing'
+    },
+    {
+      id: '3',
+      moduleName: 'Data Integrity',
+      enabled: true,
+      description: 'Validates critical data relationships',
+      lastRun: new Date().toISOString(),
+      lastStatus: 'partial'
+    },
+    {
+      id: '4',
+      moduleName: 'Authentication',
+      enabled: true,
+      description: 'Tests authentication flows',
+      lastRun: new Date().toISOString(),
+      lastStatus: 'passing'
+    },
+    {
+      id: '5',
+      moduleName: 'Performance',
+      enabled: false,
+      description: 'Measures response times for critical operations',
+      lastRun: new Date().toISOString(),
+      lastStatus: 'pending'
     }
+  ];
+
+  const mockResults: ModuleTestResult[] = [
+    {
+      id: '1',
+      moduleName: 'API Connectivity',
+      status: 'passing',
+      timestamp: new Date().toISOString(),
+      details: [
+        {
+          id: '1-1',
+          name: 'Supplier API',
+          status: 'success',
+          message: 'Connection successful',
+          responseTime: 120
+        },
+        {
+          id: '1-2',
+          name: 'Document Storage API',
+          status: 'success',
+          message: 'Connection successful',
+          responseTime: 95
+        }
+      ]
+    },
+    {
+      id: '2',
+      moduleName: 'Database Connection',
+      status: 'passing',
+      timestamp: new Date().toISOString(),
+      details: [
+        {
+          id: '2-1',
+          name: 'Primary DB Connection',
+          status: 'success',
+          message: 'Connection successful',
+          responseTime: 42
+        },
+        {
+          id: '2-2',
+          name: 'Read Permissions',
+          status: 'success',
+          message: 'Permissions verified',
+          responseTime: 38
+        },
+        {
+          id: '2-3',
+          name: 'Write Permissions',
+          status: 'success',
+          message: 'Permissions verified',
+          responseTime: 40
+        }
+      ]
+    },
+    {
+      id: '3',
+      moduleName: 'Data Integrity',
+      status: 'partial',
+      timestamp: new Date().toISOString(),
+      details: [
+        {
+          id: '3-1',
+          name: 'Product-Component Relationships',
+          status: 'success',
+          message: 'All relationships valid',
+          responseTime: 350
+        },
+        {
+          id: '3-2',
+          name: 'Supplier-Component Linkage',
+          status: 'error',
+          message: 'Orphaned components detected',
+          responseTime: 420,
+          errorDetails: '3 components found without supplier linkage',
+          actionRequired: 'Review component table and ensure all have valid supplier_id'
+        }
+      ]
+    }
+  ];
+
+  // Function to check database connectivity
+  const checkDatabaseConnection = async () => {
+    try {
+      // Instead of selecting from pg_tables which might be restricted,
+      // let's use a table we know exists in our database
+      const { data, error } = await supabase.from('documents').select('id').limit(1);
+      
+      if (error) throw error;
+      
+      return {
+        status: 'success',
+        message: 'Database connection successful',
+        responseTime: 50 // Mock response time
+      };
+    } catch (err) {
+      console.error('Error checking database connection:', err);
+      return {
+        status: 'error',
+        message: 'Database connection failed',
+        errorDetails: err.message,
+        responseTime: 500 // Mock timeout response time
+      };
+    }
+  };
+
+  // Initialize with mock data
+  useEffect(() => {
+    setModules(mockModules);
+    setResults(mockResults);
   }, []);
 
-  const runTests = async () => {
-    return fetchDatabaseInfo();
-  };
-
-  useEffect(() => {
-    fetchDatabaseInfo();
-  }, [fetchDatabaseInfo]);
-
-  const toggleModule = (moduleName: string) => {
-    setActiveModules(prev => {
-      return prev.map(module => 
-        module.moduleName === moduleName ? { ...module, enabled: !module.enabled } : module
-      );
-    });
-  };
-
+  // Function to run all tests
   const runAllTests = async () => {
-    setIsRunning(true);
-
+    setLoading(true);
+    setError(null);
+    
     try {
-      setResults(testModules.map(module => ({
-        id: module.id,
-        name: module.name,
-        moduleName: module.moduleName,
-        status: 'pending',
-        tests: [],
-        timestamp: new Date(),
-        details: []
-      })));
-
-      for (const module of activeModules.filter(m => m.enabled)) {
-        const moduleIndex = testModules.findIndex(m => m.moduleName === module.moduleName);
-        if (moduleIndex === -1) continue;
-
-        setResults(prev => {
-          const updated = [...prev];
-          updated[moduleIndex] = {
-            ...updated[moduleIndex],
-            status: 'pending',
-          };
-          return updated;
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 2000));
-
-        const testResults: DatabaseTestResult[] = [];
-        const detailResults: TestResultDetail[] = [];
-        const testCount = Math.floor(Math.random() * 5) + 2;
-
-        for (let i = 0; i < testCount; i++) {
-          const success = Math.random() > 0.2;
-          const testId = `test-${i + 1}`;
-          
-          testResults.push({
-            success,
-            message: success ? `Test ${i + 1} passed` : `Test ${i + 1} failed`,
-            status: success ? 'success' : 'error',
-            duration: Math.floor(Math.random() * 500) + 100,
-            error: success ? undefined : 'Mock error message for testing purposes',
-          });
-          
-          detailResults.push({
-            id: testId,
-            name: `Test ${i + 1}`,
-            description: `Test case for ${module.moduleName}`,
-            status: success ? 'success' : 'error',
-            message: success ? `Successfully completed test ${i + 1}` : `Failed to complete test ${i + 1}`,
-            responseTime: Math.floor(Math.random() * 500) + 100,
-            errorDetails: success ? undefined : 'Detailed error information would appear here',
-            actionRequired: success ? undefined : 'Recommended action to fix this issue',
-            duration: Math.floor(Math.random() * 500) + 100,
-          });
-        }
-
-        const allPassed = testResults.every(r => r.success);
-
-        setResults(prev => {
-          const updated = [...prev];
-          updated[moduleIndex] = {
-            ...updated[moduleIndex],
-            status: allPassed ? 'success' : 'error',
-            tests: testResults,
-            details: detailResults,
-            error: allPassed ? undefined : 'Some tests failed',
-            timestamp: new Date()
-          };
-          return updated;
-        });
-      }
-    } catch (error) {
-      console.error('Error running tests:', error);
+      // In a real implementation, this would actually run the tests
+      // For now, we'll simulate a delay and use our mock data
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update the timestamp on our mock results
+      const updatedResults = mockResults.map(result => ({
+        ...result,
+        timestamp: new Date().toISOString()
+      }));
+      
+      setResults(updatedResults);
+      
+      // Update the lastRun timestamp on our modules
+      const updatedModules = modules.map(module => ({
+        ...module,
+        lastRun: new Date().toISOString()
+      }));
+      
+      setModules(updatedModules);
+    } catch (err) {
+      console.error('Error running tests:', err);
+      setError('Failed to run tests: ' + err.message);
     } finally {
-      setIsRunning(false);
+      setLoading(false);
     }
   };
 
-  const resetResults = () => {
-    setResults([]);
+  // Function to run a specific test module
+  const runTestModule = async (moduleId: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Find the module
+      const moduleToRun = modules.find(m => m.id === moduleId);
+      
+      if (!moduleToRun) {
+        throw new Error('Module not found');
+      }
+      
+      // In a real implementation, this would run the specific test
+      // For now, simulate a delay and update timestamps
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update the result for this module
+      const updatedResults = [...results];
+      const resultIndex = updatedResults.findIndex(r => r.id === moduleId);
+      
+      if (resultIndex >= 0) {
+        updatedResults[resultIndex] = {
+          ...updatedResults[resultIndex],
+          timestamp: new Date().toISOString()
+        };
+      }
+      
+      setResults(updatedResults);
+      
+      // Update the lastRun timestamp on the module
+      const updatedModules = modules.map(module => 
+        module.id === moduleId 
+          ? { ...module, lastRun: new Date().toISOString() } 
+          : module
+      );
+      
+      setModules(updatedModules);
+    } catch (err) {
+      console.error(`Error running test module ${moduleId}:`, err);
+      setError(`Failed to run test module: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to toggle module enabled status
+  const toggleModuleEnabled = (moduleId: string) => {
+    const updatedModules = modules.map(module => 
+      module.id === moduleId 
+        ? { ...module, enabled: !module.enabled } 
+        : module
+    );
+    
+    setModules(updatedModules);
   };
 
   return {
-    tables,
-    functions,
-    storage,
-    summary,
-    isLoading,
-    isRunning,
+    modules,
     results,
-    activeModules,
-    toggleModule,
+    loading,
+    error,
     runAllTests,
-    resetResults,
-    runTests,
+    runTestModule,
+    toggleModuleEnabled
   };
 }
 
