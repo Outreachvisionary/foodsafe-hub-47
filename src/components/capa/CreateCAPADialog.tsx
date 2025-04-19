@@ -11,6 +11,7 @@ import CAPAAuditIntegration from './CAPAAuditIntegration';
 import { createCAPA } from '@/services/capaService';
 import { useUser } from '@/contexts/UserContext';
 import { CAPASource, SourceReference } from '@/types/capa';
+import { mapStatusToInternal } from '@/services/capa/capaStatusService';
 
 interface SourceDataType {
   title?: string;
@@ -107,7 +108,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         source,
         sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
         priority: priority as any,
-        status: 'Open' as const,
+        status: 'open' as const,
         assignedTo: assignedTo || user?.full_name || 'Unassigned',
         department: '',
         dueDate,

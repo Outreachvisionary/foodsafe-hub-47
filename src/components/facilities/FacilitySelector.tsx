@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { fetchFacilities } from '@/services/facilityService';
+import { getFacilities } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
 import { Loader2 } from 'lucide-react';
 
@@ -44,13 +44,13 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
         setLoading(true);
         setError(null);
         
-        const data = await fetchFacilities(organizationId);
-        console.log('Loaded facilities:', data);
-        setFacilities(data);
+        const facilityData = await getFacilities(organizationId);
+        console.log('Loaded facilities:', facilityData);
+        setFacilities(facilityData as any);
         
         // If there's only one facility and no value is selected, select it automatically
-        if (data.length === 1 && !value) {
-          onChange(data[0].id);
+        if (facilityData.length === 1 && !value) {
+          onChange(facilityData[0].id);
         }
       } catch (err) {
         console.error('Error loading facilities:', err);

@@ -1,23 +1,50 @@
 
 import { CAPAStatus } from '@/types/capa';
 
+// Define UI display values for statuses
+export type CAPAStatusDisplay = 'Open' | 'In Progress' | 'Closed' | 'Verified';
+
 // Define database values for statuses
 type DbCAPAStatus = 'open' | 'in_progress' | 'closed' | 'verified';
 
-// Map from UI to Database values
-const statusToDbMap: Record<CAPAStatus, DbCAPAStatus> = {
+// Map from UI display to internal values
+const statusToInternalMap: Record<CAPAStatusDisplay, CAPAStatus> = {
   'Open': 'open',
-  'In Progress': 'in_progress',
+  'In Progress': 'in-progress',
   'Closed': 'closed',
   'Verified': 'verified'
 };
 
-// Map from Database to UI values
-const dbToStatusMap: Record<DbCAPAStatus, CAPAStatus> = {
+// Map from internal to UI display values
+const internalToStatusMap: Record<CAPAStatus, CAPAStatusDisplay> = {
   'open': 'Open',
-  'in_progress': 'In Progress',
+  'in-progress': 'In Progress',
   'closed': 'Closed',
   'verified': 'Verified'
+};
+
+// Map from UI to Database values
+const statusToDbMap: Record<CAPAStatus, DbCAPAStatus> = {
+  'open': 'open',
+  'in-progress': 'in_progress',
+  'closed': 'closed',
+  'verified': 'verified'
+};
+
+// Map from Database to UI values
+const dbToStatusMap: Record<DbCAPAStatus, CAPAStatus> = {
+  'open': 'open',
+  'in_progress': 'in-progress',
+  'closed': 'closed',
+  'verified': 'verified'
+};
+
+export const mapStatusToInternal = (displayStatus: CAPAStatusDisplay): CAPAStatus => {
+  return statusToInternalMap[displayStatus] || 'open';
+};
+
+export const mapInternalToStatus = (internalStatus: CAPAStatus): CAPAStatusDisplay => {
+  return internalToStatusMap[internalStatus] || 'Open';
 };
 
 export const mapStatusToDatabaseValue = (status: CAPAStatus): DbCAPAStatus => {
@@ -25,7 +52,7 @@ export const mapStatusToDatabaseValue = (status: CAPAStatus): DbCAPAStatus => {
 };
 
 export const mapDatabaseValueToStatus = (dbStatus: DbCAPAStatus): CAPAStatus => {
-  return dbToStatusMap[dbStatus] || 'Open';
+  return dbToStatusMap[dbStatus] || 'open';
 };
 
 // Export the mapping functions with alias names for backward compatibility
@@ -35,14 +62,14 @@ export const mapStatusFromDb = mapDatabaseValueToStatus;
 // Get the next status in the workflow 
 export const getNextStatus = (currentStatus: CAPAStatus): CAPAStatus => {
   switch (currentStatus) {
-    case 'Open':
-      return 'In Progress';
-    case 'In Progress':
-      return 'Closed';
-    case 'Closed':
-      return 'Verified';
+    case 'open':
+      return 'in-progress';
+    case 'in-progress':
+      return 'closed';
+    case 'closed':
+      return 'verified';
     default:
-      return 'Open';
+      return 'open';
   }
 };
 
@@ -51,14 +78,14 @@ export const isValidStatusTransition = (currentStatus: CAPAStatus, newStatus: CA
   if (currentStatus === newStatus) return true;
   
   switch (currentStatus) {
-    case 'Open':
-      return newStatus === 'In Progress' || newStatus === 'Closed';
-    case 'In Progress':
-      return newStatus === 'Open' || newStatus === 'Closed';
-    case 'Closed':
-      return newStatus === 'Verified' || newStatus === 'In Progress';
-    case 'Verified':
-      return newStatus === 'Closed';
+    case 'open':
+      return newStatus === 'in-progress' || newStatus === 'closed';
+    case 'in-progress':
+      return newStatus === 'open' || newStatus === 'closed';
+    case 'closed':
+      return newStatus === 'verified' || newStatus === 'in-progress';
+    case 'verified':
+      return newStatus === 'closed';
     default:
       return false;
   }
@@ -67,15 +94,15 @@ export const isValidStatusTransition = (currentStatus: CAPAStatus, newStatus: CA
 // Get all possible transitions for a status
 export const getPossibleStatusTransitions = (currentStatus: CAPAStatus): CAPAStatus[] => {
   switch (currentStatus) {
-    case 'Open':
-      return ['In Progress', 'Closed'];
-    case 'In Progress':
-      return ['Open', 'Closed'];
-    case 'Closed':
-      return ['Verified', 'In Progress'];
-    case 'Verified':
-      return ['Closed'];
+    case 'open':
+      return ['in-progress', 'closed'];
+    case 'in-progress':
+      return ['open', 'closed'];
+    case 'closed':
+      return ['verified', 'in-progress'];
+    case 'verified':
+      return ['closed'];
     default:
-      return ['Open'];
+      return ['open'];
   }
 };

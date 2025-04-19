@@ -69,6 +69,9 @@ export interface CAPAFilter {
   search?: string;
 }
 
+// Alias for compatibility with components using CAPAFilters
+export type CAPAFilters = CAPAFilter;
+
 export type CAPAFilterParams = {
   status?: string | string[];
   priority?: string | string[];
@@ -92,14 +95,20 @@ export interface CAPAStats {
   recentItems: CAPA[];
   averageClosureTime?: number;
   fsma204ComplianceRate?: number;
+  overdue?: number;
+  averageTimeToClose?: number;
   effectivenessStats?: {
     effective: number;
     partiallyEffective: number;
     ineffective: number;
     notEvaluated: number;
   };
+  effectivenessRating?: {
+    effective: number;
+    partiallyEffective: number;
+    notEffective: number;
+  };
   completionRates?: Record<string, number>;
-  overdue?: number;
 }
 
 export interface CAPAEffectivenessMetrics {
@@ -110,6 +119,7 @@ export interface CAPAEffectivenessMetrics {
   rootCauseEliminated: boolean;
   documentationComplete: boolean;
   preventionMeasureEffective: boolean;
+  preventiveMeasuresImplemented?: boolean; // Added for backward compatibility
   assessmentDate: string;
   notes?: string;
   createdBy: string;

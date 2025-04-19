@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Pie, PieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
-import { CAPA, CAPAFilters, CAPAStats } from '@/types/capa';
+import { CAPA, CAPAFilter, CAPAStats } from '@/types/capa';
 import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,6 +24,8 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
   const [capaList, setCAPAList] = useState<CAPA[]>([]);
   const [stats, setStats] = useState<CAPAStats>({
     total: 0,
+    openCAPAs: 0,
+    overdueCAPAs: 0,
     byStatus: {
       open: 0,
       'in-progress': 0,
@@ -46,16 +48,16 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     },
     overdue: 0,
     recentItems: [],
-    completionRates: {},
+    averageTimeToClose: 0,
+    averageClosureTime: 0,
+    fsma204ComplianceRate: 0,
     effectivenessStats: {
       effective: 0,
       partiallyEffective: 0,
       ineffective: 0,
       notEvaluated: 0
     },
-    averageTimeToClose: 0,
-    averageClosureTime: 0,
-    fsma204ComplianceRate: 0
+    completionRates: {}
   });
 
   useEffect(() => {
@@ -75,10 +77,6 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     loadStats();
   }, [filters, searchQuery]);
 
-  const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
-  const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6'];
-  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#3b82f6'];
-
   const fetchStats = async () => {
     setIsLoading(true);
     try {
@@ -86,18 +84,19 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       setStats({
         ...statsData,
         averageClosureTime: statsData.averageClosureTime || 0,
-        effectivenessRating: statsData.effectivenessRating || {
+        effectivenessStats: statsData.effectivenessStats || {
           effective: 0,
           partiallyEffective: 0,
-          notEffective: 0
+          ineffective: 0,
+          notEvaluated: 0
         },
         fsma204ComplianceRate: statsData.fsma204ComplianceRate || 0
       });
       
       const capas = await fetchCAPAs({
-        status: filters.status !== 'all' ? filters.status : undefined,
-        priority: filters.priority !== 'all' ? filters.priority : undefined,
-        source: filters.source !== 'all' ? filters.source : undefined,
+        status: filters.status !== 'all' ? [filters.status] : undefined,
+        priority: filters.priority !== 'all' ? [filters.priority] : undefined,
+        source: filters.source !== 'all' ? [filters.source] : undefined,
         dueDate: filters.dueDate !== 'all' ? filters.dueDate : undefined,
         searchQuery: searchQuery || undefined
       });
@@ -109,6 +108,10 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       setIsLoading(false);
     }
   };
+
+  const statusColors = ['#3b82f6', '#8b5cf6', '#10b981', '#06b6d4'];
+  const priorityColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6'];
+  const sourceColors = ['#8b5cf6', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#3b82f6'];
 
   const statusData = stats && stats.byStatus ? [
     { name: 'Open', value: stats.byStatus.open || 0 },
@@ -149,7 +152,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     
     capaList.forEach(capa => {
       const createdDate = new Date(capa.createdDate);
-      const completedDate = capa.completedDate ? new Date(capa.completedDate) : null;
+      const completedDate = capa.completionDate ? new Date(capa.completionDate) : null;
       
       if (createdDate >= sixMonthsAgo) {
         const monthYear = `${createdDate.toLocaleString('default', { month: 'short' })} ${createdDate.getFullYear()}`;
@@ -194,6 +197,44 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       );
     }
     return null;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open':
+        return 'bg-blue-100 text-blue-800';
+      case 'in-progress':
+        return 'bg-amber-100 text-amber-800';
+      case 'closed':
+        return 'bg-green-100 text-green-800';
+      case 'verified':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const renderCAPACard = (capa: CAPA) => {
+    return (
+      <div className="bg-white p-4 rounded-md shadow-sm border hover:shadow-md transition-shadow">
+        <h3 className="font-medium text-gray-900 truncate">{capa.title}</h3>
+        <p className="text-sm text-gray-500 mt-1 truncate">{capa.description}</p>
+        <div className="flex items-center justify-between mt-3">
+          <Badge variant={capa.priority as any}>{capa.priority}</Badge>
+          <span className="text-xs text-gray-500">
+            Due: {new Date(capa.dueDate).toLocaleDateString()}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-gray-600">
+            {capa.completionDate ? `Completed: ${new Date(capa.completionDate).toLocaleDateString()}` : 'Not completed'}
+          </span>
+          <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(capa.status)}`}>
+            {capa.status}
+          </span>
+        </div>
+      </div>
+    );
   };
 
   return (

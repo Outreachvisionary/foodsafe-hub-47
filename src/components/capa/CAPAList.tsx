@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
 import { fetchCAPAs } from '@/services/capaService';
 import { useToast } from '@/components/ui/use-toast';
+import { mapInternalToStatus } from '@/services/capa/capaStatusService';
 
 interface CAPAListProps {
   filters: {
@@ -45,7 +46,11 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchCAPAs(filters);
+        const data = await fetchCAPAs({
+          status: filters.status !== 'all' ? [filters.status] : undefined,
+          priority: filters.priority !== 'all' ? [filters.priority] : undefined,
+          source: filters.source !== 'all' ? [filters.source] : undefined,
+        });
         setCapas(data);
         setFilteredCapas(data);
       } catch (error) {
@@ -68,7 +73,6 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
 
     let result = [...capas];
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(capa =>
@@ -77,17 +81,14 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
       );
     }
 
-    // Apply status filter
     if (statusFilter.length > 0) {
       result = result.filter(capa => statusFilter.includes(capa.status));
     }
 
-    // Apply priority filter
     if (priorityFilter.length > 0) {
       result = result.filter(capa => priorityFilter.includes(capa.priority));
     }
 
-    // Apply source filter
     if (sourceFilter.length > 0) {
       result = result.filter(capa => sourceFilter.includes(capa.source));
     }
@@ -107,9 +108,9 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
     );
   }
 
-  const statuses: CAPAStatus[] = ['Open', 'In Progress', 'Closed', 'Verified'];
+  const statuses: CAPAStatus[] = ['open', 'in-progress', 'closed', 'verified'];
   const priorities: CAPAPriority[] = ['low', 'medium', 'high', 'critical'];
-  const sources: CAPASource[] = ['audit', 'complaint', 'non_conformance', 'supplier', 'haccp', 'traceability'];
+  const sources: CAPASource[] = ['audit', 'complaint', 'non_conformance', 'internal', 'other', 'supplier', 'haccp', 'traceability'];
 
   return (
     <div className="space-y-4">
@@ -243,7 +244,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
             </TableRow>
           ) : (
             filteredCapas.map((capa) => {
-              const isResolved = capa.status === 'Closed' || capa.status === 'Verified';
+              const isResolved = capa.status === 'closed' || capa.status === 'verified';
 
               return (
                 <TableRow
@@ -254,7 +255,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                   <TableCell>{capa.title}</TableCell>
                   <TableCell>{capa.source}</TableCell>
                   <TableCell>{capa.priority}</TableCell>
-                  <TableCell>{capa.status}</TableCell>
+                  <TableCell>{mapInternalToStatus(capa.status)}</TableCell>
                   <TableCell>{new Date(capa.dueDate).toLocaleDateString()}</TableCell>
                   <TableCell>{capa.assignedTo}</TableCell>
                   <TableCell className="text-center">
