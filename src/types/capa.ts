@@ -1,8 +1,8 @@
 
 export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified' | 'overdue' | 'pending-verification';
-export type CAPASource = 'non-conformance' | 'audit' | 'complaint' | 'internal' | 'customer' | 'regulatory';
+export type CAPASource = 'non-conformance' | 'audit' | 'complaint' | 'internal' | 'customer' | 'regulatory' | 'supplier' | 'haccp' | 'traceability';
 export type CAPAPriority = 'high' | 'medium' | 'low' | 'critical';
-export type CAPAEffectivenessRating = 'effective' | 'partially-effective' | 'ineffective' | 'not-verified' | 'adequate' | 'inadequate';
+export type CAPAEffectivenessRating = 'effective' | 'partially-effective' | 'ineffective' | 'not-verified' | 'adequate' | 'inadequate' | 'excellent' | 'good' | 'poor';
 
 export interface CAPA {
   id: string;
@@ -29,6 +29,36 @@ export interface CAPA {
   createdDate?: string;
   lastUpdated?: string;
   isFsma204Compliant?: boolean;
+  relatedDocuments?: RelatedDocument[];
+  relatedTraining?: RelatedTraining[];
+  sourceReference?: SourceReference;
+}
+
+export interface RelatedDocument {
+  id: string;
+  documentId: string;
+  capaId: string;
+  documentType: string;
+  title?: string;
+  addedAt: string;
+  addedBy: string;
+}
+
+export interface RelatedTraining {
+  id: string;
+  trainingId: string;
+  capaId: string;
+  title?: string;
+  addedAt: string;
+  addedBy: string;
+}
+
+export interface SourceReference {
+  id: string;
+  type: string;
+  title: string;
+  date?: string;
+  url?: string;
 }
 
 export interface CAPAActivity {
@@ -58,21 +88,18 @@ export interface CAPAFilter {
 }
 
 export interface CAPAEffectivenessMetrics {
-  rootCauseEliminated: number;
-  documentationComplete: number;
-  preventionMeasureEffective: number;
-  recurrenceChecked: number;
-  overall: number;
-}
-
-export interface CAPAEffectivenessAssessment {
   id?: string;
   capaId: string;
-  score: number;
-  recurrenceCheck: boolean;
   rootCauseEliminated: boolean;
   documentationComplete: boolean;
   preventionMeasureEffective: boolean;
+  recurrenceCheck: boolean;
+  recurrenceChecked: number;
+  rootCauseEliminated: number;
+  documentationComplete: number;
+  preventionMeasureEffective: number;
+  overall: number;
+  score: number;
   assessmentDate: string;
   notes?: string;
   createdBy: string;
@@ -94,12 +121,25 @@ export interface CAPAStats {
     low: number;
   };
   bySource: Record<CAPASource, number>;
-  byDepartment: Record<string, number>;
+  byStatus: {
+    open: number;
+    'in-progress': number;
+    closed: number;
+    verified: number;
+    overdue: number;
+    'pending-verification': number;
+  };
   effectivenessStats: {
     verified: number;
     effective: number;
     partiallyEffective: number;
     ineffective: number;
+    notEvaluated?: number;
   };
   averageTimeToClose?: number;
+  averageClosureTime?: number;
+  fsma204ComplianceRate?: number;
+  overdue: number;
+  recentItems: CAPA[];
+  completionRates: Record<string, number>;
 }

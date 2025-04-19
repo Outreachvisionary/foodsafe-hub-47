@@ -2,7 +2,7 @@
 import { CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
 
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
-export type DbCAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Ineffective' | 'Not Verified' | 'Adequate' | 'Inadequate';
+export type DbCAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Ineffective' | 'Not Verified' | 'Adequate' | 'Inadequate' | 'Excellent' | 'Good' | 'Poor';
 
 // Map frontend status (kebab-case) to database status (Title Case)
 export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
@@ -44,6 +44,46 @@ export const mapStatusFromDb = (dbStatus: DbCAPAStatus): CAPAStatus => {
   }
 };
 
+// Map status from UI/internal to database
+export const mapStatusToInternal = (status: string): CAPAStatus => {
+  switch (status.toLowerCase().replace(/[\s-]/g, '')) {
+    case 'open':
+      return 'open';
+    case 'inprogress':
+      return 'in-progress';
+    case 'closed':
+      return 'closed';
+    case 'overdue':
+      return 'overdue';
+    case 'pendingverification':
+      return 'pending-verification';
+    case 'verified':
+      return 'verified';
+    default:
+      return 'open';
+  }
+};
+
+// Map status from database to UI/internal
+export const mapInternalToStatus = (status: CAPAStatus): string => {
+  switch (status) {
+    case 'open':
+      return 'Open';
+    case 'in-progress':
+      return 'In Progress';
+    case 'closed':
+      return 'Closed';
+    case 'overdue':
+      return 'Overdue';
+    case 'pending-verification':
+      return 'Pending Verification';
+    case 'verified':
+      return 'Verified';
+    default:
+      return 'Open';
+  }
+};
+
 // Map frontend effectiveness rating (kebab-case) to database effectiveness rating (Title Case)
 export const mapEffectivenessRatingToDb = (rating: CAPAEffectivenessRating): DbCAPAEffectivenessRating => {
   switch (rating) {
@@ -59,6 +99,12 @@ export const mapEffectivenessRatingToDb = (rating: CAPAEffectivenessRating): DbC
       return 'Adequate';
     case 'inadequate':
       return 'Inadequate';
+    case 'excellent':
+      return 'Excellent';
+    case 'good':
+      return 'Good';
+    case 'poor':
+      return 'Poor';
     default:
       return 'Not Verified';
   }
@@ -79,6 +125,12 @@ export const mapEffectivenessRatingFromDb = (dbRating: DbCAPAEffectivenessRating
       return 'adequate';
     case 'Inadequate':
       return 'inadequate';
+    case 'Excellent':
+      return 'excellent';
+    case 'Good':
+      return 'good';
+    case 'Poor':
+      return 'poor';
     default:
       return 'not-verified';
   }

@@ -19,6 +19,7 @@ export interface Facility {
   };
   created_at?: string;
   updated_at?: string;
+  facility_type?: string;
 }
 
 export interface FacilityProps {
@@ -32,4 +33,5 @@ export interface FacilityProps {
     phone?: string;
   };
   organizationId?: string;
+  facility_type?: string;
 }
