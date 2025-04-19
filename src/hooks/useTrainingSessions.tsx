@@ -73,7 +73,7 @@ export const useTrainingSessions = () => {
       
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(dbSessionData)
+        .insert(dbSessionData as any)
         .select()
         .single();
       

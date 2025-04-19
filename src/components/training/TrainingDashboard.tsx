@@ -149,7 +149,7 @@ const TrainingDashboard: React.FC = () => {
             <CardDescription>Training status by department</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpcomingTrainings />
+            <UpcomingTrainings sessions={sessions} />
           </CardContent>
         </Card>
       </div>

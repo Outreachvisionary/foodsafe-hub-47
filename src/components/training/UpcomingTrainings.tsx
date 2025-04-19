@@ -2,13 +2,12 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrainingSession } from '@/types/training';
+import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { CalendarDays, Users, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
-interface UpcomingTrainingsProps {
-  sessions: TrainingSession[];
+export interface UpcomingTrainingsProps {
+  sessions: any[];
   loading?: boolean;
 }
 
@@ -82,7 +81,7 @@ const UpcomingTrainings: React.FC<UpcomingTrainingsProps> = ({ sessions, loading
                 </div>
                 <div className="flex items-center">
                   <Users className="h-3.5 w-3.5 mr-1" />
-                  {session.assigned_to.length} participants
+                  {session.assigned_to?.length || 0} participants
                 </div>
                 <div className="flex items-center">
                   <CalendarDays className="h-3.5 w-3.5 mr-1" />

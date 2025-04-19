@@ -29,21 +29,26 @@ const useTrainingRecords = (employeeId?: string) => {
       if (error) throw error;
       
       // Transform data to match ExtendedTrainingRecord type
-      const transformedData: ExtendedTrainingRecord[] = (data || []).map(record => ({
-        id: record.id,
-        employee_id: record.employee_id,
-        session_id: record.session_id,
-        status: record.status as TrainingStatus,
-        completion_date: record.completion_date,
-        score: record.score,
-        due_date: record.due_date,
-        notes: record.notes,
-        assigned_date: record.assigned_date,
-        courseName: record.training_sessions?.title || 'Unknown Course',
-        instructorName: record.training_sessions?.instructor_name || 'Not Assigned',
-        created_at: record.created_at || new Date().toISOString(),
-        updated_at: record.updated_at || new Date().toISOString()
-      }));
+      const transformedData: ExtendedTrainingRecord[] = (data || []).map(record => {
+        // Handle possible null values and provide fallbacks
+        const sessionInfo = record.training_sessions || {};
+        
+        return {
+          id: record.id,
+          employee_id: record.employee_id,
+          session_id: record.session_id,
+          status: record.status as TrainingStatus,
+          completion_date: record.completion_date,
+          score: record.score,
+          due_date: record.due_date,
+          notes: record.notes,
+          assigned_date: record.assigned_date,
+          courseName: sessionInfo.title || 'Unknown Course',
+          instructorName: sessionInfo.instructor_name || 'Not Assigned',
+          created_at: record.created_at || new Date().toISOString(),
+          updated_at: record.updated_at || new Date().toISOString()
+        };
+      });
       
       setTrainingRecords(transformedData);
     } catch (err) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +31,8 @@ import { toast } from 'sonner';
 import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority, ComplaintSource } from '@/types/complaint';
 import ComplaintDetails from '@/components/complaints/ComplaintDetails';
 
-type ComplaintSource = 'Consumer' | 'Retailer' | 'Internal QA' | 'Laboratory Test' | 'Regulatory Agency';
+// Remove conflicting type declaration
+// type ComplaintSource = 'Consumer' | 'Retailer' | 'Internal QA' | 'Laboratory Test' | 'Regulatory Agency';
 
 const mockComplaints: Complaint[] = [
   {
@@ -126,7 +128,7 @@ const mockComplaints: Complaint[] = [
 function getDisplayStatus(status: ComplaintStatus): string {
   switch (status) {
     case 'new': return 'New';
-    case 'investigating': return 'In Progress';
+    case 'in-progress': return 'In Progress';
     case 'resolved': return 'Resolved';
     case 'closed': return 'Closed';
     default: return status;
@@ -135,10 +137,9 @@ function getDisplayStatus(status: ComplaintStatus): string {
 
 function getDisplayCategory(category: ComplaintCategory): string {
   switch (category) {
-    case 'product_quality': return 'Quality';
-    case 'foreign_material': return 'Food Safety';
-    case 'packaging': return 'Regulatory';
-    case 'service': return 'Service';
+    case 'quality': return 'Quality';
+    case 'safety': return 'Food Safety';
+    case 'packaging': return 'Packaging';
     case 'delivery': return 'Delivery';
     case 'other': return 'Other';
     default: return category;
@@ -155,7 +156,7 @@ const StatusBadge = ({ status }: { status: ComplaintStatus }) => {
       color = 'bg-green-100 text-green-800 border-green-200';
       icon = <CheckCircle className="h-3 w-3 mr-1" />;
       break;
-    case 'investigating':
+    case 'in-progress':
       color = 'bg-blue-100 text-blue-800 border-blue-200';
       icon = <Clock className="h-3 w-3 mr-1" />;
       break;

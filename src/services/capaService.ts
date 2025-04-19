@@ -1,261 +1,212 @@
 
-import { CAPA, CAPASource, CAPAPriority, CAPAStatus, CAPAStats, CAPAFilter, CAPAEffectivenessMetrics } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAStats, CAPAFilter, CAPAFetchParams, SourceReference, CAPAEffectivenessMetrics } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
-import { mapStatusFromDb, mapStatusToDb } from './capa/capaStatusService';
 
-// Mock potential CAPA data for prototype
-const mockPotentialCAPAs = [
-  {
-    id: 'potcapa1',
-    title: 'High bacteria count in raw material batch',
-    description: 'Routine testing of raw material batch RM-2023-0456 detected high bacteria count exceeding critical limits.',
-    source: 'audit' as CAPASource,
-    sourceReference: {
-      type: 'lab_test',
-      title: 'Microbiological Test Results - March 2023',
-      date: new Date().toISOString()
-    },
-    priority: 'critical' as CAPAPriority,
-    suggestedActions: 'Isolate affected batch, investigate supplier process controls, conduct root cause analysis',
-    detectedBy: 'QA Laboratory',
-    detectedAt: new Date().toISOString(),
-    department: 'Quality Assurance'
-  },
-  {
-    id: 'potcapa2',
-    title: 'Metal detection system failure',
-    description: 'Production line A metal detector failed validation check for 3 consecutive shifts.',
-    source: 'incident' as CAPASource,
-    sourceReference: {
-      type: 'equipment_report',
-      title: 'Metal Detector Validation Report',
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    priority: 'high' as CAPAPriority,
-    suggestedActions: 'Service metal detector, verify calibration, review maintenance schedule',
-    detectedBy: 'Production Supervisor',
-    detectedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    department: 'Production'
-  },
-  {
-    id: 'potcapa3',
-    title: 'Allergen control procedure non-compliance',
-    description: 'Internal audit found instances of allergen control procedures not being followed correctly during changeovers.',
-    source: 'audit' as CAPASource,
-    sourceReference: {
-      type: 'internal_audit',
-      title: 'Q1 GMP Audit Report',
-      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    priority: 'high' as CAPAPriority,
-    suggestedActions: 'Retrain production staff, update allergen control procedures, increase monitoring frequency',
-    detectedBy: 'Internal Auditor',
-    detectedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    department: 'Production'
-  }
-];
-
-export async function getPotentialCAPAs() {
+// Function to fetch multiple CAPAs
+export const fetchCAPAs = async (filters?: CAPAFilter): Promise<CAPA[]> => {
   try {
-    // In a real implementation, we would fetch from the database
-    // const { data, error } = await supabase.from('capa_potential_issues').select('*');
-    // if (error) throw error;
-    // return data;
-    
-    // For now, return mock data
-    return mockPotentialCAPAs;
-  } catch (error) {
-    console.error('Error fetching potential CAPAs:', error);
-    return [];
-  }
-}
+    let query = supabase
+      .from('capas')
+      .select('*')
+      .order('createdDate', { ascending: false });
 
-export async function createCAPA(capaData: Omit<CAPA, 'id'>) {
-  try {
-    // In a real implementation, we would insert into the database
-    // const { data, error } = await supabase.from('capa_actions').insert(capaData).select().single();
-    // if (error) throw error;
-    // return data;
+    // Apply filters if provided
+    if (filters) {
+      if (filters.status) {
+        if (Array.isArray(filters.status)) {
+          query = query.in('status', filters.status);
+        } else {
+          query = query.eq('status', filters.status);
+        }
+      }
+      
+      if (filters.priority) {
+        if (Array.isArray(filters.priority)) {
+          query = query.in('priority', filters.priority);
+        } else {
+          query = query.eq('priority', filters.priority);
+        }
+      }
+      
+      if (filters.source) {
+        if (Array.isArray(filters.source)) {
+          query = query.in('source', filters.source);
+        } else {
+          query = query.eq('source', filters.source);
+        }
+      }
+      
+      if (filters.assignedTo) {
+        if (Array.isArray(filters.assignedTo)) {
+          query = query.in('assignedTo', filters.assignedTo);
+        } else {
+          query = query.eq('assignedTo', filters.assignedTo);
+        }
+      }
+      
+      if (filters.searchTerm) {
+        query = query.or(`title.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`);
+      }
+      
+      if (filters.dateRange) {
+        query = query
+          .gte('createdDate', filters.dateRange.start)
+          .lte('createdDate', filters.dateRange.end);
+      }
+    }
+
+    const { data, error } = await query;
     
-    // For now, return mock data with a generated ID
-    const newCAPA: CAPA = {
-      ...capaData,
-      id: `capa-${Date.now()}`,
-      lastUpdated: new Date().toISOString()
-    };
+    if (error) throw error;
     
-    return newCAPA;
+    // For mock purposes, just return the raw data as CAPA objects
+    // In a real implementation, you would need to convert DB fields to the CAPA interface
+    return data as CAPA[];
   } catch (error) {
-    console.error('Error creating CAPA:', error);
+    console.error('Error fetching CAPAs:', error);
     throw error;
   }
-}
+};
 
-// Add the missing exported functions
-export async function getCAPAStats(): Promise<CAPAStats> {
+// Function to fetch a single CAPA by ID
+export const fetchCAPAById = async (id: string): Promise<CAPA> => {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    if (!data) {
+      throw new Error(`CAPA with ID ${id} not found`);
+    }
+    
+    // Return the data as a CAPA object (mock implementation)
+    return data as CAPA;
+  } catch (error) {
+    console.error(`Error fetching CAPA with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Function to update a CAPA
+export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return data as CAPA;
+  } catch (error) {
+    console.error(`Error updating CAPA with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Function to get CAPA statistics
+export const getCAPAStats = async (): Promise<CAPAStats> => {
   // Mock implementation for CAPA statistics
   return {
-    total: 35,
-    openCount: 12,
-    inProgressCount: 8,
-    closedCount: 10,
-    verifiedCount: 5,
-    pendingVerificationCount: 3,
-    overdueCount: 7,
+    total: 15,
+    openCount: 3,
+    inProgressCount: 5,
+    closedCount: 4,
+    verifiedCount: 2,
+    pendingVerificationCount: 1,
+    overdueCount: 2,
     byStatus: [
-      { name: 'Open', value: 12 },
-      { name: 'In Progress', value: 8 },
-      { name: 'Closed', value: 10 },
-      { name: 'Verified', value: 5 }
+      { name: 'Open', value: 3 },
+      { name: 'In Progress', value: 5 },
+      { name: 'Pending Verification', value: 1 },
+      { name: 'Closed', value: 4 },
+      { name: 'Verified', value: 2 }
     ],
     byPriority: [
-      { name: 'Critical', value: 5 },
-      { name: 'High', value: 10 },
-      { name: 'Medium', value: 15 },
-      { name: 'Low', value: 5 }
+      { name: 'Critical', value: 2 },
+      { name: 'High', value: 4 },
+      { name: 'Medium', value: 7 },
+      { name: 'Low', value: 2 }
     ],
     bySource: [
-      { name: 'Audit', value: 8 },
-      { name: 'Complaint', value: 12 },
-      { name: 'Nonconformance', value: 6 },
-      { name: 'HACCP', value: 4 },
-      { name: 'Other', value: 5 }
+      { name: 'Audit', value: 4 },
+      { name: 'Complaint', value: 3 },
+      { name: 'Incident', value: 2 },
+      { name: 'Internal', value: 4 },
+      { name: 'Supplier', value: 2 }
     ],
-    fsma204ComplianceRate: 85,
+    fsma204ComplianceRate: 87.5,
     effectivenessStats: {
-      effective: 12,
-      partiallyEffective: 8,
-      ineffective: 3
+      effective: 6,
+      partiallyEffective: 2,
+      ineffective: 1
     }
   };
-}
+};
 
-export async function fetchCAPAs(filter?: CAPAFilter): Promise<CAPA[]> {
-  // Mock implementation for fetching CAPAs
-  const mockCAPAs: CAPA[] = [
+// Function to get potential CAPAs
+export const getPotentialCAPAs = async (): Promise<CAPA[]> => {
+  // Mock implementation for potential CAPAs
+  const mockPotentialCAPAs: CAPA[] = [
     {
-      id: 'capa-1',
-      title: 'Audit Finding: Metal Detection Failure',
-      description: 'Critical failure in metal detection system during production',
-      source: 'audit',
-      sourceId: 'audit-123',
-      priority: 'critical',
-      status: 'open',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: 'John Smith',
-      department: 'Production',
-      createdBy: 'Quality Manager',
-      createdDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      lastUpdated: new Date().toISOString(),
-      rootCause: 'Calibration issues and maintenance gaps',
-      isFsma204Compliant: true,
-    },
-    {
-      id: 'capa-2',
-      title: 'Customer Complaint: Foreign Material',
-      description: 'Customer reported finding plastic in product',
-      source: 'complaint',
-      sourceId: 'complaint-456',
-      priority: 'high',
-      status: 'in-progress',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: 'Sarah Johnson',
-      department: 'Quality Assurance',
-      createdBy: 'Customer Service',
-      createdDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      lastUpdated: new Date().toISOString(),
-      rootCause: 'Packaging material fragment from supplier',
-      correctiveAction: 'Supplier audit initiated',
-      isFsma204Compliant: true,
-    },
-    {
-      id: 'capa-3',
-      title: 'Temperature Deviation in Storage',
-      description: 'Temperature logs showed deviation outside acceptable range',
+      id: 'auto-1',
+      title: 'Potential CAPA: Temperature Deviation Pattern',
+      description: 'Multiple temperature deviations detected in cold storage area C over the past week.',
       source: 'nonconformance',
-      sourceId: 'nc-789',
+      sourceId: 'nc-58912',
+      priority: 'high',
+      status: 'open',
+      dueDate: new Date().toISOString(),
+      assignedTo: 'John Doe',
+      department: 'Quality',
+      createdBy: 'System',
+      createdDate: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      rootCause: '',
+      correctiveAction: '',
+      preventiveAction: '',
+      effectivenessCriteria: '',
+      effectivenessVerified: false,
+      isFsma204Compliant: true
+    },
+    {
+      id: 'auto-2',
+      title: 'Potential CAPA: Recurring Supplier Issues',
+      description: 'Multiple quality issues identified with raw materials from Supplier XYZ in the last month.',
+      source: 'supplier',
+      sourceId: 'sup-234',
       priority: 'medium',
-      status: 'closed',
-      dueDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      completionDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: 'Michael Wong',
-      department: 'Warehouse',
-      createdBy: 'Warehouse Manager',
-      createdDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-      lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      rootCause: 'Refrigeration system failure',
-      correctiveAction: 'Repaired cooling system and updated monitoring',
-      preventiveAction: 'Installed backup power system and alarm',
-      effectivenessCriteria: 'Zero temperature deviations for 30 days',
-      effectivenessVerified: true,
-      isFsma204Compliant: false,
+      status: 'open',
+      dueDate: new Date().toISOString(),
+      assignedTo: 'Jane Smith',
+      department: 'Purchasing',
+      createdBy: 'System',
+      createdDate: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      rootCause: '',
+      correctiveAction: '',
+      preventiveAction: '',
+      effectivenessCriteria: '',
+      effectivenessVerified: false,
+      isFsma204Compliant: true
     }
   ];
   
-  // Apply filters if provided
-  if (filter) {
-    let filtered = [...mockCAPAs];
-    
-    if (filter.status && filter.status.length > 0) {
-      filtered = filtered.filter(capa => 
-        Array.isArray(filter.status) 
-          ? filter.status.includes(capa.status)
-          : capa.status === filter.status
-      );
-    }
-    
-    if (filter.priority && filter.priority.length > 0) {
-      filtered = filtered.filter(capa => 
-        Array.isArray(filter.priority) 
-          ? filter.priority.includes(capa.priority)
-          : capa.priority === filter.priority
-      );
-    }
-    
-    if (filter.source && filter.source.length > 0) {
-      filtered = filtered.filter(capa => 
-        Array.isArray(filter.source) 
-          ? filter.source.includes(capa.source)
-          : capa.source === filter.source
-      );
-    }
-    
-    if (filter.searchTerm) {
-      const term = filter.searchTerm.toLowerCase();
-      filtered = filtered.filter(capa => 
-        capa.title.toLowerCase().includes(term) || 
-        capa.description.toLowerCase().includes(term)
-      );
-    }
-    
-    return filtered;
-  }
-  
-  return mockCAPAs;
-}
+  return mockPotentialCAPAs;
+};
 
-export async function fetchCAPAById(id: string): Promise<CAPA | null> {
-  // Mock implementation for fetching a specific CAPA
-  const allCAPAs = await fetchCAPAs();
-  return allCAPAs.find(capa => capa.id === id) || null;
-}
-
-export async function updateCAPA(id: string, updates: Partial<CAPA>): Promise<CAPA> {
-  // Mock implementation for updating CAPA
-  const allCAPAs = await fetchCAPAs();
-  const capaIndex = allCAPAs.findIndex(capa => capa.id === id);
-  
-  if (capaIndex === -1) {
-    throw new Error(`CAPA with id ${id} not found`);
-  }
-  
-  const updatedCAPA: CAPA = {
-    ...allCAPAs[capaIndex],
-    ...updates,
-    lastUpdated: new Date().toISOString()
+// Function to get CAPA effectiveness metrics
+export const getCAPAEffectivenessMetrics = async (capaId: string): Promise<CAPAEffectivenessMetrics> => {
+  // Mock implementation for CAPA effectiveness metrics
+  return {
+    score: 85,
+    rating: 'good',
+    notes: 'Corrective actions effectively addressed the root cause, but some minor improvements needed in documentation.'
   };
-  
-  // In a real implementation, we would update the database here
-  
-  return updatedCAPA;
-}
+};

@@ -42,7 +42,8 @@ const useTrainingConfig = () => {
             const mappedConfig: TrainingAutomationConfig = {
               id: createdConfig.id,
               enabled: createdConfig.enabled,
-              rules: createdConfig.rules || [],
+              // Parse JSON or use empty array as fallback
+              rules: Array.isArray(createdConfig.rules) ? createdConfig.rules : [],
               documentChangesTrigger: createdConfig.document_changes_trigger,
               newEmployeeTrigger: createdConfig.new_employee_trigger,
               roleCangeTrigger: createdConfig.role_change_trigger,
@@ -60,7 +61,8 @@ const useTrainingConfig = () => {
           const mappedConfig: TrainingAutomationConfig = {
             id: data.id,
             enabled: data.enabled,
-            rules: data.rules || [],
+            // Parse JSON or use empty array as fallback
+            rules: Array.isArray(data.rules) ? data.rules : [],
             documentChangesTrigger: data.document_changes_trigger,
             newEmployeeTrigger: data.new_employee_trigger,
             roleCangeTrigger: data.role_change_trigger,
