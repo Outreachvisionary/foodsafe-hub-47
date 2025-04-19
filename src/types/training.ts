@@ -1,9 +1,5 @@
-
 // Define the TrainingStatus type directly
-export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
-
-// Re-export types from database
-// export type { TrainingStatus } from './database'; // Removing this line to avoid duplicate declaration
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
 
 // Define TrainingRecord type directly instead of importing it
 export interface TrainingRecord {
@@ -72,6 +68,18 @@ export interface TrainingPlan {
   createdBy?: string; // Add this to fix the createdBy property errors
   createdDate?: string; // Add this for completeness
   relatedStandards?: string[]; // Add this for completeness
+  created_by?: string; // For database compatibility
+  created_at?: string; // For database compatibility
+  updated_at?: string; // For database compatibility
+  duration_days?: number; // For database compatibility
+  target_roles?: string[]; // For database compatibility
+  target_departments?: string[]; // For database compatibility
+  is_required?: boolean; // For database compatibility
+  is_automated?: boolean; // For database compatibility
+  start_date?: string; // For database compatibility
+  end_date?: string; // For database compatibility
+  automation_trigger?: string; // For database compatibility
+  related_standards?: string[]; // For database compatibility
 }
 
 export interface EmployeeRole {

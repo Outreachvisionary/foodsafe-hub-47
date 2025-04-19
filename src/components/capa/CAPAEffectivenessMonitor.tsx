@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle, CheckCircle2, HelpCircle, Info, BarChart3, FileText, Clock, Loader2 } from 'lucide-react';
 import { CAPAEffectivenessMetrics, CAPAEffectivenessRating } from '@/types/capa';
 import { saveEffectivenessMetrics, getEffectivenessMetrics } from '@/services/capaService';
+import { Progress } from '@/components/ui/progress';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
@@ -50,7 +51,6 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
         if (data) {
           setMetrics(data);
           
-          // Update assessment data with existing values
           setAssessmentData({
             ...assessmentData,
             score: data.score,
@@ -94,11 +94,9 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
       [field]: !assessmentData[field as keyof CAPAEffectivenessMetrics]
     };
     
-    // Recalculate score
     const newScore = calculateScore(updatedData);
     updatedData.score = newScore;
     
-    // Determine rating based on score
     if (newScore >= 90) updatedData.rating = 'excellent';
     else if (newScore >= 75) updatedData.rating = 'good';
     else if (newScore >= 60) updatedData.rating = 'adequate';
@@ -112,7 +110,6 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     try {
       setIsSubmitting(true);
       
-      // Ensure score is calculated before submission
       const finalData: CAPAEffectivenessMetrics = {
         ...assessmentData,
         score: calculateScore(assessmentData),

@@ -7,6 +7,7 @@ import { CAPA, CAPAFilter, CAPAStats } from '@/types/capa';
 import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 interface CAPADashboardProps {
   filters: {

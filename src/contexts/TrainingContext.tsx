@@ -62,7 +62,25 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         .order('due_date', { ascending: true });
 
       if (recordsError) throw recordsError;
-      setRecords(recordsData || []);
+      
+      // Convert database records to our TrainingRecord type
+      const transformedRecords: TrainingRecord[] = (recordsData || []).map(record => ({
+        id: record.id,
+        session_id: record.session_id,
+        employee_id: record.employee_id,
+        employee_name: record.employee_name,
+        status: record.status as TrainingStatus,
+        assigned_date: record.assigned_date,
+        due_date: record.due_date,
+        completion_date: record.completion_date,
+        score: record.score,
+        pass_threshold: record.pass_threshold,
+        next_recurrence: record.next_recurrence,
+        last_recurrence: record.last_recurrence,
+        notes: record.notes
+      }));
+      
+      setRecords(transformedRecords);
 
       // Fetch training sessions
       const { data: sessionsData, error: sessionsError } = await supabase
@@ -71,7 +89,29 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         .order('created_at', { ascending: false });
 
       if (sessionsError) throw sessionsError;
-      setSessions(sessionsData || []);
+      
+      // Convert database sessions to our TrainingSession type
+      const transformedSessions: TrainingSession[] = (sessionsData || []).map(session => ({
+        id: session.id,
+        title: session.title,
+        description: session.description,
+        training_type: session.training_type,
+        training_category: session.training_category,
+        department: session.department,
+        start_date: session.start_date,
+        due_date: session.due_date,
+        assigned_to: session.assigned_to || [],
+        materials_id: session.materials_id,
+        required_roles: session.required_roles,
+        is_recurring: session.is_recurring,
+        recurring_interval: session.recurring_interval,
+        completion_status: session.completion_status as TrainingStatus,
+        created_by: session.created_by,
+        created_at: session.created_at,
+        updated_at: session.updated_at
+      }));
+      
+      setSessions(transformedSessions);
 
       // Fetch training plans
       const { data: plansData, error: plansError } = await supabase
@@ -80,7 +120,42 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         .order('created_at', { ascending: false });
 
       if (plansError) throw plansError;
-      setTrainingPlans(plansData || []);
+      
+      // Convert database plans to our TrainingPlan type
+      const transformedPlans: TrainingPlan[] = (plansData || []).map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        targetRoles: plan.target_roles || [],
+        coursesIncluded: plan.courses || [],
+        durationDays: plan.duration_days || 0,
+        isRequired: plan.is_required || false,
+        priority: plan.priority || 'medium',
+        status: plan.status,
+        startDate: plan.start_date,
+        endDate: plan.end_date,
+        isAutomated: plan.is_automated,
+        automationTrigger: plan.automation_trigger,
+        createdBy: plan.created_by,
+        created_by: plan.created_by,
+        createdDate: plan.created_at,
+        created_at: plan.created_at,
+        updated_at: plan.updated_at,
+        courses: plan.courses,
+        targetDepartments: plan.target_departments,
+        relatedStandards: plan.related_standards,
+        target_departments: plan.target_departments,
+        duration_days: plan.duration_days,
+        target_roles: plan.target_roles,
+        is_required: plan.is_required,
+        is_automated: plan.is_automated,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        automation_trigger: plan.automation_trigger,
+        related_standards: plan.related_standards
+      }));
+      
+      setTrainingPlans(transformedPlans);
 
       // Calculate department stats
       const deptStats: DepartmentTrainingStats[] = [];
@@ -180,9 +255,28 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const createTrainingPlan = async (plan: Partial<TrainingPlan>): Promise<boolean> => {
     try {
+      // Convert from our interface to the database schema
+      const dbPlan = {
+        name: plan.name,
+        description: plan.description,
+        target_roles: plan.targetRoles || plan.target_roles,
+        courses: plan.coursesIncluded || plan.courses,
+        duration_days: plan.durationDays || plan.duration_days,
+        is_required: plan.isRequired || plan.is_required,
+        priority: plan.priority,
+        status: plan.status,
+        start_date: plan.startDate || plan.start_date,
+        end_date: plan.endDate || plan.end_date,
+        is_automated: plan.isAutomated || plan.is_automated,
+        automation_trigger: plan.automationTrigger || plan.automation_trigger,
+        target_departments: plan.targetDepartments || plan.target_departments,
+        related_standards: plan.relatedStandards || plan.related_standards,
+        created_by: plan.createdBy || plan.created_by || 'Current User'
+      };
+        
       const { error } = await supabase
         .from('training_plans')
-        .insert(plan);
+        .insert(dbPlan);
         
       if (error) throw error;
       

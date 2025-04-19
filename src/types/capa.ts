@@ -1,4 +1,3 @@
-
 export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified';
 
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';

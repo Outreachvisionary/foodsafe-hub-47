@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
@@ -37,7 +36,22 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
     console.log('Creating CAPA for NC:', data.id);
     // The parent component will show the CAPA creation dialog
   };
-  
+
+  const getPriorityBadgeClass = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
       <div className="space-y-1">
@@ -53,15 +67,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
         </div>
         {data.priority && (
           <div className="text-sm">
-            <span className={`font-medium ${
-              data.priority === 'Critical' 
-                ? 'text-red-600' 
-                : data.priority === 'High' 
-                  ? 'text-orange-600' 
-                  : data.priority === 'Medium' 
-                    ? 'text-amber-600' 
-                    : 'text-green-600'
-            }`}>
+            <span className={`font-medium ${getPriorityBadgeClass(data.priority)}`}>
               {data.priority} Priority
             </span>
           </div>
