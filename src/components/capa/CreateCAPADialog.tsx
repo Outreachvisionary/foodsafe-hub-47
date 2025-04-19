@@ -1,316 +1,303 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Calendar, Check, ClipboardList, Plus, AlertTriangle, FileText } from 'lucide-react';
-import CAPAAuditIntegration from './CAPAAuditIntegration';
+import { Plus } from 'lucide-react';
+import { CAPA, CAPASource, CAPAPriority, SourceReference } from '@/types/capa';
 import { createCAPA } from '@/services/capaService';
-import { useUser } from '@/contexts/UserContext';
-import { CAPASource, SourceReference } from '@/types/capa';
+import { useToast } from '@/components/ui/use-toast';
 import { mapStatusToInternal } from '@/services/capa/capaStatusService';
 
-interface SourceDataType {
-  title?: string;
-  description?: string;
-  source?: CAPASource;
-  sourceId?: string;
-  priority?: string;
-  sourceReference?: SourceReference;
-  type?: string;
-  id?: string;
-  date?: string;
-}
-
 interface CreateCAPADialogProps {
-  onCAPACreated?: (data: any) => void;
+  onCAPACreated?: (capa: CAPA) => void;
   trigger?: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  sourceData?: SourceDataType;
+  initialSource?: CAPASource;
+  initialPriority?: CAPAPriority;
+  initialSourceReference?: SourceReference;
+  title?: string;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
-  onCAPACreated, 
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
+  onCAPACreated,
   trigger,
-  open,
-  onOpenChange,
-  sourceData
+  initialSource = 'internal',
+  initialPriority = 'medium',
+  initialSourceReference,
+  title = 'Create CAPA'
 }) => {
-  const { user } = useUser();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<Partial<CAPA>>({
+    title: '',
+    description: '',
+    source: initialSource,
+    priority: initialPriority,
+    status: 'open',
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    assignedTo: '',
+    department: '',
+    isFsma204Compliant: false,
+    sourceReference: initialSourceReference
+  });
   
-  const [title, setTitle] = useState(sourceData?.title || '');
-  const [description, setDescription] = useState(sourceData?.description || '');
-  const [source, setSource] = useState<CAPASource>(sourceData?.source || 'audit');
-  const [priority, setPriority] = useState<string>(sourceData?.priority || 'medium');
-  const [dueDate, setDueDate] = useState('');
-  const [assignedTo, setAssignedTo] = useState('');
-  const [sourceId, setSourceId] = useState(sourceData?.sourceId || '');
-  const [auditFinding, setAuditFinding] = useState<any>(null);
+  const { toast } = useToast();
   
-  useEffect(() => {
-    if (sourceData) {
-      setTitle(sourceData.title || '');
-      setDescription(sourceData.description || '');
-      setSource(sourceData.source || 'audit');
-      setPriority(sourceData.priority || 'medium');
-      setSourceId(sourceData.sourceId || '');
-    }
-  }, [sourceData]);
-  
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setSource('audit');
-    setPriority('medium');
-    setDueDate('');
-    setAssignedTo('');
-    setSourceId('');
-    setAuditFinding(null);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
   
-  const handleClose = () => {
-    if (onOpenChange) {
-      onOpenChange(false);
-    } else {
-      setIsOpen(false);
-    }
-    resetForm();
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked
+    }));
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !source || !priority || !dueDate) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
     try {
-      const sourceReference = sourceData?.sourceReference ? {
-        type: sourceData.type || sourceData.sourceReference.type,
-        title: sourceData.title || sourceData.sourceReference.title,
-        id: sourceData.id || sourceData.sourceReference.id,
-        url: `/non-conformance/${sourceData.id || sourceData.sourceReference.id}`,
-        date: sourceData.date || sourceData.sourceReference.date,
-      } : undefined;
+      setLoading(true);
       
-      const formData = {
-        title,
-        description,
-        source,
-        sourceId: sourceId || (auditFinding ? auditFinding.id : ''),
-        priority: priority as any,
-        status: 'open' as const,
-        assignedTo: assignedTo || user?.full_name || 'Unassigned',
-        department: '',
-        dueDate,
-        rootCause: '',
-        correctiveAction: '',
-        preventiveAction: '',
-        sourceReference,
-        fsma204Compliant: false,
-        createdBy: user?.full_name || 'System'
+      // Add the createdBy field
+      const completeFormData: any = {
+        ...formData,
+        createdBy: 'Current User', // Replace with actual user in a real application
+        createdDate: new Date().toISOString()
       };
       
-      const newCAPA = await createCAPA(formData);
+      const capa = await createCAPA(completeFormData);
       
-      toast.success('CAPA created successfully');
+      toast({
+        title: 'Success',
+        description: 'CAPA created successfully',
+      });
       
       if (onCAPACreated) {
-        onCAPACreated(newCAPA);
+        onCAPACreated(capa);
       }
       
-      handleClose();
+      setOpen(false);
+      resetForm();
     } catch (error) {
       console.error('Error creating CAPA:', error);
-      toast.error('Failed to create CAPA');
+      toast({
+        title: 'Error',
+        description: 'Failed to create CAPA',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
   
-  const handleFindingSelected = (finding: any) => {
-    setAuditFinding(finding);
-    setTitle(finding.description);
-    setDescription(`Finding from audit ${finding.auditId}: ${finding.description}`);
-    setPriority(finding.severity === 'Critical' ? 'critical' : 
-                finding.severity === 'Major' ? 'high' : 
-                finding.severity === 'Minor' ? 'medium' : 'low');
-    setSourceId(finding.id);
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      source: initialSource,
+      priority: initialPriority,
+      status: 'open',
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      assignedTo: '',
+      department: '',
+      isFsma204Compliant: false,
+      sourceReference: initialSourceReference
+    });
   };
-
-  const dialogOpen = open !== undefined ? open : isOpen;
-  const setDialogOpen = onOpenChange || setIsOpen;
   
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="flex items-center">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
             Create CAPA
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New CAPA</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Create a new Corrective and Preventive Action (CAPA) to address compliance issues
+            Create a new Corrective and Preventive Action (CAPA) record.
           </DialogDescription>
         </DialogHeader>
         
-        {sourceData && sourceData.sourceReference && (
-          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
-            <div className="flex items-start">
-              <FileText className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-blue-700">
-                  Creating CAPA from {sourceData.sourceReference.type}
-                </p>
-                <p className="text-sm text-blue-600 mt-1">
-                  {sourceData.sourceReference.title}
-                </p>
-                {sourceData.sourceReference.date && (
-                  <p className="text-xs text-blue-500 mt-1">
-                    Reported on {new Date(sourceData.sourceReference.date).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
-            <Input
-              id="title"
-              placeholder="Enter CAPA title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
-              <Select 
-                value={source} 
-                onValueChange={(value) => setSource(value as CAPASource)}
-                disabled={!!sourceData?.source}
-              >
-                <SelectTrigger id="source">
-                  <SelectValue placeholder="Select source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="audit">Audit</SelectItem>
-                  <SelectItem value="haccp">HACCP</SelectItem>
-                  <SelectItem value="supplier">Supplier</SelectItem>
-                  <SelectItem value="complaint">Complaint</SelectItem>
-                  <SelectItem value="traceability">Traceability</SelectItem>
-                  <SelectItem value="nonconformance">Non-Conformance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-            <Textarea
-              id="description"
-              placeholder="Describe the issue or non-conformance requiring corrective action"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="assignedTo">Assigned To</Label>
-              <Input
-                id="assignedTo"
-                placeholder="Person responsible"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
+              <label htmlFor="title" className="text-sm font-medium">
+                Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                value={formData.title}
+                onChange={handleInputChange}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                placeholder="Brief title describing the issue"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+              <label htmlFor="description" className="text-sm font-medium">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                required
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                placeholder="Detailed description of the issue"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="source" className="text-sm font-medium">
+                  Source
+                </label>
+                <select
+                  id="source"
+                  name="source"
                   required
-                />
-                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  value={formData.source}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="internal">Internal</option>
+                  <option value="audit">Audit</option>
+                  <option value="complaint">Complaint</option>
+                  <option value="non-conformance">Non-Conformance</option>
+                  <option value="haccp">HACCP</option>
+                  <option value="traceability">Traceability</option>
+                  <option value="supplier">Supplier</option>
+                  <option value="customer">Customer</option>
+                  <option value="regulatory">Regulatory</option>
+                </select>
               </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="priority" className="text-sm font-medium">
+                  Priority
+                </label>
+                <select
+                  id="priority"
+                  name="priority"
+                  required
+                  value={formData.priority}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="dueDate" className="text-sm font-medium">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  id="dueDate"
+                  name="dueDate"
+                  required
+                  value={typeof formData.dueDate === 'string' ? formData.dueDate.split('T')[0] : ''}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="assignedTo" className="text-sm font-medium">
+                  Assigned To
+                </label>
+                <input
+                  type="text"
+                  id="assignedTo"
+                  name="assignedTo"
+                  required
+                  value={formData.assignedTo}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Person responsible"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="department" className="text-sm font-medium">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  id="department"
+                  name="department"
+                  value={formData.department || ''}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Responsible department"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isFsma204Compliant"
+                name="isFsma204Compliant"
+                checked={formData.isFsma204Compliant || false}
+                onChange={handleCheckboxChange}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="isFsma204Compliant" className="text-sm">
+                FSMA 204 Compliant
+              </label>
             </div>
           </div>
           
-          {source === 'audit' && !sourceData?.source && (
-            <div className="space-y-2">
-              <Label htmlFor="auditFinding">Link to Audit Finding</Label>
-              <CAPAAuditIntegration onFindingSelected={handleFindingSelected} />
-              {auditFinding && (
-                <div className="flex items-center mt-2 p-2 bg-green-50 border border-green-100 rounded-md">
-                  <Check className="h-4 w-4 text-green-500 mr-2" />
-                  <span className="text-sm text-green-700">
-                    Linked to finding: {auditFinding.id}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" type="button" onClick={handleClose}>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                resetForm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <ClipboardList className="h-4 w-4 mr-2 animate-pulse" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <ClipboardList className="h-4 w-4 mr-2" />
-                  Create CAPA
-                </>
-              )}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Creating...' : 'Create CAPA'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -1,19 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { CAPA, CAPAEffectivenessRating } from '@/types/capa';
+import { updateCAPA } from '@/services/capaService';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, FileText, NotebookPen, CheckSquare, XSquare, AlertTriangle, RefreshCw, Calendar as CalendarIcon, User, Building, Tag, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { AlertCircle, BookOpen, Calendar, CheckCircle2, ChevronRight, Clock, Edit, FileText, Loader2, Save, Trash2, X } from 'lucide-react';
-import { CAPA, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
-import { deleteCAPA } from '@/services/capaService';
 import { mapInternalToStatus, mapStatusToInternal } from '@/services/capa/capaStatusService';
 
 interface CAPADetailsProps {
@@ -23,733 +18,612 @@ interface CAPADetailsProps {
 }
 
 const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) => {
+  const [activeTab, setActiveTab] = useState("info");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('details');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editedData, setEditedData] = useState<CAPA>(capa);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
+  
+  // Form state
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState(capa);
+  
   useEffect(() => {
-    setEditedData(capa);
+    setFormData(capa);
   }, [capa]);
-
-  const handleStatusChange = (newStatus: string) => {
-    setEditedData({
-      ...editedData,
-      status: mapStatusToInternal(newStatus as any)
-    });
-
-    // If changing to closed and no completion date, set it to today
-    if (newStatus === 'Closed' && !editedData.completionDate) {
-      setEditedData({
-        ...editedData,
-        status: mapStatusToInternal(newStatus as any),
-        completionDate: new Date().toISOString().split('T')[0]
-      });
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setEditedData({
-      ...editedData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
   };
-
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setEditedData({
-      ...editedData,
-      [name]: checked
-    });
+  
+  const handleToggleEdit = () => {
+    if (editMode) {
+      // Cancel editing
+      setFormData(capa);
+    }
+    setEditMode(!editMode);
   };
-
+  
   const handleSave = async () => {
     try {
-      setIsSubmitting(true);
-      // In a real app, you would call an API to update the CAPA
-      // For now, we'll just simulate a successful update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      onUpdate(editedData);
-      setIsEditing(false);
-      
+      setLoading(true);
+      const result = await updateCAPA(capa.id, formData);
+      onUpdate(result);
+      setEditMode(false);
       toast({
         title: "CAPA Updated",
-        description: "CAPA details have been updated successfully"
+        description: "Changes to the CAPA have been saved successfully.",
       });
     } catch (error) {
       console.error('Error updating CAPA:', error);
       toast({
         title: "Error",
-        description: "Failed to update CAPA details",
-        variant: "destructive"
+        description: "Failed to update CAPA. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-
-  const handleDelete = async () => {
+  
+  const handleStatusChange = async (newStatus: string) => {
     try {
-      setIsSubmitting(true);
-      await deleteCAPA(capa.id);
+      setLoading(true);
+      
+      // Prepare data for update
+      const statusUpdateData = {
+        ...capa,
+        status: mapStatusToInternal(newStatus)
+      };
+      
+      // Additional fields based on status
+      if (newStatus === 'Closed') {
+        statusUpdateData.completionDate = new Date().toISOString();
+      } else if (newStatus === 'Verified') {
+        statusUpdateData.verificationDate = new Date().toISOString();
+      }
+      
+      const result = await updateCAPA(capa.id, statusUpdateData);
+      onUpdate(result);
       
       toast({
-        title: "CAPA Deleted",
-        description: "CAPA has been deleted successfully"
+        title: "Status Updated",
+        description: `CAPA status changed to ${newStatus}`,
       });
-      
-      onClose();
     } catch (error) {
-      console.error('Error deleting CAPA:', error);
+      console.error('Error updating CAPA status:', error);
       toast({
         title: "Error",
-        description: "Failed to delete CAPA",
-        variant: "destructive"
+        description: "Failed to update CAPA status. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-
-  const renderStatusBadge = (status: CAPAStatus) => {
-    // Convert internal status to display value
-    const displayStatus = mapInternalToStatus(status);
-    
-    switch (status) {
-      case 'open':
-        return (
-          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-            {displayStatus}
-          </Badge>
-        );
-      case 'in-progress':
-        return (
-          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-            {displayStatus}
-          </Badge>
-        );
-      case 'closed':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-            {displayStatus}
-          </Badge>
-        );
-      case 'verified':
-        return (
-          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">
-            {displayStatus}
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">
-            {displayStatus}
-          </Badge>
-        );
-    }
-  };
-
-  const renderPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            Critical
-          </Badge>
-        );
-      case 'high':
-        return (
-          <Badge className="bg-orange-100 text-orange-800">
-            High
-          </Badge>
-        );
-      case 'medium':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            Medium
-          </Badge>
-        );
-      case 'low':
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            Low
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gray-100 text-gray-800">
-            {priority}
-          </Badge>
-        );
-    }
-  };
-
-  const renderEffectivenessRating = (rating: CAPAEffectivenessRating) => {
-    switch (rating) {
-      case 'excellent':
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            Excellent
-          </Badge>
-        );
-      case 'good':
-        return (
-          <Badge className="bg-teal-100 text-teal-800">
-            Good
-          </Badge>
-        );
-      case 'adequate':
-        return (
-          <Badge className="bg-blue-100 text-blue-800">
-            Adequate
-          </Badge>
-        );
-      case 'poor':
-        return (
-          <Badge className="bg-amber-100 text-amber-800">
-            Poor
-          </Badge>
-        );
-      case 'ineffective':
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            Ineffective
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gray-100 text-gray-800">
-            Not Rated
-          </Badge>
-        );
-    }
-  };
-
-  // Rendering related documents section
-  const renderRelatedDocuments = () => {
-    if (!capa.relatedDocuments || capa.relatedDocuments.length === 0) {
-      return (
-        <div className="bg-gray-50 p-4 text-center rounded-md border border-gray-100">
-          <p className="text-gray-500">No related documents</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-2">
-        {capa.relatedDocuments.map((doc) => (
-          <div key={doc.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md border border-gray-100">
-            <div className="flex items-center">
-              <FileText className="h-4 w-4 text-blue-500 mr-2" />
-              <span>{doc.title}</span>
-            </div>
-            <Badge variant="outline">{doc.type}</Badge>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Rendering related training section
-  const renderRelatedTraining = () => {
-    if (!capa.relatedTraining || capa.relatedTraining.length === 0) {
-      return (
-        <div className="bg-gray-50 p-4 text-center rounded-md border border-gray-100">
-          <p className="text-gray-500">No related training</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-2">
-        {capa.relatedTraining.map((training) => (
-          <div key={training.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md border border-gray-100">
-            <div className="flex items-center">
-              <BookOpen className="h-4 w-4 text-green-500 mr-2" />
-              <span>{training.title}</span>
-            </div>
-            <Badge variant="outline">{training.type}</Badge>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle className="text-xl">{capa.title}</CardTitle>
-          <CardDescription>
-            CAPA #{capa.id} | Created on {new Date(capa.createdDate).toLocaleDateString()}
-          </CardDescription>
-        </div>
-        <div className="flex space-x-2">
-          {isEditing ? (
+  
+  const renderEditButtons = () => (
+    <div className="mt-4 flex justify-end gap-2">
+      <Button variant="outline" onClick={handleToggleEdit} disabled={loading}>
+        {editMode ? "Cancel" : "Edit"}
+      </Button>
+      
+      {editMode && (
+        <Button onClick={handleSave} disabled={loading}>
+          {loading ? (
             <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsEditing(false)}
-                disabled={isSubmitting}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-1" />
-                )}
-                Save
-              </Button>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
             </>
           ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-              <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the CAPA
-                      and all associated data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleDelete}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-1" />
-                      )}
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
+            "Save Changes"
           )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Status</Label>
-            {isEditing ? (
-              <Select 
-                value={mapInternalToStatus(editedData.status)} 
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
-                  <SelectItem value="Verified">Verified</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div>{renderStatusBadge(capa.status)}</div>
-            )}
-          </div>
-          
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Priority</Label>
-            {isEditing ? (
-              <Select 
-                value={editedData.priority} 
-                onValueChange={(value) => setEditedData({...editedData, priority: value as any})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div>{renderPriorityBadge(capa.priority)}</div>
-            )}
-          </div>
-          
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Source</Label>
-            <div className="flex items-center">
-              <Badge variant="outline" className="capitalize">
-                {capa.source.replace('_', ' ')}
-              </Badge>
-              {capa.sourceId && (
-                <span className="text-xs text-gray-500 ml-2">
-                  ID: {capa.sourceId}
-                </span>
-              )}
+        </Button>
+      )}
+    </div>
+  );
+  
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase().replace(/[- ]/g, '')) {
+      case 'open':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'inprogress':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'closed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'verified':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'pendingverification':
+        return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'overdue':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'critical':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getEffectivenessRatingColor = (rating: CAPAEffectivenessRating) => {
+    if (rating === 'excellent' || rating === 'effective') {
+      return 'bg-green-100 text-green-800 border-green-200';
+    } else if (rating === 'good' || rating === 'partially-effective' || rating === 'adequate') {
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    } else if (rating === 'poor' || rating === 'ineffective' || rating === 'inadequate') {
+      return 'bg-red-100 text-red-800 border-red-200';
+    } else {
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not set';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+  
+  const isOverdue = () => {
+    if (capa.status === 'closed' || capa.status === 'verified') return false;
+    
+    const now = new Date();
+    const dueDate = new Date(capa.dueDate);
+    return now > dueDate;
+  };
+  
+  const hasRelatedDocuments = Array.isArray(capa.relatedDocuments) && capa.relatedDocuments.length > 0;
+  const hasRelatedTraining = Array.isArray(capa.relatedTraining) && capa.relatedTraining.length > 0;
+  
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-md shadow-sm border overflow-hidden">
+        <div className="p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
+          <div>
+            <h1 className="text-2xl font-bold">{capa.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-1">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Created: {formatDate(capa.createdDate)}
+              </div>
+              <span>•</span>
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                By: {capa.createdBy}
+              </div>
+              <span>•</span>
+              <div className="flex items-center">
+                <Tag className="h-4 w-4 mr-1" />
+                ID: {capa.id.substring(0, 8)}
+              </div>
             </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(capa.status)}`}>
+              {mapInternalToStatus(capa.status)}
+            </div>
+            <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(capa.priority)}`}>
+              {capa.priority.charAt(0).toUpperCase() + capa.priority.slice(1)}
+            </div>
+            {isOverdue() && (
+              <div className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 border border-red-200">
+                Overdue
+              </div>
+            )}
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Due Date</Label>
-            <div className="flex items-center">
-              {isEditing ? (
-                <Input 
-                  type="date" 
-                  name="dueDate"
-                  value={editedData.dueDate}
-                  onChange={handleInputChange}
-                />
-              ) : (
-                <>
-                  <Calendar className="h-4 w-4 text-gray-500 mr-1.5" />
-                  <span>{new Date(capa.dueDate).toLocaleDateString()}</span>
-                </>
-              )}
-            </div>
+        <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="px-6 border-b">
+            <TabsList className="bg-transparent border-b-0 -mb-px h-12">
+              <TabsTrigger value="info" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-12">
+                Info
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-12">
+                Corrective Actions
+              </TabsTrigger>
+              <TabsTrigger value="effectiveness" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-12">
+                Effectiveness
+              </TabsTrigger>
+              <TabsTrigger value="related" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none h-12">
+                Related Items
+              </TabsTrigger>
+            </TabsList>
           </div>
           
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Completion Date</Label>
-            <div className="flex items-center">
-              {isEditing ? (
-                <Input 
-                  type="date" 
-                  name="completionDate"
-                  value={editedData.completionDate || ''}
-                  onChange={handleInputChange}
-                />
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 text-gray-500 mr-1.5" />
-                  <span>
-                    {capa.completionDate ? new Date(capa.completionDate).toLocaleDateString() : 'Not completed'}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          
-          <div className="space-y-1">
-            <Label className="text-xs text-gray-500">Assigned To</Label>
-            <div className="flex items-center">
-              {isEditing ? (
-                <Input 
-                  name="assignedTo"
-                  value={editedData.assignedTo}
-                  onChange={handleInputChange}
-                />
-              ) : (
-                <span>{capa.assignedTo}</span>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="actions">Actions</TabsTrigger>
-            <TabsTrigger value="verification">Verification</TabsTrigger>
-            <TabsTrigger value="related">Related Items</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Description</Label>
-              {isEditing ? (
-                <Textarea 
-                  name="description"
-                  value={editedData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                  {capa.description}
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Root Cause</Label>
-              {isEditing ? (
-                <Textarea 
-                  name="rootCause"
-                  value={editedData.rootCause || ''}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="Describe the root cause of the issue"
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                  {capa.rootCause || 'No root cause analysis documented'}
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Corrective Action</Label>
-                {isEditing ? (
-                  <Textarea 
-                    name="correctiveAction"
-                    value={editedData.correctiveAction || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                    placeholder="Describe the corrective action taken"
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    {capa.correctiveAction || 'No corrective action documented'}
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Preventive Action</Label>
-                {isEditing ? (
-                  <Textarea 
-                    name="preventiveAction"
-                    value={editedData.preventiveAction || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                    placeholder="Describe the preventive action taken"
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    {capa.preventiveAction || 'No preventive action documented'}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Department</Label>
-              {isEditing ? (
-                <Input 
-                  name="department"
-                  value={editedData.department || ''}
-                  onChange={handleInputChange}
-                  placeholder="Department responsible"
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                  {capa.department || 'No department specified'}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Label>FSMA 204 Compliant</Label>
-              {isEditing ? (
-                <Switch 
-                  checked={editedData.fsma204Compliant || false}
-                  onCheckedChange={(checked) => handleSwitchChange('fsma204Compliant', checked)}
-                />
-              ) : (
-                <Badge variant={capa.fsma204Compliant ? "success" : "outline"}>
-                  {capa.fsma204Compliant ? 'Yes' : 'No'}
-                </Badge>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="actions" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Effectiveness Criteria</Label>
-              {isEditing ? (
-                <Textarea 
-                  name="effectivenessCriteria"
-                  value={editedData.effectivenessCriteria || ''}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="Define criteria to measure effectiveness"
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                  {capa.effectivenessCriteria || 'No effectiveness criteria defined'}
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Action Timeline</Label>
-              <div className="space-y-2">
-                <div className="flex items-center p-3 bg-blue-50 rounded-md border border-blue-100">
-                  <Calendar className="h-4 w-4 text-blue-500 mr-2" />
-                  <span className="text-blue-700">Created: {new Date(capa.createdDate).toLocaleDateString()}</span>
-                  <ChevronRight className="h-4 w-4 mx-2 text-blue-300" />
-                  <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                  <span className="text-blue-700">Due: {new Date(capa.dueDate).toLocaleDateString()}</span>
+          <TabsContent value="info" className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium">Description</h3>
+                  {editMode ? (
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      className="w-full h-32 p-2 mt-2 border rounded-md"
+                    />
+                  ) : (
+                    <p className="mt-2 text-gray-700">{capa.description}</p>
+                  )}
                 </div>
                 
-                {capa.completionDate && (
-                  <div className="flex items-center p-3 bg-green-50 rounded-md border border-green-100">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    <span className="text-green-700">Completed: {new Date(capa.completionDate).toLocaleDateString()}</span>
-                  </div>
-                )}
-                
-                {capa.lastUpdated && (
-                  <div className="flex items-center p-3 bg-gray-50 rounded-md border border-gray-100">
-                    <Clock className="h-4 w-4 text-gray-500 mr-2" />
-                    <span className="text-gray-700">Last Updated: {new Date(capa.lastUpdated).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="verification" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Verification Method</Label>
-              {isEditing ? (
-                <Textarea 
-                  name="verificationMethod"
-                  value={editedData.verificationMethod || ''}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="Describe how the CAPA will be verified"
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                  {capa.verificationMethod || 'No verification method defined'}
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Verification Date</Label>
-                {isEditing ? (
-                  <Input 
-                    type="date" 
-                    name="verificationDate"
-                    value={editedData.verificationDate || ''}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    {capa.verificationDate ? new Date(capa.verificationDate).toLocaleDateString() : 'Not verified'}
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Verified By</Label>
-                {isEditing ? (
-                  <Input 
-                    name="verifiedBy"
-                    value={editedData.verifiedBy || ''}
-                    onChange={handleInputChange}
-                    placeholder="Person who verified the CAPA"
-                  />
-                ) : (
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    {capa.verifiedBy || 'Not verified'}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Effectiveness Verified</Label>
-                {isEditing ? (
-                  <Switch 
-                    checked={editedData.effectivenessVerified || false}
-                    onCheckedChange={(checked) => handleSwitchChange('effectivenessVerified', checked)}
-                  />
-                ) : (
-                  <Badge variant={capa.effectivenessVerified ? "success" : "outline"}>
-                    {capa.effectivenessVerified ? 'Yes' : 'No'}
-                  </Badge>
-                )}
-              </div>
-              
-              {capa.effectivenessVerified && capa.effectivenessRating && (
-                <div className="flex items-center mt-2">
-                  <Label className="mr-2">Effectiveness Rating:</Label>
-                  {renderEffectivenessRating(capa.effectivenessRating)}
-                </div>
-              )}
-            </div>
-            
-            {(capa.status === 'closed' || capa.status === 'verified') && !capa.effectivenessVerified && (
-              <div className="bg-amber-50 p-4 rounded-md border border-amber-100">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium text-amber-800">Effectiveness Verification Required</h3>
-                    <p className="text-sm text-amber-700 mt-1">
-                      This CAPA has been closed but effectiveness has not been verified.
-                      Complete the effectiveness assessment to ensure the issue has been properly addressed.
+                <div>
+                  <h3 className="text-lg font-medium">Root Cause Analysis</h3>
+                  {editMode ? (
+                    <textarea
+                      name="rootCause"
+                      value={formData.rootCause || ''}
+                      onChange={handleInputChange}
+                      className="w-full h-32 p-2 mt-2 border rounded-md"
+                      placeholder="Describe the root cause of the issue..."
+                    />
+                  ) : (
+                    <p className="mt-2 text-gray-700">
+                      {capa.rootCause || 'No root cause analysis has been documented yet.'}
                     </p>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="related" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Related Documents</Label>
-              {renderRelatedDocuments()}
+              
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md">Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Due Date</div>
+                      <div className="flex items-center mt-1">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        {editMode ? (
+                          <input
+                            type="date"
+                            name="dueDate"
+                            value={formData.dueDate.split('T')[0]}
+                            onChange={handleInputChange}
+                            className="w-full p-1 border rounded-md"
+                          />
+                        ) : (
+                          <span className={isOverdue() ? 'text-red-600 font-medium' : ''}>
+                            {formatDate(capa.dueDate)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Assigned To</div>
+                      <div className="flex items-center mt-1">
+                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                        {editMode ? (
+                          <input
+                            type="text"
+                            name="assignedTo"
+                            value={formData.assignedTo}
+                            onChange={handleInputChange}
+                            className="w-full p-1 border rounded-md"
+                          />
+                        ) : (
+                          <span>{capa.assignedTo}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {capa.department && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Department</div>
+                        <div className="flex items-center mt-1">
+                          <Building className="h-4 w-4 mr-2 text-gray-400" />
+                          {editMode ? (
+                            <input
+                              type="text"
+                              name="department"
+                              value={formData.department || ''}
+                              onChange={handleInputChange}
+                              className="w-full p-1 border rounded-md"
+                            />
+                          ) : (
+                            <span>{capa.department}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Source</div>
+                      <div className="flex items-center mt-1">
+                        <Info className="h-4 w-4 mr-2 text-gray-400" />
+                        <span className="capitalize">{capa.source.replace('-', ' ')}</span>
+                      </div>
+                    </div>
+                    
+                    {capa.completionDate && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Completion Date</div>
+                        <div className="flex items-center mt-1">
+                          <CheckSquare className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>{formatDate(capa.completionDate)}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {capa.verificationDate && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Verification Date</div>
+                        <div className="flex items-center mt-1">
+                          <CheckSquare className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>{formatDate(capa.verificationDate)}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">FSMA 204 Compliant</div>
+                      <div className="flex items-center mt-1">
+                        {capa.isFsma204Compliant ? (
+                          <>
+                            <CheckSquare className="h-4 w-4 mr-2 text-green-500" />
+                            <span className="text-green-600">Yes</span>
+                          </>
+                        ) : (
+                          <>
+                            <XSquare className="h-4 w-4 mr-2 text-red-500" />
+                            <span className="text-red-600">No</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {!editMode && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-md">Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {capa.status !== 'closed' && capa.status !== 'verified' && (
+                          <Button 
+                            className="w-full justify-start" 
+                            variant="outline"
+                            onClick={() => handleStatusChange('Closed')}
+                            disabled={loading}
+                          >
+                            <CheckSquare className="h-4 w-4 mr-2" />
+                            Mark as Closed
+                          </Button>
+                        )}
+                        
+                        {capa.status === 'closed' && (
+                          <Button 
+                            className="w-full justify-start" 
+                            variant="outline"
+                            onClick={() => handleStatusChange('Verified')}
+                            disabled={loading}
+                          >
+                            <CheckSquare className="h-4 w-4 mr-2" />
+                            Mark as Verified
+                          </Button>
+                        )}
+                        
+                        {capa.status !== 'open' && (
+                          <Button 
+                            className="w-full justify-start" 
+                            variant="outline"
+                            onClick={() => handleStatusChange('Open')}
+                            disabled={loading}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reopen CAPA
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label>Related Training</Label>
-              {renderRelatedTraining()}
+            {renderEditButtons()}
+          </TabsContent>
+          
+          <TabsContent value="actions" className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-medium">Corrective Action</h3>
+                {editMode ? (
+                  <textarea
+                    name="correctiveAction"
+                    value={formData.correctiveAction || ''}
+                    onChange={handleInputChange}
+                    className="w-full h-32 p-2 mt-2 border rounded-md"
+                    placeholder="Describe the corrective action taken to address the immediate issue..."
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-700">
+                    {capa.correctiveAction || 'No corrective action has been documented yet.'}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium">Preventive Action</h3>
+                {editMode ? (
+                  <textarea
+                    name="preventiveAction"
+                    value={formData.preventiveAction || ''}
+                    onChange={handleInputChange}
+                    className="w-full h-32 p-2 mt-2 border rounded-md"
+                    placeholder="Describe the preventive action taken to prevent recurrence..."
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-700">
+                    {capa.preventiveAction || 'No preventive action has been documented yet.'}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {capa.verificationMethod && (
+              <div className="mt-6">
+                <h3 className="text-lg font-medium">Verification Method</h3>
+                {editMode ? (
+                  <textarea
+                    name="verificationMethod"
+                    value={formData.verificationMethod || ''}
+                    onChange={handleInputChange}
+                    className="w-full h-24 p-2 mt-2 border rounded-md"
+                    placeholder="Describe how the effectiveness of actions will be verified..."
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-700">{capa.verificationMethod}</p>
+                )}
+              </div>
+            )}
+            
+            {renderEditButtons()}
+          </TabsContent>
+          
+          <TabsContent value="effectiveness" className="p-6">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium">Effectiveness Criteria</h3>
+                {editMode ? (
+                  <textarea
+                    name="effectivenessCriteria"
+                    value={formData.effectivenessCriteria || ''}
+                    onChange={handleInputChange}
+                    className="w-full h-32 p-2 mt-2 border rounded-md"
+                    placeholder="Define criteria for determining effectiveness of actions taken..."
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-700">
+                    {capa.effectivenessCriteria || 'No effectiveness criteria have been defined yet.'}
+                  </p>
+                )}
+              </div>
+              
+              {capa.effectivenessRating && (
+                <div className="bg-gray-50 p-4 rounded-md border">
+                  <h3 className="text-md font-medium">Effectiveness Evaluation</h3>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Rating</div>
+                      <div className="mt-1">
+                        <span className={`px-2 py-1 rounded-full text-sm font-medium ${getEffectivenessRatingColor(capa.effectivenessRating)}`}>
+                          {capa.effectivenessRating.replace('-', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {capa.verifiedBy && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Verified By</div>
+                        <div className="mt-1 flex items-center">
+                          <User className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>{capa.verifiedBy}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {capa.verificationDate && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Verification Date</div>
+                        <div className="mt-1 flex items-center">
+                          <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>{formatDate(capa.verificationDate)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {renderEditButtons()}
+          </TabsContent>
+          
+          <TabsContent value="related" className="p-6">
+            <div className="space-y-6">
+              {hasRelatedDocuments ? (
+                <div>
+                  <h3 className="text-lg font-medium">Related Documents</h3>
+                  <div className="mt-3 space-y-2">
+                    {capa.relatedDocuments.map(doc => (
+                      <div key={doc.id} className="flex items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100">
+                        <FileText className="h-5 w-5 mr-3 text-blue-500" />
+                        <div>
+                          <div className="font-medium">{doc.title || `Document: ${doc.documentId}`}</div>
+                          <div className="text-sm text-gray-500">
+                            {doc.type || doc.documentType} • Added on {formatDate(doc.addedAt)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-md border">
+                  <FileText className="h-10 w-10 mx-auto text-gray-400" />
+                  <h3 className="mt-2 text-lg font-medium">No Related Documents</h3>
+                  <p className="text-gray-500 mt-1">
+                    No documents have been attached to this CAPA yet.
+                  </p>
+                </div>
+              )}
+              
+              {hasRelatedTraining ? (
+                <div>
+                  <h3 className="text-lg font-medium">Related Training</h3>
+                  <div className="mt-3 space-y-2">
+                    {capa.relatedTraining.map(training => (
+                      <div key={training.id} className="flex items-center p-3 border rounded-md bg-gray-50 hover:bg-gray-100">
+                        <NotebookPen className="h-5 w-5 mr-3 text-green-500" />
+                        <div>
+                          <div className="font-medium">{training.title || `Training: ${training.trainingId}`}</div>
+                          <div className="text-sm text-gray-500">
+                            {training.type || 'Training'} • Added on {formatDate(training.addedAt)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-md border">
+                  <NotebookPen className="h-10 w-10 mx-auto text-gray-400" />
+                  <h3 className="mt-2 text-lg font-medium">No Related Training</h3>
+                  <p className="text-gray-500 mt-1">
+                    No training records have been linked to this CAPA yet.
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-      <CardFooter className="flex justify-between border-t pt-4">
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-        
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit CAPA
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
 

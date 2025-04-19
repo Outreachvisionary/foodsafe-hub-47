@@ -1,46 +1,28 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { CAPA, CAPAEffectivenessMetrics, CAPAEffectivenessRating } from '@/types/capa';
 import { useToast } from '@/components/ui/use-toast';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  CircleCheck, 
-  CircleX, 
-  FileCheck, 
-  Loader2, 
-  ShieldCheck,
-  AlertTriangle
-} from 'lucide-react';
-import { CAPAEffectivenessRating } from '@/types/capa';
-import { saveEffectivenessMetrics, getEffectivenessMetrics } from '@/services/capaService';
-
-interface CAPAEffectivenessMetrics {
-  id?: string;
-  capaId: string;
-  score: number;
-  recurrenceCheck: boolean;
-  rootCauseEliminated: boolean;
-  documentationComplete: boolean;
-  preventionMeasureEffective: boolean;
-  assessmentDate: string;
-  notes?: string;
-  createdBy: string;
-  rating: CAPAEffectivenessRating;
-}
+import { createCAPAEffectivenessReport, updateCAPAEffectivenessReport, getCAPAEffectivenessReport } from '@/services/capaService';
+import { CheckCircle, Clock, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
   title: string;
   implementationDate?: string;
-  onEffectivenessUpdate: (metrics: CAPAEffectivenessMetrics) => Promise<void>;
+  onEffectivenessUpdate?: (data: CAPAEffectivenessMetrics) => void;
 }
 
 const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
@@ -49,360 +31,367 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   implementationDate,
   onEffectivenessUpdate
 }) => {
-  const { toast } = useToast();
-  const [expanded, setExpanded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [metrics, setMetrics] = useState<CAPAEffectivenessMetrics>({
-    capaId,
-    score: 0,
-    recurrenceCheck: false,
+    capaId: capaId,
     rootCauseEliminated: false,
     documentationComplete: false,
     preventionMeasureEffective: false,
-    assessmentDate: new Date().toISOString().split('T')[0],
-    notes: '',
-    createdBy: 'system',
-    rating: 'ineffective'
+    recurrenceCheck: false,
+    rootCauseEliminated: 0,
+    documentationComplete: 0,
+    preventionMeasureEffective: 0,
+    recurrenceChecked: 0,
+    overall: 0,
+    score: 0,
+    assessmentDate: new Date().toISOString(),
+    createdBy: 'Current User',
+    rating: 'not-verified'
   });
   
-  const [hasExistingReport, setHasExistingReport] = useState(false);
-
+  const [existingReport, setExistingReport] = useState<CAPAEffectivenessMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('criteria');
+  const [notes, setNotes] = useState('');
+  
+  const { toast } = useToast();
+  
   useEffect(() => {
-    const loadMetrics = async () => {
+    const fetchReport = async () => {
       try {
         setLoading(true);
-        const existingMetrics = await getEffectivenessMetrics(capaId);
+        const report = await getCAPAEffectivenessReport(capaId);
         
-        if (existingMetrics) {
-          setMetrics(existingMetrics);
-          setHasExistingReport(true);
+        if (report) {
+          setExistingReport(report);
+          setMetrics(report);
+          setNotes(report.notes || '');
         }
       } catch (error) {
-        console.error('Error loading effectiveness metrics:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load effectiveness assessment data',
-          variant: 'destructive'
-        });
+        console.error('Error fetching effectiveness report:', error);
       } finally {
         setLoading(false);
       }
     };
     
-    loadMetrics();
-  }, [capaId, toast]);
-
-  useEffect(() => {
-    calculateScore();
-  }, [
-    metrics.rootCauseEliminated, 
-    metrics.documentationComplete, 
-    metrics.preventionMeasureEffective,
-    metrics.recurrenceCheck
-  ]);
-
-  const calculateScore = () => {
-    let totalScore = 0;
+    fetchReport();
+  }, [capaId]);
+  
+  const calculateScore = (metrics: Partial<CAPAEffectivenessMetrics>) => {
+    const rootCauseScore = metrics.rootCauseEliminated ? 40 : 0;
+    const documentationScore = metrics.documentationComplete ? 20 : 0;
+    const preventionScore = metrics.preventionMeasureEffective ? 30 : 0;
+    const recurrenceScore = metrics.recurrenceCheck ? 10 : 0;
     
-    if (metrics.rootCauseEliminated) totalScore += 30;
-    if (metrics.documentationComplete) totalScore += 20;
-    if (metrics.preventionMeasureEffective) totalScore += 30;
-    if (metrics.recurrenceCheck) totalScore += 20;
+    const totalScore = rootCauseScore + documentationScore + preventionScore + recurrenceScore;
     
-    let rating: CAPAEffectivenessRating;
+    let rating: CAPAEffectivenessRating = 'not-verified';
+    
     if (totalScore >= 90) {
       rating = 'excellent';
-    } else if (totalScore >= 70) {
+    } else if (totalScore >= 75) {
+      rating = 'effective';
+    } else if (totalScore >= 60) {
       rating = 'good';
-    } else if (totalScore >= 50) {
+    } else if (totalScore >= 40) {
+      rating = 'partially-effective';
+    } else if (totalScore >= 25) {
       rating = 'adequate';
-    } else if (totalScore >= 30) {
-      rating = 'poor';
+    } else if (totalScore > 0) {
+      rating = 'inadequate';
     } else {
-      rating = 'ineffective';
+      rating = 'poor';
     }
     
-    setMetrics(prev => ({
-      ...prev,
+    return {
       score: totalScore,
       rating
-    }));
+    };
   };
-
-  const handleToggleExpand = () => {
-    setExpanded(!expanded);
+  
+  const handleCriteriaChange = (criteria: keyof CAPAEffectivenessMetrics, value: boolean) => {
+    const updatedMetrics = {
+      ...metrics,
+      [criteria]: value
+    };
+    
+    const { score, rating } = calculateScore(updatedMetrics);
+    
+    setMetrics({
+      ...updatedMetrics,
+      score,
+      rating
+    });
   };
-
-  const handleToggleChange = (field: keyof CAPAEffectivenessMetrics) => {
-    setMetrics(prev => ({
-      ...prev,
-      [field]: !prev[field as keyof CAPAEffectivenessMetrics]
-    }));
-  };
-
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMetrics(prev => ({
-      ...prev,
-      notes: e.target.value
-    }));
-  };
-
-  const handleSave = async () => {
+  
+  const handleSubmit = async () => {
     try {
-      setSaving(true);
+      setSubmitting(true);
       
-      const savedMetrics = await saveEffectivenessMetrics(metrics);
+      const updatedMetrics = {
+        ...metrics,
+        notes,
+        assessmentDate: new Date().toISOString()
+      };
       
-      await onEffectivenessUpdate(savedMetrics);
+      let result;
       
-      setHasExistingReport(true);
+      if (existingReport) {
+        result = await updateCAPAEffectivenessReport(existingReport.id!, updatedMetrics);
+      } else {
+        result = await createCAPAEffectivenessReport(updatedMetrics);
+      }
+      
+      setExistingReport(result);
+      
+      if (onEffectivenessUpdate) {
+        onEffectivenessUpdate(result);
+      }
+      
       toast({
         title: 'Success',
         description: 'Effectiveness assessment saved successfully',
       });
+      
+      setActiveTab('results');
     } catch (error) {
-      console.error('Error saving effectiveness metrics:', error);
+      console.error('Error submitting effectiveness assessment:', error);
       toast({
         title: 'Error',
         description: 'Failed to save effectiveness assessment',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'bg-green-500';
-    if (score >= 70) return 'bg-emerald-500';
-    if (score >= 50) return 'bg-blue-500';
-    if (score >= 30) return 'bg-amber-500';
-    return 'bg-red-500';
-  };
-
-  const getRatingBadge = (rating: CAPAEffectivenessRating) => {
-    switch (rating) {
-      case 'excellent':
-        return <Badge className="bg-green-100 text-green-800">Excellent</Badge>;
-      case 'good':
-        return <Badge className="bg-emerald-100 text-emerald-800">Good</Badge>;
-      case 'adequate':
-        return <Badge className="bg-blue-100 text-blue-800">Adequate</Badge>;
-      case 'poor':
-        return <Badge className="bg-amber-100 text-amber-800">Poor</Badge>;
-      case 'ineffective':
-        return <Badge className="bg-red-100 text-red-800">Ineffective</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">Not Rated</Badge>;
+  
+  const getEffectivenessColor = (rating: CAPAEffectivenessRating) => {
+    if (rating === 'excellent' || rating === 'effective') {
+      return 'text-green-600';
+    } else if (rating === 'good' || rating === 'partially-effective' || rating === 'adequate') {
+      return 'text-yellow-600';
+    } else if (rating === 'poor' || rating === 'ineffective' || rating === 'inadequate') {
+      return 'text-red-600';
+    } else {
+      return 'text-gray-600';
     }
   };
-
+  
+  const getEffectivenessIcon = (rating: CAPAEffectivenessRating) => {
+    if (rating === 'excellent' || rating === 'effective') {
+      return <CheckCircle className="h-6 w-6 text-green-600" />;
+    } else if (rating === 'good' || rating === 'partially-effective' || rating === 'adequate') {
+      return <AlertTriangle className="h-6 w-6 text-yellow-600" />;
+    } else if (rating === 'poor' || rating === 'ineffective' || rating === 'inadequate') {
+      return <XCircle className="h-6 w-6 text-red-600" />;
+    } else {
+      return <Clock className="h-6 w-6 text-gray-600" />;
+    }
+  };
+  
+  const renderEffectivenessDetails = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          {getEffectivenessIcon(metrics.rating)}
+          <div>
+            <h3 className={`text-lg font-medium ${getEffectivenessColor(metrics.rating)}`}>
+              {metrics.rating.charAt(0).toUpperCase() + metrics.rating.slice(1).replace('-', ' ')}
+            </h3>
+            <p className="text-sm text-gray-500">
+              Overall effectiveness score: {metrics.score}/100
+            </p>
+          </div>
+        </div>
+        
+        <Separator />
+        
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Root Cause Eliminated</span>
+              <span className={metrics.rootCauseEliminated ? 'text-green-600' : 'text-red-600'}>
+                {metrics.rootCauseEliminated ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Documentation Complete</span>
+              <span className={metrics.documentationComplete ? 'text-green-600' : 'text-red-600'}>
+                {metrics.documentationComplete ? 'Yes' : 'No'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Prevention Effective</span>
+              <span className={metrics.preventionMeasureEffective ? 'text-green-600' : 'text-red-600'}>
+                {metrics.preventionMeasureEffective ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Recurrence Checked</span>
+              <span className={metrics.recurrenceCheck ? 'text-green-600' : 'text-red-600'}>
+                {metrics.recurrenceCheck ? 'Yes' : 'No'}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {notes && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-1">Notes</h4>
+            <p className="text-sm p-3 bg-gray-50 rounded-md border">{notes}</p>
+          </div>
+        )}
+        
+        <div className="mt-4 text-xs text-gray-500">
+          Assessment date: {new Date(metrics.assessmentDate).toLocaleString()}
+        </div>
+      </div>
+    );
+  };
+  
   if (loading) {
     return (
       <Card>
-        <CardHeader className="flex flex-row items-center">
-          <CardTitle className="text-xl">
-            Effectiveness Assessment
-          </CardTitle>
-          <div className="ml-auto flex items-center">
-            <Loader2 className="animate-spin h-5 w-5 text-gray-400" />
-          </div>
+        <CardHeader>
+          <CardTitle>Effectiveness Monitoring</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-6">
-            <Loader2 className="animate-spin h-8 w-8 text-primary" />
-            <span className="ml-2">Loading assessment data...</span>
-          </div>
+        <CardContent className="flex justify-center items-center py-8">
+          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
     <Card>
-      <CardHeader 
-        className="flex flex-row items-center cursor-pointer" 
-        onClick={handleToggleExpand}
-      >
-        <CardTitle className="text-xl flex items-center">
-          <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
-          Effectiveness Assessment
-          {hasExistingReport && (
-            <Badge className="ml-2 bg-blue-100 text-blue-800">
-              {metrics.score >= 70 ? 'Verified' : 'Assessed'}
-            </Badge>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Effectiveness Monitoring</span>
+          {existingReport && (
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getEffectivenessColor(metrics.rating)} bg-opacity-20 bg-gray-100`}>
+              {metrics.rating.charAt(0).toUpperCase() + metrics.rating.slice(1).replace('-', ' ')}
+            </div>
           )}
         </CardTitle>
-        <div className="ml-auto flex items-center">
-          <div className="mr-4 flex items-center">
-            <span className="text-sm font-medium mr-2">Score:</span>
-            <Badge className={`${getScoreColor(metrics.score)} text-white`}>
-              {metrics.score}%
-            </Badge>
-          </div>
-          {expanded ? (
-            <ChevronUp className="h-5 w-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-gray-400" />
-          )}
-        </div>
       </CardHeader>
-      
-      {expanded && (
-        <CardContent className="space-y-6">
-          {implementationDate && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Effectiveness Verification</AlertTitle>
-              <AlertDescription>
-                This CAPA was implemented on {new Date(implementationDate).toLocaleDateString()}. 
-                Effectiveness should be verified to ensure the issue has been resolved.
-              </AlertDescription>
-            </Alert>
-          )}
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="criteria">Assessment Criteria</TabsTrigger>
+            <TabsTrigger value="results">Results</TabsTrigger>
+          </TabsList>
           
-          <div className="space-y-1">
-            <div className="text-sm text-gray-500">Overall Effectiveness</div>
-            <div className="flex items-center space-x-3">
-              <Progress 
-                value={metrics.score} 
-                className={`h-2.5 ${getScoreColor(metrics.score)}`} 
-              />
-              <span className="font-medium">{metrics.score}%</span>
-            </div>
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-sm">Rating: </span>
-              {getRatingBadge(metrics.rating)}
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="space-y-0.5">
-                <Label htmlFor="rootCauseEliminated" className="text-base font-medium">
-                  Root Cause Eliminated (30%)
-                </Label>
-                <div className="text-sm text-gray-500">
-                  The root cause has been successfully eliminated
+          <TabsContent value="criteria">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="rootCause">Root Cause Eliminated</Label>
+                    <p className="text-sm text-gray-500">Has the root cause been fully addressed?</p>
+                  </div>
+                  <Switch
+                    id="rootCause"
+                    checked={metrics.rootCauseEliminated}
+                    onCheckedChange={(checked) => handleCriteriaChange('rootCauseEliminated', checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="documentation">Documentation Complete</Label>
+                    <p className="text-sm text-gray-500">Are all required documents updated?</p>
+                  </div>
+                  <Switch
+                    id="documentation"
+                    checked={metrics.documentationComplete}
+                    onCheckedChange={(checked) => handleCriteriaChange('documentationComplete', checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="prevention">Prevention Measure Effective</Label>
+                    <p className="text-sm text-gray-500">Are preventive actions working as expected?</p>
+                  </div>
+                  <Switch
+                    id="prevention"
+                    checked={metrics.preventionMeasureEffective}
+                    onCheckedChange={(checked) => handleCriteriaChange('preventionMeasureEffective', checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="recurrence">Recurrence Check Completed</Label>
+                    <p className="text-sm text-gray-500">Has adequate time passed to verify no recurrence?</p>
+                  </div>
+                  <Switch
+                    id="recurrence"
+                    checked={metrics.recurrenceCheck}
+                    onCheckedChange={(checked) => handleCriteriaChange('recurrenceCheck', checked)}
+                  />
                 </div>
               </div>
-              <div className="flex items-center">
-                {metrics.rootCauseEliminated ? (
-                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
-                ) : (
-                  <CircleX className="mr-2 h-5 w-5 text-red-500" />
-                )}
-                <Switch 
-                  id="rootCauseEliminated"
-                  checked={metrics.rootCauseEliminated}
-                  onCheckedChange={() => handleToggleChange('rootCauseEliminated')}
+              
+              <Separator />
+              
+              <div>
+                <Label htmlFor="notes">Assessment Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any notes about the effectiveness assessment..."
+                  className="mt-2"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <div className="space-y-0.5">
-                <Label htmlFor="documentationComplete" className="text-base font-medium">
-                  Documentation Complete (20%)
-                </Label>
-                <div className="text-sm text-gray-500">
-                  All documentation has been properly updated
+              
+              <div className="flex justify-between items-center">
+                <div className="space-y-0.5">
+                  <h3 className="font-medium">Effectiveness Score</h3>
+                  <p className="text-sm text-gray-500">Based on selected criteria</p>
+                </div>
+                <div className="text-2xl font-bold">
+                  {metrics.score}/100
                 </div>
               </div>
-              <div className="flex items-center">
-                {metrics.documentationComplete ? (
-                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
-                ) : (
-                  <CircleX className="mr-2 h-5 w-5 text-red-500" />
-                )}
-                <Switch 
-                  id="documentationComplete"
-                  checked={metrics.documentationComplete}
-                  onCheckedChange={() => handleToggleChange('documentationComplete')}
-                />
+              
+              <Separator />
+              
+              <div className="flex justify-end">
+                <Button onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Assessment'
+                  )}
+                </Button>
               </div>
             </div>
-            
-            <div className="flex justify-between items-center">
-              <div className="space-y-0.5">
-                <Label htmlFor="preventionMeasureEffective" className="text-base font-medium">
-                  Prevention Measures Effective (30%)
-                </Label>
-                <div className="text-sm text-gray-500">
-                  Preventive actions have been effective
-                </div>
-              </div>
-              <div className="flex items-center">
-                {metrics.preventionMeasureEffective ? (
-                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
-                ) : (
-                  <CircleX className="mr-2 h-5 w-5 text-red-500" />
-                )}
-                <Switch 
-                  id="preventionMeasureEffective"
-                  checked={metrics.preventionMeasureEffective}
-                  onCheckedChange={() => handleToggleChange('preventionMeasureEffective')}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <div className="space-y-0.5">
-                <Label htmlFor="recurrenceCheck" className="text-base font-medium">
-                  No Recurrence (20%)
-                </Label>
-                <div className="text-sm text-gray-500">
-                  The issue has not recurred
-                </div>
-              </div>
-              <div className="flex items-center">
-                {metrics.recurrenceCheck ? (
-                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
-                ) : (
-                  <CircleX className="mr-2 h-5 w-5 text-red-500" />
-                )}
-                <Switch 
-                  id="recurrenceCheck"
-                  checked={metrics.recurrenceCheck}
-                  onCheckedChange={() => handleToggleChange('recurrenceCheck')}
-                />
-              </div>
-            </div>
-          </div>
+          </TabsContent>
           
-          <Separator />
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea 
-              id="notes"
-              value={metrics.notes || ''}
-              onChange={handleNotesChange}
-              placeholder="Enter any additional notes or observations about the effectiveness assessment"
-              rows={3}
-            />
-          </div>
-          
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <FileCheck className="mr-2 h-4 w-4" />
-                  {hasExistingReport ? 'Update Assessment' : 'Save Assessment'}
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      )}
+          <TabsContent value="results">
+            {existingReport ? (
+              renderEffectivenessDetails()
+            ) : (
+              <div className="text-center py-8">
+                <Clock className="mx-auto h-12 w-12 text-gray-300" />
+                <h3 className="mt-2 text-lg font-medium">No Assessment Yet</h3>
+                <p className="text-gray-500 mt-1 max-w-md mx-auto">
+                  Complete the assessment criteria and save to generate effectiveness results.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 };

@@ -40,6 +40,7 @@ export interface RelatedDocument {
   capaId: string;
   documentType: string;
   title?: string;
+  type?: string;
   addedAt: string;
   addedBy: string;
 }
@@ -49,6 +50,7 @@ export interface RelatedTraining {
   trainingId: string;
   capaId: string;
   title?: string;
+  type?: string;
   addedAt: string;
   addedBy: string;
 }

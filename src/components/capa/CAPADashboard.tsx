@@ -25,14 +25,12 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
   const [capaList, setCAPAList] = useState<CAPA[]>([]);
   const [stats, setStats] = useState<CAPAStats>({
     total: 0,
-    openCAPAs: 0,
-    overdueCAPAs: 0,
-    byStatus: {
-      open: 0,
-      'in-progress': 0,
-      closed: 0,
-      verified: 0
-    },
+    openCount: 0,
+    closedCount: 0,
+    overdueCount: 0,
+    verifiedCount: 0,
+    inProgressCount: 0,
+    pendingVerificationCount: 0,
     byPriority: {
       critical: 0,
       high: 0,
@@ -41,23 +39,35 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     },
     bySource: {
       audit: 0,
-      haccp: 0,
-      supplier: 0,
+      'haccp': 0,
+      'non-conformance': 0,
       complaint: 0,
       traceability: 0,
-      nonconformance: 0
+      internal: 0,
+      customer: 0,
+      regulatory: 0,
+      supplier: 0
+    },
+    byStatus: {
+      open: 0,
+      'in-progress': 0,
+      closed: 0,
+      verified: 0,
+      overdue: 0,
+      'pending-verification': 0
+    },
+    effectivenessStats: {
+      verified: 0,
+      effective: 0,
+      partiallyEffective: 0,
+      ineffective: 0,
+      notEvaluated: 0
     },
     overdue: 0,
     recentItems: [],
     averageTimeToClose: 0,
     averageClosureTime: 0,
     fsma204ComplianceRate: 0,
-    effectivenessStats: {
-      effective: 0,
-      partiallyEffective: 0,
-      ineffective: 0,
-      notEvaluated: 0
-    },
     completionRates: {}
   });
 
@@ -85,11 +95,12 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
       setStats({
         ...statsData,
         averageClosureTime: statsData.averageClosureTime || 0,
-        effectivenessStats: statsData.effectivenessStats || {
-          effective: 0,
-          partiallyEffective: 0,
-          ineffective: 0,
-          notEvaluated: 0
+        effectivenessStats: {
+          verified: statsData.effectivenessStats.verified || 0,
+          effective: statsData.effectivenessStats.effective || 0,
+          partiallyEffective: statsData.effectivenessStats.partiallyEffective || 0,
+          ineffective: statsData.effectivenessStats.ineffective || 0,
+          notEvaluated: statsData.effectivenessStats.notEvaluated || 0
         },
         fsma204ComplianceRate: statsData.fsma204ComplianceRate || 0
       });
@@ -134,7 +145,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     { name: 'Supplier', value: stats.bySource.supplier || 0 },
     { name: 'Complaint', value: stats.bySource.complaint || 0 },
     { name: 'Traceability', value: stats.bySource.traceability || 0 },
-    { name: 'Non-Conformance', value: stats.bySource.nonconformance || 0 }
+    { name: 'Non-Conformance', value: stats.bySource['non-conformance'] || 0 }
   ] : [];
 
   const getMonthlyTrendData = () => {

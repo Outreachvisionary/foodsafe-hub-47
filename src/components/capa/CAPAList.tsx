@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -108,9 +109,9 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
     );
   }
 
-  const statuses: CAPAStatus[] = ['open', 'in-progress', 'closed', 'verified'];
+  const statuses: CAPAStatus[] = ['open', 'in-progress', 'closed', 'verified', 'overdue', 'pending-verification'];
   const priorities: CAPAPriority[] = ['low', 'medium', 'high', 'critical'];
-  const sources: CAPASource[] = ['audit', 'complaint', 'non_conformance', 'internal', 'other', 'supplier', 'haccp', 'traceability'];
+  const sources: CAPASource[] = ['audit', 'complaint', 'non-conformance', 'internal', 'customer', 'regulatory', 'supplier', 'haccp', 'traceability'];
 
   return (
     <div className="space-y-4">
