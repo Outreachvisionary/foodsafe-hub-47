@@ -4,6 +4,19 @@ export type ComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'r
 export type ComplaintPriority = 'critical' | 'high' | 'medium' | 'low';
 export type ComplaintSource = 'customer' | 'consumer' | 'retailer' | 'distributor' | 'internal' | 'audit' | 'inspection';
 
+// Database-compatible types
+export type DbComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
+export type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
+
+// Category map for UI display
+export const categoryDisplayMap: Record<ComplaintCategory, string> = {
+  'quality': 'Product Quality',
+  'safety': 'Food Safety',
+  'packaging': 'Packaging',
+  'delivery': 'Delivery',
+  'other': 'Other'
+};
+
 export interface Complaint {
   id: string;
   title: string;
@@ -62,4 +75,26 @@ export interface ComplaintStats {
   bySource?: { name: string; value: number }[];
   responseTimeAvg: number;
   resolutionTimeAvg: number;
+}
+
+// Database interface for complaints table
+export interface DbComplaint {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  priority: string; // Add this to match what's needed in ComplaintManagement
+  reported_date: string;
+  assigned_to?: string;
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  resolution_date?: string;
+  customer_name?: string;
+  customer_contact?: string;
+  product_involved?: string;
+  lot_number?: string;
+  capa_required?: boolean;
+  capa_id?: string;
 }

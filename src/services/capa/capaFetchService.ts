@@ -71,6 +71,9 @@ export const mapDbRowToCapa = (row: any): CAPA => {
   };
 };
 
+// For use in other services
+export const mapDbResultToCapa = mapDbRowToCapa;
+
 export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
     let query = supabase

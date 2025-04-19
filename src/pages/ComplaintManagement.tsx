@@ -10,55 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
+import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority, DbComplaint, DbComplaintCategory, DbComplaintStatus, categoryDisplayMap } from '@/types/complaint';
 import { Plus } from 'lucide-react';
-
-// Define the database schema compatible types
-type DbComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
-type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
 
 // Define values for select inputs
 const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
 const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
-
-// Map for converting between UI and DB values
-const categoryMap: Record<ComplaintCategory, DbComplaintCategory> = {
-  'quality': 'quality',
-  'safety': 'safety',
-  'packaging': 'packaging',
-  'delivery': 'delivery',
-  'other': 'other'
-};
-
-const statusMap: Record<ComplaintStatus, DbComplaintStatus> = {
-  'new': 'new',
-  'in-progress': 'in-progress',
-  'resolved': 'resolved',
-  'closed': 'closed',
-  'reopened': 'reopened'
-};
-
-// Interface for database records
-interface DbComplaint {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  priority: string;
-  reported_date: string;
-  assigned_to?: string;
-  created_by: string;
-  created_at: string;
-  updated_at?: string;
-  resolution_date?: string;
-  customer_name?: string;
-  customer_contact?: string;
-  product_involved?: string;
-  lot_number?: string;
-  capa_required?: boolean;
-  capa_id?: string;
-}
 
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -91,7 +48,7 @@ const ComplaintManagement: React.FC = () => {
       if (error) throw error;
 
       // Convert database schema to our complaint type
-      const convertedComplaints: Complaint[] = (data || []).map((item: DbComplaint) => ({
+      const convertedComplaints: Complaint[] = (data || []).map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -143,8 +100,8 @@ const ComplaintManagement: React.FC = () => {
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
-        category: categoryMap[newComplaint.category as ComplaintCategory],
-        status: statusMap[newComplaint.status as ComplaintStatus],
+        category: newComplaint.category, // Already correct format for DB
+        status: newComplaint.status, // Already correct format for DB
         priority: newComplaint.priority,
         reported_date: new Date().toISOString(),
         created_by: 'current_user', // This should be dynamic based on auth user
@@ -163,28 +120,28 @@ const ComplaintManagement: React.FC = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const newComplaintData = data[0] as DbComplaint;
+        const newDbComplaint = data[0] as any;
         
         // Convert back to our type
         const convertedComplaint: Complaint = {
-          id: newComplaintData.id,
-          title: newComplaintData.title,
-          description: newComplaintData.description,
-          category: newComplaintData.category as ComplaintCategory,
-          status: newComplaintData.status as ComplaintStatus,
-          priority: (newComplaintData.priority || 'medium') as ComplaintPriority,
-          reportedDate: newComplaintData.reported_date,
-          assignedTo: newComplaintData.assigned_to,
-          createdBy: newComplaintData.created_by,
-          createdDate: newComplaintData.created_at,
-          updatedAt: newComplaintData.updated_at,
-          resolutionDate: newComplaintData.resolution_date,
-          customerName: newComplaintData.customer_name,
-          customerContact: newComplaintData.customer_contact,
-          productInvolved: newComplaintData.product_involved,
-          lotNumber: newComplaintData.lot_number,
-          capaRequired: newComplaintData.capa_required || false,
-          capaId: newComplaintData.capa_id,
+          id: newDbComplaint.id,
+          title: newDbComplaint.title,
+          description: newDbComplaint.description,
+          category: newDbComplaint.category as ComplaintCategory,
+          status: newDbComplaint.status as ComplaintStatus,
+          priority: (newDbComplaint.priority || 'medium') as ComplaintPriority,
+          reportedDate: newDbComplaint.reported_date,
+          assignedTo: newDbComplaint.assigned_to,
+          createdBy: newDbComplaint.created_by,
+          createdDate: newDbComplaint.created_at,
+          updatedAt: newDbComplaint.updated_at,
+          resolutionDate: newDbComplaint.resolution_date,
+          customerName: newDbComplaint.customer_name,
+          customerContact: newDbComplaint.customer_contact,
+          productInvolved: newDbComplaint.product_involved,
+          lotNumber: newDbComplaint.lot_number,
+          capaRequired: newDbComplaint.capa_required || false,
+          capaId: newDbComplaint.capa_id,
           source: 'customer'  // Default value
         };
         
@@ -226,20 +183,7 @@ const ComplaintManagement: React.FC = () => {
   };
 
   const getCategoryLabel = (category: ComplaintCategory) => {
-    switch (category) {
-      case 'quality':
-        return 'Product Quality';
-      case 'safety':
-        return 'Food Safety';
-      case 'packaging':
-        return 'Packaging';
-      case 'delivery':
-        return 'Delivery';
-      case 'other':
-        return 'Other';
-      default:
-        return category;
-    }
+    return categoryDisplayMap[category] || category;
   };
 
   return (

@@ -84,6 +84,7 @@ export interface CAPAEffectivenessAssessment {
   recurrenceCheck: string;
   notes?: string;
   createdBy: string;
+  checkedDate?: string; // Added for stats service
 }
 
 export interface CAPAFilter {
@@ -116,12 +117,23 @@ export interface CAPAStats {
     partiallyEffective: number;
     ineffective: number;
   };
+  averageTimeToClose?: number;
+  averageClosureTime?: number;
+  overdue?: number;
+  recentItems?: CAPA[];
+  completionRates?: Record<string, number>;
 }
 
 export interface CAPAEffectivenessMetrics {
   score: number;
-  rating: CAPAEffectivenessRating;
+  rating?: CAPAEffectivenessRating;
   notes?: string;
+  rootCauseEliminated?: boolean;
+  preventiveMeasuresImplemented?: boolean;
+  documentationComplete?: boolean;
+  recurrenceCheck?: string;
+  checkedDate?: string;
+  assessmentDate?: string;
 }
 
 export interface CAPAFetchParams {
@@ -131,11 +143,11 @@ export interface CAPAFetchParams {
   sourceId?: string;
   assignedTo?: string;
   department?: string;
-  searchQuery?: string; // Added this field
-  from?: string; // Added this field for date range start
-  to?: string; // Added this field for date range end
+  searchQuery?: string; 
+  from?: string;
+  to?: string; 
   dueDate?: string;
   limit?: number;
   page?: number;
-  id?: string; // Added this field to fetch by ID
+  id?: string;
 }

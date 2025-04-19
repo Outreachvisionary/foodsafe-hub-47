@@ -1,3 +1,4 @@
+
 import { fetchCAPAs } from './capaFetchService';
 import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus } from '@/types/capa';
 
@@ -8,46 +9,58 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     
     const stats: CAPAStats = {
       total: capas.length,
-      byStatus: {},
-      byPriority: {},
-      bySource: {},
-      overdue: 0,
-      recentItems: capas.slice(0, 5),
-      completionRates: {},
+      openCount: 0,
+      inProgressCount: 0,
+      closedCount: 0,
+      verifiedCount: 0,
+      pendingVerificationCount: 0,
+      overdueCount: 0,
+      byStatus: [],
+      byPriority: [],
+      bySource: [],
+      fsma204ComplianceRate: 0,
       effectivenessStats: {
         effective: 0,
         partiallyEffective: 0,
-        ineffective: 0,
-        notEvaluated: 0
-      },
-      averageTimeToClose: 0,
-      averageClosureTime: 0,
-      fsma204ComplianceRate: 0
+        ineffective: 0
+      }
     };
     
     const today = new Date();
     let totalClosureTime = 0;
     let closedItemsCount = 0;
     let totalFSMACompliant = 0;
+    
+    // Create counters for statuses, priorities, and sources
+    const statusCounts: Record<string, number> = {};
+    const priorityCounts: Record<string, number> = {};
+    const sourceCounts: Record<string, number> = {};
 
     capas.forEach(capa => {
       // Count by status
-      stats.byStatus[capa.status] = (stats.byStatus[capa.status] || 0) + 1;
+      statusCounts[capa.status] = (statusCounts[capa.status] || 0) + 1;
+      
+      // Update individual status counts
+      if (capa.status === 'open') stats.openCount++;
+      if (capa.status === 'in-progress') stats.inProgressCount++;
+      if (capa.status === 'closed') stats.closedCount++;
+      if (capa.status === 'verified') stats.verifiedCount++;
+      if (capa.status === 'pending-verification') stats.pendingVerificationCount++;
 
       // Count by priority
-      stats.byPriority[capa.priority] = (stats.byPriority[capa.priority] || 0) + 1;
+      priorityCounts[capa.priority] = (priorityCounts[capa.priority] || 0) + 1;
 
       // Count by source
-      stats.bySource[capa.source] = (stats.bySource[capa.source] || 0) + 1;
+      sourceCounts[capa.source] = (sourceCounts[capa.source] || 0) + 1;
 
       // Calculate overdue items
-      if (new Date(capa.dueDate) < today && capa.status !== 'Closed' && capa.status !== 'Verified') {
-        stats.overdue++;
+      if (new Date(capa.dueDate) < today && (capa.status !== 'closed' && capa.status !== 'verified')) {
+        stats.overdueCount++;
       }
 
       // Calculate completion rates
-      if (capa.completedDate) {
-        const completionDate = new Date(capa.completedDate);
+      if (capa.completionDate) {
+        const completionDate = new Date(capa.completionDate);
         const dueDate = new Date(capa.dueDate);
         const timeToClose = completionDate.getTime() - dueDate.getTime();
         totalClosureTime += timeToClose;
@@ -55,21 +68,24 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       }
 
       // Calculate FSMA 204 compliance rate
-      if (capa.fsma204Compliant) {
+      if (capa.isFsma204Compliant) {
         totalFSMACompliant++;
       }
 
       // Calculate effectiveness stats
-      if (capa.effectivenessRating === 'Effective') {
-        stats.effectivenessStats.effective++;
-      } else if (capa.effectivenessRating === 'Partially Effective') {
-        stats.effectivenessStats.partiallyEffective++;
-      } else if (capa.effectivenessRating === 'Ineffective') {
-        stats.effectivenessStats.ineffective++;
-      } else {
-        stats.effectivenessStats.notEvaluated++;
+      if (capa.effectivenessRating === 'excellent' || capa.effectivenessRating === 'good') {
+        stats.effectivenessStats!.effective++;
+      } else if (capa.effectivenessRating === 'adequate') {
+        stats.effectivenessStats!.partiallyEffective++;
+      } else if (capa.effectivenessRating === 'poor' || capa.effectivenessRating === 'ineffective') {
+        stats.effectivenessStats!.ineffective++;
       }
     });
+
+    // Convert counters to array format for charts
+    stats.byStatus = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+    stats.byPriority = Object.entries(priorityCounts).map(([name, value]) => ({ name, value }));
+    stats.bySource = Object.entries(sourceCounts).map(([name, value]) => ({ name, value }));
 
     // Calculate average time to close
     if (closedItemsCount > 0) {
@@ -100,11 +116,12 @@ export const createEffectivenessAssessment = async (
       rootCauseEliminated: assessmentData.rootCauseEliminated || false,
       preventiveMeasuresImplemented: assessmentData.preventiveMeasuresImplemented || false,
       documentationComplete: assessmentData.documentationComplete || false,
-      recurrenceCheck: assessmentData.recurrenceCheck,
+      recurrenceCheck: assessmentData.recurrenceCheck || '',
       score: assessmentData.score || 0,
       checkedDate: assessmentData.checkedDate || new Date().toISOString(),
       assessmentDate: assessmentData.assessmentDate,
-      notes: assessmentData.notes
+      notes: assessmentData.notes,
+      rating: assessmentData.rating
     };
     
     return metrics;
