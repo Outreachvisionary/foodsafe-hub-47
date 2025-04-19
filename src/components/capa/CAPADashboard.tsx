@@ -25,7 +25,19 @@ interface CAPADashboardProps {
 }
 
 const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
-  const [stats, setStats] = useState<CAPAStats | null>(null);
+  const [stats, setStats] = useState<CAPAStats>({
+    total: 0,
+    openCount: 0,
+    inProgressCount: 0,
+    closedCount: 0,
+    verifiedCount: 0,
+    pendingVerificationCount: 0,
+    overdueCount: 0,
+    byStatus: [],
+    byPriority: [],
+    bySource: []
+  });
+  
   const [recentCAPAs, setRecentCAPAs] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -74,12 +86,17 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
           capaFilter.searchTerm = searchQuery;
         }
         
-        const capas = await fetchCAPAs({
+        // Convert filter to fetch parameters
+        const fetchParams = {
           status: capaFilter.status,
           priority: capaFilter.priority,
           source: capaFilter.source,
-          searchQuery: capaFilter.searchTerm
-        });
+          searchQuery: capaFilter.searchTerm,
+          limit: 5,
+          page: 1
+        };
+        
+        const capas = await fetchCAPAs(fetchParams);
         setRecentCAPAs(capas.slice(0, 5)); // Show only the first 5 items
       } catch (error) {
         console.error('Error loading CAPA dashboard data:', error);

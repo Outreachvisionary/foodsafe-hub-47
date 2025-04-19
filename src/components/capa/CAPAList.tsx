@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchCAPAs } from '@/services/capaService';
-import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
+import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +55,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           capaFilter.searchTerm = searchQuery;
         }
         
-        const data = await fetchCAPAs({
+        // Convert filter to fetch parameters
+        const fetchParams: CAPAFetchParams = {
           status: capaFilter.status,
           priority: capaFilter.priority,
           source: capaFilter.source,
@@ -64,8 +65,9 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           ...(capaFilter.dateRange && {
             dueDate: capaFilter.dateRange.end
           })
-        });
+        };
         
+        const data = await fetchCAPAs(fetchParams);
         setCapas(data);
       } catch (error) {
         console.error('Error loading CAPAs:', error);
@@ -152,10 +154,10 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
               
               <div className="flex flex-col sm:items-end gap-2">
                 <div className="flex gap-2">
-                  <Badge className={`capitalize`}>
+                  <Badge className={`capitalize ${getStatusColor(capa.status)}`}>
                     {capa.status.replace('-', ' ')}
                   </Badge>
-                  <Badge variant="outline" className={`capitalize`}>
+                  <Badge variant="outline" className={`capitalize ${getPriorityColor(capa.priority)}`}>
                     {capa.priority}
                   </Badge>
                 </div>

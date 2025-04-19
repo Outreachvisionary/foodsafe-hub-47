@@ -1,5 +1,4 @@
 
-// Create this utility file for database testing functions
 export interface FunctionTestResult {
   name: string;
   status: 'pending' | 'passing' | 'failing' | 'partial';

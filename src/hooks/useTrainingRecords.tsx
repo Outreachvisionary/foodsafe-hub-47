@@ -45,8 +45,8 @@ const useTrainingRecords = (employeeId?: string) => {
           assigned_date: record.assigned_date,
           courseName: sessionInfo.title || 'Unknown Course',
           instructorName: 'Not Assigned', // This field may need to be added to the training_sessions table
-          created_at: record.assigned_date || new Date().toISOString(), // Fallback
-          updated_at: record.completion_date || new Date().toISOString() // Fallback
+          created_at: record.assigned_date || new Date().toISOString(), // Use assigned_date for created_at
+          updated_at: record.completion_date || new Date().toISOString() // Use completion_date for updated_at
         };
       });
       

@@ -1,19 +1,27 @@
-
-import React, { useState, useEffect } from 'react';
-import { useTrainingContext } from '@/contexts/TrainingContext';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrainingPlan, TrainingPriority } from '@/types/training';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/components/ui/use-toast';
+import { TrainingPlan, TrainingPriority } from '@/types/training';
+import { useTrainingContext } from '@/contexts/TrainingContext';
+import { PlusCircle, Edit, Trash2, Calendar, Loader } from 'lucide-react';
+import { format } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
 
 const TrainingPlans = () => {
-  const { trainingPlans, isLoading, createTrainingPlan } = useTrainingContext();
+  const { plans, isLoading, createPlan, deletePlan } = useTrainingContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newPlan, setNewPlan] = useState<Partial<TrainingPlan>>({
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  const [formData, setFormData] = useState<Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: '',
     description: '',
     priority: 'medium',
@@ -21,39 +29,57 @@ const TrainingPlans = () => {
     target_roles: [],
     courses: [],
     duration_days: 30,
-    target_departments: []
+    target_departments: [],
+    status: 'Active',
+    start_date: new Date().toISOString(),
+    end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    is_automated: false,
+    automation_trigger: '',
+    created_by: user?.id || 'system',
+    related_standards: []
   });
-
-  const handleCreatePlan = async () => {
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSubmit = async () => {
     try {
-      // Validate required fields
-      if (!newPlan.name) {
-        toast.error('Plan name is required');
+      // Ensure all required fields are present
+      if (!formData.name || !formData.description) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
         return;
       }
-
-      // Add required fields that might be missing
-      const planToCreate = {
-        name: newPlan.name,
-        description: newPlan.description || '',
-        priority: (newPlan.priority || 'medium') as TrainingPriority,
-        is_required: Boolean(newPlan.is_required),
-        target_roles: newPlan.target_roles || [],
-        courses: newPlan.courses || [],
-        duration_days: newPlan.duration_days || 30,
-        target_departments: newPlan.target_departments || [],
-        status: 'Active',
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        is_automated: false,
-        related_standards: []
-      };
-
-      await createTrainingPlan(planToCreate);
-      toast.success('Training plan created successfully');
+      
+      await createPlan({
+        name: formData.name,
+        description: formData.description,
+        priority: formData.priority,
+        is_required: formData.is_required,
+        target_roles: formData.target_roles,
+        courses: formData.courses,
+        duration_days: formData.duration_days,
+        target_departments: formData.target_departments,
+        status: formData.status,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        is_automated: formData.is_automated,
+        automation_trigger: formData.automation_trigger,
+        created_by: user?.id || 'system',
+        related_standards: formData.related_standards || []
+      });
+      
       setIsDialogOpen(false);
-      // Reset form
-      setNewPlan({
+      setFormData({
         name: '',
         description: '',
         priority: 'medium',
@@ -61,18 +87,39 @@ const TrainingPlans = () => {
         target_roles: [],
         courses: [],
         duration_days: 30,
-        target_departments: []
+        target_departments: [],
+        status: 'Active',
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        is_automated: false,
+        automation_trigger: '',
+        created_by: user?.id || 'system',
+        related_standards: []
+      });
+      
+      toast({
+        title: "Success",
+        description: "Training plan created successfully"
       });
     } catch (error) {
-      console.error('Error creating training plan:', error);
-      toast.error('Failed to create training plan');
+      console.error("Error creating training plan:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create training plan. Please try again.",
+        variant: "destructive"
+      });
     }
   };
-
+  
   if (isLoading) {
-    return <div>Loading training plans...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader className="animate-spin mr-2" />
+        <span>Loading training plans...</span>
+      </div>
+    );
   }
-
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -95,8 +142,8 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="name"
-                  value={newPlan.name}
-                  onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                  value={formData.name}
+                  onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
@@ -104,10 +151,10 @@ const TrainingPlans = () => {
                 <Label htmlFor="description" className="text-right">
                   Description
                 </Label>
-                <Input
+                <Textarea
                   id="description"
-                  value={newPlan.description}
-                  onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                  value={formData.description}
+                  onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
@@ -116,8 +163,8 @@ const TrainingPlans = () => {
                   Priority
                 </Label>
                 <Select
-                  value={newPlan.priority as string}
-                  onValueChange={(value) => setNewPlan({ ...newPlan, priority: value as TrainingPriority })}
+                  value={formData.priority as string}
+                  onValueChange={(value) => handleSelectChange('priority', value)}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select priority" />
@@ -137,8 +184,86 @@ const TrainingPlans = () => {
                 <Input
                   id="durationDays"
                   type="number"
-                  value={newPlan.duration_days}
-                  onChange={(e) => setNewPlan({ ...newPlan, duration_days: parseInt(e.target.value) })}
+                  value={formData.duration_days}
+                  onChange={(e) => handleInputChange({ target: { name: 'duration_days', value: parseInt(e.target.value) } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="start_date" className="text-right">
+                  Start Date
+                </Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => handleInputChange({ target: { name: 'start_date', value: e.target.value } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="end_date" className="text-right">
+                  End Date
+                </Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => handleInputChange({ target: { name: 'end_date', value: e.target.value } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="is_required" className="text-right">
+                  Is Required
+                </Label>
+                <Checkbox
+                  id="is_required"
+                  checked={formData.is_required}
+                  onChange={(e) => handleInputChange({ target: { name: 'is_required', value: e.target.checked } })}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="target_roles" className="text-right">
+                  Target Roles
+                </Label>
+                <Input
+                  id="target_roles"
+                  value={formData.target_roles.join(', ')}
+                  onChange={(e) => handleInputChange({ target: { name: 'target_roles', value: e.target.value } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="courses" className="text-right">
+                  Courses
+                </Label>
+                <Input
+                  id="courses"
+                  value={formData.courses.join(', ')}
+                  onChange={(e) => handleInputChange({ target: { name: 'courses', value: e.target.value } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="target_departments" className="text-right">
+                  Target Departments
+                </Label>
+                <Input
+                  id="target_departments"
+                  value={formData.target_departments.join(', ')}
+                  onChange={(e) => handleInputChange({ target: { name: 'target_departments', value: e.target.value } })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="automation_trigger" className="text-right">
+                  Automation Trigger
+                </Label>
+                <Input
+                  id="automation_trigger"
+                  value={formData.automation_trigger}
+                  onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
@@ -147,13 +272,13 @@ const TrainingPlans = () => {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreatePlan}>Create Plan</Button>
+              <Button onClick={handleSubmit}>Create Plan</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {trainingPlans.length === 0 ? (
+      {plans.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-40">
             <p className="text-muted-foreground mb-4">No training plans found</p>
@@ -162,7 +287,7 @@ const TrainingPlans = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {trainingPlans.map((plan) => (
+          {plans.map((plan) => (
             <Card key={plan.id}>
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>

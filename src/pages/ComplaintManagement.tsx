@@ -13,10 +13,26 @@ import { toast } from 'sonner';
 import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 import { Plus } from 'lucide-react';
 
-// Define enumerated types for dropdown options
-const complaintStatuses: ComplaintStatus[] = ['new', 'in-progress', 'resolved', 'closed', 'reopened'];
-const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
-const complaintPriorities: ComplaintPriority[] = ['critical', 'high', 'medium', 'low'];
+// Define the database schema compatible types
+type DbComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
+type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
+
+// Map for converting between UI and DB values
+const categoryMap: Record<ComplaintCategory, DbComplaintCategory> = {
+  'quality': 'quality',
+  'safety': 'safety',
+  'packaging': 'packaging',
+  'delivery': 'delivery',
+  'other': 'other'
+};
+
+const statusMap: Record<ComplaintStatus, DbComplaintStatus> = {
+  'new': 'new',
+  'in-progress': 'in-progress',
+  'resolved': 'resolved',
+  'closed': 'closed',
+  'reopened': 'reopened'
+};
 
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -66,8 +82,9 @@ const ComplaintManagement: React.FC = () => {
         customerContact: item.customer_contact,
         productInvolved: item.product_involved,
         lotNumber: item.lot_number,
-        capaRequired: false,
-        capaId: item.capa_id
+        capaRequired: item.capa_required || false,
+        capaId: item.capa_id,
+        source: 'customer'  // Default value if not in DB
       }));
 
       setComplaints(convertedComplaints);
@@ -100,15 +117,16 @@ const ComplaintManagement: React.FC = () => {
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
-        category: newComplaint.category,
-        status: newComplaint.status,
+        category: categoryMap[newComplaint.category as ComplaintCategory],
+        status: statusMap[newComplaint.status as ComplaintStatus],
         priority: newComplaint.priority,
         reported_date: new Date().toISOString(),
         created_by: 'current_user', // This should be dynamic based on auth user
         customer_name: newComplaint.customerName,
         customer_contact: newComplaint.customerContact,
         product_involved: newComplaint.productInvolved,
-        lot_number: newComplaint.lotNumber
+        lot_number: newComplaint.lotNumber,
+        capa_required: false
       };
 
       const { data, error } = await supabase
@@ -137,8 +155,9 @@ const ComplaintManagement: React.FC = () => {
         customerContact: data.customer_contact,
         productInvolved: data.product_involved,
         lotNumber: data.lot_number,
-        capaRequired: false,
-        capaId: data.capa_id
+        capaRequired: data.capa_required || false,
+        capaId: data.capa_id,
+        source: 'customer'  // Default value
       };
       
       setComplaints([newComplaintData, ...complaints]);
