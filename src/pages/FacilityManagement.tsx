@@ -190,7 +190,21 @@ const FacilityManagement = () => {
       if (isNewFacility) {
         // Create new facility
         console.log('Creating new facility with data:', facilityData);
-        savedFacility = await createFacility(facilityData);
+        const newFacilityData: Omit<Facility, 'id'> = {
+          name: facilityData.name as string,
+          organization_id: facilityData.organization_id as string,
+          status: facilityData.status as 'active' | 'inactive' | 'pending',
+          description: facilityData.description,
+          address: facilityData.address,
+          country: facilityData.country,
+          state: facilityData.state,
+          city: facilityData.city,
+          zipcode: facilityData.zipcode,
+          contact_email: facilityData.contact_email,
+          contact_phone: facilityData.contact_phone,
+          location_data: facilityData.location_data
+        };
+        savedFacility = await createFacility(newFacilityData);
         console.log('Facility created successfully:', savedFacility);
         toast({
           title: 'Facility Created',
@@ -200,6 +214,9 @@ const FacilityManagement = () => {
       } else {
         // Update existing facility
         console.log('Updating facility with data:', facilityData);
+        if (facilityData.status) {
+          facilityData.status = facilityData.status as 'active' | 'inactive' | 'pending';
+        }
         savedFacility = await updateFacility(id!, facilityData);
         console.log('Facility updated successfully:', savedFacility);
         toast({

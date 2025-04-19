@@ -2,18 +2,34 @@
 export interface Facility {
   id: string;
   name: string;
-  description?: string | null;
-  address?: string | null;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipcode?: string;
+  country?: string;
+  status: 'active' | 'inactive' | 'pending';
   organization_id: string;
-  status: string;
+  contact_email?: string;
+  contact_phone?: string;
+  location_data?: {
+    countryCode?: string;
+    stateCode?: string;
+    [key: string]: any;
+  };
   created_at?: string;
   updated_at?: string;
-  contact_email?: string | null;
-  contact_phone?: string | null;
-  location_data?: Record<string, any> | null;
-  country?: string | null;
-  state?: string | null;
-  city?: string | null;
-  zipcode?: string | null;
-  facility_type?: string | null;
+}
+
+export interface FacilityProps {
+  id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  status: 'active' | 'inactive' | 'pending';
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+  };
+  organizationId?: string;
 }

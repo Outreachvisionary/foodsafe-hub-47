@@ -39,17 +39,18 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
   };
 
   const getPriorityBadgeClass = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'critical':
-        return 'bg-red-100 text-red-800';
-      case 'high':
-        return 'bg-orange-100 text-orange-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    const priorityLower = priority.toLowerCase();
+    
+    if (priorityLower === 'critical') {
+      return 'bg-red-100 text-red-800';
+    } else if (priorityLower === 'high') {
+      return 'bg-orange-100 text-orange-800';
+    } else if (priorityLower === 'medium') {
+      return 'bg-yellow-100 text-yellow-800';
+    } else if (priorityLower === 'low') {
+      return 'bg-blue-100 text-blue-800';
+    } else {
+      return 'bg-gray-100 text-gray-800';
     }
   };
 

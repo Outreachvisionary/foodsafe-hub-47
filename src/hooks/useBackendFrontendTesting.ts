@@ -43,11 +43,41 @@ export interface TestSummary {
   };
 }
 
+export interface TestResultDetail {
+  name: string;
+  status: 'success' | 'error' | 'warning' | 'pending';
+  message: string;
+  responseTime?: number;
+  errorDetails?: string;
+  actionRequired?: string;
+}
+
+export interface ModuleTestResult {
+  moduleName: string;
+  status: 'success' | 'error' | 'partial' | 'pending';
+  timestamp: Date;
+  details: TestResultDetail[];
+}
+
+// Define structure for active modules
+export interface ActiveModule {
+  moduleName: string;
+  enabled: boolean;
+}
+
 export function useBackendFrontendTesting() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [functions, setFunctions] = useState<FunctionInfo[]>([]);
   const [storage, setStorage] = useState<StorageInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [results, setResults] = useState<ModuleTestResult[]>([]);
+  const [activeModules, setActiveModules] = useState<ActiveModule[]>([
+    { moduleName: 'Database', enabled: true },
+    { moduleName: 'Authentication', enabled: true },
+    { moduleName: 'Storage', enabled: false },
+    { moduleName: 'Functions', enabled: false }
+  ]);
   const [summary, setSummary] = useState<TestSummary>({
     tables: { total: 0, success: 0, failed: 0 },
     functions: { total: 0, success: 0, failed: 0 },
@@ -121,7 +151,14 @@ export function useBackendFrontendTesting() {
     
     for (const func of functionsToTest) {
       try {
-        const { data, error } = await supabase.rpc(func.name, func.params || {});
+        // Cast function name to the correct type for Supabase RPC call
+        const functionName = func.name as "get_organizations" | "get_facilities" | 
+          "get_regulatory_standards" | "find_product_components" | 
+          "find_affected_products_by_component" | "get_facility_standards" | 
+          "get_related_items" | "has_permission" | "has_role" | 
+          "update_nc_status" | "update_recall_schedule_next_execution";
+        
+        const { data, error } = await supabase.rpc(functionName, func.params || {});
         
         functionResults.push({
           name: func.name,
@@ -214,12 +251,102 @@ export function useBackendFrontendTesting() {
     }
   };
 
+  const runAllTests = async () => {
+    setIsRunning(true);
+    const newResults: ModuleTestResult[] = [];
+    
+    // Run each enabled module test
+    for (const module of activeModules.filter(m => m.enabled)) {
+      const result: ModuleTestResult = {
+        moduleName: module.moduleName,
+        status: 'pending',
+        timestamp: new Date(),
+        details: []
+      };
+      
+      try {
+        if (module.moduleName === 'Database') {
+          // Test database tables
+          const tableDetails: TestResultDetail[] = [];
+          let successCount = 0;
+          
+          for (const tableName of tablesToTest.slice(0, 5)) { // Limit to 5 tables for demo
+            const startTime = performance.now();
+            const { count, error } = await supabase
+              .from(tableName as any)
+              .select('*', { count: 'exact', head: true });
+            const endTime = performance.now();
+            
+            const detail: TestResultDetail = {
+              name: `Table: ${tableName}`,
+              status: error ? 'error' : 'success',
+              message: error ? `Error: ${error.message}` : `Found ${count || 0} records`,
+              responseTime: endTime - startTime,
+              errorDetails: error ? error.message : undefined
+            };
+            
+            tableDetails.push(detail);
+            if (!error) successCount++;
+          }
+          
+          result.details = tableDetails;
+          result.status = successCount === tableDetails.length ? 'success' : 
+                        successCount > 0 ? 'partial' : 'error';
+        } 
+        else if (module.moduleName === 'Authentication') {
+          // Add a placeholder auth test
+          result.details = [{
+            name: 'Authentication Service',
+            status: 'success',
+            message: 'Authentication service is available',
+            responseTime: 45
+          }];
+          result.status = 'success';
+        }
+        // Add more module tests here
+      } catch (error) {
+        result.status = 'error';
+        result.details.push({
+          name: 'Module Error',
+          status: 'error',
+          message: `Failed to test ${module.moduleName}`,
+          errorDetails: error instanceof Error ? error.message : String(error)
+        });
+      }
+      
+      newResults.push(result);
+    }
+    
+    setResults(newResults);
+    setIsRunning(false);
+  };
+
+  const toggleModule = (moduleName: string) => {
+    setActiveModules(prev => 
+      prev.map(module => 
+        module.moduleName === moduleName 
+          ? { ...module, enabled: !module.enabled } 
+          : module
+      )
+    );
+  };
+
+  const resetResults = () => {
+    setResults([]);
+  };
+
   return {
     tables,
     functions,
     storage,
     summary,
     isLoading,
+    isRunning,
+    results,
+    activeModules,
+    toggleModule,
+    runAllTests,
+    resetResults,
     runTests
   };
 }

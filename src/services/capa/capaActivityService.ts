@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
-import { mapStatusToDb } from './capaStatusService';
+import { mapStatusToDb, DbCAPAStatus } from './capaStatusService';
 
 // Table name used for CAPA activities
 const TABLE_NAME = 'capa_activities';
@@ -27,9 +27,10 @@ export const logCAPAActivity = async (
       metadata: metadata || undefined
     };
 
+    // Use insert with typecasting to handle the DB format expectations
     const { data, error } = await supabase
       .from(TABLE_NAME)
-      .insert(activityData)
+      .insert(activityData as any)
       .select()
       .single();
 

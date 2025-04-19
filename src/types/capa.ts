@@ -1,47 +1,34 @@
-export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified';
 
-export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
-
-export type CAPASource = 'non_conformance' | 'complaint' | 'audit' | 'internal' | 'other' | 'supplier' | 'haccp' | 'traceability';
-
-export type CAPAEffectivenessRating = 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective';
+export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified' | 'overdue' | 'pending-verification';
+export type CAPASource = 'non-conformance' | 'audit' | 'complaint' | 'internal' | 'customer' | 'regulatory';
+export type CAPAPriority = 'high' | 'medium' | 'low' | 'critical';
+export type CAPAEffectivenessRating = 'effective' | 'partially-effective' | 'ineffective' | 'not-verified' | 'adequate' | 'inadequate';
 
 export interface CAPA {
   id: string;
   title: string;
   description: string;
+  source: CAPASource;
+  sourceId?: string;
   rootCause?: string;
   correctiveAction?: string;
   preventiveAction?: string;
-  status: CAPAStatus;
   priority: CAPAPriority;
-  createdDate: string;
   dueDate: string;
-  completionDate?: string;
-  verificationDate?: string;
+  status: CAPAStatus;
   effectivenessVerified?: boolean;
   effectivenessRating?: CAPAEffectivenessRating;
-  assignedTo: string;
-  createdBy: string;
-  department?: string;
-  source: CAPASource;
-  sourceId?: string;
   effectivenessCriteria?: string;
+  assignedTo: string;
+  department?: string;
+  completionDate?: string;
+  verificationDate?: string;
   verificationMethod?: string;
   verifiedBy?: string;
+  createdBy: string;
+  createdDate?: string;
   lastUpdated?: string;
-  relatedDocuments?: Array<{id: string, title: string, type: string}>;
-  relatedTraining?: Array<{id: string, title: string, type: string}>;
-  fsma204Compliant?: boolean;
-  sourceReference?: SourceReference;
-}
-
-export interface SourceReference {
-  type: string;
-  title: string;
-  id: string;
-  url?: string;
-  date?: string;
+  isFsma204Compliant?: boolean;
 }
 
 export interface CAPAActivity {
@@ -60,57 +47,25 @@ export interface CAPAFilter {
   status?: CAPAStatus[];
   priority?: CAPAPriority[];
   source?: CAPASource[];
+  department?: string[];
   assignedTo?: string[];
   dateRange?: {
-    start?: string;
-    end?: string;
+    start: string;
+    end: string;
   };
-  search?: string;
-}
-
-// Alias for compatibility with components using CAPAFilters
-export type CAPAFilters = CAPAFilter;
-
-export type CAPAFilterParams = {
-  status?: string | string[];
-  priority?: string | string[];
-  source?: string | string[];
-  sourceId?: string;
-  assignedTo?: string;
-  department?: string;
-  searchQuery?: string;
-  dueDate?: string;
-  limit?: number;
-  page?: number;
-};
-
-export interface CAPAStats {
-  total: number;
-  openCAPAs: number;
-  overdueCAPAs: number;
-  byStatus: Record<CAPAStatus, number>;
-  byPriority: Record<CAPAPriority, number>;
-  bySource: Record<string, number>;
-  recentItems: CAPA[];
-  averageClosureTime?: number;
-  fsma204ComplianceRate?: number;
-  overdue?: number;
-  averageTimeToClose?: number;
-  effectivenessStats?: {
-    effective: number;
-    partiallyEffective: number;
-    ineffective: number;
-    notEvaluated: number;
-  };
-  effectivenessRating?: {
-    effective: number;
-    partiallyEffective: number;
-    notEffective: number;
-  };
-  completionRates?: Record<string, number>;
+  searchTerm?: string;
+  effectivenessVerified?: boolean;
 }
 
 export interface CAPAEffectivenessMetrics {
+  rootCauseEliminated: number;
+  documentationComplete: number;
+  preventionMeasureEffective: number;
+  recurrenceChecked: number;
+  overall: number;
+}
+
+export interface CAPAEffectivenessAssessment {
   id?: string;
   capaId: string;
   score: number;
@@ -118,9 +73,33 @@ export interface CAPAEffectivenessMetrics {
   rootCauseEliminated: boolean;
   documentationComplete: boolean;
   preventionMeasureEffective: boolean;
-  preventiveMeasuresImplemented?: boolean; // Added for backward compatibility
   assessmentDate: string;
   notes?: string;
   createdBy: string;
   rating: CAPAEffectivenessRating;
+}
+
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  verifiedCount: number;
+  inProgressCount: number;
+  pendingVerificationCount: number;
+  byPriority: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  bySource: Record<CAPASource, number>;
+  byDepartment: Record<string, number>;
+  effectivenessStats: {
+    verified: number;
+    effective: number;
+    partiallyEffective: number;
+    ineffective: number;
+  };
+  averageTimeToClose?: number;
 }

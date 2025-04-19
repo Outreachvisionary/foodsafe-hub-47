@@ -2,33 +2,34 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Facility } from '@/types/facility';
 
 interface FacilityListProps {
   facilities: Facility[];
-  onFacilityUpdated: (facility: Facility) => void;
-  onFacilityDeleted: (id: string) => void;
+  onEdit: (facility: Facility) => void;
+  onDelete: (facilityId: string) => void;
 }
 
-const FacilityList: React.FC<FacilityListProps> = ({ 
-  facilities, 
-  onFacilityUpdated, 
-  onFacilityDeleted 
-}) => {
+const FacilityList: React.FC<FacilityListProps> = ({ facilities, onEdit, onDelete }) => {
+  const getBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (facilities.length === 0) {
     return (
-      <div className="text-center py-6 text-gray-500">
-        No facilities found. Add your first facility to get started.
+      <div className="text-center py-8">
+        <p className="text-gray-500">No facilities found.</p>
       </div>
     );
   }
@@ -48,42 +49,38 @@ const FacilityList: React.FC<FacilityListProps> = ({
           <TableRow key={facility.id}>
             <TableCell className="font-medium">{facility.name}</TableCell>
             <TableCell>
-              {[facility.city, facility.state, facility.country]
+              {[
+                facility.address,
+                facility.city,
+                facility.state,
+                facility.zipcode,
+                facility.country
+              ]
                 .filter(Boolean)
                 .join(', ')}
             </TableCell>
             <TableCell>
-              <Badge variant={facility.status === 'active' ? 'success' : 'secondary'}>
-                {facility.status === 'active' ? 'Active' : 'Inactive'}
+              <Badge className={getBadgeVariant(facility.status)}>
+                {facility.status}
               </Badge>
             </TableCell>
             <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Actions</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => onFacilityUpdated(facility)}
-                    className="flex items-center cursor-pointer"
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => onFacilityDeleted(facility.id)}
-                    className="flex items-center text-red-600 cursor-pointer"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(facility)}
+                title="Edit facility"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(facility.id)}
+                title="Delete facility"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </TableCell>
           </TableRow>
         ))}

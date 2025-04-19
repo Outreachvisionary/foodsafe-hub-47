@@ -1,108 +1,99 @@
 
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
 
-// Define UI display values for statuses
-export type CAPAStatusDisplay = 'Open' | 'In Progress' | 'Closed' | 'Verified';
+export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
+export type DbCAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Ineffective' | 'Not Verified' | 'Adequate' | 'Inadequate';
 
-// Define database values for statuses
-type DbCAPAStatus = 'open' | 'in_progress' | 'closed' | 'verified';
-
-// Map from UI display to internal values
-const statusToInternalMap: Record<CAPAStatusDisplay, CAPAStatus> = {
-  'Open': 'open',
-  'In Progress': 'in-progress',
-  'Closed': 'closed',
-  'Verified': 'verified'
-};
-
-// Map from internal to UI display values
-const internalToStatusMap: Record<CAPAStatus, CAPAStatusDisplay> = {
-  'open': 'Open',
-  'in-progress': 'In Progress',
-  'closed': 'Closed',
-  'verified': 'Verified'
-};
-
-// Map from UI to Database values
-const statusToDbMap: Record<CAPAStatus, DbCAPAStatus> = {
-  'open': 'open',
-  'in-progress': 'in_progress',
-  'closed': 'closed',
-  'verified': 'verified'
-};
-
-// Map from Database to UI values
-const dbToStatusMap: Record<DbCAPAStatus, CAPAStatus> = {
-  'open': 'open',
-  'in_progress': 'in-progress',
-  'closed': 'closed',
-  'verified': 'verified'
-};
-
-export const mapStatusToInternal = (displayStatus: CAPAStatusDisplay): CAPAStatus => {
-  return statusToInternalMap[displayStatus] || 'open';
-};
-
-export const mapInternalToStatus = (internalStatus: CAPAStatus): CAPAStatusDisplay => {
-  return internalToStatusMap[internalStatus] || 'Open';
-};
-
-export const mapStatusToDatabaseValue = (status: CAPAStatus): DbCAPAStatus => {
-  return statusToDbMap[status] || 'open';
-};
-
-export const mapDatabaseValueToStatus = (dbStatus: DbCAPAStatus): CAPAStatus => {
-  return dbToStatusMap[dbStatus] || 'open';
-};
-
-// Export the mapping functions with alias names for backward compatibility
-export const mapStatusToDb = mapStatusToDatabaseValue;
-export const mapStatusFromDb = mapDatabaseValueToStatus;
-
-// Get the next status in the workflow 
-export const getNextStatus = (currentStatus: CAPAStatus): CAPAStatus => {
-  switch (currentStatus) {
+// Map frontend status (kebab-case) to database status (Title Case)
+export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  switch (status) {
     case 'open':
-      return 'in-progress';
+      return 'Open';
     case 'in-progress':
-      return 'closed';
+      return 'In Progress';
     case 'closed':
+      return 'Closed';
+    case 'overdue':
+      return 'Overdue';
+    case 'pending-verification':
+      return 'Pending Verification';
+    case 'verified':
+      return 'Verified';
+    default:
+      return 'Open';
+  }
+};
+
+// Map database status (Title Case) to frontend status (kebab-case)
+export const mapStatusFromDb = (dbStatus: DbCAPAStatus): CAPAStatus => {
+  switch (dbStatus) {
+    case 'Open':
+      return 'open';
+    case 'In Progress':
+      return 'in-progress';
+    case 'Closed':
+      return 'closed';
+    case 'Overdue':
+      return 'overdue';
+    case 'Pending Verification':
+      return 'pending-verification';
+    case 'Verified':
       return 'verified';
     default:
       return 'open';
   }
 };
 
-// Check if a status transition is valid
-export const isValidStatusTransition = (currentStatus: CAPAStatus, newStatus: CAPAStatus): boolean => {
-  if (currentStatus === newStatus) return true;
-  
-  switch (currentStatus) {
-    case 'open':
-      return newStatus === 'in-progress' || newStatus === 'closed';
-    case 'in-progress':
-      return newStatus === 'open' || newStatus === 'closed';
-    case 'closed':
-      return newStatus === 'verified' || newStatus === 'in-progress';
-    case 'verified':
-      return newStatus === 'closed';
+// Map frontend effectiveness rating (kebab-case) to database effectiveness rating (Title Case)
+export const mapEffectivenessRatingToDb = (rating: CAPAEffectivenessRating): DbCAPAEffectivenessRating => {
+  switch (rating) {
+    case 'effective':
+      return 'Effective';
+    case 'partially-effective':
+      return 'Partially Effective';
+    case 'ineffective':
+      return 'Ineffective';
+    case 'not-verified':
+      return 'Not Verified';
+    case 'adequate':
+      return 'Adequate';
+    case 'inadequate':
+      return 'Inadequate';
     default:
-      return false;
+      return 'Not Verified';
   }
 };
 
-// Get all possible transitions for a status
-export const getPossibleStatusTransitions = (currentStatus: CAPAStatus): CAPAStatus[] => {
-  switch (currentStatus) {
-    case 'open':
-      return ['in-progress', 'closed'];
-    case 'in-progress':
-      return ['open', 'closed'];
-    case 'closed':
-      return ['verified', 'in-progress'];
-    case 'verified':
-      return ['closed'];
+// Map database effectiveness rating (Title Case) to frontend effectiveness rating (kebab-case)
+export const mapEffectivenessRatingFromDb = (dbRating: DbCAPAEffectivenessRating): CAPAEffectivenessRating => {
+  switch (dbRating) {
+    case 'Effective':
+      return 'effective';
+    case 'Partially Effective':
+      return 'partially-effective';
+    case 'Ineffective':
+      return 'ineffective';
+    case 'Not Verified':
+      return 'not-verified';
+    case 'Adequate':
+      return 'adequate';
+    case 'Inadequate':
+      return 'inadequate';
     default:
-      return ['open'];
+      return 'not-verified';
   }
+};
+
+// For loosely comparing status values regardless of format
+export const statusEquals = (status1: string, status2: string): boolean => {
+  const normalized1 = status1.toLowerCase().replace(/[\s-]/g, '');
+  const normalized2 = status2.toLowerCase().replace(/[\s-]/g, '');
+  return normalized1 === normalized2;
+};
+
+// For loosely comparing effectiveness rating values regardless of format
+export const effectivenessRatingEquals = (rating1: string, rating2: string): boolean => {
+  const normalized1 = rating1.toLowerCase().replace(/[\s-]/g, '');
+  const normalized2 = rating2.toLowerCase().replace(/[\s-]/g, '');
+  return normalized1 === normalized2;
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,12 +63,11 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     assessmentDate: new Date().toISOString().split('T')[0],
     notes: '',
     createdBy: 'system',
-    rating: 'inadequate'
+    rating: 'ineffective'
   });
   
   const [hasExistingReport, setHasExistingReport] = useState(false);
 
-  // Load existing effectiveness metrics if any
   useEffect(() => {
     const loadMetrics = async () => {
       try {
@@ -95,7 +93,6 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     loadMetrics();
   }, [capaId, toast]);
 
-  // Calculate score and rating whenever criteria change
   useEffect(() => {
     calculateScore();
   }, [
@@ -108,13 +105,11 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   const calculateScore = () => {
     let totalScore = 0;
     
-    // Weight each criterion
     if (metrics.rootCauseEliminated) totalScore += 30;
     if (metrics.documentationComplete) totalScore += 20;
     if (metrics.preventionMeasureEffective) totalScore += 30;
     if (metrics.recurrenceCheck) totalScore += 20;
     
-    // Set the rating based on score
     let rating: CAPAEffectivenessRating;
     if (totalScore >= 90) {
       rating = 'excellent';
@@ -157,10 +152,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
     try {
       setSaving(true);
       
-      // Save metrics to database
       const savedMetrics = await saveEffectivenessMetrics(metrics);
       
-      // Notify parent component
       await onEffectivenessUpdate(savedMetrics);
       
       setHasExistingReport(true);
