@@ -112,3 +112,23 @@ export const mapInternalToStatus = (status: CAPAStatus): string => {
       return 'Open';
   }
 };
+
+// Convert internal status to user-friendly status
+export const mapStatusToInternal = (status: string): CAPAStatus => {
+  switch (status) {
+    case 'Open':
+      return 'open';
+    case 'In Progress':
+      return 'in-progress';
+    case 'Closed':
+      return 'closed';
+    case 'Verified':
+      return 'verified';
+    case 'Pending Verification':
+      return 'pending-verification';
+    case 'Overdue':
+      return 'overdue';
+    default:
+      return 'open';
+  }
+};
