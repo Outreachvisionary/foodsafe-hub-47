@@ -131,8 +131,11 @@ export interface CAPAFetchParams {
   sourceId?: string;
   assignedTo?: string;
   department?: string;
-  searchQuery?: string;
+  searchQuery?: string; // Added this field
+  from?: string; // Added this field for date range start
+  to?: string; // Added this field for date range end
   dueDate?: string;
   limit?: number;
   page?: number;
+  id?: string; // Added this field to fetch by ID
 }

@@ -45,7 +45,7 @@ interface DbComplaint {
   description: string;
   category: string;
   status: string;
-  priority?: string;
+  priority: string;
   reported_date: string;
   assigned_to?: string;
   created_by: string;

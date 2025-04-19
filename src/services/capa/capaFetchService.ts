@@ -5,38 +5,40 @@ import { CAPA, CAPAFetchParams, CAPAStatus, CAPAPriority, CAPASource } from '@/t
 // Helper function to cast status values to the correct type
 const castToCapaStatus = (status: string): CAPAStatus => {
   const validStatuses: Record<string, CAPAStatus> = {
-    'open': 'Open',
-    'in_progress': 'In Progress',
-    'closed': 'Closed',
-    'overdue': 'Overdue',
-    'pending_verification': 'Pending Verification',
-    'verified': 'Overdue', // Map verified to the nearest supported value
-    'cancelled': 'Closed', // Map cancelled to the nearest supported value
-    // Add mappings for all other potential status values
-    'Open': 'Open',
-    'In Progress': 'In Progress',
-    'Closed': 'Closed',
-    'Overdue': 'Overdue',
-    'Pending Verification': 'Pending Verification'
+    'open': 'open',
+    'in_progress': 'in-progress',
+    'closed': 'closed',
+    'overdue': 'open', // Map "overdue" to a valid enum value
+    'pending_verification': 'pending-verification',
+    'verified': 'verified', 
+    'cancelled': 'cancelled',
+    // Capitalized versions
+    'Open': 'open',
+    'In Progress': 'in-progress',
+    'Closed': 'closed',
+    'Overdue': 'open', // Map "Overdue" to a valid enum value
+    'Pending Verification': 'pending-verification',
+    'Verified': 'verified',
+    'Cancelled': 'cancelled'
   };
 
-  return validStatuses[status] || 'Open'; // Default to 'Open' if not recognized
+  return validStatuses[status] || 'open'; // Default to 'open' if not recognized
 };
 
 // Helper function to cast priority values to the correct type
 const castToCapaPriority = (priority: string): CAPAPriority => {
   const validPriorities: Record<string, CAPAPriority> = {
-    'critical': 'Critical',
-    'high': 'High',
-    'medium': 'Medium',
-    'low': 'Low',
-    'Critical': 'Critical',
-    'High': 'High',
-    'Medium': 'Medium',
-    'Low': 'Low'
+    'critical': 'critical',
+    'high': 'high',
+    'medium': 'medium',
+    'low': 'low',
+    'Critical': 'critical',
+    'High': 'high',
+    'Medium': 'medium',
+    'Low': 'low'
   };
 
-  return validPriorities[priority] || 'Medium'; // Default to 'Medium' if not recognized
+  return validPriorities[priority] || 'medium'; // Default to 'medium' if not recognized
 };
 
 // Convert DB row to CAPA interface
@@ -58,8 +60,8 @@ export const mapDbRowToCapa = (row: any): CAPA => {
     effectivenessCriteria: row.effectiveness_criteria,
     completionDate: row.completion_date,
     createdBy: row.created_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdDate: row.created_at,
+    lastUpdated: row.updated_at,
     isFsma204Compliant: row.is_fsma204_compliant || false,
     verificationMethod: row.verification_method,
     verificationDate: row.verification_date,
@@ -80,13 +82,19 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     if (params) {
       if (params.status) {
         if (Array.isArray(params.status)) {
-          // Map each status to its DB equivalent if needed
-          const statusValues = params.status.map(s => typeof s === 'string' ? s.toLowerCase().replace(' ', '_') : s);
+          // Handle array of statuses - convert to database format
+          const statusValues = params.status.map(s => {
+            if (typeof s === 'string') {
+              // Convert from CAPAStatus enum to database format
+              return s.toLowerCase().replace('-', '_');
+            }
+            return s;
+          });
           query = query.in('status', statusValues);
         } else if (params.status) {
-          // Single status filter
+          // Single status filter - convert to database format
           const statusValue = typeof params.status === 'string' 
-            ? params.status.toLowerCase().replace(' ', '_')
+            ? params.status.toLowerCase().replace('-', '_')
             : params.status;
           query = query.eq('status', statusValue);
         }
@@ -116,17 +124,18 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         query = query.eq('department', params.department);
       }
 
-      if (params.dateRange) {
-        if (params.dateRange.from) {
-          query = query.gte('created_at', params.dateRange.from);
-        }
-        if (params.dateRange.to) {
-          query = query.lte('created_at', params.dateRange.to);
-        }
+      // Handle date ranges if they exist in params
+      if (params.from) {
+        query = query.gte('created_at', params.from);
+      }
+      
+      if (params.to) {
+        query = query.lte('created_at', params.to);
       }
 
-      if (params.search) {
-        query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+      // Handle search if it exists in params
+      if (params.searchQuery) {
+        query = query.or(`title.ilike.%${params.searchQuery}%,description.ilike.%${params.searchQuery}%`);
       }
 
       // Limit results if specified
@@ -150,13 +159,13 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   }
 };
 
-export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'createdAt' | 'updatedAt'>): Promise<CAPA> => {
+export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'createdDate' | 'lastUpdated'>): Promise<CAPA> => {
   try {
     // Map our interface to database column names
     const dbCapa = {
       title: capaData.title,
       description: capaData.description,
-      status: capaData.status.toLowerCase().replace(' ', '_'),
+      status: capaData.status.replace('-', '_'), // Convert to DB format
       source: capaData.source,
       source_id: capaData.sourceId,
       priority: capaData.priority,
@@ -226,7 +235,7 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>): Promise<C
     
     if (capaData.title) updateObject.title = capaData.title;
     if (capaData.description) updateObject.description = capaData.description;
-    if (capaData.status) updateObject.status = capaData.status.toLowerCase().replace(' ', '_');
+    if (capaData.status) updateObject.status = capaData.status.replace('-', '_'); // Convert to DB format
     if (capaData.priority) updateObject.priority = capaData.priority;
     if (capaData.assignedTo) updateObject.assigned_to = capaData.assignedTo;
     if (capaData.department) updateObject.department = capaData.department;
@@ -281,3 +290,6 @@ export const deleteCAPA = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Export utility functions for mapDbToCapa
+export { castToCapaStatus, castToCapaPriority };
