@@ -1,48 +1,37 @@
 
+// Define the common types used across the training system
+
+export type TrainingType = 'onboarding' | 'food-safety' | 'regulatory' | 'quality' | 'procedural' | 'operational' | 'technical' | 'soft-skills';
+
+export type TrainingCategory = 'haccp' | 'gmp' | 'fsma' | 'allergen' | 'sanitation' | 'quality' | 'safety' | 'compliance' | 'leadership' | 'technical' | 'other';
+
+export type TrainingPriority = 'critical' | 'high' | 'medium' | 'low';
+
 export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
-export type TrainingPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TrainingType = 'compliance' | 'onboarding' | 'skills' | 'safety' | 'food-safety' | 'technical' | 'management' | 'Online' | 'In-person' | 'Video' | 'Document';
-export type TrainingCategory = 'haccp' | 'gmp' | 'fsma' | 'safety' | 'quality' | 'operations' | 'maintenance' | 'regulatory' | 'other';
-export type TrainingCompletionStatus = 'completed' | 'in-progress' | 'not-started' | 'canceled';
-export type EmployeeRole = 'admin' | 'manager' | 'supervisor' | 'line-worker' | 'quality' | 'maintenance' | 'operations' | 'hr' | 'operator';
-export type Department = 'production' | 'quality' | 'maintenance' | 'operations' | 'management' | 'hr' | 'sales' | 'administration' | 'r&d' | 'logistics';
 
-export interface TrainingRecord {
-  id: string;
-  session_id: string;
-  employee_id: string;
-  employee_name: string;
-  status: TrainingStatus;
-  assigned_date: string;
-  due_date: string;
-  completion_date?: string;
-  score?: number;
-  pass_threshold?: number;
-  next_recurrence?: string;
-  last_recurrence?: string;
-  notes?: string;
-}
+export type TrainingCompletionStatus = 'not-started' | 'in-progress' | 'completed' | 'overdue' | 'cancelled';
 
-export interface ExtendedTrainingRecord extends TrainingRecord {
-  courseName: string;
-  instructorName?: string;
-}
+export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+
+export type Department = string;
+
+export type EmployeeRole = string;
 
 export interface TrainingSession {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   training_type: TrainingType;
   training_category: TrainingCategory;
-  department?: string;
+  department: string;
   start_date: string;
   due_date: string;
-  assigned_to?: string[];
-  materials_id?: string;
-  required_roles?: string[];
-  is_recurring?: boolean;
-  recurring_interval?: string;
-  completion_status: TrainingCompletionStatus;
+  assigned_to: string[];
+  materials_id: string[];
+  required_roles: string[];
+  is_recurring: boolean;
+  recurring_interval: string;
+  completion_status: TrainingStatus;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -51,64 +40,85 @@ export interface TrainingSession {
 export interface TrainingPlan {
   id: string;
   name: string;
-  description?: string;
-  target_roles?: EmployeeRole[];
+  description: string;
+  target_roles: EmployeeRole[];
+  courses: string[];
+  duration_days: number;
+  is_required: boolean;
+  priority: TrainingPriority;
+  status: string;
+  start_date: string;
+  end_date: string;
+  is_automated: boolean;
+  automation_trigger: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  target_departments: Department[];
+  related_standards: string[];
+  // Legacy fields for compatibility
   targetRoles?: EmployeeRole[];
-  courses?: string[];
   coursesIncluded?: string[];
-  duration_days?: number;
   durationDays?: number;
-  is_required?: boolean;
   isRequired?: boolean;
-  priority?: TrainingPriority;
-  status?: string;
-  start_date?: string;
   startDate?: string;
-  end_date?: string;
   endDate?: string;
-  is_automated?: boolean;
   isAutomated?: boolean;
-  automation_trigger?: string;
   automationTrigger?: string;
-  created_by?: string;
   createdBy?: string;
-  created_at?: string;
-  updated_at?: string;
-  target_departments?: Department[];
+  createdDate?: string;
   targetDepartments?: Department[];
-  related_standards?: string[];
   relatedStandards?: string[];
-  recurringSchedule?: {
-    frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
-    interval: number;
-    startDate: string;
-    endDate?: string;
-  };
+}
+
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date: string;
+  completion_date?: string;
+  score?: number;
+  pass_threshold?: number;
+  last_recurrence?: string;
+  next_recurrence?: string;
+  employee_id: string;
+  employee_name: string;
+  notes?: string;
+}
+
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  description: string;
+  category: TrainingCategory;
+  duration_hours: number;
+  prerequisite_courses: string[];
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DepartmentTrainingStats {
-  departmentName: string;
-  totalAssigned: number;
-  completed: number;
-  inProgress: number;
-  overdue: number;
-  compliancePercentage: number;
-  completedCount: number;
-  overdueCount: number;
-  employeeCount: number;
-}
-
-export interface TrainingAutomationConfig {
   id: string;
   name: string;
-  description?: string;
-  triggerEvent: 'onboarding' | 'role_change' | 'compliance_update' | 'scheduled';
-  targetRoles?: EmployeeRole[];
-  targetDepartments?: Department[];
-  trainingPlanId: string;
-  daysToComplete: number;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-  updatedAt?: string;
+  totalTrainings: number;
+  completedTrainings: number;
+  overdueTrainings: number;
+  complianceRate: number;
+  averageScore?: number;
+}
+
+export interface TrainingCompetencyData {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  role: string;
+  completedTrainings: number;
+  requiredTrainings: number;
+  competencyScore: number;
+  lastAssessmentDate: string;
+  certifications: string[];
 }

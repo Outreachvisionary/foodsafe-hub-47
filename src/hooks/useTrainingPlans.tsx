@@ -1,8 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { TrainingPlan } from '@/types/training';
+import { TrainingPlan, TrainingPriority } from '@/types/training';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  mapToTrainingPriority, 
+  mapToRecurrencePattern, 
+  ensureStringArray 
+} from '@/utils/trainingTypeMapper';
 
 export function useTrainingPlans() {
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
@@ -27,33 +31,34 @@ export function useTrainingPlans() {
           id: plan.id,
           name: plan.name,
           description: plan.description,
-          targetRoles: plan.target_roles || [],
-          coursesIncluded: plan.courses || [],
+          target_roles: ensureStringArray(plan.target_roles || []),
+          courses: ensureStringArray(plan.courses || []),
+          duration_days: plan.duration_days || 0,
+          is_required: plan.is_required || false,
+          priority: mapToTrainingPriority(plan.priority || 'medium'),
+          status: plan.status,
+          start_date: plan.start_date,
+          end_date: plan.end_date,
+          is_automated: plan.is_automated,
+          automation_trigger: plan.automation_trigger,
+          created_by: plan.created_by,
+          created_at: plan.created_at,
+          updated_at: plan.updated_at,
+          target_departments: ensureStringArray(plan.target_departments || []),
+          related_standards: ensureStringArray(plan.related_standards || []),
+          // Set legacy fields to keep compatibility
+          targetRoles: ensureStringArray(plan.target_roles || []),
+          coursesIncluded: ensureStringArray(plan.courses || []),
           durationDays: plan.duration_days || 0,
           isRequired: plan.is_required || false,
-          priority: plan.priority || 'medium',
-          status: plan.status,
           startDate: plan.start_date,
           endDate: plan.end_date,
           isAutomated: plan.is_automated,
           automationTrigger: plan.automation_trigger,
           createdBy: plan.created_by,
-          created_by: plan.created_by,
           createdDate: plan.created_at,
-          created_at: plan.created_at,
-          updated_at: plan.updated_at,
-          courses: plan.courses,
-          targetDepartments: plan.target_departments,
-          relatedStandards: plan.related_standards,
-          target_departments: plan.target_departments,
-          duration_days: plan.duration_days,
-          target_roles: plan.target_roles,
-          is_required: plan.is_required,
-          is_automated: plan.is_automated,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          automation_trigger: plan.automation_trigger,
-          related_standards: plan.related_standards
+          targetDepartments: ensureStringArray(plan.target_departments || []),
+          relatedStandards: ensureStringArray(plan.related_standards || [])
         }));
         
         setPlans(transformedPlans);
@@ -81,18 +86,18 @@ export function useTrainingPlans() {
       const dbPlan = {
         name: planData.name,
         description: planData.description,
-        target_roles: planData.targetRoles || planData.target_roles,
-        courses: planData.coursesIncluded || planData.courses,
-        duration_days: planData.durationDays || planData.duration_days,
-        is_required: planData.isRequired || planData.is_required,
-        priority: planData.priority,
-        status: planData.status,
+        target_roles: planData.targetRoles || planData.target_roles || [],
+        courses: planData.coursesIncluded || planData.courses || [],
+        duration_days: planData.durationDays || planData.duration_days || 0,
+        is_required: planData.isRequired || planData.is_required || false,
+        priority: planData.priority || 'medium',
+        status: planData.status || 'Active',
         start_date: planData.startDate || planData.start_date,
         end_date: planData.endDate || planData.end_date,
-        is_automated: planData.isAutomated || planData.is_automated,
+        is_automated: planData.isAutomated || planData.is_automated || false,
         automation_trigger: planData.automationTrigger || planData.automation_trigger,
-        target_departments: planData.targetDepartments || planData.target_departments,
-        related_standards: planData.relatedStandards || planData.related_standards,
+        target_departments: planData.targetDepartments || planData.target_departments || [],
+        related_standards: planData.relatedStandards || planData.related_standards || [],
         created_by: planData.createdBy || planData.created_by || 'Current User'
       };
       
@@ -109,33 +114,35 @@ export function useTrainingPlans() {
         id: data.id,
         name: data.name,
         description: data.description,
-        targetRoles: data.target_roles || [],
-        coursesIncluded: data.courses || [],
+        target_roles: ensureStringArray(data.target_roles || []),
+        courses: ensureStringArray(data.courses || []),
+        duration_days: data.duration_days || 0,
+        is_required: data.is_required || false,
+        priority: mapToTrainingPriority(data.priority || 'medium'),
+        status: data.status,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        is_automated: data.is_automated,
+        automation_trigger: data.automation_trigger,
+        created_by: data.created_by,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        target_departments: ensureStringArray(data.target_departments || []),
+        related_standards: ensureStringArray(data.related_standards || []),
+        
+        // Legacy fields for compatibility
+        targetRoles: ensureStringArray(data.target_roles || []),
+        coursesIncluded: ensureStringArray(data.courses || []),
         durationDays: data.duration_days || 0,
         isRequired: data.is_required || false,
-        priority: data.priority || 'medium',
-        status: data.status,
         startDate: data.start_date,
         endDate: data.end_date,
         isAutomated: data.is_automated,
         automationTrigger: data.automation_trigger,
         createdBy: data.created_by,
-        created_by: data.created_by,
         createdDate: data.created_at,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        courses: data.courses,
-        targetDepartments: data.target_departments,
-        relatedStandards: data.related_standards,
-        target_departments: data.target_departments,
-        duration_days: data.duration_days,
-        target_roles: data.target_roles,
-        is_required: data.is_required,
-        is_automated: data.is_automated,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        automation_trigger: data.automation_trigger,
-        related_standards: data.related_standards
+        targetDepartments: ensureStringArray(data.target_departments || []),
+        relatedStandards: ensureStringArray(data.related_standards || [])
       };
       
       setPlans(prev => [newPlan, ...prev]);
@@ -181,8 +188,7 @@ export function useTrainingPlans() {
         is_automated: updates.isAutomated || updates.is_automated,
         automation_trigger: updates.automationTrigger || updates.automation_trigger,
         target_departments: updates.targetDepartments || updates.target_departments,
-        related_standards: updates.relatedStandards || updates.related_standards,
-        created_by: updates.createdBy || updates.created_by || 'Current User'
+        related_standards: updates.relatedStandards || updates.related_standards
       };
       
       const { error } = await supabase

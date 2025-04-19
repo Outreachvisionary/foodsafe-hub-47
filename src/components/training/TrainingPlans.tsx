@@ -5,9 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, CalendarRange, Users, Trash2, Edit, Pencil, Save, X } from 'lucide-react';
 import { TrainingPlan, EmployeeRole, Department, TrainingPriority } from '@/types/training';
 import { useTrainingPlans } from '@/hooks/useTrainingPlans';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
-// Fix property names and types in the mock data
 const mockPlans: TrainingPlan[] = [
   {
     id: '1',
@@ -124,11 +123,9 @@ const TrainingPlans = () => {
   const handleSave = async () => {
     if (!editedPlan) return;
 
-    // Update the training plan using the hook
     const success = await updateTrainingPlan(editedPlan.id, editedPlan);
 
     if (success) {
-      // Update local state
       setPlans(plans.map(plan => plan.id === editedPlan.id ? editedPlan : plan));
       setIsEditing(false);
       setEditedPlan(null);

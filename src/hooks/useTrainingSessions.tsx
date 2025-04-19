@@ -1,8 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { TrainingSession, TrainingStatus } from '@/types/training';
+import { TrainingSession, TrainingStatus, TrainingType, TrainingCategory } from '@/types/training';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  mapToTrainingType, 
+  mapToTrainingCategory, 
+  mapToTrainingStatus,
+  mapToCompletionStatus,
+  ensureStringArray 
+} from '@/utils/trainingTypeMapper';
 
 export function useTrainingSessions() {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -27,17 +34,17 @@ export function useTrainingSessions() {
           id: session.id,
           title: session.title,
           description: session.description,
-          training_type: session.training_type,
-          training_category: session.training_category,
+          training_type: mapToTrainingType(session.training_type),
+          training_category: mapToTrainingCategory(session.training_category || 'other'),
           department: session.department,
           start_date: session.start_date,
           due_date: session.due_date,
-          assigned_to: session.assigned_to || [],
-          materials_id: session.materials_id,
-          required_roles: session.required_roles,
+          assigned_to: ensureStringArray(session.assigned_to),
+          materials_id: ensureStringArray(session.materials_id),
+          required_roles: ensureStringArray(session.required_roles),
           is_recurring: session.is_recurring,
           recurring_interval: session.recurring_interval,
-          completion_status: session.completion_status as TrainingStatus,
+          completion_status: mapToTrainingStatus(session.completion_status),
           created_by: session.created_by,
           created_at: session.created_at,
           updated_at: session.updated_at
@@ -78,7 +85,9 @@ export function useTrainingSessions() {
         required_roles: sessionData.required_roles,
         is_recurring: sessionData.is_recurring,
         recurring_interval: sessionData.recurring_interval,
-        completion_status: sessionData.completion_status,
+        completion_status: sessionData.completion_status 
+          ? mapToCompletionStatus(sessionData.completion_status) 
+          : 'not-started',
         created_by: sessionData.created_by || 'Current User'
       };
       
@@ -95,17 +104,17 @@ export function useTrainingSessions() {
         id: data.id,
         title: data.title,
         description: data.description,
-        training_type: data.training_type,
-        training_category: data.training_category,
+        training_type: mapToTrainingType(data.training_type),
+        training_category: mapToTrainingCategory(data.training_category || 'other'),
         department: data.department,
         start_date: data.start_date,
         due_date: data.due_date,
-        assigned_to: data.assigned_to || [],
-        materials_id: data.materials_id,
-        required_roles: data.required_roles,
+        assigned_to: ensureStringArray(data.assigned_to),
+        materials_id: ensureStringArray(data.materials_id),
+        required_roles: ensureStringArray(data.required_roles),
         is_recurring: data.is_recurring,
         recurring_interval: data.recurring_interval,
-        completion_status: data.completion_status as TrainingStatus,
+        completion_status: mapToTrainingStatus(data.completion_status),
         created_by: data.created_by,
         created_at: data.created_at,
         updated_at: data.updated_at

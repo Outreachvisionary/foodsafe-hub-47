@@ -17,7 +17,7 @@ export interface ModuleTestResult {
   moduleName: string;
   status: 'passing' | 'failing' | 'partial' | 'pending';
   details: TestResultDetail[];
-  timestamp: string;
+  timestamp: Date;
 }
 
 export interface TestingModule {
@@ -29,10 +29,10 @@ export interface TestingModule {
   lastStatus?: 'passing' | 'failing' | 'partial' | 'pending';
 }
 
-function useBackendFrontendTesting() {
-  const [modules, setModules] = useState<TestingModule[]>([]);
+export function useBackendFrontendTesting() {
+  const [activeModules, setActiveModules] = useState<TestingModule[]>([]);
   const [results, setResults] = useState<ModuleTestResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Mock data for demonstration
@@ -84,7 +84,7 @@ function useBackendFrontendTesting() {
       id: '1',
       moduleName: 'API Connectivity',
       status: 'passing',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       details: [
         {
           id: '1-1',
@@ -106,7 +106,7 @@ function useBackendFrontendTesting() {
       id: '2',
       moduleName: 'Database Connection',
       status: 'passing',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       details: [
         {
           id: '2-1',
@@ -135,7 +135,7 @@ function useBackendFrontendTesting() {
       id: '3',
       moduleName: 'Data Integrity',
       status: 'partial',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       details: [
         {
           id: '3-1',
@@ -160,9 +160,11 @@ function useBackendFrontendTesting() {
   // Function to check database connectivity
   const checkDatabaseConnection = async () => {
     try {
-      // Instead of selecting from pg_tables which might be restricted,
-      // let's use a table we know exists in our database
-      const { data, error } = await supabase.from('documents').select('id').limit(1);
+      // Use a known table instead of pg_tables
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id')
+        .limit(1);
       
       if (error) throw error;
       
@@ -171,7 +173,7 @@ function useBackendFrontendTesting() {
         message: 'Database connection successful',
         responseTime: 50 // Mock response time
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error checking database connection:', err);
       return {
         status: 'error',
@@ -184,13 +186,13 @@ function useBackendFrontendTesting() {
 
   // Initialize with mock data
   useEffect(() => {
-    setModules(mockModules);
+    setActiveModules(mockModules);
     setResults(mockResults);
   }, []);
 
   // Function to run all tests
   const runAllTests = async () => {
-    setLoading(true);
+    setIsRunning(true);
     setError(null);
     
     try {
@@ -201,91 +203,50 @@ function useBackendFrontendTesting() {
       // Update the timestamp on our mock results
       const updatedResults = mockResults.map(result => ({
         ...result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       }));
       
       setResults(updatedResults);
       
       // Update the lastRun timestamp on our modules
-      const updatedModules = modules.map(module => ({
+      const updatedModules = activeModules.map(module => ({
         ...module,
         lastRun: new Date().toISOString()
       }));
       
-      setModules(updatedModules);
-    } catch (err) {
+      setActiveModules(updatedModules);
+    } catch (err: any) {
       console.error('Error running tests:', err);
       setError('Failed to run tests: ' + err.message);
     } finally {
-      setLoading(false);
+      setIsRunning(false);
     }
   };
 
-  // Function to run a specific test module
-  const runTestModule = async (moduleId: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Find the module
-      const moduleToRun = modules.find(m => m.id === moduleId);
-      
-      if (!moduleToRun) {
-        throw new Error('Module not found');
-      }
-      
-      // In a real implementation, this would run the specific test
-      // For now, simulate a delay and update timestamps
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update the result for this module
-      const updatedResults = [...results];
-      const resultIndex = updatedResults.findIndex(r => r.id === moduleId);
-      
-      if (resultIndex >= 0) {
-        updatedResults[resultIndex] = {
-          ...updatedResults[resultIndex],
-          timestamp: new Date().toISOString()
-        };
-      }
-      
-      setResults(updatedResults);
-      
-      // Update the lastRun timestamp on the module
-      const updatedModules = modules.map(module => 
-        module.id === moduleId 
-          ? { ...module, lastRun: new Date().toISOString() } 
+  // Function to toggle a module's enabled status
+  const toggleModule = (moduleName: string) => {
+    setActiveModules(prevModules => 
+      prevModules.map(module => 
+        module.moduleName === moduleName 
+          ? { ...module, enabled: !module.enabled } 
           : module
-      );
-      
-      setModules(updatedModules);
-    } catch (err) {
-      console.error(`Error running test module ${moduleId}:`, err);
-      setError(`Failed to run test module: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+      )
+    );
   };
 
-  // Function to toggle module enabled status
-  const toggleModuleEnabled = (moduleId: string) => {
-    const updatedModules = modules.map(module => 
-      module.id === moduleId 
-        ? { ...module, enabled: !module.enabled } 
-        : module
-    );
-    
-    setModules(updatedModules);
+  // Function to reset test results
+  const resetResults = () => {
+    setResults([]);
   };
 
   return {
-    modules,
+    activeModules,
     results,
-    loading,
+    isRunning,
     error,
     runAllTests,
-    runTestModule,
-    toggleModuleEnabled
+    resetResults,
+    toggleModule
   };
 }
 

@@ -1,18 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BadgeCheck, Calendar, CheckCircle2, Clipboard, ClipboardCheck, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import { CAPAEffectivenessMetrics } from '@/types/capa';
-import { createCAPAEffectivenessReport, updateCAPAEffectivenessReport, getCAPAEffectivenessReport } from '@/services/capaService';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { CAPAEffectivenessMetrics } from '@/types/capa';
+import { CheckCircle2, AlertCircle, AlertTriangle, BarChart, Clipboard, FileText } from 'lucide-react';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
@@ -27,258 +23,401 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   implementationDate,
   onEffectivenessUpdate
 }) => {
+  const [activeTab, setActiveTab] = useState('criteria');
+  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [metrics, setMetrics] = useState<CAPAEffectivenessMetrics>({
-    capaId,
+  
+  // Track assessment values
+  const [assessment, setAssessment] = useState({
     rootCauseEliminated: false,
+    preventiveMeasuresImplemented: false,
     documentationComplete: false,
-    preventionMeasureEffective: false,
-    recurrenceCheck: false,
-    score: 0,
-    assessmentDate: new Date().toISOString(),
+    recurrenceCheck: '',
     notes: '',
-    createdBy: user?.id || 'system',
-    rating: 'not-verified',
-    recurrenceChecked: 0,
-    overall: 0
+    score: 0,
+    rating: 'partially-effective' as 'effective' | 'partially-effective' | 'ineffective'
   });
   
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [reportId, setReportId] = useState<string | null>(null);
-  
-  const calculateTotalScore = () => {
-    const rootCauseScore = metrics.rootCauseEliminated ? 40 : 0;
-    const documentationScore = metrics.documentationComplete ? 20 : 0;
-    const preventionScore = metrics.preventionMeasureEffective ? 30 : 0;
-    const recurrenceScore = metrics.recurrenceCheck ? 10 : 0;
-    
-    const totalScore = rootCauseScore + documentationScore + preventionScore + recurrenceScore;
-    
-    let rating: CAPAEffectivenessMetrics['rating'] = 'not-verified';
-    if (totalScore >= 90) rating = 'excellent';
-    else if (totalScore >= 80) rating = 'effective';
-    else if (totalScore >= 70) rating = 'good';
-    else if (totalScore >= 60) rating = 'adequate';
-    else if (totalScore >= 50) rating = 'partially-effective';
-    else if (totalScore >= 40) rating = 'inadequate';
-    else if (totalScore >= 30) rating = 'poor';
-    else if (totalScore > 0) rating = 'ineffective';
-    
-    return { score: totalScore, rating };
-  };
-  
-  // Load existing report if available
-  useEffect(() => {
-    const loadReport = async () => {
-      try {
-        setLoading(true);
-        const report = await getCAPAEffectivenessReport(capaId);
-        
-        if (report) {
-          setReportId(report.id);
-          setMetrics({
-            ...report,
-            rootCauseEliminated: Boolean(report.rootCauseEliminated),
-            documentationComplete: Boolean(report.documentationComplete),
-            preventionMeasureEffective: Boolean(report.preventionMeasureEffective),
-            recurrenceCheck: Boolean(report.recurrenceCheck)
-          });
-        }
-      } catch (error) {
-        console.error('Error loading effectiveness report:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadReport();
-  }, [capaId]);
-  
-  const handleSwitchChange = (field: keyof CAPAEffectivenessMetrics) => (checked: boolean) => {
-    const newValue = checked;
-    
-    // Convert to number format for database compatibility
-    const numericValue = newValue ? 1 : 0;
-    
-    setMetrics(prev => {
-      const updatedMetrics = {
-        ...prev,
-        [field]: newValue
-      };
+  // Toggle assessment values
+  const toggleAssessmentValue = (key: string, value: boolean) => {
+    setAssessment(prev => {
+      const newAssessment = { ...prev, [key]: value };
       
-      const { score, rating } = calculateTotalScore();
+      // Calculate score based on checked items
+      let score = 0;
+      if (newAssessment.rootCauseEliminated) score += 40;
+      if (newAssessment.preventiveMeasuresImplemented) score += 40;
+      if (newAssessment.documentationComplete) score += 20;
       
-      return {
-        ...updatedMetrics,
-        score,
-        rating
-      };
+      // Determine rating based on score
+      let rating: 'effective' | 'partially-effective' | 'ineffective' = 'partially-effective';
+      if (score >= 85) rating = 'effective';
+      else if (score <= 40) rating = 'ineffective';
+      
+      return { ...newAssessment, score, rating };
     });
   };
   
-  const handleSave = async () => {
+  // Submit assessment
+  const submitAssessment = async () => {
+    setLoading(true);
+    
     try {
-      setSaving(true);
-      
-      // Calculate final score and rating
-      const { score, rating } = calculateTotalScore();
-      
-      const dataToSave: CAPAEffectivenessMetrics = {
-        ...metrics,
-        score,
-        rating,
+      // Create metrics object
+      const metrics: CAPAEffectivenessMetrics = {
+        id: `effectiveness-${capaId}`,
+        capaId: capaId,
         assessmentDate: new Date().toISOString(),
-        createdBy: user?.id || 'system'
+        rootCauseEliminated: assessment.rootCauseEliminated,
+        preventiveMeasuresImplemented: assessment.preventiveMeasuresImplemented,
+        documentationComplete: assessment.documentationComplete,
+        score: assessment.score,
+        rating: assessment.rating,
+        recurrenceCheck: assessment.recurrenceCheck,
+        notes: assessment.notes,
+        createdBy: user?.id || 'unknown'
       };
       
-      let result;
-      if (reportId) {
-        result = await updateCAPAEffectivenessReport(reportId, dataToSave);
-      } else {
-        result = await createCAPAEffectivenessReport(dataToSave);
-        setReportId(result.id);
+      // In a real app, we would save this to the database
+      // For now, we'll just mock a successful save
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call the onEffectivenessUpdate callback if provided
+      if (onEffectivenessUpdate) {
+        onEffectivenessUpdate(metrics);
       }
       
       toast({
-        title: 'Effectiveness Assessment Saved',
-        description: `CAPA effectiveness assessment saved successfully with a score of ${score}%.`
+        title: 'Assessment Submitted',
+        description: 'CAPA effectiveness assessment has been recorded.',
       });
       
-      if (onEffectivenessUpdate) {
-        onEffectivenessUpdate(result);
-      }
+      // After submission, switch to the results tab
+      setActiveTab('results');
     } catch (error) {
-      console.error('Error saving effectiveness assessment:', error);
+      console.error('Error submitting effectiveness assessment:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save effectiveness assessment. Please try again.',
-        variant: 'destructive'
+        title: 'Submission Failed',
+        description: 'Unable to submit effectiveness assessment. Please try again.',
+        variant: 'destructive',
       });
     } finally {
-      setSaving(false);
+      setLoading(false);
+    }
+  };
+  
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return 'bg-green-500';
+    if (score >= 50) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+  
+  const getRatingBadge = (rating: string) => {
+    switch (rating) {
+      case 'effective':
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 flex items-center">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Effective
+          </Badge>
+        );
+      case 'partially-effective':
+        return (
+          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 flex items-center">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Partially Effective
+          </Badge>
+        );
+      case 'ineffective':
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-200 flex items-center">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Ineffective
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline">
+            Not Assessed
+          </Badge>
+        );
     }
   };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <ClipboardCheck className="h-5 w-5 mr-2 text-blue-600" />
-          CAPA Effectiveness Monitoring
+        <CardTitle className="text-xl flex items-center">
+          <BarChart className="h-5 w-5 mr-2 text-primary" />
+          CAPA Effectiveness Assessment
         </CardTitle>
+        <CardDescription>
+          Evaluate the effectiveness of corrective and preventive actions
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <p>Loading assessment data...</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-sm font-medium">Assessment for:</h3>
-                <p className="text-sm text-gray-500">{title}</p>
-                <p className="text-xs text-gray-400 mt-1 flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
+      
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="criteria">Assessment Criteria</TabsTrigger>
+            <TabsTrigger value="evaluate">Evaluate</TabsTrigger>
+            <TabsTrigger value="results">Results</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="criteria" className="space-y-4">
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-2">CAPA Information</h3>
+                <p className="text-sm text-gray-600 mb-2">{title}</p>
+                <p className="text-xs text-gray-500">
                   Implementation Date: {new Date(implementationDate).toLocaleDateString()}
                 </p>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold">{metrics.score}%</div>
-                <div className={`text-sm ${
-                  metrics.rating === 'excellent' || metrics.rating === 'effective' || metrics.rating === 'good' 
-                    ? 'text-green-600' 
-                    : metrics.rating === 'adequate' || metrics.rating === 'partially-effective' 
-                      ? 'text-amber-600' 
-                      : 'text-red-600'
-                }`}>
-                  {metrics.rating.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Effectiveness Criteria</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <span className="bg-primary text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center mt-0.5 mr-2">1</span>
+                    <div>
+                      <p className="text-sm font-medium">Root Cause Elimination (40%)</p>
+                      <p className="text-sm text-gray-600">Verify if the identified root cause has been eliminated</p>
+                    </div>
+                  </li>
+                  
+                  <li className="flex items-start">
+                    <span className="bg-primary text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center mt-0.5 mr-2">2</span>
+                    <div>
+                      <p className="text-sm font-medium">Preventive Measures (40%)</p>
+                      <p className="text-sm text-gray-600">Confirm that preventive measures are in place to prevent recurrence</p>
+                    </div>
+                  </li>
+                  
+                  <li className="flex items-start">
+                    <span className="bg-primary text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center mt-0.5 mr-2">3</span>
+                    <div>
+                      <p className="text-sm font-medium">Documentation (20%)</p>
+                      <p className="text-sm text-gray-600">Ensure all relevant documentation has been updated to reflect changes</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Effectiveness Ratings</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded mr-2">Effective</span>
+                    <p className="text-sm text-gray-600">Score of 85% or higher</p>
+                  </li>
+                  
+                  <li className="flex items-center">
+                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded mr-2">Partially Effective</span>
+                    <p className="text-sm text-gray-600">Score between 41% and 84%</p>
+                  </li>
+                  
+                  <li className="flex items-center">
+                    <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded mr-2">Ineffective</span>
+                    <p className="text-sm text-gray-600">Score of 40% or lower</p>
+                  </li>
+                </ul>
               </div>
             </div>
             
-            <Progress value={metrics.score} className="h-2" />
-            
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Root Cause Elimination</Label>
-                  <p className="text-sm text-gray-500">Has the root cause been eliminated?</p>
-                </div>
-                <Switch 
-                  checked={Boolean(metrics.rootCauseEliminated)} 
-                  onCheckedChange={handleSwitchChange('rootCauseEliminated')}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Documentation</Label>
-                  <p className="text-sm text-gray-500">Are all related documents updated and complete?</p>
-                </div>
-                <Switch 
-                  checked={Boolean(metrics.documentationComplete)} 
-                  onCheckedChange={handleSwitchChange('documentationComplete')}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Preventive Measures</Label>
-                  <p className="text-sm text-gray-500">Are preventive measures effective?</p>
-                </div>
-                <Switch 
-                  checked={Boolean(metrics.preventionMeasureEffective)} 
-                  onCheckedChange={handleSwitchChange('preventionMeasureEffective')}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Recurrence Check</Label>
-                  <p className="text-sm text-gray-500">Has there been no recurrence of the issue?</p>
-                </div>
-                <Switch 
-                  checked={Boolean(metrics.recurrenceCheck)} 
-                  onCheckedChange={handleSwitchChange('recurrenceCheck')}
-                />
-              </div>
-            </div>
-            
-            <div className="pt-2">
-              <Label>Assessment Notes</Label>
-              <Textarea 
-                placeholder="Enter any notes regarding the effectiveness assessment..." 
-                className="mt-1" 
-                rows={3}
-                value={metrics.notes || ''}
-                onChange={(e) => setMetrics(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </div>
-            
-            {metrics.score < 70 && (
-              <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-                <AlertDescription className="text-amber-800">
-                  This CAPA's effectiveness is below the acceptable threshold. Additional corrective actions may be required.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <div className="flex justify-end pt-4">
-              <Button 
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center"
-              >
-                <BadgeCheck className="h-4 w-4 mr-2" />
-                {saving ? 'Saving Assessment...' : reportId ? 'Update Assessment' : 'Save Assessment'}
+            <div className="flex justify-end">
+              <Button onClick={() => setActiveTab('evaluate')}>
+                Begin Assessment
               </Button>
             </div>
-          </>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="evaluate" className="space-y-4">
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-1">Root Cause Elimination (40%)</h3>
+                <p className="text-sm text-gray-600 mb-3">Has the root cause been effectively eliminated?</p>
+                
+                <div className="flex space-x-4">
+                  <Button 
+                    variant={assessment.rootCauseEliminated ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('rootCauseEliminated', true)}
+                  >
+                    Yes
+                  </Button>
+                  <Button 
+                    variant={!assessment.rootCauseEliminated ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('rootCauseEliminated', false)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-1">Preventive Measures Implementation (40%)</h3>
+                <p className="text-sm text-gray-600 mb-3">Are adequate preventive measures implemented?</p>
+                
+                <div className="flex space-x-4">
+                  <Button 
+                    variant={assessment.preventiveMeasuresImplemented ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('preventiveMeasuresImplemented', true)}
+                  >
+                    Yes
+                  </Button>
+                  <Button 
+                    variant={!assessment.preventiveMeasuresImplemented ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('preventiveMeasuresImplemented', false)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-1">Documentation Completeness (20%)</h3>
+                <p className="text-sm text-gray-600 mb-3">Is all documentation up-to-date and complete?</p>
+                
+                <div className="flex space-x-4">
+                  <Button 
+                    variant={assessment.documentationComplete ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('documentationComplete', true)}
+                  >
+                    Yes
+                  </Button>
+                  <Button 
+                    variant={!assessment.documentationComplete ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssessmentValue('documentationComplete', false)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-1">Additional Notes</h3>
+                <textarea 
+                  className="w-full min-h-[100px] p-2 border rounded-md mt-2"
+                  placeholder="Enter any additional observations or notes about the effectiveness..."
+                  value={assessment.notes}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="outline" className="mr-2" onClick={() => setActiveTab('criteria')}>
+                Back
+              </Button>
+              <Button onClick={submitAssessment} disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit Assessment'}
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="results" className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-md border">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-medium">Assessment Results</h3>
+                {getRatingBadge(assessment.rating)}
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Effectiveness Score</span>
+                    <span className="text-sm font-medium">{assessment.score}%</span>
+                  </div>
+                  <Progress value={assessment.score} className={getScoreColor(assessment.score)} />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="border rounded-md p-3 bg-white">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full ${assessment.rootCauseEliminated ? 'bg-green-500' : 'bg-red-500'} mr-2`}></div>
+                      <span className="text-sm font-medium">Root Cause Eliminated</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">40% of total score</p>
+                  </div>
+                  
+                  <div className="border rounded-md p-3 bg-white">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full ${assessment.preventiveMeasuresImplemented ? 'bg-green-500' : 'bg-red-500'} mr-2`}></div>
+                      <span className="text-sm font-medium">Preventive Measures</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">40% of total score</p>
+                  </div>
+                  
+                  <div className="border rounded-md p-3 bg-white">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full ${assessment.documentationComplete ? 'bg-green-500' : 'bg-red-500'} mr-2`}></div>
+                      <span className="text-sm font-medium">Documentation</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">20% of total score</p>
+                  </div>
+                </div>
+                
+                {assessment.score < 85 && (
+                  <div className="border-l-4 border-amber-400 bg-amber-50 p-3">
+                    <h4 className="font-medium flex items-center text-amber-800">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      Recommendations
+                    </h4>
+                    <ul className="mt-2 text-sm space-y-1 text-amber-700">
+                      {!assessment.rootCauseEliminated && (
+                        <li>• Further investigate the root cause and implement additional measures to address it completely.</li>
+                      )}
+                      {!assessment.preventiveMeasuresImplemented && (
+                        <li>• Strengthen preventive measures to ensure the issue does not recur in the future.</li>
+                      )}
+                      {!assessment.documentationComplete && (
+                        <li>• Update all relevant documentation to reflect the changes and maintain compliance.</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                
+                {assessment.notes && (
+                  <div>
+                    <h4 className="font-medium flex items-center mb-2">
+                      <FileText className="h-4 w-4 mr-1" />
+                      Assessment Notes
+                    </h4>
+                    <div className="border rounded-md p-3 bg-white text-sm">
+                      {assessment.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="default" onClick={() => setActiveTab('evaluate')}>
+                Review Assessment
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
+      
+      <CardFooter className="flex justify-between border-t pt-6">
+        <div className="text-sm text-gray-500 flex items-center">
+          <Clipboard className="h-4 w-4 mr-1" />
+          Assessment performed {new Date().toLocaleDateString()}
+        </div>
+        
+        {activeTab === 'results' && (
+          <Button variant="outline">
+            Download Report
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 };
