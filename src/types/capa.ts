@@ -3,7 +3,7 @@ export type CAPAStatus = 'open' | 'in-progress' | 'closed' | 'verified';
 
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
 
-export type CAPASource = 'non_conformance' | 'complaint' | 'audit' | 'internal' | 'other';
+export type CAPASource = 'non_conformance' | 'complaint' | 'audit' | 'internal' | 'other' | 'supplier' | 'haccp' | 'traceability';
 
 export type CAPAEffectivenessRating = 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective';
 
@@ -30,6 +30,19 @@ export interface CAPA {
   effectivenessCriteria?: string;
   verificationMethod?: string;
   verifiedBy?: string;
+  lastUpdated?: string;
+  relatedDocuments?: Array<{id: string, title: string, type: string}>;
+  relatedTraining?: Array<{id: string, title: string, type: string}>;
+  fsma204Compliant?: boolean;
+  sourceReference?: SourceReference;
+}
+
+export interface SourceReference {
+  type: string;
+  title: string;
+  id: string;
+  url?: string;
+  date?: string;
 }
 
 export interface CAPAActivity {
@@ -56,6 +69,19 @@ export interface CAPAFilter {
   search?: string;
 }
 
+export type CAPAFilterParams = {
+  status?: string | string[];
+  priority?: string | string[];
+  source?: string | string[];
+  sourceId?: string;
+  assignedTo?: string;
+  department?: string;
+  searchQuery?: string;
+  dueDate?: string;
+  limit?: number;
+  page?: number;
+};
+
 export interface CAPAStats {
   total: number;
   openCAPAs: number;
@@ -64,18 +90,28 @@ export interface CAPAStats {
   byPriority: Record<CAPAPriority, number>;
   bySource: Record<string, number>;
   recentItems: CAPA[];
+  averageClosureTime?: number;
+  fsma204ComplianceRate?: number;
+  effectivenessStats?: {
+    effective: number;
+    partiallyEffective: number;
+    ineffective: number;
+    notEvaluated: number;
+  };
+  completionRates?: Record<string, number>;
+  overdue?: number;
 }
 
-export interface CAPAEffectivenessAssessment {
-  id: string;
+export interface CAPAEffectivenessMetrics {
+  id?: string;
   capaId: string;
-  assessmentDate: string;
-  rootCauseEliminated: boolean;
-  preventiveMeasuresImplemented: boolean;
-  documentationComplete: boolean;
   score: number;
-  rating: CAPAEffectivenessRating;
-  recurrenceCheck: string;
+  recurrenceCheck: boolean;
+  rootCauseEliminated: boolean;
+  documentationComplete: boolean;
+  preventionMeasureEffective: boolean;
+  assessmentDate: string;
   notes?: string;
   createdBy: string;
+  rating: CAPAEffectivenessRating;
 }
