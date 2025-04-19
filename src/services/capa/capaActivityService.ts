@@ -24,7 +24,7 @@ export const logCAPAActivity = async (
       performed_by: performedBy,
       old_status: oldStatus ? mapStatusToDb(oldStatus) : undefined,
       new_status: newStatus ? mapStatusToDb(newStatus) : undefined,
-      metadata: metadata || undefined
+      metadata: metadata ? JSON.stringify(metadata) : null
     };
 
     // Use insert with typecasting to handle the DB format expectations
@@ -36,6 +36,11 @@ export const logCAPAActivity = async (
 
     if (error) throw error;
 
+    // Parse metadata from JSON string to object if it exists
+    const parsedMetadata = data.metadata ? 
+      (typeof data.metadata === 'string' ? JSON.parse(data.metadata) : data.metadata) : 
+      undefined;
+
     return {
       id: data.id,
       capaId: data.capa_id,
@@ -45,7 +50,7 @@ export const logCAPAActivity = async (
       performedAt: data.performed_at,
       oldStatus: data.old_status as CAPAStatus,
       newStatus: data.new_status as CAPAStatus,
-      metadata: data.metadata
+      metadata: parsedMetadata
     };
   } catch (error) {
     console.error('Error logging CAPA activity:', error);
@@ -63,17 +68,24 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
 
     if (error) throw error;
 
-    return (data || []).map(item => ({
-      id: item.id,
-      capaId: item.capa_id,
-      actionType: item.action_type,
-      actionDescription: item.action_description,
-      performedBy: item.performed_by,
-      performedAt: item.performed_at,
-      oldStatus: item.old_status as CAPAStatus,
-      newStatus: item.new_status as CAPAStatus,
-      metadata: item.metadata
-    }));
+    return (data || []).map(item => {
+      // Parse metadata from JSON string to object if it exists
+      const parsedMetadata = item.metadata ? 
+        (typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata) : 
+        undefined;
+
+      return {
+        id: item.id,
+        capaId: item.capa_id,
+        actionType: item.action_type,
+        actionDescription: item.action_description,
+        performedBy: item.performed_by,
+        performedAt: item.performed_at,
+        oldStatus: item.old_status as CAPAStatus,
+        newStatus: item.new_status as CAPAStatus,
+        metadata: parsedMetadata
+      };
+    });
   } catch (error) {
     console.error('Error fetching CAPA activities:', error);
     throw error;

@@ -1,83 +1,105 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { TrainingSession } from '@/types/training';
+import { formatDistanceToNow, format } from 'date-fns';
+import { CalendarDays, Users, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useTrainingContext } from '@/contexts/TrainingContext';
-import { format, isAfter } from 'date-fns';
-import { Users, Clock, CalendarClock } from 'lucide-react';
 
-const UpcomingTrainings: React.FC = () => {
-  const { sessions, departmentStats } = useTrainingContext();
-  
-  // Filter upcoming sessions
-  const now = new Date();
+interface UpcomingTrainingsProps {
+  sessions: TrainingSession[];
+  loading?: boolean;
+}
+
+const UpcomingTrainings: React.FC<UpcomingTrainingsProps> = ({ sessions, loading = false }) => {
+  // Filter sessions to only show upcoming (not completed) ones
   const upcomingSessions = sessions
-    .filter(session => isAfter(new Date(session.due_date), now))
+    .filter(session => session.completion_status !== 'completed')
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-    .slice(0, 5);
-  
+    .slice(0, 5); // Just show top 5
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-32 mb-4"></div>
+              <div className="h-20 bg-gray-200 rounded w-full mb-4"></div>
+              <div className="h-20 bg-gray-200 rounded w-full"></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (upcomingSessions.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center h-40 text-center">
+            <CalendarDays className="h-10 w-10 text-gray-400 mb-2" />
+            <h3 className="text-lg font-medium">No Upcoming Trainings</h3>
+            <p className="text-sm text-gray-500 mb-4">All scheduled trainings have been completed.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      {upcomingSessions.length === 0 ? (
-        <div className="text-center py-4 text-gray-500">
-          No upcoming training sessions.
-        </div>
-      ) : (
-        <>
-          {departmentStats.map((dept, index) => (
-            <Card key={index} className="p-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{dept.name}</h4>
-                    <p className="text-sm text-gray-500">
-                      {dept.completed} of {dept.totalAssigned} completed
-                    </p>
-                  </div>
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Upcoming Training Sessions</h3>
+        <div className="space-y-4">
+          {upcomingSessions.map(session => (
+            <div key={session.id} className="border rounded-lg p-4 hover:bg-gray-50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium">{session.title}</h4>
+                  {session.department && (
+                    <p className="text-sm text-gray-500">{session.department}</p>
+                  )}
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">{dept.complianceRate}%</div>
-                  <div className="text-sm text-gray-500">compliance</div>
+                <Badge 
+                  variant="outline" 
+                  className={
+                    session.completion_status === 'overdue' 
+                      ? 'bg-red-100 text-red-800 border-red-200' 
+                      : 'bg-blue-100 text-blue-800 border-blue-200'
+                  }
+                >
+                  {session.completion_status === 'overdue' ? 'Overdue' : formatDistanceToNow(new Date(session.due_date), { addSuffix: true })}
+                </Badge>
+              </div>
+              
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
+                <div className="flex items-center">
+                  <Clock className="h-3.5 w-3.5 mr-1" />
+                  {format(new Date(session.due_date), 'MMM d, yyyy')}
+                </div>
+                <div className="flex items-center">
+                  <Users className="h-3.5 w-3.5 mr-1" />
+                  {session.assigned_to.length} participants
+                </div>
+                <div className="flex items-center">
+                  <CalendarDays className="h-3.5 w-3.5 mr-1" />
+                  {session.training_type}
                 </div>
               </div>
               
-              {dept.overdue > 0 && (
-                <div className="mt-2 flex items-center text-red-600 text-sm">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {dept.overdue} overdue trainings
-                </div>
-              )}
-            </Card>
-          ))}
-          
-          <div className="mt-6">
-            <h4 className="font-medium mb-3 flex items-center">
-              <CalendarClock className="h-4 w-4 mr-2" />
-              Upcoming Sessions
-            </h4>
-            {upcomingSessions.map(session => (
-              <div key={session.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                <div>
-                  <div className="font-medium">{session.title}</div>
-                  <div className="text-sm text-gray-500">{session.department}</div>
-                </div>
-                <div className="text-right">
-                  <Badge variant="outline" className="mb-1">
-                    {format(new Date(session.due_date), 'MMM d')}
-                  </Badge>
-                  <div className="text-xs text-gray-500">
-                    {session.assigned_to.length} assignees
-                  </div>
-                </div>
+              <div className="mt-3">
+                <Button variant="outline" size="sm" className="w-full">
+                  View Details
+                </Button>
               </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

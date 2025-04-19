@@ -1,152 +1,143 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { TrainingSession, TrainingStatus, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  mapToTrainingType, 
-  mapToTrainingCategory, 
-  mapToTrainingStatus,
-  mapToCompletionStatus,
-  ensureStringArray 
-} from '@/utils/trainingTypeMapper';
+import { TrainingSession, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
 
-export function useTrainingSessions() {
+export const useTrainingSessions = () => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
-  
-  const fetchSessions = async () => {
+
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       
-      // In a real implementation, we would fetch from the database
-      // const { data, error } = await supabase.from('training_sessions').select('*');
-      // if (error) throw error;
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .select('*')
+        .order('due_date', { ascending: true });
       
-      // Mock data for development
-      const mockSessions = [
-        {
-          id: '1',
-          title: 'Food Safety Basics',
-          description: 'Fundamental training on food safety principles',
-          training_type: 'classroom' as TrainingType,
-          training_category: 'food-safety' as TrainingCategory,
-          department: 'production',
-          start_date: new Date().toISOString(),
-          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          assigned_to: ['user1', 'user2', 'user3'],
-          materials_id: ['doc1', 'doc2'],
-          required_roles: ['operator', 'supervisor'],
-          is_recurring: true,
-          recurring_interval: '30',
-          completion_status: 'in-progress' as TrainingCompletionStatus,
-          created_by: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'HACCP Principles',
-          description: 'Advanced HACCP training for quality personnel',
-          training_type: 'online' as TrainingType,
-          training_category: 'haccp' as TrainingCategory,
-          department: 'quality',
-          start_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          assigned_to: ['user4', 'user5'],
-          materials_id: ['doc3', 'doc4'],
-          required_roles: ['qc', 'supervisor'],
-          is_recurring: false,
-          recurring_interval: '0',
-          completion_status: 'not-started' as TrainingCompletionStatus,
-          created_by: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          title: 'Equipment Safety',
-          description: 'Training on safe operation of production equipment',
-          training_type: 'on-the-job' as TrainingType,
-          training_category: 'technical' as TrainingCategory,
-          department: 'maintenance',
-          start_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          due_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          assigned_to: ['user6', 'user7', 'user8'],
-          materials_id: ['doc5'],
-          required_roles: ['operator', 'maintenance'],
-          is_recurring: true,
-          recurring_interval: '90',
-          completion_status: 'completed' as TrainingCompletionStatus,
-          created_by: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+      if (error) throw error;
       
-      setSessions(mockSessions);
+      // Convert data format from database to our interface
+      const formattedSessions: TrainingSession[] = (data || []).map(session => ({
+        id: session.id,
+        title: session.title,
+        description: session.description || '',
+        training_type: session.training_type as TrainingType,
+        training_category: session.training_category as TrainingCategory,
+        department: session.department || '',
+        start_date: session.start_date,
+        due_date: session.due_date,
+        assigned_to: session.assigned_to || [],
+        materials_id: session.materials_id || [],
+        required_roles: session.required_roles || [],
+        is_recurring: session.is_recurring || false,
+        recurring_interval: String(session.recurring_interval || ''),
+        completion_status: mapDbCompletionStatus(session.completion_status),
+        created_by: session.created_by,
+        created_at: session.created_at,
+        updated_at: session.updated_at
+      }));
+      
+      setSessions(formattedSessions);
     } catch (err) {
       console.error('Error fetching training sessions:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch training sessions'));
-      toast({
-        title: 'Error',
-        description: 'Failed to load training sessions',
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
-  };
-  
-  useEffect(() => {
-    fetchSessions();
   }, []);
-  
-  const createSession = async (sessionData: Partial<TrainingSession>) => {
+
+  const createSession = useCallback(async (sessionData: Omit<TrainingSession, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Format the data to ensure proper types
-      const formattedData = {
-        ...sessionData,
-        title: sessionData.title || '',
-        description: sessionData.description || '',
-        training_type: sessionData.training_type || 'classroom',
-        training_category: sessionData.training_category || 'food-safety',
-        department: sessionData.department || '',
-        start_date: sessionData.start_date || new Date().toISOString(),
-        due_date: sessionData.due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        assigned_to: sessionData.assigned_to || [],
-        materials_id: sessionData.materials_id || [],
-        required_roles: sessionData.required_roles || [],
-        is_recurring: Boolean(sessionData.is_recurring),
-        recurring_interval: sessionData.recurring_interval || '0',
-        completion_status: sessionData.completion_status || 'not-started',
-        created_by: sessionData.created_by || 'admin',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      setLoading(true);
+      
+      // Convert our interface format to database format
+      const dbSessionData = {
+        title: sessionData.title,
+        description: sessionData.description,
+        training_type: sessionData.training_type,
+        training_category: sessionData.training_category,
+        department: sessionData.department,
+        start_date: sessionData.start_date,
+        due_date: sessionData.due_date,
+        assigned_to: sessionData.assigned_to,
+        materials_id: sessionData.materials_id,
+        required_roles: sessionData.required_roles,
+        is_recurring: sessionData.is_recurring,
+        recurring_interval: sessionData.recurring_interval ? parseInt(sessionData.recurring_interval) : null,
+        completion_status: mapToDbCompletionStatus(sessionData.completion_status),
+        created_by: sessionData.created_by
       };
       
-      // Mock database insert
-      const newSession = {
-        ...formattedData,
-        id: `session-${Date.now()}`
-      } as TrainingSession;
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .insert(dbSessionData)
+        .select()
+        .single();
       
-      setSessions(prev => [...prev, newSession]);
+      if (error) throw error;
       
+      // Convert the returned data to our interface format
+      const newSession: TrainingSession = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        training_type: data.training_type as TrainingType,
+        training_category: data.training_category as TrainingCategory,
+        department: data.department || '',
+        start_date: data.start_date,
+        due_date: data.due_date,
+        assigned_to: data.assigned_to || [],
+        materials_id: data.materials_id || [],
+        required_roles: data.required_roles || [],
+        is_recurring: data.is_recurring || false,
+        recurring_interval: String(data.recurring_interval || ''),
+        completion_status: mapDbCompletionStatus(data.completion_status),
+        created_by: data.created_by,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
+      setSessions(prev => [newSession, ...prev]);
       return newSession;
     } catch (err) {
       console.error('Error creating training session:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to create training session',
-        variant: 'destructive',
-      });
+      setError(err instanceof Error ? err : new Error('Failed to create training session'));
       throw err;
+    } finally {
+      setLoading(false);
     }
-  };
-  
+  }, []);
+
+  // Helper functions to map between DB representation and interface representation
+  function mapDbCompletionStatus(dbStatus: string): TrainingCompletionStatus {
+    switch(dbStatus) {
+      case 'Not Started': return 'not-started';
+      case 'In Progress': return 'in-progress';
+      case 'Completed': return 'completed';
+      case 'Overdue': return 'overdue';
+      case 'Cancelled': return 'cancelled';
+      default: return 'not-started';
+    }
+  }
+
+  function mapToDbCompletionStatus(status: TrainingCompletionStatus): string {
+    switch(status) {
+      case 'not-started': return 'Not Started';
+      case 'in-progress': return 'In Progress';
+      case 'completed': return 'Completed';
+      case 'overdue': return 'Overdue';
+      case 'cancelled': return 'Cancelled';
+      default: return 'Not Started';
+    }
+  }
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
   return {
     sessions,
     loading,
@@ -154,4 +145,4 @@ export function useTrainingSessions() {
     fetchSessions,
     createSession
   };
-}
+};

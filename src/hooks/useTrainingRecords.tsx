@@ -1,146 +1,69 @@
-import { useState, useEffect, useMemo } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord, ExtendedTrainingRecord, TrainingStatus } from '@/types/training';
-import { useToast } from '@/components/ui/use-toast';
+import { ExtendedTrainingRecord, TrainingStatus } from '@/types/training';
 
-interface TrainingStats {
-  completedCount: number;
-  inProgressCount: number;
-  notStartedCount: number;
-  overdueCount: number;
-  totalCount: number;
-}
-
-export function useTrainingRecords() {
-  const [records, setRecords] = useState<ExtendedTrainingRecord[]>([]);
+const useTrainingRecords = (employeeId?: string) => {
+  const [trainingRecords, setTrainingRecords] = useState<ExtendedTrainingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
-  
-  const stats = useMemo<TrainingStats>(() => {
-    const completedCount = records.filter(r => r.status === 'Completed').length;
-    const inProgressCount = records.filter(r => r.status === 'In Progress').length;
-    const notStartedCount = records.filter(r => r.status === 'Not Started').length;
-    const overdueCount = records.filter(r => r.status === 'Overdue').length;
-    
-    return {
-      completedCount,
-      inProgressCount,
-      notStartedCount,
-      overdueCount,
-      totalCount: records.length
-    };
-  }, [records]);
-  
-  const fetchTrainingRecords = async () => {
+
+  const fetchTrainingRecords = useCallback(async () => {
     try {
       setLoading(true);
       
-      // In a real app, join with course data
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('training_records')
-        .select('*')
-        .order('due_date', { ascending: true });
-        
-      if (fetchError) throw fetchError;
+        .select(`
+          *,
+          training_sessions(title, instructor_name)
+        `)
+        .order('due_date', { ascending: false });
       
-      // Process data to add course name (mock version)
-      const extendedRecords: ExtendedTrainingRecord[] = (data || []).map(record => {
-        // Here you would normally get course name from a courses JOIN
-        const courseName = `Course ${record.session_id.substring(0, 4)}`;
-        const instructorName = `Instructor ${record.employee_id.substring(0, 3)}`;
-        
-        // Check for overdue status
-        let status = record.status as TrainingStatus;
-        if (status !== 'Completed' && new Date(record.due_date) < new Date()) {
-          status = 'Overdue';
-        }
-        
-        return {
-          ...record,
-          courseName,
-          instructorName,
-          status,
-          created_at: record.created_at || new Date().toISOString(),
-          updated_at: record.updated_at || new Date().toISOString()
-        };
-      });
+      if (employeeId) {
+        query = query.eq('employee_id', employeeId);
+      }
       
-      setRecords(extendedRecords);
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      // Transform data to match ExtendedTrainingRecord type
+      const transformedData: ExtendedTrainingRecord[] = (data || []).map(record => ({
+        id: record.id,
+        employee_id: record.employee_id,
+        session_id: record.session_id,
+        status: record.status as TrainingStatus,
+        completion_date: record.completion_date,
+        score: record.score,
+        due_date: record.due_date,
+        notes: record.notes,
+        assigned_date: record.assigned_date,
+        courseName: record.training_sessions?.title || 'Unknown Course',
+        instructorName: record.training_sessions?.instructor_name || 'Not Assigned',
+        created_at: record.created_at || new Date().toISOString(),
+        updated_at: record.updated_at || new Date().toISOString()
+      }));
+      
+      setTrainingRecords(transformedData);
     } catch (err) {
       console.error('Error fetching training records:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch training records'));
-      toast({
-        title: 'Error',
-        description: 'Failed to load training records',
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
-  };
-  
+  }, [employeeId]);
+
   useEffect(() => {
     fetchTrainingRecords();
-    
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('training-records-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'training_records' 
-      }, () => {
-        fetchTrainingRecords();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-  
-  const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>): Promise<boolean> => {
-    try {
-      const { error: updateError } = await supabase
-        .from('training_records')
-        .update(updates)
-        .eq('id', recordId);
-        
-      if (updateError) throw updateError;
-      
-      // Update local state
-      setRecords(prev => 
-        prev.map(record => 
-          record.id === recordId 
-            ? { ...record, ...updates } 
-            : record
-        )
-      );
-      
-      toast({
-        title: 'Success',
-        description: 'Training record updated successfully',
-      });
-      
-      return true;
-    } catch (err) {
-      console.error('Error updating training record:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update training record',
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
-  
+  }, [fetchTrainingRecords]);
+
   return {
-    records,
+    trainingRecords,
     loading,
     error,
-    stats,
-    updateTrainingRecord,
-    refreshRecords: fetchTrainingRecords
+    refresh: fetchTrainingRecords
   };
-}
+};
+
+export default useTrainingRecords;

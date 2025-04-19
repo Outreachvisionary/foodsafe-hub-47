@@ -50,12 +50,14 @@ export interface CAPA {
   isFsma204Compliant: boolean;
   relatedDocuments?: RelatedDocument[];
   relatedTraining?: RelatedTraining[];
-  sourceReference?: {
-    type: string;
-    title: string;
-    url?: string;
-    date?: string;
-  }
+  sourceReference?: SourceReference;
+}
+
+export interface SourceReference {
+  type: string;
+  title: string;
+  url?: string;
+  date?: string;
 }
 
 export interface CAPAActivity {
@@ -85,16 +87,16 @@ export interface CAPAEffectivenessAssessment {
 }
 
 export interface CAPAFilter {
-  status?: CAPAStatus[];
-  priority?: CAPAPriority[];
-  source?: CAPASource[];
+  status?: CAPAStatus[] | CAPAStatus;
+  priority?: CAPAPriority[] | CAPAPriority;
+  source?: CAPASource[] | CAPASource;
   dateRange?: {
     start: string;
     end: string;
   };
   searchTerm?: string;
-  assignedTo?: string[];
-  department?: string[];
+  assignedTo?: string[] | string;
+  department?: string[] | string;
 }
 
 export interface CAPAStats {
@@ -120,4 +122,17 @@ export interface CAPAEffectivenessMetrics {
   score: number;
   rating: CAPAEffectivenessRating;
   notes?: string;
+}
+
+export interface CAPAFetchParams {
+  status?: CAPAStatus[] | string;
+  priority?: CAPAPriority[] | string;
+  source?: CAPASource | string;
+  sourceId?: string;
+  assignedTo?: string;
+  department?: string;
+  searchQuery?: string;
+  dueDate?: string;
+  limit?: number;
+  page?: number;
 }

@@ -42,7 +42,7 @@ const useTrainingConfig = () => {
             const mappedConfig: TrainingAutomationConfig = {
               id: createdConfig.id,
               enabled: createdConfig.enabled,
-              rules: createdConfig.rules,
+              rules: createdConfig.rules || [],
               documentChangesTrigger: createdConfig.document_changes_trigger,
               newEmployeeTrigger: createdConfig.new_employee_trigger,
               roleCangeTrigger: createdConfig.role_change_trigger,
@@ -60,7 +60,7 @@ const useTrainingConfig = () => {
           const mappedConfig: TrainingAutomationConfig = {
             id: data.id,
             enabled: data.enabled,
-            rules: data.rules,
+            rules: data.rules || [],
             documentChangesTrigger: data.document_changes_trigger,
             newEmployeeTrigger: data.new_employee_trigger,
             roleCangeTrigger: data.role_change_trigger,
@@ -89,7 +89,7 @@ const useTrainingConfig = () => {
       // Map interface properties to database properties
       const dbUpdates = {
         enabled: updatedConfig.enabled,
-        rules: updatedConfig.rules,
+        rules: updatedConfig.rules || [],
         document_changes_trigger: updatedConfig.documentChangesTrigger,
         new_employee_trigger: updatedConfig.newEmployeeTrigger,
         role_change_trigger: updatedConfig.roleCangeTrigger,
