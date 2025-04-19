@@ -7,14 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
+import { Plus } from 'lucide-react';
 
 // Define enumerated types for dropdown options
-const complaintStatuses: ComplaintStatus[] = ['new', 'investigating', 'resolved', 'closed'];
-const complaintCategories: ComplaintCategory[] = ['food_safety', 'product_quality', 'foreign_material', 'packaging', 'service'];
-const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
+const complaintStatuses: ComplaintStatus[] = ['new', 'in-progress', 'resolved', 'closed', 'reopened'];
+const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
+const complaintPriorities: ComplaintPriority[] = ['critical', 'high', 'medium', 'low'];
 
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -23,13 +25,13 @@ const ComplaintManagement: React.FC = () => {
   const [newComplaint, setNewComplaint] = useState<Partial<Complaint>>({
     title: '',
     description: '',
-    category: 'food_safety',
+    category: 'quality',
     status: 'new',
     priority: 'medium',
-    customer_name: '',
-    customer_contact: '',
-    product_involved: '',
-    lot_number: ''
+    customerName: '',
+    customerContact: '',
+    productInvolved: '',
+    lotNumber: ''
   });
 
   useEffect(() => {
@@ -45,7 +47,30 @@ const ComplaintManagement: React.FC = () => {
         .order('reported_date', { ascending: false });
 
       if (error) throw error;
-      setComplaints(data || []);
+
+      // Convert database schema to our complaint type
+      const convertedComplaints: Complaint[] = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.category as ComplaintCategory,
+        status: item.status as ComplaintStatus,
+        priority: item.priority || 'medium' as ComplaintPriority,
+        reportedDate: item.reported_date,
+        assignedTo: item.assigned_to,
+        createdBy: item.created_by,
+        createdDate: item.created_at,
+        updatedAt: item.updated_at,
+        resolutionDate: item.resolution_date,
+        customerName: item.customer_name,
+        customerContact: item.customer_contact,
+        productInvolved: item.product_involved,
+        lotNumber: item.lot_number,
+        capaRequired: false,
+        capaId: item.capa_id
+      }));
+
+      setComplaints(convertedComplaints);
     } catch (error) {
       console.error('Error fetching complaints:', error);
       toast.error('Failed to load complaints');
@@ -71,11 +96,19 @@ const ComplaintManagement: React.FC = () => {
         return;
       }
 
-      // Add user info and timestamps
+      // Map our Complaint type to the database schema
       const complaintToSubmit = {
-        ...newComplaint,
+        title: newComplaint.title,
+        description: newComplaint.description,
+        category: newComplaint.category,
+        status: newComplaint.status,
+        priority: newComplaint.priority,
         reported_date: new Date().toISOString(),
         created_by: 'current_user', // This should be dynamic based on auth user
+        customer_name: newComplaint.customerName,
+        customer_contact: newComplaint.customerContact,
+        product_involved: newComplaint.productInvolved,
+        lot_number: newComplaint.lotNumber
       };
 
       const { data, error } = await supabase
@@ -86,19 +119,41 @@ const ComplaintManagement: React.FC = () => {
 
       if (error) throw error;
       
-      setComplaints([data, ...complaints]);
+      // Convert back to our type
+      const newComplaintData: Complaint = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        category: data.category as ComplaintCategory,
+        status: data.status as ComplaintStatus,
+        priority: data.priority as ComplaintPriority,
+        reportedDate: data.reported_date,
+        assignedTo: data.assigned_to,
+        createdBy: data.created_by,
+        createdDate: data.created_at,
+        updatedAt: data.updated_at,
+        resolutionDate: data.resolution_date,
+        customerName: data.customer_name,
+        customerContact: data.customer_contact,
+        productInvolved: data.product_involved,
+        lotNumber: data.lot_number,
+        capaRequired: false,
+        capaId: data.capa_id
+      };
+      
+      setComplaints([newComplaintData, ...complaints]);
       toast.success('Complaint submitted successfully');
       setIsDialogOpen(false);
       setNewComplaint({
         title: '',
         description: '',
-        category: 'food_safety',
+        category: 'quality',
         status: 'new',
         priority: 'medium',
-        customer_name: '',
-        customer_contact: '',
-        product_involved: '',
-        lot_number: ''
+        customerName: '',
+        customerContact: '',
+        productInvolved: '',
+        lotNumber: ''
       });
     } catch (error) {
       console.error('Error submitting complaint:', error);
@@ -110,7 +165,7 @@ const ComplaintManagement: React.FC = () => {
     switch (status) {
       case 'new':
         return 'bg-blue-50 text-blue-800 border-blue-200';
-      case 'investigating':
+      case 'in-progress':
         return 'bg-amber-50 text-amber-800 border-amber-200';
       case 'resolved':
         return 'bg-green-50 text-green-800 border-green-200';
@@ -123,16 +178,16 @@ const ComplaintManagement: React.FC = () => {
 
   const getCategoryLabel = (category: ComplaintCategory) => {
     switch (category) {
-      case 'food_safety':
-        return 'Food Safety';
-      case 'product_quality':
+      case 'quality':
         return 'Product Quality';
-      case 'foreign_material':
-        return 'Foreign Material';
+      case 'safety':
+        return 'Food Safety';
       case 'packaging':
         return 'Packaging';
-      case 'service':
-        return 'Service';
+      case 'delivery':
+        return 'Delivery';
+      case 'other':
+        return 'Other';
       default:
         return category;
     }
@@ -229,50 +284,50 @@ const ComplaintManagement: React.FC = () => {
                     </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customer_name" className="text-right">
+                    <Label htmlFor="customerName" className="text-right">
                       Customer Name
                     </Label>
                     <Input
-                      id="customer_name"
-                      name="customer_name"
+                      id="customerName"
+                      name="customerName"
                       className="col-span-3"
-                      value={newComplaint.customer_name}
+                      value={newComplaint.customerName}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customer_contact" className="text-right">
+                    <Label htmlFor="customerContact" className="text-right">
                       Customer Contact
                     </Label>
                     <Input
-                      id="customer_contact"
-                      name="customer_contact"
+                      id="customerContact"
+                      name="customerContact"
                       className="col-span-3"
-                      value={newComplaint.customer_contact}
+                      value={newComplaint.customerContact}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="product_involved" className="text-right">
+                    <Label htmlFor="productInvolved" className="text-right">
                       Product Involved
                     </Label>
                     <Input
-                      id="product_involved"
-                      name="product_involved"
+                      id="productInvolved"
+                      name="productInvolved"
                       className="col-span-3"
-                      value={newComplaint.product_involved}
+                      value={newComplaint.productInvolved}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="lot_number" className="text-right">
+                    <Label htmlFor="lotNumber" className="text-right">
                       Lot Number
                     </Label>
                     <Input
-                      id="lot_number"
-                      name="lot_number"
+                      id="lotNumber"
+                      name="lotNumber"
                       className="col-span-3"
-                      value={newComplaint.lot_number}
+                      value={newComplaint.lotNumber}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -328,10 +383,10 @@ const ComplaintManagement: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(complaint.reported_date).toLocaleDateString()}
+                        {new Date(complaint.reportedDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{complaint.customer_name || 'N/A'}</TableCell>
-                      <TableCell>{complaint.product_involved || 'N/A'}</TableCell>
+                      <TableCell>{complaint.customerName || 'N/A'}</TableCell>
+                      <TableCell>{complaint.productInvolved || 'N/A'}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -36,28 +36,50 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
         
         // Get CAPA statistics
         const capaStats = await getCAPAStats();
-        setStats(capaStats);
+        
+        // Ensure we have a proper CAPAStats object
+        const typedStats: CAPAStats = {
+          total: capaStats.total || 0,
+          openCount: capaStats.openCount || 0,
+          inProgressCount: capaStats.inProgressCount || 0,
+          closedCount: capaStats.closedCount || 0,
+          verifiedCount: capaStats.verifiedCount || 0,
+          pendingVerificationCount: capaStats.pendingVerificationCount || 0,
+          overdueCount: capaStats.overdueCount || 0,
+          byStatus: capaStats.byStatus || [],
+          byPriority: capaStats.byPriority || [],
+          bySource: capaStats.bySource || [],
+          fsma204ComplianceRate: capaStats.fsma204ComplianceRate,
+          effectivenessStats: capaStats.effectivenessStats
+        };
+        
+        setStats(typedStats);
         
         // Get recent CAPAs with filters
         const capaFilter: CAPAFilter = {};
         
         if (filters.status !== 'all') {
-          capaFilter.status = [filters.status as CAPAStatus];
+          capaFilter.status = filters.status as CAPAStatus;
         }
         
         if (filters.priority !== 'all') {
-          capaFilter.priority = [filters.priority as CAPAPriority];
+          capaFilter.priority = filters.priority as CAPAPriority;
         }
         
         if (filters.source !== 'all') {
-          capaFilter.source = [filters.source as CAPASource];
+          capaFilter.source = filters.source as CAPASource;
         }
         
         if (searchQuery) {
           capaFilter.searchTerm = searchQuery;
         }
         
-        const capas = await fetchCAPAs(capaFilter);
+        const capas = await fetchCAPAs({
+          status: capaFilter.status,
+          priority: capaFilter.priority,
+          source: capaFilter.source,
+          searchQuery: capaFilter.searchTerm
+        });
         setRecentCAPAs(capas.slice(0, 5)); // Show only the first 5 items
       } catch (error) {
         console.error('Error loading CAPA dashboard data:', error);

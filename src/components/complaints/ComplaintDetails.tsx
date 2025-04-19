@@ -8,7 +8,7 @@ import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import { Complaint } from '@/types/complaint';
 import { format } from 'date-fns';
 import { ArrowLeft, AlertTriangle, FileCheck, MessageSquare, ClipboardList, CalendarCheck } from 'lucide-react';
-import { Timeline, TimelineItem, TimelineContent, TimelineSeparator, TimelineDot, TimelineConnector } from '@/components/ui/timeline';
+import { Timeline, TimelineItem } from '@/components/ui/timeline';
 
 interface ComplaintDetailsProps {
   complaint: Complaint;
@@ -28,6 +28,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
       case 'new':
         return <Badge variant="outline" className="bg-blue-100 text-blue-800">New</Badge>;
       case 'investigating':
+      case 'in-progress':
         return <Badge className="bg-amber-100 text-amber-800">Investigating</Badge>;
       case 'resolved':
         return <Badge className="bg-green-100 text-green-800">Resolved</Badge>;
@@ -41,12 +42,15 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
   const getCategoryBadge = (category: string) => {
     switch (category.toLowerCase()) {
       case 'product_quality':
+      case 'quality':
         return <Badge className="bg-purple-100 text-purple-800">Product Quality</Badge>;
       case 'foreign_material':
+      case 'safety':
         return <Badge className="bg-red-100 text-red-800">Foreign Material</Badge>;
       case 'packaging':
         return <Badge className="bg-blue-100 text-blue-800">Packaging</Badge>;
       case 'service':
+      case 'delivery':
         return <Badge className="bg-green-100 text-green-800">Service</Badge>;
       default:
         return <Badge>{category}</Badge>;
@@ -203,52 +207,33 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
             
             <TabsContent value="timeline">
               <Timeline>
-                <TimelineItem>
-                  <TimelineSeparator>
-                    <TimelineDot />
-                    <TimelineConnector />
-                  </TimelineSeparator>
-                  <TimelineContent>
-                    <h3 className="font-medium">Complaint Received</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(complaint.reportedDate), 'PPp')}
-                    </p>
-                    <p className="text-sm mt-1">
-                      Complaint was recorded in the system by {complaint.createdBy}
-                    </p>
-                  </TimelineContent>
+                <TimelineItem 
+                  title="Complaint Received"
+                  date={format(new Date(complaint.reportedDate), 'PPp')}
+                >
+                  <p className="text-sm mt-1">
+                    Complaint was recorded in the system by {complaint.createdBy}
+                  </p>
                 </TimelineItem>
                 
-                <TimelineItem>
-                  <TimelineSeparator>
-                    <TimelineDot />
-                    <TimelineConnector />
-                  </TimelineSeparator>
-                  <TimelineContent>
-                    <h3 className="font-medium">Assigned for Investigation</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(complaint.reportedDate), 'PPp')}
-                    </p>
-                    <p className="text-sm mt-1">
-                      Complaint was assigned to {complaint.assignedTo || 'Quality Team'}
-                    </p>
-                  </TimelineContent>
+                <TimelineItem 
+                  title="Assigned for Investigation"
+                  date={format(new Date(complaint.reportedDate), 'PPp')}
+                >
+                  <p className="text-sm mt-1">
+                    Complaint was assigned to {complaint.assignedTo || 'Quality Team'}
+                  </p>
                 </TimelineItem>
                 
                 {complaint.resolutionDate && (
-                  <TimelineItem>
-                    <TimelineSeparator>
-                      <TimelineDot />
-                    </TimelineSeparator>
-                    <TimelineContent>
-                      <h3 className="font-medium">Complaint Resolved</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(complaint.resolutionDate), 'PPp')}
-                      </p>
-                      <p className="text-sm mt-1">
-                        Resolution: Issue addressed and customer notified
-                      </p>
-                    </TimelineContent>
+                  <TimelineItem 
+                    title="Complaint Resolved"
+                    date={format(new Date(complaint.resolutionDate), 'PPp')}
+                    isLast
+                  >
+                    <p className="text-sm mt-1">
+                      Resolution: Issue addressed and customer notified
+                    </p>
                   </TimelineItem>
                 )}
               </Timeline>
@@ -269,7 +254,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
         
         <CardFooter className="border-t pt-4 flex justify-between">
           <div className="text-sm text-muted-foreground">
-            Last updated: {format(new Date(complaint.updatedAt), 'PPp')}
+            Last updated: {format(new Date(complaint.updatedAt || complaint.reportedDate), 'PPp')}
           </div>
           
           <div className="flex gap-2">

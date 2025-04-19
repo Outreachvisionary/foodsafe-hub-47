@@ -33,15 +33,15 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
         const capaFilter: CAPAFilter = {};
         
         if (filters.status !== 'all') {
-          capaFilter.status = [filters.status as CAPAStatus];
+          capaFilter.status = filters.status as CAPAStatus;
         }
         
         if (filters.priority !== 'all') {
-          capaFilter.priority = [filters.priority as CAPAPriority];
+          capaFilter.priority = filters.priority as CAPAPriority;
         }
         
         if (filters.source !== 'all') {
-          capaFilter.source = [filters.source as CAPASource];
+          capaFilter.source = filters.source as CAPASource;
         }
         
         if (filters.dueDate === 'overdue') {
@@ -55,7 +55,17 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           capaFilter.searchTerm = searchQuery;
         }
         
-        const data = await fetchCAPAs(capaFilter);
+        const data = await fetchCAPAs({
+          status: capaFilter.status,
+          priority: capaFilter.priority,
+          source: capaFilter.source,
+          searchQuery: capaFilter.searchTerm,
+          // Convert dateRange if needed
+          ...(capaFilter.dateRange && {
+            dueDate: capaFilter.dateRange.end
+          })
+        });
+        
         setCapas(data);
       } catch (error) {
         console.error('Error loading CAPAs:', error);

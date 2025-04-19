@@ -182,4 +182,5 @@ export const testCrossModuleIntegration = async (): Promise<FunctionTestResult> 
   }
 };
 
+// Export the FunctionTestResult as default export to support both import approaches
 export default FunctionTestResult;
