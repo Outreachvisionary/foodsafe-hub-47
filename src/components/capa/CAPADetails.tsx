@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,11 +160,11 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   };
   
   const getEffectivenessRatingColor = (rating: CAPAEffectivenessRating) => {
-    if (rating === 'effective') {
+    if (rating === 'excellent') {
       return 'bg-green-100 text-green-800 border-green-200';
-    } else if (rating === 'partially-effective') {
+    } else if (rating === 'good') {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    } else if (rating === 'ineffective') {
+    } else if (rating === 'poor') {
       return 'bg-red-100 text-red-800 border-red-200';
     } else {
       return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -531,7 +532,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                       <div className="text-sm font-medium text-gray-500">Rating</div>
                       <div className="mt-1">
                         <span className={`px-2 py-1 rounded-full text-sm font-medium ${getEffectivenessRatingColor(capa.effectivenessRating)}`}>
-                          {capa.effectivenessRating.replace('-', ' ')}
+                          {capa.effectivenessRating}
                         </span>
                       </div>
                     </div>

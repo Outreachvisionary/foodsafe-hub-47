@@ -1,10 +1,27 @@
 
 // Define the types for CAPA module
 
-export type CAPAStatus = 'open' | 'in-progress' | 'pending-verification' | 'closed' | 'cancelled';
+export type CAPAStatus = 'open' | 'in-progress' | 'pending-verification' | 'closed' | 'verified' | 'cancelled';
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
-export type CAPASource = 'audit' | 'complaint' | 'incident' | 'nonconformance' | 'internal' | 'supplier' | 'other';
+export type CAPASource = 'audit' | 'complaint' | 'incident' | 'nonconformance' | 'internal' | 'supplier' | 'other' | 'haccp' | 'traceability';
 export type CAPAEffectivenessRating = 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective';
+
+export interface RelatedDocument {
+  id: string;
+  title?: string;
+  documentId: string;
+  type?: string;
+  documentType?: string;
+  addedAt: string;
+}
+
+export interface RelatedTraining {
+  id: string;
+  title?: string;
+  trainingId: string;
+  type?: string;
+  addedAt: string;
+}
 
 export interface CAPA {
   id: string;
@@ -27,11 +44,18 @@ export interface CAPA {
   preventiveAction?: string;
   effectivenessCriteria?: string;
   effectivenessVerified: boolean;
+  effectivenessRating?: CAPAEffectivenessRating;
   verificationMethod?: string;
   verifiedBy?: string;
   isFsma204Compliant: boolean;
-  relatedDocuments?: string[];
-  relatedTraining?: string[];
+  relatedDocuments?: RelatedDocument[];
+  relatedTraining?: RelatedTraining[];
+  sourceReference?: {
+    type: string;
+    title: string;
+    url?: string;
+    date?: string;
+  }
 }
 
 export interface CAPAActivity {
@@ -58,4 +82,42 @@ export interface CAPAEffectivenessAssessment {
   recurrenceCheck: string;
   notes?: string;
   createdBy: string;
+}
+
+export interface CAPAFilter {
+  status?: CAPAStatus[];
+  priority?: CAPAPriority[];
+  source?: CAPASource[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+  assignedTo?: string[];
+  department?: string[];
+}
+
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  inProgressCount: number;
+  closedCount: number;
+  verifiedCount: number;
+  pendingVerificationCount: number;
+  overdueCount: number;
+  byStatus: { name: string; value: number }[];
+  byPriority: { name: string; value: number }[];
+  bySource: { name: string; value: number }[];
+  fsma204ComplianceRate?: number;
+  effectivenessStats?: {
+    effective: number;
+    partiallyEffective: number;
+    ineffective: number;
+  };
+}
+
+export interface CAPAEffectivenessMetrics {
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
 }

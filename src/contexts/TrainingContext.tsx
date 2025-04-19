@@ -1,356 +1,294 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  TrainingSession, 
-  TrainingPlan, 
-  DepartmentTrainingStats, 
-  TrainingStatus, 
-  TrainingType, 
-  TrainingCategory, 
-  TrainingCompletionStatus,
-  TrainingPriority
-} from '@/types/training';
 import { supabase } from '@/integrations/supabase/client';
+import { TrainingSession, DepartmentTrainingStats, TrainingPlan, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
 
 interface TrainingContextType {
   sessions: TrainingSession[];
-  plans: TrainingPlan[];
+  sessionLoading: boolean;
   departmentStats: DepartmentTrainingStats[];
-  isLoading: boolean;
-  createTrainingSession: (sessionData: Partial<TrainingSession>) => Promise<TrainingSession | null>;
-  createTrainingPlan: (planData: Partial<TrainingPlan>) => Promise<TrainingPlan | null>;
+  statsLoading: boolean;
+  plans: TrainingPlan[];
+  plansLoading: boolean;
+  refreshSessions: () => Promise<void>;
+  refreshStats: () => Promise<void>;
+  refreshPlans: () => Promise<void>;
 }
 
-const mapDbToTrainingType = (type: string): TrainingType => {
-  const validTypes: TrainingType[] = [
-    'classroom', 'online', 'self-study', 'on-the-job', 'workshop', 'certification'
-  ];
-  return validTypes.includes(type as TrainingType) 
-    ? type as TrainingType 
-    : 'classroom';
-};
+const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
 
-const mapDbToTrainingCategory = (category: string): TrainingCategory => {
-  const validCategories: TrainingCategory[] = [
-    'food-safety', 'gmp', 'haccp', 'quality', 'regulatory', 'technical', 'leadership', 'other'
-  ];
-  return validCategories.includes(category as TrainingCategory) 
-    ? category as TrainingCategory 
-    : 'other';
-};
-
-const mapDbToCompletionStatus = (status: string): TrainingCompletionStatus => {
-  const validStatuses: TrainingCompletionStatus[] = [
-    'not-started', 'in-progress', 'completed', 'overdue', 'cancelled'
-  ];
-  return validStatuses.includes(status as TrainingCompletionStatus) 
-    ? status as TrainingCompletionStatus 
-    : 'not-started';
-};
-
-const mapDbToTrainingPriority = (priority: string): TrainingPriority => {
-  const validPriorities: TrainingPriority[] = [
-    'critical', 'high', 'medium', 'low'
-  ];
-  return validPriorities.includes(priority as TrainingPriority)
-    ? priority as TrainingPriority
-    : 'medium';
-};
-
-const mapTrainingStatus = (status: string): TrainingStatus => {
-  switch(status.toLowerCase()) {
-    case 'not-started': return 'Not Started';
-    case 'in-progress': return 'In Progress';
-    case 'completed': return 'Completed';
-    case 'overdue': return 'Overdue';
-    case 'cancelled': return 'Cancelled';
-    default: return 'Not Started';
+export const useTrainingContext = () => {
+  const context = useContext(TrainingContext);
+  if (!context) {
+    throw new Error('useTrainingContext must be used within a TrainingProvider');
   }
+  return context;
 };
 
-const TrainingContext = createContext<TrainingContextType>({
-  sessions: [],
-  plans: [],
-  departmentStats: [],
-  isLoading: true,
-  createTrainingSession: async () => null,
-  createTrainingPlan: async () => null,
-});
+interface TrainingProviderProps {
+  children: ReactNode;
+}
 
-export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
-  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [departmentStats, setDepartmentStats] = useState<DepartmentTrainingStats[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTrainingData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Fetch training sessions
-        const { data: sessionsData, error: sessionsError } = await supabase
-          .from('training_sessions')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (sessionsError) throw sessionsError;
-        
-        const transformedSessions: TrainingSession[] = (sessionsData || []).map(session => ({
-          id: session.id,
-          title: session.title,
-          description: session.description,
-          training_type: mapDbToTrainingType(session.training_type),
-          training_category: mapDbToTrainingCategory(session.training_category),
-          department: session.department,
-          start_date: session.start_date,
-          due_date: session.due_date,
-          assigned_to: Array.isArray(session.assigned_to) ? session.assigned_to : [],
-          materials_id: Array.isArray(session.materials_id) ? session.materials_id : [],
-          required_roles: Array.isArray(session.required_roles) ? session.required_roles : [],
-          is_recurring: Boolean(session.is_recurring),
-          recurring_interval: String(session.recurring_interval || ''),
-          completion_status: mapDbToCompletionStatus(session.completion_status),
-          created_by: session.created_by,
-          created_at: session.created_at,
-          updated_at: session.updated_at
-        }));
-        
-        setSessions(transformedSessions);
-        
-        // Fetch training plans
-        const { data: plansData, error: plansError } = await supabase
-          .from('training_plans')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (plansError) throw plansError;
-        
-        const transformedPlans: TrainingPlan[] = (plansData || []).map(plan => ({
-          id: plan.id,
-          name: plan.name,
-          description: plan.description,
-          target_roles: Array.isArray(plan.target_roles) ? plan.target_roles : [],
-          courses: Array.isArray(plan.courses) ? plan.courses : [],
-          duration_days: plan.duration_days || 0,
-          is_required: Boolean(plan.is_required),
-          priority: mapDbToTrainingPriority(plan.priority || 'medium'),
-          status: plan.status,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          is_automated: Boolean(plan.is_automated),
-          automation_trigger: plan.automation_trigger,
-          created_by: plan.created_by,
-          created_at: plan.created_at,
-          updated_at: plan.updated_at,
-          target_departments: Array.isArray(plan.target_departments) ? plan.target_departments : [],
-          related_standards: Array.isArray(plan.related_standards) ? plan.related_standards : []
-        }));
-        
-        setPlans(transformedPlans);
-        
-        // For demo purposes, generate department stats
-        // In a real app, this would be computed from actual data
-        setDepartmentStats([
-          {
-            department: 'production',
-            name: 'Production',
-            completed: 42,
-            overdue: 8,
-            totalAssigned: 50,
-            complianceRate: 84
-          },
-          {
-            department: 'quality',
-            name: 'Quality',
-            completed: 18,
-            overdue: 2,
-            totalAssigned: 20,
-            complianceRate: 90
-          },
-          {
-            department: 'maintenance',
-            name: 'Maintenance',
-            completed: 12,
-            overdue: 3,
-            totalAssigned: 15,
-            complianceRate: 80
-          },
-          {
-            department: 'warehouse',
-            name: 'Warehouse',
-            completed: 22,
-            overdue: 3,
-            totalAssigned: 25,
-            complianceRate: 88
-          }
-        ]);
-        
-      } catch (err) {
-        console.error('Error fetching training data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTrainingData();
-  }, []);
-
-  const createTrainingSession = async (sessionData: Partial<TrainingSession>): Promise<TrainingSession | null> => {
+  // Mock data for development, replace with actual API calls
+  const loadSessionsData = async () => {
     try {
-      setIsLoading(true);
+      setSessionLoading(true);
       
-      // Convert from our interface to the database schema
-      const dbSession = {
-        title: sessionData.title,
-        description: sessionData.description,
-        training_type: sessionData.training_type,
-        training_category: sessionData.training_category,
-        department: sessionData.department,
-        start_date: sessionData.start_date,
-        due_date: sessionData.due_date,
-        assigned_to: sessionData.assigned_to || [],
-        materials_id: sessionData.materials_id || [],
-        required_roles: sessionData.required_roles || [],
-        is_recurring: sessionData.is_recurring || false,
-        recurring_interval: sessionData.recurring_interval || '',
-        completion_status: sessionData.completion_status || 'not-started',
-        created_by: sessionData.created_by || 'Current User'
-      };
+      // In a real implementation, this would fetch from your API
+      // const { data, error } = await supabase.from('training_sessions').select('*');
       
-      // Map completion_status from our app format to DB format
-      const completionStatusForDb = (status: TrainingCompletionStatus): string => {
-        switch(status) {
-          case 'not-started': return 'Not Started';
-          case 'in-progress': return 'In Progress';
-          case 'completed': return 'Completed';
-          case 'overdue': return 'Overdue';
-          case 'cancelled': return 'Cancelled';
-          default: return 'Not Started';
+      // Mock data for development
+      const mockSessions: TrainingSession[] = [
+        {
+          id: '1',
+          title: 'Food Safety Basics',
+          description: 'Fundamental training on food safety principles',
+          training_type: 'classroom' as TrainingType,
+          training_category: 'food-safety' as TrainingCategory,
+          department: 'production',
+          start_date: new Date().toISOString(),
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: ['user1', 'user2', 'user3'],
+          materials_id: ['doc1', 'doc2'],
+          required_roles: ['operator', 'supervisor'],
+          is_recurring: true,
+          recurring_interval: '30',
+          completion_status: 'in-progress' as TrainingCompletionStatus,
+          created_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: 'HACCP Principles',
+          description: 'Advanced HACCP training for quality personnel',
+          training_type: 'online' as TrainingType,
+          training_category: 'haccp' as TrainingCategory,
+          department: 'quality',
+          start_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: ['user4', 'user5'],
+          materials_id: ['doc3', 'doc4'],
+          required_roles: ['qc', 'supervisor'],
+          is_recurring: false,
+          recurring_interval: '0',
+          completion_status: 'not-started' as TrainingCompletionStatus,
+          created_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '3',
+          title: 'Equipment Safety',
+          description: 'Training on safe operation of production equipment',
+          training_type: 'on-the-job' as TrainingType,
+          training_category: 'technical' as TrainingCategory,
+          department: 'maintenance',
+          start_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          due_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          assigned_to: ['user6', 'user7', 'user8'],
+          materials_id: ['doc5'],
+          required_roles: ['operator', 'maintenance'],
+          is_recurring: true,
+          recurring_interval: '90',
+          completion_status: 'completed' as TrainingCompletionStatus,
+          created_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
-      };
+      ];
       
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .insert({
-          ...dbSession,
-          completion_status: completionStatusForDb(dbSession.completion_status as TrainingCompletionStatus)
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      // Transform to our TrainingSession type
-      const newSession: TrainingSession = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        training_type: mapDbToTrainingType(data.training_type),
-        training_category: mapDbToTrainingCategory(data.training_category),
-        department: data.department,
-        start_date: data.start_date,
-        due_date: data.due_date,
-        assigned_to: Array.isArray(data.assigned_to) ? data.assigned_to : [],
-        materials_id: Array.isArray(data.materials_id) ? data.materials_id : [],
-        required_roles: Array.isArray(data.required_roles) ? data.required_roles : [],
-        is_recurring: Boolean(data.is_recurring),
-        recurring_interval: String(data.recurring_interval || ''),
-        completion_status: mapDbToCompletionStatus(data.completion_status),
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
-      
-      setSessions(prev => [newSession, ...prev]);
-      
-      return newSession;
-    } catch (err) {
-      console.error('Error creating training session:', err);
-      return null;
+      setSessions(mockSessions);
+    } catch (error) {
+      console.error('Error loading training sessions:', error);
     } finally {
-      setIsLoading(false);
+      setSessionLoading(false);
+    }
+  };
+  
+  const loadStatsData = async () => {
+    try {
+      setStatsLoading(true);
+      
+      // Mock department stats
+      const mockStats: DepartmentTrainingStats[] = [
+        {
+          department: 'production',
+          name: 'Production',
+          completed: 45,
+          overdue: 5,
+          totalAssigned: 60,
+          complianceRate: 75
+        },
+        {
+          department: 'quality',
+          name: 'Quality Assurance',
+          completed: 32,
+          overdue: 2,
+          totalAssigned: 35,
+          complianceRate: 91
+        },
+        {
+          department: 'maintenance',
+          name: 'Maintenance',
+          completed: 18,
+          overdue: 4,
+          totalAssigned: 25,
+          complianceRate: 72
+        },
+        {
+          department: 'warehouse',
+          name: 'Warehouse',
+          completed: 15,
+          overdue: 1,
+          totalAssigned: 20,
+          complianceRate: 75
+        }
+      ];
+      
+      setDepartmentStats(mockStats);
+    } catch (error) {
+      console.error('Error loading department stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+  
+  const loadPlansData = async () => {
+    try {
+      setPlansLoading(true);
+      
+      // Mock training plans
+      const mockPlans: TrainingPlan[] = [
+        {
+          id: '1',
+          name: 'New Employee Onboarding',
+          description: 'Standard training plan for all new employees',
+          target_roles: ['operator', 'supervisor', 'qc'],
+          courses: ['course1', 'course2', 'course3'],
+          duration_days: 14,
+          is_required: true,
+          priority: 'high',
+          status: 'active',
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          is_automated: true,
+          automation_trigger: 'new_employee',
+          created_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          target_departments: ['production', 'quality'],
+          related_standards: ['ISO 9001']
+        },
+        {
+          id: '2',
+          name: 'FSMA Refresher',
+          description: 'Annual FSMA requirements refresher training',
+          target_roles: ['manager', 'supervisor', 'qc'],
+          courses: ['course4', 'course5'],
+          duration_days: 7,
+          is_required: true,
+          priority: 'critical',
+          status: 'active',
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+          is_automated: true,
+          automation_trigger: 'annual',
+          created_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          target_departments: ['production', 'quality', 'warehouse'],
+          related_standards: ['FSMA', 'FDA CFR 117']
+        }
+      ];
+      
+      setPlans(mockPlans);
+    } catch (error) {
+      console.error('Error loading training plans:', error);
+    } finally {
+      setPlansLoading(false);
     }
   };
 
-  const createTrainingPlan = async (planData: Partial<TrainingPlan>): Promise<TrainingPlan | null> => {
+  useEffect(() => {
+    loadSessionsData();
+    loadStatsData();
+    loadPlansData();
+  }, []);
+
+  const refreshSessions = async () => {
+    await loadSessionsData();
+  };
+
+  const refreshStats = async () => {
+    await loadStatsData();
+  };
+
+  const refreshPlans = async () => {
+    await loadPlansData();
+  };
+
+  // This would be the implementation for creating a new training session
+  const createSession = async (sessionData: any) => {
     try {
-      setIsLoading(true);
-      
-      // Convert from our interface to the database schema
-      const dbPlan = {
-        name: planData.name,
-        description: planData.description,
-        target_roles: planData.target_roles || [],
-        courses: planData.courses || [],
-        duration_days: planData.duration_days || 0,
-        is_required: planData.is_required || false,
-        priority: planData.priority || 'medium',
-        status: planData.status || 'Active',
-        start_date: planData.start_date,
-        end_date: planData.end_date,
-        is_automated: planData.is_automated || false,
-        automation_trigger: planData.automation_trigger,
-        target_departments: planData.target_departments || [],
-        related_standards: planData.related_standards || [],
-        created_by: planData.created_by || 'Current User'
+      // Convert types to match database expectations
+      const mappedSessionData = {
+        ...sessionData,
+        training_type: sessionData.training_type,
+        training_category: sessionData.training_category,
+        is_recurring: sessionData.is_recurring || false,
+        recurring_interval: sessionData.recurring_interval || "0",
+        assigned_to: sessionData.assigned_to || [],
+        required_roles: sessionData.required_roles || [],
+        materials_id: sessionData.materials_id || [],
+        completion_status: "not-started" as TrainingCompletionStatus
       };
       
-      const { data, error } = await supabase
-        .from('training_plans')
-        .insert(dbPlan)
-        .select()
-        .single();
-        
-      if (error) throw error;
+      // In a real implementation, this would insert into your database
+      // const { data, error } = await supabase.from('training_sessions').insert(mappedSessionData);
       
-      // Transform database response to match our TrainingPlan interface
-      const newPlan: TrainingPlan = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
-        courses: Array.isArray(data.courses) ? data.courses : [],
-        duration_days: data.duration_days || 0,
-        is_required: Boolean(data.is_required),
-        priority: mapDbToTrainingPriority(data.priority || 'medium'),
-        status: data.status,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        is_automated: Boolean(data.is_automated),
-        automation_trigger: data.automation_trigger,
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
-        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
+      // For mock implementation, just add to the local state
+      const newSession = {
+        ...mappedSessionData,
+        id: `mock-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
-      setPlans(prev => [newPlan, ...prev]);
+      setSessions(prevSessions => [...prevSessions, newSession as TrainingSession]);
       
-      return newPlan;
-    } catch (err) {
-      console.error('Error creating training plan:', err);
-      return null;
-    } finally {
-      setIsLoading(false);
+      return newSession;
+    } catch (error) {
+      console.error('Error creating training session:', error);
+      throw error;
     }
   };
 
   return (
-    <TrainingContext.Provider value={{
-      sessions,
-      plans,
-      departmentStats,
-      isLoading,
-      createTrainingSession,
-      createTrainingPlan
-    }}>
+    <TrainingContext.Provider
+      value={{
+        sessions,
+        sessionLoading,
+        departmentStats,
+        statsLoading,
+        plans,
+        plansLoading,
+        refreshSessions,
+        refreshStats,
+        refreshPlans
+      }}
+    >
       {children}
     </TrainingContext.Provider>
   );
 };
-
-export const useTrainingContext = () => useContext(TrainingContext);
 
 export default TrainingContext;

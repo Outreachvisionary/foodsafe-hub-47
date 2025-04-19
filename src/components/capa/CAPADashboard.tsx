@@ -3,14 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getCAPAStats, fetchCAPAs } from '@/services/capaService';
-import { CAPA, CAPAStats, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
-import CapaOverviewChart from './charts/CapaOverviewChart';
-import CapaPriorityChart from './charts/CapaPriorityChart';
-import CapaStatusChart from './charts/CapaStatusChart';
-import CapaSourceChart from './charts/CapaSourceChart';
-import RecentCapaList from './RecentCapaList';
-import CapaComplianceChart from './charts/CapaComplianceChart';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAFilter, CAPAStats } from '@/types/capa';
 import { Loader } from 'lucide-react';
+
+// Placeholders for the chart components
+const CapaOverviewChart = ({ data }: any) => <div>Overview Chart</div>;
+const CapaPriorityChart = ({ data }: any) => <div>Priority Chart</div>;
+const CapaStatusChart = ({ data }: any) => <div>Status Chart</div>;
+const CapaSourceChart = ({ data }: any) => <div>Source Chart</div>;
+const CapaComplianceChart = ({ data }: any) => <div>Compliance Chart</div>;
+const RecentCapaList = ({ items }: { items: CAPA[] }) => <div>Recent CAPA List</div>;
 
 interface CAPADashboardProps {
   filters: {

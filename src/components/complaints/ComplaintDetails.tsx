@@ -73,7 +73,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
             <div>
               <CardTitle className="text-xl">{complaint.title}</CardTitle>
               <div className="text-sm text-muted-foreground mt-1">
-                Reported on {format(new Date(complaint.reported_date), 'PP')} by {complaint.created_by}
+                Reported on {format(new Date(complaint.reportedDate), 'PP')} by {complaint.createdBy}
               </div>
             </div>
             <div className="flex gap-2">
@@ -84,7 +84,9 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                   description: complaint.description,
                   source: 'complaint',
                   sourceId: complaint.id,
-                  priority: complaint.priority || 'high'
+                  priority: complaint.priority === 'critical' ? 'critical' : 
+                            complaint.priority === 'high' ? 'high' : 
+                            complaint.priority === 'medium' ? 'medium' : 'low'
                 }}
               >
                 <Button variant="outline" className="flex gap-1 items-center">
@@ -128,8 +130,8 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                   <div>
                     <h3 className="text-sm font-medium">Customer Information</h3>
                     <div className="mt-1 text-sm">
-                      <p><span className="font-medium">Name:</span> {complaint.customer_name || 'N/A'}</p>
-                      <p><span className="font-medium">Contact:</span> {complaint.customer_contact || 'N/A'}</p>
+                      <p><span className="font-medium">Name:</span> {complaint.customerName || 'N/A'}</p>
+                      <p><span className="font-medium">Contact:</span> {complaint.customerContact || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -138,21 +140,21 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                   <div>
                     <h3 className="text-sm font-medium">Product Information</h3>
                     <div className="mt-1 text-sm">
-                      <p><span className="font-medium">Product:</span> {complaint.product_involved || 'N/A'}</p>
-                      <p><span className="font-medium">Lot Number:</span> {complaint.lot_number || 'N/A'}</p>
+                      <p><span className="font-medium">Product:</span> {complaint.productInvolved || 'N/A'}</p>
+                      <p><span className="font-medium">Lot Number:</span> {complaint.lotNumber || 'N/A'}</p>
                     </div>
                   </div>
                   
                   <div>
                     <h3 className="text-sm font-medium">Assigned To</h3>
-                    <p className="mt-1 text-sm">{complaint.assigned_to || 'Unassigned'}</p>
+                    <p className="mt-1 text-sm">{complaint.assignedTo || 'Unassigned'}</p>
                   </div>
                   
                   <div>
                     <h3 className="text-sm font-medium">Resolution Date</h3>
                     <p className="mt-1 text-sm">
-                      {complaint.resolution_date 
-                        ? format(new Date(complaint.resolution_date), 'PP') 
+                      {complaint.resolutionDate 
+                        ? format(new Date(complaint.resolutionDate), 'PP') 
                         : 'Not resolved yet'}
                     </p>
                   </div>
@@ -161,7 +163,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
             </TabsContent>
             
             <TabsContent value="investigation">
-              {complaint.capa_id ? (
+              {complaint.capaId ? (
                 <div className="bg-green-50 border border-green-200 rounded-md p-4">
                   <div className="flex items-center">
                     <FileCheck className="h-5 w-5 text-green-600 mr-2" />
@@ -187,7 +189,9 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                         description: complaint.description,
                         source: 'complaint',
                         sourceId: complaint.id,
-                        priority: complaint.priority || 'high'
+                        priority: complaint.priority === 'critical' ? 'critical' : 
+                                  complaint.priority === 'high' ? 'high' : 
+                                  complaint.priority === 'medium' ? 'medium' : 'low'
                       }}
                     >
                       <Button>Start Investigation / Create CAPA</Button>
@@ -207,10 +211,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                   <TimelineContent>
                     <h3 className="font-medium">Complaint Received</h3>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(complaint.reported_date), 'PPp')}
+                      {format(new Date(complaint.reportedDate), 'PPp')}
                     </p>
                     <p className="text-sm mt-1">
-                      Complaint was recorded in the system by {complaint.created_by}
+                      Complaint was recorded in the system by {complaint.createdBy}
                     </p>
                   </TimelineContent>
                 </TimelineItem>
@@ -223,15 +227,15 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                   <TimelineContent>
                     <h3 className="font-medium">Assigned for Investigation</h3>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(complaint.reported_date), 'PPp')}
+                      {format(new Date(complaint.reportedDate), 'PPp')}
                     </p>
                     <p className="text-sm mt-1">
-                      Complaint was assigned to {complaint.assigned_to || 'Quality Team'}
+                      Complaint was assigned to {complaint.assignedTo || 'Quality Team'}
                     </p>
                   </TimelineContent>
                 </TimelineItem>
                 
-                {complaint.resolution_date && (
+                {complaint.resolutionDate && (
                   <TimelineItem>
                     <TimelineSeparator>
                       <TimelineDot />
@@ -239,7 +243,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
                     <TimelineContent>
                       <h3 className="font-medium">Complaint Resolved</h3>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(complaint.resolution_date), 'PPp')}
+                        {format(new Date(complaint.resolutionDate), 'PPp')}
                       </p>
                       <p className="text-sm mt-1">
                         Resolution: Issue addressed and customer notified
@@ -265,7 +269,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onBack }
         
         <CardFooter className="border-t pt-4 flex justify-between">
           <div className="text-sm text-muted-foreground">
-            Last updated: {format(new Date(complaint.updated_at), 'PPp')}
+            Last updated: {format(new Date(complaint.updatedAt), 'PPp')}
           </div>
           
           <div className="flex gap-2">
