@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingRecord, ExtendedTrainingRecord, TrainingStatus } from '@/types/training';
@@ -61,7 +60,9 @@ export function useTrainingRecords() {
           ...record,
           courseName,
           instructorName,
-          status
+          status,
+          created_at: record.created_at || new Date().toISOString(),
+          updated_at: record.updated_at || new Date().toISOString()
         };
       });
       

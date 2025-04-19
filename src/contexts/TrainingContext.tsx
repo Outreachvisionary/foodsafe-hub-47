@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingSession, DepartmentTrainingStats, TrainingPlan, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
@@ -10,9 +9,12 @@ interface TrainingContextType {
   statsLoading: boolean;
   plans: TrainingPlan[];
   plansLoading: boolean;
+  isLoading: boolean;
   refreshSessions: () => Promise<void>;
   refreshStats: () => Promise<void>;
   refreshPlans: () => Promise<void>;
+  createTrainingPlan: (planData: Partial<TrainingPlan>) => Promise<TrainingPlan | null>;
+  createSession: (sessionData: any) => Promise<any>;
 }
 
 const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
@@ -36,8 +38,8 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
   const [statsLoading, setStatsLoading] = useState(true);
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for development, replace with actual API calls
   const loadSessionsData = async () => {
     try {
       setSessionLoading(true);
@@ -219,9 +221,20 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
   };
 
   useEffect(() => {
-    loadSessionsData();
-    loadStatsData();
-    loadPlansData();
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          loadSessionsData(),
+          loadStatsData(),
+          loadPlansData()
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const refreshSessions = async () => {
@@ -236,7 +249,42 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
     await loadPlansData();
   };
 
-  // This would be the implementation for creating a new training session
+  const createTrainingPlan = async (planData: Partial<TrainingPlan>): Promise<TrainingPlan | null> => {
+    try {
+      // In a real implementation, this would insert into your database
+      // const { data, error } = await supabase.from('training_plans').insert(planData);
+      
+      // For mock implementation, just add to the local state
+      const newPlan: TrainingPlan = {
+        id: `plan-${Date.now()}`,
+        name: planData.name || 'Unnamed Plan',
+        description: planData.description || '',
+        target_roles: planData.target_roles || [],
+        courses: planData.courses || [],
+        duration_days: planData.duration_days || 0,
+        is_required: planData.is_required || false,
+        priority: planData.priority || 'medium',
+        status: planData.status || 'active',
+        start_date: planData.start_date || new Date().toISOString(),
+        end_date: planData.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        is_automated: planData.is_automated || false,
+        automation_trigger: planData.automation_trigger || '',
+        created_by: planData.created_by || 'admin',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        target_departments: planData.target_departments || [],
+        related_standards: planData.related_standards || []
+      };
+      
+      setPlans(prevPlans => [...prevPlans, newPlan]);
+      
+      return newPlan;
+    } catch (error) {
+      console.error('Error creating training plan:', error);
+      return null;
+    }
+  };
+
   const createSession = async (sessionData: any) => {
     try {
       // Convert types to match database expectations
@@ -281,9 +329,12 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
         statsLoading,
         plans,
         plansLoading,
+        isLoading,
         refreshSessions,
         refreshStats,
-        refreshPlans
+        refreshPlans,
+        createTrainingPlan,
+        createSession
       }}
     >
       {children}

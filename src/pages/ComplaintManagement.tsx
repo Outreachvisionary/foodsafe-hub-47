@@ -27,87 +27,125 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority, ComplaintSource } from '@/types/complaint';
+import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/complaint';
 import ComplaintDetails from '@/components/complaints/ComplaintDetails';
 
-// Mock data for complaints
+type ComplaintSource = 'Consumer' | 'Retailer' | 'Internal QA' | 'Laboratory Test' | 'Regulatory Agency';
+
 const mockComplaints: Complaint[] = [
   {
     id: '1',
     title: 'Foreign object in packaged product',
-    date: new Date().toISOString(),
-    category: 'Food Safety',
     description: 'Customer reported finding small plastic pieces in packaged food product.',
-    source: 'Consumer',
-    status: 'In Progress',
-    priority: 'High',
-    assignedTo: 'John Smith'
+    status: 'investigating',
+    priority: 'high',
+    category: 'foreign_material',
+    reportedDate: new Date().toISOString(),
+    createdBy: 'John Smith',
+    assignedTo: 'John Smith',
+    updatedAt: new Date().toISOString(),
+    source: 'Consumer' as ComplaintSource,
+    date: new Date().toISOString()
   },
   {
     id: '2',
     title: 'Product texture inconsistency',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    category: 'Quality',
     description: 'Internal QA detected inconsistent texture across recent production batch.',
-    source: 'Internal QA',
-    status: 'Resolved',
-    priority: 'Medium',
-    assignedTo: 'Emily Johnson'
+    status: 'resolved',
+    priority: 'medium',
+    category: 'product_quality',
+    reportedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'Emily Johnson',
+    assignedTo: 'Emily Johnson',
+    updatedAt: new Date().toISOString(),
+    source: 'Internal QA' as ComplaintSource,
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
     id: '3', 
     title: 'Missing allergen warning on label',
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    category: 'Regulatory',
     description: 'Retailer identified missing allergen warning on product label.',
-    source: 'Retailer',
-    status: 'Under Investigation',
-    priority: 'Critical',
-    assignedTo: 'Michael Chen'
+    status: 'investigating',
+    priority: 'critical',
+    category: 'packaging',
+    reportedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'Michael Chen',
+    assignedTo: 'Michael Chen',
+    updatedAt: new Date().toISOString(),
+    source: 'Retailer' as ComplaintSource,
+    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
     id: '4',
     title: 'Pathogen detection in batch sample',
-    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    category: 'Food Safety',
     description: 'Laboratory testing found potential contamination in product sample.',
-    source: 'Laboratory Test',
-    status: 'In Progress',
-    priority: 'Critical',
-    assignedTo: 'Sarah Wilson'
+    status: 'investigating',
+    priority: 'critical',
+    category: 'product_quality',
+    reportedDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'Sarah Wilson',
+    assignedTo: 'Sarah Wilson',
+    updatedAt: new Date().toISOString(),
+    source: 'Laboratory Test' as ComplaintSource,
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
     id: '5',
     title: 'Product color variation',
-    date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    category: 'Quality',
     description: 'Consumer reported unusual color variation in product.',
-    source: 'Consumer',
-    status: 'Resolved',
-    priority: 'Low',
-    assignedTo: 'David Martinez'
+    status: 'resolved',
+    priority: 'low',
+    category: 'product_quality',
+    reportedDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'David Martinez',
+    assignedTo: 'David Martinez',
+    updatedAt: new Date().toISOString(),
+    source: 'Consumer' as ComplaintSource,
+    date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
   }
 ];
 
-// Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
+function getDisplayStatus(status: ComplaintStatus): string {
+  switch (status) {
+    case 'new': return 'New';
+    case 'investigating': return 'In Progress';
+    case 'resolved': return 'Resolved';
+    case 'closed': return 'Closed';
+    default: return status;
+  }
+}
+
+function getDisplayCategory(category: ComplaintCategory): string {
+  switch (category) {
+    case 'product_quality': return 'Quality';
+    case 'foreign_material': return 'Food Safety';
+    case 'packaging': return 'Regulatory';
+    case 'service': return 'Service';
+    case 'delivery': return 'Delivery';
+    case 'other': return 'Other';
+    default: return category;
+  }
+}
+
+const StatusBadge = ({ status }: { status: ComplaintStatus }) => {
   let color;
   let icon;
+  const displayStatus = getDisplayStatus(status);
   
   switch (status) {
-    case 'Resolved':
+    case 'resolved':
       color = 'bg-green-100 text-green-800 border-green-200';
       icon = <CheckCircle className="h-3 w-3 mr-1" />;
       break;
-    case 'In Progress':
+    case 'investigating':
       color = 'bg-blue-100 text-blue-800 border-blue-200';
       icon = <Clock className="h-3 w-3 mr-1" />;
       break;
-    case 'Under Investigation':
+    case 'new':
       color = 'bg-amber-100 text-amber-800 border-amber-200';
       icon = <AlertTriangle className="h-3 w-3 mr-1" />;
       break;
-    case 'Closed':
+    case 'closed':
       color = 'bg-gray-100 text-gray-800 border-gray-200';
       icon = <Ban className="h-3 w-3 mr-1" />;
       break;
@@ -119,26 +157,26 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <Badge variant="outline" className={`${color} flex items-center`}>
       {icon}
-      {status}
+      {displayStatus}
     </Badge>
   );
 };
 
-// Priority badge component
-const PriorityBadge = ({ priority }: { priority: string }) => {
+const PriorityBadge = ({ priority }: { priority: ComplaintPriority }) => {
   let color;
+  const displayPriority = priority.charAt(0).toUpperCase() + priority.slice(1);
   
   switch (priority) {
-    case 'Critical':
+    case 'critical':
       color = 'bg-red-100 text-red-800 border-red-200';
       break;
-    case 'High':
+    case 'high':
       color = 'bg-orange-100 text-orange-800 border-orange-200';
       break;
-    case 'Medium':
+    case 'medium':
       color = 'bg-amber-100 text-amber-800 border-amber-200';
       break;
-    case 'Low':
+    case 'low':
       color = 'bg-green-100 text-green-800 border-green-200';
       break;
     default:
@@ -147,12 +185,11 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
   
   return (
     <Badge variant="outline" className={color}>
-      {priority}
+      {displayPriority}
     </Badge>
   );
 };
 
-// New Complaint form
 const NewComplaintForm = ({ onSubmitSuccess }: { onSubmitSuccess: () => void }) => {
   const form = useForm({
     defaultValues: {
@@ -293,17 +330,15 @@ const NewComplaintForm = ({ onSubmitSuccess }: { onSubmitSuccess: () => void }) 
   );
 };
 
-// Main complaint management component
 const ComplaintManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewComplaintDialogOpen, setIsNewComplaintDialogOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   
-  // Filter complaints based on search term
   const filteredComplaints = mockComplaints.filter(complaint => 
     complaint.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     complaint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    complaint.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getDisplayCategory(complaint.category).toLowerCase().includes(searchTerm.toLowerCase()) ||
     complaint.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
@@ -386,7 +421,7 @@ const ComplaintManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle>Active Complaints</CardTitle>
                 <CardDescription>
-                  Showing {filteredComplaints.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length} active complaints
+                  Showing {filteredComplaints.filter(c => c.status !== 'resolved' && c.status !== 'closed').length} active complaints
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -405,12 +440,12 @@ const ComplaintManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredComplaints
-                      .filter(complaint => complaint.status !== 'Resolved' && complaint.status !== 'Closed')
+                      .filter(complaint => complaint.status !== 'resolved' && complaint.status !== 'closed')
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
-                          <TableCell>{complaint.category}</TableCell>
+                          <TableCell>{new Date(complaint.reportedDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{getDisplayCategory(complaint.category)}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
                           </TableCell>
@@ -443,7 +478,7 @@ const ComplaintManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle>Resolved Complaints</CardTitle>
                 <CardDescription>
-                  Showing {filteredComplaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length} resolved complaints
+                  Showing {filteredComplaints.filter(c => c.status === 'resolved' || c.status === 'closed').length} resolved complaints
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -461,12 +496,12 @@ const ComplaintManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredComplaints
-                      .filter(complaint => complaint.status === 'Resolved' || complaint.status === 'Closed')
+                      .filter(complaint => complaint.status === 'resolved' || complaint.status === 'closed')
                       .map(complaint => (
                         <TableRow key={complaint.id}>
                           <TableCell className="font-medium">{complaint.id}</TableCell>
-                          <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
-                          <TableCell>{complaint.category}</TableCell>
+                          <TableCell>{new Date(complaint.reportedDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{getDisplayCategory(complaint.category)}</TableCell>
                           <TableCell className="hidden md:table-cell max-w-xs truncate">
                             {complaint.description}
                           </TableCell>
@@ -517,8 +552,8 @@ const ComplaintManagement = () => {
                     {filteredComplaints.map(complaint => (
                       <TableRow key={complaint.id}>
                         <TableCell className="font-medium">{complaint.id}</TableCell>
-                        <TableCell>{new Date(complaint.date).toLocaleDateString()}</TableCell>
-                        <TableCell>{complaint.category}</TableCell>
+                        <TableCell>{new Date(complaint.reportedDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{getDisplayCategory(complaint.category)}</TableCell>
                         <TableCell className="hidden md:table-cell max-w-xs truncate">
                           {complaint.description}
                         </TableCell>

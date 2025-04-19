@@ -21,6 +21,7 @@ interface TimelineDotProps {
   variant?: 'filled' | 'outlined';
   color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
   className?: string;
+  children?: ReactNode;
 }
 
 interface TimelineConnectorProps {
@@ -46,20 +47,25 @@ export const TimelineSeparator: React.FC<TimelineSeparatorProps> = ({ children }
 export const TimelineDot: React.FC<TimelineDotProps> = ({ 
   variant = 'filled', 
   color = 'primary',
-  className = ''
+  className = '',
+  children
 }) => {
-  const baseClasses = "rounded-full h-3 w-3 z-10 ";
+  const baseClasses = "rounded-full h-6 w-6 z-10 flex items-center justify-center ";
   
   const colorClasses = {
-    primary: "bg-primary",
-    secondary: "bg-gray-500",
-    error: "bg-red-500",
-    info: "bg-blue-500",
-    success: "bg-green-500",
-    warning: "bg-yellow-500",
+    primary: "bg-primary text-primary-foreground",
+    secondary: "bg-gray-500 text-white",
+    error: "bg-red-500 text-white",
+    info: "bg-blue-500 text-white",
+    success: "bg-green-500 text-white",
+    warning: "bg-yellow-500 text-white",
   };
   
-  return <div className={`${baseClasses} ${colorClasses[color]} ${className}`}></div>;
+  return (
+    <div className={`${baseClasses} ${colorClasses[color]} ${className}`}>
+      {children}
+    </div>
+  );
 };
 
 export const TimelineConnector: React.FC<TimelineConnectorProps> = ({ className = '' }) => {

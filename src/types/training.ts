@@ -8,6 +8,7 @@ export type TrainingCategory = 'food-safety' | 'gmp' | 'haccp' | 'quality' | 're
 export type TrainingPriority = 'critical' | 'high' | 'medium' | 'low';
 export type EmployeeRole = 'operator' | 'supervisor' | 'manager' | 'qc' | 'maintenance' | 'administrative' | 'executive';
 export type Department = 'production' | 'quality' | 'maintenance' | 'warehouse' | 'rd' | 'admin' | 'executive' | 'sales' | 'it';
+export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
 
 export interface TrainingRecord {
   id: string;

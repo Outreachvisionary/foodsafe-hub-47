@@ -38,12 +38,38 @@ const useTrainingConfig = () => {
               
             if (createError) throw createError;
             
-            setConfig(createdConfig as TrainingAutomationConfig);
+            // Map database properties to interface properties
+            const mappedConfig: TrainingAutomationConfig = {
+              id: createdConfig.id,
+              enabled: createdConfig.enabled,
+              rules: createdConfig.rules,
+              documentChangesTrigger: createdConfig.document_changes_trigger,
+              newEmployeeTrigger: createdConfig.new_employee_trigger,
+              roleCangeTrigger: createdConfig.role_change_trigger,
+              created_at: createdConfig.created_at,
+              updated_at: createdConfig.updated_at,
+              created_by: createdConfig.created_by,
+            };
+            
+            setConfig(mappedConfig);
           } else {
             throw error;
           }
         } else {
-          setConfig(data as TrainingAutomationConfig);
+          // Map database properties to interface properties
+          const mappedConfig: TrainingAutomationConfig = {
+            id: data.id,
+            enabled: data.enabled,
+            rules: data.rules,
+            documentChangesTrigger: data.document_changes_trigger,
+            newEmployeeTrigger: data.new_employee_trigger,
+            roleCangeTrigger: data.role_change_trigger,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            created_by: data.created_by,
+          };
+          
+          setConfig(mappedConfig);
         }
       } catch (err) {
         console.error('Error fetching training automation config:', err);
@@ -60,9 +86,18 @@ const useTrainingConfig = () => {
     try {
       if (!config) return false;
       
+      // Map interface properties to database properties
+      const dbUpdates = {
+        enabled: updatedConfig.enabled,
+        rules: updatedConfig.rules,
+        document_changes_trigger: updatedConfig.documentChangesTrigger,
+        new_employee_trigger: updatedConfig.newEmployeeTrigger,
+        role_change_trigger: updatedConfig.roleCangeTrigger,
+      };
+      
       const { error } = await supabase
         .from('training_automation_config')
-        .update(updatedConfig)
+        .update(dbUpdates)
         .eq('id', config.id);
         
       if (error) throw error;
