@@ -10,7 +10,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority, DbComplaint, DbComplaintCategory, DbComplaintStatus, categoryDisplayMap } from '@/types/complaint';
+import { 
+  Complaint, 
+  ComplaintCategory, 
+  ComplaintStatus, 
+  ComplaintPriority, 
+  DbComplaint, 
+  categoryDisplayMap,
+  mapDbCategoryToDisplay
+} from '@/types/complaint';
 import { Plus } from 'lucide-react';
 
 // Define values for select inputs
@@ -100,9 +108,9 @@ const ComplaintManagement: React.FC = () => {
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
-        category: newComplaint.category, // Already correct format for DB
-        status: newComplaint.status, // Already correct format for DB
-        priority: newComplaint.priority,
+        category: newComplaint.category, // Already in correct format
+        status: newComplaint.status, // Already in correct format
+        priority: newComplaint.priority, // Already in correct format
         reported_date: new Date().toISOString(),
         created_by: 'current_user', // This should be dynamic based on auth user
         customer_name: newComplaint.customerName,

@@ -6,6 +6,19 @@ export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
 export type CAPASource = 'audit' | 'complaint' | 'incident' | 'nonconformance' | 'internal' | 'supplier' | 'other' | 'haccp' | 'traceability';
 export type CAPAEffectivenessRating = 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective';
 
+// Database CAPA status (for consistency with db column format)
+export type DbCAPAStatus = 'open' | 'in_progress' | 'pending_verification' | 'closed' | 'verified' | 'cancelled';
+
+// UI Display status mapping
+export const capaStatusDisplayMap: Record<CAPAStatus, string> = {
+  'open': 'Open',
+  'in-progress': 'In Progress',
+  'pending-verification': 'Pending Verification',
+  'closed': 'Closed',
+  'verified': 'Verified',
+  'cancelled': 'Cancelled'
+};
+
 export interface RelatedDocument {
   id: string;
   title?: string;
@@ -151,3 +164,29 @@ export interface CAPAFetchParams {
   page?: number;
   id?: string;
 }
+
+// Map functions for database conversions
+export const mapStatusToDisplay = (status: CAPAStatus): string => {
+  return capaStatusDisplayMap[status] || status;
+};
+
+export const mapDisplayStatusToInternal = (displayStatus: string): CAPAStatus => {
+  for (const [key, value] of Object.entries(capaStatusDisplayMap)) {
+    if (value === displayStatus) {
+      return key as CAPAStatus;
+    }
+  }
+  return 'open';  // Default fallback
+};
+
+export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  if (status === 'in-progress') return 'in_progress';
+  if (status === 'pending-verification') return 'pending_verification';
+  return status as DbCAPAStatus;
+};
+
+export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
+  if (dbStatus === 'in_progress') return 'in-progress';
+  if (dbStatus === 'pending_verification') return 'pending-verification';
+  return dbStatus as CAPAStatus;
+};

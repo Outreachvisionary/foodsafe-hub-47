@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA } from '@/types/capa';
-import { mapStatusToDb } from './capaStatusService';
+import { CAPA, mapStatusToDb } from '@/types/capa';
 import { mapDbResultToCapa } from './capaFetchService';
 
 /**
@@ -20,7 +19,7 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     status: dbStatus,
     assigned_to: capa.assignedTo,
     due_date: capa.dueDate,
-    completion_date: capa.completedDate,
+    completion_date: capa.completionDate,
     root_cause: capa.rootCause,
     corrective_action: capa.correctiveAction,
     preventive_action: capa.preventiveAction,
@@ -63,7 +62,7 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
   }
   if (updates.assignedTo !== undefined) dbUpdates.assigned_to = updates.assignedTo;
   if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
-  if (updates.completedDate !== undefined) dbUpdates.completion_date = updates.completedDate;
+  if (updates.completionDate !== undefined) dbUpdates.completion_date = updates.completionDate;
   if (updates.rootCause !== undefined) dbUpdates.root_cause = updates.rootCause;
   if (updates.correctiveAction !== undefined) dbUpdates.corrective_action = updates.correctiveAction;
   if (updates.preventiveAction !== undefined) dbUpdates.preventive_action = updates.preventiveAction;

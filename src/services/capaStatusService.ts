@@ -1,29 +1,61 @@
 
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, mapStatusToDb, mapDbStatusToInternal } from '@/types/capa';
 
-// Convert from UI status display to database status value
-export const mapStatusToDb = (status: CAPAStatus): string => {
+export type DbCAPAStatus = 'open' | 'in_progress' | 'pending_verification' | 'closed' | 'verified' | 'cancelled';
+
+// This function is now deprecated, use the one from @/types/capa instead
+export function mapInternalToStatus(status: CAPAStatus): string {
   switch (status) {
-    case 'Open': return 'open';
-    case 'In Progress': return 'in_progress';
-    case 'Closed': return 'closed';
-    case 'Verified': return 'verified';
-    default: return 'open';
+    case 'open':
+      return 'Open';
+    case 'in-progress':
+      return 'In Progress';
+    case 'pending-verification':
+      return 'Pending Verification';
+    case 'closed':
+      return 'Closed';
+    case 'verified':
+      return 'Verified';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return status;
   }
-};
+}
 
-// Convert from database status value to UI status display
-export const mapStatusFromDb = (dbStatus: string): CAPAStatus => {
-  switch (dbStatus) {
-    case 'open': return 'Open';
-    case 'in_progress': return 'In Progress';
-    case 'closed': return 'Closed';
-    case 'verified': return 'Verified';
-    default: return 'Open';
+// This function is now deprecated, use the one from @/types/capa instead
+export function mapStatusToInternal(status: string): CAPAStatus {
+  switch (status.toLowerCase().replace(/\s+/g, '-')) {
+    case 'open':
+      return 'open';
+    case 'in-progress':
+    case 'in-process':
+    case 'investigating':
+      return 'in-progress';
+    case 'pending-verification':
+    case 'pending-review':
+      return 'pending-verification';
+    case 'closed':
+    case 'complete':
+    case 'completed':
+      return 'closed';
+    case 'verified':
+    case 'validated':
+      return 'verified';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      return 'open';
   }
-};
+}
+
+// These functions are now deprecated, use the ones from @/types/capa instead
+export { mapStatusToDb, mapDbStatusToInternal };
 
 export default {
   mapStatusToDb,
-  mapStatusFromDb
+  mapDbStatusToInternal,
+  mapInternalToStatus,
+  mapStatusToInternal
 };

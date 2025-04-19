@@ -1,54 +1,24 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAFetchParams, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
-
-// Helper function to cast status values to the correct type
-const castToCapaStatus = (status: string): CAPAStatus => {
-  const validStatuses: Record<string, CAPAStatus> = {
-    'open': 'open',
-    'in_progress': 'in-progress',
-    'closed': 'closed',
-    'overdue': 'open', // Map "overdue" to a valid enum value
-    'pending_verification': 'pending-verification',
-    'verified': 'verified', 
-    'cancelled': 'cancelled',
-    // Capitalized versions
-    'Open': 'open',
-    'In Progress': 'in-progress',
-    'Closed': 'closed',
-    'Overdue': 'open', // Map "Overdue" to a valid enum value
-    'Pending Verification': 'pending-verification',
-    'Verified': 'verified',
-    'Cancelled': 'cancelled'
-  };
-
-  return validStatuses[status] || 'open'; // Default to 'open' if not recognized
-};
-
-// Helper function to cast priority values to the correct type
-const castToCapaPriority = (priority: string): CAPAPriority => {
-  const validPriorities: Record<string, CAPAPriority> = {
-    'critical': 'critical',
-    'high': 'high',
-    'medium': 'medium',
-    'low': 'low',
-    'Critical': 'critical',
-    'High': 'high',
-    'Medium': 'medium',
-    'Low': 'low'
-  };
-
-  return validPriorities[priority] || 'medium'; // Default to 'medium' if not recognized
-};
+import { 
+  CAPA, 
+  CAPAFetchParams, 
+  CAPAStatus, 
+  CAPAPriority, 
+  CAPASource,
+  DbCAPAStatus,
+  mapDbStatusToInternal
+} from '@/types/capa';
 
 // Convert DB row to CAPA interface
 export const mapDbRowToCapa = (row: any): CAPA => {
+  const dbStatus = row.status as DbCAPAStatus;
+  
   return {
     id: row.id,
     title: row.title,
     description: row.description,
-    status: castToCapaStatus(row.status),
-    priority: castToCapaPriority(row.priority),
+    status: mapDbStatusToInternal(dbStatus as DbCAPAStatus),
+    priority: row.priority.toLowerCase() as CAPAPriority,
     source: row.source as CAPASource,
     sourceId: row.source_id,
     assignedTo: row.assigned_to,
@@ -89,7 +59,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
           const statusValues = params.status.map(s => {
             if (typeof s === 'string') {
               // Convert from CAPAStatus enum to database format
-              return s.toLowerCase().replace('-', '_');
+              return s.replace('-', '_');
             }
             return s;
           });
@@ -97,7 +67,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         } else if (params.status) {
           // Single status filter - convert to database format
           const statusValue = typeof params.status === 'string' 
-            ? params.status.toLowerCase().replace('-', '_')
+            ? params.status.replace('-', '_')
             : params.status;
           query = query.eq('status', statusValue);
         }
