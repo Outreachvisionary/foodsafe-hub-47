@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,7 @@ const ComplaintManagement: React.FC = () => {
         description: item.description,
         category: item.category as ComplaintCategory,
         status: item.status as ComplaintStatus,
-        priority: item.priority || 'medium' as ComplaintPriority,
+        priority: (item.priority || 'medium') as ComplaintPriority,
         reportedDate: item.reported_date,
         assignedTo: item.assigned_to,
         createdBy: item.created_by,
@@ -147,7 +148,7 @@ const ComplaintManagement: React.FC = () => {
         description: data.description,
         category: data.category as ComplaintCategory,
         status: data.status as ComplaintStatus,
-        priority: data.priority as ComplaintPriority,
+        priority: (data.priority || 'medium') as ComplaintPriority,
         reportedDate: data.reported_date,
         assignedTo: data.assigned_to,
         createdBy: data.created_by,

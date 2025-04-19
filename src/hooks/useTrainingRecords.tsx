@@ -45,7 +45,7 @@ export const useTrainingRecords = () => {
 
   const transformSessionRecord = (record: any) => {
     // If record doesn't have session data, return a basic object
-    if (!record.session_id) {
+    if (!record.session) {
       return {
         id: record.id,
         title: 'Unknown Session', // Provide a default title

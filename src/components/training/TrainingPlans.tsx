@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 
 const TrainingPlans = () => {
-  const { plans, isLoading, createPlan, deletePlan } = useTrainingContext();
+  const { trainingPlans: plans, isLoading, createTrainingPlan: createPlan, deleteTrainingPlan: deletePlan } = useTrainingContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -47,8 +48,7 @@ const TrainingPlans = () => {
     });
   };
   
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
+  const handleCheckboxChange = (checked: boolean, name: string) => {
     setPlanForm({
       ...planForm,
       [name]: checked
@@ -60,6 +60,13 @@ const TrainingPlans = () => {
     setPlanForm({
       ...planForm,
       [name]: parseInt(value, 10) || 0
+    });
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setPlanForm({
+      ...planForm,
+      [name]: value
     });
   };
   
@@ -157,6 +164,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="name"
+                  name="name"
                   value={planForm.name}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -168,6 +176,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Textarea
                   id="description"
+                  name="description"
                   value={planForm.description}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -179,7 +188,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Select
                   value={planForm.priority as string}
-                  onValueChange={(value) => handleInputChange({ target: { name: 'priority', value } })}
+                  onValueChange={(value) => handleSelectChange('priority', value)}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select priority" />
@@ -202,7 +211,7 @@ const TrainingPlans = () => {
                   name="duration_days"
                   value={String(planForm.duration_days || '')}
                   onChange={handleNumberChange}
-                  className="border p-2 rounded-md w-full"
+                  className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -211,9 +220,10 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="start_date"
+                  name="start_date"
                   type="date"
-                  value={planForm.start_date}
-                  onChange={(e) => handleInputChange({ target: { name: 'start_date', value: e.target.value } })}
+                  value={planForm.start_date ? planForm.start_date.split('T')[0] : ''}
+                  onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
@@ -223,9 +233,10 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="end_date"
+                  name="end_date"
                   type="date"
-                  value={planForm.end_date}
-                  onChange={(e) => handleInputChange({ target: { name: 'end_date', value: e.target.value } })}
+                  value={planForm.end_date ? planForm.end_date.split('T')[0] : ''}
+                  onChange={handleInputChange}
                   className="col-span-3"
                 />
               </div>
@@ -235,8 +246,8 @@ const TrainingPlans = () => {
                 </Label>
                 <Checkbox
                   id="is_required"
-                  checked={planForm.is_required}
-                  onCheckedChange={(checked) => handleCheckboxChange({ target: { name: 'is_required', checked } })}
+                  checked={!!planForm.is_required}
+                  onCheckedChange={(checked) => handleCheckboxChange(!!checked, 'is_required')}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -245,8 +256,16 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="target_roles"
+                  name="target_roles"
                   value={planForm.target_roles.join(', ')}
-                  onChange={(e) => handleInputChange({ target: { name: 'target_roles', value: e.target.value } })}
+                  onChange={(e) => handleInputChange({
+                    ...e,
+                    target: {
+                      ...e.target,
+                      name: 'target_roles',
+                      value: e.target.value.split(',').map(role => role.trim())
+                    }
+                  } as React.ChangeEvent<HTMLInputElement>)}
                   className="col-span-3"
                 />
               </div>
@@ -256,8 +275,16 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="courses"
+                  name="courses"
                   value={planForm.courses.join(', ')}
-                  onChange={(e) => handleInputChange({ target: { name: 'courses', value: e.target.value } })}
+                  onChange={(e) => handleInputChange({
+                    ...e,
+                    target: {
+                      ...e.target,
+                      name: 'courses',
+                      value: e.target.value.split(',').map(course => course.trim())
+                    }
+                  } as React.ChangeEvent<HTMLInputElement>)}
                   className="col-span-3"
                 />
               </div>
@@ -267,8 +294,16 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="target_departments"
+                  name="target_departments"
                   value={planForm.target_departments.join(', ')}
-                  onChange={(e) => handleInputChange({ target: { name: 'target_departments', value: e.target.value } })}
+                  onChange={(e) => handleInputChange({
+                    ...e,
+                    target: {
+                      ...e.target,
+                      name: 'target_departments',
+                      value: e.target.value.split(',').map(dept => dept.trim())
+                    }
+                  } as React.ChangeEvent<HTMLInputElement>)}
                   className="col-span-3"
                 />
               </div>
@@ -278,6 +313,7 @@ const TrainingPlans = () => {
                 </Label>
                 <Input
                   id="automation_trigger"
+                  name="automation_trigger"
                   value={planForm.automation_trigger}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -336,165 +372,6 @@ const TrainingPlans = () => {
           ))}
         </div>
       )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Training Plan</DialogTitle>
-            <DialogDescription>
-              Define a new training plan for your organization
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                value={planForm.name}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={planForm.description}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="priority" className="text-right">
-                Priority
-              </Label>
-              <Select
-                value={planForm.priority as string}
-                onValueChange={(value) => handleInputChange({ target: { name: 'priority', value } })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="duration_days" className="text-right">
-                Duration (days)
-              </Label>
-              <Input
-                type="number"
-                id="duration_days"
-                name="duration_days"
-                value={String(planForm.duration_days || '')}
-                onChange={handleNumberChange}
-                className="border p-2 rounded-md w-full"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="start_date" className="text-right">
-                Start Date
-              </Label>
-              <Input
-                id="start_date"
-                name="start_date"
-                type="date"
-                value={planForm.start_date}
-                onChange={(e) => handleInputChange({ target: { name: 'start_date', value: e.target.value } })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="end_date" className="text-right">
-                End Date
-              </Label>
-              <Input
-                id="end_date"
-                name="end_date"
-                type="date"
-                value={planForm.end_date}
-                onChange={(e) => handleInputChange({ target: { name: 'end_date', value: e.target.value } })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_required" className="text-right">
-                Is Required
-              </Label>
-              <Checkbox
-                id="is_required"
-                checked={planForm.is_required}
-                onCheckedChange={(checked) => handleCheckboxChange({ target: { name: 'is_required', checked } })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="target_roles" className="text-right">
-                Target Roles
-              </Label>
-              <Input
-                id="target_roles"
-                name="target_roles"
-                value={planForm.target_roles.join(', ')}
-                onChange={(e) => handleInputChange({ target: { name: 'target_roles', value: e.target.value } })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="courses" className="text-right">
-                Courses
-              </Label>
-              <Input
-                id="courses"
-                name="courses"
-                value={planForm.courses.join(', ')}
-                onChange={(e) => handleInputChange({ target: { name: 'courses', value: e.target.value } })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="target_departments" className="text-right">
-                Target Departments
-              </Label>
-              <Input
-                id="target_departments"
-                name="target_departments"
-                value={planForm.target_departments.join(', ')}
-                onChange={(e) => handleInputChange({ target: { name: 'target_departments', value: e.target.value } })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="automation_trigger" className="text-right">
-                Automation Trigger
-              </Label>
-              <Input
-                id="automation_trigger"
-                name="automation_trigger"
-                value={planForm.automation_trigger}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>Create Plan</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
