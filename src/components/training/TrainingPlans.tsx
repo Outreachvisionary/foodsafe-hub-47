@@ -70,6 +70,17 @@ const TrainingPlans = () => {
     });
   };
   
+  // Custom handler for array inputs
+  const handleArrayInputChange = (name: string, value: string) => {
+    // Split the input by commas and trim whitespace
+    const arrayValues = value.split(',').map(item => item.trim());
+    
+    setPlanForm({
+      ...planForm,
+      [name]: arrayValues
+    });
+  };
+  
   const handleSubmit = async () => {
     try {
       // Ensure all required fields are present
@@ -258,15 +269,9 @@ const TrainingPlans = () => {
                   id="target_roles"
                   name="target_roles"
                   value={planForm.target_roles.join(', ')}
-                  onChange={(e) => handleInputChange({
-                    ...e,
-                    target: {
-                      ...e.target,
-                      name: 'target_roles',
-                      value: e.target.value.split(',').map(role => role.trim())
-                    }
-                  } as React.ChangeEvent<HTMLInputElement>)}
+                  onChange={(e) => handleArrayInputChange('target_roles', e.target.value)}
                   className="col-span-3"
+                  placeholder="Enter roles separated by commas"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -277,15 +282,9 @@ const TrainingPlans = () => {
                   id="courses"
                   name="courses"
                   value={planForm.courses.join(', ')}
-                  onChange={(e) => handleInputChange({
-                    ...e,
-                    target: {
-                      ...e.target,
-                      name: 'courses',
-                      value: e.target.value.split(',').map(course => course.trim())
-                    }
-                  } as React.ChangeEvent<HTMLInputElement>)}
+                  onChange={(e) => handleArrayInputChange('courses', e.target.value)}
                   className="col-span-3"
+                  placeholder="Enter courses separated by commas"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -296,15 +295,9 @@ const TrainingPlans = () => {
                   id="target_departments"
                   name="target_departments"
                   value={planForm.target_departments.join(', ')}
-                  onChange={(e) => handleInputChange({
-                    ...e,
-                    target: {
-                      ...e.target,
-                      name: 'target_departments',
-                      value: e.target.value.split(',').map(dept => dept.trim())
-                    }
-                  } as React.ChangeEvent<HTMLInputElement>)}
+                  onChange={(e) => handleArrayInputChange('target_departments', e.target.value)}
                   className="col-span-3"
+                  placeholder="Enter departments separated by commas"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">

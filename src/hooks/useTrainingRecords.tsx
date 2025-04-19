@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -44,13 +45,28 @@ export const useTrainingRecords = () => {
   }, [toast]);
 
   const transformSessionRecord = (record: any) => {
-    // If record doesn't have session data, return a basic object
-    if (!record.session) {
+    // If record doesn't have session data or training data, return a basic object with defaults
+    if (!record.session || !record.session.training) {
       return {
         id: record.id,
         title: 'Unknown Session', // Provide a default title
+        employeeId: record.employee_id,
+        employeeName: record.employee ? `${record.employee.first_name} ${record.employee.last_name}` : 'Unknown Employee',
+        sessionId: record.session_id,
+        sessionDate: null,
+        trainingId: null,
+        trainingType: 'Unknown',
         status: record.status,
-        // ... other properties with defaults as needed
+        score: record.score || 0,
+        completedDate: record.completed_date,
+        notes: record.notes || '',
+        isRequired: false,
+        expiresAt: record.expires_at,
+        department: record.employee?.department || 'Unknown',
+        position: record.employee?.position || 'Unknown',
+        instructor: 'Unknown',
+        location: 'Unknown',
+        duration: 0,
       };
     }
     

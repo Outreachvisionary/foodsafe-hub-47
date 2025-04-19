@@ -38,6 +38,28 @@ const statusMap: Record<ComplaintStatus, DbComplaintStatus> = {
   'reopened': 'reopened'
 };
 
+// Interface for database records
+interface DbComplaint {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  priority?: string;
+  reported_date: string;
+  assigned_to?: string;
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  resolution_date?: string;
+  customer_name?: string;
+  customer_contact?: string;
+  product_involved?: string;
+  lot_number?: string;
+  capa_required?: boolean;
+  capa_id?: string;
+}
+
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +91,7 @@ const ComplaintManagement: React.FC = () => {
       if (error) throw error;
 
       // Convert database schema to our complaint type
-      const convertedComplaints: Complaint[] = (data || []).map(item => ({
+      const convertedComplaints: Complaint[] = (data || []).map((item: DbComplaint) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -136,35 +158,39 @@ const ComplaintManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('complaints')
         .insert([complaintToSubmit])
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
       
-      // Convert back to our type
-      const newComplaintData: Complaint = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        category: data.category as ComplaintCategory,
-        status: data.status as ComplaintStatus,
-        priority: (data.priority || 'medium') as ComplaintPriority,
-        reportedDate: data.reported_date,
-        assignedTo: data.assigned_to,
-        createdBy: data.created_by,
-        createdDate: data.created_at,
-        updatedAt: data.updated_at,
-        resolutionDate: data.resolution_date,
-        customerName: data.customer_name,
-        customerContact: data.customer_contact,
-        productInvolved: data.product_involved,
-        lotNumber: data.lot_number,
-        capaRequired: data.capa_required || false,
-        capaId: data.capa_id,
-        source: 'customer'  // Default value
-      };
+      if (data && data.length > 0) {
+        const newComplaintData = data[0] as DbComplaint;
+        
+        // Convert back to our type
+        const convertedComplaint: Complaint = {
+          id: newComplaintData.id,
+          title: newComplaintData.title,
+          description: newComplaintData.description,
+          category: newComplaintData.category as ComplaintCategory,
+          status: newComplaintData.status as ComplaintStatus,
+          priority: (newComplaintData.priority || 'medium') as ComplaintPriority,
+          reportedDate: newComplaintData.reported_date,
+          assignedTo: newComplaintData.assigned_to,
+          createdBy: newComplaintData.created_by,
+          createdDate: newComplaintData.created_at,
+          updatedAt: newComplaintData.updated_at,
+          resolutionDate: newComplaintData.resolution_date,
+          customerName: newComplaintData.customer_name,
+          customerContact: newComplaintData.customer_contact,
+          productInvolved: newComplaintData.product_involved,
+          lotNumber: newComplaintData.lot_number,
+          capaRequired: newComplaintData.capa_required || false,
+          capaId: newComplaintData.capa_id,
+          source: 'customer'  // Default value
+        };
+        
+        setComplaints([convertedComplaint, ...complaints]);
+      }
       
-      setComplaints([newComplaintData, ...complaints]);
       toast.success('Complaint submitted successfully');
       setIsDialogOpen(false);
       setNewComplaint({
