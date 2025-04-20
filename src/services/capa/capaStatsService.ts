@@ -1,6 +1,6 @@
 
 import { fetchCAPAs } from './capaFetchService';
-import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus } from '@/types/capa';
+import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
 
 // Update the CAPA stats function to match the CAPAStats type
 export const fetchCAPAStats = async (): Promise<CAPAStats> => {
@@ -89,8 +89,9 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
 
     // Calculate average time to close
     if (closedItemsCount > 0) {
-      stats.averageTimeToClose = totalClosureTime / closedItemsCount;
-      stats.averageClosureTime = stats.averageTimeToClose / (1000 * 60 * 60 * 24); // Convert to days
+      const avgTimeToClose = totalClosureTime / closedItemsCount;
+      stats.averageTimeToClose = avgTimeToClose;
+      stats.averageClosureTime = avgTimeToClose / (1000 * 60 * 60 * 24); // Convert to days
     } else {
       stats.averageTimeToClose = 0;
       stats.averageClosureTime = 0;
@@ -113,11 +114,11 @@ export const createEffectivenessAssessment = async (
 ): Promise<CAPAEffectivenessMetrics> => {
   try {
     const metrics: CAPAEffectivenessMetrics = {
+      score: assessmentData.score || 0,
       rootCauseEliminated: assessmentData.rootCauseEliminated || false,
       preventiveMeasuresImplemented: assessmentData.preventiveMeasuresImplemented || false,
       documentationComplete: assessmentData.documentationComplete || false,
       recurrenceCheck: assessmentData.recurrenceCheck || '',
-      score: assessmentData.score || 0,
       checkedDate: assessmentData.checkedDate || new Date().toISOString(),
       assessmentDate: assessmentData.assessmentDate,
       notes: assessmentData.notes,

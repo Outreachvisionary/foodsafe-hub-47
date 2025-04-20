@@ -1,8 +1,6 @@
 
 import { CAPAStatus, mapStatusToDb, mapDbStatusToInternal } from '@/types/capa';
 
-export type DbCAPAStatus = 'open' | 'in_progress' | 'pending_verification' | 'closed' | 'verified' | 'cancelled';
-
 // This function is now deprecated, use the one from @/types/capa instead
 export function mapInternalToStatus(status: CAPAStatus): string {
   switch (status) {

@@ -1,8 +1,7 @@
 
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, DbCAPAStatus, mapStatusToDb, mapDbStatusToInternal } from '@/types/capa';
 
-export type DbCAPAStatus = 'open' | 'in_progress' | 'pending_verification' | 'closed' | 'verified' | 'cancelled';
-
+// This function converts internal status to display format
 export function mapInternalToStatus(status: CAPAStatus): string {
   switch (status) {
     case 'open':
@@ -22,6 +21,7 @@ export function mapInternalToStatus(status: CAPAStatus): string {
   }
 }
 
+// This function converts display status to internal format
 export function mapStatusToInternal(status: string): CAPAStatus {
   switch (status.toLowerCase().replace(/\s+/g, '-')) {
     case 'open':
@@ -48,40 +48,9 @@ export function mapStatusToInternal(status: string): CAPAStatus {
   }
 }
 
-export function mapStatusToDb(status: CAPAStatus): DbCAPAStatus {
-  switch (status) {
-    case 'open':
-      return 'open';
-    case 'in-progress':
-      return 'in_progress';
-    case 'pending-verification':
-      return 'pending_verification';
-    case 'closed':
-      return 'closed';
-    case 'verified':
-      return 'verified';
-    case 'cancelled':
-      return 'cancelled';
-    default:
-      return 'open';
-  }
-}
-
-export function mapStatusFromDb(dbStatus: DbCAPAStatus): CAPAStatus {
-  switch (dbStatus) {
-    case 'open':
-      return 'open';
-    case 'in_progress':
-      return 'in-progress';
-    case 'pending_verification':
-      return 'pending-verification';
-    case 'closed':
-      return 'closed';
-    case 'verified':
-      return 'verified';
-    case 'cancelled':
-      return 'cancelled';
-    default:
-      return 'open';
-  }
-}
+export default {
+  mapStatusToDb,
+  mapDbStatusToInternal,
+  mapInternalToStatus,
+  mapStatusToInternal
+};

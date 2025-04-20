@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, mapStatusToDb } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, mapStatusToDb } from '@/types/capa';
 import { mapDbResultToCapa } from './capaFetchService';
 
 /**
@@ -24,9 +24,14 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
     corrective_action: capa.correctiveAction,
     preventive_action: capa.preventiveAction,
     verification_date: capa.verificationDate,
-    effectiveness_criteria: '',
-    effectiveness_verified: false,
-    created_by: (await supabase.auth.getUser()).data.user?.id || 'system'
+    effectiveness_criteria: capa.effectivenessCriteria || '',
+    effectiveness_verified: capa.effectivenessVerified || false,
+    created_by: (await supabase.auth.getUser()).data.user?.id || 'system',
+    is_fsma204_compliant: capa.isFsma204Compliant || false,
+    department: capa.department,
+    verification_method: capa.verificationMethod,
+    verified_by: capa.verifiedBy,
+    effectiveness_rating: capa.effectivenessRating
   };
 
   const { data, error } = await supabase
@@ -67,6 +72,13 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
   if (updates.correctiveAction !== undefined) dbUpdates.corrective_action = updates.correctiveAction;
   if (updates.preventiveAction !== undefined) dbUpdates.preventive_action = updates.preventiveAction;
   if (updates.verificationDate !== undefined) dbUpdates.verification_date = updates.verificationDate;
+  if (updates.effectivenessCriteria !== undefined) dbUpdates.effectiveness_criteria = updates.effectivenessCriteria;
+  if (updates.effectivenessVerified !== undefined) dbUpdates.effectiveness_verified = updates.effectivenessVerified;
+  if (updates.effectivenessRating !== undefined) dbUpdates.effectiveness_rating = updates.effectivenessRating;
+  if (updates.isFsma204Compliant !== undefined) dbUpdates.is_fsma204_compliant = updates.isFsma204Compliant;
+  if (updates.department !== undefined) dbUpdates.department = updates.department;
+  if (updates.verificationMethod !== undefined) dbUpdates.verification_method = updates.verificationMethod;
+  if (updates.verifiedBy !== undefined) dbUpdates.verified_by = updates.verifiedBy;
 
   const { data, error } = await supabase
     .from('capa_actions')

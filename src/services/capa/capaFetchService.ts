@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CAPA, 
@@ -6,7 +7,9 @@ import {
   CAPAPriority, 
   CAPASource,
   DbCAPAStatus,
-  mapDbStatusToInternal
+  mapDbStatusToInternal,
+  castToCapaStatus,
+  castToCapaPriority
 } from '@/types/capa';
 
 // Convert DB row to CAPA interface
@@ -18,7 +21,7 @@ export const mapDbRowToCapa = (row: any): CAPA => {
     title: row.title,
     description: row.description,
     status: mapDbStatusToInternal(dbStatus as DbCAPAStatus),
-    priority: row.priority.toLowerCase() as CAPAPriority,
+    priority: (row.priority || 'medium').toLowerCase() as CAPAPriority,
     source: row.source as CAPASource,
     sourceId: row.source_id,
     assignedTo: row.assigned_to,
@@ -132,51 +135,6 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   }
 };
 
-export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'createdDate' | 'lastUpdated'>): Promise<CAPA> => {
-  try {
-    // Map our interface to database column names
-    const dbCapa = {
-      title: capaData.title,
-      description: capaData.description,
-      status: capaData.status.replace('-', '_'), // Convert to DB format
-      source: capaData.source,
-      source_id: capaData.sourceId,
-      priority: capaData.priority,
-      assigned_to: capaData.assignedTo,
-      department: capaData.department,
-      due_date: capaData.dueDate,
-      root_cause: capaData.rootCause,
-      corrective_action: capaData.correctiveAction,
-      preventive_action: capaData.preventiveAction,
-      effectiveness_criteria: capaData.effectivenessCriteria,
-      completion_date: capaData.completionDate,
-      created_by: capaData.createdBy,
-      is_fsma204_compliant: capaData.isFsma204Compliant,
-      verification_method: capaData.verificationMethod,
-      verification_date: capaData.verificationDate,
-      verified_by: capaData.verifiedBy,
-      effectiveness_verified: capaData.effectivenessVerified,
-      effectiveness_rating: capaData.effectivenessRating
-    };
-
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .insert([dbCapa])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating CAPA:', error);
-      throw new Error(error.message);
-    }
-
-    return mapDbRowToCapa(data);
-  } catch (error) {
-    console.error('Error in createCAPA:', error);
-    throw error;
-  }
-};
-
 export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   try {
     const { data, error } = await supabase
@@ -201,68 +159,5 @@ export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   }
 };
 
-export const updateCAPA = async (id: string, capaData: Partial<CAPA>): Promise<CAPA> => {
-  try {
-    // Construct the update object, mapping from our interface to DB columns
-    const updateObject: any = {};
-    
-    if (capaData.title) updateObject.title = capaData.title;
-    if (capaData.description) updateObject.description = capaData.description;
-    if (capaData.status) updateObject.status = capaData.status.replace('-', '_'); // Convert to DB format
-    if (capaData.priority) updateObject.priority = capaData.priority;
-    if (capaData.assignedTo) updateObject.assigned_to = capaData.assignedTo;
-    if (capaData.department) updateObject.department = capaData.department;
-    if (capaData.dueDate) updateObject.due_date = capaData.dueDate;
-    if (capaData.rootCause) updateObject.root_cause = capaData.rootCause;
-    if (capaData.correctiveAction) updateObject.corrective_action = capaData.correctiveAction;
-    if (capaData.preventiveAction) updateObject.preventive_action = capaData.preventiveAction;
-    if (capaData.effectivenessCriteria) updateObject.effectiveness_criteria = capaData.effectivenessCriteria;
-    if (capaData.completionDate) updateObject.completion_date = capaData.completionDate;
-    if (capaData.isFsma204Compliant !== undefined) updateObject.is_fsma204_compliant = capaData.isFsma204Compliant;
-    if (capaData.verificationMethod) updateObject.verification_method = capaData.verificationMethod;
-    if (capaData.verificationDate) updateObject.verification_date = capaData.verificationDate;
-    if (capaData.verifiedBy) updateObject.verified_by = capaData.verifiedBy;
-    if (capaData.effectivenessVerified !== undefined) updateObject.effectiveness_verified = capaData.effectivenessVerified;
-    if (capaData.effectivenessRating) updateObject.effectiveness_rating = capaData.effectivenessRating;
-    
-    // Always update the updated_at timestamp
-    updateObject.updated_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .update(updateObject)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating CAPA:', error);
-      throw new Error(error.message);
-    }
-
-    return mapDbRowToCapa(data);
-  } catch (error) {
-    console.error('Error in updateCAPA:', error);
-    throw error;
-  }
-};
-
-export const deleteCAPA = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('capa_actions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting CAPA:', error);
-      throw new Error(error.message);
-    }
-  } catch (error) {
-    console.error('Error in deleteCAPA:', error);
-    throw error;
-  }
-};
-
-// Export utility functions for mapDbToCapa
+// Export utility functions
 export { castToCapaStatus, castToCapaPriority };

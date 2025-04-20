@@ -1,5 +1,5 @@
 
-// Define the types for CAPA module
+// Define the types for complaint module
 
 export type ComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
 export type ComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
@@ -12,6 +12,15 @@ export type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 
 
 // Category map for UI display
 export const categoryDisplayMap: Record<ComplaintCategory, string> = {
+  'quality': 'Product Quality',
+  'safety': 'Food Safety',
+  'packaging': 'Packaging',
+  'delivery': 'Delivery',
+  'other': 'Other'
+};
+
+// Database category mapping
+export const dbCategoryDisplayMap = {
   'quality': 'Product Quality',
   'safety': 'Food Safety',
   'packaging': 'Packaging',
@@ -84,8 +93,8 @@ export interface DbComplaint {
   id: string;
   title: string;
   description: string;
-  category: string;
-  status: string;
+  category: DbComplaintCategory;
+  status: DbComplaintStatus;
   priority: string;
   reported_date: string;
   assigned_to?: string;
@@ -103,23 +112,23 @@ export interface DbComplaint {
 
 // Map function for database conversions
 export const mapDbCategoryToDisplay = (dbCategory: string): string => {
-  switch (dbCategory) {
-    case 'quality': return 'Product Quality';
-    case 'safety': return 'Food Safety';
-    case 'packaging': return 'Packaging';
-    case 'delivery': return 'Delivery';
-    case 'other': return 'Other';
-    default: return dbCategory;
-  }
+  const mappings: Record<string, string> = {
+    'quality': 'Product Quality',
+    'safety': 'Food Safety',
+    'packaging': 'Packaging',
+    'delivery': 'Delivery',
+    'other': 'Other'
+  };
+  return mappings[dbCategory] || dbCategory;
 };
 
 export const mapDisplayCategoryToDb = (displayCategory: string): string => {
-  switch (displayCategory) {
-    case 'Product Quality': return 'quality';
-    case 'Food Safety': return 'safety';
-    case 'Packaging': return 'packaging';
-    case 'Delivery': return 'delivery';
-    case 'Other': return 'other';
-    default: return displayCategory.toLowerCase();
-  }
+  const mappings: Record<string, string> = {
+    'Product Quality': 'quality',
+    'Food Safety': 'safety',
+    'Packaging': 'packaging',
+    'Delivery': 'delivery',
+    'Other': 'other'
+  };
+  return mappings[displayCategory.toLowerCase()] || displayCategory.toLowerCase();
 };

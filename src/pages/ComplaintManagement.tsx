@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +15,7 @@ import {
   ComplaintStatus, 
   ComplaintPriority, 
   DbComplaint, 
-  categoryDisplayMap,
-  mapDbCategoryToDisplay
+  categoryDisplayMap
 } from '@/types/complaint';
 import { Plus } from 'lucide-react';
 

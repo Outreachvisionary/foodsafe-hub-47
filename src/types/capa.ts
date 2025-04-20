@@ -190,3 +190,18 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   if (dbStatus === 'pending_verification') return 'pending-verification';
   return dbStatus as CAPAStatus;
 };
+
+// Define utility functions to cast string values to our type enums
+export const castToCapaStatus = (status: string): CAPAStatus => {
+  const validStatuses: CAPAStatus[] = ['open', 'in-progress', 'pending-verification', 'closed', 'verified', 'cancelled'];
+  return validStatuses.includes(status as CAPAStatus) 
+    ? status as CAPAStatus 
+    : 'open';
+};
+
+export const castToCapaPriority = (priority: string): CAPAPriority => {
+  const validPriorities: CAPAPriority[] = ['critical', 'high', 'medium', 'low'];
+  return validPriorities.includes(priority as CAPAPriority)
+    ? priority as CAPAPriority
+    : 'medium';
+};
