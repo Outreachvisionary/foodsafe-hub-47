@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
-import { mapStatusToDb, DbCAPAStatus } from './capaStatusService';
+import { mapStatusToDb, DbCAPAStatus } from '@/types/capa';
 
 // Table name used for CAPA activities
 const TABLE_NAME = 'capa_activities';

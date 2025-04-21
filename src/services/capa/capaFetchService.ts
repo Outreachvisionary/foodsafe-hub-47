@@ -58,11 +58,11 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     if (params) {
       if (params.status) {
         if (Array.isArray(params.status)) {
-          // Handle array of statuses - convert to database format
+          // Convert array of strings to array of valid statuses
           const statusValues = params.status.map(s => {
+            // Convert to database format (replace hyphens with underscores)
             if (typeof s === 'string') {
-              // Convert from CAPAStatus enum to database format
-              return s.replace('-', '_');
+              return s.replace(/-/g, '_');
             }
             return s;
           });
@@ -70,7 +70,7 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
         } else if (params.status) {
           // Single status filter - convert to database format
           const statusValue = typeof params.status === 'string' 
-            ? params.status.replace('-', '_')
+            ? params.status.replace(/-/g, '_')
             : params.status;
           query = query.eq('status', statusValue);
         }
@@ -159,5 +159,5 @@ export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   }
 };
 
-// Export utility functions
+// Export utility functions from types/capa.ts
 export { castToCapaStatus, castToCapaPriority };

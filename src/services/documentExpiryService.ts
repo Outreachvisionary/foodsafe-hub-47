@@ -1,5 +1,85 @@
-
 import { supabase } from '@/integrations/supabase/client';
+
+// Temporarily commenting out document_notifications table interaction 
+// since it seems the table might not exist or have a different structure
+// We'll need to update this when we have the proper table structure
+
+// Function to check for documents expiring soon
+export const checkExpiringDocuments = async () => {
+  try {
+    const today = new Date();
+    
+    // Get documents with expiry dates in the next 30 days
+    const { data, error } = await supabase
+      .from('documents')
+      .select('id, title, expiry_date, custom_notification_days')
+      .gte('expiry_date', today.toISOString())
+      .lte('expiry_date', new Date(today.setDate(today.getDate() + 30)).toISOString());
+    
+    if (error) {
+      console.error('Error checking for expiring documents:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in checkExpiringDocuments:', error);
+    throw error;
+  }
+};
+
+// Function to create expiry notifications
+export const createExpiryNotifications = async (documentId: string, daysUntilExpiry: number) => {
+  try {
+    // Fetch document details
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('title, expiry_date, created_by')
+      .eq('id', documentId)
+      .single();
+    
+    if (docError) {
+      console.error('Error fetching document details:', docError);
+      throw docError;
+    }
+    
+    // Create notification message
+    const message = `Document "${document.title}" will expire in ${daysUntilExpiry} days (on ${new Date(document.expiry_date).toLocaleDateString()}).`;
+    
+    // We should handle this differently since document_notifications might not exist
+    // or might have a different structure than expected
+    // For now, we'll just return the message
+    
+    return {
+      documentId,
+      message,
+      daysUntilExpiry
+    };
+    
+    /* Commenting out until we confirm the correct table structure
+    // Create notification record
+    const { data, error } = await supabase
+      .from('document_notifications')
+      .insert({
+        document_id: documentId,
+        message,
+        notification_type: 'expiry',
+        recipient_email: 'document_owner@example.com', // Should be fetched from user records
+        recipient_name: 'Document Owner' // Should be fetched from user records
+      });
+    
+    if (error) {
+      console.error('Error creating document expiry notification:', error);
+      throw error;
+    }
+    
+    return data;
+    */
+  } catch (error) {
+    console.error('Error in createExpiryNotifications:', error);
+    throw error;
+  }
+};
 
 // Function to send email notifications for expiring documents
 export const sendDocumentExpiryNotifications = async () => {

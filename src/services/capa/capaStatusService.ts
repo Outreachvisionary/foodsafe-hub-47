@@ -48,6 +48,9 @@ export function mapStatusToInternal(status: string): CAPAStatus {
   }
 }
 
+// Export the functions from types/capa.ts
+export { mapStatusToDb, mapDbStatusToInternal };
+
 export default {
   mapStatusToDb,
   mapDbStatusToInternal,
