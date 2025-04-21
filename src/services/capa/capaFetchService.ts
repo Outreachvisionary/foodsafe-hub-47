@@ -7,9 +7,7 @@ import {
   CAPAPriority, 
   CAPASource,
   DbCAPAStatus,
-  mapDbStatusToInternal,
-  castToCapaStatus,
-  castToCapaPriority
+  mapDbStatusToInternal
 } from '@/types/capa';
 
 // Convert DB row to CAPA interface
@@ -20,7 +18,7 @@ export const mapDbRowToCapa = (row: any): CAPA => {
     id: row.id,
     title: row.title,
     description: row.description,
-    status: mapDbStatusToInternal(dbStatus as DbCAPAStatus),
+    status: mapDbStatusToInternal(dbStatus),
     priority: (row.priority || 'medium').toLowerCase() as CAPAPriority,
     source: row.source as CAPASource,
     sourceId: row.source_id,
@@ -58,37 +56,38 @@ export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
     if (params) {
       if (params.status) {
         if (Array.isArray(params.status)) {
-          // Convert array of strings to array of valid statuses
-          const statusValues = params.status.map(s => {
-            // Convert to database format (replace hyphens with underscores)
+          // For DB, convert each status to the correct DB format
+          const dbStatusValues = params.status.map(s => {
+            // Need to convert from internal format to database format
             if (typeof s === 'string') {
-              return s.replace(/-/g, '_');
+              // Convert based on the mapping in your types file
+              return s.toLowerCase().replace(/-/g, '_');
             }
             return s;
           });
-          query = query.in('status', statusValues);
+          query = query.in('status', dbStatusValues as any);
         } else if (params.status) {
           // Single status filter - convert to database format
-          const statusValue = typeof params.status === 'string' 
-            ? params.status.replace(/-/g, '_')
+          const dbStatusValue = typeof params.status === 'string' 
+            ? params.status.toLowerCase().replace(/-/g, '_')
             : params.status;
-          query = query.eq('status', statusValue);
+          query = query.eq('status', dbStatusValue as any);
         }
       }
 
       if (params.priority) {
         if (Array.isArray(params.priority)) {
-          query = query.in('priority', params.priority);
+          query = query.in('priority', params.priority as any);
         } else {
-          query = query.eq('priority', params.priority);
+          query = query.eq('priority', params.priority as any);
         }
       }
 
       if (params.source) {
         if (Array.isArray(params.source)) {
-          query = query.in('source', params.source);
+          query = query.in('source', params.source as any);
         } else {
-          query = query.eq('source', params.source);
+          query = query.eq('source', params.source as any);
         }
       }
 
@@ -159,5 +158,5 @@ export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
   }
 };
 
-// Export utility functions from types/capa.ts
-export { castToCapaStatus, castToCapaPriority };
+// We're no longer exporting these as they've been moved to types/capa.ts
+// export { castToCapaStatus, castToCapaPriority };

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Building } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { fetchFacilities } from '@/services/facilityService';
+import { getFacilities } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,7 @@ const FacilitiesList = () => {
   const loadFacilities = async () => {
     try {
       setLoading(true);
-      const data = await fetchFacilities();
+      const data = await getFacilities();
       setFacilities(data);
       setFilteredFacilities(data);
       setLoading(false);

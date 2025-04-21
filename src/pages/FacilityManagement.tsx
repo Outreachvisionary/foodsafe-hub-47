@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -13,7 +14,7 @@ import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import { Facility } from '@/types/facility';
-import { fetchFacilityById, createFacility, updateFacility } from '@/services/facilityService';
+import { getFacilityById, createFacility, updateFacility } from '@/services/facilityService';
 import LocationForm, { LocationData } from '@/components/location/LocationForm';
 import { validateZipcode } from '@/utils/locationUtils';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';

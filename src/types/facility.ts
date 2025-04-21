@@ -22,6 +22,7 @@ export interface Facility {
   facility_type?: string;
 }
 
+// This is the interface used for components
 export interface FacilityProps {
   id: string;
   name: string;

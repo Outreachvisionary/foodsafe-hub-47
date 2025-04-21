@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facility } from '@/types/facility';
-import { fetchFacilitiesByOrganization, deleteFacility } from '@/services/facilityService';
+import { getFacilities, deleteFacility } from '@/services/facilityService';
 import FacilityList from '@/components/facilities/FacilityList';
 import FacilityAddDialog from '@/components/facilities/FacilityAddDialog';
 
@@ -19,8 +19,8 @@ const FacilitiesTab = ({ organizationId }: { organizationId: string }) => {
     
     try {
       setLoading(true);
-      const facilitiesData = await fetchFacilitiesByOrganization(organizationId);
-      setFacilities(facilitiesData as any);
+      const facilitiesData = await getFacilities(organizationId);
+      setFacilities(facilitiesData);
     } catch (error) {
       console.error('Error loading facilities:', error);
       toast.error('Failed to load facilities');

@@ -6,9 +6,9 @@ export type ComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'r
 export type ComplaintPriority = 'critical' | 'high' | 'medium' | 'low';
 export type ComplaintSource = 'customer' | 'consumer' | 'retailer' | 'distributor' | 'internal' | 'audit' | 'inspection';
 
-// Database-compatible types
-export type DbComplaintCategory = 'quality' | 'safety' | 'packaging' | 'delivery' | 'other';
-export type DbComplaintStatus = 'new' | 'in-progress' | 'resolved' | 'closed' | 'reopened';
+// Database-compatible types - MUST match the exact values in database enum
+export type DbComplaintCategory = 'Product Quality' | 'Foreign Material' | 'Packaging' | 'Labeling' | 'Customer Service' | 'Other';
+export type DbComplaintStatus = 'New' | 'In Progress' | 'Resolved' | 'Closed' | 'Reopened';
 
 // Category map for UI display
 export const categoryDisplayMap: Record<ComplaintCategory, string> = {
@@ -21,11 +21,12 @@ export const categoryDisplayMap: Record<ComplaintCategory, string> = {
 
 // Database category mapping
 export const dbCategoryDisplayMap = {
-  'quality': 'Product Quality',
-  'safety': 'Food Safety',
-  'packaging': 'Packaging',
-  'delivery': 'Delivery',
-  'other': 'Other'
+  'Product Quality': 'Product Quality',
+  'Foreign Material': 'Foreign Material',
+  'Packaging': 'Packaging',
+  'Labeling': 'Labeling',
+  'Customer Service': 'Customer Service',
+  'Other': 'Other'
 };
 
 export interface Complaint {
@@ -113,22 +114,72 @@ export interface DbComplaint {
 // Map function for database conversions
 export const mapDbCategoryToDisplay = (dbCategory: string): string => {
   const mappings: Record<string, string> = {
-    'quality': 'Product Quality',
-    'safety': 'Food Safety',
-    'packaging': 'Packaging',
-    'delivery': 'Delivery',
-    'other': 'Other'
+    'Product Quality': 'Product Quality',
+    'Foreign Material': 'Foreign Material',
+    'Packaging': 'Packaging',
+    'Labeling': 'Labeling',
+    'Customer Service': 'Customer Service', 
+    'Other': 'Other'
   };
   return mappings[dbCategory] || dbCategory;
 };
 
 export const mapDisplayCategoryToDb = (displayCategory: string): string => {
   const mappings: Record<string, string> = {
-    'Product Quality': 'quality',
-    'Food Safety': 'safety',
-    'Packaging': 'packaging',
-    'Delivery': 'delivery',
-    'Other': 'other'
+    'Product Quality': 'Product Quality',
+    'Food Safety': 'Foreign Material',
+    'Packaging': 'Packaging',
+    'Delivery': 'Labeling',
+    'Other': 'Other'
   };
-  return mappings[displayCategory.toLowerCase()] || displayCategory.toLowerCase();
+  return mappings[displayCategory] || 'Other';
 };
+
+// Helper function to map our app's category to DB category
+export function mapCategoryToDb(category: ComplaintCategory): DbComplaintCategory {
+  switch(category) {
+    case 'quality': return 'Product Quality';
+    case 'safety': return 'Foreign Material';
+    case 'packaging': return 'Packaging';
+    case 'delivery': return 'Labeling';
+    case 'other': return 'Other';
+    default: return 'Other';
+  }
+}
+
+// Helper function to map DB category to our app's category
+export function mapDbCategoryToInternal(dbCategory: DbComplaintCategory): ComplaintCategory {
+  switch(dbCategory) {
+    case 'Product Quality': return 'quality';
+    case 'Foreign Material': return 'safety';
+    case 'Packaging': return 'packaging';
+    case 'Labeling': return 'delivery';
+    case 'Customer Service': return 'other';
+    case 'Other': return 'other';
+    default: return 'other';
+  }
+}
+
+// Helper function to map our app's status to DB status
+export function mapStatusToDb(status: ComplaintStatus): DbComplaintStatus {
+  switch(status) {
+    case 'new': return 'New';
+    case 'in-progress': return 'In Progress';
+    case 'resolved': return 'Resolved';
+    case 'closed': return 'Closed';
+    case 'reopened': return 'Reopened';
+    default: return 'New';
+  }
+}
+
+// Helper function to map DB status to our app's status
+export function mapDbStatusToInternal(dbStatus: DbComplaintStatus): ComplaintStatus {
+  switch(dbStatus) {
+    case 'New': return 'new';
+    case 'In Progress': return 'in-progress';
+    case 'Resolved': return 'resolved';
+    case 'Closed': return 'closed';
+    case 'Reopened': return 'reopened';
+    default: return 'new';
+  }
+}

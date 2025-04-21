@@ -37,7 +37,7 @@ export const createCAPA = async (capa: Omit<CAPA, 'id' | 'createdDate' | 'lastUp
   // Use type casting since the DB schema might have additional validation
   const { data, error } = await supabase
     .from('capa_actions')
-    .insert(dbRecord as any)
+    .insert(dbRecord)
     .select()
     .single();
   
@@ -84,7 +84,7 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
   // Use type casting for the update operation since the database schema might have additional validation
   const { data, error } = await supabase
     .from('capa_actions')
-    .update(dbUpdates as any)
+    .update(dbUpdates)
     .eq('id', id)
     .select()
     .single();

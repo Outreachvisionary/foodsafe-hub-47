@@ -34,19 +34,17 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
 
   useEffect(() => {
     const loadFacilities = async () => {
-      if (!organizationId) {
-        setFacilities([]);
-        setLoading(false);
-        return;
-      }
-      
       try {
         setLoading(true);
         setError(null);
         
-        const facilityData = await getFacilities(organizationId);
+        // Pass organizationId if it exists
+        const facilityData = organizationId ? 
+          await getFacilities(organizationId) : 
+          await getFacilities();
+        
         console.log('Loaded facilities:', facilityData);
-        setFacilities(facilityData as any);
+        setFacilities(facilityData);
         
         // If there's only one facility and no value is selected, select it automatically
         if (facilityData.length === 1 && !value) {

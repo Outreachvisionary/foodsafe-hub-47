@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import {
   ComplaintStatus, 
   ComplaintPriority, 
   DbComplaint, 
-  categoryDisplayMap
+  categoryDisplayMap,
+  mapDisplayCategoryToDb
 } from '@/types/complaint';
 import { Plus } from 'lucide-react';
 
@@ -106,9 +108,9 @@ const ComplaintManagement: React.FC = () => {
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
-        category: newComplaint.category, // Already in correct format
-        status: newComplaint.status, // Already in correct format
-        priority: newComplaint.priority, // Already in correct format
+        category: newComplaint.category, 
+        status: newComplaint.status,
+        priority: newComplaint.priority,
         reported_date: new Date().toISOString(),
         created_by: 'current_user', // This should be dynamic based on auth user
         customer_name: newComplaint.customerName,
@@ -120,7 +122,7 @@ const ComplaintManagement: React.FC = () => {
 
       const { data, error } = await supabase
         .from('complaints')
-        .insert([complaintToSubmit])
+        .insert(complaintToSubmit)
         .select();
 
       if (error) throw error;
