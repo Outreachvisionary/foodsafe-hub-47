@@ -70,21 +70,20 @@ const FacilityManagement = () => {
 
   useEffect(() => {
     const loadFacility = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         if (!id) {
-          setError('No facility ID provided');
           return;
         }
-        
         const facilityData = await getFacilityById(id);
         setFacility(facilityData);
-        
-        // Load related data if necessary
-      } catch (error) {
-        console.error('Error loading facility:', error);
-        setError('Failed to load facility details');
-        toast.error('Error loading facility details');
+      } catch (err) {
+        console.error('Error fetching facility:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load facility details",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }

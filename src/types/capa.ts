@@ -1,3 +1,4 @@
+
 // CAPA Status types for internal representation vs database representation
 export type CAPAStatus = 'open' | 'in-progress' | 'pending-verification' | 'closed' | 'verified' | 'cancelled';
 export type DbCAPAStatus = 'open' | 'in_progress' | 'pending_verification' | 'closed' | 'verified' | 'cancelled';
@@ -34,19 +35,19 @@ export interface CAPAEffectivenessMetrics {
 export const getStatusColor = (status: CAPAStatus) => {
   switch (status) {
     case 'open':
-      return 'bg-amber-100 text-amber-800 border-amber-200';
+      return 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200';
     case 'in-progress':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200';
     case 'pending-verification':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200';
     case 'closed':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
     case 'verified':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200';
     case 'cancelled':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
   }
 };
 
@@ -54,19 +55,19 @@ export const getStatusColor = (status: CAPAStatus) => {
 export const getPriorityColor = (priority: CAPAPriority) => {
   switch (priority) {
     case 'critical':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200';
     case 'high':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
+      return 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200';
     case 'low':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
   }
 };
 
-// Create a StatusBadge component for consistent status display
+// Statistics for CAPA Dashboard
 export interface CAPAStats {
   total: number;
   openCount: number;
@@ -119,16 +120,18 @@ export function mapDbStatusToInternal(dbStatus: DbCAPAStatus): CAPAStatus {
   }
 }
 
-export function mapEffectivenessRatingToDb(rating: CAPAEffectivenessRating): DbCAPAEffectivenessRating {
+export function mapEffectivenessRatingToDb(rating: CAPAEffectivenessRating | ExtendedCAPAEffectivenessRating): DbCAPAEffectivenessRating {
   switch(rating) {
     case 'excellent':
     case 'good':
       return 'Effective';
     case 'fair':
+    case 'adequate':
       return 'Partially Effective';
     case 'poor':
-      return 'Not Effective';
+    case 'ineffective':
     case 'not-determined':
+      return 'Not Effective';
     default:
       return 'Partially Effective';
   }
@@ -237,3 +240,26 @@ export interface CAPAEffectivenessResult {
   notes?: string;
   createdBy: string;
 }
+
+// Helper functions for complaint categories
+export const dbCategoryToInternal = (dbCategory: string): string => {
+  // Convert database category format (e.g., "Product Quality") to internal format (e.g., "product-quality")
+  return dbCategory.toLowerCase().replace(/ /g, '-');
+};
+
+export const internalCategoryToDb = (internalCategory: string): string => {
+  // Convert internal category format (e.g., "product-quality") to database format (e.g., "Product Quality")
+  return internalCategory
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// Helper for facility service to map statuses
+export const mapFacilityStatusFromDb = (status: string): "active" | "inactive" | "pending" => {
+  if (status === "active" || status === "inactive" || status === "pending") {
+    return status;
+  }
+  // Default to pending for unknown statuses
+  return "pending";
+};
