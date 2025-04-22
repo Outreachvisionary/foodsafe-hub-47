@@ -1,104 +1,237 @@
 
-import { CAPA, CAPAStats, CAPAFetchParams } from '@/types/capa';
-import { fetchCAPAs as fetchCAPAsFromService } from './capa/capaFetchService';
-import { createCAPA as createCAPAFromService, updateCAPA as updateCAPAFromService, deleteCAPA as deleteCAPAFromService } from './capa/capaUpdateService';
-import { mapDbResultToCapa } from './capa/capaFetchService';
+import { supabase } from '@/integrations/supabase/client';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
+import { v4 as uuidv4 } from 'uuid';
 
-export const fetchCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
-  return fetchCAPAsFromService(params);
-};
+/**
+ * Create a new CAPA
+ * @param data CAPA data
+ * @returns Newly created CAPA
+ */
+export const createCAPA = async (data: Omit<CAPA, 'id' | 'status' | 'createdAt' | 'lastUpdated'>): Promise<CAPA> => {
+  const newId = uuidv4();
+  const now = new Date().toISOString();
 
-export const fetchCAPAById = async (id: string): Promise<CAPA> => {
-  const capas = await fetchCAPAsFromService({ id });
-  if (capas.length === 0) {
-    throw new Error(`CAPA with ID ${id} not found`);
+  try {
+    // Map frontend model to database schema
+    const dbRecord = {
+      id: newId,
+      title: data.title,
+      description: data.description,
+      status: 'Open' as CAPAStatus,
+      priority: data.priority,
+      source: data.source,
+      root_cause: data.rootCause,
+      corrective_action: data.correctiveAction,
+      preventive_action: data.preventiveAction,
+      due_date: data.dueDate,
+      created_by: 'system', // This should be the current user ID in a real app
+      created_at: now,
+      updated_at: now,
+      assigned_to: data.assignedTo || 'unassigned',
+      effectiveness_criteria: data.effectivenessCriteria,
+      source_id: data.sourceId
+    };
+
+    const { data: insertedData, error } = await supabase
+      .from('capa_actions')
+      .insert(dbRecord)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Map database record back to frontend model
+    return {
+      id: insertedData.id,
+      title: insertedData.title,
+      description: insertedData.description,
+      status: insertedData.status as CAPAStatus,
+      priority: insertedData.priority as CAPAPriority,
+      source: insertedData.source as CAPASource,
+      rootCause: insertedData.root_cause,
+      correctiveAction: insertedData.corrective_action,
+      preventiveAction: insertedData.preventive_action,
+      dueDate: insertedData.due_date,
+      assignedTo: insertedData.assigned_to,
+      createdBy: insertedData.created_by,
+      createdAt: insertedData.created_at,
+      lastUpdated: insertedData.updated_at,
+      effectivenessCriteria: insertedData.effectiveness_criteria,
+      sourceId: insertedData.source_id
+    };
+  } catch (error) {
+    console.error('Error creating CAPA:', error);
+    throw error;
   }
-  return capas[0];
 };
 
-export const createCAPA = async (capaData: Omit<CAPA, 'id' | 'createdDate' | 'lastUpdated'>): Promise<CAPA> => {
-  return createCAPAFromService(capaData);
+/**
+ * Get all CAPAs
+ * @returns Array of CAPA items
+ */
+export const getCAPAs = async (): Promise<CAPA[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      status: item.status as CAPAStatus,
+      priority: item.priority as CAPAPriority,
+      source: item.source as CAPASource,
+      rootCause: item.root_cause,
+      correctiveAction: item.corrective_action,
+      preventiveAction: item.preventive_action,
+      dueDate: item.due_date,
+      assignedTo: item.assigned_to,
+      createdBy: item.created_by,
+      createdAt: item.created_at,
+      lastUpdated: item.updated_at,
+      effectivenessCriteria: item.effectiveness_criteria,
+      sourceId: item.source_id
+    }));
+  } catch (error) {
+    console.error('Error fetching CAPAs:', error);
+    throw error;
+  }
 };
 
-export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
-  return updateCAPAFromService(id, updates);
-};
+/**
+ * Get a CAPA by ID
+ * @param id CAPA ID
+ * @returns CAPA object or null if not found
+ */
+export const getCAPAById = async (id: string): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-export const deleteCAPA = async (id: string): Promise<void> => {
-  return deleteCAPAFromService(id);
-};
-
-export const getPotentialCAPAs = async (): Promise<any[]> => {
-  // This is a mock function to return potential CAPAs for automation
-  return [
-    {
-      id: 'potential-1',
-      title: 'Critical temperature deviation in frozen storage',
-      description: 'Temperature logs indicate Zone B frozen storage exceeded -15°C for more than 4 hours.',
-      source: 'haccp',
-      sourceId: 'temp-dev-129',
-      date: new Date().toISOString(),
-      severity: 'critical',
-      confidence: 0.95
-    },
-    {
-      id: 'potential-2',
-      title: 'Allergen cross-contamination risk identified',
-      description: 'Production line changeover inspection found traces of peanut residue after sanitation procedure on Line 3.',
-      source: 'audit',
-      sourceId: 'audit-2023-187',
-      date: new Date().toISOString(),
-      severity: 'major',
-      confidence: 0.89
-    },
-    {
-      id: 'potential-3',
-      title: 'Foreign material complaint from distributor',
-      description: 'Distributor reported 3 instances of hard plastic fragments in product batch #A78942.',
-      source: 'complaint',
-      sourceId: 'comp-2023-078',
-      date: new Date().toISOString(),
-      severity: 'critical',
-      confidence: 0.92
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      throw error;
     }
-  ];
+
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      status: data.status as CAPAStatus,
+      priority: data.priority as CAPAPriority,
+      source: data.source as CAPASource,
+      rootCause: data.root_cause,
+      correctiveAction: data.corrective_action,
+      preventiveAction: data.preventive_action,
+      dueDate: data.due_date,
+      assignedTo: data.assigned_to,
+      createdBy: data.created_by,
+      createdAt: data.created_at,
+      lastUpdated: data.updated_at,
+      effectivenessCriteria: data.effectiveness_criteria,
+      sourceId: data.source_id
+    };
+  } catch (error) {
+    console.error(`Error fetching CAPA with ID ${id}:`, error);
+    throw error;
+  }
 };
 
-export const getCAPAStats = async (): Promise<CAPAStats> => {
-  // Implement this function or provide mock data for now
-  return {
-    total: 125,
-    openCount: 38,
-    inProgressCount: 42,
-    closedCount: 25,
-    verifiedCount: 15,
-    pendingVerificationCount: 5,
-    overdueCount: 12,
-    byStatus: [
-      { name: 'Open', value: 38 },
-      { name: 'In Progress', value: 42 },
-      { name: 'Closed', value: 25 },
-      { name: 'Verified', value: 15 },
-      { name: 'Pending Verification', value: 5 }
-    ],
-    byPriority: [
-      { name: 'Critical', value: 15 },
-      { name: 'High', value: 35 },
-      { name: 'Medium', value: 55 },
-      { name: 'Low', value: 20 }
-    ],
-    bySource: [
-      { name: 'Audit', value: 42 },
-      { name: 'Complaint', value: 28 },
-      { name: 'HACCP', value: 22 },
-      { name: 'Incident', value: 15 },
-      { name: 'Supplier', value: 18 }
-    ],
-    fsma204ComplianceRate: 87,
-    effectivenessStats: {
-      effective: 30,
-      partiallyEffective: 12,
-      ineffective: 5
-    }
-  };
+/**
+ * Update a CAPA
+ * @param id CAPA ID
+ * @param data Updated CAPA data
+ * @returns Updated CAPA
+ */
+export const updateCAPA = async (id: string, data: Partial<CAPA>): Promise<CAPA> => {
+  try {
+    // Map frontend model to database schema
+    const updates: any = {};
+    
+    if (data.title !== undefined) updates.title = data.title;
+    if (data.description !== undefined) updates.description = data.description;
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.priority !== undefined) updates.priority = data.priority;
+    if (data.source !== undefined) updates.source = data.source;
+    if (data.rootCause !== undefined) updates.root_cause = data.rootCause;
+    if (data.correctiveAction !== undefined) updates.corrective_action = data.correctiveAction;
+    if (data.preventiveAction !== undefined) updates.preventive_action = data.preventiveAction;
+    if (data.dueDate !== undefined) updates.due_date = data.dueDate;
+    if (data.assignedTo !== undefined) updates.assigned_to = data.assignedTo;
+    if (data.effectivenessCriteria !== undefined) updates.effectiveness_criteria = data.effectivenessCriteria;
+    if (data.sourceId !== undefined) updates.source_id = data.sourceId;
+
+    // Always update the last updated timestamp
+    updates.updated_at = new Date().toISOString();
+
+    const { data: updatedData, error } = await supabase
+      .from('capa_actions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Map database record back to frontend model
+    return {
+      id: updatedData.id,
+      title: updatedData.title,
+      description: updatedData.description,
+      status: updatedData.status as CAPAStatus,
+      priority: updatedData.priority as CAPAPriority,
+      source: updatedData.source as CAPASource,
+      rootCause: updatedData.root_cause,
+      correctiveAction: updatedData.corrective_action,
+      preventiveAction: updatedData.preventive_action,
+      dueDate: updatedData.due_date,
+      assignedTo: updatedData.assigned_to,
+      createdBy: updatedData.created_by,
+      createdAt: updatedData.created_at,
+      lastUpdated: updatedData.updated_at,
+      effectivenessCriteria: updatedData.effectiveness_criteria,
+      sourceId: updatedData.source_id
+    };
+  } catch (error) {
+    console.error(`Error updating CAPA with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a CAPA
+ * @param id CAPA ID
+ * @returns boolean indicating success
+ */
+export const deleteCAPA = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting CAPA with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+export default {
+  createCAPA,
+  getCAPAs,
+  getCAPAById,
+  updateCAPA,
+  deleteCAPA
 };

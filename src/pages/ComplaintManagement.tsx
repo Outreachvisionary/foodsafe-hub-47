@@ -1,408 +1,390 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import DashboardHeader from '@/components/DashboardHeader';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { 
-  Complaint, 
-  ComplaintCategory, 
-  ComplaintStatus, 
-  ComplaintPriority, 
-  DbComplaint, 
-  categoryDisplayMap,
-  mapDisplayCategoryToDb
-} from '@/types/complaint';
-import { Plus } from 'lucide-react';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 
-const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
-const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
-
-// Define a mapping from internal enum values to database values
-const categoryToDatabaseMapping: Record<ComplaintCategory, string> = {
-  'quality': 'Product Quality',
-  'safety': 'Foreign Material',
-  'packaging': 'Packaging',
-  'delivery': 'Labeling',
-  'other': 'Other'
-};
-
-const ComplaintManagement: React.FC = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newComplaint, setNewComplaint] = useState<Partial<Complaint>>({
-    title: '',
-    description: '',
-    category: 'quality',
-    status: 'new',
-    priority: 'medium',
-    customerName: '',
-    customerContact: '',
-    productInvolved: '',
-    lotNumber: ''
-  });
-
+const ComplaintManagement = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
+  const [productInvolved, setProductInvolved] = useState('');
+  const [lotNumber, setLotNumber] = useState('');
+  const [category, setCategory] = useState<ComplaintCategory>('Product Quality');
+  const [priority, setPriority] = useState<ComplaintPriority>('Medium');
+  const [capaRequired, setCapaRequired] = useState(false);
+  
   useEffect(() => {
     fetchComplaints();
   }, []);
-
+  
   const fetchComplaints = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('complaints')
         .select('*')
         .order('reported_date', { ascending: false });
-
+      
       if (error) throw error;
-
-      const convertedComplaints: Complaint[] = (data || []).map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        category: item.category as ComplaintCategory,
-        status: item.status as ComplaintStatus,
-        priority: (item.priority || 'medium') as ComplaintPriority,
-        reportedDate: item.reported_date,
-        assignedTo: item.assigned_to,
-        createdBy: item.created_by,
-        createdDate: item.created_at,
-        updatedAt: item.updated_at,
-        resolutionDate: item.resolution_date,
-        customerName: item.customer_name,
-        customerContact: item.customer_contact,
-        productInvolved: item.product_involved,
-        lotNumber: item.lot_number,
-        capaRequired: item.capa_required || false,
-        capaId: item.capa_id,
-        source: 'customer'
-      }));
-
-      setComplaints(convertedComplaints);
+      
+      setComplaints(data || []);
     } catch (error) {
       console.error('Error fetching complaints:', error);
-      toast.error('Failed to load complaints');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch complaints',
+        variant: 'destructive',
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewComplaint({ ...newComplaint, [name]: value });
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setNewComplaint({ ...newComplaint, [name]: value });
-  };
-
-  const handleSubmit = async () => {
+  
+  const handleCreateComplaint = async () => {
     try {
-      if (!newComplaint.title || !newComplaint.description || !newComplaint.category) {
-        toast.error('Please fill all required fields');
-        return;
-      }
-
-      // Map the internal category enum to the database expected value
-      const dbCategory = categoryToDatabaseMapping[newComplaint.category as ComplaintCategory];
-
-      const complaintToSubmit = {
-        title: newComplaint.title,
-        description: newComplaint.description,
-        category: dbCategory, // Use the mapped database category
-        status: newComplaint.status,
-        priority: newComplaint.priority,
+      const newComplaint = {
+        title,
+        description,
+        category: category as string, // Ensure proper type conversion
+        status: 'New' as ComplaintStatus,
+        priority,
         reported_date: new Date().toISOString(),
-        created_by: 'current_user',
-        customer_name: newComplaint.customerName,
-        customer_contact: newComplaint.customerContact,
-        product_involved: newComplaint.productInvolved,
-        lot_number: newComplaint.lotNumber,
-        capa_required: false
+        created_by: 'admin', // Should be the current user in a real app
+        customer_name: customerName,
+        customer_contact: customerContact,
+        product_involved: productInvolved,
+        lot_number: lotNumber,
+        capa_required: capaRequired
       };
-
+      
       const { data, error } = await supabase
         .from('complaints')
-        .insert(complaintToSubmit)
-        .select();
-
+        .insert(newComplaint)
+        .select()
+        .single();
+      
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        const newDbComplaint = data[0] as any;
-        
-        const convertedComplaint: Complaint = {
-          id: newDbComplaint.id,
-          title: newDbComplaint.title,
-          description: newDbComplaint.description,
-          category: newDbComplaint.category as ComplaintCategory,
-          status: newDbComplaint.status as ComplaintStatus,
-          priority: (newDbComplaint.priority || 'medium') as ComplaintPriority,
-          reportedDate: newDbComplaint.reported_date,
-          assignedTo: newDbComplaint.assigned_to,
-          createdBy: newDbComplaint.created_by,
-          createdDate: newDbComplaint.created_at,
-          updatedAt: newDbComplaint.updated_at,
-          resolutionDate: newDbComplaint.resolution_date,
-          customerName: newDbComplaint.customer_name,
-          customerContact: newDbComplaint.customer_contact,
-          productInvolved: newDbComplaint.product_involved,
-          lotNumber: newDbComplaint.lot_number,
-          capaRequired: newDbComplaint.capa_required || false,
-          capaId: newDbComplaint.capa_id,
-          source: 'customer'
-        };
-        
-        setComplaints([convertedComplaint, ...complaints]);
-      }
-      
-      toast.success('Complaint submitted successfully');
-      setIsDialogOpen(false);
-      setNewComplaint({
-        title: '',
-        description: '',
-        category: 'quality',
-        status: 'new',
-        priority: 'medium',
-        customerName: '',
-        customerContact: '',
-        productInvolved: '',
-        lotNumber: ''
+      toast({
+        title: 'Success',
+        description: 'Complaint created successfully',
       });
+      
+      setIsCreateOpen(false);
+      fetchComplaints();
+      
+      // Reset form
+      resetForm();
     } catch (error) {
-      console.error('Error submitting complaint:', error);
-      toast.error('Failed to submit complaint');
+      console.error('Error creating complaint:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create complaint',
+        variant: 'destructive',
+      });
     }
   };
-
-  const getStatusBadgeColor = (status: ComplaintStatus) => {
+  
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setCustomerName('');
+    setCustomerContact('');
+    setProductInvolved('');
+    setLotNumber('');
+    setCategory('Product Quality');
+    setPriority('Medium');
+    setCapaRequired(false);
+  };
+  
+  const getStatusBadgeVariant = (status: ComplaintStatus) => {
     switch (status) {
-      case 'new':
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-      case 'in-progress':
-        return 'bg-amber-50 text-amber-800 border-amber-200';
-      case 'resolved':
-        return 'bg-green-50 text-green-800 border-green-200';
-      case 'closed':
-        return 'bg-gray-50 text-gray-800 border-gray-200';
+      case 'New':
+        return 'bg-blue-100 text-blue-700';
+      case 'Under Investigation':
+        return 'bg-amber-100 text-amber-700';
+      case 'Resolved':
+        return 'bg-green-100 text-green-700';
+      case 'Closed':
+        return 'bg-gray-100 text-gray-700';
       default:
-        return 'bg-gray-50 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-700';
     }
   };
-
-  const getCategoryLabel = (category: ComplaintCategory) => {
-    return categoryDisplayMap[category] || category;
+  
+  const getPriorityBadgeVariant = (priority: ComplaintPriority) => {
+    switch (priority) {
+      case 'Low':
+        return 'bg-green-100 text-green-700';
+      case 'Medium':
+        return 'bg-blue-100 text-blue-700';
+      case 'High':
+        return 'bg-amber-100 text-amber-700';
+      case 'Urgent':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
   };
-
+  
+  const categoryLabels: Record<ComplaintCategory, string> = {
+    'Product Quality': 'Product Quality',
+    'Foreign Material': 'Foreign Material',
+    'Packaging': 'Packaging',
+    'Labeling': 'Labeling',
+    'Customer Service': 'Customer Service',
+    'Other': 'Other'
+  };
+  
   return (
-    <div className="container mx-auto p-4">
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Complaint Management</CardTitle>
-              <CardDescription>
-                Track and manage customer complaints
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Complaint
+    <div className="min-h-screen bg-background">
+      <DashboardHeader 
+        title="Complaint Management"
+        subtitle="Track and manage customer complaints"
+      />
+      
+      <div className="container py-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Complaints</h2>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            Create Complaint
+          </Button>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>All Complaints</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="py-8 text-center">Loading complaints...</div>
+            ) : complaints.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">No complaints found</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsCreateOpen(true)}
+                >
+                  Create Your First Complaint
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Register New Complaint</DialogTitle>
-                  <DialogDescription>
-                    Enter the details of the customer complaint
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="title" className="text-right">
-                      Title*
-                    </Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      className="col-span-3"
-                      value={newComplaint.title}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="description" className="text-right">
-                      Description*
-                    </Label>
-                    <Input
-                      id="description"
-                      name="description"
-                      className="col-span-3"
-                      value={newComplaint.description}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="category" className="text-right">
-                      Category*
-                    </Label>
-                    <Select
-                      value={newComplaint.category}
-                      onValueChange={(value) => handleSelectChange('category', value)}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {complaintCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {getCategoryLabel(category)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="priority" className="text-right">
-                      Priority
-                    </Label>
-                    <Select
-                      value={newComplaint.priority}
-                      onValueChange={(value) => handleSelectChange('priority', value)}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {complaintPriorities.map((priority) => (
-                          <SelectItem key={priority} value={priority}>
-                            {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customerName" className="text-right">
-                      Customer Name
-                    </Label>
-                    <Input
-                      id="customerName"
-                      name="customerName"
-                      className="col-span-3"
-                      value={newComplaint.customerName}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customerContact" className="text-right">
-                      Customer Contact
-                    </Label>
-                    <Input
-                      id="customerContact"
-                      name="customerContact"
-                      className="col-span-3"
-                      value={newComplaint.customerContact}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="productInvolved" className="text-right">
-                      Product Involved
-                    </Label>
-                    <Input
-                      id="productInvolved"
-                      name="productInvolved"
-                      className="col-span-3"
-                      value={newComplaint.productInvolved}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="lotNumber" className="text-right">
-                      Lot Number
-                    </Label>
-                    <Input
-                      id="lotNumber"
-                      name="lotNumber"
-                      className="col-span-3"
-                      value={newComplaint.lotNumber}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleSubmit}>
-                    Submit Complaint
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-center py-4">Loading complaints...</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Reported Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Product</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {complaints.length === 0 ? (
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6">
-                      No complaints found
-                    </TableCell>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Reported Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  complaints.map((complaint) => (
+                </TableHeader>
+                <TableBody>
+                  {complaints.map((complaint) => (
                     <TableRow key={complaint.id}>
                       <TableCell className="font-medium">{complaint.title}</TableCell>
-                      <TableCell>{getCategoryLabel(complaint.category)}</TableCell>
+                      <TableCell>{complaint.category}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={getStatusBadgeColor(complaint.status)}
+                        <Badge className={getStatusBadgeVariant(complaint.status)}>
+                          {complaint.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getPriorityBadgeVariant(complaint.priority)}>
+                          {complaint.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{complaint.customer_name || 'N/A'}</TableCell>
+                      <TableCell>
+                        {new Date(complaint.reported_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/complaints/${complaint.id}`)}
                         >
-                          {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
-                        </Badge>
+                          View
+                        </Button>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {complaint.priority.charAt(0).toUpperCase() + complaint.priority.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(complaint.reportedDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{complaint.customerName || 'N/A'}</TableCell>
-                      <TableCell>{complaint.productInvolved || 'N/A'}</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Create Complaint Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Complaint</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Brief title of the complaint"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={category}
+                  onValueChange={(value) => setCategory(value as ComplaintCategory)}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Product Quality">Product Quality</SelectItem>
+                    <SelectItem value="Foreign Material">Foreign Material</SelectItem>
+                    <SelectItem value="Packaging">Packaging</SelectItem>
+                    <SelectItem value="Labeling">Labeling</SelectItem>
+                    <SelectItem value="Customer Service">Customer Service</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detailed description of the complaint"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Customer Name</Label>
+                <Input
+                  id="customerName"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Name of the customer"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="customerContact">Customer Contact</Label>
+                <Input
+                  id="customerContact"
+                  value={customerContact}
+                  onChange={(e) => setCustomerContact(e.target.value)}
+                  placeholder="Email or phone number"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="productInvolved">Product Involved</Label>
+                <Input
+                  id="productInvolved"
+                  value={productInvolved}
+                  onChange={(e) => setProductInvolved(e.target.value)}
+                  placeholder="Product name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="lotNumber">Lot Number</Label>
+                <Input
+                  id="lotNumber"
+                  value={lotNumber}
+                  onChange={(e) => setLotNumber(e.target.value)}
+                  placeholder="Lot/batch number"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={priority}
+                  onValueChange={(value) => setPriority(value as ComplaintPriority)}
+                >
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2 pt-8">
+                <Checkbox
+                  id="capaRequired"
+                  checked={capaRequired}
+                  onCheckedChange={(checked) => setCapaRequired(checked as boolean)}
+                />
+                <Label htmlFor="capaRequired">CAPA Required</Label>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateComplaint}>Create Complaint</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

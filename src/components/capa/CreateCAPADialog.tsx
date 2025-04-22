@@ -1,184 +1,173 @@
-import React, { useState, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { createCAPA } from '@/services/capaService';
-import { useAuth } from '@/hooks/useAuth';
-import { CAPASource, CAPAPriority, CAPAStatus } from '@/types/capa';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
+
+import React, { useState } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog";
+  DialogDescription
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Save, X, Loader2 } from 'lucide-react';
-
-interface InitialData {
-  title?: string;
-  description?: string;
-  source?: CAPASource;
-  sourceId?: string;
-  priority?: CAPAPriority;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { CAPASource, CAPAPriority } from '@/types/capa';
+import { createCAPA } from '@/services/capaService';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 
 interface CreateCAPADialogProps {
-  onCAPACreated: (capa: any) => void;
-  initialData?: InitialData;
-  children?: ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCAPACreated?: () => void;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
-  onCAPACreated,
-  initialData,
-  children
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
+  open, 
+  onOpenChange,
+  onCAPACreated 
 }) => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    title: initialData?.title || 'New CAPA',
-    description: initialData?.description || '',
-    source: initialData?.source || 'other' as CAPASource,
-    sourceId: initialData?.sourceId || '',
-    priority: initialData?.priority || 'medium' as CAPAPriority
-  });
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmitCAPA = async () => {
-    setLoading(true);
-    try {
-      const now = new Date().toISOString();
-      
-      const capaData = {
-        title: formData.title,
-        description: formData.description,
-        source: formData.source as CAPASource,
-        sourceId: formData.sourceId,
-        priority: formData.priority as CAPAPriority,
-        status: 'open' as CAPAStatus,
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedTo: user?.id || 'system',
-        createdBy: user?.id || 'system',
-        createdDate: now,
-        lastUpdated: now,
-        effectivenessVerified: false,
-        isFsma204Compliant: false
-      };
-      
-      const result = await createCAPA(capaData);
-      onCAPACreated(result);
+  
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [source, setSource] = useState<CAPASource>('audit');
+  const [priority, setPriority] = useState<CAPAPriority>('medium');
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [rootCause, setRootCause] = useState('');
+  const [correctiveAction, setCorrectiveAction] = useState('');
+  const [preventiveAction, setPreventiveAction] = useState('');
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !description || !source || !priority) {
       toast({
-        title: "CAPA Created",
-        description: "Your new CAPA has been successfully created",
+        title: "Missing required fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
       });
-      setOpen(false);
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      await createCAPA({
+        title,
+        description,
+        source,
+        priority,
+        rootCause,
+        correctiveAction,
+        preventiveAction,
+        dueDate: dueDate ? dueDate.toISOString() : undefined,
+      });
+      
+      toast({
+        title: "CAPA created",
+        description: "The CAPA has been created successfully",
+        // Fix the variant to use valid types
+        variant: "default"
+      });
+      
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setSource('audit');
+      setPriority('medium');
+      setDueDate(undefined);
+      setRootCause('');
+      setCorrectiveAction('');
+      setPreventiveAction('');
+      
+      // Close dialog and notify parent
+      onOpenChange(false);
+      if (onCAPACreated) {
+        onCAPACreated();
+      }
     } catch (error) {
       console.error('Error creating CAPA:', error);
       toast({
-        title: "Error Creating CAPA",
-        description: "There was a problem creating your CAPA. Please try again.",
-        variant: "destructive",
+        title: "Failed to create CAPA",
+        description: "An error occurred while creating the CAPA. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button className="bg-primary hover:bg-primary-dark text-white flex items-center gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Create CAPA
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-display text-foreground">Create CAPA</DialogTitle>
+          <DialogTitle>Create New CAPA</DialogTitle>
+          <DialogDescription>
+            Create a new Corrective and Preventive Action (CAPA) to address an issue.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
-          <p className="text-sm text-muted-foreground">
-            Create a Corrective and Preventive Action from {initialData?.source || 'scratch'}
-          </p>
-          
-          <div className="space-y-4">
+        
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-medium">
-                Title
-              </Label>
+              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="title"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-                placeholder="Enter CAPA title"
-                className="w-full"
+                placeholder="Brief title of the CAPA"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
-                Description
-              </Label>
+              <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
               <Textarea
                 id="description"
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Describe the issue and corrective action needed"
-                className="min-h-[120px] w-full"
+                placeholder="Detailed description of the issue"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                className="min-h-[80px]"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="source" className="text-sm font-medium">
-                  Source
-                </Label>
+                <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
                 <Select 
-                  value={formData.source} 
-                  onValueChange={(value) => handleChange('source', value)}
+                  value={source} 
+                  onValueChange={(value) => setSource(value as CAPASource)}
                 >
-                  <SelectTrigger id="source">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="audit">Audit</SelectItem>
-                    <SelectItem value="complaint">Complaint</SelectItem>
-                    <SelectItem value="non-conformance">Non-Conformance</SelectItem>
-                    <SelectItem value="incident">Incident</SelectItem>
+                    <SelectItem value="customer-complaint">Customer Complaint</SelectItem>
+                    <SelectItem value="internal-qc">Internal QC</SelectItem>
+                    <SelectItem value="supplier-issue">Supplier Issue</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="priority" className="text-sm font-medium">
-                  Priority
-                </Label>
+                <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
                 <Select 
-                  value={formData.priority} 
-                  onValueChange={(value) => handleChange('priority', value)}
+                  value={priority} 
+                  onValueChange={(value) => setPriority(value as CAPAPriority)}
                 >
-                  <SelectTrigger id="priority">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -192,46 +181,80 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="sourceId" className="text-sm font-medium">
-                Source Reference ID
-              </Label>
-              <Input
-                id="sourceId"
-                value={formData.sourceId}
-                onChange={(e) => handleChange('sourceId', e.target.value)}
-                placeholder="Enter reference ID (optional)"
-                className="w-full"
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, "PPP") : "Select due date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    initialFocus
+                    disabled={(date) => date < new Date()}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="rootCause">Root Cause</Label>
+              <Textarea
+                id="rootCause"
+                placeholder="Identified root cause of the issue"
+                value={rootCause}
+                onChange={(e) => setRootCause(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="correctiveAction">Corrective Action</Label>
+              <Textarea
+                id="correctiveAction"
+                placeholder="Action to correct the immediate issue"
+                value={correctiveAction}
+                onChange={(e) => setCorrectiveAction(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="preventiveAction">Preventive Action</Label>
+              <Textarea
+                id="preventiveAction"
+                placeholder="Action to prevent recurrence"
+                value={preventiveAction}
+                onChange={(e) => setPreventiveAction(e.target.value)}
+                className="min-h-[80px]"
               />
             </div>
           </div>
-        </div>
-        <DialogFooter className="flex justify-end space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setOpen(false)}
-            className="hover:bg-secondary flex items-center gap-2"
-          >
-            <X className="h-4 w-4" />
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitCAPA}
-            disabled={loading}
-            className="bg-primary hover:bg-primary-dark text-white flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Create CAPA
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create CAPA"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

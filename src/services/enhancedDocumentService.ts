@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentVersion, DocumentAccess } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
@@ -111,15 +110,23 @@ export const checkUserAccess = async (documentId: string, userId: string): Promi
     if (data) return true;
     
     // Check if document is public
-    const { data: docData, error: docError } = await supabase
-      .from('documents')
-      .select('is_public')
-      .eq('id', documentId)
-      .single();
+    // The 'is_public' field might not exist, so we'll handle that case
+    try {
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .select('*') // Don't specifically request is_public since it might not exist
+        .eq('id', documentId)
+        .single();
     
-    if (docError) throw docError;
-    
-    return docData?.is_public || false;
+      if (docError) throw docError;
+      
+      // If the document has an is_public property and it's true, return true
+      // Otherwise return false
+      return docData && 'is_public' in docData ? !!docData.is_public : false;
+    } catch (docError) {
+      console.error(`Error checking document public status ${documentId}:`, docError);
+      return false;
+    }
   } catch (error) {
     console.error(`Error checking access for document ${documentId}:`, error);
     return false;

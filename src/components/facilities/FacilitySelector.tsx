@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { getFacilities } from '@/services/facilityService';
+import { getFacilities, getFacilitiesByOrganization } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
 import { Loader2 } from 'lucide-react';
 
@@ -38,13 +38,12 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
         setLoading(true);
         setError(null);
         
-        // Get all facilities - updated to match the expected function signature
         let facilityData: Facility[] = [];
         if (organizationId) {
-          facilityData = await getFacilities();
-          // Filter by organization ID in the client side if needed
-          facilityData = facilityData.filter(f => f.organization_id === organizationId);
+          // Get facilities for a specific organization
+          facilityData = await getFacilitiesByOrganization(organizationId);
         } else {
+          // Get all facilities
           facilityData = await getFacilities();
         }
         

@@ -1,299 +1,291 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPASource, CAPAPriority, CAPAStatus, DbCAPAStatus, CAPAEffectivenessRating, mapStatusToDb, mapEffectivenessRatingToDb, mapDbStatusToInternal } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
 
 /**
- * Create a new CAPA record
+ * Convert database source records to CAPA objects
  */
-export async function createCAPA(capaData: Omit<CAPA, 'id'>): Promise<CAPA> {
+export const convertSourceToCAPA = async (source: string, sourceId: string, userId: string): Promise<CAPA | null> => {
   try {
-    // Convert status to database format
-    const dbStatus: DbCAPAStatus = mapStatusToDb(capaData.status);
+    // Identify the appropriate table based on the source
+    let tableName: string;
+    let sourceType: CAPASource;
     
-    // Map effectiveness rating to DB format if provided
-    let dbEffectivenessRating: string | undefined;
-    if (capaData.effectivenessRating) {
-      dbEffectivenessRating = mapEffectivenessRatingToDb(capaData.effectivenessRating);
+    switch (source) {
+      case 'audit':
+        tableName = 'audit_findings';
+        sourceType = 'audit';
+        break;
+      case 'complaint':
+        tableName = 'complaints';
+        sourceType = 'customer-complaint';
+        break;
+      case 'non-conformance':
+        tableName = 'non_conformances';
+        sourceType = 'internal-qc';
+        break;
+      default:
+        console.error(`Unsupported source type: ${source}`);
+        return null;
     }
     
-    // Prepare data for database insertion
-    const insertData: any = {
+    // Fetch the source record
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq('id', sourceId)
+      .single();
+    
+    if (error) {
+      console.error(`Error fetching ${source} with ID ${sourceId}:`, error);
+      return null;
+    }
+    
+    if (!data) {
+      console.error(`No ${source} found with ID ${sourceId}`);
+      return null;
+    }
+    
+    // Create a base CAPA object with default values
+    const capaBase: Partial<CAPA> = {
+      source: sourceType,
+      sourceId: sourceId,
+      createdBy: userId,
+      assignedTo: data.assigned_to || userId,
+    };
+    
+    // Source-specific mapping
+    let capaData: CAPA;
+    
+    if (tableName === 'audit_findings') {
+      // Map audit finding to CAPA
+      capaData = {
+        ...capaBase,
+        id: "", // Will be generated on insert
+        title: `CAPA for Audit Finding: ${data.description.substring(0, 50)}...`,
+        description: data.description,
+        status: "Open" as CAPAStatus,
+        priority: mapSeverityToPriority(data.severity),
+        rootCause: "",
+        correctiveAction: "",
+        preventiveAction: "",
+        dueDate: data.due_date,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        effectivenessCriteria: "",
+      };
+    } else if (tableName === 'complaints') {
+      // Map customer complaint to CAPA
+      capaData = {
+        ...capaBase,
+        id: "", // Will be generated on insert
+        title: data.title || `CAPA for Customer Complaint`,
+        description: data.description,
+        status: "Open" as CAPAStatus,
+        priority: mapComplaintPriorityToCapaPriority(data.priority),
+        rootCause: "",
+        correctiveAction: "",
+        preventiveAction: "",
+        dueDate: undefined,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        effectivenessCriteria: "",
+      };
+    } else if (tableName === 'non_conformances') {
+      // Map non-conformance to CAPA
+      capaData = {
+        ...capaBase,
+        id: "", // Will be generated on insert
+        title: data.title || `CAPA for Non-Conformance`,
+        description: data.description,
+        status: "Open" as CAPAStatus,
+        priority: mapNcRiskToPriority(data.risk_level),
+        rootCause: "",
+        correctiveAction: "",
+        preventiveAction: "",
+        dueDate: undefined,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        effectivenessCriteria: "",
+      };
+    } else {
+      console.error(`Unsupported table: ${tableName}`);
+      return null;
+    }
+    
+    return capaData;
+  } catch (error) {
+    console.error(`Error converting ${source} to CAPA:`, error);
+    return null;
+  }
+};
+
+/**
+ * Create a CAPA from a database source record
+ */
+export const createCapaFromSource = async (source: string, sourceId: string, userId: string): Promise<CAPA | null> => {
+  try {
+    // Convert source to CAPA
+    const capaData = await convertSourceToCAPA(source, sourceId, userId);
+    
+    if (!capaData) {
+      return null;
+    }
+    
+    // Map to database schema
+    const dbRecord = {
       title: capaData.title,
       description: capaData.description,
-      status: dbStatus,
+      status: capaData.status,
       priority: capaData.priority,
       source: capaData.source,
-      source_id: capaData.sourceId,
-      assigned_to: capaData.assignedTo,
-      department: capaData.department,
+      root_cause: capaData.rootCause,
+      corrective_action: capaData.correctiveAction,
+      preventive_action: capaData.preventiveAction,
       due_date: capaData.dueDate,
       created_by: capaData.createdBy,
-      created_date: capaData.createdDate,
-      last_updated: capaData.lastUpdated || new Date().toISOString(),
-      is_fsma204_compliant: capaData.isFsma204Compliant || false,
-      effectiveness_verified: capaData.effectivenessVerified || false
+      assigned_to: capaData.assignedTo,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      source_id: capaData.sourceId,
+      effectiveness_criteria: capaData.effectivenessCriteria,
+      fsma204_compliant: false,
     };
     
-    // Add optional fields if they exist
-    if (capaData.rootCause) insertData.root_cause = capaData.rootCause;
-    if (capaData.correctiveAction) insertData.corrective_action = capaData.correctiveAction;
-    if (capaData.preventiveAction) insertData.preventive_action = capaData.preventiveAction;
-    if (capaData.effectivenessCriteria) insertData.effectiveness_criteria = capaData.effectivenessCriteria;
-    if (capaData.completionDate) insertData.completion_date = capaData.completionDate;
-    if (capaData.verificationMethod) insertData.verification_method = capaData.verificationMethod;
-    if (capaData.verificationDate) insertData.verification_date = capaData.verificationDate;
-    if (capaData.verifiedBy) insertData.verified_by = capaData.verifiedBy;
-    if (dbEffectivenessRating) insertData.effectiveness_rating = dbEffectivenessRating;
-    if (capaData.sourceReference) insertData.source_reference = capaData.sourceReference;
-    if (capaData.relatedDocuments) insertData.related_documents = capaData.relatedDocuments;
-    if (capaData.relatedTraining) insertData.related_training = capaData.relatedTraining;
-
-    // Insert into database
+    // Insert CAPA record
     const { data, error } = await supabase
-      .from('capa_actions')  // Using capa_actions instead of capas
-      .insert(insertData)
-      .select('*')
+      .from('capa_actions')
+      .insert(dbRecord)
+      .select()
       .single();
-
+    
     if (error) {
-      console.error('Error creating CAPA:', error);
+      console.error('Error creating CAPA from source:', error);
       throw error;
     }
-
-    // Transform response to match CAPA interface
-    const newCapa: CAPA = {
+    
+    // Update the source record to link it to the new CAPA
+    await updateSourceWithCapaId(source, sourceId, data.id);
+    
+    // Map database record to frontend model
+    return {
       id: data.id,
       title: data.title,
       description: data.description,
-      status: mapDbStatusToInternal(data.status as DbCAPAStatus),
+      status: data.status as CAPAStatus,
       priority: data.priority as CAPAPriority,
       source: data.source as CAPASource,
-      sourceId: data.source_id,
-      assignedTo: data.assigned_to,
-      department: data.department,
-      dueDate: data.due_date,
       rootCause: data.root_cause,
       correctiveAction: data.corrective_action,
       preventiveAction: data.preventive_action,
-      effectivenessCriteria: data.effectiveness_criteria,
-      completionDate: data.completion_date,
-      createdBy: data.created_by,
-      createdDate: data.created_date,
-      lastUpdated: data.last_updated,
-      isFsma204Compliant: data.is_fsma204_compliant,
-      verificationMethod: data.verification_method,
-      verificationDate: data.verification_date,
-      verifiedBy: data.verified_by,
-      effectivenessVerified: data.effectiveness_verified,
-      effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
-      sourceReference: data.source_reference,
-      relatedDocuments: data.related_documents,
-      relatedTraining: data.related_training
-    };
-
-    return newCapa;
-  } catch (error) {
-    console.error('Error in createCAPA:', error);
-    throw error;
-  }
-}
-
-/**
- * Update a CAPA record
- */
-export async function updateCAPA(id: string, capaData: Partial<CAPA>): Promise<CAPA> {
-  try {
-    // Convert status to database format if provided
-    let dbStatus: DbCAPAStatus | undefined;
-    if (capaData.status) {
-      dbStatus = mapStatusToDb(capaData.status);
-    }
-
-    // Map effectiveness rating to DB format if provided
-    let dbEffectivenessRating: string | undefined;
-    if (capaData.effectivenessRating) {
-      dbEffectivenessRating = mapEffectivenessRatingToDb(capaData.effectivenessRating);
-    }
-
-    // Prepare data for database update
-    const updateData: any = {
-      ...capaData,
-      status: dbStatus,
-      effectiveness_rating: dbEffectivenessRating,
-      last_updated: new Date().toISOString()
-    };
-
-    // Remove fields that should not be directly updated
-    delete updateData.id;
-    delete updateData.created_date;
-    delete updateData.lastUpdated; // Use last_updated instead
-    delete updateData.effectivenessRating; // Use effectiveness_rating instead
-    delete updateData.status; // Use the mapped status
-    
-    // Convert field names to snake_case for database
-    if (updateData.sourceId !== undefined) {
-      updateData.source_id = updateData.sourceId;
-      delete updateData.sourceId;
-    }
-    
-    if (updateData.assignedTo !== undefined) {
-      updateData.assigned_to = updateData.assignedTo;
-      delete updateData.assignedTo;
-    }
-    
-    if (updateData.dueDate !== undefined) {
-      updateData.due_date = updateData.dueDate;
-      delete updateData.dueDate;
-    }
-    
-    if (updateData.rootCause !== undefined) {
-      updateData.root_cause = updateData.rootCause;
-      delete updateData.rootCause;
-    }
-    
-    if (updateData.correctiveAction !== undefined) {
-      updateData.corrective_action = updateData.correctiveAction;
-      delete updateData.correctiveAction;
-    }
-    
-    if (updateData.preventiveAction !== undefined) {
-      updateData.preventive_action = updateData.preventiveAction;
-      delete updateData.preventiveAction;
-    }
-    
-    if (updateData.effectivenessCriteria !== undefined) {
-      updateData.effectiveness_criteria = updateData.effectivenessCriteria;
-      delete updateData.effectivenessCriteria;
-    }
-    
-    if (updateData.completionDate !== undefined) {
-      updateData.completion_date = updateData.completionDate;
-      delete updateData.completionDate;
-    }
-    
-    if (updateData.createdBy !== undefined) {
-      updateData.created_by = updateData.createdBy;
-      delete updateData.createdBy;
-    }
-    
-    if (updateData.createdDate !== undefined) {
-      updateData.created_date = updateData.createdDate;
-      delete updateData.createdDate;
-    }
-    
-    if (updateData.isFsma204Compliant !== undefined) {
-      updateData.is_fsma204_compliant = updateData.isFsma204Compliant;
-      delete updateData.isFsma204Compliant;
-    }
-    
-    if (updateData.verificationMethod !== undefined) {
-      updateData.verification_method = updateData.verificationMethod;
-      delete updateData.verificationMethod;
-    }
-    
-    if (updateData.verificationDate !== undefined) {
-      updateData.verification_date = updateData.verificationDate;
-      delete updateData.verificationDate;
-    }
-    
-    if (updateData.verifiedBy !== undefined) {
-      updateData.verified_by = updateData.verifiedBy;
-      delete updateData.verifiedBy;
-    }
-    
-    if (updateData.effectivenessVerified !== undefined) {
-      updateData.effectiveness_verified = updateData.effectivenessVerified;
-      delete updateData.effectivenessVerified;
-    }
-    
-    if (updateData.sourceReference !== undefined) {
-      updateData.source_reference = updateData.sourceReference;
-      delete updateData.sourceReference;
-    }
-    
-    if (updateData.relatedDocuments !== undefined) {
-      updateData.related_documents = updateData.relatedDocuments;
-      delete updateData.relatedDocuments;
-    }
-    
-    if (updateData.relatedTraining !== undefined) {
-      updateData.related_training = updateData.relatedTraining;
-      delete updateData.relatedTraining;
-    }
-
-    // Perform the update
-    const { data, error } = await supabase
-      .from('capa_actions')  // Using capa_actions instead of capas
-      .update(updateData)
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error updating CAPA:', error);
-      throw error;
-    }
-
-    // Transform the response to match the CAPA interface
-    const updatedCapa: CAPA = {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      status: mapDbStatusToInternal(data.status as DbCAPAStatus),
-      priority: data.priority as CAPAPriority,
-      source: data.source as CAPASource,
-      sourceId: data.source_id,
-      assignedTo: data.assigned_to,
-      department: data.department,
       dueDate: data.due_date,
-      rootCause: data.root_cause,
-      correctiveAction: data.corrective_action,
-      preventiveAction: data.preventive_action,
-      effectivenessCriteria: data.effectiveness_criteria,
-      completionDate: data.completion_date,
+      assignedTo: data.assigned_to,
       createdBy: data.created_by,
-      createdDate: data.created_date,
-      lastUpdated: data.last_updated,
-      isFsma204Compliant: data.is_fsma204_compliant,
-      verificationMethod: data.verification_method,
-      verificationDate: data.verification_date,
-      verifiedBy: data.verified_by,
-      effectivenessVerified: data.effectiveness_verified,
-      effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
-      sourceReference: data.source_reference,
-      relatedDocuments: data.related_documents,
-      relatedTraining: data.related_training
+      createdAt: data.created_at,
+      lastUpdated: data.updated_at,
+      effectivenessCriteria: data.effectiveness_criteria,
+      sourceId: data.source_id
     };
-
-    return updatedCapa;
   } catch (error) {
-    console.error('Error in updateCAPA:', error);
-    throw error;
+    console.error(`Error creating CAPA from ${source} with ID ${sourceId}:`, error);
+    return null;
   }
-}
+};
 
 /**
- * Delete a CAPA record
+ * Update the source record with the ID of the newly created CAPA
  */
-export async function deleteCAPA(id: string): Promise<void> {
+const updateSourceWithCapaId = async (source: string, sourceId: string, capaId: string): Promise<boolean> => {
   try {
+    let tableName: string;
+    
+    switch (source) {
+      case 'audit':
+        tableName = 'audit_findings';
+        break;
+      case 'complaint':
+        tableName = 'complaints';
+        break;
+      case 'non-conformance':
+        tableName = 'non_conformances';
+        break;
+      default:
+        console.error(`Unsupported source type: ${source}`);
+        return false;
+    }
+    
     const { error } = await supabase
-      .from('capa_actions') // Using capa_actions instead of capas
-      .delete()
-      .eq('id', id);
-
+      .from(tableName)
+      .update({ capa_id: capaId })
+      .eq('id', sourceId);
+    
     if (error) {
-      console.error('Error deleting CAPA:', error);
-      throw error;
+      console.error(`Error updating ${source} with CAPA ID:`, error);
+      return false;
     }
+    
+    return true;
   } catch (error) {
-    console.error('Error in deleteCAPA:', error);
-    throw error;
+    console.error(`Error linking CAPA to ${source}:`, error);
+    return false;
   }
-}
+};
+
+/**
+ * Map severity to CAPA priority
+ */
+const mapSeverityToPriority = (severity: string): CAPAPriority => {
+  switch (severity) {
+    case 'Critical':
+      return 'critical';
+    case 'Major':
+      return 'high';
+    case 'Minor':
+      return 'medium';
+    case 'Observation':
+      return 'low';
+    default:
+      return 'medium';
+  }
+};
+
+/**
+ * Map complaint priority to CAPA priority
+ */
+const mapComplaintPriorityToCapaPriority = (priority: string): CAPAPriority => {
+  switch (priority) {
+    case 'High':
+      return 'high';
+    case 'Medium':
+      return 'medium';
+    case 'Low':
+      return 'low';
+    case 'Urgent':
+      return 'critical';
+    default:
+      return 'medium';
+  }
+};
+
+/**
+ * Map non-conformance risk level to CAPA priority
+ */
+const mapNcRiskToPriority = (riskLevel: string): CAPAPriority => {
+  switch (riskLevel) {
+    case 'High':
+      return 'high';
+    case 'Medium':
+      return 'medium';
+    case 'Low':
+      return 'low';
+    case 'Critical':
+      return 'critical';
+    default:
+      return 'medium';
+  }
+};
 
 export default {
-  createCAPA,
-  updateCAPA,
-  deleteCAPA
+  convertSourceToCAPA,
+  createCapaFromSource
 };

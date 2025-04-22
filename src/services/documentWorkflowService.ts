@@ -1,5 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Document } from '@/types/document';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Fetch all document workflows
@@ -185,6 +187,109 @@ export const completeWorkflow = async (instanceId: string) => {
   }
 };
 
+/**
+ * Generate notifications based on document status
+ */
+export const generateNotifications = (documents: Document[]) => {
+  const notifications = [];
+  const now = new Date();
+  
+  for (const doc of documents) {
+    // Check for documents pending approval
+    if (doc.status === 'Pending Approval') {
+      notifications.push({
+        id: uuidv4(),
+        documentId: doc.id,
+        documentTitle: doc.title,
+        type: 'approval_request',
+        message: `${doc.title} needs your approval`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        targetUserIds: doc.approvers || []
+      });
+    }
+    
+    // Check for expiring documents
+    if (doc.expiry_date) {
+      const expiryDate = new Date(doc.expiry_date);
+      const daysToExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysToExpiry <= 0) {
+        notifications.push({
+          id: uuidv4(),
+          documentId: doc.id,
+          documentTitle: doc.title,
+          type: 'document_expired',
+          message: `${doc.title} has expired`,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          targetUserIds: ['admin'] // Replace with actual admin user IDs
+        });
+      } else if (daysToExpiry <= 30) {
+        notifications.push({
+          id: uuidv4(),
+          documentId: doc.id,
+          documentTitle: doc.title,
+          type: 'expiry_reminder',
+          message: `${doc.title} will expire in ${daysToExpiry} days`,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          targetUserIds: ['admin'] // Replace with actual admin user IDs
+        });
+      }
+    }
+  }
+  
+  return notifications;
+};
+
+/**
+ * Submit a document for approval
+ */
+export const submitForApproval = (document: Document) => {
+  // Update document status to pending approval
+  const updatedDoc = {
+    ...document,
+    status: 'Pending Approval',
+    pending_since: new Date().toISOString()
+  };
+  
+  return updatedDoc;
+};
+
+/**
+ * Approve a document
+ */
+export const approveDocument = (document: Document, comment: string) => {
+  // Update document status based on the workflow step
+  // This is a simplified version; in a real app, you'd check the workflow step
+  const updatedDoc = {
+    ...document,
+    status: 'Approved',
+    last_action: `Approved with comment: ${comment}`,
+    updated_at: new Date().toISOString()
+  };
+  
+  return updatedDoc;
+};
+
+/**
+ * Reject a document
+ */
+export const rejectDocument = (document: Document, reason: string) => {
+  // Update document status to rejected
+  const updatedDoc = {
+    ...document,
+    status: 'Draft', // Return to draft status
+    rejection_reason: reason,
+    last_action: `Rejected: ${reason}`,
+    updated_at: new Date().toISOString()
+  };
+  
+  return updatedDoc;
+};
+
+// Export all functions as a default object
 const documentWorkflowService = {
   getDocumentWorkflows,
   getDocumentWorkflowById,
@@ -194,7 +299,11 @@ const documentWorkflowService = {
   createWorkflowInstance,
   getDocumentWorkflowInstance,
   advanceWorkflow,
-  completeWorkflow
+  completeWorkflow,
+  generateNotifications,
+  submitForApproval,
+  approveDocument,
+  rejectDocument
 };
 
 export default documentWorkflowService;
