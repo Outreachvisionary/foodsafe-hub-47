@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchCAPAs } from '@/services/capaService';
+import { getCAPAs } from '@/services/capaService';
 import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           })
         };
         
-        const data = await fetchCAPAs(fetchParams);
+        const data = await getCAPAs(fetchParams);
         setCapas(data);
       } catch (error) {
         console.error('Error loading CAPAs:', error);
@@ -130,7 +131,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
               <div className="flex-grow">
                 <div className="flex items-start gap-1">
                   <h3 className="font-medium">{capa.title}</h3>
-                  {new Date(capa.dueDate) < new Date() && capa.status !== 'closed' && capa.status !== 'verified' && (
+                  {capa.dueDate && new Date(capa.dueDate) < new Date() && capa.status !== 'closed' && capa.status !== 'verified' && (
                     <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
                   )}
                 </div>
@@ -161,10 +162,12 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                   </Badge>
                 </div>
                 
-                <div className="flex items-center text-xs text-gray-500">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Due: {format(new Date(capa.dueDate), 'MMM d, yyyy')}
-                </div>
+                {capa.dueDate && (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Due: {format(new Date(capa.dueDate), 'MMM d, yyyy')}
+                  </div>
+                )}
                 
                 <Button 
                   variant="ghost" 

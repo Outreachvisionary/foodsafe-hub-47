@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -21,16 +21,16 @@ export const createCAPA = async (data: Omit<CAPA, 'id' | 'status' | 'createdAt' 
       status: 'Open' as CAPAStatus,
       priority: data.priority,
       source: data.source,
-      root_cause: data.rootCause,
-      corrective_action: data.correctiveAction,
-      preventive_action: data.preventiveAction,
+      root_cause: data.rootCause || '',
+      corrective_action: data.correctiveAction || '',
+      preventive_action: data.preventiveAction || '',
       due_date: data.dueDate,
-      created_by: 'system', // This should be the current user ID in a real app
+      created_by: data.createdBy || 'system', // This should be the current user ID in a real app
       created_at: now,
       updated_at: now,
       assigned_to: data.assignedTo || 'unassigned',
-      effectiveness_criteria: data.effectivenessCriteria,
-      source_id: data.sourceId
+      effectiveness_criteria: data.effectivenessCriteria || '',
+      source_id: data.sourceId || null
     };
 
     const { data: insertedData, error } = await supabase
@@ -70,12 +70,35 @@ export const createCAPA = async (data: Omit<CAPA, 'id' | 'status' | 'createdAt' 
  * Get all CAPAs
  * @returns Array of CAPA items
  */
-export const getCAPAs = async (): Promise<CAPA[]> => {
+export const getCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('capa_actions')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
+    
+    // Apply filters if provided
+    if (params) {
+      if (params.status) {
+        query = query.eq('status', params.status);
+      }
+      if (params.priority) {
+        query = query.eq('priority', params.priority);
+      }
+      if (params.source) {
+        query = query.eq('source', params.source);
+      }
+      if (params.searchQuery) {
+        query = query.or(`title.ilike.%${params.searchQuery}%,description.ilike.%${params.searchQuery}%`);
+      }
+      if (params.dueDate) {
+        query = query.lte('due_date', params.dueDate);
+      }
+    }
+    
+    // Order by creation date
+    query = query.order('created_at', { ascending: false });
+    
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -100,6 +123,75 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
     throw error;
+  }
+};
+
+// Add the alias for compatibility with existing code
+export const fetchCAPAs = getCAPAs;
+
+/**
+ * Get potential CAPAs from various sources (audits, complaints, etc.)
+ * @returns Array of potential CAPA items
+ */
+export const getPotentialCAPAs = async (): Promise<any[]> => {
+  try {
+    // Fetch critical audit findings without CAPAs
+    const { data: auditFindings, error: auditError } = await supabase
+      .from('audit_findings')
+      .select('*')
+      .eq('severity', 'Critical')
+      .is('capa_id', null)
+      .limit(5);
+    
+    if (auditError) throw auditError;
+
+    // Fetch serious complaints without CAPAs
+    const { data: complaints, error: complaintError } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('status', 'New')
+      .is('capa_id', null)
+      .limit(5);
+    
+    if (complaintError) throw complaintError;
+
+    // Fetch high-risk non-conformances without CAPAs
+    const { data: nonConformances, error: ncError } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .eq('risk_level', 'high')
+      .is('capa_id', null)
+      .limit(5);
+    
+    if (ncError) throw ncError;
+
+    // Combine all potential sources
+    const potentialCAPAs = [
+      ...(auditFindings || []).map(item => ({
+        ...item,
+        source: 'audit',
+        title: `Critical Audit Finding: ${item.description.substring(0, 50)}...`,
+        suggestion: 'This critical audit finding requires corrective action',
+        priority: 'critical'
+      })),
+      ...(complaints || []).map(item => ({
+        ...item,
+        source: 'complaint',
+        suggestion: 'This customer complaint should be addressed with a corrective action',
+        priority: item.priority || 'high'
+      })),
+      ...(nonConformances || []).map(item => ({
+        ...item,
+        source: 'non-conformance',
+        suggestion: 'This high-risk non-conformance requires a CAPA',
+        priority: 'high'
+      }))
+    ];
+
+    return potentialCAPAs;
+  } catch (error) {
+    console.error('Error fetching potential CAPAs:', error);
+    return [];
   }
 };
 
@@ -231,7 +323,9 @@ export const deleteCAPA = async (id: string): Promise<boolean> => {
 export default {
   createCAPA,
   getCAPAs,
+  fetchCAPAs,
   getCAPAById,
   updateCAPA,
-  deleteCAPA
+  deleteCAPA,
+  getPotentialCAPAs
 };

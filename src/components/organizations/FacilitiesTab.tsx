@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Building2 } from 'lucide-react';
-import { getFacilitiesByOrganization } from '@/services/facilityService';
+import { getFacilities } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
 
 interface FacilitiesTabProps {
@@ -21,8 +21,13 @@ const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
       try {
         setLoading(true);
         
-        // Get facilities for this organization
-        const orgFacilities = await getFacilitiesByOrganization(organizationId);
+        // Get all facilities
+        const allFacilities = await getFacilities();
+        
+        // Filter facilities by organization ID
+        const orgFacilities = allFacilities.filter(facility => 
+          facility.organization_id === organizationId
+        );
         
         setFacilities(orgFacilities);
       } catch (error) {

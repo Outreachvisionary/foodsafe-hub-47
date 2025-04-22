@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -280,11 +279,7 @@ const AutomatedCAPAGenerator: React.FC<AutomatedCAPAGeneratorProps> = ({ onCAPAC
           </p>
         </div>
         
-        <CreateCAPADialog onCAPACreated={onCAPACreated}>
-          <Button>
-            Create Manual CAPA
-          </Button>
-        </CreateCAPADialog>
+        <CreateCAPADialog onCAPACreated={onCAPACreated} />
       </CardFooter>
     </Card>
   );

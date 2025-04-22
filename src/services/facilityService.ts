@@ -110,9 +110,9 @@ export const getFacilityById = async (id: string): Promise<Facility | null> => {
  */
 export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
   try {
-    // Use the fetchFacilities helper passing the organizationId
-    const facilities = await fetchFacilitiesFromSupabase(organizationId);
-    return facilities;
+    // Get all facilities, then filter by organization ID
+    const facilities = await getFacilities();
+    return facilities.filter(facility => facility.organization_id === organizationId);
   } catch (error) {
     console.error(`Error fetching facilities for organization ${organizationId}:`, error);
     return [];

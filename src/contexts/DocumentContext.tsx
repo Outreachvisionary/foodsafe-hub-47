@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Document, DocumentNotification, Folder } from '@/types/document';
+import { Document, DocumentNotification, Folder, DocumentStatus } from '@/types/document';
 import documentService from '@/services/documentService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -175,9 +175,16 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedDoc = documentWorkflowService.submitForApproval(document);
       await documentService.updateDocument(document.id, updatedDoc);
       
+      // Convert updatedDoc to match Document type before updating state
+      const typedUpdatedDoc: Document = {
+        ...document,
+        status: updatedDoc.status as DocumentStatus,
+        pending_since: updatedDoc.pending_since
+      };
+      
       // Update documents list
       setDocuments(docs => 
-        docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
+        docs.map(doc => doc.id === document.id ? typedUpdatedDoc : doc)
       );
       
       // Add a notification for the approval request
@@ -212,9 +219,17 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedDoc = documentWorkflowService.approveDocument(document, comment);
       await documentService.updateDocument(document.id, updatedDoc);
       
+      // Convert updatedDoc to match Document type before updating state
+      const typedUpdatedDoc: Document = {
+        ...document,
+        status: updatedDoc.status as DocumentStatus,
+        last_action: updatedDoc.last_action,
+        updated_at: updatedDoc.updated_at
+      };
+      
       // Update documents list
       setDocuments(docs => 
-        docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
+        docs.map(doc => doc.id === document.id ? typedUpdatedDoc : doc)
       );
       
       // Add a notification for the approval
@@ -250,9 +265,18 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedDoc = documentWorkflowService.rejectDocument(document, reason);
       await documentService.updateDocument(document.id, updatedDoc);
       
+      // Convert updatedDoc to match Document type before updating state
+      const typedUpdatedDoc: Document = {
+        ...document,
+        status: updatedDoc.status as DocumentStatus,
+        rejection_reason: updatedDoc.rejection_reason,
+        last_action: updatedDoc.last_action,
+        updated_at: updatedDoc.updated_at
+      };
+      
       // Update documents list
       setDocuments(docs => 
-        docs.map(doc => doc.id === document.id ? {...doc, ...updatedDoc} : doc)
+        docs.map(doc => doc.id === document.id ? typedUpdatedDoc : doc)
       );
       
       // Add a notification for the rejection

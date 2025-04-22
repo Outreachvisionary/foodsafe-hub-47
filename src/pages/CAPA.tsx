@@ -25,6 +25,7 @@ const CAPA = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [showAutomation, setShowAutomation] = useState(false);
+  const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
   
   const { toast } = useToast();
 
@@ -118,10 +119,10 @@ const CAPA = () => {
               <SelectContent>
                 <SelectItem value="all">All Sources</SelectItem>
                 <SelectItem value="audit">Audit</SelectItem>
-                <SelectItem value="haccp">HACCP</SelectItem>
-                <SelectItem value="supplier">Supplier</SelectItem>
-                <SelectItem value="complaint">Complaint</SelectItem>
-                <SelectItem value="traceability">Traceability</SelectItem>
+                <SelectItem value="customer-complaint">Customer Complaint</SelectItem>
+                <SelectItem value="internal-qc">Internal QC</SelectItem>
+                <SelectItem value="supplier-issue">Supplier Issue</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
             
@@ -155,7 +156,14 @@ const CAPA = () => {
               Auto-Detected Issues
             </Button>
             
-            <CreateCAPADialog onCAPACreated={handleCAPACreated} />
+            <Button onClick={() => setCreateCAPADialogOpen(true)}>
+              Create CAPA
+            </Button>
+            <CreateCAPADialog 
+              open={createCAPADialogOpen} 
+              onOpenChange={setCreateCAPADialogOpen} 
+              onCAPACreated={handleCAPACreated} 
+            />
           </div>
         </div>
         

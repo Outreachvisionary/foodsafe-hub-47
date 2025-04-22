@@ -6,14 +6,15 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogFooter,
-  DialogDescription
+  DialogDescription,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { CAPASource, CAPAPriority } from '@/types/capa';
 import { createCAPA } from '@/services/capaService';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,18 +24,21 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
 interface CreateCAPADialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCAPACreated?: () => void;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCAPACreated?: (data: any) => void;
 }
 
 const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
-  open, 
-  onOpenChange,
+  children,
+  open: controlledOpen, 
+  onOpenChange: setControlledOpen,
   onCAPACreated 
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -45,6 +49,24 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [rootCause, setRootCause] = useState('');
   const [correctiveAction, setCorrectiveAction] = useState('');
   const [preventiveAction, setPreventiveAction] = useState('');
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (setControlledOpen) {
+      setControlledOpen(newOpen);
+    }
+  };
+  
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setSource('audit');
+    setPriority('medium');
+    setDueDate(undefined);
+    setRootCause('');
+    setCorrectiveAction('');
+    setPreventiveAction('');
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +83,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     setLoading(true);
     
     try {
-      await createCAPA({
+      const capaData = await createCAPA({
         title,
         description,
         source,
@@ -70,29 +92,23 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         correctiveAction,
         preventiveAction,
         dueDate: dueDate ? dueDate.toISOString() : undefined,
+        createdBy: 'system', // This should be the current user ID in a real app
+        assignedTo: 'unassigned',
       });
       
       toast({
         title: "CAPA created",
         description: "The CAPA has been created successfully",
-        // Fix the variant to use valid types
         variant: "default"
       });
       
       // Reset form
-      setTitle('');
-      setDescription('');
-      setSource('audit');
-      setPriority('medium');
-      setDueDate(undefined);
-      setRootCause('');
-      setCorrectiveAction('');
-      setPreventiveAction('');
+      resetForm();
       
       // Close dialog and notify parent
-      onOpenChange(false);
+      handleOpenChange(false);
       if (onCAPACreated) {
-        onCAPACreated();
+        onCAPACreated(capaData);
       }
     } catch (error) {
       console.error('Error creating CAPA:', error);
@@ -106,8 +122,13 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     }
   };
   
+  const isControlled = controlledOpen !== undefined;
+  const dialogOpen = isControlled ? controlledOpen : open;
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+      
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New CAPA</DialogTitle>
@@ -245,7 +266,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={loading}
             >
               Cancel

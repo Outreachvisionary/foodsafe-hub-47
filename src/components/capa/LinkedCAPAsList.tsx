@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader, AlertCircle, ClipboardList, ArrowUpRight } from 'lucide-react';
 import { CAPA, CAPASource } from '@/types/capa';
-import { fetchCAPAs } from '@/services/capaService';
+import { getCAPAs } from '@/services/capaService';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -33,12 +34,30 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         setLoading(true);
         // Fetch CAPAs linked to this source
         // For now, we'll filter on the frontend since we don't have a direct sourceId filter
-        const allCapas = await fetchCAPAs();
+        const allCapas = await getCAPAs();
+        
+        // Map source type to CAPA source
+        let capaSourceType: string;
+        switch (sourceType) {
+          case 'complaint':
+            capaSourceType = 'customer-complaint';
+            break;
+          case 'nonconformance':
+            capaSourceType = 'internal-qc';
+            break;
+          case 'audit':
+            capaSourceType = 'audit';
+            break;
+          default:
+            capaSourceType = sourceType;
+        }
+        
         // Match by sourceId and sourceType
         const filtered = allCapas.filter(capa => 
           capa.sourceId === sourceId && 
-          capa.source === sourceType as CAPASource
+          capa.source === capaSourceType
         );
+        
         setLinkedCAPAs(filtered);
       } catch (err) {
         console.error('Error loading linked CAPAs:', err);
@@ -149,7 +168,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
                 
                 <div className="flex justify-between items-center mt-3">
                   <div className="text-xs text-gray-500">
-                    Created {formatDistanceToNow(new Date(capa.createdDate), { addSuffix: true })}
+                    Created {formatDistanceToNow(new Date(capa.createdAt), { addSuffix: true })}
                   </div>
                   <Button 
                     variant="ghost" 
