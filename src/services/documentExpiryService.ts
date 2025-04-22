@@ -1,38 +1,111 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Document } from '@/types/document';
 
-// This is a fix for the document_notifications table issue
-// The table doesn't exist according to errors, so we'll implement a stub function
+interface DocumentNotificationData {
+  document_id: string;
+  recipient_name: string; 
+  recipient_email: string;
+  document_title: string;
+  expiry_date: string;
+  days_until_expiry: number;
+  notification_type: 'expiry_warning' | 'expired';
+}
 
+/**
+ * Check documents for upcoming expiration and send notifications
+ */
 export const sendExpiryNotifications = async () => {
   try {
-    // Since the document_notifications table doesn't exist, we'll log a message
-    // and return an empty array
-    console.warn('The document_notifications table does not exist in the database.');
-    console.info('Please create the table before using this functionality.');
+    // Get documents that are expiring soon or already expired
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
     
-    // For now, we'll just return an empty array to avoid errors
-    return [];
+    const { data: documents, error } = await supabase
+      .from('documents')
+      .select('*')
+      .lt('expiry_date', thirtyDaysFromNow.toISOString())
+      .gt('expiry_date', new Date().toISOString());
     
-    /* 
-    // This is the code that would work if the table existed:
-    const { data, error } = await supabase
-      .from('document_notifications')
-      .insert([
-        {
-          recipient_name: 'User Name',
-          recipient_email: 'user@example.com',
-          ...other fields
-        }
-      ]);
-      
     if (error) throw error;
-    return data || [];
-    */
+    
+    if (!documents || documents.length === 0) {
+      console.log('No documents expiring soon');
+      return [];
+    }
+    
+    console.log(`Found ${documents.length} documents expiring soon`);
+    
+    // For each document, create a notification record
+    const notifications: DocumentNotificationData[] = [];
+    
+    for (const document of documents) {
+      const expiryDate = new Date(document.expiry_date);
+      const currentDate = new Date();
+      const daysUntilExpiry = Math.floor((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Get document approvers or owner to notify
+      const recipients = document.approvers || [document.created_by];
+      
+      for (const recipient of recipients) {
+        notifications.push({
+          document_id: document.id,
+          recipient_name: recipient,
+          recipient_email: recipient, // In a real implementation, you would get the email from the user profile
+          document_title: document.title,
+          expiry_date: document.expiry_date,
+          days_until_expiry: daysUntilExpiry,
+          notification_type: 'expiry_warning'
+        });
+      }
+    }
+    
+    // In a real implementation, you would insert these notifications into a database table
+    // and send emails. For now, we'll just return them.
+    console.log(`Created ${notifications.length} notifications`);
+    return notifications;
   } catch (error) {
     console.error('Error sending document expiry notifications:', error);
     throw error;
   }
 };
 
-// ... keep existing code (for the rest of the file)
+/**
+ * Get documents that will expire within a specified number of days
+ */
+export const getDocumentsExpiringWithinDays = async (days: number = 30): Promise<Document[]> => {
+  try {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + days);
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .lt('expiry_date', targetDate.toISOString())
+      .gt('expiry_date', new Date().toISOString());
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error(`Error getting documents expiring within ${days} days:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get expired documents
+ */
+export const getExpiredDocuments = async (): Promise<Document[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .lt('expiry_date', new Date().toISOString());
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error getting expired documents:', error);
+    throw error;
+  }
+};

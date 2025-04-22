@@ -1,54 +1,40 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PencilLine, Save, X } from 'lucide-react';
-import { DocumentComment } from '@/types/document-comment';
-import { useDocumentService } from '@/hooks/useDocumentService';
-import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { supabase } from '@/integrations/supabase/client';
+import { Send, Trash2, Edit, Save } from 'lucide-react';
+import { DocumentComment } from '@/types/database';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/contexts/UserContext';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import { format } from 'date-fns';
 
 interface DocumentCommentsProps {
   documentId: string;
 }
 
-const DocumentComments = ({ documentId }: DocumentCommentsProps) => {
+const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
   const [comments, setComments] = useState<DocumentComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editedContent, setEditedContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
   const { toast } = useToast();
+  const { user } = useUser();
   const documentService = useDocumentService();
-  
+
   useEffect(() => {
-    fetchComments();
-    fetchCurrentUser();
+    loadComments();
   }, [documentId]);
-  
-  const fetchCurrentUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUser(user);
-      }
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-    }
-  };
-  
-  const fetchComments = async () => {
+
+  const loadComments = async () => {
     setIsLoading(true);
     try {
-      const fetchedComments = await documentService.getDocumentComments(documentId);
-      setComments(fetchedComments);
+      const loadedComments = await documentService.getDocumentComments(documentId);
+      setComments(loadedComments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error('Error loading comments:', error);
       toast({
         title: 'Error',
         description: 'Failed to load comments',
@@ -58,24 +44,34 @@ const DocumentComments = ({ documentId }: DocumentCommentsProps) => {
       setIsLoading(false);
     }
   };
-  
-  const handleSubmitComment = async () => {
-    if (!newComment.trim() || !currentUser) return;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
     
-    setIsSubmitting(true);
     try {
-      const comment = await documentService.createDocumentComment({
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to comment',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      await documentService.createDocumentComment({
         document_id: documentId,
-        user_id: currentUser.id,
-        user_name: currentUser.email || 'User',
-        content: newComment.trim(),
+        user_id: user.id,
+        user_name: user.full_name || user.email || 'Anonymous',
+        content: newComment
       });
       
-      setComments(prev => [comment, ...prev]);
       setNewComment('');
+      loadComments();
+      
       toast({
-        title: 'Comment Added',
-        description: 'Your comment has been added successfully',
+        title: 'Success',
+        description: 'Comment added successfully',
       });
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -84,36 +80,58 @@ const DocumentComments = ({ documentId }: DocumentCommentsProps) => {
         description: 'Failed to add comment',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
-  
-  const handleEditComment = (commentId: string, content: string) => {
-    setEditingCommentId(commentId);
-    setEditedContent(content);
+
+  const handleDelete = async (commentId: string) => {
+    if (confirm('Are you sure you want to delete this comment?')) {
+      try {
+        await documentService.deleteDocumentComment(commentId);
+        setComments(comments.filter(c => c.id !== commentId));
+        
+        toast({
+          title: 'Success',
+          description: 'Comment deleted successfully',
+        });
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete comment',
+          variant: 'destructive',
+        });
+      }
+    }
   };
-  
-  const handleSaveEdit = async (commentId: string) => {
-    if (!editedContent.trim()) return;
-    
+
+  const startEditing = (comment: DocumentComment) => {
+    setEditingId(comment.id);
+    setEditContent(comment.content);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditContent('');
+  };
+
+  const saveEdit = async (commentId: string) => {
     try {
       await documentService.updateDocumentComment(commentId, {
-        content: editedContent.trim(),
+        content: editContent
       });
       
-      setComments(prev => 
-        prev.map(comment => 
-          comment.id === commentId 
-            ? { ...comment, content: editedContent.trim(), updated_at: new Date().toISOString() }
-            : comment
-        )
-      );
+      setComments(comments.map(c => 
+        c.id === commentId 
+          ? { ...c, content: editContent, updated_at: new Date().toISOString() } 
+          : c
+      ));
       
-      setEditingCommentId(null);
+      setEditingId(null);
+      setEditContent('');
+      
       toast({
-        title: 'Comment Updated',
-        description: 'Your comment has been updated successfully',
+        title: 'Success',
+        description: 'Comment updated successfully',
       });
     } catch (error) {
       console.error('Error updating comment:', error);
@@ -124,143 +142,119 @@ const DocumentComments = ({ documentId }: DocumentCommentsProps) => {
       });
     }
   };
-  
-  const handleDeleteComment = async (commentId: string) => {
-    try {
-      await documentService.deleteDocumentComment(commentId);
-      
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
-      toast({
-        title: 'Comment Deleted',
-        description: 'Comment has been deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete comment',
-        variant: 'destructive',
-      });
-    }
+
+  const canEditOrDelete = (comment: DocumentComment) => {
+    if (!user) return false;
+    return user.id === comment.user_id || user.role === 'admin';
   };
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Loading comments...</span>
-      </div>
-    );
-  }
-  
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'PPP p');
+  };
+
   return (
     <div className="space-y-6">
-      {currentUser && (
-        <div className="flex gap-3 items-start">
-          <Avatar>
-            <AvatarFallback>{currentUser.email?.substring(0, 2).toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-2">
-            <Input
-              placeholder="Add a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="w-full"
-            />
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSubmitComment} 
-                disabled={!newComment.trim() || isSubmitting}
-                size="sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Posting...
-                  </>
-                ) : 'Post Comment'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <h3 className="text-lg font-medium">Comments</h3>
       
-      {comments.length === 0 ? (
-        <div className="text-center py-6 text-muted-foreground">
-          No comments yet. Be the first to comment!
-        </div>
+      {isLoading ? (
+        <div className="py-4 text-center text-muted-foreground">Loading comments...</div>
+      ) : comments.length === 0 ? (
+        <div className="py-4 text-center text-muted-foreground">No comments yet</div>
       ) : (
         <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="border rounded-lg p-4 space-y-2">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarFallback>{comment.user_name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{comment.user_name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {comment.created_at && formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                      {comment.updated_at && comment.updated_at !== comment.created_at && ' (edited)'}
-                    </div>
-                  </div>
-                </div>
+          {comments.map(comment => (
+            <div key={comment.id} className="bg-muted/30 p-3 rounded-md">
+              <div className="flex items-start gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>
+                    {comment.user_name?.substring(0, 2).toUpperCase() || 'UN'}
+                  </AvatarFallback>
+                </Avatar>
                 
-                {currentUser && currentUser.id === comment.user_id && (
-                  <div className="flex gap-2">
-                    {editingCommentId !== comment.id ? (
-                      <>
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <div>
+                      <span className="font-medium">{comment.user_name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {formatDate(comment.updated_at || comment.created_at)}
+                        {comment.updated_at && comment.updated_at !== comment.created_at && 
+                          ' (edited)'}
+                      </span>
+                    </div>
+                    
+                    {canEditOrDelete(comment) && (
+                      <div className="flex gap-2">
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => handleEditComment(comment.id, comment.content)}
+                          className="h-6 w-6" 
+                          onClick={() => startEditing(comment)}
                         >
-                          <PencilLine className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                         <Button 
                           variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDeleteComment(comment.id)}
+                          size="icon" 
+                          className="h-6 w-6 text-destructive hover:text-destructive" 
+                          onClick={() => handleDelete(comment.id)}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleSaveEdit(comment.id)}
-                        >
-                          <Save className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setEditingCommentId(null)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
+                      </div>
                     )}
                   </div>
-                )}
+                  
+                  {editingId === comment.id ? (
+                    <div className="mt-2 space-y-2">
+                      <Input
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={cancelEditing}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => saveEdit(comment.id)}
+                        >
+                          <Save className="h-3.5 w-3.5 mr-1" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm mt-1">{comment.content}</p>
+                  )}
+                </div>
               </div>
-              
-              {editingCommentId === comment.id ? (
-                <Input
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="w-full mt-2"
-                />
-              ) : (
-                <p className="text-sm">{comment.content}</p>
-              )}
             </div>
           ))}
         </div>
       )}
+      
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-4">
+        <Avatar className="h-8 w-8">
+          <AvatarFallback>
+            {user?.full_name?.substring(0, 2).toUpperCase() || 'U'}
+          </AvatarFallback>
+        </Avatar>
+        <Input
+          placeholder="Add a comment..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          className="flex-1"
+        />
+        <Button type="submit" size="sm" disabled={!newComment.trim()}>
+          <Send className="h-4 w-4 mr-1" />
+          Send
+        </Button>
+      </form>
     </div>
   );
 };
