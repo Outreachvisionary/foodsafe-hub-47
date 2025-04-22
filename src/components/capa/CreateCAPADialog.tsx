@@ -25,8 +25,8 @@ interface CreateCAPADialogProps {
   children?: ReactNode;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
-  onCAPACreated, 
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
+  onCAPACreated,
   initialData,
   children
 }) => {
@@ -69,46 +69,47 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button>
+          <Button className="bg-primary hover:bg-primary-dark text-white">
             Create CAPA
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create CAPA</DialogTitle>
+          <DialogTitle className="text-2xl font-display text-foreground">Create CAPA</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 p-4">
-          <p className="text-sm text-gray-500">
+        <div className="space-y-6 p-4">
+          <p className="text-sm text-muted-foreground">
             Create a Corrective and Preventive Action from {initialData?.source || 'scratch'}
           </p>
           
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Title</label>
-              <div className="border p-2 rounded-md bg-gray-50">
+              <label className="block text-sm font-medium mb-1 text-foreground">Title</label>
+              <div className="rounded-lg bg-card p-3 border shadow-sm">
                 {initialData?.title || 'New CAPA'}
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <div className="border p-2 rounded-md bg-gray-50 min-h-[60px]">
+              <label className="block text-sm font-medium mb-1 text-foreground">Description</label>
+              <div className="rounded-lg bg-card p-3 border shadow-sm min-h-[60px]">
                 {initialData?.description || 'No description provided'}
               </div>
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">
               <Button 
-                type="button" 
                 variant="outline" 
                 onClick={() => setOpen(false)}
+                className="hover:bg-secondary"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSubmitCAPA}
                 disabled={loading}
+                className="bg-primary hover:bg-primary-dark text-white"
               >
                 {loading ? 'Creating...' : 'Create CAPA'}
               </Button>
