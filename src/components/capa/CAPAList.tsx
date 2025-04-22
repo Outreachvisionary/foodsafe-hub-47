@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchCAPAs } from '@/services/capaService';
@@ -57,9 +56,9 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
         
         // Convert filter to fetch parameters
         const fetchParams: CAPAFetchParams = {
-          status: capaFilter.status as CAPAStatus,
-          priority: capaFilter.priority as CAPAPriority,
-          source: capaFilter.source as string,
+          status: capaFilter.status,
+          priority: capaFilter.priority,
+          source: capaFilter.source,
           searchQuery: capaFilter.searchTerm,
           // Convert dateRange if needed
           ...(capaFilter.dateRange && {

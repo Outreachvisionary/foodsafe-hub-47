@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -19,7 +18,6 @@ import LocationForm, { LocationData } from '@/components/location/LocationForm';
 import { validateZipcode } from '@/utils/locationUtils';
 import OrganizationSelector from '@/components/organizations/OrganizationSelector';
 
-// Create form schema using zod
 const facilityFormSchema = z.object({
   name: z.string().min(2, {
     message: "Facility name must be at least 2 characters.",
@@ -48,10 +46,11 @@ const FacilityManagement = () => {
   const isNewFacility = id === 'new' || !id;
   const [locationData, setLocationData] = useState<LocationData>({});
   const [zipcodeValid, setZipcodeValid] = useState<boolean>(true);
+  const [facility, setFacility] = useState<Facility | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   console.log('FacilityManagement rendered, id:', id, 'isNewFacility:', isNewFacility);
 
-  // Initialize form with default values
   const form = useForm<FacilityFormValues>({
     resolver: zodResolver(facilityFormSchema),
     defaultValues: {
@@ -70,14 +69,30 @@ const FacilityManagement = () => {
   });
 
   useEffect(() => {
-    if (!isNewFacility) {
-      loadFacilityData();
-    } else {
-      setLoading(false);
-    }
+    const loadFacility = async () => {
+      try {
+        setLoading(true);
+        if (!id) {
+          setError('No facility ID provided');
+          return;
+        }
+        
+        const facilityData = await getFacilityById(id);
+        setFacility(facilityData);
+        
+        // Load related data if necessary
+      } catch (error) {
+        console.error('Error loading facility:', error);
+        setError('Failed to load facility details');
+        toast.error('Error loading facility details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadFacility();
   }, [id]);
 
-  // Update form when location data changes
   useEffect(() => {
     if (locationData) {
       console.log('Updating form with location data:', locationData);
@@ -94,58 +109,6 @@ const FacilityManagement = () => {
       }
     }
   }, [locationData, form]);
-
-  const loadFacilityData = async () => {
-    try {
-      setLoading(true);
-      
-      if (!id || id === 'new') {
-        setLoading(false);
-        return;
-      }
-      
-      const facilityData = await fetchFacilityById(id);
-      console.log('Loaded facility data:', facilityData);
-      
-      // Update form values
-      form.reset({
-        name: facilityData.name,
-        description: facilityData.description || '',
-        address: facilityData.address || '',
-        contact_email: facilityData.contact_email || '',
-        contact_phone: facilityData.contact_phone || '',
-        status: facilityData.status as "active" | "inactive" | "pending",
-        organization_id: facilityData.organization_id,
-        country: facilityData.country || '',
-        state: facilityData.state || '',
-        city: facilityData.city || '',
-        zipcode: facilityData.zipcode || '',
-      });
-      
-      // Set location data
-      setLocationData({
-        address: facilityData.address,
-        country: facilityData.country,
-        countryCode: facilityData.location_data?.countryCode || '',
-        state: facilityData.state,
-        stateCode: facilityData.location_data?.stateCode || '',
-        city: facilityData.city,
-        zipcode: facilityData.zipcode,
-      });
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading facility data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load facility data',
-        variant: 'destructive',
-      });
-      setLoading(false);
-      // Navigate back if we can't load the data
-      navigate('/facilities');
-    }
-  };
 
   const handleLocationChange = (data: LocationData) => {
     console.log('Location data changed:', data);

@@ -12,8 +12,60 @@ export type CAPASource = 'audit' | 'complaint' | 'non-conformance' | 'incident' 
 // CAPA Effectiveness Rating
 export type CAPAEffectivenessRating = 'excellent' | 'good' | 'fair' | 'poor' | 'not-determined';
 
+// Extended effectiveness rating for components that need it
+export type ExtendedCAPAEffectivenessRating = CAPAEffectivenessRating | 'adequate' | 'ineffective';
+
 // Database-friendly CAPA effectiveness rating
 export type DbCAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective';
+
+// Interface for effectiveness metrics
+export interface CAPAEffectivenessMetrics {
+  score: number;
+  rootCauseEliminated?: boolean;
+  preventiveMeasuresImplemented?: boolean;
+  documentationComplete?: boolean;
+  recurrenceCheck?: string;
+  checkedDate?: string;
+  assessmentDate?: string;
+  notes?: string;
+  rating?: ExtendedCAPAEffectivenessRating;
+}
+
+// Interface for CAPA statistics
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  inProgressCount: number;
+  closedCount: number;
+  verifiedCount: number;
+  pendingVerificationCount: number;
+  overdueCount: number;
+  byStatus: Array<{ name: string; value: number }>;
+  byPriority: Array<{ name: string; value: number }>;
+  bySource: Array<{ name: string; value: number }>;
+  fsma204ComplianceRate?: number;
+  averageTimeToClose?: number;
+  averageClosureTime?: number;
+  effectivenessStats?: {
+    effective: number;
+    partiallyEffective: number;
+    ineffective: number;
+  };
+}
+
+// Filter interface for CAPA queries
+export interface CAPAFilter {
+  status?: CAPAStatus | CAPAStatus[];
+  priority?: CAPAPriority | CAPAPriority[];
+  source?: CAPASource | CAPASource[];
+  assignedTo?: string;
+  department?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+}
 
 // Mapping functions for database interactions
 export function mapStatusToDb(status: CAPAStatus): DbCAPAStatus {
@@ -60,6 +112,13 @@ export function mapDbEffectivenessRatingToInternal(dbRating: DbCAPAEffectiveness
   }
 }
 
+export interface SourceReference {
+  type: string;
+  url?: string;
+  title?: string;
+  date?: string;
+}
+
 export interface CAPA {
   id: string;
   title: string;
@@ -85,6 +144,22 @@ export interface CAPA {
   verifiedBy?: string;
   effectivenessVerified?: boolean;
   effectivenessRating?: CAPAEffectivenessRating;
+  sourceReference?: SourceReference;
+  relatedDocuments?: Array<{
+    id: string;
+    documentId: string;
+    title?: string;
+    type?: string;
+    documentType?: string;
+    addedAt: string;
+  }>;
+  relatedTraining?: Array<{
+    id: string;
+    trainingId: string;
+    title?: string;
+    type?: string;
+    addedAt: string;
+  }>;
 }
 
 export interface CAPAActivity {
@@ -100,6 +175,7 @@ export interface CAPAActivity {
 }
 
 export interface CAPAFetchParams {
+  id?: string;
   status?: CAPAStatus | CAPAStatus[];
   priority?: CAPAPriority | CAPAPriority[];
   source?: CAPASource | CAPASource[];
@@ -109,6 +185,8 @@ export interface CAPAFetchParams {
   to?: string;
   searchQuery?: string;
   limit?: number;
+  page?: number;
+  dueDate?: string;
 }
 
 export interface CAPAEffectivenessResult {
@@ -124,6 +202,3 @@ export interface CAPAEffectivenessResult {
   notes?: string;
   createdBy: string;
 }
-
-// Removed the castToCapaStatus and castToCapaPriority functions as they're not needed
-// and were causing errors

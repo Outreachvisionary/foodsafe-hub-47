@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
+import { CAPAEffectivenessRating, CAPAEffectivenessMetrics, ExtendedCAPAEffectivenessRating } from '@/types/capa';
 import { format, differenceInDays } from 'date-fns';
 
 interface CAPAEffectivenessMonitorProps {
@@ -21,7 +21,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   implementationDate,
   onEffectivenessUpdate
 }) => {
-  const [rating, setRating] = useState<CAPAEffectivenessRating>('good');
+  const [rating, setRating] = useState<ExtendedCAPAEffectivenessRating>('good');
   const [notes, setNotes] = useState('');
   
   // Calculate days since implementation
@@ -49,6 +49,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
       case 'ineffective':
         score = 0;
         break;
+      default:
+        score = 50;
     }
     
     onEffectivenessUpdate({
@@ -79,7 +81,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
             <h3 className="font-medium mb-3">Effectiveness Rating</h3>
             <RadioGroup 
               value={rating} 
-              onValueChange={(value) => setRating(value as CAPAEffectivenessRating)}
+              onValueChange={(value) => setRating(value as ExtendedCAPAEffectivenessRating)}
               className="space-y-3"
             >
               <div className="flex items-center space-x-2">

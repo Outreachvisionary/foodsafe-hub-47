@@ -1,6 +1,6 @@
 
 import { fetchCAPAs } from './capaFetchService';
-import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
+import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus, CAPAEffectivenessRating, ExtendedCAPAEffectivenessRating } from '@/types/capa';
 
 // Update the CAPA stats function to match the CAPAStats type
 export const fetchCAPAStats = async (): Promise<CAPAStats> => {
@@ -72,12 +72,12 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
         totalFSMACompliant++;
       }
 
-      // Calculate effectiveness stats
+      // Calculate effectiveness stats based on rating
       if (capa.effectivenessRating === 'excellent' || capa.effectivenessRating === 'good') {
         stats.effectivenessStats!.effective++;
-      } else if (capa.effectivenessRating === 'adequate') {
+      } else if (capa.effectivenessRating === 'fair') {
         stats.effectivenessStats!.partiallyEffective++;
-      } else if (capa.effectivenessRating === 'poor' || capa.effectivenessRating === 'ineffective') {
+      } else if (capa.effectivenessRating === 'poor' || capa.effectivenessRating === 'not-determined') {
         stats.effectivenessStats!.ineffective++;
       }
     });

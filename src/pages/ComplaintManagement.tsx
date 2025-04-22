@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import {
 } from '@/types/complaint';
 import { Plus } from 'lucide-react';
 
-// Define values for select inputs
 const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
 const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
 
@@ -55,7 +53,6 @@ const ComplaintManagement: React.FC = () => {
 
       if (error) throw error;
 
-      // Convert database schema to our complaint type
       const convertedComplaints: Complaint[] = (data || []).map((item: any) => ({
         id: item.id,
         title: item.title,
@@ -75,7 +72,7 @@ const ComplaintManagement: React.FC = () => {
         lotNumber: item.lot_number,
         capaRequired: item.capa_required || false,
         capaId: item.capa_id,
-        source: 'customer'  // Default value if not in DB
+        source: 'customer'
       }));
 
       setComplaints(convertedComplaints);
@@ -96,15 +93,26 @@ const ComplaintManagement: React.FC = () => {
     setNewComplaint({ ...newComplaint, [name]: value });
   };
 
+  const mapCategoryToDbFormat = (category: ComplaintCategory): string => {
+    const categoryMap: Record<ComplaintCategory, string> = {
+      'product-quality': 'Product Quality',
+      'foreign-material': 'Foreign Material',
+      'packaging': 'Packaging',
+      'labeling': 'Labeling',
+      'customer-service': 'Customer Service',
+      'other': 'Other'
+    };
+    
+    return categoryMap[category] || 'Other';
+  };
+
   const handleSubmit = async () => {
     try {
-      // Validate required fields
       if (!newComplaint.title || !newComplaint.description || !newComplaint.category) {
         toast.error('Please fill all required fields');
         return;
       }
 
-      // Map our Complaint type to the database schema
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
@@ -112,7 +120,7 @@ const ComplaintManagement: React.FC = () => {
         status: newComplaint.status,
         priority: newComplaint.priority,
         reported_date: new Date().toISOString(),
-        created_by: 'current_user', // This should be dynamic based on auth user
+        created_by: 'current_user',
         customer_name: newComplaint.customerName,
         customer_contact: newComplaint.customerContact,
         product_involved: newComplaint.productInvolved,
@@ -130,7 +138,6 @@ const ComplaintManagement: React.FC = () => {
       if (data && data.length > 0) {
         const newDbComplaint = data[0] as any;
         
-        // Convert back to our type
         const convertedComplaint: Complaint = {
           id: newDbComplaint.id,
           title: newDbComplaint.title,
@@ -150,7 +157,7 @@ const ComplaintManagement: React.FC = () => {
           lotNumber: newDbComplaint.lot_number,
           capaRequired: newDbComplaint.capa_required || false,
           capaId: newDbComplaint.capa_id,
-          source: 'customer'  // Default value
+          source: 'customer'
         };
         
         setComplaints([convertedComplaint, ...complaints]);

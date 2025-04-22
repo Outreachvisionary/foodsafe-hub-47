@@ -1,4 +1,3 @@
-
 import React, { useState, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { createCAPA } from '@/services/capaService';
@@ -35,7 +34,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // This would be a more elaborate form in a real implementation
   const handleSubmitCAPA = async () => {
     setLoading(true);
     try {
@@ -44,8 +42,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
       const capaData = {
         title: initialData?.title || 'New CAPA',
         description: initialData?.description || '',
-        source: initialData?.source || 'internal',
-        sourceId: initialData?.sourceId || null,
+        source: (initialData?.source as CAPASource) || 'other',
+        sourceId: initialData?.sourceId || '',
         priority: initialData?.priority || 'medium',
         status: 'open' as CAPAStatus,
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),

@@ -105,6 +105,7 @@ const CAPADetailsPage = () => {
     navigate(capa.sourceReference.url);
   };
 
+  // Render with null checks for sourceReference
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 
@@ -195,7 +196,7 @@ const CAPADetailsPage = () => {
               <CAPAEffectivenessMonitor
                 capaId={capa.id}
                 title={capa.title}
-                implementationDate={capa.completionDate || capa.lastUpdated}
+                implementationDate={capa.completionDate || capa.lastUpdated || capa.createdDate}
                 onEffectivenessUpdate={handleEffectivenessUpdate}
               />
             )}
