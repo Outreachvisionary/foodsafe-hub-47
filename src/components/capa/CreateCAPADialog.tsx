@@ -1,4 +1,3 @@
-
 import React, { useState, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { createCAPA } from '@/services/capaService';
@@ -89,7 +88,6 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
       toast({
         title: "CAPA Created",
         description: "Your new CAPA has been successfully created",
-        variant: "success",
       });
       setOpen(false);
     } catch (error) {

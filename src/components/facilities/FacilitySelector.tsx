@@ -38,10 +38,15 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
         setLoading(true);
         setError(null);
         
-        // Pass organizationId if it exists
-        const facilityData = organizationId ? 
-          await getFacilities(organizationId) : 
-          await getFacilities();
+        // Get all facilities - updated to match the expected function signature
+        let facilityData: Facility[] = [];
+        if (organizationId) {
+          facilityData = await getFacilities();
+          // Filter by organization ID in the client side if needed
+          facilityData = facilityData.filter(f => f.organization_id === organizationId);
+        } else {
+          facilityData = await getFacilities();
+        }
         
         console.log('Loaded facilities:', facilityData);
         setFacilities(facilityData);

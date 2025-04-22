@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -84,9 +85,9 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
         
         // Convert filter to fetch parameters
         const fetchParams: CAPAFetchParams = {
-          status: capaFilter.status as CAPAStatus,
-          priority: capaFilter.priority as CAPAPriority,
-          source: capaFilter.source as string,
+          status: capaFilter.status,
+          priority: capaFilter.priority,
+          source: capaFilter.source,
           searchQuery: capaFilter.searchTerm,
           limit: 5,
           page: 1

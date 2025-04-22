@@ -50,7 +50,7 @@ export async function createCAPA(capaData: Omit<CAPA, 'id'>): Promise<CAPA> {
 
     // Insert into database
     const { data, error } = await supabase
-      .from('capas')
+      .from('capa_actions')  // Using capa_actions instead of capas
       .insert(insertData)
       .select('*')
       .single();
@@ -85,7 +85,7 @@ export async function createCAPA(capaData: Omit<CAPA, 'id'>): Promise<CAPA> {
       verificationDate: data.verification_date,
       verifiedBy: data.verified_by,
       effectivenessVerified: data.effectiveness_verified,
-      effectivenessRating: data.effectiveness_rating,
+      effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
       sourceReference: data.source_reference,
       relatedDocuments: data.related_documents,
       relatedTraining: data.related_training
@@ -223,7 +223,7 @@ export async function updateCAPA(id: string, capaData: Partial<CAPA>): Promise<C
 
     // Perform the update
     const { data, error } = await supabase
-      .from('capas')
+      .from('capa_actions')  // Using capa_actions instead of capas
       .update(updateData)
       .eq('id', id)
       .select('*')
@@ -239,7 +239,7 @@ export async function updateCAPA(id: string, capaData: Partial<CAPA>): Promise<C
       id: data.id,
       title: data.title,
       description: data.description,
-      status: data.status,
+      status: mapDbStatusToInternal(data.status as DbCAPAStatus),
       priority: data.priority as CAPAPriority,
       source: data.source as CAPASource,
       sourceId: data.source_id,
@@ -278,7 +278,7 @@ export async function updateCAPA(id: string, capaData: Partial<CAPA>): Promise<C
 export async function deleteCAPA(id: string): Promise<void> {
   try {
     const { error } = await supabase
-      .from('capas')
+      .from('capa_actions') // Using capa_actions instead of capas
       .delete()
       .eq('id', id);
 
@@ -291,3 +291,9 @@ export async function deleteCAPA(id: string): Promise<void> {
     throw error;
   }
 }
+
+export default {
+  createCAPA,
+  updateCAPA,
+  deleteCAPA
+};

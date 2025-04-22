@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,15 @@ import { Plus } from 'lucide-react';
 
 const complaintCategories: ComplaintCategory[] = ['quality', 'safety', 'packaging', 'delivery', 'other'];
 const complaintPriorities: ComplaintPriority[] = ['low', 'medium', 'high', 'critical'];
+
+// Define a mapping from internal enum values to database values
+const categoryToDatabaseMapping: Record<ComplaintCategory, string> = {
+  'quality': 'Product Quality',
+  'safety': 'Foreign Material',
+  'packaging': 'Packaging',
+  'delivery': 'Labeling',
+  'other': 'Other'
+};
 
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -93,19 +103,6 @@ const ComplaintManagement: React.FC = () => {
     setNewComplaint({ ...newComplaint, [name]: value });
   };
 
-  const mapCategoryToDbFormat = (category: ComplaintCategory): string => {
-    const categoryMap: Record<ComplaintCategory, string> = {
-      'product-quality': 'Product Quality',
-      'foreign-material': 'Foreign Material',
-      'packaging': 'Packaging',
-      'labeling': 'Labeling',
-      'customer-service': 'Customer Service',
-      'other': 'Other'
-    };
-    
-    return categoryMap[category] || 'Other';
-  };
-
   const handleSubmit = async () => {
     try {
       if (!newComplaint.title || !newComplaint.description || !newComplaint.category) {
@@ -113,10 +110,13 @@ const ComplaintManagement: React.FC = () => {
         return;
       }
 
+      // Map the internal category enum to the database expected value
+      const dbCategory = categoryToDatabaseMapping[newComplaint.category as ComplaintCategory];
+
       const complaintToSubmit = {
         title: newComplaint.title,
         description: newComplaint.description,
-        category: newComplaint.category, 
+        category: dbCategory, // Use the mapped database category
         status: newComplaint.status,
         priority: newComplaint.priority,
         reported_date: new Date().toISOString(),

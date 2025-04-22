@@ -1,100 +1,119 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Loader2, Building2 } from 'lucide-react';
+import { getFacilities } from '@/services/facilityService';
 import { Facility } from '@/types/facility';
-import { getFacilities, deleteFacility } from '@/services/facilityService';
-import FacilityList from '@/components/facilities/FacilityList';
-import FacilityAddDialog from '@/components/facilities/FacilityAddDialog';
 
-const FacilitiesTab = ({ organizationId }: { organizationId: string }) => {
+interface FacilitiesTabProps {
+  organizationId: string;
+}
+
+const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  const loadFacilities = async () => {
-    if (!organizationId) return;
-    
-    try {
-      setLoading(true);
-      const facilitiesData = await getFacilities(organizationId);
-      setFacilities(facilitiesData);
-    } catch (error) {
-      console.error('Error loading facilities:', error);
-      toast.error('Failed to load facilities');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    loadFacilities();
+    const loadFacilities = async () => {
+      try {
+        setLoading(true);
+        
+        // Get all facilities - fixed to match the expected function signature
+        const allFacilities = await getFacilities();
+        
+        // Filter for this organization
+        const orgFacilities = allFacilities.filter(
+          facility => facility.organization_id === organizationId
+        );
+        
+        setFacilities(orgFacilities);
+      } catch (error) {
+        console.error('Error loading facilities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (organizationId) {
+      loadFacilities();
+    }
   }, [organizationId]);
 
-  const handleAddDialogOpen = () => {
-    setIsAddDialogOpen(true);
-  };
-
-  const handleAddDialogClose = () => {
-    setIsAddDialogOpen(false);
-  };
-
-  const handleFacilityCreated = (newFacility: Facility) => {
-    setFacilities([...facilities, newFacility]);
-    setIsAddDialogOpen(false);
-  };
-
-  const handleFacilityUpdated = (updatedFacility: Facility) => {
-    setFacilities(
-      facilities.map((facility) =>
-        facility.id === updatedFacility.id ? updatedFacility : facility
-      )
-    );
-  };
-
-  const handleFacilityDeleted = async (id: string) => {
-    try {
-      await deleteFacility(id);
-      setFacilities(facilities.filter((facility) => facility.id !== id));
-      toast.success('Facility deleted successfully');
-    } catch (error) {
-      console.error('Error deleting facility:', error);
-      toast.error('Failed to delete facility');
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Facilities</CardTitle>
-        <Button onClick={handleAddDialogOpen} disabled={loading}>
-          <Plus className="mr-2 h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Facilities</h3>
+        <Button size="sm" className="gap-1">
+          <Plus className="h-4 w-4" />
           Add Facility
         </Button>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading facilities...
-          </div>
-        ) : (
-          <FacilityList
-            facilities={facilities}
-            onFacilityUpdated={handleFacilityUpdated}
-            onFacilityDeleted={handleFacilityDeleted}
-          />
-        )}
-      </CardContent>
-      <FacilityAddDialog
-        open={isAddDialogOpen}
-        onOpenChange={handleAddDialogClose}
-        onFacilityCreated={handleFacilityCreated}
-        organizationId={organizationId}
-      />
-    </Card>
+      </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              <span>Loading facilities...</span>
+            </div>
+          ) : facilities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-center p-4">
+              <Building2 className="h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-muted-foreground">No facilities found for this organization</p>
+              <Button variant="link" size="sm" className="mt-2">
+                <Plus className="h-4 w-4 mr-1" />
+                Add your first facility
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {facilities.map((facility) => (
+                  <TableRow key={facility.id}>
+                    <TableCell className="font-medium">{facility.name}</TableCell>
+                    <TableCell>
+                      {[
+                        facility.city,
+                        facility.state,
+                        facility.country
+                      ].filter(Boolean).join(', ')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          facility.status === 'active' 
+                            ? 'bg-green-50 text-green-700 border-green-200' 
+                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                        }
+                      >
+                        {facility.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{facility.contact_email || 'N/A'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">View</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

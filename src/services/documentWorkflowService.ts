@@ -1,157 +1,200 @@
 
-import { Document, DocumentNotification } from '@/types/document';
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Submit document for approval
+ * Fetch all document workflows
  */
-export const submitForApproval = (document: Document): Partial<Document> => {
-  return {
-    status: 'Pending_Approval',
-    pending_since: new Date().toISOString(),
-    last_action: 'Submitted for approval',
-    is_locked: true
-  };
-};
-
-/**
- * Approve document
- */
-export const approveDocument = (document: Document, comment: string): Partial<Document> => {
-  return {
-    status: 'Approved',
-    last_action: 'Approved',
-    last_review_date: new Date().toISOString(),
-    next_review_date: calculateNextReviewDate(document),
-    is_locked: false
-  };
-};
-
-/**
- * Reject document
- */
-export const rejectDocument = (document: Document, reason: string): Partial<Document> => {
-  return {
-    status: 'Draft',
-    last_action: 'Rejected',
-    rejection_reason: reason,
-    is_locked: false,
-    pending_since: null
-  };
-};
-
-/**
- * Calculate next review date based on document type
- */
-const calculateNextReviewDate = (document: Document): string => {
-  const nextReviewDate = new Date();
-  
-  // Default review period is 1 year
-  nextReviewDate.setFullYear(nextReviewDate.getFullYear() + 1);
-  
-  // Adjust based on document category if needed
-  if (document.category === 'Policy') {
-    // Policies are reviewed every 2 years
-    nextReviewDate.setFullYear(nextReviewDate.getFullYear() + 1);
-  } else if (document.category === 'Procedure') {
-    // Procedures are reviewed every year (default)
-  } else if (document.category === 'Form') {
-    // Forms are reviewed every 6 months
-    nextReviewDate.setMonth(nextReviewDate.getMonth() + 6);
+export const getDocumentWorkflows = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflows')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching document workflows:', error);
+    throw error;
   }
-  
-  return nextReviewDate.toISOString();
 };
 
 /**
- * Generate notifications based on document statuses, expirations, etc.
+ * Get a specific document workflow by ID
  */
-export const generateNotifications = (documents: Document[]): DocumentNotification[] => {
-  const notifications: DocumentNotification[] = [];
-  const now = new Date();
-  
-  documents.forEach(doc => {
-    // Check for pending approvals
-    if (doc.status === 'Pending_Approval') {
-      notifications.push({
-        id: uuidv4(),
-        documentId: doc.id,
-        documentTitle: doc.title,
-        type: 'approval_request',
-        message: `Document "${doc.title}" is waiting for your approval`,
-        createdAt: now.toISOString(),
-        isRead: false,
-        targetUserIds: doc.approvers || []
-      });
-    }
+export const getDocumentWorkflowById = async (id: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflows')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    // Check for expiring documents
-    if (doc.expiry_date) {
-      const expiryDate = new Date(doc.expiry_date);
-      const daysUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
-        notifications.push({
-          id: uuidv4(),
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'expiry_reminder',
-          message: `Document "${doc.title}" will expire in ${daysUntilExpiry} days`,
-          createdAt: now.toISOString(),
-          isRead: false,
-          targetUserIds: [doc.created_by, ...(doc.approvers || [])]
-        });
-      } else if (daysUntilExpiry <= 0) {
-        notifications.push({
-          id: uuidv4(),
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'expired',
-          message: `Document "${doc.title}" has expired`,
-          createdAt: now.toISOString(),
-          isRead: false,
-          targetUserIds: [doc.created_by, ...(doc.approvers || [])]
-        });
-      }
-    }
-    
-    // Check for review dates
-    if (doc.next_review_date) {
-      const reviewDate = new Date(doc.next_review_date);
-      const daysUntilReview = Math.floor((reviewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilReview <= 30 && daysUntilReview > 0) {
-        notifications.push({
-          id: uuidv4(),
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'review_reminder',
-          message: `Document "${doc.title}" is due for review in ${daysUntilReview} days`,
-          createdAt: now.toISOString(),
-          isRead: false,
-          targetUserIds: [doc.created_by]
-        });
-      } else if (daysUntilReview <= 0) {
-        notifications.push({
-          id: uuidv4(),
-          documentId: doc.id,
-          documentTitle: doc.title,
-          type: 'review_overdue',
-          message: `Document "${doc.title}" is overdue for review`,
-          createdAt: now.toISOString(),
-          isRead: false,
-          targetUserIds: [doc.created_by]
-        });
-      }
-    }
-  });
-  
-  return notifications;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching document workflow ${id}:`, error);
+    throw error;
+  }
 };
 
-export default {
-  submitForApproval,
-  approveDocument,
-  rejectDocument,
-  generateNotifications
+/**
+ * Create a new document workflow
+ */
+export const createDocumentWorkflow = async (workflow: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflows')
+      .insert(workflow)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating document workflow:', error);
+    throw error;
+  }
 };
+
+/**
+ * Update an existing document workflow
+ */
+export const updateDocumentWorkflow = async (id: string, updates: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflows')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error updating document workflow ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a document workflow
+ */
+export const deleteDocumentWorkflow = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from('document_workflows')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting document workflow ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Create a workflow instance for a document
+ */
+export const createWorkflowInstance = async (documentId: string, workflowId: string, createdBy: string) => {
+  try {
+    const instance = {
+      document_id: documentId,
+      workflow_id: workflowId,
+      current_step: 0,
+      status: 'in_progress',
+      created_by: createdBy
+    };
+    
+    const { data, error } = await supabase
+      .from('document_workflow_instances')
+      .insert(instance)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating workflow instance:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get the current active workflow instance for a document
+ */
+export const getDocumentWorkflowInstance = async (documentId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflow_instances')
+      .select(`
+        *,
+        workflow:workflow_id (*)
+      `)
+      .eq('document_id', documentId)
+      .eq('status', 'in_progress')
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "No rows returned"
+    return data || null;
+  } catch (error) {
+    console.error(`Error fetching workflow instance for document ${documentId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Advance the workflow to the next step
+ */
+export const advanceWorkflow = async (instanceId: string, currentStep: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflow_instances')
+      .update({ current_step: currentStep + 1 })
+      .eq('id', instanceId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error advancing workflow instance ${instanceId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Complete a document workflow
+ */
+export const completeWorkflow = async (instanceId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_workflow_instances')
+      .update({ status: 'completed' })
+      .eq('id', instanceId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error completing workflow instance ${instanceId}:`, error);
+    throw error;
+  }
+};
+
+const documentWorkflowService = {
+  getDocumentWorkflows,
+  getDocumentWorkflowById,
+  createDocumentWorkflow,
+  updateDocumentWorkflow,
+  deleteDocumentWorkflow,
+  createWorkflowInstance,
+  getDocumentWorkflowInstance,
+  advanceWorkflow,
+  completeWorkflow
+};
+
+export default documentWorkflowService;
