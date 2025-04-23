@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -17,11 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { DocumentProvider, useDocuments } from '@/contexts/DocumentContext';
 import { Document as DocumentType } from '@/types/document';
+import { Document as DatabaseDocument } from '@/types/database';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 
-// This component must be used inside the DocumentProvider
 const DocumentsContent = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -48,10 +48,9 @@ const DocumentsContent = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
 
-  // Load documents on component mount
   useEffect(() => {
     const loadData = async () => {
-      if (initialLoadAttempted) return; // Avoid multiple initial load attempts
+      if (initialLoadAttempted) return;
       
       setInitialLoadAttempted(true);
       try {
@@ -102,6 +101,10 @@ const DocumentsContent = () => {
     setActiveTab('approvals');
   };
 
+  const handleUpdateDocument = (document: DatabaseDocument) => {
+    updateDocument(document);
+  };
+
   const approvalNotifications = notifications.filter(n => 
     n.type === 'approval_overdue' || n.type === 'approval_request'
   ).length;
@@ -127,7 +130,6 @@ const DocumentsContent = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         <Breadcrumbs />
         
-        {/* Display error handler when there's an error */}
         {error && <DocumentRepositoryErrorHandler />}
         
         <div className="flex justify-between items-center my-6">
@@ -208,7 +210,10 @@ const DocumentsContent = () => {
           
           <TabsContent value="expired">
             <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
-              <ExpiredDocuments />
+              <ExpiredDocuments 
+                documents={documents} 
+                onDocumentUpdated={handleUpdateDocument}
+              />
             </div>
           </TabsContent>
           
@@ -253,7 +258,6 @@ const DocumentsContent = () => {
   );
 };
 
-// The main Documents component wrapped with DocumentProvider
 const Documents = () => (
   <DocumentProvider>
     <DocumentsContent />

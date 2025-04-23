@@ -9,10 +9,10 @@ import DocumentFolders from '@/components/documents/DocumentFolders';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
-import { Document as DocumentType } from '@/types/database';
+import { Document as DatabaseDocument } from '@/types/database';
 import { Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { adaptDocumentArray, adaptDatabaseToFolder } from '@/utils/documentTypeAdapter';
+import { adaptDatabaseArray, adaptDatabaseToFolder } from '@/utils/documentTypeAdapter';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -27,7 +27,7 @@ const DocumentRepository: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<DatabaseDocument[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -60,7 +60,7 @@ const DocumentRepository: React.FC = () => {
       }
     });
     
-    // Using filtered directly since it's already the database Document type
+    // Set filtered documents directly as DatabaseDocument[] since they already are that type
     setFilteredDocuments(filtered);
   }, [documents, searchQuery, selectedFolder, sortBy, sortDirection]);
 
@@ -81,9 +81,9 @@ const DocumentRepository: React.FC = () => {
       name: folder.name,
       path: folder.path,
       created_by: folder.created_by,
-      created_at: folder.created_at || '',
+      created_at: folder.created_at || new Date().toISOString(),
       document_count: folder.document_count,
-      updated_at: folder.updated_at
+      updated_at: folder.updated_at || new Date().toISOString()
     });
     setSelectedFolder(documentFolder);
   };

@@ -1,3 +1,4 @@
+
 // Define CAPA types
 
 export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | string;
@@ -105,7 +106,7 @@ export interface CAPAFilter {
   department?: string;
 }
 
-// Add missing properties to CAPAFetchParams
+// Update CAPAFetchParams with all the missing properties
 export interface CAPAFetchParams {
   status?: string;
   priority?: string;

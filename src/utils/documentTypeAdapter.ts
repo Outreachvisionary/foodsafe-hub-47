@@ -12,9 +12,10 @@ export const adaptDocumentToDatabase = (doc: DocumentType): DatabaseDocument => 
   return {
     ...doc,
     // Ensure category is the correct type
-    category: doc.category as unknown as DocumentCategory,
+    category: doc.category as DocumentCategory,
     // Ensure status is the correct type
-    status: doc.status as unknown as DocumentStatus
+    status: doc.status as DocumentStatus,
+    // Handle any other necessary conversions
   };
 };
 
@@ -23,9 +24,10 @@ export const adaptDatabaseToDocument = (doc: DatabaseDocument): DocumentType => 
   return {
     ...doc,
     // Ensure category is the correct type
-    category: doc.category as unknown as DocumentCategory,
+    category: doc.category as DocumentCategory,
     // Ensure status is the correct type
-    status: doc.status as unknown as DocumentStatus
+    status: doc.status as DocumentStatus,
+    // Handle any other necessary conversions
   };
 };
 
@@ -49,6 +51,7 @@ export const adaptFolderToDatabase = (folder: FolderType): DatabaseFolder => {
 export const adaptDatabaseToFolder = (folder: DatabaseFolder): FolderType => {
   return {
     ...folder,
+    created_at: folder.created_at || new Date().toISOString(), // Ensure created_at is never undefined
     // Add any specific conversions if needed
   } as FolderType;
 };
@@ -63,6 +66,10 @@ export const adaptVersionToDatabase = (version: DocumentVersionType): DatabaseDo
 export const adaptDatabaseToVersion = (version: DatabaseDocumentVersion): DocumentVersionType => {
   return {
     ...version,
+    // Map version_number to version if it exists
+    version: version.version_number || version.version,
+    // Map change_summary to change_notes if it exists
+    change_notes: version.change_summary || version.change_notes,
     // Add any specific conversions if needed
   } as DocumentVersionType;
 };

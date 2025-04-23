@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,7 @@ interface ExpiredDocumentsProps {
   onDocumentUpdated?: (document: DocumentType) => void;
 }
 
-const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents, onDocumentUpdated }) => {
+const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onDocumentUpdated }) => {
   const [docs, setDocs] = useState<DocumentType[]>(documents);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [renewDialogOpen, setRenewDialogOpen] = useState(false);
@@ -55,19 +56,21 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents, onDocume
   }, [documents]);
 
   const handleViewDocument = (doc: DocumentType) => {
-    setSelectedDocument(adaptDatabaseToDocument(doc)); 
+    // No need to adapt since we're already using the correct type
+    setSelectedDocument(doc); 
     setViewDialogOpen(true);
   };
 
   const handleRenewDocument = (doc: DocumentType) => {
-    setSelectedDocument(adaptDatabaseToDocument(doc));
+    // No need to adapt since we're already using the correct type
+    setSelectedDocument(doc);
     setRenewDialogOpen(true);
   };
 
-  const handleUpdateDocument = (updatedDoc: any) => {
+  const handleUpdateDocument = (updatedDoc: DocumentType) => {
     setDocs(prevDocs => 
       prevDocs.map(doc => 
-        doc.id === updatedDoc.id ? adaptDocumentToDatabase(updatedDoc) : doc
+        doc.id === updatedDoc.id ? updatedDoc : doc
       )
     );
     fetchDocuments();
@@ -86,10 +89,10 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents, onDocume
 
     try {
       // Update the document with the new expiry date and status
-      const updatedDocument = {
+      const updatedDocument: DocumentType = {
         ...selectedDocument,
         expiry_date: newExpiryDate.toISOString(),
-        status: newStatus,
+        status: newStatus as any, // Cast to appropriate type for database
       };
 
       // Call the onDocumentUpdated prop to update the document in the parent component

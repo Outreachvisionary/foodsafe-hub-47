@@ -82,7 +82,7 @@ export const fetchCAPAActivities = async (capaId: string): Promise<CAPAActivity[
 
     if (error) throw error;
 
-    // Map database results to CAPAActivity interface
+    // Map database results to CAPAActivity interface with proper parsing of JSON
     return (data || []).map(item => ({
       id: item.id,
       capaId: item.capa_id,
@@ -92,7 +92,7 @@ export const fetchCAPAActivities = async (capaId: string): Promise<CAPAActivity[
       performedBy: item.performed_by,
       oldStatus: item.old_status ? mapDbStatusToInternal(item.old_status as DbCAPAStatus) : undefined,
       newStatus: item.new_status ? mapDbStatusToInternal(item.new_status as DbCAPAStatus) : undefined,
-      metadata: item.metadata ? JSON.parse(item.metadata) : {}
+      metadata: typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata || {}
     }));
   } catch (error) {
     console.error('Error fetching CAPA activities:', error);

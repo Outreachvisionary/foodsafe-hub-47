@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -25,9 +26,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { ComplaintCategory, ComplaintStatus, ComplaintPriority, mapComplaintToDb } from '@/types/complaint';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 import { ListActions } from '@/components/ui/list-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+// Import any missing functions
+import { mapComplaintToDb } from '@/types/complaint';
 
 const ComplaintManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -92,8 +96,10 @@ const ComplaintManagement: React.FC = () => {
         capa_required: capaRequired
       };
       
+      // Use the mapComplaintToDb function to convert to database format
       const dbComplaint = mapComplaintToDb(newComplaintData);
 
+      // Now insert the correctly formatted data
       const { data, error } = await supabase
         .from('complaints')
         .insert(dbComplaint)

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
 
@@ -46,12 +47,32 @@ export const convertSourceToCAPA = async (source: string, sourceId: string, user
       return null;
     }
     
-    // Fetch the source record using type safe table name
-    const { data, error } = await supabase
-      .from(tableName as any)
-      .select('*')
-      .eq('id', sourceId)
-      .single();
+    // Use a type guard to safely handle the response
+    let result;
+    if (tableName === 'audit_findings') {
+      result = await supabase
+        .from('audit_findings')
+        .select('*')
+        .eq('id', sourceId)
+        .single();
+    } else if (tableName === 'complaints') {
+      result = await supabase
+        .from('complaints')
+        .select('*')
+        .eq('id', sourceId)
+        .single();
+    } else if (tableName === 'non_conformances') {
+      result = await supabase
+        .from('non_conformances')
+        .select('*')
+        .eq('id', sourceId)
+        .single();
+    } else {
+      console.error(`Unsupported table name: ${tableName}`);
+      return null;
+    }
+    
+    const { data, error } = result;
     
     if (error) {
       console.error(`Error fetching ${source} with ID ${sourceId}:`, error);
@@ -68,70 +89,68 @@ export const convertSourceToCAPA = async (source: string, sourceId: string, user
       source: sourceType,
       sourceId: sourceId,
       createdBy: userId,
-      assignedTo: tableName === 'complaints' || tableName === 'audit_findings' ? 
-                  data.assigned_to || userId : userId,
+      assignedTo: 'assignedTo' in data ? data.assigned_to || userId : userId,
     };
     
     // Source-specific mapping, handle each source type separately
     let capaData: CAPA;
     
     if (tableName === 'audit_findings') {
+      const findingData = data;
       // Map audit finding to CAPA
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: `CAPA for Audit Finding: ${data.description?.substring(0, 50) || 'No description'}`,
-        description: `Corrective action required for audit finding: ${data.description || 'No description'}`,
+        title: `CAPA for Audit Finding: ${findingData.description?.substring(0, 50) || 'No description'}`,
+        description: `Corrective action required for audit finding: ${findingData.description || 'No description'}`,
         status: 'Open' as CAPAStatus,
-        priority: data.severity === 'Critical' ? 'critical' as CAPAPriority : 
-                  data.severity === 'Major' ? 'high' as CAPAPriority : 
-                  'medium' as CAPAPriority,
-        dueDate: data.due_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
+        priority: mapSeverityToPriority(findingData.severity || 'Medium'),
+        source: sourceType,
+        dueDate: findingData.due_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        department: data.department || ""
+        department: findingData.department || ""
       };
     } else if (tableName === 'complaints') {
+      const complaintData = data;
       // Map complaint to CAPA
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: `CAPA for Complaint: ${data.title?.substring(0, 50) || 'No title'}`,
-        description: `Corrective action required for customer complaint: ${data.description || 'No description'}`,
+        title: `CAPA for Complaint: ${complaintData.title?.substring(0, 50) || 'No title'}`,
+        description: `Corrective action required for customer complaint: ${complaintData.description || 'No description'}`,
         status: 'Open' as CAPAStatus,
-        priority: data.priority === 'Urgent' ? 'critical' as CAPAPriority : 
-                  data.priority === 'High' ? 'high' as CAPAPriority : 
-                  data.priority === 'Medium' ? 'medium' as CAPAPriority : 
-                  'low' as CAPAPriority,
+        priority: mapComplaintPriorityToCapaPriority(complaintData.priority || 'Medium'),
+        source: sourceType,
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        department: data.department || ""
+        department: complaintData.department || ""
       };
     } else if (tableName === 'non_conformances') {
+      const ncData = data;
       // Map non-conformance to CAPA
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: `CAPA for Non-Conformance: ${data.title?.substring(0, 50) || 'No title'}`,
-        description: `Corrective action required for non-conformance: ${data.description || 'No description'}`,
+        title: `CAPA for Non-Conformance: ${ncData.title?.substring(0, 50) || 'No title'}`,
+        description: `Corrective action required for non-conformance: ${ncData.description || 'No description'}`,
         status: 'Open' as CAPAStatus,
-        priority: data.priority === 'Critical' ? 'critical' as CAPAPriority : 
-                  data.priority === 'High' ? 'high' as CAPAPriority : 
-                  'medium' as CAPAPriority,
+        priority: mapNcRiskToPriority(ncData.risk_level || 'Medium'),
+        source: sourceType,
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        department: data.department || ""
+        department: ncData.department || ""
       };
     } else {
       console.error(`Unsupported source type: ${source}`);
