@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -13,6 +12,7 @@ import { Document as DatabaseDocument } from '@/types/database';
 import { Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { adaptDatabaseArray, adaptDatabaseToFolder } from '@/utils/documentTypeAdapter';
+import { Card, CardContent } from '@/components/ui/card';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -21,12 +21,11 @@ const DocumentRepository: React.FC = () => {
     selectedFolder,
     setSelectedFolder,
     isLoading,
-    error
+    error,
   } = useDocuments();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [filteredDocuments, setFilteredDocuments] = useState<DatabaseDocument[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -60,7 +59,6 @@ const DocumentRepository: React.FC = () => {
       }
     });
     
-    // Set filtered documents directly as DatabaseDocument[] since they already are that type
     setFilteredDocuments(filtered);
   }, [documents, searchQuery, selectedFolder, sortBy, sortDirection]);
 
@@ -105,124 +103,63 @@ const DocumentRepository: React.FC = () => {
   };
 
   return (
-    <div className="p-6 bg-white">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="documentList">Document List</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="dashboard">
-          <div className="text-center py-8">
-            <h3 className="text-xl font-medium mb-4">Document Dashboard</h3>
-            <p className="text-muted-foreground mb-4">
-              View and manage your document metrics and statistics here.
-            </p>
-            <Button onClick={() => setActiveTab('documentList')}>
-              View Documents
-            </Button>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              type="search"
+              placeholder="Search documents..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-        </TabsContent>
+          <Button variant="outline" size="icon" onClick={() => handleSortChange('updated_at')}>
+            <Filter className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsUploadOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Upload
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-1">
+          <DocumentFolders
+            onSelectFolder={handleFolderSelect}
+            selectedFolder={selectedFolder}
+          />
+        </div>
         
-        <TabsContent value="documentList" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-1">
-              <DocumentFolders
-                onSelectFolder={handleFolderSelect}
-                selectedFolder={selectedFolder}
+        <div className="md:col-span-3">
+          {selectedFolder && (
+            <div className="flex items-center gap-2 bg-muted/30 rounded-md p-2 mb-4">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Current Folder: {selectedFolder.name}</span>
+              <Badge variant="outline" className="ml-2">
+                {filteredDocuments.length} documents
+              </Badge>
+            </div>
+          )}
+          
+          <Card>
+            <CardContent className="p-0">
+              <DocumentList
+                documents={adaptDatabaseArray(filteredDocuments)}
+                onViewDocument={handleViewDocument}
+                onEditDocument={handleEditDocument}
+                onDeleteDocument={handleDeleteDocument}
+                onDownloadDocument={handleDownloadDocument}
               />
-            </div>
-            
-            <div className="md:col-span-3 space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search documents..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="gap-1"
-                    onClick={() => handleSortChange('updated_at')}
-                  >
-                    <ArrowUpDown className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sort</span>
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="gap-1"
-                    onClick={() => setSortBy(sortBy === 'title' ? 'updated_at' : 'title')}
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span className="hidden sm:inline">Filter</span>
-                  </Button>
-                  
-                  <Button 
-                    className="gap-1"
-                    onClick={() => setIsUploadOpen(true)}
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Upload</span>
-                  </Button>
-                </div>
-              </div>
-              
-              {selectedFolder && (
-                <div className="flex items-center gap-2 bg-muted/30 rounded-md p-2">
-                  <FolderOpen className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Current Folder: {selectedFolder.name}</span>
-                  <Badge variant="outline" className="ml-2">
-                    {filteredDocuments.length} documents
-                  </Badge>
-                </div>
-              )}
-              
-              {filteredDocuments.length > 0 ? (
-                <div className="border rounded-md">
-                  <DocumentList 
-                    documents={filteredDocuments} 
-                    onViewDocument={handleViewDocument}
-                    onEditDocument={handleEditDocument}
-                    onDeleteDocument={handleDeleteDocument}
-                    onDownloadDocument={handleDownloadDocument}
-                  />
-                </div>
-              ) : (
-                <div className="border rounded-md p-12 text-center">
-                  <div className="mx-auto bg-muted/20 rounded-full w-20 h-20 flex items-center justify-center mb-4">
-                    <FolderOpen className="h-10 w-10 text-muted-foreground/60" />
-                  </div>
-                  <h3 className="text-lg font-medium">No documents found</h3>
-                  {selectedFolder ? (
-                    <p className="text-muted-foreground mt-1 mb-4">
-                      This folder is empty. Upload documents to get started.
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground mt-1 mb-4">
-                      No documents match your search query.
-                    </p>
-                  )}
-                  <Button 
-                    onClick={() => setIsUploadOpen(true)}
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Upload Your First Document
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       <UploadDocumentDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen}
