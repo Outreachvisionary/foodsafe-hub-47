@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCAPAs } from '@/services/capaService';
-import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Eye, Clock, AlertTriangle } from 'lucide-react';
+import { Loader, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
+import { ListActions } from '@/components/ui/list-actions';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { deleteCAPA } from '@/services/capa/capaFetchService';
+import { getCAPAs } from '@/services/capaService';
 
 interface CAPAListProps {
   filters: {
@@ -21,8 +24,43 @@ interface CAPAListProps {
 const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCapaId, setSelectedCapaId] = useState<string | null>(null);
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
+
+  const handleView = (id: string) => {
+    navigate(`/capa/${id}`);
+  };
+
+  const handleEdit = (id: string) => {
+    navigate(`/capa/${id}/edit`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCAPA(id);
+      setCapas(capas.filter(capa => capa.id !== id));
+      toast({
+        title: 'CAPA Deleted',
+        description: 'The CAPA has been successfully deleted.',
+      });
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting CAPA:', error);
+      toast({
+        title: 'Error',
+        description: 'There was an error deleting the CAPA.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    setSelectedCapaId(id);
+    setDeleteDialogOpen(true);
+  };
+
   useEffect(() => {
     const loadCAPAs = async () => {
       try {
@@ -78,10 +116,6 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
     loadCAPAs();
   }, [filters, searchQuery]);
   
-  const handleViewCAPA = (id: string) => {
-    navigate(`/capa/${id}`);
-  };
-  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -120,69 +154,70 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
       </Card>
     );
   }
-  
+
   return (
-    <div className="space-y-4">
-      {capas.map((capa) => (
-        <Card key={capa.id} className="hover:bg-gray-50 transition-colors">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex-grow">
-                <div className="flex items-start gap-1">
-                  <h3 className="font-medium">{capa.title}</h3>
-                  {capa.dueDate && new Date(capa.dueDate) < new Date() && capa.status !== 'closed' && capa.status !== 'verified' && (
-                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 mt-1 truncate">{capa.description}</p>
-                
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Badge variant="outline" className="text-xs capitalize">
-                    {capa.source}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {capa.department || 'No Department'}
-                  </Badge>
-                  {capa.isFsma204Compliant && (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                      FSMA 204 Compliant
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:items-end gap-2">
-                <div className="flex gap-2">
-                  <Badge className={`capitalize ${getStatusColor(capa.status)}`}>
-                    {capa.status.replace('-', ' ')}
-                  </Badge>
-                  <Badge variant="outline" className={`capitalize ${getPriorityColor(capa.priority)}`}>
-                    {capa.priority}
-                  </Badge>
-                </div>
-                
-                {capa.dueDate && (
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Due: {format(new Date(capa.dueDate), 'MMM d, yyyy')}
+    <>
+      <div className="space-y-4">
+        {capas.map((capa) => (
+          <Card key={capa.id} className="hover:bg-gray-50 transition-colors">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex-grow">
+                  <div className="flex items-start gap-1">
+                    <h3 className="font-medium">{capa.title}</h3>
+                    {capa.dueDate && new Date(capa.dueDate) < new Date() && 
+                     capa.status !== 'closed' && capa.status !== 'verified' && (
+                      <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+                    )}
                   </div>
-                )}
+                  <p className="text-sm text-gray-500 mt-1 truncate">{capa.description}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {capa.source}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {capa.department || 'No Department'}
+                    </Badge>
+                    {capa.isFsma204Compliant && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                        FSMA 204 Compliant
+                      </Badge>
+                    )}
+                  </div>
+                </div>
                 
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="mt-1" 
-                  onClick={() => handleViewCAPA(capa.id)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Details
-                </Button>
+                <div className="flex flex-col sm:items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <ListActions
+                      onView={() => handleView(capa.id)}
+                      onEdit={() => handleEdit(capa.id)}
+                      onDelete={() => confirmDelete(capa.id)}
+                      disableEdit={capa.status === 'closed' || capa.status === 'verified'}
+                    />
+                  </div>
+                  
+                  {capa.dueDate && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Due: {format(new Date(capa.dueDate), 'MMM d, yyyy')}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete CAPA"
+        description="Are you sure you want to delete this CAPA? This action cannot be undone."
+        onConfirm={() => selectedCapaId && handleDelete(selectedCapaId)}
+      />
+    </>
   );
 };
 

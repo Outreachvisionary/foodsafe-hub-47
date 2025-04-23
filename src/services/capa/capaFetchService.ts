@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CAPA, 
@@ -155,6 +154,23 @@ export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
     return mapDbRowToCapa(data);
   } catch (error) {
     console.error('Error in fetchCAPAById:', error);
+    throw error;
+  }
+};
+
+export const deleteCAPA = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting CAPA:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to delete CAPA:', error);
     throw error;
   }
 };

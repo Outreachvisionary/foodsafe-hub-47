@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -27,15 +26,18 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { ComplaintCategory, ComplaintStatus, ComplaintPriority, mapComplaintToDb } from '@/types/complaint';
+import { ListActions } from '@/components/ui/list-actions';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-const ComplaintManagement = () => {
+const ComplaintManagement: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  
-  // Form state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -45,11 +47,11 @@ const ComplaintManagement = () => {
   const [category, setCategory] = useState<ComplaintCategory>('Product Quality');
   const [priority, setPriority] = useState<ComplaintPriority>('Medium');
   const [capaRequired, setCapaRequired] = useState(false);
-  
+
   useEffect(() => {
     fetchComplaints();
   }, []);
-  
+
   const fetchComplaints = async () => {
     try {
       setIsLoading(true);
@@ -57,9 +59,9 @@ const ComplaintManagement = () => {
         .from('complaints')
         .select('*')
         .order('reported_date', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       setComplaints(data || []);
     } catch (error) {
       console.error('Error fetching complaints:', error);
@@ -72,7 +74,7 @@ const ComplaintManagement = () => {
       setIsLoading(false);
     }
   };
-  
+
   const handleCreateComplaint = async () => {
     try {
       const newComplaint = mapComplaintToDb({
@@ -89,24 +91,23 @@ const ComplaintManagement = () => {
         lotNumber,
         capaRequired
       });
-      
+
       const { data, error } = await supabase
         .from('complaints')
         .insert(newComplaint)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       toast({
         title: 'Success',
         description: 'Complaint created successfully',
       });
-      
+
       setIsCreateOpen(false);
       fetchComplaints();
-      
-      // Reset form
+
       resetForm();
     } catch (error) {
       console.error('Error creating complaint:', error);
@@ -117,7 +118,7 @@ const ComplaintManagement = () => {
       });
     }
   };
-  
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
@@ -129,7 +130,7 @@ const ComplaintManagement = () => {
     setPriority('Medium');
     setCapaRequired(false);
   };
-  
+
   const getStatusBadgeVariant = (status: ComplaintStatus) => {
     switch (status) {
       case 'New':
@@ -144,7 +145,7 @@ const ComplaintManagement = () => {
         return 'bg-gray-100 text-gray-700';
     }
   };
-  
+
   const getPriorityBadgeVariant = (priority: ComplaintPriority) => {
     switch (priority) {
       case 'Low':
@@ -159,7 +160,7 @@ const ComplaintManagement = () => {
         return 'bg-gray-100 text-gray-700';
     }
   };
-  
+
   const categoryLabels: Record<ComplaintCategory, string> = {
     'Product Quality': 'Product Quality',
     'Foreign Material': 'Foreign Material',
@@ -168,14 +169,44 @@ const ComplaintManagement = () => {
     'Customer Service': 'Customer Service',
     'Other': 'Other'
   };
-  
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setComplaints(complaints.filter(c => c.id !== id));
+      toast({
+        title: 'Complaint Deleted',
+        description: 'The complaint has been successfully deleted.',
+      });
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting complaint:', error);
+      toast({
+        title: 'Error',
+        description: 'There was an error deleting the complaint.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    setSelectedComplaintId(id);
+    setDeleteDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader 
         title="Complaint Management"
         subtitle="Track and manage customer complaints"
       />
-      
+
       <div className="container py-6 space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Complaints</h2>
@@ -183,7 +214,7 @@ const ComplaintManagement = () => {
             Create Complaint
           </Button>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>All Complaints</CardTitle>
@@ -235,13 +266,12 @@ const ComplaintManagement = () => {
                         {new Date(complaint.reported_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/complaints/${complaint.id}`)}
-                        >
-                          View
-                        </Button>
+                        <ListActions
+                          onView={() => navigate(`/complaints/${complaint.id}`)}
+                          onEdit={() => navigate(`/complaints/${complaint.id}/edit`)}
+                          onDelete={() => confirmDelete(complaint.id)}
+                          disableEdit={complaint.status === 'Closed'}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -251,7 +281,7 @@ const ComplaintManagement = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -382,6 +412,14 @@ const ComplaintManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Complaint"
+        description="Are you sure you want to delete this complaint? This action cannot be undone."
+        onConfirm={() => selectedComplaintId && handleDelete(selectedComplaintId)}
+      />
     </div>
   );
 };
