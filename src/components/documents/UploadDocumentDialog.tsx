@@ -17,6 +17,7 @@ interface UploadDocumentDialogProps {
   allowedTypes?: string[];
   maxSize?: number;
   selectedFolder?: string | null;
+  onSuccess?: () => void;
 }
 
 const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
@@ -25,13 +26,18 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   category,
   allowedTypes,
   maxSize,
-  selectedFolder
+  selectedFolder,
+  onSuccess
 }) => {
   const { selectedFolder: contextFolder, refreshData } = useDocuments();
   
   const handleUploadComplete = () => {
     onOpenChange(false);
     refreshData(); // Refresh document list after upload
+    
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   // Use selectedFolder prop if provided, otherwise use the one from context
@@ -41,7 +47,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Upload Document</DialogTitle>
           <DialogDescription>
             Upload a document to the document management system
             {contextFolder && ` in folder: ${contextFolder.name}`}

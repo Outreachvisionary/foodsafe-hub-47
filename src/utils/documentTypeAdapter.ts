@@ -33,7 +33,7 @@ export const adaptDatabaseArray = (docs: DatabaseDocument[]): DocumentType[] => 
   return docs.map(adaptDatabaseToDocument);
 };
 
-// Add the missing folder adapter functions
+// Folder adapter functions
 export const adaptFolderToDatabase = (folder: FolderType): DatabaseFolder => {
   return {
     ...folder,

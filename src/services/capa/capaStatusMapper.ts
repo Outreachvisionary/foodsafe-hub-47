@@ -1,17 +1,19 @@
 
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, DbCAPAStatus } from '@/types/capa';
 
-export const mapStatusToDb = (status: CAPAStatus): string => {
-  switch (status.toLowerCase()) {
-    case 'open': return 'Open';
-    case 'in progress': return 'In_Progress';
-    case 'closed': return 'Closed';
-    case 'overdue': return 'Overdue';
-    case 'pending verification': return 'Pending_Verification';
-    default: return status;
+// Map from application CAPAStatus to database status string
+export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  switch (status) {
+    case 'Open': return 'Open';
+    case 'In Progress': return 'In_Progress';
+    case 'Closed': return 'Closed';
+    case 'Overdue': return 'Overdue';
+    case 'Pending Verification': return 'Pending_Verification';
+    default: return ensureValidDbStatus(status as string);
   }
 };
 
+// Map from database status string to application CAPAStatus
 export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
   switch (dbStatus) {
     case 'Open': return 'Open';
@@ -24,8 +26,8 @@ export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
 };
 
 // Helper function to ensure a string status is a valid database status
-export const ensureValidDbStatus = (status: string): "Open" | "In_Progress" | "Closed" | "Overdue" | "Pending_Verification" => {
-  switch (status) {
+export const ensureValidDbStatus = (status: string): DbCAPAStatus => {
+  switch (status.replace(' ', '_')) {
     case 'Open': return 'Open';
     case 'In_Progress': return 'In_Progress';
     case 'Closed': return 'Closed';
@@ -34,4 +36,17 @@ export const ensureValidDbStatus = (status: string): "Open" | "In_Progress" | "C
     // Map any non-matching status to a default
     default: return 'Open';
   }
+};
+
+// Helper function to convert from any string format to proper CAPAStatus
+export const normalizeStatus = (status: string): CAPAStatus => {
+  const lowerStatus = status.toLowerCase();
+  
+  if (lowerStatus === 'open') return 'Open';
+  if (lowerStatus === 'in progress' || lowerStatus === 'in_progress') return 'In Progress';
+  if (lowerStatus === 'closed') return 'Closed';
+  if (lowerStatus === 'overdue') return 'Overdue';
+  if (lowerStatus === 'pending verification' || lowerStatus === 'pending_verification') return 'Pending Verification';
+  
+  return 'Open'; // Default fallback
 };

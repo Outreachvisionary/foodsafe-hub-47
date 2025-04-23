@@ -1,11 +1,10 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
-import { Form } from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -20,7 +19,8 @@ import {
   X, 
   Loader,
   CheckCircle,
-  UserCheck
+  UserCheck,
+  AlertCircle
 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -29,10 +29,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Document, DocumentStatus, DocumentCategory } from '@/types/database';
+import { Document, DocumentStatus, DocumentCategory } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentService } from '@/hooks/useDocumentService';
-import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -66,10 +67,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { toast } = useToast();
   const documentService = useDocumentService();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
@@ -83,7 +86,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
-      if (!allowedTypes.includes(fileExtension)) {
+      if (!allowedTypes.includes('.*') && !allowedTypes.includes(fileExtension)) {
         toast({
           title: "Invalid file type",
           description: `Allowed file types: ${allowedTypes.join(', ')}`,
@@ -93,6 +96,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       }
       
       setFile(selectedFile);
+      // Set a default title based on filename without extension
       const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
       setTitle(fileName);
     }
@@ -101,6 +105,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const handleRemoveFile = () => {
     setFile(null);
     setTitle('');
+    setUploadError(null);
   };
 
   const uploadDocument = async () => {
@@ -125,43 +130,61 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     setIsUploading(true);
     setUploadProgress(0);
     setUploadSuccess(false);
+    setUploadError(null);
     
-    const progressInterval = simulateProgress();
+    // Create an interval to simulate progress until we get actual progress
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev < 90) return prev + 5;
+        return prev;
+      });
+    }, 200);
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "You must be logged in to upload documents",
-          variant: "destructive"
-        });
-        setIsUploading(false);
-        clearInterval(progressInterval);
-        return;
+        throw new Error("Authentication required. You must be logged in to upload documents.");
       }
       
       const documentId = uuidv4();
       
-      const fileName = `${documentId}_${file.name}`;
+      // Create a clean filename without spaces and special characters
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${documentId}_${cleanFileName}`;
       const filePath = `documents/${documentId}/${fileName}`;
       
+      // Upload the file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('attachments')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
       
       if (uploadError) {
-        throw uploadError;
+        console.error("Storage upload error:", uploadError);
+        throw new Error(`File upload failed: ${uploadError.message}`);
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+      
+      if (!urlData || !urlData.publicUrl) {
+        throw new Error("Could not generate public URL for uploaded file");
       }
       
       const tagArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : [];
       
-      const newDocument: Partial<Document> = {
+      // Create document record in the database
+      const newDocument = {
         id: documentId,
         title: title.trim(),
         description: description.trim(),
         file_name: fileName,
+        file_path: urlData.publicUrl, // Store the public URL
         file_size: file.size,
         file_type: file.type,
         category: selectedCategory,
@@ -180,9 +203,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       const documentData = await documentService.createDocument(newDocument);
       
+      // Create version record
       const versionData = {
         document_id: documentId,
         file_name: fileName,
+        file_path: urlData.publicUrl,
         file_size: file.size,
         file_type: file.type,
         created_by: user.id,
@@ -195,10 +220,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       const versionResponse = await documentService.createVersion(versionData);
       
+      // Update document with current version ID
       await documentService.updateDocument(documentId, { 
         current_version_id: versionResponse.id 
       });
       
+      // Record the activity
       await documentService.recordActivity({
         document_id: documentId,
         action: 'create',
@@ -211,7 +238,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       // If the document was uploaded to a folder, update folder document count
       if (selectedFolder) {
         try {
-          // Update folder document count directly without using rpc
+          // Get current folder document count
           const { data: folderData } = await supabase
             .from('folders')
             .select('document_count')
@@ -220,34 +247,38 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             
           const currentCount = folderData?.document_count || 0;
           
+          // Update folder document count
           await supabase
             .from('folders')
-            .update({ document_count: currentCount + 1 })
+            .update({ 
+              document_count: currentCount + 1,
+              updated_at: new Date().toISOString()
+            })
             .eq('id', selectedFolder);
         } catch (error) {
           console.error('Error updating folder document count:', error);
-          // Don't throw here, as the document was already uploaded successfully
+          // Don't fail the whole upload if folder count update fails
         }
       }
       
+      clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadSuccess(true);
-      
-      clearInterval(progressInterval);
       
       toast({
         title: "Upload successful",
         description: "Document has been uploaded successfully.",
       });
       
-      if (onUploadComplete) {
-        onUploadComplete(adaptDocumentToDatabase(documentData));
+      if (onUploadComplete && documentData) {
+        onUploadComplete(adaptDatabaseToDocument(documentData));
       }
       
       if (onSuccess) {
         onSuccess();
       }
       
+      // Reset form after a short delay
       setTimeout(() => {
         setFile(null);
         setTitle('');
@@ -257,36 +288,32 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         setUploadSuccess(false);
       }, 1500);
       
-    } catch (error) {
+    } catch (error: any) {
       clearInterval(progressInterval);
       console.error('Error uploading document:', error);
+      setUploadError(error.message || "There was a problem uploading your document.");
+      setIsUploading(false);
+      setUploadProgress(0);
+      
       toast({
         title: "Upload failed",
-        description: "There was a problem uploading your document.",
+        description: error.message || "There was a problem uploading your document.",
         variant: "destructive"
       });
-      setIsUploading(false);
     }
-  };
-
-  const simulateProgress = () => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 5;
-      if (progress > 90) {
-        clearInterval(interval);
-        setUploadProgress(90);
-      } else {
-        setUploadProgress(progress);
-      }
-    }, 200);
-    
-    return interval;
   };
 
   return (
     <div className="p-4">
       <div className="space-y-4">
+        {uploadError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Upload Failed</AlertTitle>
+            <AlertDescription>{uploadError}</AlertDescription>
+          </Alert>
+        )}
+        
         {!file ? (
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
             <Input 
@@ -306,7 +333,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           </div>
         ) : (
           <>
-            <div className="bg-gray-50 p-4 rounded-md">
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-md">
@@ -361,6 +388,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   placeholder="Document title"
                   disabled={isUploading || uploadSuccess}
                   required
+                  className="border-gray-300"
                 />
               </div>
               
@@ -373,6 +401,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   placeholder="Brief description of this document"
                   disabled={isUploading || uploadSuccess}
                   rows={3}
+                  className="border-gray-300"
                 />
               </div>
               
@@ -383,7 +412,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
                   disabled={isUploading || uploadSuccess}
                 >
-                  <SelectTrigger id="document-category" className="bg-white">
+                  <SelectTrigger id="document-category" className="bg-white border-gray-300">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
@@ -408,7 +437,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   onValueChange={(value) => setSelectedStatus(value as DocumentStatus)}
                   disabled={isUploading || uploadSuccess || submitForReview}
                 >
-                  <SelectTrigger id="document-status" className="bg-white">
+                  <SelectTrigger id="document-status" className="bg-white border-gray-300">
                     <SelectValue placeholder="Select a status" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
@@ -427,7 +456,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                       variant="outline"
                       disabled={isUploading || uploadSuccess}
                       className={cn(
-                        "w-full justify-start text-left font-normal bg-white",
+                        "w-full justify-start text-left font-normal border-gray-300",
                         !expiryDate && "text-muted-foreground"
                       )}
                     >
@@ -455,10 +484,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="quality, inspection, compliance"
                   disabled={isUploading || uploadSuccess}
+                  className="border-gray-300"
                 />
               </div>
 
-              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border p-4">
+              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border border-gray-200 p-4">
                 <div className="space-y-0.5">
                   <Label className="text-base" htmlFor="submit-for-review">Submit for Review</Label>
                   <p className="text-sm text-muted-foreground">
@@ -481,7 +511,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                     value={approvers[0] || ""}
                     onValueChange={(value) => setApprovers([value])}
                   >
-                    <SelectTrigger id="approvers" className="bg-white">
+                    <SelectTrigger id="approvers" className="bg-white border-gray-300">
                       <SelectValue placeholder="Select approver" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -493,7 +523,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 </div>
               )}
               
-              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border p-4">
+              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border border-gray-200 p-4">
                 <div className="space-y-0.5">
                   <Label className="text-base" htmlFor="document-locked">Lock Document</Label>
                   <p className="text-sm text-muted-foreground">
@@ -509,7 +539,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               </div>
               
               {selectedFolder && (
-                <div className="flex items-center p-3 bg-muted/20 rounded-md">
+                <div className="flex items-center p-3 bg-blue-50 rounded-md border border-blue-200">
                   <FileText className="h-4 w-4 mr-2 text-primary" />
                   <span className="text-sm">
                     This document will be uploaded to folder: <strong>{selectedFolder}</strong>
@@ -520,13 +550,13 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           </>
         )}
         
-        <div className="flex justify-between gap-3 pt-2">
+        <div className="flex justify-between gap-3 pt-4 border-t border-gray-100 mt-4">
           {onCancel && (
             <Button 
               onClick={onCancel} 
               variant="outline" 
               disabled={isUploading}
-              className="w-full"
+              className="w-full border-gray-300"
             >
               Cancel
             </Button>
