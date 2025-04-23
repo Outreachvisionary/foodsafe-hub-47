@@ -133,7 +133,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}
-                      {onDownloadDocument && (
+                      {onDownloadDocument && doc.file_path && (
                         <Button
                           variant="ghost"
                           size="icon"

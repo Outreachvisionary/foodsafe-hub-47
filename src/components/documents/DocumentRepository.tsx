@@ -8,7 +8,6 @@ import DocumentList from '@/components/documents/DocumentList';
 import DocumentFolders from '@/components/documents/DocumentFolders';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
-import { Document as DatabaseDocument } from '@/types/database';
 import { Document as DocumentType, Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { adaptDatabaseArray, adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
@@ -17,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import DocumentViewer from './DocumentViewer';
 import { supabase } from '@/integrations/supabase/client';
+import documentService from '@/services/documentService';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -32,7 +32,7 @@ const DocumentRepository: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [filteredDocuments, setFilteredDocuments] = useState<DatabaseDocument[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
@@ -104,8 +104,7 @@ const DocumentRepository: React.FC = () => {
       // Record view activity
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const documentService = await import('@/hooks/useDocumentService').then(mod => mod.useDocumentService());
-        await documentService.recordActivity({
+        await documentService.createDocumentActivity({
           document_id: document.id,
           action: 'view',
           user_id: user.id,
@@ -131,46 +130,18 @@ const DocumentRepository: React.FC = () => {
   const handleDeleteDocument = async (document: DocumentType) => {
     if (confirm(`Are you sure you want to delete "${document.title}"?`)) {
       try {
-        // If document is in a folder, we need to update the folder count after deletion
-        const folderId = document.folder_id;
-        
         if (!deleteDocument) {
           throw new Error("Delete function is not available");
         }
         
         await deleteDocument(document.id);
         
-        // Update folder document count if needed
-        if (folderId) {
-          try {
-            // Get current folder document count
-            const { data: folderData } = await supabase
-              .from('folders')
-              .select('document_count')
-              .eq('id', folderId)
-              .single();
-              
-            const currentCount = folderData?.document_count || 0;
-            if (currentCount > 0) {
-              // Decrement folder document count
-              await supabase
-                .from('folders')
-                .update({ 
-                  document_count: currentCount - 1,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', folderId);
-            }
-          } catch (error) {
-            console.error('Error updating folder document count:', error);
-          }
-        }
-        
         toast({
           title: "Document Deleted",
           description: `"${document.title}" has been deleted successfully.`,
         });
         
+        // Refresh data after deletion
         await refreshData();
       } catch (error: any) {
         console.error('Error deleting document:', error);
@@ -193,9 +164,8 @@ const DocumentRepository: React.FC = () => {
       }
       
       // Create a download link and click it
-      const link = document.file_path;
       const a = document.createElement('a');
-      a.href = link;
+      a.href = filePath;
       a.download = document.file_name || document.title;
       document.body.appendChild(a);
       a.click();
@@ -209,8 +179,7 @@ const DocumentRepository: React.FC = () => {
       // Record download activity
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const documentService = await import('@/hooks/useDocumentService').then(mod => mod.useDocumentService());
-        await documentService.recordActivity({
+        await documentService.createDocumentActivity({
           document_id: document.id,
           action: 'download',
           user_id: user.id,
@@ -267,7 +236,7 @@ const DocumentRepository: React.FC = () => {
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsUploadOpen(true)} className="gap-2">
+          <Button onClick={() => setIsUploadOpen(true)} className="gap-2 bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Upload
           </Button>
         </div>
@@ -334,7 +303,7 @@ const DocumentRepository: React.FC = () => {
                 </div>
               ) : (
                 <DocumentList
-                  documents={adaptDatabaseArray(filteredDocuments)}
+                  documents={filteredDocuments}
                   onViewDocument={handleViewDocument}
                   onEditDocument={handleEditDocument}
                   onDeleteDocument={handleDeleteDocument}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -16,11 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { DocumentProvider, useDocuments } from '@/contexts/DocumentContext';
 import { Document as DocumentType } from '@/types/document';
-import { Document as DatabaseDocument } from '@/types/database';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 
 const DocumentsContent = () => {
   const { t } = useTranslation();
@@ -99,10 +98,6 @@ const DocumentsContent = () => {
   const handleSubmitForReview = (doc: DocumentType) => {
     submitForApproval(doc);
     setActiveTab('approvals');
-  };
-
-  const handleUpdateDocument = (document: DatabaseDocument) => {
-    updateDocument(document);
   };
 
   const approvalNotifications = notifications.filter(n => 
@@ -210,10 +205,7 @@ const DocumentsContent = () => {
           
           <TabsContent value="expired">
             <div className="bg-white border border-accent/10 rounded-lg shadow-lg">
-              <ExpiredDocuments 
-                documents={documents} 
-                onDocumentUpdated={handleUpdateDocument}
-              />
+              <ExpiredDocuments />
             </div>
           </TabsContent>
           

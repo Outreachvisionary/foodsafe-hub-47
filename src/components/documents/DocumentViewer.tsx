@@ -1,107 +1,45 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Document } from '@/types/document';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Download, 
-  Calendar, 
-  Tag, 
-  FileText, 
-  Edit, 
-  Trash, 
-  Lock, 
-  Unlock,
-  Clock,
-  User
-} from 'lucide-react';
+import { Document as DocumentType } from '@/types/document';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
+import { FileText, Download, Calendar, Tag, Info, Loader2, AlertCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentViewerProps {
-  document: Document;
+  document: DocumentType | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit?: (document: Document) => void;
-  onDelete?: (document: Document) => void;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
-  onOpenChange,
-  onEdit,
-  onDelete,
+  onOpenChange
 }) => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string>('');
-
+  const [activeTab, setActiveTab] = useState('preview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   useEffect(() => {
-    if (open && document) {
-      // Determine file type for proper preview
-      const determineFileType = () => {
-        const fileName = document.file_name?.toLowerCase() || '';
-        const mimeType = document.file_type?.toLowerCase() || '';
-        
-        if (mimeType.includes('pdf') || fileName.endsWith('.pdf')) {
-          return 'pdf';
-        } else if (mimeType.includes('image') || 
-                  ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].some(ext => fileName.endsWith(ext))) {
-          return 'image';
-        } else if (mimeType.includes('text') || 
-                  ['.txt', '.md', '.csv'].some(ext => fileName.endsWith(ext))) {
-          return 'text';
-        } else {
-          return 'other';
-        }
-      };
+    // Reset loading state when document changes
+    if (document) {
+      setIsLoading(true);
+      setError(null);
       
-      setFileType(determineFileType());
+      // Simulate loading delay
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
       
-      // Try to get the document URL for preview
-      if (document.file_path) {
-        setPreview(document.file_path);
-      }
+      return () => clearTimeout(timer);
     }
-  }, [open, document]);
-
-  const handleDownload = async () => {
-    try {
-      // Create a download link and click it
-      const link = document.file_path;
-      const a = document.createElement('a');
-      a.href = link;
-      a.download = document.file_name || document.title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      toast({
-        title: "Download Started",
-        description: `Downloading ${document.title}`,
-      });
-    } catch (error: any) {
-      console.error('Error downloading document:', error);
-      toast({
-        title: "Download Failed",
-        description: error.message || "Failed to download document.",
-        variant: "destructive"
-      });
-    }
-  };
-
+  }, [document]);
+  
   const getStatusBadgeColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'draft':
@@ -120,192 +58,264 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
+  
+  const handleDownload = () => {
+    if (!document || !document.file_path) return;
+    
+    const a = document.createElement('a');
+    a.href = document.file_path;
+    a.download = document.file_name || document.title;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const renderPreview = () => {
-    if (!preview) {
+    if (!document) return null;
+    
+    // Check if there's no file to preview
+    if (!document.file_path) {
       return (
-        <div className="flex flex-col items-center justify-center p-12 bg-gray-50 rounded-md border border-dashed border-gray-300">
-          <FileText className="h-16 w-16 text-gray-400 mb-4" />
-          <p className="text-gray-500">No preview available</p>
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-yellow-500 mb-3" />
+          <h3 className="text-lg font-medium mb-2">No preview available</h3>
+          <p className="text-muted-foreground">
+            This document does not have an associated file.
+          </p>
         </div>
       );
     }
-
-    switch (fileType) {
-      case 'pdf':
-        return (
-          <div className="h-[500px] w-full overflow-hidden rounded-md border border-gray-200">
-            <iframe
-              src={`${preview}#toolbar=0`}
-              className="h-full w-full"
-              title={document.title}
-            />
-          </div>
-        );
-      case 'image':
-        return (
-          <div className="flex items-center justify-center bg-gray-50 rounded-md p-4 border border-gray-200">
-            <img
-              src={preview}
-              alt={document.title}
-              className="max-h-[500px] max-w-full object-contain"
-            />
-          </div>
-        );
-      case 'text':
-        return (
-          <div className="h-[500px] w-full overflow-auto p-4 rounded-md bg-gray-50 border border-gray-200 font-mono text-sm">
-            Loading text content...
-          </div>
-        );
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center p-12 bg-gray-50 rounded-md border border-dashed border-gray-300">
-            <FileText className="h-16 w-16 text-gray-400 mb-4" />
-            <p className="text-gray-500">Preview not available for this file type</p>
-            <Button 
-              variant="outline" 
-              className="mt-4" 
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4 mr-2" /> Download to View
-            </Button>
-          </div>
-        );
+    
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mb-3" />
+          <p className="text-muted-foreground">Loading preview...</p>
+        </div>
+      );
     }
+    
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mb-3" />
+          <h3 className="text-lg font-medium mb-2">Error loading preview</h3>
+          <p className="text-muted-foreground">{error}</p>
+          <Button variant="outline" className="mt-4" onClick={() => setIsLoading(true)}>
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    
+    // Check file type for appropriate preview
+    const fileType = document.file_type.toLowerCase();
+    
+    if (fileType.includes('pdf')) {
+      return (
+        <iframe 
+          src={`${document.file_path}#toolbar=0`}
+          className="w-full h-[60vh] border-0"
+          title={document.title}
+        />
+      );
+    }
+    
+    if (fileType.includes('image')) {
+      return (
+        <div className="flex justify-center p-4">
+          <img 
+            src={document.file_path} 
+            alt={document.title} 
+            className="max-h-[60vh] max-w-full object-contain"
+          />
+        </div>
+      );
+    }
+    
+    // For other file types, show download prompt
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <FileText className="h-12 w-12 text-primary mb-3" />
+        <h3 className="text-lg font-medium mb-2">Preview not available</h3>
+        <p className="text-muted-foreground mb-4">
+          This file type ({document.file_type || 'Unknown'}) cannot be previewed directly.
+        </p>
+        <Button onClick={handleDownload} className="gap-2">
+          <Download className="h-4 w-4" />
+          Download File
+        </Button>
+      </div>
+    );
   };
-
+  
+  const renderDetails = () => {
+    if (!document) return null;
+    
+    return (
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Document ID</p>
+            <p className="font-mono text-xs bg-muted p-2 rounded">{document.id}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Status</p>
+            <div>
+              <Badge 
+                className={cn("font-medium border", getStatusBadgeColor(document.status))}
+              >
+                {document.status}
+              </Badge>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Category</p>
+            <p>{document.category || 'Uncategorized'}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Version</p>
+            <p>v{document.version || 1}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Created By</p>
+            <div className="flex items-center">
+              <User className="h-4 w-4 mr-2 text-muted-foreground" />
+              <p>{document.created_by || 'Unknown'}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Created Date</p>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <p>{document.created_at ? format(new Date(document.created_at), 'PPP') : 'Unknown'}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <p>{document.updated_at ? format(new Date(document.updated_at), 'PPP') : 'N/A'}</p>
+            </div>
+          </div>
+          
+          {document.expiry_date && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Expires On</p>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                <p>{format(new Date(document.expiry_date), 'PPP')}</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {document.description && (
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-sm font-medium text-muted-foreground">Description</p>
+            <p className="text-sm">{document.description}</p>
+          </div>
+        )}
+        
+        {document.tags && document.tags.length > 0 && (
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-sm font-medium text-muted-foreground">Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {document.tags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center">
+                  <Tag className="h-3 w-3 mr-1" />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {document.file_name && (
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-sm font-medium text-muted-foreground">File Information</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Name</p>
+                <p className="text-sm truncate">{document.file_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Size</p>
+                <p className="text-sm">
+                  {document.file_size ? `${Math.round(document.file_size / 1024)} KB` : 'Unknown'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Type</p>
+                <p className="text-sm">{document.file_type || 'Unknown'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  if (!document) return null;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-auto">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{document.title}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <FileText className="mr-2 h-5 w-5 text-primary" />
+              <DialogTitle className="text-xl">{document.title}</DialogTitle>
+            </div>
             <Badge 
               className={cn("font-medium border", getStatusBadgeColor(document.status))}
             >
               {document.status}
             </Badge>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">{document.category}</span>
-            {document.is_locked && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <span className="flex items-center text-amber-600 text-sm">
-                  <Lock className="h-3 w-3 mr-1" /> Locked
-                </span>
-              </>
-            )}
-          </DialogDescription>
+          </div>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {document.description && (
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-              <p className="text-sm text-blue-800">{document.description}</p>
-            </div>
-          )}
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="preview" className="flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              Preview
+            </TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center">
+              <Info className="h-4 w-4 mr-2" />
+              Details
+            </TabsTrigger>
+          </TabsList>
           
-          {/* Document metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-            <div className="flex items-start gap-2 text-sm">
-              <User className="h-4 w-4 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium text-gray-700">Created by</p>
-                <p className="text-gray-600">{document.created_by || 'Unknown'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-2 text-sm">
-              <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium text-gray-700">Created at</p>
-                <p className="text-gray-600">
-                  {document.created_at ? format(new Date(document.created_at), 'PPP') : 'Unknown'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-2 text-sm">
-              <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium text-gray-700">Last updated</p>
-                <p className="text-gray-600">
-                  {document.updated_at ? format(new Date(document.updated_at), 'PPP') : 'Unknown'}
-                </p>
-              </div>
-            </div>
-            
-            {document.expiry_date && (
-              <div className="flex items-start gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-700">Expiry date</p>
-                  <p className="text-gray-600">
-                    {format(new Date(document.expiry_date), 'PPP')}
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {document.tags && document.tags.length > 0 && (
-              <div className="flex items-start gap-2 text-sm md:col-span-2">
-                <Tag className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-700">Tags</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {document.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="bg-gray-50">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <TabsContent value="preview" className="border rounded-md mt-4">
+            <Card>
+              {renderPreview()}
+            </Card>
+          </TabsContent>
           
-          {/* Document preview */}
-          <div className="mt-6">
-            <p className="text-sm font-medium text-gray-700 mb-2">Document Preview</p>
-            {renderPreview()}
-          </div>
-        </div>
-
-        <DialogFooter className="mt-6 flex gap-2 justify-between sm:justify-between">
-          <div>
-            {onDelete && (
-              <Button 
-                variant="outline" 
-                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={() => {
-                  onOpenChange(false);
-                  onDelete(document);
-                }}
-              >
-                <Trash className="h-4 w-4 mr-2" /> Delete
-              </Button>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            {onEdit && (
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  onOpenChange(false);
-                  onEdit(document);
-                }}
-                disabled={document.is_locked}
-              >
-                <Edit className="h-4 w-4 mr-2" /> Edit
-              </Button>
-            )}
-            
-            <Button onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" /> Download
+          <TabsContent value="details" className="border rounded-md mt-4">
+            <Card>
+              {renderDetails()}
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        <DialogFooter>
+          {document.file_path && (
+            <Button onClick={handleDownload} className="gap-2 mr-auto">
+              <Download className="h-4 w-4" />
+              Download
             </Button>
-          </div>
+          )}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
