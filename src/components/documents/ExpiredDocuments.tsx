@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
@@ -26,7 +25,7 @@ import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { useToast } from '@/hooks/use-toast';
-import { DocumentStatus } from '@/types/document';
+import { Document, DocumentStatus } from '@/types/database';
 import {
   Select,
   SelectContent,
@@ -34,19 +33,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { adaptDatabaseToDocument, adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
-import { Document as DocumentType } from '@/types/database';
+import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 
 interface ExpiredDocumentsProps {
-  documents: DocumentType[];
-  onDocumentUpdated?: (document: DocumentType) => void;
+  documents: Document[];
+  onDocumentUpdated?: (document: Document) => void;
 }
 
-const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onDocumentUpdated }) => {
-  const [docs, setDocs] = useState<DocumentType[]>(documents);
+const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ 
+  documents = [], 
+  onDocumentUpdated 
+}) => {
+  const [docs, setDocs] = useState<Document[]>(documents);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [renewDialogOpen, setRenewDialogOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [newExpiryDate, setNewExpiryDate] = useState<Date | undefined>(undefined);
   const [newStatus, setNewStatus] = useState<DocumentStatus>("Draft");
   const { toast } = useToast();
@@ -55,19 +56,17 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onD
     setDocs(documents);
   }, [documents]);
 
-  const handleViewDocument = (doc: DocumentType) => {
-    // No need to adapt since we're already using the correct type
+  const handleViewDocument = (doc: Document) => {
     setSelectedDocument(doc); 
     setViewDialogOpen(true);
   };
 
-  const handleRenewDocument = (doc: DocumentType) => {
-    // No need to adapt since we're already using the correct type
+  const handleRenewDocument = (doc: Document) => {
     setSelectedDocument(doc);
     setRenewDialogOpen(true);
   };
 
-  const handleUpdateDocument = (updatedDoc: DocumentType) => {
+  const handleUpdateDocument = (updatedDoc: Document) => {
     setDocs(prevDocs => 
       prevDocs.map(doc => 
         doc.id === updatedDoc.id ? updatedDoc : doc
@@ -89,10 +88,10 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onD
 
     try {
       // Update the document with the new expiry date and status
-      const updatedDocument: DocumentType = {
+      const updatedDocument: Document = {
         ...selectedDocument,
         expiry_date: newExpiryDate.toISOString(),
-        status: newStatus as any, // Cast to appropriate type for database
+        status: newStatus,
       };
 
       // Call the onDocumentUpdated prop to update the document in the parent component
@@ -119,8 +118,6 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onD
   const fetchDocuments = () => {
     // Mock implementation to simulate fetching documents
     // In a real application, you would fetch the documents from an API
-    // and update the state with the fetched documents
-    // For now, we just update the state with the current documents
     setDocs(documents);
   };
 
@@ -242,11 +239,10 @@ const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents = [], onD
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="In Review">In Review</SelectItem>
+                  <SelectItem value="Pending Approval">In Review</SelectItem>
                   <SelectItem value="Approved">Approved</SelectItem>
                   <SelectItem value="Rejected">Rejected</SelectItem>
                   <SelectItem value="Archived">Archived</SelectItem>
-                  <SelectItem value="Expired">Expired</SelectItem>
                 </SelectContent>
               </Select>
             </div>

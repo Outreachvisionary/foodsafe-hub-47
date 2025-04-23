@@ -22,3 +22,16 @@ export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
     default: return dbStatus as CAPAStatus;
   }
 };
+
+// Helper function to ensure a string status is a valid database status
+export const ensureValidDbStatus = (status: string): "Open" | "In_Progress" | "Closed" | "Overdue" | "Pending_Verification" => {
+  switch (status) {
+    case 'Open': return 'Open';
+    case 'In_Progress': return 'In_Progress';
+    case 'Closed': return 'Closed';
+    case 'Overdue': return 'Overdue';
+    case 'Pending_Verification': return 'Pending_Verification';
+    // Map any non-matching status to a default
+    default: return 'Open';
+  }
+};

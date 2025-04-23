@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus } from '@/types/capa';
-import { mapStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
+import { mapStatusToDb, mapDbStatusToInternal, ensureValidDbStatus } from './capaStatusMapper';
 
 export const updateCAPAStatus = async (
   capaId: string,
@@ -19,25 +19,31 @@ export const updateCAPAStatus = async (
     if (fetchError) throw fetchError;
     if (!capa) throw new Error('CAPA not found');
 
+    // Map the new status to database format
+    const dbStatus = mapStatusToDb(newStatus);
+    
     const { error: updateError } = await supabase
       .from('capa_actions')
       .update({
-        status: mapStatusToDb(newStatus),
+        status: dbStatus,
         updated_at: new Date().toISOString(),
       })
       .eq('id', capaId);
 
     if (updateError) throw updateError;
 
-    // Record the activity
+    // Record the activity - ensure valid status formats for the database
+    const oldDbStatus = ensureValidDbStatus(capa.status);
+    const newDbStatus = ensureValidDbStatus(dbStatus);
+    
     const activityData = {
       capa_id: capaId,
       action_type: 'status_change',
       action_description: `Status updated to ${newStatus}`,
       performed_by: userId,
-      old_status: capa.status,
-      new_status: mapStatusToDb(newStatus),
-      metadata: comment ? { comment } : undefined
+      old_status: oldDbStatus,
+      new_status: newDbStatus,
+      metadata: comment ? { comment } : {}
     };
 
     const { error: activityError } = await supabase

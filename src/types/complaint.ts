@@ -1,22 +1,22 @@
 
-// Define complaint types
-export type ComplaintStatus = 'New' | 'Under Investigation' | 'Resolved' | 'Closed' | string;
-export type ComplaintCategory = 'Product Quality' | 'Foreign Material' | 'Packaging' | 'Labeling' | 'Customer Service' | 'Other' | string;
-export type ComplaintPriority = 'Low' | 'Medium' | 'High' | 'Urgent' | string;
+// Define the complaint types and mappers
+export type ComplaintCategory = 'Product Quality' | 'Foreign Material' | 'Packaging' | 'Labeling' | 'Customer Service' | 'Other';
+export type ComplaintStatus = 'New' | 'Under Investigation' | 'Resolved' | 'Closed';
+export type ComplaintPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export interface Complaint {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   category: ComplaintCategory;
   status: ComplaintStatus;
   priority: ComplaintPriority;
-  reported_date?: string;
+  reported_date: string;
   resolution_date?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by: string;
+  created_at: string;
+  updated_at: string;
   assigned_to?: string;
+  created_by: string;
   customer_name?: string;
   customer_contact?: string;
   product_involved?: string;
@@ -25,14 +25,13 @@ export interface Complaint {
   capa_required?: boolean;
 }
 
-// Helper function to map Complaint to database format
-export const mapComplaintToDb = (complaint: Partial<Complaint>): Record<string, any> => {
+export const mapComplaintToDb = (complaint: Partial<Complaint>) => {
   return {
     title: complaint.title,
     description: complaint.description,
-    category: complaint.category, // Already a string compatible with the DB enum
-    status: complaint.status, // Already a string compatible with the DB enum
-    priority: complaint.priority, // Already a string compatible with the DB enum
+    category: complaint.category,
+    status: complaint.status,
+    priority: complaint.priority,
     reported_date: complaint.reported_date || new Date().toISOString(),
     resolution_date: complaint.resolution_date,
     created_by: complaint.created_by,
@@ -45,45 +44,24 @@ export const mapComplaintToDb = (complaint: Partial<Complaint>): Record<string, 
   };
 };
 
-// Map database status to complaint status
-export const mapDbStatusToComplaintStatus = (status: string): ComplaintStatus => {
-  switch (status) {
-    case 'new': return 'New';
-    case 'under_investigation': return 'Under Investigation';
-    case 'resolved': return 'Resolved';
-    case 'closed': return 'Closed';
-    default: return status as ComplaintStatus;
-  }
-};
-
-// Get badge variant for complaint status
-export const getStatusBadgeVariant = (status: ComplaintStatus): string => {
-  switch (status) {
-    case 'New':
-      return 'bg-blue-100 text-blue-700';
-    case 'Under Investigation':
-      return 'bg-amber-100 text-amber-700';
-    case 'Resolved':
-      return 'bg-green-100 text-green-700';
-    case 'Closed':
-      return 'bg-gray-100 text-gray-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-};
-
-// Get badge variant for complaint priority
-export const getPriorityBadgeVariant = (priority: ComplaintPriority): string => {
-  switch (priority) {
-    case 'Low':
-      return 'bg-green-100 text-green-700';
-    case 'Medium':
-      return 'bg-blue-100 text-blue-700';
-    case 'High':
-      return 'bg-amber-100 text-amber-700';
-    case 'Urgent':
-      return 'bg-red-100 text-red-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
+export const mapDbToComplaint = (dbComplaint: any): Complaint => {
+  return {
+    id: dbComplaint.id,
+    title: dbComplaint.title,
+    description: dbComplaint.description,
+    category: dbComplaint.category as ComplaintCategory,
+    status: dbComplaint.status as ComplaintStatus,
+    priority: dbComplaint.priority as ComplaintPriority,
+    reported_date: dbComplaint.reported_date,
+    resolution_date: dbComplaint.resolution_date,
+    created_at: dbComplaint.created_at,
+    updated_at: dbComplaint.updated_at,
+    assigned_to: dbComplaint.assigned_to,
+    created_by: dbComplaint.created_by,
+    customer_name: dbComplaint.customer_name,
+    customer_contact: dbComplaint.customer_contact,
+    product_involved: dbComplaint.product_involved,
+    lot_number: dbComplaint.lot_number,
+    capa_id: dbComplaint.capa_id
+  };
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -8,7 +9,7 @@ import DocumentFolders from '@/components/documents/DocumentFolders';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
-import { Document as DatabaseDocument } from '@/types/database';
+import { Document } from '@/types/database';
 import { Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { adaptDatabaseArray, adaptDatabaseToFolder } from '@/utils/documentTypeAdapter';
@@ -26,7 +27,7 @@ const DocumentRepository: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [filteredDocuments, setFilteredDocuments] = useState<DatabaseDocument[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [sortBy, setSortBy] = useState<'title' | 'updated_at'>('updated_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -80,25 +81,25 @@ const DocumentRepository: React.FC = () => {
       path: folder.path,
       created_by: folder.created_by,
       created_at: folder.created_at || new Date().toISOString(),
-      document_count: folder.document_count,
-      updated_at: folder.updated_at || new Date().toISOString()
+      updated_at: folder.updated_at || new Date().toISOString(),
+      document_count: folder.document_count || 0
     });
     setSelectedFolder(documentFolder);
   };
 
-  const handleViewDocument = (document: DocumentType) => {
+  const handleViewDocument = (document: Document) => {
     console.log('View document:', document);
   };
 
-  const handleEditDocument = (document: DocumentType) => {
+  const handleEditDocument = (document: Document) => {
     console.log('Edit document:', document);
   };
 
-  const handleDeleteDocument = (document: DocumentType) => {
+  const handleDeleteDocument = (document: Document) => {
     console.log('Delete document:', document);
   };
 
-  const handleDownloadDocument = (document: DocumentType) => {
+  const handleDownloadDocument = (document: Document) => {
     console.log('Download document:', document);
   };
 

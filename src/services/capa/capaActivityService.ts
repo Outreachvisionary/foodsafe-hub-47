@@ -1,99 +1,93 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPAActivity, CAPAFetchParams } from '@/types/capa';
+import { mapDbStatusToInternal } from './capaStatusMapper';
 
-// Define CAPA activity interface
-export interface CAPAActivity {
+interface ActivityRow {
   id: string;
-  capaId: string;
-  actionType: string;
-  actionDescription: string;
-  performedAt: string;
-  performedBy: string;
-  oldStatus?: CAPAStatus;
-  newStatus?: CAPAStatus;
-  metadata?: Record<string, any>;
-}
-
-// Define DB CAPA Status type - matching the database enum values
-type DbCAPAStatus = "Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification";
-
-// Map internal status to DB status
-const mapStatusToDb = (status: string): DbCAPAStatus => {
-  switch (status.toLowerCase()) {
-    case 'open': return 'Open';
-    case 'in progress': return 'In Progress';
-    case 'closed': return 'Closed';
-    case 'overdue': return 'Overdue';
-    case 'pending verification': return 'Pending Verification';
-    default: return 'Open'; // Default fallback
-  }
-};
-
-// Map DB status to internal status
-const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
-  switch (dbStatus) {
-    case 'Open': return 'Open';
-    case 'In Progress': return 'In Progress';
-    case 'Closed': return 'Closed';
-    case 'Overdue': return 'Overdue';
-    case 'Pending Verification': return 'Pending Verification';
-    default: return dbStatus as CAPAStatus;
-  }
-};
-
-export const recordCAPAActivity = async (activity: {
   capa_id: string;
   action_type: string;
   action_description: string;
+  performed_at: string;
   performed_by: string;
-  old_status?: string;
-  new_status?: string;
-  metadata?: Record<string, any>;
-}): Promise<void> => {
-  try {
-    // Convert status values to DB format if they exist
-    const dbActivity = {
-      ...activity,
-      old_status: activity.old_status ? mapStatusToDb(activity.old_status) : undefined,
-      new_status: activity.new_status ? mapStatusToDb(activity.new_status) : undefined,
-      // Ensure metadata is properly formatted for database
-      metadata: activity.metadata ? JSON.stringify(activity.metadata) : null
-    };
+  old_status: string;
+  new_status: string;
+  metadata: any;
+}
 
-    const { error } = await supabase
+export const createCAPAActivity = async (
+  capaId: string,
+  actionType: string,
+  description: string,
+  userId: string,
+  oldStatus?: string,
+  newStatus?: string,
+  metadata?: Record<string, any>
+) => {
+  try {
+    const { data, error } = await supabase
       .from('capa_activities')
-      .insert(dbActivity);
+      .insert({
+        capa_id: capaId,
+        action_type: actionType,
+        action_description: description,
+        performed_by: userId,
+        old_status: oldStatus,
+        new_status: newStatus,
+        metadata: metadata || {}
+      })
+      .select();
 
     if (error) throw error;
+    return data;
   } catch (error) {
-    console.error('Error recording CAPA activity:', error);
+    console.error('Error creating CAPA activity:', error);
     throw error;
   }
 };
 
-export const fetchCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
+export const fetchCAPAActivities = async (params: CAPAFetchParams): Promise<CAPAActivity[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('capa_activities')
-      .select('*')
-      .eq('capa_id', capaId)
-      .order('performed_at', { ascending: false });
+      .select('*');
+
+    if (params.capaId) {
+      query = query.eq('capa_id', params.capaId);
+    }
+
+    if (params.actionType) {
+      query = query.eq('action_type', params.actionType);
+    }
+
+    if (params.performedBy) {
+      query = query.eq('performed_by', params.performedBy);
+    }
+
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
+
+    query = query.order('performed_at', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
-    // Map database results to CAPAActivity interface with proper parsing of JSON
-    return (data || []).map(item => ({
-      id: item.id,
-      capaId: item.capa_id,
-      actionType: item.action_type,
-      actionDescription: item.action_description,
-      performedAt: item.performed_at,
-      performedBy: item.performed_by,
-      oldStatus: item.old_status ? mapDbStatusToInternal(item.old_status as DbCAPAStatus) : undefined,
-      newStatus: item.new_status ? mapDbStatusToInternal(item.new_status as DbCAPAStatus) : undefined,
-      metadata: typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata || {}
+    // Map the database rows to the CAPAActivity interface
+    const activities = data.map((row: ActivityRow) => ({
+      id: row.id,
+      capaId: row.capa_id,
+      actionType: row.action_type,
+      actionDescription: row.action_description,
+      performedAt: row.performed_at,
+      performedBy: row.performed_by,
+      oldStatus: row.old_status ? mapDbStatusToInternal(row.old_status) : undefined,
+      newStatus: row.new_status ? mapDbStatusToInternal(row.new_status) : undefined,
+      metadata: row.metadata || {}
     }));
+
+    return activities;
   } catch (error) {
     console.error('Error fetching CAPA activities:', error);
     throw error;

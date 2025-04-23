@@ -1,6 +1,6 @@
 
-import { DocumentStatus, DocumentCategory, Document as DocumentType } from '@/types/document';
-import { Document as DatabaseDocument } from '@/types/database';
+import { DocumentStatus, DocumentCategory, Document as DocumentType, Folder as FolderType } from '@/types/document';
+import { Document as DatabaseDocument, Folder as DatabaseFolder } from '@/types/database';
 
 export const adaptDocumentToDatabase = (doc: DocumentType): DatabaseDocument => {
   return {
@@ -31,4 +31,39 @@ export const adaptDocumentArray = (docs: DocumentType[]): DatabaseDocument[] => 
 
 export const adaptDatabaseArray = (docs: DatabaseDocument[]): DocumentType[] => {
   return docs.map(adaptDatabaseToDocument);
+};
+
+// Add the missing folder adapter functions
+export const adaptFolderToDatabase = (folder: FolderType): DatabaseFolder => {
+  return {
+    ...folder,
+    name: folder.name,
+    path: folder.path,
+    created_by: folder.created_by,
+    parent_id: folder.parent_id,
+    created_at: folder.created_at || new Date().toISOString(),
+    updated_at: folder.updated_at || new Date().toISOString(),
+    document_count: folder.document_count || 0
+  } as DatabaseFolder;
+};
+
+export const adaptDatabaseToFolder = (folder: DatabaseFolder): FolderType => {
+  return {
+    id: folder.id,
+    name: folder.name,
+    path: folder.path,
+    created_by: folder.created_by,
+    parent_id: folder.parent_id,
+    created_at: folder.created_at || new Date().toISOString(),
+    updated_at: folder.updated_at || new Date().toISOString(),
+    document_count: folder.document_count || 0
+  } as FolderType;
+};
+
+export const adaptFolderArray = (folders: FolderType[]): DatabaseFolder[] => {
+  return folders.map(adaptFolderToDatabase);
+};
+
+export const adaptDatabaseFolderArray = (folders: DatabaseFolder[]): FolderType[] => {
+  return folders.map(adaptDatabaseToFolder);
 };
