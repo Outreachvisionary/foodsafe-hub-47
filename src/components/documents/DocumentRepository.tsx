@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
@@ -8,10 +9,10 @@ import DocumentFolders from '@/components/documents/DocumentFolders';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
-import { Folder, Document as DocumentType } from '@/types/database';
+import { Document as DocumentType } from '@/types/database';
+import { Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { adaptDocumentArray } from '@/utils/documentTypeAdapter';
-import { Folder as DocumentFolder } from '@/types/document';
+import { adaptDocumentArray, adaptDatabaseToFolder } from '@/utils/documentTypeAdapter';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -59,6 +60,7 @@ const DocumentRepository: React.FC = () => {
       }
     });
     
+    // Using filtered directly since it's already the database Document type
     setFilteredDocuments(filtered);
   }, [documents, searchQuery, selectedFolder, sortBy, sortDirection]);
 
@@ -72,7 +74,8 @@ const DocumentRepository: React.FC = () => {
   };
 
   const handleFolderSelect = (folder: any) => {
-    const documentFolder: DocumentFolder = {
+    // Use adaptDatabaseToFolder to ensure correct typing
+    const documentFolder: Folder = adaptDatabaseToFolder({
       id: folder.id,
       parent_id: folder.parent_id,
       name: folder.name,
@@ -81,7 +84,7 @@ const DocumentRepository: React.FC = () => {
       created_at: folder.created_at || '',
       document_count: folder.document_count,
       updated_at: folder.updated_at
-    };
+    });
     setSelectedFolder(documentFolder);
   };
 

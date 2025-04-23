@@ -1,6 +1,19 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
+
+// Helper function to get table name from source type
+const getTableNameFromSource = (source: string): string => {
+  switch (source) {
+    case 'audit':
+      return 'audit_findings';
+    case 'complaint':
+      return 'complaints';
+    case 'non-conformance':
+      return 'non_conformances';
+    default:
+      throw new Error(`Unsupported source type: ${source}`);
+  }
+};
 
 /**
  * Convert database source records to CAPA objects
@@ -11,27 +24,31 @@ export const convertSourceToCAPA = async (source: string, sourceId: string, user
     let tableName: string;
     let sourceType: CAPASource;
     
-    switch (source) {
-      case 'audit':
-        tableName = 'audit_findings';
-        sourceType = 'audit';
-        break;
-      case 'complaint':
-        tableName = 'complaints';
-        sourceType = 'customer-complaint';
-        break;
-      case 'non-conformance':
-        tableName = 'non_conformances';
-        sourceType = 'internal-qc';
-        break;
-      default:
-        console.error(`Unsupported source type: ${source}`);
-        return null;
+    // Convert source to table name
+    try {
+      tableName = getTableNameFromSource(source);
+      
+      switch (source) {
+        case 'audit':
+          sourceType = 'audit' as CAPASource;
+          break;
+        case 'complaint':
+          sourceType = 'customer-complaint' as CAPASource;
+          break;
+        case 'non-conformance':
+          sourceType = 'internal-qc' as CAPASource;
+          break;
+        default:
+          sourceType = 'other' as CAPASource;
+      }
+    } catch (error) {
+      console.error(`Error getting table name: ${error}`);
+      return null;
     }
     
-    // Fetch the source record
+    // Fetch the source record using type safe table name
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('*')
       .eq('id', sourceId)
       .single();
@@ -51,10 +68,11 @@ export const convertSourceToCAPA = async (source: string, sourceId: string, user
       source: sourceType,
       sourceId: sourceId,
       createdBy: userId,
-      assignedTo: data.assigned_to || userId,
+      assignedTo: tableName === 'complaints' || tableName === 'audit_findings' ? 
+                  data.assigned_to || userId : userId,
     };
     
-    // Source-specific mapping
+    // Source-specific mapping, handle each source type separately
     let capaData: CAPA;
     
     if (tableName === 'audit_findings') {
@@ -62,61 +80,68 @@ export const convertSourceToCAPA = async (source: string, sourceId: string, user
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: `CAPA for Audit Finding: ${data.description.substring(0, 50)}...`,
-        description: data.description,
-        status: "Open" as CAPAStatus,
-        priority: mapSeverityToPriority(data.severity),
+        title: `CAPA for Audit Finding: ${data.description?.substring(0, 50) || 'No description'}`,
+        description: `Corrective action required for audit finding: ${data.description || 'No description'}`,
+        status: 'Open' as CAPAStatus,
+        priority: data.severity === 'Critical' ? 'critical' as CAPAPriority : 
+                  data.severity === 'Major' ? 'high' as CAPAPriority : 
+                  'medium' as CAPAPriority,
+        dueDate: data.due_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        dueDate: data.due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        effectivenessCriteria: "",
+        department: data.department || ""
       };
     } else if (tableName === 'complaints') {
-      // Map customer complaint to CAPA
+      // Map complaint to CAPA
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: data.title || `CAPA for Customer Complaint`,
-        description: data.description,
-        status: "Open" as CAPAStatus,
-        priority: mapComplaintPriorityToCapaPriority(data.priority || 'medium'),
+        title: `CAPA for Complaint: ${data.title?.substring(0, 50) || 'No title'}`,
+        description: `Corrective action required for customer complaint: ${data.description || 'No description'}`,
+        status: 'Open' as CAPAStatus,
+        priority: data.priority === 'Urgent' ? 'critical' as CAPAPriority : 
+                  data.priority === 'High' ? 'high' as CAPAPriority : 
+                  data.priority === 'Medium' ? 'medium' as CAPAPriority : 
+                  'low' as CAPAPriority,
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default to 14 days from now
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        effectivenessCriteria: "",
+        department: data.department || ""
       };
     } else if (tableName === 'non_conformances') {
       // Map non-conformance to CAPA
       capaData = {
         ...capaBase,
         id: "", // Will be generated on insert
-        title: data.title || `CAPA for Non-Conformance`,
-        description: data.description || '',
-        status: "Open" as CAPAStatus,
-        priority: mapNcRiskToPriority(data.risk_level || 'medium'),
+        title: `CAPA for Non-Conformance: ${data.title?.substring(0, 50) || 'No title'}`,
+        description: `Corrective action required for non-conformance: ${data.description || 'No description'}`,
+        status: 'Open' as CAPAStatus,
+        priority: data.priority === 'Critical' ? 'critical' as CAPAPriority : 
+                  data.priority === 'High' ? 'high' as CAPAPriority : 
+                  'medium' as CAPAPriority,
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default 2 weeks
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
         rootCause: "",
         correctiveAction: "",
         preventiveAction: "",
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Default to 14 days from now
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        effectivenessCriteria: "",
+        department: data.department || ""
       };
     } else {
-      console.error(`Unsupported table: ${tableName}`);
+      console.error(`Unsupported source type: ${source}`);
       return null;
     }
     
     return capaData;
   } catch (error) {
-    console.error(`Error converting ${source} to CAPA:`, error);
-    return null;
+    console.error('Error in convertSourceToCAPA:', error);
+    throw error;
   }
 };
 

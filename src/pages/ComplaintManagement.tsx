@@ -77,24 +77,26 @@ const ComplaintManagement: React.FC = () => {
 
   const handleCreateComplaint = async () => {
     try {
-      const newComplaint = mapComplaintToDb({
+      const newComplaintData = {
         title,
         description,
         category: category as ComplaintCategory,
         status: 'New' as ComplaintStatus,
         priority: priority as ComplaintPriority,
-        reportedDate: new Date().toISOString(),
-        createdBy: 'admin', // Should be the current user in a real app
-        customerName,
-        customerContact,
-        productInvolved,
-        lotNumber,
-        capaRequired
-      });
+        reported_date: new Date().toISOString(),
+        created_by: 'admin', // Should be the current user in a real app
+        customer_name: customerName,
+        customer_contact: customerContact,
+        product_involved: productInvolved,
+        lot_number: lotNumber,
+        capa_required: capaRequired
+      };
+      
+      const dbComplaint = mapComplaintToDb(newComplaintData);
 
       const { data, error } = await supabase
         .from('complaints')
-        .insert(newComplaint)
+        .insert(dbComplaint)
         .select()
         .single();
 

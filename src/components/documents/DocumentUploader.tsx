@@ -32,6 +32,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Document, DocumentStatus, DocumentCategory } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useDocumentService } from '@/hooks/useDocumentService';
+import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 
 interface DocumentUploaderProps {
   onUploadComplete?: (document: Document) => void;
@@ -240,7 +241,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       });
       
       if (onUploadComplete) {
-        onUploadComplete(documentData);
+        onUploadComplete(adaptDocumentToDatabase(documentData));
       }
       
       if (onSuccess) {

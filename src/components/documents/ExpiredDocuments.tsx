@@ -1,300 +1,256 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Document } from '@/types/database';
-import { useDocuments } from '@/contexts/DocumentContext';
-import DocumentExpirySettings from './DocumentExpirySettings';
-import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
-import { CalendarClock, Search, AlertTriangle, Filter, Clock, ExternalLink, Calendar, RotateCcw } from 'lucide-react';
-import { adaptDocumentToDatabase, adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { useToast } from '@/hooks/use-toast';
+import { DocumentStatus } from '@/types/document';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { adaptDatabaseToDocument, adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { Document as DocumentType } from '@/types/database';
 
-const ExpiredDocuments: React.FC = () => {
-  const { documents, updateDocument } = useDocuments();
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [showExpirySettings, setShowExpirySettings] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+interface ExpiredDocumentsProps {
+  documents: DocumentType[];
+  onDocumentUpdated?: (document: DocumentType) => void;
+}
 
-  const categories = Array.from(new Set(documents.map(doc => doc.category)));
+const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents, onDocumentUpdated }) => {
+  const [docs, setDocs] = useState<DocumentType[]>(documents);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [renewDialogOpen, setRenewDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [newExpiryDate, setNewExpiryDate] = useState<Date | undefined>(undefined);
+  const [newStatus, setNewStatus] = useState<DocumentStatus>("Draft");
+  const { toast } = useToast();
 
-  const filteredDocuments = documents.filter(doc => {
-    const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date();
-    const isExpiringSoon = doc.expiry_date && !isExpired && 
-      (new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 30;
-    
-    const matchesStatus = 
-      (filterStatus === 'expired' && isExpired) ||
-      (filterStatus === 'expiring' && isExpiringSoon) ||
-      (filterStatus === 'all' && (isExpired || isExpiringSoon));
-      
-    const matchesCategory = 
-      filterCategory === 'all' || doc.category === filterCategory;
-      
-    const matchesSearch = 
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
-      
-    return matchesSearch && matchesStatus && matchesCategory && (isExpired || isExpiringSoon);
-  });
+  useEffect(() => {
+    setDocs(documents);
+  }, [documents]);
 
-  const expiredCount = documents.filter(doc => 
-    doc.expiry_date && new Date(doc.expiry_date) < new Date()
-  ).length;
-
-  const expiringSoonCount = documents.filter(doc => {
-    if (!doc.expiry_date) return false;
-    const expiryDate = new Date(doc.expiry_date);
-    const now = new Date();
-    const daysToExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return daysToExpiry > 0 && daysToExpiry <= 30;
-  }).length;
-
-  const handleExpiryUpdate = (updatedDoc: any) => {
-    const dbDoc = adaptDocumentToDatabase(updatedDoc);
-    updateDocument(dbDoc);
-    setShowExpirySettings(false);
+  const handleViewDocument = (doc: DocumentType) => {
+    setSelectedDocument(adaptDatabaseToDocument(doc)); 
+    setViewDialogOpen(true);
   };
 
-  const calculateDaysToExpiry = (expiryDate: string) => {
-    const expiry = new Date(expiryDate);
-    const now = new Date();
-    const daysToExpiry = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysToExpiry < 0) {
-      return `Expired ${Math.abs(daysToExpiry)} days ago`;
-    } else if (daysToExpiry === 0) {
-      return 'Expires today';
-    } else {
-      return `Expires in ${daysToExpiry} days`;
+  const handleRenewDocument = (doc: DocumentType) => {
+    setSelectedDocument(adaptDatabaseToDocument(doc));
+    setRenewDialogOpen(true);
+  };
+
+  const handleUpdateDocument = (updatedDoc: any) => {
+    setDocs(prevDocs => 
+      prevDocs.map(doc => 
+        doc.id === updatedDoc.id ? adaptDocumentToDatabase(updatedDoc) : doc
+      )
+    );
+    fetchDocuments();
+    setRenewDialogOpen(false);
+  };
+
+  const handleRenew = async () => {
+    if (!selectedDocument || !newExpiryDate) {
+      toast({
+        title: "Error",
+        description: "Please select a document and an expiry date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Update the document with the new expiry date and status
+      const updatedDocument = {
+        ...selectedDocument,
+        expiry_date: newExpiryDate.toISOString(),
+        status: newStatus,
+      };
+
+      // Call the onDocumentUpdated prop to update the document in the parent component
+      onDocumentUpdated?.(updatedDocument);
+
+      // Update the local state
+      handleUpdateDocument(updatedDocument);
+
+      toast({
+        title: "Success",
+        description: "Document renewed successfully.",
+      });
+      setRenewDialogOpen(false);
+    } catch (error) {
+      console.error("Error renewing document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to renew document.",
+        variant: "destructive",
+      });
     }
   };
 
-  const renewDocument = (doc: Document) => {
-    const newExpiryDate = new Date();
-    newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
-    
-    const updatedDoc = {
-      ...doc,
-      expiry_date: newExpiryDate.toISOString(),
-      status: doc.status === 'Expired' ? 'Published' : doc.status,
-      updated_at: new Date().toISOString()
-    };
-    
-    updateDocument(updatedDoc);
+  const fetchDocuments = () => {
+    // Mock implementation to simulate fetching documents
+    // In a real application, you would fetch the documents from an API
+    // and update the state with the fetched documents
+    // For now, we just update the state with the current documents
+    setDocs(documents);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center">
-            <CalendarClock className="mr-2 h-6 w-6" />
-            Expiring Documents
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Manage documents that are expired or about to expire
-          </p>
+    <div>
+      {docs.length === 0 ? (
+        <div className="text-center py-4">
+          <p className="text-muted-foreground">No expired documents found</p>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-red-50 border-red-100">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium text-red-800">Expired Documents</h3>
-                <p className="text-3xl font-bold mt-2 text-red-900">{expiredCount}</p>
-              </div>
-              <div className="bg-red-100 p-3 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-amber-50 border-amber-100">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium text-amber-800">Expiring Soon</h3>
-                <p className="text-3xl font-bold mt-2 text-amber-900">{expiringSoonCount}</p>
-              </div>
-              <div className="bg-amber-100 p-3 rounded-full">
-                <Clock className="h-6 w-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder="Search documents..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="expiring">Expiring Soon</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Documents Requiring Attention</CardTitle>
-          <CardDescription>
-            Manage expired documents and those approaching their expiry date
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Document Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Version</TableHead>
-                <TableHead>Actions</TableHead>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Expiry Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {docs.map((doc) => (
+              <TableRow key={doc.id}>
+                <TableCell className="font-medium">{doc.title}</TableCell>
+                <TableCell>{doc.category}</TableCell>
+                <TableCell>
+                  {doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'N/A'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
+                    View
+                  </Button>
+                  <Button variant="default" size="sm" onClick={() => handleRenewDocument(doc)}>
+                    Renew
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDocuments.length > 0 ? (
-                filteredDocuments.map((doc) => {
-                  const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date();
-                  
-                  return (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">{doc.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-gray-100">
-                          {doc.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className={isExpired ? 'text-red-600 font-medium' : ''}>
-                            {doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'N/A'}
-                          </span>
-                          {doc.expiry_date && (
-                            <span className={`text-xs ${isExpired ? 'text-red-500' : 'text-amber-500'}`}>
-                              {calculateDaysToExpiry(doc.expiry_date)}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {isExpired ? (
-                          <Badge variant="destructive" className="flex items-center gap-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            Expired
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-amber-100 text-amber-800 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Expiring Soon
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>v{doc.version}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              setSelectedDocument(doc);
-                              setShowPreview(true);
-                            }}
-                            className="flex items-center"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDocument(doc);
-                              setShowExpirySettings(true);
-                            }}
-                            className="flex items-center"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Edit Expiry
-                          </Button>
-                          <Button 
-                            variant={isExpired ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => renewDocument(doc)}
-                            className="flex items-center"
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            Renew
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                    No expired or expiring documents found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <DocumentPreviewDialogWrapper
-        document={selectedDocument}
-        open={showPreview}
-        onOpenChange={setShowPreview}
-      />
-
-      {selectedDocument && (
-        <DocumentExpirySettings 
-          document={adaptDatabaseToDocument(selectedDocument)}
-          open={showExpirySettings}
-          onOpenChange={setShowExpirySettings}
-          onUpdate={handleExpiryUpdate}
-        />
+            ))}
+          </TableBody>
+        </Table>
       )}
+
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>View Document</DialogTitle>
+            <DialogDescription>
+              {selectedDocument?.description || 'No description available'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input type="text" id="title" value={selectedDocument?.title || ''} readOnly className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Category
+              </Label>
+              <Input type="text" id="category" value={selectedDocument?.category || ''} readOnly className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expiry_date" className="text-right">
+                Expiry Date
+              </Label>
+              <Input type="text" id="expiry_date" value={selectedDocument?.expiry_date ? new Date(selectedDocument.expiry_date).toLocaleDateString() : 'N/A'} readOnly className="col-span-3" />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renewDialogOpen} onOpenChange={setRenewDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Renew Document</DialogTitle>
+            <DialogDescription>
+              Select a new expiry date and status for the document.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new_expiry_date" className="text-right">
+                New Expiry Date
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !newExpiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newExpiryDate ? format(newExpiryDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                  <Calendar
+                    mode="single"
+                    selected={newExpiryDate}
+                    onSelect={setNewExpiryDate}
+                    disabled={(date) =>
+                      date < new Date()
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new_status" className="text-right">
+                New Status
+              </Label>
+              <Select onValueChange={(value) => setNewStatus(value as DocumentStatus)}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Select a status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="In Review">In Review</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="Archived">Archived</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button onClick={handleRenew}>Renew Document</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

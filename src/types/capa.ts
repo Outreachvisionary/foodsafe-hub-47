@@ -1,4 +1,3 @@
-
 // Define CAPA types
 
 export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | string;
@@ -106,6 +105,7 @@ export interface CAPAFilter {
   department?: string;
 }
 
+// Add missing properties to CAPAFetchParams
 export interface CAPAFetchParams {
   status?: string;
   priority?: string;
@@ -140,7 +140,7 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
     case 'closed': return 'Closed';
     case 'overdue': return 'Overdue';
     case 'pending_verification': return 'Pending Verification';
-    default: return dbStatus;
+    default: return dbStatus as unknown as CAPAStatus;
   }
 };
 

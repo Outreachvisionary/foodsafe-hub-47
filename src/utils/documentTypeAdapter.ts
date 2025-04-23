@@ -1,6 +1,6 @@
 
-import { DocumentStatus, DocumentCategory, Document as DocumentType } from '@/types/document';
-import { Document as DatabaseDocument } from '@/types/database';
+import { DocumentStatus, DocumentCategory, Document as DocumentType, DocumentVersion as DocumentVersionType, DocumentActivity as DocumentActivityType, DocumentAccess as DocumentAccessType, Folder as FolderType } from '@/types/document';
+import { Document as DatabaseDocument, DocumentVersion as DatabaseDocumentVersion, DocumentActivity as DatabaseDocumentActivity, DocumentAccess as DatabaseDocumentAccess, Folder as DatabaseFolder } from '@/types/database';
 
 /**
  * Adapts between different document type formats in the system
@@ -35,4 +35,42 @@ export const adaptDocumentArray = (docs: DocumentType[]): DatabaseDocument[] => 
 
 export const adaptDatabaseArray = (docs: DatabaseDocument[]): DocumentType[] => {
   return docs.map(adaptDatabaseToDocument);
+};
+
+// Additional adapters for version, activity, access and folder types
+
+export const adaptFolderToDatabase = (folder: FolderType): DatabaseFolder => {
+  return {
+    ...folder,
+    // Add any specific conversions if needed
+  } as DatabaseFolder;
+};
+
+export const adaptDatabaseToFolder = (folder: DatabaseFolder): FolderType => {
+  return {
+    ...folder,
+    // Add any specific conversions if needed
+  } as FolderType;
+};
+
+export const adaptVersionToDatabase = (version: DocumentVersionType): DatabaseDocumentVersion => {
+  return {
+    ...version,
+    // Add any specific conversions if needed
+  } as DatabaseDocumentVersion;
+};
+
+export const adaptDatabaseToVersion = (version: DatabaseDocumentVersion): DocumentVersionType => {
+  return {
+    ...version,
+    // Add any specific conversions if needed
+  } as DocumentVersionType;
+};
+
+export const adaptVersionArray = (versions: DocumentVersionType[]): DatabaseDocumentVersion[] => {
+  return versions.map(adaptVersionToDatabase);
+};
+
+export const adaptDatabaseVersionArray = (versions: DatabaseDocumentVersion[]): DocumentVersionType[] => {
+  return versions.map(adaptDatabaseToVersion);
 };
