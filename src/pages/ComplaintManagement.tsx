@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -78,9 +77,9 @@ const ComplaintManagement = () => {
       const newComplaint = {
         title,
         description,
-        category: category as string, // Ensure proper type conversion
+        category: category as string,
         status: 'New' as ComplaintStatus,
-        priority,
+        priority: priority as string,
         reported_date: new Date().toISOString(),
         created_by: 'admin', // Should be the current user in a real app
         customer_name: customerName,
@@ -252,7 +251,6 @@ const ComplaintManagement = () => {
         </Card>
       </div>
       
-      {/* Create Complaint Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -275,7 +273,7 @@ const ComplaintManagement = () => {
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={category}
-                  onValueChange={(value) => setCategory(value as ComplaintCategory)}
+                  onValueChange={(value: ComplaintCategory) => setCategory(value)}
                 >
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
@@ -352,7 +350,7 @@ const ComplaintManagement = () => {
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={priority}
-                  onValueChange={(value) => setPriority(value as ComplaintPriority)}
+                  onValueChange={(value: ComplaintPriority) => setPriority(value)}
                 >
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="Select priority" />

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +26,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { Facility } from '@/types/facility';
 import { Loader2 } from 'lucide-react';
 
-// Define form schema with Zod
 const facilityFormSchema = z.object({
   name: z.string().min(2, {
     message: "Facility name must be at least 2 characters.",
@@ -63,22 +61,21 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Initialize form with default values
   const form = useForm<FacilityFormValues>({
     resolver: zodResolver(facilityFormSchema),
-    defaultValues: defaultValues || {
-      name: '',
-      description: '',
-      address: '',
-      city: '',
-      state: '',
-      zipcode: '',
-      country: '',
-      status: 'active',
-      organization_id: '',
-      contact_email: '',
-      contact_phone: '',
-      facility_type: '',
+    defaultValues: {
+      name: defaultValues?.name || '',
+      description: defaultValues?.description || '',
+      address: defaultValues?.address || '',
+      city: defaultValues?.city || '',
+      state: defaultValues?.state || '',
+      zipcode: defaultValues?.zipcode || '',
+      country: defaultValues?.country || '',
+      status: (defaultValues?.status as 'active' | 'inactive' | 'pending') || 'active',
+      organization_id: defaultValues?.organization_id || '',
+      contact_email: defaultValues?.contact_email || '',
+      contact_phone: defaultValues?.contact_phone || '',
+      facility_type: defaultValues?.facility_type || '',
     },
   });
 

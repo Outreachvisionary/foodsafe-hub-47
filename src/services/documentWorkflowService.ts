@@ -1,4 +1,5 @@
 
+// Fix the default export
 import { Document, DocumentNotification, DocumentWorkflowStep } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -131,7 +132,7 @@ const getAvailableApprovers = async () => {
   ];
 };
 
-export default {
+const documentWorkflowService = {
   submitForApproval,
   approveDocument,
   rejectDocument,
@@ -139,3 +140,5 @@ export default {
   getDefaultWorkflowSteps,
   getAvailableApprovers
 };
+
+export default documentWorkflowService;

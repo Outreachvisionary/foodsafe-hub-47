@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { CAPA, CAPAEffectivenessMetrics } from '@/types/capa';
-import { fetchCAPAById, updateCAPA } from '@/services/capaService';
+import { getCAPAById, updateCAPA } from '@/services/capaService';
 import CAPADetails from '@/components/capa/CAPADetails';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
@@ -31,7 +31,7 @@ const CAPADetailsPage = () => {
           return;
         }
 
-        const capaData = await fetchCAPAById(id);
+        const capaData = await getCAPAById(id);
         setCapa(capaData);
         
         // Show effectiveness monitor for closed CAPAs
@@ -196,7 +196,7 @@ const CAPADetailsPage = () => {
               <CAPAEffectivenessMonitor
                 capaId={capa.id}
                 title={capa.title}
-                implementationDate={capa.completionDate || capa.lastUpdated || capa.createdDate}
+                implementationDate={capa.completionDate || capa.lastUpdated || capa.createdAt}
                 onEffectivenessUpdate={handleEffectivenessUpdate}
               />
             )}

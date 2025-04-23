@@ -23,7 +23,7 @@ export const getFacilities = async (): Promise<Facility[]> => {
  * @param {Partial<Facility>} facility - The facility data
  * @returns {Promise<Facility | null>} The created facility or null if there was an error
  */
-export const createFacility = async (facility: Partial<Facility>): Promise<Facility | null> => {
+export const createFacility = async (facility: Partial<Facility>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
@@ -35,7 +35,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
     return data;
   } catch (error) {
     console.error('Error creating facility:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -45,7 +45,7 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
  * @param {Partial<Facility>} updates - The updates to apply
  * @returns {Promise<Facility | null>} The updated facility or null if there was an error
  */
-export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility | null> => {
+export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
@@ -58,7 +58,7 @@ export const updateFacility = async (id: string, updates: Partial<Facility>): Pr
     return data;
   } catch (error) {
     console.error(`Error updating facility ${id}:`, error);
-    return null;
+    throw error;
   }
 };
 
@@ -110,9 +110,13 @@ export const getFacilityById = async (id: string): Promise<Facility | null> => {
  */
 export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
   try {
-    // Get all facilities, then filter by organization ID
-    const facilities = await getFacilities();
-    return facilities.filter(facility => facility.organization_id === organizationId);
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('organization_id', organizationId);
+    
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error(`Error fetching facilities for organization ${organizationId}:`, error);
     return [];
