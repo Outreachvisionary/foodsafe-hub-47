@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDocuments } from '@/contexts/DocumentContext';
-import { Search, Plus, Filter, FolderOpen, ArrowUpDown, Download, Eye, Edit, Trash, AlertCircle } from 'lucide-react';
+import { Search, Plus, Filter, FolderOpen, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DocumentList from '@/components/documents/DocumentList';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Document as DatabaseDocument } from '@/types/database';
 import { Document as DocumentType, Folder } from '@/types/document';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { adaptDatabaseArray, adaptDatabaseToFolder, adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { adaptDatabaseArray, adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -91,19 +91,8 @@ const DocumentRepository: React.FC = () => {
   };
 
   // Handle folder selection
-  const handleFolderSelect = (folder: any) => {
-    // Use adaptDatabaseToFolder to ensure correct typing
-    const documentFolder = adaptDatabaseToFolder({
-      id: folder.id,
-      parent_id: folder.parent_id,
-      name: folder.name,
-      path: folder.path,
-      created_by: folder.created_by,
-      created_at: folder.created_at || new Date().toISOString(),
-      updated_at: folder.updated_at || new Date().toISOString(),
-      document_count: folder.document_count || 0
-    });
-    setSelectedFolder(documentFolder);
+  const handleFolderSelect = (folder: Folder) => {
+    setSelectedFolder(folder);
   };
 
   // Document action handlers
@@ -144,6 +133,10 @@ const DocumentRepository: React.FC = () => {
       try {
         // If document is in a folder, we need to update the folder count after deletion
         const folderId = document.folder_id;
+        
+        if (!deleteDocument) {
+          throw new Error("Delete function is not available");
+        }
         
         await deleteDocument(document.id);
         
@@ -245,7 +238,6 @@ const DocumentRepository: React.FC = () => {
     <div className="p-6 space-y-6">
       {error && (
         <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             Failed to load documents: {error.message || "Unknown error"}

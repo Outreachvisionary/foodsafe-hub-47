@@ -22,6 +22,7 @@ export const adaptDatabaseToDocument = (doc: DatabaseDocument): DocumentType => 
     file_name: doc.file_name || '',
     file_size: doc.file_size || 0,
     file_type: doc.file_type || '',
+    file_path: doc.file_path || '',
   } as DocumentType;
 };
 

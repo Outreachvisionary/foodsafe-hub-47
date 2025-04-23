@@ -42,6 +42,34 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
+  const handleViewClick = (doc: Document) => {
+    console.log("View document clicked:", doc);
+    if (onViewDocument) {
+      onViewDocument(doc);
+    }
+  };
+
+  const handleEditClick = (doc: Document) => {
+    console.log("Edit document clicked:", doc);
+    if (onEditDocument) {
+      onEditDocument(doc);
+    }
+  };
+
+  const handleDeleteClick = (doc: Document) => {
+    console.log("Delete document clicked:", doc);
+    if (onDeleteDocument) {
+      onDeleteDocument(doc);
+    }
+  };
+
+  const handleDownloadClick = (doc: Document) => {
+    console.log("Download document clicked:", doc);
+    if (onDownloadDocument) {
+      onDownloadDocument(doc);
+    }
+  };
+
   return (
     <div className="w-full">
       {documents.length === 0 ? (
@@ -87,7 +115,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onViewDocument(doc)}
+                          onClick={() => handleViewClick(doc)}
                           className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                           title="View document"
                         >
@@ -98,7 +126,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onEditDocument(doc)}
+                          onClick={() => handleEditClick(doc)}
                           className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-50"
                           title="Edit document"
                         >
@@ -109,7 +137,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDownloadDocument(doc)}
+                          onClick={() => handleDownloadClick(doc)}
                           className="h-8 w-8 text-green-600 hover:text-green-800 hover:bg-green-50"
                           title="Download document"
                         >
@@ -120,7 +148,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteDocument(doc)}
+                          onClick={() => handleDeleteClick(doc)}
                           className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
                           title="Delete document"
                         >

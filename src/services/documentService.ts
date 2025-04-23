@@ -60,7 +60,8 @@ const documentService = {
         updated_at: document.updated_at || new Date().toISOString(),
         expiry_date: document.expiry_date,
         is_locked: document.is_locked || false,
-        tags: document.tags || []
+        tags: document.tags || [],
+        file_path: document.file_path || ''
       };
       
       const { data, error } = await supabase
@@ -99,15 +100,84 @@ const documentService = {
   
   async deleteDocument(id: string): Promise<void> {
     try {
-      const { error } = await supabase
+      console.log(`Attempting to delete document with ID: ${id}`);
+      
+      // First get the document to find if there's an associated file in storage
+      const { data: document, error: fetchError } = await supabase
+        .from('documents')
+        .select('file_path, file_name')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error(`Error fetching document info for deletion: ${fetchError.message}`);
+        throw fetchError;
+      }
+      
+      // If there's a file in storage, delete it
+      if (document && document.file_path) {
+        try {
+          const storagePath = `documents/${id}/${document.file_name}`;
+          const { error: deleteStorageError } = await supabase
+            .storage
+            .from('attachments')
+            .remove([storagePath]);
+          
+          if (deleteStorageError) {
+            console.warn(`Could not delete file from storage: ${deleteStorageError.message}`);
+            // Continue with document deletion even if file deletion fails
+          } else {
+            console.log(`Successfully deleted file from storage: ${storagePath}`);
+          }
+        } catch (storageError) {
+          console.warn('Error while attempting to delete file from storage:', storageError);
+          // Continue with document deletion
+        }
+      }
+      
+      // Delete document's activities
+      try {
+        const { error: activitiesError } = await supabase
+          .from('document_activities')
+          .delete()
+          .eq('document_id', id);
+        
+        if (activitiesError) {
+          console.warn(`Could not delete document activities: ${activitiesError.message}`);
+        }
+      } catch (activitiesError) {
+        console.warn('Error deleting document activities:', activitiesError);
+      }
+      
+      // Delete document's versions
+      try {
+        const { error: versionsError } = await supabase
+          .from('document_versions')
+          .delete()
+          .eq('document_id', id);
+        
+        if (versionsError) {
+          console.warn(`Could not delete document versions: ${versionsError.message}`);
+        }
+      } catch (versionsError) {
+        console.warn('Error deleting document versions:', versionsError);
+      }
+      
+      // Finally delete the document itself
+      const { error: deleteError } = await supabase
         .from('documents')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
-    } catch (error) {
+      if (deleteError) {
+        console.error(`Error deleting document from database: ${deleteError.message}`);
+        throw deleteError;
+      }
+      
+      console.log(`Successfully deleted document with ID: ${id}`);
+    } catch (error: any) {
       console.error(`Error deleting document ${id}:`, error);
-      throw error;
+      throw new Error(`Failed to delete document: ${error.message || "Unknown error"}`);
     }
   },
   

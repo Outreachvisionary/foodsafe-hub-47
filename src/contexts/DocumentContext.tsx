@@ -30,6 +30,7 @@ interface DocumentContextType {
   getDocumentsInFolder: (folderId: string | null) => Document[];
   createFolder: (name: string, parentId: string | null) => Promise<Folder>;
   moveDocumentToFolder: (documentId: string, folderId: string | null) => Promise<void>;
+  deleteDocument: (documentId: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -166,6 +167,46 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         description: 'Failed to update document',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Function to delete a document
+  const deleteDocument = async (documentId: string): Promise<void> => {
+    try {
+      console.log(`Deleting document with ID: ${documentId}`);
+      
+      // First, check if the document exists
+      const documentToDelete = documents.find(doc => doc.id === documentId);
+      if (!documentToDelete) {
+        throw new Error("Document not found");
+      }
+      
+      // Call the document service to delete the document
+      await documentService.deleteDocument(documentId);
+      
+      // Update the documents list by removing the deleted document
+      setDocuments(docs => docs.filter(doc => doc.id !== documentId));
+      
+      // If the deleted document was selected, clear the selection
+      if (selectedDocument && selectedDocument.id === documentId) {
+        setSelectedDocument(null);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+      
+      // No need to call refreshData here as we've already updated the state
+      
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: `Failed to delete document: ${error.message || "Unknown error"}`,
+        variant: 'destructive',
+      });
+      throw error; // Re-throw to allow component to handle error
     }
   };
 
@@ -438,7 +479,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         retryFetchDocuments,
         getDocumentsInFolder,
         createFolder,
-        moveDocumentToFolder
+        moveDocumentToFolder,
+        deleteDocument
       }}
     >
       {children}
