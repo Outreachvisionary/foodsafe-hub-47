@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// Import statements at the top
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -8,17 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Document } from '@/types/database';
+import { Document as DocumentType } from '@/types/document';
 import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
 import DocumentApprover from './DocumentApprover';
 import { AlertCircle, CheckCircle2, Clock, Search, FileText, Users, CalendarClock, ClipboardCheck } from 'lucide-react';
+import { adaptDocumentToDatabase, adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
 
 const ApprovalWorkflow: React.FC = () => {
   const { documents, approveDocument, rejectDocument } = useDocuments();
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [rejectionDialog, setRejectionDialog] = useState({ open: false, document: null as Document | null, reason: '' });
+  const [rejectionDialog, setRejectionDialog] = useState({ open: false, document: null as DocumentType | null, reason: '' });
   const [filterStatus, setFilterStatus] = useState<string>('pending');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -46,7 +48,7 @@ const ApprovalWorkflow: React.FC = () => {
     categoryCount[doc.category]++;
   });
 
-  const handleApprove = async (doc: Document, comment: string) => {
+  const handleApprove = async (doc: DocumentType, comment: string) => {
     try {
       await approveDocument(doc, comment);
       setSelectedDocument(null);
@@ -55,7 +57,7 @@ const ApprovalWorkflow: React.FC = () => {
     }
   };
 
-  const handleReject = async (doc: Document, reason: string) => {
+  const handleReject = async (doc: DocumentType, reason: string) => {
     try {
       await rejectDocument(doc, reason);
       setSelectedDocument(null);
@@ -65,11 +67,11 @@ const ApprovalWorkflow: React.FC = () => {
     }
   };
 
-  const handleOpenRejectDialog = (doc: Document) => {
+  const handleOpenRejectDialog = (doc: DocumentType) => {
     setRejectionDialog({ open: true, document: doc, reason: '' });
   };
 
-  const getPriorityBadge = (doc: Document) => {
+  const getPriorityBadge = (doc: DocumentType) => {
     if (!doc.pending_since) return null;
     
     const pendingDate = new Date(doc.pending_since);

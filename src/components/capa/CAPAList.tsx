@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCAPAs } from '@/services/capaService';
@@ -67,7 +66,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           })
         };
         
-        const data = await getCAPAs(fetchParams);
+        const data = await getCAPAs();
         setCapas(data);
       } catch (error) {
         console.error('Error loading CAPAs:', error);

@@ -62,6 +62,7 @@ export interface DocumentVersion {
   id: string;
   document_id: string;
   version: number;
+  version_number?: number; // Alias for version
   file_size: number;
   created_at: string;
   editor_metadata?: any;
@@ -69,6 +70,7 @@ export interface DocumentVersion {
   file_name: string;
   created_by: string;
   change_notes?: string;
+  change_summary?: string; // Alias for change_notes
 }
 
 export interface DocumentActivity {
@@ -94,6 +96,52 @@ export interface DocumentAccess {
 }
 
 export interface Folder {
+  id: string;
+  parent_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  document_count?: number;
+  name: string;
+  path: string;
+  created_by: string;
+}
+
+// Document types from database.ts to ensure compatibility
+export interface DatabaseDocument {
+  id: string;
+  title: string;
+  description?: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  category: DocumentCategory;
+  status: DocumentStatus;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  expiry_date?: string;
+  tags?: string[];
+  approvers?: string[];
+  folder_id?: string;
+  linked_module?: string;
+  linked_item_id?: string;
+  pending_since?: string | null;
+  custom_notification_days?: number[];
+  is_locked?: boolean;
+  last_review_date?: string;
+  next_review_date?: string;
+  current_version_id?: string;
+  is_template?: boolean;
+  checkout_timestamp?: string;
+  rejection_reason?: string;
+  last_action?: string;
+  checkout_user_id?: string;
+  workflow_status?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DatabaseFolder {
   id: string;
   parent_id?: string;
   created_at: string;

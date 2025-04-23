@@ -25,13 +25,14 @@ export const mapDbRowToCapa = (row: any): CAPA => {
     assignedTo: row.assigned_to,
     department: row.department,
     dueDate: row.due_date,
-    rootCause: row.root_cause,
-    correctiveAction: row.corrective_action,
-    preventiveAction: row.preventive_action,
+    rootCause: row.root_cause || '',
+    correctiveAction: row.corrective_action || '',
+    preventiveAction: row.preventive_action || '',
     effectivenessCriteria: row.effectiveness_criteria,
     completionDate: row.completion_date,
     createdBy: row.created_by,
-    createdDate: row.created_at,
+    createdAt: row.created_at,
+    createdDate: row.created_at, // Alias for createdAt
     lastUpdated: row.updated_at,
     isFsma204Compliant: row.is_fsma204_compliant || false,
     verificationMethod: row.verification_method,
@@ -157,6 +158,3 @@ export const fetchCAPAById = async (id: string): Promise<CAPA | null> => {
     throw error;
   }
 };
-
-// We're no longer exporting these as they've been moved to types/capa.ts
-// export { castToCapaStatus, castToCapaPriority };

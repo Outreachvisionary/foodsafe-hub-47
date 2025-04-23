@@ -1,10 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPAActivity, CAPAStatus } from '@/types/capa';
-import { mapStatusToDb, DbCAPAStatus } from '@/types/capa';
-
-// Table name used for CAPA activities
-const TABLE_NAME = 'capa_activities';
+import { CAPAActivity, CAPAStatus, mapStatusToDb } from '@/types/capa';
 
 export const logCAPAActivity = async (
   capaId: string,
@@ -14,80 +10,59 @@ export const logCAPAActivity = async (
   oldStatus?: CAPAStatus,
   newStatus?: CAPAStatus,
   metadata?: Record<string, any>
-): Promise<CAPAActivity> => {
+): Promise<void> => {
   try {
-    // Format the data for Supabase
     const activityData = {
       capa_id: capaId,
       action_type: actionType,
       action_description: actionDescription,
       performed_by: performedBy,
-      old_status: oldStatus ? mapStatusToDb(oldStatus) : undefined,
-      new_status: newStatus ? mapStatusToDb(newStatus) : undefined,
-      metadata: metadata ? JSON.stringify(metadata) : null
+      old_status: oldStatus ? mapStatusToDb(oldStatus) : null,
+      new_status: newStatus ? mapStatusToDb(newStatus) : null,
+      metadata: metadata || {}
     };
 
-    // Use insert with typecasting to handle the DB format expectations
-    const { data, error } = await supabase
-      .from(TABLE_NAME)
-      .insert(activityData as any)
-      .select()
-      .single();
+    const { error } = await supabase
+      .from('capa_activities')
+      .insert(activityData);
 
-    if (error) throw error;
-
-    // Parse metadata from JSON string to object if it exists
-    const parsedMetadata = data.metadata ? 
-      (typeof data.metadata === 'string' ? JSON.parse(data.metadata) : data.metadata) : 
-      undefined;
-
-    return {
-      id: data.id,
-      capaId: data.capa_id,
-      actionType: data.action_type,
-      actionDescription: data.action_description,
-      performedBy: data.performed_by,
-      performedAt: data.performed_at,
-      oldStatus: data.old_status as CAPAStatus,
-      newStatus: data.new_status as CAPAStatus,
-      metadata: parsedMetadata
-    };
+    if (error) {
+      console.error('Error logging CAPA activity:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error logging CAPA activity:', error);
-    throw error;
+    console.error('Failed to log CAPA activity:', error);
+    // Don't re-throw the error to avoid breaking the main flow
   }
 };
 
-export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
+export const fetchCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
   try {
     const { data, error } = await supabase
-      .from(TABLE_NAME)
+      .from('capa_activities')
       .select('*')
       .eq('capa_id', capaId)
       .order('performed_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching CAPA activities:', error);
+      throw error;
+    }
 
-    return (data || []).map(item => {
-      // Parse metadata from JSON string to object if it exists
-      const parsedMetadata = item.metadata ? 
-        (typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata) : 
-        undefined;
-
-      return {
-        id: item.id,
-        capaId: item.capa_id,
-        actionType: item.action_type,
-        actionDescription: item.action_description,
-        performedBy: item.performed_by,
-        performedAt: item.performed_at,
-        oldStatus: item.old_status as CAPAStatus,
-        newStatus: item.new_status as CAPAStatus,
-        metadata: parsedMetadata
-      };
-    });
+    // Map DB columns to CAPAActivity interface
+    return (data || []).map(item => ({
+      id: item.id,
+      capaId: item.capa_id,
+      actionType: item.action_type,
+      actionDescription: item.action_description,
+      performedAt: item.performed_at,
+      performedBy: item.performed_by,
+      oldStatus: item.old_status ? mapDbStatusToInternal(item.old_status) : undefined,
+      newStatus: item.new_status ? mapDbStatusToInternal(item.new_status) : undefined,
+      metadata: item.metadata
+    }));
   } catch (error) {
-    console.error('Error fetching CAPA activities:', error);
-    throw error;
+    console.error('Error in fetchCAPAActivities:', error);
+    return [];
   }
 };

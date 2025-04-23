@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -25,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority, mapComplaintToDb } from '@/types/complaint';
 
 const ComplaintManagement = () => {
   const navigate = useNavigate();
@@ -74,20 +75,20 @@ const ComplaintManagement = () => {
   
   const handleCreateComplaint = async () => {
     try {
-      const newComplaint = {
+      const newComplaint = mapComplaintToDb({
         title,
         description,
         category: category as ComplaintCategory,
         status: 'New' as ComplaintStatus,
         priority: priority as ComplaintPriority,
-        reported_date: new Date().toISOString(),
-        created_by: 'admin', // Should be the current user in a real app
-        customer_name: customerName,
-        customer_contact: customerContact,
-        product_involved: productInvolved,
-        lot_number: lotNumber,
-        capa_required: capaRequired
-      };
+        reportedDate: new Date().toISOString(),
+        createdBy: 'admin', // Should be the current user in a real app
+        customerName,
+        customerContact,
+        productInvolved,
+        lotNumber,
+        capaRequired
+      });
       
       const { data, error } = await supabase
         .from('complaints')

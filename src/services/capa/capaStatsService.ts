@@ -1,133 +1,90 @@
 
+import { supabase } from '@/integrations/supabase/client';
+import { CAPAStats, CAPAPriority, CAPASource } from '@/types/capa';
 import { fetchCAPAs } from './capaFetchService';
-import { CAPA, CAPAEffectivenessMetrics, CAPAStats, CAPAStatus, CAPAEffectivenessRating, ExtendedCAPAEffectivenessRating } from '@/types/capa';
 
-// Update the CAPA stats function to match the CAPAStats type
-export const fetchCAPAStats = async (): Promise<CAPAStats> => {
+export const getCAPAStats = async (): Promise<CAPAStats> => {
   try {
     const capas = await fetchCAPAs();
     
+    // Initialize stats object
     const stats: CAPAStats = {
       total: capas.length,
       openCount: 0,
-      inProgressCount: 0,
       closedCount: 0,
-      verifiedCount: 0,
-      pendingVerificationCount: 0,
       overdueCount: 0,
-      byStatus: [],
-      byPriority: [],
-      bySource: [],
-      fsma204ComplianceRate: 0,
-      effectivenessStats: {
-        effective: 0,
-        partiallyEffective: 0,
-        ineffective: 0
-      }
+      pendingVerificationCount: 0,
+      byPriority: {} as Record<string, number>,
+      bySource: {} as Record<string, number>,
+      byDepartment: {} as Record<string, number>,
     };
     
-    const today = new Date();
-    let totalClosureTime = 0;
-    let closedItemsCount = 0;
-    let totalFSMACompliant = 0;
+    // Initialize priority counts
+    const priorities: CAPAPriority[] = ['low', 'medium', 'high', 'critical'];
+    priorities.forEach(priority => {
+      stats.byPriority[priority] = 0;
+    });
     
-    // Create counters for statuses, priorities, and sources
-    const statusCounts: Record<string, number> = {};
-    const priorityCounts: Record<string, number> = {};
-    const sourceCounts: Record<string, number> = {};
-
+    // Initialize source counts
+    const sources: CAPASource[] = ['audit', 'customer-complaint', 'internal-qc', 'supplier-issue', 'other'];
+    sources.forEach(source => {
+      stats.bySource[source] = 0;
+    });
+    
+    // Process each CAPA for statistics
     capas.forEach(capa => {
       // Count by status
-      statusCounts[capa.status] = (statusCounts[capa.status] || 0) + 1;
-      
-      // Update individual status counts
-      if (capa.status === 'open') stats.openCount++;
-      if (capa.status === 'in-progress') stats.inProgressCount++;
-      if (capa.status === 'closed') stats.closedCount++;
-      if (capa.status === 'verified') stats.verifiedCount++;
-      if (capa.status === 'pending-verification') stats.pendingVerificationCount++;
-
-      // Count by priority
-      priorityCounts[capa.priority] = (priorityCounts[capa.priority] || 0) + 1;
-
-      // Count by source
-      sourceCounts[capa.source] = (sourceCounts[capa.source] || 0) + 1;
-
-      // Calculate overdue items
-      if (new Date(capa.dueDate) < today && (capa.status !== 'closed' && capa.status !== 'verified')) {
+      if (capa.status.toLowerCase() === 'open') {
+        stats.openCount++;
+      } else if (capa.status.toLowerCase() === 'closed' || capa.status.toLowerCase() === 'verified') {
+        stats.closedCount++;
+      } else if (capa.status.toLowerCase() === 'overdue') {
         stats.overdueCount++;
+      } else if (capa.status.toLowerCase().includes('verification')) {
+        stats.pendingVerificationCount++;
       }
-
-      // Calculate completion rates
-      if (capa.completionDate) {
-        const completionDate = new Date(capa.completionDate);
-        const dueDate = new Date(capa.dueDate);
-        const timeToClose = completionDate.getTime() - dueDate.getTime();
-        totalClosureTime += timeToClose;
-        closedItemsCount++;
+      
+      // Count by priority
+      const priority = capa.priority.toLowerCase() as CAPAPriority;
+      if (!stats.byPriority[priority]) {
+        stats.byPriority[priority] = 0;
       }
-
-      // Calculate FSMA 204 compliance rate
-      if (capa.isFsma204Compliant) {
-        totalFSMACompliant++;
+      stats.byPriority[priority]++;
+      
+      // Count by source
+      const source = capa.source as CAPASource;
+      if (!stats.bySource[source]) {
+        stats.bySource[source] = 0;
       }
-
-      // Calculate effectiveness stats based on rating
-      if (capa.effectivenessRating === 'excellent' || capa.effectivenessRating === 'good') {
-        stats.effectivenessStats!.effective++;
-      } else if (capa.effectivenessRating === 'fair') {
-        stats.effectivenessStats!.partiallyEffective++;
-      } else if (capa.effectivenessRating === 'poor' || capa.effectivenessRating === 'not-determined') {
-        stats.effectivenessStats!.ineffective++;
+      stats.bySource[source]++;
+      
+      // Count by department
+      if (capa.department) {
+        if (!stats.byDepartment![capa.department]) {
+          stats.byDepartment![capa.department] = 0;
+        }
+        stats.byDepartment![capa.department]++;
       }
     });
-
-    // Convert counters to array format for charts
-    stats.byStatus = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
-    stats.byPriority = Object.entries(priorityCounts).map(([name, value]) => ({ name, value }));
-    stats.bySource = Object.entries(sourceCounts).map(([name, value]) => ({ name, value }));
-
-    // Calculate average time to close
-    if (closedItemsCount > 0) {
-      const avgTimeToClose = totalClosureTime / closedItemsCount;
-      stats.averageTimeToClose = avgTimeToClose;
-      stats.averageClosureTime = avgTimeToClose / (1000 * 60 * 60 * 24); // Convert to days
-    } else {
-      stats.averageTimeToClose = 0;
-      stats.averageClosureTime = 0;
-    }
-
-    // Calculate FSMA 204 compliance rate
-    stats.fsma204ComplianceRate = (capas.length > 0) ? (totalFSMACompliant / capas.length) * 100 : 0;
-
+    
+    // Calculate effectiveness rate
+    const verifiedCapas = capas.filter(capa => capa.effectivenessVerified === true);
+    stats.effectivenessRate = verifiedCapas.length > 0
+      ? (verifiedCapas.filter(capa => capa.effectivenessRating?.toLowerCase().includes('effective')).length / verifiedCapas.length) * 100
+      : 0;
+    
     return stats;
   } catch (error) {
-    console.error('Error in fetchCAPAStats:', error);
-    throw error;
-  }
-};
-
-// Fix the effectiveness metrics creation function
-export const createEffectivenessAssessment = async (
-  capaId: string,
-  assessmentData: Partial<CAPAEffectivenessMetrics>
-): Promise<CAPAEffectivenessMetrics> => {
-  try {
-    const metrics: CAPAEffectivenessMetrics = {
-      score: assessmentData.score || 0,
-      rootCauseEliminated: assessmentData.rootCauseEliminated || false,
-      preventiveMeasuresImplemented: assessmentData.preventiveMeasuresImplemented || false,
-      documentationComplete: assessmentData.documentationComplete || false,
-      recurrenceCheck: assessmentData.recurrenceCheck || '',
-      checkedDate: assessmentData.checkedDate || new Date().toISOString(),
-      assessmentDate: assessmentData.assessmentDate,
-      notes: assessmentData.notes,
-      rating: assessmentData.rating
+    console.error('Error getting CAPA statistics:', error);
+    // Return default empty stats on error
+    return {
+      total: 0,
+      openCount: 0,
+      closedCount: 0,
+      overdueCount: 0,
+      pendingVerificationCount: 0,
+      byPriority: {},
+      bySource: {}
     };
-    
-    return metrics;
-  } catch (error) {
-    console.error('Error in createEffectivenessAssessment:', error);
-    throw error;
   }
 };

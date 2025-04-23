@@ -10,6 +10,8 @@ import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
 import { Badge } from '@/components/ui/badge';
 import { Folder, Document as DocumentType } from '@/types/database';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { adaptDocumentArray } from '@/utils/documentTypeAdapter';
+import { Folder as DocumentFolder } from '@/types/document';
 
 const DocumentRepository: React.FC = () => {
   const {
@@ -69,8 +71,18 @@ const DocumentRepository: React.FC = () => {
     }
   };
 
-  const handleFolderSelect = (folder: Folder | null) => {
-    setSelectedFolder(folder);
+  const handleFolderSelect = (folder: any) => {
+    const documentFolder: DocumentFolder = {
+      id: folder.id,
+      parent_id: folder.parent_id,
+      name: folder.name,
+      path: folder.path,
+      created_by: folder.created_by,
+      created_at: folder.created_at || '',
+      document_count: folder.document_count,
+      updated_at: folder.updated_at
+    };
+    setSelectedFolder(documentFolder);
   };
 
   const handleViewDocument = (document: DocumentType) => {

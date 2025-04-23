@@ -10,6 +10,7 @@ import { useDocuments } from '@/contexts/DocumentContext';
 import DocumentExpirySettings from './DocumentExpirySettings';
 import DocumentPreviewDialogWrapper from './DocumentPreviewDialogWrapper';
 import { CalendarClock, Search, AlertTriangle, Filter, Clock, ExternalLink, Calendar, RotateCcw } from 'lucide-react';
+import { adaptDocumentToDatabase, adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
 
 const ExpiredDocuments: React.FC = () => {
   const { documents, updateDocument } = useDocuments();
@@ -55,8 +56,9 @@ const ExpiredDocuments: React.FC = () => {
     return daysToExpiry > 0 && daysToExpiry <= 30;
   }).length;
 
-  const handleExpiryUpdate = (updatedDoc: Document) => {
-    updateDocument(updatedDoc);
+  const handleExpiryUpdate = (updatedDoc: any) => {
+    const dbDoc = adaptDocumentToDatabase(updatedDoc);
+    updateDocument(dbDoc);
     setShowExpirySettings(false);
   };
 
@@ -287,7 +289,7 @@ const ExpiredDocuments: React.FC = () => {
 
       {selectedDocument && (
         <DocumentExpirySettings 
-          document={selectedDocument}
+          document={adaptDatabaseToDocument(selectedDocument)}
           open={showExpirySettings}
           onOpenChange={setShowExpirySettings}
           onUpdate={handleExpiryUpdate}

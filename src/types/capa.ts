@@ -6,6 +6,9 @@ export type CAPAPriority = 'low' | 'medium' | 'high' | 'critical' | string;
 export type CAPASource = 'audit' | 'customer-complaint' | 'internal-qc' | 'supplier-issue' | 'other' | string;
 export type CAPAEffectivenessRating = 'Ineffective' | 'Partially Effective' | 'Effective' | 'Highly Effective' | 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective' | string;
 
+// Database CAPA status type (for mapping between frontend and backend)
+export type DbCAPAStatus = 'open' | 'in_progress' | 'closed' | 'overdue' | 'pending_verification' | string;
+
 // Extended version for the effectiveness monitor
 export type ExtendedCAPAEffectivenessRating = 'excellent' | 'good' | 'adequate' | 'poor' | 'ineffective' | string;
 
@@ -41,6 +44,19 @@ export interface CAPARelatedTraining {
   title?: string;
   type?: string;
   addedAt: string;
+}
+
+// CAPA Activity tracking
+export interface CAPAActivity {
+  id: string;
+  capaId: string;
+  actionType: string;
+  actionDescription: string;
+  performedAt: string;
+  performedBy: string;
+  oldStatus?: CAPAStatus;
+  newStatus?: CAPAStatus;
+  metadata?: Record<string, any>;
 }
 
 export interface CAPA {
@@ -87,6 +103,7 @@ export interface CAPAFilter {
   };
   assignedTo?: string;
   createdBy?: string;
+  department?: string;
 }
 
 export interface CAPAFetchParams {
@@ -97,6 +114,10 @@ export interface CAPAFetchParams {
   dueDate?: string;
   assignedTo?: string;
   createdBy?: string;
+  department?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
 }
 
 export interface CAPAStats {
@@ -110,6 +131,30 @@ export interface CAPAStats {
   byDepartment?: Record<string, number>;
   effectivenessRate?: number;
 }
+
+// Helper functions for mapping between frontend and backend status
+export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
+  switch (dbStatus) {
+    case 'open': return 'Open';
+    case 'in_progress': return 'In Progress';
+    case 'closed': return 'Closed';
+    case 'overdue': return 'Overdue';
+    case 'pending_verification': return 'Pending Verification';
+    default: return dbStatus;
+  }
+};
+
+export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  const normalized = status.toLowerCase().replace(/\s/g, '_');
+  switch (normalized) {
+    case 'open': return 'open';
+    case 'in_progress': return 'in_progress';
+    case 'closed': return 'closed';
+    case 'overdue': return 'overdue';
+    case 'pending_verification': return 'pending_verification';
+    default: return normalized as DbCAPAStatus;
+  }
+};
 
 // Helper functions for badge colors
 export const getStatusColor = (status: CAPAStatus): string => {
