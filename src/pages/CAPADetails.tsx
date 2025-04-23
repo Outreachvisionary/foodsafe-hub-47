@@ -4,14 +4,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader, ExternalLink } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { CAPA, CAPAEffectivenessMetrics } from '@/types/capa';
 import { getCAPAById, updateCAPA } from '@/services/capaService';
 import CAPADetails from '@/components/capa/CAPADetails';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
-import { mapInternalToStatus, mapStatusToInternal } from '@/services/capa/capaStatusService';
 
 const CAPADetailsPage = () => {
   const { id } = useParams<{ id: string }>();

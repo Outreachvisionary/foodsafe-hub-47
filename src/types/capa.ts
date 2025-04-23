@@ -69,7 +69,7 @@ export interface CAPA {
   effectivenessVerified?: boolean;
   isFsma204Compliant?: boolean;
   
-  // New properties to match component usage
+  // Added these properties to match component usage
   sourceReference?: CAPASourceReference;
   relatedDocuments?: CAPARelatedDocument[];
   relatedTraining?: CAPARelatedTraining[];

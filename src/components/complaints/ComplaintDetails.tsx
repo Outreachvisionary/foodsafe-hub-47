@@ -87,16 +87,16 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatus
                 <CardContent>
                   <p>{complaint.description}</p>
 
-                  {complaint.productInvolved && (
+                  {complaint.product_involved && (
                     <div className="mt-4">
                       <h4 className="font-medium mb-2">Product Information</h4>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="font-medium">Product:</div>
-                        <div>{complaint.productInvolved}</div>
-                        {complaint.lotNumber && (
+                        <div>{complaint.product_involved}</div>
+                        {complaint.lot_number && (
                           <>
                             <div className="font-medium">Lot Number:</div>
-                            <div>{complaint.lotNumber}</div>
+                            <div>{complaint.lot_number}</div>
                           </>
                         )}
                       </div>
@@ -115,35 +115,35 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatus
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center text-sm text-gray-500">
                           <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(complaint.reportedDate)}
+                          {formatDate(complaint.reported_date)}
                         </div>
                         <div className="flex items-center text-sm text-gray-500">
                           <MessageSquare className="h-4 w-4 mr-1" />
-                          Reported by: {complaint.createdBy}
+                          Reported by: {complaint.created_by}
                         </div>
                       </div>
                     </TimelineItem>
 
-                    {complaint.assignedTo && (
+                    {complaint.assigned_to && (
                       <TimelineItem title="Assigned for Investigation">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center text-sm text-gray-500">
                             <Clock className="h-4 w-4 mr-1" />
-                            {formatDate(complaint.updatedAt)}
+                            {formatDate(complaint.updated_at)}
                           </div>
                           <div className="text-sm">
-                            Assigned to: {complaint.assignedTo}
+                            Assigned to: {complaint.assigned_to}
                           </div>
                         </div>
                       </TimelineItem>
                     )}
 
-                    {complaint.resolutionDate && (
+                    {complaint.resolution_date && (
                       <TimelineItem title="Complaint Resolved">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
-                            {formatDate(complaint.resolutionDate)}
+                            {formatDate(complaint.resolution_date)}
                           </div>
                         </div>
                       </TimelineItem>
@@ -162,12 +162,12 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatus
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-sm font-medium text-gray-500">Customer Name</h4>
-                      <p>{complaint.customerName || 'Not provided'}</p>
+                      <p>{complaint.customer_name || 'Not provided'}</p>
                     </div>
                     <Separator />
                     <div>
                       <h4 className="text-sm font-medium text-gray-500">Contact Information</h4>
-                      <p>{complaint.customerContact || 'Not provided'}</p>
+                      <p>{complaint.customer_contact || 'Not provided'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -220,7 +220,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatus
                         Reopen Complaint
                       </Button>
                     )}
-                    {!complaint.capaRequired && complaint.status !== 'new' && (
+                    {!complaint.capa_required && complaint.status !== 'new' && (
                       <Button
                         variant="outline"
                         className="w-full justify-start"
@@ -230,7 +230,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatus
                         Create CAPA
                       </Button>
                     )}
-                    {complaint.capaId && (
+                    {complaint.capa_id && (
                       <Button
                         variant="secondary"
                         className="w-full justify-start"

@@ -18,5 +18,5 @@ export interface Facility {
   state?: string;
   city?: string;
   zipcode?: string;
-  facility_type?: string; // Added this field
+  facility_type?: string;
 }

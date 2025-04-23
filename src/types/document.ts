@@ -56,3 +56,50 @@ export interface Document {
   workflow_status?: string;
   metadata?: Record<string, any>;
 }
+
+// Add missing types for Document components
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version: number;
+  file_size: number;
+  created_at: string;
+  editor_metadata?: any;
+  is_binary_file?: boolean;
+  file_name: string;
+  created_by: string;
+  change_notes?: string;
+}
+
+export interface DocumentActivity {
+  id: string;
+  document_id: string;
+  timestamp: string;
+  action: string;
+  user_id: string;
+  user_name: string;
+  user_role: string;
+  comments?: string;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  folder_id?: string;
+  granted_at: string;
+  user_id: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+}
+
+export interface Folder {
+  id: string;
+  parent_id?: string;
+  created_at: string;
+  updated_at: string;
+  document_count?: number;
+  name: string;
+  path: string;
+  created_by: string;
+}

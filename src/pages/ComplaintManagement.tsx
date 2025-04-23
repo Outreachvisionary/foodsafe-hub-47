@@ -77,9 +77,9 @@ const ComplaintManagement = () => {
       const newComplaint = {
         title,
         description,
-        category: category as string,
+        category: category as ComplaintCategory,
         status: 'New' as ComplaintStatus,
-        priority: priority as string,
+        priority: priority as ComplaintPriority,
         reported_date: new Date().toISOString(),
         created_by: 'admin', // Should be the current user in a real app
         customer_name: customerName,
@@ -254,28 +254,39 @@ const ComplaintManagement = () => {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Create New Complaint</DialogTitle>
+            <DialogTitle>Create Complaint</DialogTitle>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Brief description of the complaint"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detailed description of the complaint"
+                className="min-h-[100px]"
+              />
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Brief title of the complaint"
-                />
-              </div>
-              
-              <div className="space-y-2">
+              <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={category}
-                  onValueChange={(value: ComplaintCategory) => setCategory(value)}
+                  onValueChange={(value) => setCategory(value as ComplaintCategory)}
                 >
-                  <SelectTrigger id="category">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -288,71 +299,14 @@ const ComplaintManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Detailed description of the complaint"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Name of the customer"
-                />
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="customerContact">Customer Contact</Label>
-                <Input
-                  id="customerContact"
-                  value={customerContact}
-                  onChange={(e) => setCustomerContact(e.target.value)}
-                  placeholder="Email or phone number"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="productInvolved">Product Involved</Label>
-                <Input
-                  id="productInvolved"
-                  value={productInvolved}
-                  onChange={(e) => setProductInvolved(e.target.value)}
-                  placeholder="Product name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lotNumber">Lot Number</Label>
-                <Input
-                  id="lotNumber"
-                  value={lotNumber}
-                  onChange={(e) => setLotNumber(e.target.value)}
-                  placeholder="Lot/batch number"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="grid gap-2">
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={priority}
-                  onValueChange={(value: ComplaintPriority) => setPriority(value)}
+                  onValueChange={(value) => setPriority(value as ComplaintPriority)}
                 >
-                  <SelectTrigger id="priority">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -363,15 +317,59 @@ const ComplaintManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="flex items-center space-x-2 pt-8">
-                <Checkbox
-                  id="capaRequired"
-                  checked={capaRequired}
-                  onCheckedChange={(checked) => setCapaRequired(checked as boolean)}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Name of the customer"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="customerContact">Customer Contact</Label>
+              <Input
+                id="customerContact"
+                value={customerContact}
+                onChange={(e) => setCustomerContact(e.target.value)}
+                placeholder="Email or phone number"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="productInvolved">Product Involved</Label>
+                <Input
+                  id="productInvolved"
+                  value={productInvolved}
+                  onChange={(e) => setProductInvolved(e.target.value)}
+                  placeholder="Product name"
                 />
-                <Label htmlFor="capaRequired">CAPA Required</Label>
               </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="lotNumber">Lot Number</Label>
+                <Input
+                  id="lotNumber"
+                  value={lotNumber}
+                  onChange={(e) => setLotNumber(e.target.value)}
+                  placeholder="Product lot number"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="capaRequired"
+                checked={capaRequired}
+                onCheckedChange={(checked) => setCapaRequired(checked === true)}
+              />
+              <Label htmlFor="capaRequired" className="text-sm">
+                Requires CAPA (Corrective and Preventive Action)
+              </Label>
             </div>
           </div>
           
@@ -379,7 +377,7 @@ const ComplaintManagement = () => {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateComplaint}>Create Complaint</Button>
+            <Button onClick={handleCreateComplaint}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
