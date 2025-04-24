@@ -43,8 +43,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState<CAPASource>('audit');
-  const [priority, setPriority] = useState<CAPAPriority>('medium');
+  const [source, setSource] = useState<CAPASource>('Audit');
+  const [priority, setPriority] = useState<CAPAPriority>('Medium');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [rootCause, setRootCause] = useState('');
   const [correctiveAction, setCorrectiveAction] = useState('');
@@ -60,8 +60,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setSource('audit');
-    setPriority('medium');
+    setSource('Audit');
+    setPriority('Medium');
     setDueDate(undefined);
     setRootCause('');
     setCorrectiveAction('');
@@ -173,11 +173,11 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="audit">Audit</SelectItem>
-                    <SelectItem value="customer-complaint">Customer Complaint</SelectItem>
-                    <SelectItem value="internal-qc">Internal QC</SelectItem>
-                    <SelectItem value="supplier-issue">Supplier Issue</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="Audit">Audit</SelectItem>
+                    <SelectItem value="Customer_Complaint">Customer Complaint</SelectItem>
+                    <SelectItem value="Internal_QC">Internal QC</SelectItem>
+                    <SelectItem value="Supplier_Issue">Supplier Issue</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -192,10 +192,10 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

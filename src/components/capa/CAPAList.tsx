@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -152,12 +153,12 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                   
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Badge variant="outline" className="text-xs capitalize">
-                      {capa.source}
+                      {capa.source.replace('_', ' ')}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {capa.department || 'No Department'}
                     </Badge>
-                    {capa.isFsma204Compliant && (
+                    {capa.fsma204Compliant && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
                         FSMA 204 Compliant
                       </Badge>

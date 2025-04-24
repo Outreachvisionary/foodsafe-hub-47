@@ -1,3 +1,4 @@
+
 export type DocumentCategory = 
   | 'Other' 
   | 'SOP' 
@@ -45,8 +46,8 @@ export interface Document {
   file_path?: string;
   file_size: number;
   file_type: string;
-  category: string;
-  status: string;
+  category: DocumentCategory;
+  status: DocumentStatus;
   version: number;
   created_by: string;
   created_at?: string;
@@ -86,7 +87,7 @@ export interface DocumentVersion {
   id: string;
   document_id: string;
   version_number: number;
-  version?: number; // Adding both version and version_number for compatibility
+  version?: number;
   file_name: string;
   file_size: number;
   created_by: string;

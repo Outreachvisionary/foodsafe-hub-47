@@ -42,3 +42,5 @@ export const mapInternalStatusToDb = (internalStatus: CAPAStatus): DbCAPAStatus 
       return 'Open';
   }
 };
+
+export const mapStatusToInternal = mapDbStatusToInternal;

@@ -116,6 +116,10 @@ const transformDbCapaToClientCapa = (dbCapa: any): CAPA => {
       case 'Not_Effective':
         effectivenessRating = 'Not_Effective';
         break;
+      case 'Highly Effective':
+      case 'Highly_Effective':
+        effectivenessRating = 'Highly_Effective';
+        break;
       default:
         effectivenessRating = null;
     }
@@ -145,5 +149,6 @@ const transformDbCapaToClientCapa = (dbCapa: any): CAPA => {
     fsma204Compliant: dbCapa.fsma204_compliant || false,
     effectivenessVerified: dbCapa.effectiveness_verified || false,
     sourceId: dbCapa.source_id,
+    sourceReference: dbCapa.source_reference,
   };
 };

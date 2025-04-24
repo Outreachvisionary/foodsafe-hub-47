@@ -28,9 +28,9 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
     switch (normalizedStatus) {
       case 'Open':
         return <AlertTriangle className="h-3.5 w-3.5 mr-1" />;
-      case 'In Progress':
+      case 'In_Progress':
         return <Clock className="h-3.5 w-3.5 mr-1" />;
-      case 'Pending Verification':
+      case 'Pending_Verification':
         return <AlertCircle className="h-3.5 w-3.5 mr-1" />;
       case 'Closed':
       case 'Verified':
@@ -44,13 +44,13 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
     switch (status) {
       case 'Open':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'In Progress':
+      case 'In_Progress':
         return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'Closed':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'Verified':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Pending Verification':
+      case 'Pending_Verification':
         return 'bg-teal-100 text-teal-800 border-teal-200';
       case 'Overdue':
         return 'bg-red-100 text-red-800 border-red-200';
@@ -60,15 +60,14 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
   };
 
   const getPriorityColor = (priority: CAPAPriority): string => {
-    const normalized = priority.toLowerCase();
-    switch (normalized) {
-      case 'critical':
+    switch (priority) {
+      case 'Critical':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
+      case 'High':
         return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
+      case 'Medium':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
+      case 'Low':
         return 'bg-green-100 text-green-800 border-green-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -87,7 +86,7 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
         )}
       >
         {showIcon && getIcon()}
-        {normalizedStatus.replace('-', ' ')}
+        {normalizedStatus.replace('_', ' ')}
       </Badge>
       {priority && (
         <Badge 
@@ -100,4 +99,3 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
     </div>
   );
 };
-

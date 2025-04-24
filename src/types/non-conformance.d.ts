@@ -18,85 +18,38 @@ export type NCReasonCategory =
   | 'Process Deviation'
   | 'Other';
 
+export type NonConformanceStatus = NCStatus;
+
 export interface NonConformance {
   id: string;
   title: string;
   description: string;
   item_name: string;
-  item_id?: string;
   item_category: NCItemCategory;
   reason_category: NCReasonCategory;
-  reason_details?: string;
-  quantity?: number;
-  quantity_on_hold?: number;
-  units?: string;
   status: NCStatus;
   reported_date: string;
   review_date?: string;
   resolution_date?: string;
+  created_at: string;
+  updated_at: string;
   created_by: string;
-  created_at?: string;
-  updated_at?: string;
   assigned_to?: string;
   reviewer?: string;
+  resolution_details?: string;
+  capa_id?: string;
+  item_id?: string;
+  reason_details?: string;
+  quantity?: number;
+  quantity_on_hold?: number;
+  units?: string;
+  tags?: string[];
   location?: string;
   department?: string;
-  priority?: 'Critical' | 'High' | 'Medium' | 'Low';
-  risk_level?: 'High' | 'Medium' | 'Low';
-  capa_id?: string;
-  resolution_details?: string;
-  tags?: string[];
-}
-
-export interface NCActivity {
-  id: string;
-  non_conformance_id: string;
-  action: string;
-  performed_by: string;
-  performed_at: string;
-  previous_status?: NCStatus;
-  new_status?: NCStatus;
-  comments?: string;
-}
-
-export interface NCFilter {
-  status?: NCStatus[];
-  item_category?: NCItemCategory[];
-  reason_category?: NCReasonCategory[];
-  date_range?: {
-    start?: string;
-    end?: string;
-  };
-  search?: string;
-}
-
-export interface NCAttachment {
-  id: string;
-  non_conformance_id: string;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  description?: string;
-  uploaded_by: string;
-  uploaded_at: string;
-}
-
-export interface NCStats {
-  total: number;
-  totalQuantityOnHold: number;
-  byStatus: Record<NCStatus, number>;
-  byCategory: Record<string, number>;
-  byReason: Record<string, number>;
-  recentItems: NonConformance[];
-}
-
-export interface NCNotification {
-  id: string;
-  non_conformance_id: string;
-  message: string;
-  notification_type: string;
-  target_users?: string[];
-  is_read: boolean;
-  created_at?: string;
+  priority?: string;
+  risk_level?: string;
+  capaId?: string;
+  category?: string;
+  severity?: string;
+  source?: string;
 }

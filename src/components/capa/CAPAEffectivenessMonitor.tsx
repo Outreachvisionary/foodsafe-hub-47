@@ -9,7 +9,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, AlertTriangle, RefreshCw, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { format, differenceInDays } from 'date-fns';
-import { CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
+import { CAPAEffectivenessRating } from '@/types/capa';
+
+export interface CAPAEffectivenessMetrics {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
+}
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
@@ -44,10 +54,10 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   };
   
   const determineRating = (score: number): CAPAEffectivenessRating => {
-    if (score >= 90) return 'Highly Effective';
+    if (score >= 90) return 'Highly_Effective';
     if (score >= 70) return 'Effective';  
-    if (score >= 40) return 'Partially Effective';
-    return 'Ineffective';
+    if (score >= 40) return 'Partially_Effective';
+    return 'Not_Effective';
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +87,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
       
       toast({
         title: 'Effectiveness Assessment Saved',
-        description: `CAPA effectiveness rated as ${calculatedRating}`,
+        description: `CAPA effectiveness rated as ${calculatedRating.replace('_', ' ')}`,
       });
     } catch (error) {
       console.error('Error saving effectiveness assessment:', error);
@@ -198,7 +208,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
                   <div className="flex items-center">
                     {getRatingIcon(calculateScore())}
                     <span className="ml-2 font-medium">
-                      {determineRating(calculateScore())}
+                      {determineRating(calculateScore()).replace('_', ' ')}
                     </span>
                   </div>
                   <span className="font-bold">{calculateScore()}/100</span>

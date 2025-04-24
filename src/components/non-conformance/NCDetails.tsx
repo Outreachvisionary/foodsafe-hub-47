@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { NonConformance, NonConformanceStatus } from '@/types/non-conformance';
+import { NonConformance } from '@/types/non-conformance';
 import { useToast } from '@/hooks/use-toast';
 import { useNonConformanceService } from '@/hooks/useNonConformanceService';
 import NCStatusBadge from './NCStatusBadge';
@@ -9,6 +10,7 @@ import NCWorkflowTimeline from './NCWorkflowTimeline';
 import NCActionsPanel from './NCActionsPanel';
 import { Badge } from '@/components/ui/badge';
 import { LinkedCAPAsList } from './LinkedCAPAsList';
+import { Separator } from '@/components/ui/separator';
 
 interface NCDetailsProps {
   id: string;
@@ -68,8 +70,8 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onEdit, onGenerateCapa, onVie
   };
 
   const handleViewCapa = () => {
-    if (nonConformance.capaId && onViewCapa) {
-      onViewCapa(nonConformance.capaId);
+    if (nonConformance.capa_id && onViewCapa) {
+      onViewCapa(nonConformance.capa_id);
     }
   };
 
@@ -107,19 +109,19 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onEdit, onGenerateCapa, onVie
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Category</p>
-                  <p>{nonConformance.category}</p>
+                  <p>{nonConformance.item_category}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Severity</p>
-                  <p>{nonConformance.severity}</p>
+                  <p>{nonConformance.risk_level || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Source</p>
-                  <p>{nonConformance.source}</p>
+                  <p>{nonConformance.reason_category}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Location</p>
-                  <p>{nonConformance.location}</p>
+                  <p>{nonConformance.location || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -128,9 +130,9 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onEdit, onGenerateCapa, onVie
 
             <div className="space-y-2">
               <h4 className="text-md font-semibold">Linked CAPA</h4>
-              {nonConformance.capaId ? (
+              {nonConformance.capa_id ? (
                 <Badge variant="outline">
-                  Linked to CAPA: {nonConformance.capaId}
+                  Linked to CAPA: {nonConformance.capa_id}
                 </Badge>
               ) : (
                 <p>No CAPA linked to this non-conformance.</p>
@@ -152,9 +154,9 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onEdit, onGenerateCapa, onVie
           id={id}
           title={nonConformance.title}
           description={nonConformance.description}
-          category={nonConformance.category}
-          severity={nonConformance.severity}
-          capaId={nonConformance.capaId}
+          category={nonConformance.item_category}
+          severity={nonConformance.risk_level}
+          capaId={nonConformance.capa_id}
           onEdit={() => onEdit(id)}
           onGenerateCapa={handleGenerateCapa}
           onViewCapa={handleViewCapa}

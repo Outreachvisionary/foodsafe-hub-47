@@ -25,7 +25,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const fetchedComments = await documentService.fetchDocumentComments(documentId);
+      const fetchedComments = await documentService.getDocumentComments(documentId);
       setComments(fetchedComments || []);
     } catch (error) {
       console.error('Error fetching document comments:', error);
@@ -43,7 +43,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
     if (!newComment.trim()) return;
     
     try {
-      await documentService.addDocumentComment({
+      await documentService.createDocumentComment({
         document_id: documentId,
         content: newComment,
         user_id: 'currentUser',

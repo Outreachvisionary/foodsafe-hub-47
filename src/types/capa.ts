@@ -3,25 +3,35 @@
 
 export type CAPAStatus = 'Open' | 'In_Progress' | 'Closed' | 'Overdue' | 'Pending_Verification' | 'Verified';
 
-export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective';
+export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective' | 'Highly_Effective';
 
 export type CAPAPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 
-export type CAPASource = 'Audit' | 'Customer Complaint' | 'Internal QC' | 'Supplier Issue' | 'Other';
+export type CAPASource = 'Audit' | 'Customer_Complaint' | 'Internal_QC' | 'Supplier_Issue' | 'Other';
+
+export interface CAPAEffectivenessMetrics {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
+}
 
 export interface CAPA {
   id: string;
   title: string;
   description: string;
   status: CAPAStatus;
-  priority: string;
+  priority: CAPAPriority;
   createdAt: string;
   dueDate: string;
   completionDate?: string;
   verificationDate?: string;
   assignedTo: string;
   createdBy: string;
-  source: string;
+  source: CAPASource;
   rootCause?: string;
   correctiveAction?: string;
   preventiveAction?: string;
@@ -35,6 +45,12 @@ export interface CAPA {
   sourceId?: string;
   relatedDocuments?: any[];
   relatedTraining?: any[];
+  sourceReference?: {
+    type: string;
+    title: string;
+    url?: string;
+    date?: string;
+  };
 }
 
 export interface CAPAFilter {
@@ -50,8 +66,20 @@ export interface CAPAFilter {
 
 export interface CAPAFetchParams {
   status?: CAPAStatus;
-  priority?: string;
-  source?: string;
+  priority?: CAPAPriority;
+  source?: CAPASource;
   searchQuery?: string;
   dueDate?: string;
+}
+
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  pendingVerificationCount: number;
+  effectivenessRate: number;
+  byPriority: Record<string, number>;
+  bySource: Record<string, number>;
+  byDepartment: Record<string, number>;
 }
