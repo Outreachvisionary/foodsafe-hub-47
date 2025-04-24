@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus } from '@/types/capa';
-import { mapInternalStatusToDb } from './capaStatusMapper';
+import { DbCAPAStatus, mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
 
 export interface CAPAActivity {
   id?: string;
@@ -57,12 +57,8 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       id: activity.id,
       capa_id: activity.capa_id,
       performed_at: activity.performed_at,
-      old_status: activity.old_status === 'In Progress' ? 'In_Progress' as CAPAStatus : 
-                  activity.old_status === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
-                  activity.old_status as CAPAStatus,
-      new_status: activity.new_status === 'In Progress' ? 'In_Progress' as CAPAStatus : 
-                  activity.new_status === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
-                  activity.new_status as CAPAStatus,
+      old_status: activity.old_status ? mapDbStatusToInternal(activity.old_status as DbCAPAStatus) : undefined,
+      new_status: activity.new_status ? mapDbStatusToInternal(activity.new_status as DbCAPAStatus) : undefined,
       action_type: activity.action_type,
       action_description: activity.action_description,
       performed_by: activity.performed_by,

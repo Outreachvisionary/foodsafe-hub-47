@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Document } from '@/types/document';
-import { DocumentList } from './DocumentList';
+import DocumentList from './DocumentList';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export const ReviewQueue: React.FC = () => {

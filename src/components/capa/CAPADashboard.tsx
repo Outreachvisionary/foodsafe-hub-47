@@ -1,191 +1,232 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Chart } from '@/components/charts/Chart';
-import { CAPAStatusBadge } from './CAPAStatusBadge';
-import { CAPAStatus } from '@/types/capa';
+import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+import { AlertCircle, CheckCircle, Clock, Activity, AlertTriangle } from 'lucide-react';
+import { CAPA, CAPAStats } from '@/types/capa';
 
-export interface CAPAStats {
-  total: number;
-  openCount: number;
-  closedCount: number;
-  overdueCount: number;
-  pendingVerificationCount: number;
-  effectivenessRate: number;
-  byPriority: Record<string, number>;
-  bySource: Record<string, number>;
-  byDepartment: Record<string, number>;
-}
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-export interface CAPADashboardProps {
-  stats: CAPAStats;
-  filters?: {
+// Define the props interface for CAPADashboard
+interface CAPADashboardProps {
+  filters: {
     status: string;
     priority: string;
     source: string;
     dueDate: string;
   };
-  searchQuery?: string;
+  searchQuery: string;
+  stats: CAPAStats;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ 
-  stats, 
-  filters = { status: 'all', priority: 'all', source: 'all', dueDate: 'all' },
-  searchQuery = '' 
-}) => {
-  const {
-    total,
-    openCount,
-    closedCount,
-    overdueCount,
-    pendingVerificationCount,
-    effectivenessRate,
-    byPriority,
-    bySource,
-    byDepartment
-  } = stats;
-
-  const formatPercentage = (value: number, total: number): string => {
-    if (total === 0) return '0%';
-    return `${Math.round((value / total) * 100)}%`;
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery, stats }) => {
+  // Provide default empty stats if not provided
+  const defaultStats: CAPAStats = {
+    total: 0,
+    openCount: 0,
+    closedCount: 0,
+    overdueCount: 0,
+    pendingVerificationCount: 0,
+    effectivenessRate: 0,
+    byPriority: {},
+    bySource: {},
+    byDepartment: {},
   };
 
-  const getProgressColor = (status: string): string => {
-    switch (status) {
-      case 'Closed':
-        return 'bg-green-500';
-      case 'Overdue':
-        return 'bg-red-500';
-      case 'Pending_Verification':
-        return 'bg-amber-500';
-      default:
-        return 'bg-blue-500';
+  const safeStats = stats || defaultStats;
+
+  // Status distribution data
+  const statusData = {
+    labels: ['Open', 'Closed', 'Overdue', 'Pending Verification'],
+    datasets: [
+      {
+        data: [
+          safeStats.openCount,
+          safeStats.closedCount,
+          safeStats.overdueCount,
+          safeStats.pendingVerificationCount,
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.7)', // blue
+          'rgba(16, 185, 129, 0.7)', // green
+          'rgba(239, 68, 68, 0.7)',  // red
+          'rgba(139, 92, 246, 0.7)', // purple
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(139, 92, 246, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Priority distribution data
+  const priorityData = {
+    labels: Object.keys(safeStats.byPriority),
+    datasets: [
+      {
+        label: 'CAPAs by Priority',
+        data: Object.values(safeStats.byPriority),
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Source distribution data
+  const sourceData = {
+    labels: Object.keys(safeStats.bySource),
+    datasets: [
+      {
+        label: 'CAPAs by Source',
+        data: Object.values(safeStats.bySource),
+        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Options for bar charts
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0
+        }
+      }
     }
   };
 
-  const getEffectivenessColor = (rate: number): string => {
-    if (rate >= 90) return 'text-green-600';
-    if (rate >= 70) return 'text-amber-600';
-    return 'text-red-600';
-  };
-
-  const getEffectivenessRating = (rate: number): string => {
-    if (rate >= 90) return 'Highly_Effective';
-    if (rate >= 70) return 'Effective';
-    if (rate >= 40) return 'Partially_Effective';
-    return 'Not_Effective';
-  };
-
-  // For the chart
-  const priorityData = Object.entries(byPriority).map(([key, value]) => ({
-    name: key,
-    value: value
-  }));
-
-  const sourceData = Object.entries(bySource).map(([key, value]) => ({
-    name: key.replace('_', ' '),
-    value: value
-  }));
-
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
+      {/* CAPA Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Total CAPAs</p>
-              <p className="text-3xl font-bold">{total}</p>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total CAPAs</p>
+                <h3 className="text-2xl font-bold">{safeStats.total}</h3>
+              </div>
+              <Activity className="h-8 w-8 text-gray-400" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Open</p>
-              <p className="text-3xl font-bold">{openCount}</p>
-              <p className="text-sm text-gray-500">{formatPercentage(openCount, total)} of total</p>
-              <Progress value={(openCount / total) * 100} className="h-1 bg-gray-100" />
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Open CAPAs</p>
+                <h3 className="text-2xl font-bold text-blue-600">{safeStats.openCount}</h3>
+              </div>
+              <Clock className="h-8 w-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Closed</p>
-              <p className="text-3xl font-bold">{closedCount}</p>
-              <p className="text-sm text-gray-500">{formatPercentage(closedCount, total)} of total</p>
-              <Progress value={(closedCount / total) * 100} className={`h-1 ${getProgressColor('Closed')}`} />
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Overdue</p>
+                <h3 className="text-2xl font-bold text-red-600">{safeStats.overdueCount}</h3>
+              </div>
+              <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Overdue</p>
-              <p className="text-3xl font-bold">{overdueCount}</p>
-              <p className="text-sm text-gray-500">{formatPercentage(overdueCount, total)} of total</p>
-              <Progress value={(overdueCount / total) * 100} className={`h-1 ${getProgressColor('Overdue')}`} />
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Closed</p>
+                <h3 className="text-2xl font-bold text-green-600">{safeStats.closedCount}</h3>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-400" />
             </div>
           </CardContent>
         </Card>
       </div>
-
+      
       {/* Effectiveness Rate */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-medium">Overall Effectiveness</h3>
-              <p className="text-sm text-gray-500">Based on closed CAPAs</p>
+        <CardHeader>
+          <CardTitle>Effectiveness Rate</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <Progress value={safeStats.effectivenessRate} />
             </div>
-            <div className="text-right">
-              <p className={`text-3xl font-bold ${getEffectivenessColor(effectivenessRate)}`}>
-                {effectivenessRate}%
-              </p>
-              <p className="text-sm">{getEffectivenessRating(effectivenessRate)}</p>
-            </div>
+            <div className="text-2xl font-bold text-green-600">{safeStats.effectivenessRate}%</div>
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Measures how effective implemented CAPAs are at preventing recurrence.</p>
           </div>
         </CardContent>
       </Card>
-
+      
       {/* Charts */}
-      <Tabs defaultValue="priority" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="priority">By Priority</TabsTrigger>
-          <TabsTrigger value="source">By Source</TabsTrigger>
-          <TabsTrigger value="department">By Department</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="priority" className="mt-0">
-          <Card>
-            <CardContent className="p-6 h-[300px]">
-              <Chart data={priorityData} type="pie" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="source" className="mt-0">
-          <Card>
-            <CardContent className="p-6 h-[300px]">
-              <Chart data={sourceData} type="bar" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="department" className="mt-0">
-          <Card>
-            <CardContent className="p-6 h-[300px]">
-              <Chart data={Object.entries(byDepartment).map(([key, value]) => ({ name: key, value }))} type="bar" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>CAPA Status Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80">
+            <Pie data={statusData} />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <Tabs defaultValue="priority">
+              <TabsList>
+                <TabsTrigger value="priority">By Priority</TabsTrigger>
+                <TabsTrigger value="source">By Source</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent className="h-80">
+            <TabsContent value="priority">
+              <Bar data={priorityData} options={barOptions} />
+            </TabsContent>
+            <TabsContent value="source">
+              <Bar data={sourceData} options={barOptions} />
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Alerts Section */}
+      {safeStats.overdueCount > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-red-800">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Attention Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-700">
+              There {safeStats.overdueCount === 1 ? 'is' : 'are'} {safeStats.overdueCount} overdue CAPA{safeStats.overdueCount === 1 ? '' : 's'} requiring immediate attention.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,8 +13,8 @@ import { useToast } from '@/components/ui/use-toast';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
+import { CAPAStats } from '@/types/capa';
 
-// Define props interfaces for child components
 interface FilterableComponentProps {
   filters: {
     status: string;
@@ -38,6 +37,34 @@ const CAPA = () => {
   const [showAutomation, setShowAutomation] = useState(false);
   const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
   
+  const mockStats: CAPAStats = {
+    total: 24,
+    openCount: 8,
+    closedCount: 12,
+    overdueCount: 2,
+    pendingVerificationCount: 2,
+    effectivenessRate: 85,
+    byPriority: {
+      'Critical': 4,
+      'High': 8,
+      'Medium': 10,
+      'Low': 2
+    },
+    bySource: {
+      'Audit': 6,
+      'Customer_Complaint': 4,
+      'Internal_QC': 10,
+      'Supplier_Issue': 2,
+      'Other': 2
+    },
+    byDepartment: {
+      'Production': 12,
+      'QA': 6,
+      'Warehouse': 4,
+      'Receiving': 2
+    }
+  };
+  
   const { toast } = useToast();
 
   const handleCAPACreated = useCallback((capaData: any) => {
@@ -45,7 +72,6 @@ const CAPA = () => {
       title: "CAPA Created",
       description: `New CAPA "${capaData.title}" has been created`
     });
-    // Refresh is handled via service functions
     setShowAutomation(false);
   }, [toast]);
 
@@ -198,7 +224,7 @@ const CAPA = () => {
           </TabsList>
           
           <TabsContent value="dashboard">
-            <CAPADashboard filters={filters} searchQuery={searchQuery} />
+            <CAPADashboard filters={filters} searchQuery={searchQuery} stats={mockStats} />
           </TabsContent>
           
           <TabsContent value="list">

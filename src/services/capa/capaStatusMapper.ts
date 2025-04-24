@@ -1,49 +1,29 @@
 
 import { CAPAStatus } from '@/types/capa';
 
+// This type corresponds to the database enum type
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
+
+// Map internal application status to the database format
+export const mapInternalStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  switch (status) {
+    case 'In_Progress':
+      return 'In Progress';
+    case 'Pending_Verification':
+      return 'Pending Verification';
+    default:
+      return status as DbCAPAStatus;
+  }
+};
 
 // Map database status to internal application status
 export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   switch (dbStatus) {
-    case 'Open':
-      return 'Open';
     case 'In Progress':
       return 'In_Progress';
-    case 'Closed':
-      return 'Closed';
-    case 'Overdue':
-      return 'Overdue';
     case 'Pending Verification':
       return 'Pending_Verification';
-    case 'Verified':
-      return 'Verified';
     default:
-      return 'Open';
+      return dbStatus as CAPAStatus;
   }
 };
-
-// Map internal application status to database status
-export const mapInternalStatusToDb = (internalStatus: CAPAStatus): DbCAPAStatus => {
-  switch (internalStatus) {
-    case 'Open':
-      return 'Open';
-    case 'In_Progress':
-      return 'In Progress';
-    case 'Closed':
-      return 'Closed';
-    case 'Overdue':
-      return 'Overdue';
-    case 'Pending_Verification':
-      return 'Pending Verification';
-    case 'Verified':
-      return 'Verified';
-    default:
-      return 'Open';
-  }
-};
-
-// Aliases for more consistent naming
-export const mapStatusToInternal = mapDbStatusToInternal;
-export const mapStatusToDb = mapInternalStatusToDb;
-export const normalizeStatus = mapDbStatusToInternal;

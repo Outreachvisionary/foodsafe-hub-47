@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CAPA, CAPAStatus } from '@/types/capa';
@@ -7,15 +6,86 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Clock, AlertCircle, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { updateCAPAStatus } from '@/services/capa/capaUpdateService';
 import { updateCAPA } from '@/services/capaService';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
-import RelatedDocumentsList from './RelatedDocumentsList';
-import RelatedTrainingList from './RelatedTrainingList';
+import { format } from 'date-fns';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
-import CAPATimeline from './CAPATimeline';
-import CAPAEffectivenessForm from './CAPAEffectivenessForm';
+
+const RelatedDocumentsList = ({ documentIds }: { documentIds: string[] }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Related Documents</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {documentIds.length === 0 ? (
+          <p className="text-sm text-gray-500">No related documents</p>
+        ) : (
+          <ul className="space-y-2">
+            {documentIds.map((id) => (
+              <li key={id} className="text-sm">Document ID: {id}</li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const RelatedTrainingList = ({ trainingIds }: { trainingIds: string[] }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Related Training</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {trainingIds.length === 0 ? (
+          <p className="text-sm text-gray-500">No related training</p>
+        ) : (
+          <ul className="space-y-2">
+            {trainingIds.map((id) => (
+              <li key={id} className="text-sm">Training ID: {id}</li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const CAPATimeline = ({ capaId }: { capaId: string }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>CAPA Timeline</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-500">Timeline for CAPA ID: {capaId}</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface CAPAEffectivenessFormProps {
+  capaId: string;
+  onSubmit?: (data: any) => void;
+}
+
+const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId, onSubmit = () => {} }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Effectiveness Assessment</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-500">Assessment form for CAPA ID: {capaId}</p>
+        <Button onClick={() => onSubmit({ capaId, effective: true })}>Submit Assessment</Button>
+      </CardContent>
+    </Card>
+  );
+};
 
 interface CAPADetailsProps {
   capa: CAPA;
@@ -157,7 +227,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
 
       <CAPATimeline capaId={capa.id} />
 
-      <CAPAEffectivenessForm capaId={capa.id} />
+      <CAPAEffectivenessForm capaId={capa.id} onSubmit={() => {}} />
     </div>
   );
 };

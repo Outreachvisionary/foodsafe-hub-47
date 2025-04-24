@@ -1,80 +1,57 @@
 
 import React from 'react';
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+import { 
+  Chart as ChartJS,
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  Title, 
+  Tooltip, 
   Legend,
-  ResponsiveContainer
-} from 'recharts';
+  BarElement,
+  ArcElement
+} from 'chart.js';
+import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 
-interface ChartData {
-  name: string;
-  value: number;
-}
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+type ChartType = 'line' | 'bar' | 'pie' | 'doughnut';
 
 interface ChartProps {
-  data: ChartData[];
-  type: 'pie' | 'bar';
-  colors?: string[];
+  type: ChartType;
+  data: any;
+  options?: any;
+  height?: number;
 }
 
-export const Chart: React.FC<ChartProps> = ({ data, type, colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'] }) => {
-  if (!data || data.length === 0) {
-    return <div className="flex items-center justify-center h-full">No data available</div>;
-  }
+const Chart: React.FC<ChartProps> = ({ type, data, options = {}, height }) => {
+  const renderChart = () => {
+    switch (type) {
+      case 'line':
+        return <Line data={data} options={options} height={height} />;
+      case 'bar':
+        return <Bar data={data} options={options} height={height} />;
+      case 'pie':
+        return <Pie data={data} options={options} height={height} />;
+      case 'doughnut':
+        return <Doughnut data={data} options={options} height={height} />;
+      default:
+        return <p>Unsupported chart type</p>;
+    }
+  };
 
-  const renderPieChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-          ))}
-        </Pie>
-        <Tooltip formatter={(value) => [value, 'Count']} />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-
-  const renderBarChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart
-        data={data}
-        margin={{
-          top: 5,
-          right: 30,
-          left: 20,
-          bottom: 5,
-        }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="value" fill="#8884d8" />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-
-  return type === 'pie' ? renderPieChart() : renderBarChart();
+  return <div className="chart-container">{renderChart()}</div>;
 };
 
 export default Chart;

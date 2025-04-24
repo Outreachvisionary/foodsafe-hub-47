@@ -1,16 +1,25 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
-import { mapInternalStatusToDb } from './capaStatusMapper';
+import { DbCAPAStatus, mapDbStatusToInternal } from './capaStatusMapper';
 
 // Helper function to handle type conversions from DB format to app format
 const convertDbToAppFormat = (dbCapa: any): CAPA => {
+  const status: CAPAStatus = dbCapa.status === 'In Progress' ? 'In_Progress' : 
+                            dbCapa.status === 'Pending Verification' ? 'Pending_Verification' : 
+                            dbCapa.status as CAPAStatus;
+                            
+  const effectivenessRating: CAPAEffectivenessRating | undefined = 
+    dbCapa.effectiveness_rating === 'Highly Effective' ? 'Highly_Effective' as CAPAEffectivenessRating :
+    dbCapa.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' as CAPAEffectivenessRating :
+    dbCapa.effectiveness_rating === 'Not Effective' ? 'Not_Effective' as CAPAEffectivenessRating :
+    dbCapa.effectiveness_rating as CAPAEffectivenessRating;
+
   return {
     id: dbCapa.id,
     title: dbCapa.title,
     description: dbCapa.description,
-    status: dbCapa.status === 'In Progress' ? 'In_Progress' : 
-            dbCapa.status === 'Pending Verification' ? 'Pending_Verification' : dbCapa.status as CAPAStatus,
+    status: status,
     priority: dbCapa.priority,
     createdAt: dbCapa.created_at,
     dueDate: dbCapa.due_date,
@@ -23,10 +32,7 @@ const convertDbToAppFormat = (dbCapa: any): CAPA => {
     correctiveAction: dbCapa.corrective_action,
     preventiveAction: dbCapa.preventive_action,
     department: dbCapa.department,
-    effectivenessRating: dbCapa.effectiveness_rating === 'Highly Effective' ? 'Highly_Effective' :
-                        dbCapa.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' :
-                        dbCapa.effectiveness_rating === 'Not Effective' ? 'Not_Effective' :
-                        dbCapa.effectiveness_rating as CAPAEffectivenessRating,
+    effectivenessRating: effectivenessRating,
     effectivenessCriteria: dbCapa.effectiveness_criteria,
     verificationMethod: dbCapa.verification_method,
     verifiedBy: dbCapa.verified_by,

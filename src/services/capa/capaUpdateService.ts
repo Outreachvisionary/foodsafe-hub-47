@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus } from '@/types/capa';
-import { mapInternalStatusToDb } from './capaStatusMapper';
+import { DbCAPAStatus, mapInternalStatusToDb } from './capaStatusMapper';
 import { recordCAPAActivity } from './capaActivityService';
 
 export const updateCAPAStatus = async (
@@ -61,15 +61,48 @@ export const updateCAPAStatus = async (
     // Record the activity
     await recordCAPAActivity({
       capa_id: capaId,
-      old_status: currentCAPA.status,
+      old_status: currentStatus === 'In Progress' ? 'In_Progress' as CAPAStatus :
+                 currentStatus === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
+                 currentStatus as CAPAStatus,
       new_status: newStatus,
       action_type: 'status_change',
-      action_description: comments || `Status updated from ${currentCAPA.status} to ${dbNewStatus}`,
+      action_description: comments || `Status updated from ${currentStatus} to ${dbNewStatus}`,
       performed_by: userId,
       metadata: { comments }
     });
 
-    return data;
+    // Convert database format to app format
+    const convertedData: CAPA = {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      status: data.status === 'In Progress' ? 'In_Progress' :
+              data.status === 'Pending Verification' ? 'Pending_Verification' : data.status as CAPAStatus,
+      priority: data.priority,
+      createdAt: data.created_at,
+      dueDate: data.due_date,
+      completionDate: data.completion_date,
+      verificationDate: data.verification_date,
+      assignedTo: data.assigned_to,
+      createdBy: data.created_by,
+      source: data.source,
+      rootCause: data.root_cause,
+      correctiveAction: data.corrective_action,
+      preventiveAction: data.preventive_action,
+      department: data.department,
+      effectivenessRating: data.effectiveness_rating,
+      effectivenessCriteria: data.effectiveness_criteria,
+      verificationMethod: data.verification_method,
+      verifiedBy: data.verified_by,
+      fsma204Compliant: data.fsma204_compliant,
+      effectivenessVerified: data.effectiveness_verified,
+      sourceId: data.source_id,
+      sourceReference: data.source_reference,
+      relatedDocuments: data.related_documents || [],
+      relatedTraining: data.related_training || []
+    };
+
+    return convertedData;
   } catch (error) {
     console.error('Error updating CAPA status:', error);
     throw error;

@@ -1,53 +1,11 @@
 
-export type NCStatus = 
-  | 'On Hold' 
-  | 'Under Review' 
-  | 'Released' 
-  | 'Disposed' 
-  | 'Approved' 
-  | 'Rejected' 
-  | 'Resolved' 
-  | 'Closed';
+export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Approved' | 'Rejected' | 'Resolved' | 'Closed' | 'Under Investigation';
 
-export type NCItemCategory = 
-  | 'Raw Materials' 
-  | 'Packaging' 
-  | 'Work in Progress' 
-  | 'Finished Goods'
-  | 'Equipment'
-  | 'Facility'
-  | 'Process'
-  | 'Documentation'
-  | 'Personnel'
-  | 'Other'
-  | 'Processing Equipment'
-  | 'Product Storage Tanks'
-  | 'Finished Products'
-  | 'Raw Products'
-  | 'Packaging Materials';
+export type NCItemCategory = 'Raw Material' | 'Ingredient' | 'Packaging' | 'In-Process Product' | 'Finished Product' | 'Equipment' | 'Facility' | 'Other' | 'Packaged Goods';
 
-export type NCReasonCategory = 
-  | 'Physical Contamination'
-  | 'Chemical Contamination'
-  | 'Biological Contamination'
-  | 'Quality Deviation'
-  | 'Specification Failure'
-  | 'Process Deviation'
-  | 'Documentation Error'
-  | 'Labeling Error'
-  | 'Supplier Issue'
-  | 'Storage Issue'
-  | 'Transportation Issue'
-  | 'Equipment Failure'
-  | 'Personnel Error'
-  | 'Foreign Material'
-  | 'Contamination'
-  | 'Quality Issues'
-  | 'Regulatory Non-Compliance'
-  | 'Equipment Malfunction'
-  | 'Documentation Error'
-  | 'Process Deviation'
-  | 'Other';
+export type NCReasonCategory = 'Quality Issue' | 'Food Safety' | 'Damaged' | 'Expired' | 'Process Deviation' | 'Documentation Issue' | 'Customer Complaint' | 'Foreign Material' | 'Other';
+
+export type NCRiskLevel = 'low' | 'moderate' | 'high' | 'severe' | 'Critical' | 'Major';
 
 export interface NonConformance {
   id: string;
@@ -60,76 +18,37 @@ export interface NonConformance {
   reason_details?: string;
   status: NCStatus;
   reported_date: string;
+  review_date?: string;
+  resolution_date?: string;
+  created_at: string;
+  updated_at: string;
   created_by: string;
-  department?: string;
   assigned_to?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-  risk_level?: 'low' | 'moderate' | 'high' | 'severe';
+  reviewer?: string;
+  resolution_details?: string;
   quantity?: number;
   quantity_on_hold?: number;
   units?: string;
-  batch_number?: string;
-  lot_number?: string;
-  expiry_date?: string;
-  supplier_id?: string;
-  supplier_name?: string;
   location?: string;
-  containment_actions?: string;
-  resolution_details?: string;
-  resolution_date?: string;
-  verified_by?: string;
-  verification_date?: string;
+  department?: string;
   capa_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  review_date?: string;
-  reviewer?: string;
   tags?: string[];
+  priority?: string;
+  risk_level?: NCRiskLevel;
+  severity?: string;
+  source?: string;
+  category?: string;
 }
-
-export type NCFormData = Omit<NonConformance, 'id' | 'created_at' | 'updated_at'>;
 
 export interface NCActivity {
   id: string;
   non_conformance_id: string;
-  action: string;
-  performed_by: string;
   performed_at: string;
+  action: string;
+  comments?: string;
+  performed_by: string;
   previous_status?: NCStatus;
   new_status?: NCStatus;
-  comments?: string;
-}
-
-export interface NCAttachment {
-  id: string;
-  non_conformance_id: string;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  description?: string;
-  uploaded_by: string;
-  uploaded_at: string;
-}
-
-export interface NCStats {
-  total: number;
-  totalQuantityOnHold: number;
-  byStatus: Record<NCStatus, number>;
-  byCategory: Record<string, number>;
-  byReason: Record<string, number>;
-  recentItems: NonConformance[];
-}
-
-export interface NCFilter {
-  status?: NCStatus[];
-  item_category?: NCItemCategory[];
-  reason_category?: NCReasonCategory[];
-  date_range?: {
-    start?: string;
-    end?: string;
-  };
-  search?: string;
 }
 
 export interface NCNotification {
@@ -137,7 +56,37 @@ export interface NCNotification {
   non_conformance_id: string;
   message: string;
   notification_type: string;
-  target_users?: string[];
+  created_at: string;
   is_read: boolean;
-  created_at?: string;
+  target_users?: string[];
+}
+
+export interface NCAttachment {
+  id: string;
+  non_conformance_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  description?: string;
+  uploaded_at: string;
+  uploaded_by: string;
+}
+
+export interface NCFilter {
+  status?: NCStatus[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  categories?: NCItemCategory[];
+  reasons?: NCReasonCategory[];
+  assignedTo?: string[];
+  searchTerm?: string;
+  riskLevels?: NCRiskLevel[];
+}
+
+export interface NCDetailsProps {
+  id: string;
+  onClose?: () => void;
 }
