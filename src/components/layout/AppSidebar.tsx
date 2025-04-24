@@ -1,183 +1,220 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Sidebar } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { LogOut, User, Settings, LayoutDashboard, ClipboardCheck, FileText, AlertTriangle, RefreshCw, Truck, GraduationCap, Activity, Building2, Building, Beaker, HardDrive, BookOpen, ChevronLeft, ChevronRight, TestTube2 } from 'lucide-react';
-import { useUser } from '@/contexts/UserContext';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import ProfileTile from '@/components/profile/ProfileTile';
 
-interface SidebarLink {
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { 
+  BarChart, 
+  FileText, 
+  ClipboardCheck, 
+  Building2, 
+  Settings, 
+  Users, 
+  LayoutDashboard,
+  Shield,
+  BookOpen,
+  GraduationCap,
+  Menu,
+  ChevronRight
+} from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from './ThemeToggle';
+
+// Define sidebar items with proper typing
+interface SidebarItem {
   name: string;
-  href: string;
   icon: React.ElementType;
-  color: string;
-  gradientFrom?: string;
-  gradientTo?: string;
+  path: string;
 }
 
-const AppSidebar = () => {
-  const { t } = useTranslation();
-  const { user } = useUser();
-  const navigate = useNavigate();
+const mainNavItems: SidebarItem[] = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'Documents', icon: FileText, path: '/documents' },
+  { name: 'CAPAs', icon: ClipboardCheck, path: '/capas' },
+  { name: 'Training', icon: GraduationCap, path: '/training' },
+  { name: 'Facilities', icon: Building2, path: '/facilities' },
+  { name: 'Reports', icon: BarChart, path: '/reports' },
+];
+
+const secondaryNavItems: SidebarItem[] = [
+  { name: 'Standards', icon: Shield, path: '/standards' },
+  { name: 'Learning', icon: BookOpen, path: '/learning' },
+  { name: 'Users', icon: Users, path: '/users' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
+];
+
+const AppSidebar: React.FC = () => {
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-  
-  const sidebarLinks: SidebarLink[] = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      color: 'text-blue-500',
-      gradientFrom: 'from-blue-500',
-      gradientTo: 'to-blue-600'
-    }, {
-      name: 'Documents',
-      href: '/documents',
-      icon: FileText,
-      color: 'text-green-500',
-      gradientFrom: 'from-green-500',
-      gradientTo: 'to-green-600'
-    }, {
-      name: 'Standards',
-      href: '/standards',
-      icon: BookOpen,
-      color: 'text-purple-500',
-      gradientFrom: 'from-purple-500',
-      gradientTo: 'to-purple-600'
-    }, {
-      name: 'Organizations',
-      href: '/organizations',
-      icon: Building,
-      color: 'text-indigo-600',
-      gradientFrom: 'from-indigo-500',
-      gradientTo: 'to-indigo-600'
-    }, {
-      name: 'Facilities',
-      href: '/facilities',
-      icon: Building2,
-      color: 'text-teal-500',
-      gradientFrom: 'from-teal-500',
-      gradientTo: 'to-teal-600'
-    }, {
-      name: 'Audits',
-      href: '/audits',
-      icon: HardDrive,
-      color: 'text-yellow-600',
-      gradientFrom: 'from-yellow-500',
-      gradientTo: 'to-yellow-600'
-    }, {
-      name: 'Non-Conformance',
-      href: '/non-conformance',
-      icon: AlertTriangle,
-      color: 'text-red-500',
-      gradientFrom: 'from-red-500',
-      gradientTo: 'to-red-600'
-    }, {
-      name: 'CAPA',
-      href: '/capa',
-      icon: RefreshCw,
-      color: 'text-orange-500',
-      gradientFrom: 'from-orange-500',
-      gradientTo: 'to-orange-600'
-    }, {
-      name: 'Suppliers',
-      href: '/suppliers',
-      icon: Truck,
-      color: 'text-pink-500',
-      gradientFrom: 'from-pink-500',
-      gradientTo: 'to-pink-600'
-    }, {
-      name: 'Training',
-      href: '/training',
-      icon: GraduationCap,
-      color: 'text-indigo-500',
-      gradientFrom: 'from-indigo-400',
-      gradientTo: 'to-indigo-500'
-    }, {
-      name: 'HACCP',
-      href: '/haccp',
-      icon: Beaker,
-      color: 'text-emerald-500',
-      gradientFrom: 'from-emerald-500',
-      gradientTo: 'to-emerald-600'
-    }, {
-      name: 'Traceability',
-      href: '/traceability',
-      icon: Activity,
-      color: 'text-cyan-500',
-      gradientFrom: 'from-cyan-500',
-      gradientTo: 'to-cyan-600'
-    }, {
-      name: 'Testing',
-      href: '/testing',
-      icon: TestTube2,
-      color: 'text-violet-500',
-      gradientFrom: 'from-violet-500',
-      gradientTo: 'to-violet-600'
+  const isMobile = useIsMobile();
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setCollapsed(!collapsed);
     }
-  ];
-  
-  const isActiveLink = (href: string) => {
-    return location.pathname === href || (href !== '/' && href !== '/dashboard' && location.pathname.startsWith(href));
   };
+
+  const sidebarWidthClass = collapsed 
+    ? 'w-16 sm:w-20' 
+    : 'w-64';
+
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
+  // Sidebar appearance with new design system
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isMobile && mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div 
+        className={cn(
+          "fixed left-0 top-0 bottom-0 z-30 flex flex-col h-screen bg-card border-r border-border transition-all duration-300",
+          sidebarWidthClass,
+          isMobile && !mobileOpen ? '-translate-x-full' : 'translate-x-0'
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+          {!collapsed && (
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm">
+                CC
+              </div>
+              <span className="font-display font-semibold text-lg text-gradient-primary">
+                ComplianceCore
+              </span>
+            </Link>
+          )}
+          {collapsed && (
+            <Link to="/dashboard" className="flex items-center mx-auto">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm">
+                CC
+              </div>
+            </Link>
+          )}
+          {!isMobile && (
+            <button 
+              onClick={toggleSidebar}
+              className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <ChevronRight className={cn("h-4 w-4 transition-transform", collapsed ? "rotate-0" : "rotate-180")} />
+            </button>
+          )}
+        </div>
+
+        {/* Main navigation */}
+        <nav className="flex-1 overflow-y-auto py-6 px-2">
+          <div className="space-y-1">
+            {mainNavItems.map((item) => (
+              <NavItem 
+                key={item.path}
+                item={item}
+                collapsed={collapsed}
+                active={isActive(item.path)}
+              />
+            ))}
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-border/60">
+            <div className="px-4 mb-2">
+              {!collapsed && (
+                <span className="text-xs font-medium text-foreground-muted uppercase tracking-wider">
+                  System
+                </span>
+              )}
+            </div>
+            <div className="space-y-1">
+              {secondaryNavItems.map((item) => (
+                <NavItem 
+                  key={item.path}
+                  item={item}
+                  collapsed={collapsed}
+                  active={isActive(item.path)}
+                />
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border flex items-center justify-between">
+          <ThemeToggle />
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-accent/80">
+                JS
+              </div>
+              <span className="text-sm text-foreground-secondary">Admin</span>
+            </div>
+          )}
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="rounded-md p-1 hover:bg-secondary transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {/* Mobile toggle button */}
+      {isMobile && !mobileOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed bottom-4 left-4 z-20 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
+    </>
+  );
+};
+
+// Nav item component with updated styling
+interface NavItemProps {
+  item: SidebarItem;
+  collapsed: boolean;
+  active: boolean;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ item, collapsed, active }) => {
+  const Icon = item.icon;
   
   return (
-    <Sidebar className="h-screen flex flex-col transition-all duration-300">
-      <div className="border-b border-border/60 relative">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="bg-gradient-to-r from-accent to-primary rounded-md p-1.5 shadow-glow">
-              <ClipboardCheck className="h-5 w-5 text-white" />
-            </div>
-            {!collapsed && (
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Compliance Core</span>
-            )}
-          </Link>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setCollapsed(!collapsed)}
-            className="hover:bg-accent/10 text-accent absolute right-2"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="space-y-1.5">
-          {sidebarLinks.map(link => (
-            <Link 
-              key={link.href} 
-              to={link.href}
-              className={`
-                group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all
-                ${isActiveLink(link.href) 
-                  ? `bg-gradient-to-r ${link.gradientFrom} ${link.gradientTo} text-white shadow-md` 
-                  : 'text-foreground hover:bg-secondary hover:text-primary'}
-              `}
-            >
-              <div className={`${isActiveLink(link.href) ? 'text-white' : link.color} mr-3 h-5 w-5 flex-shrink-0 transition-all group-hover:scale-110`}>
-                <link.icon className="h-5 w-5" />
-              </div>
-              {!collapsed && (
-                <span>{link.name}</span>
-              )}
-              {isActiveLink(link.href) && !collapsed && (
-                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white animate-pulse"></div>
-              )}
-            </Link>
-          ))}
-        </div>
-      </div>
-      
-      <div className="border-t border-border/60 p-3">
-        <ProfileTile collapsed={collapsed} />
-      </div>
-    </Sidebar>
+    <Link
+      to={item.path}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+        active 
+          ? "bg-accent/10 text-accent" 
+          : "hover:bg-secondary text-foreground-secondary hover:text-foreground"
+      )}
+    >
+      <Icon className={cn(
+        "flex-shrink-0",
+        collapsed ? "h-5 w-5 mx-auto" : "h-5 w-5"
+      )} />
+      {!collapsed && (
+        <span className="text-sm">{item.name}</span>
+      )}
+      {active && !collapsed && (
+        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
+      )}
+    </Link>
   );
 };
 

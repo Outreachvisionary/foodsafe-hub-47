@@ -1,7 +1,8 @@
+
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: ['class'],
+  darkMode: ['class', '[data-theme="dark"]'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -19,81 +20,134 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: '#E2E8F0', // Refined light blue-gray border
-        input: '#EDF2F7', // Lighter blue-gray for input fields
-        ring: '#4A6FA5', // Steel blue for focus states
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          light: 'hsl(var(--border-light))',
+        },
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
         background: {
-          light: '#F8FAFC', // Off-white background for sections
-          dark: '#2D3F63', // Deep navy for headers or sidebars
-          DEFAULT: '#FFFFFF', // Default white background
+          DEFAULT: 'hsl(var(--background))',
+          secondary: 'hsl(var(--background-secondary))',
+          tertiary: 'hsl(var(--background-tertiary))',
         },
         foreground: {
-          light: '#4A5568', // Medium blue-gray for lighter text
-          dark: '#F8FAFC', // Off-white text for dark backgrounds
-          DEFAULT: '#1A2333', // Near black for default text
+          DEFAULT: 'hsl(var(--foreground))',
+          secondary: 'hsl(var(--foreground-secondary))',
+          muted: 'hsl(var(--foreground-muted))',
         },
         primary: {
-          DEFAULT: '#2D3F63', // Deep navy blue for primary elements
-          dark: '#1A2333',    // Darker navy for emphasis
-          light: '#4A6FA5',   // Steel blue for hover states
-          foreground: '#FFFFFF', // White text on primary buttons
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          hover: 'hsl(var(--primary-hover))',
+          active: 'hsl(var(--primary-active))',
         },
         secondary: {
-          DEFAULT: '#EDF2F7', // Light blue-gray for secondary elements
-          foreground: '#2D3F63', // Deep navy text on secondary buttons
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+          hover: 'hsl(var(--secondary-hover))',
         },
         destructive: {
-          DEFAULT: '#E53E3E', // Refined red for destructive actions
-          foreground: '#FFFFFF', // White text on destructive buttons
-        },
-        accent: {
-          DEFAULT: '#16BAC5',  // Turquoise for accents
-          light: '#4FD1DB',    // Lighter turquoise for hover states
-          dark: '#0E9AA7',     // Deeper turquoise for emphasis
-          foreground: '#FFFFFF', // White text on accent elements
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+          hover: 'hsl(var(--destructive-hover))',
         },
         success: {
-          DEFAULT: '#3CCF91', // Mint green for success indicators
-          foreground: '#FFFFFF', // White text on success badges
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          hover: 'hsl(var(--success-hover))',
+          muted: 'hsl(var(--success-muted))',
         },
         warning: {
-          DEFAULT: '#FF9F43', // Amber for warnings
-          foreground: '#1A2333', // Near black text on warning badges
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+          hover: 'hsl(var(--warning-hover))',
+          muted: 'hsl(var(--warning-muted))',
         },
         info: {
-          DEFAULT: '#4A6FA5', // Steel blue for informational elements
-          foreground: '#FFFFFF', // White text on info badges
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+          hover: 'hsl(var(--info-hover))',
+          muted: 'hsl(var(--info-muted))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+          hover: 'hsl(var(--accent-hover))',
+          active: 'hsl(var(--accent-active))',
+          muted: 'hsl(var(--accent-muted))',
         },
         muted: {
-          DEFAULT: '#F1F5F9', // Light blue-gray for muted backgrounds
-          foreground: '#64748B', // Medium blue-gray for muted text
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+          hover: 'hsl(var(--card-hover))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
         },
       },
       fontFamily: {
-        sans: ['Manrope', 'system-ui', 'sans-serif'], // Modern, professional sans-serif
-        display: ['Satoshi', 'system-ui', 'sans-serif'], // Contemporary display font for headings
-        mono: ['JetBrains Mono', 'monospace'], // Maintained for code sections
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Satoshi', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius-md)',
+        sm: 'var(--radius-sm)',
       },
-      borderColor: {
-        DEFAULT: 'var(--border)',
+      boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        'inner': 'var(--shadow-inner)',
+        'subtle': 'var(--shadow-subtle)',
+        'glow': 'var(--shadow-glow)',
       },
-      borderOpacity: {
-        '10': '0.1',
-        '20': '0.2',
-        '30': '0.3',
-        '40': '0.4',
-        '50': '0.5',
-        '60': '0.6',
-        '70': '0.7',
-        '80': '0.8',
-        '90': '0.9',
-      }
-    }
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'fade-up': 'fadeUp 0.5s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'pulse-subtle': 'pulseSubtle 2s infinite',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideIn: {
+          '0%': { opacity: '0', transform: 'translateX(-10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        pulseSubtle: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.85' },
+        },
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+    },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;

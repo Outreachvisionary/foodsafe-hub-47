@@ -44,6 +44,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked Out",
         description: "You can now edit this document",
+        variant: "success",
       });
       onUpdate();
     } catch (error: any) {
@@ -65,6 +66,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked In",
         description: "Document has been successfully checked in",
+        variant: "success",
       });
       onUpdate();
     } catch (error: any) {
@@ -76,7 +78,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  // Compare checkout status using the correct string value
+  // Using string comparison for "Checked Out" status instead of enum
   const isCheckedOut = document.checkout_status === 'Checked Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
@@ -87,7 +89,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
           onClick={handleCheckout}
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-2 text-info hover:border-info/30 hover:bg-info-muted/50"
         >
           <Lock className="h-4 w-4" />
           Check Out
@@ -98,7 +100,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
             onClick={() => setIsCheckInDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 text-success hover:border-success/30 hover:bg-success-muted/50"
           >
             <Unlock className="h-4 w-4" />
             Check In
@@ -107,7 +109,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       )}
 
       <Dialog open={isCheckInDialogOpen} onOpenChange={setIsCheckInDialogOpen}>
-        <DialogContent>
+        <DialogContent className="glass-card">
           <DialogHeader>
             <DialogTitle>Check In Document</DialogTitle>
           </DialogHeader>
@@ -117,13 +119,15 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
               value={checkInComment}
               onChange={(e) => setCheckInComment(e.target.value)}
               rows={4}
+              className="border-border-light focus:border-accent"
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCheckInDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCheckIn}>
+            <Button onClick={handleCheckIn} className="gap-2">
+              <Unlock className="h-4 w-4" />
               Check In
             </Button>
           </DialogFooter>

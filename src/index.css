@@ -1,66 +1,263 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@300;400;500;700;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;  /* White background */
-    --foreground: 215 30% 15%;    /* Dark navy text */
+    /* Base colors */
+    --background: 210 40% 98%; /* Light blue-gray background */
+    --background-secondary: 220 30% 96%;
+    --background-tertiary: 220 20% 94%;
+    
+    --foreground: 225 25% 20%; /* Deep blue-gray text */
+    --foreground-secondary: 225 20% 30%;
+    --foreground-muted: 220 15% 40%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 215 30% 15%;
- 
+    /* Card and containers */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 225 25% 20%; /* Same as foreground */
+    --card-hover: 220 30% 97%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 215 30% 15%;
- 
-    --primary: 230 65% 45%;      /* Vibrant blue primary */
-    --primary-foreground: 0 0% 100%;  /* White text on primary */
-    --primary-light: 230 65% 55%;     /* Lighter blue for hover */
-    --primary-dark: 230 65% 35%;      /* Darker blue for active */
- 
-    --secondary: 210 30% 96%;   /* Light blue-gray */
-    --secondary-foreground: 215 38% 28%;  /* Navy text on secondary */
- 
-    --muted: 210 30% 97%;
-    --muted-foreground: 215 16% 47%;  /* Medium blue-gray for muted text */
- 
-    --accent: 185 82% 45%;       /* Turquoise accent */
+    --popover-foreground: 225 25% 20%;
+
+    /* Borders and input */
+    --border: 220 13% 90%;
+    --border-light: 220 13% 94%;
+    --input: 220 13% 90%;
+    --ring: 210 80% 56%; /* Bright blue for focus rings */
+
+    /* Core theme colors */
+    --primary: 210 80% 56%; /* Bright blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --primary-hover: 210 80% 50%;
+    --primary-active: 210 80% 45%;
+    
+    --secondary: 225 25% 95%; /* Light gray-blue */
+    --secondary-foreground: 225 25% 20%; /* Same as foreground */
+    --secondary-hover: 225 30% 92%;
+
+    --accent: 270 76% 53%; /* Vibrant purple */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+    --accent-hover: 270 76% 48%;
+    --accent-active: 270 76% 43%;
+    --accent-muted: 270 76% 93%;
+
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 50%;
+
+    /* Status colors */
+    --destructive: 0 84% 60%; /* Red */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    --destructive-hover: 0 84% 55%;
+    
+    --success: 142 72% 50%; /* Green */
+    --success-foreground: 0 0% 100%; /* White text on success */
+    --success-hover: 142 72% 45%;
+    --success-muted: 142 72% 92%;
+    
+    --warning: 38 92% 50%; /* Amber yellow */
+    --warning-foreground: 38 10% 10%; /* Dark text on warning */
+    --warning-hover: 38 92% 45%;
+    --warning-muted: 38 92% 92%;
+    
+    --info: 210 80% 56%; /* Bright blue, same as primary */
+    --info-foreground: 0 0% 100%; /* White text on info */
+    --info-hover: 210 80% 50%;
+    --info-muted: 210 80% 92%;
+
+    /* Border radius */
+    --radius-sm: 0.3rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+    --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 15px rgba(66, 153, 225, 0.3);
+  }
+
+  [data-theme="dark"] {
+    /* Base colors */
+    --background: 222 47% 11%; /* Dark blue-gray background */
+    --background-secondary: 223 47% 9%;
+    --background-tertiary: 224 47% 7%;
+    
+    --foreground: 220 20% 98%; /* Off-white text */
+    --foreground-secondary: 220 15% 85%;
+    --foreground-muted: 220 15% 70%;
+
+    /* Card and containers */
+    --card: 223 47% 14%; /* Dark card background */
+    --card-foreground: 220 20% 98%; /* Same as foreground */
+    --card-hover: 223 47% 16%;
+    
+    --popover: 223 47% 14%;
+    --popover-foreground: 220 20% 98%;
+
+    /* Borders and input */
+    --border: 220 26% 18%;
+    --border-light: 220 26% 22%;
+    --input: 220 26% 18%;
+    --ring: 210 80% 56%; /* Same as light mode for consistency */
+
+    /* Core theme colors - same hues as light mode but adjusted for dark */
+    --primary: 210 80% 60%; /* Brighter blue for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 80% 65%;
+    --primary-active: 210 80% 70%;
+    
+    --secondary: 225 25% 26%; /* Darker gray-blue */
+    --secondary-foreground: 220 20% 98%;
+    --secondary-hover: 225 25% 30%;
+
+    --accent: 270 76% 60%; /* Brighter purple for dark mode */
     --accent-foreground: 0 0% 100%;
-    --accent-light: 185 82% 55%;   /* Lighter turquoise for gradients */
-    --accent-dark: 185 82% 35%;    /* Darker turquoise for active states */
- 
-    --destructive: 0 84% 60%;
+    --accent-hover: 270 76% 65%;
+    --accent-active: 270 76% 70%;
+    --accent-muted: 270 76% 25%;
+
+    --muted: 220 14% 18%;
+    --muted-foreground: 220 10% 65%;
+
+    /* Status colors - adjusted for dark mode */
+    --destructive: 0 84% 65%; /* Brighter red for dark mode */
     --destructive-foreground: 0 0% 100%;
-
-    --success: 142 76% 45%;
+    --destructive-hover: 0 84% 70%;
+    
+    --success: 142 72% 45%; /* Slightly darker green for dark mode */
     --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --info: 215 82% 45%;
+    --success-hover: 142 72% 50%;
+    --success-muted: 142 72% 20%;
+    
+    --warning: 38 92% 60%; /* Brighter yellow for dark mode */
+    --warning-foreground: 38 10% 10%;
+    --warning-hover: 38 92% 65%;
+    --warning-muted: 38 92% 25%;
+    
+    --info: 210 80% 60%; /* Same as primary for dark mode */
     --info-foreground: 0 0% 100%;
+    --info-hover: 210 80% 65%;
+    --info-muted: 210 80% 25%;
 
-    --border: 210 20% 93%;      /* Light blue-gray borders */
-    --input: 210 20% 93%;
-    --ring: 215 38% 47%;
- 
-    --radius: 0.6rem;
+    /* Shadows adapted for dark mode */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+    --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 15px rgba(66, 153, 225, 0.2);
   }
 
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground font-sans;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-semibold text-foreground tracking-tight;
+  }
+
+  /* Accessibility focus styles */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Enhanced component styles */
+@layer components {
+  /* Button styles */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary-hover transition-colors;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active transition-colors;
+  }
+
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors;
+  }
+
+  /* Card styles */
+  .card-hover {
+    @apply hover:shadow-md hover:bg-card-hover transition-all duration-200;
+  }
+
+  .card-active {
+    @apply border-accent shadow-glow;
+  }
+
+  /* Status badges */
+  .status-success {
+    @apply text-success bg-success-muted border-success/20 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  .status-warning {
+    @apply text-warning-foreground bg-warning-muted border-warning/20 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  .status-error {
+    @apply text-destructive bg-destructive/10 border-destructive/20 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  .status-info {
+    @apply text-info bg-info-muted border-info/20 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  /* Glassmorphism effects */
+  .glass {
+    @apply bg-background/60 backdrop-blur-md border border-border/30 shadow-sm;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-md;
+  }
+
+  /* Gradient backgrounds */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary-hover;
+  }
+
+  .bg-gradient-accent {
+    @apply bg-gradient-to-r from-accent to-accent-hover;
+  }
+
+  /* Other common stylings can be added here */
+}
+
+/* Additional utility classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .border-subtle {
+    @apply border border-border/60;
+  }
+
+  .border-accent-subtle {
+    @apply border border-accent/20;
   }
 }
 

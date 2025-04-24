@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Info } from 'lucide-react';
 
 export type StatusType = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
@@ -30,11 +30,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   
   // Define color schemes based on status type
   const colorScheme = {
-    success: "bg-success/10 text-success border-success/20 hover:bg-success/20",
-    warning: "bg-warning/10 text-warning-foreground border-warning/20 hover:bg-warning/20",
+    success: "bg-success-muted text-success border-success/20 hover:bg-success-muted/80",
+    warning: "bg-warning-muted text-warning-foreground border-warning/20 hover:bg-warning-muted/80",
     danger: "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20",
-    info: "bg-info/10 text-info border-info/20 hover:bg-info/20",
-    neutral: "bg-secondary text-foreground border-border hover:bg-secondary/80",
+    info: "bg-info-muted text-info border-info/20 hover:bg-info-muted/80",
+    neutral: "bg-secondary text-foreground-secondary border-border hover:bg-secondary/80",
   };
   
   // Select the appropriate icon based on status type
@@ -44,7 +44,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     <Badge 
       variant="outline" 
       className={cn(
-        "font-medium text-xs py-1",
+        "font-medium text-xs py-1 shadow-sm",
         colorScheme[type],
         className
       )}
@@ -69,7 +69,8 @@ function getStatusType(status: string): StatusType {
     lowerStatus.includes('released') ||
     lowerStatus.includes('approved') ||
     lowerStatus.includes('active') ||
-    lowerStatus.includes('compliant')
+    lowerStatus.includes('compliant') ||
+    lowerStatus.includes('verified')
   ) {
     return 'success';
   }
@@ -92,7 +93,8 @@ function getStatusType(status: string): StatusType {
     lowerStatus.includes('recalled') ||
     lowerStatus.includes('rejected') ||
     lowerStatus.includes('critical') ||
-    lowerStatus.includes('non-compliant')
+    lowerStatus.includes('non-compliant') ||
+    lowerStatus.includes('overdue')
   ) {
     return 'danger';
   }
@@ -120,7 +122,7 @@ function getStatusIcon(type: StatusType): React.ElementType {
     case 'danger':
       return AlertTriangle;
     case 'info':
-      return (props: any) => <span {...props}>i</span>;
+      return Info;
     default:
       return (props: any) => <span {...props}>•</span>;
   }
