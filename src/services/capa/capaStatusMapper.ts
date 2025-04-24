@@ -5,7 +5,7 @@ import { CAPAStatus } from '@/types/capa';
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
 // Map internal application status to the database format
-export const mapInternalStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+export function mapInternalStatusToDb(status: CAPAStatus): DbCAPAStatus {
   switch (status) {
     case 'In_Progress':
       return 'In Progress';
@@ -17,7 +17,7 @@ export const mapInternalStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
 };
 
 // Map database status to internal application status
-export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
+export function mapDbStatusToInternal(dbStatus: DbCAPAStatus): CAPAStatus {
   switch (dbStatus) {
     case 'In Progress':
       return 'In_Progress';
@@ -28,6 +28,18 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   }
 };
 
-// Export functions with different names to avoid redeclaration issues
+// Export convenience aliases
 export const internalToDbStatusMap = mapInternalStatusToDb;
 export const dbToInternalStatusMap = mapDbStatusToInternal;
+
+// Check if status is equal (case-insensitive)
+export const isStatusEqual = (status1: string, status2: string): boolean => {
+  if (!status1 || !status2) return false;
+  return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
+};
+
+export default {
+  mapInternalStatusToDb,
+  mapDbStatusToInternal,
+  isStatusEqual
+};

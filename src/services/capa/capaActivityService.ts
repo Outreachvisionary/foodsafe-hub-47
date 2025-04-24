@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
 import { ensureRecord } from '@/utils/jsonUtils';
+import { mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
 
 interface RecordCAPAActivityParams {
   capa_id: string;
@@ -30,8 +31,8 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       action_type,
       action_description,
       performed_by,
-      old_status,
-      new_status,
+      old_status: old_status ? mapInternalStatusToDb(old_status) : undefined,
+      new_status: new_status ? mapInternalStatusToDb(new_status) : undefined,
       metadata,
       capa_id
     };
@@ -68,8 +69,8 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       id: activity.id,
       capa_id: activity.capa_id,
       performed_at: activity.performed_at,
-      old_status: activity.old_status as CAPAStatus,
-      new_status: activity.new_status as CAPAStatus,
+      old_status: activity.old_status ? mapDbStatusToInternal(activity.old_status) : undefined,
+      new_status: activity.new_status ? mapDbStatusToInternal(activity.new_status) : undefined,
       action_type: activity.action_type,
       action_description: activity.action_description,
       performed_by: activity.performed_by,

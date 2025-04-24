@@ -1,8 +1,13 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment, DocumentActionType } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment, DocumentActionType, CheckoutStatus } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
-import { adaptDocumentToDatabase, mapToDocumentActionType } from '@/utils/documentTypeAdapter';
+import { 
+  adaptDocumentToDatabase, 
+  mapToDocumentActionType, 
+  mapDbToAppCheckoutStatus,
+  mapAppToDbCheckoutStatus
+} from '@/utils/documentTypeAdapter';
 import { ensureRecord } from '@/utils/jsonUtils';
 
 const transformVersionData = (versionData: any): DocumentVersion => {
@@ -160,7 +165,7 @@ export const useDocumentService = () => {
       const document: Document = {
         id: data.id,
         title: data.title,
-        description: data.description,
+        description: data.description || '',
         file_name: data.file_name,
         file_path: data.file_path,
         file_type: data.file_type,
@@ -178,14 +183,14 @@ export const useDocumentService = () => {
         linked_module: data.linked_module,
         linked_item_id: data.linked_item_id,
         rejection_reason: data.rejection_reason,
-        is_locked: data.is_locked,
+        is_locked: data.is_locked || false,
         last_action: data.last_action,
         last_review_date: data.last_review_date,
         next_review_date: data.next_review_date,
         pending_since: data.pending_since,
         current_version_id: data.current_version_id,
-        is_template: data.is_template,
-        checkout_status: data.checkout_status === 'Checked Out' ? 'Checked_Out' : 'Available',
+        is_template: data.is_template || false,
+        checkout_status: mapDbToAppCheckoutStatus(data.checkout_status),
         checkout_timestamp: data.checkout_timestamp,
         checkout_user_id: data.checkout_user_id,
         checkout_user_name: data.checkout_user_name,
@@ -261,7 +266,7 @@ export const useDocumentService = () => {
 
       await supabase.from('document_activities').insert({
         document_id: documentId,
-        action: 'checkin' as DocumentActionType,
+        action: 'checkin',
         user_id: userId,
         user_name: userName,
         user_role: 'User',
@@ -270,7 +275,43 @@ export const useDocumentService = () => {
         timestamp: new Date().toISOString()
       });
 
-      return data as Document;
+      const document: Document = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        file_name: data.file_name,
+        file_path: data.file_path,
+        file_type: data.file_type,
+        file_size: data.file_size,
+        category: data.category,
+        status: data.status,
+        version: data.version,
+        created_by: data.created_by,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        expiry_date: data.expiry_date,
+        folder_id: data.folder_id,
+        tags: data.tags,
+        approvers: data.approvers,
+        linked_module: data.linked_module,
+        linked_item_id: data.linked_item_id,
+        rejection_reason: data.rejection_reason,
+        is_locked: data.is_locked || false,
+        last_action: data.last_action,
+        last_review_date: data.last_review_date,
+        next_review_date: data.next_review_date,
+        pending_since: data.pending_since,
+        current_version_id: data.current_version_id,
+        is_template: data.is_template || false,
+        checkout_status: mapDbToAppCheckoutStatus(data.checkout_status),
+        checkout_timestamp: data.checkout_timestamp,
+        checkout_user_id: data.checkout_user_id,
+        checkout_user_name: data.checkout_user_name,
+        workflow_status: data.workflow_status,
+        custom_notification_days: data.custom_notification_days
+      };
+
+      return document;
     } catch (error: any) {
       console.error('Error checking in document:', error.message);
       throw error;
@@ -542,13 +583,13 @@ export const useDocumentService = () => {
         file_name: fileName,
         file_size: fileSize,
         created_by: createdBy,
+        version: 1, // This will be automatically incremented by a trigger
         editor_metadata: editorMetadata,
         version_type: versionType,
         change_notes: changeNotes,
         change_summary: changeSummary,
         check_in_comment: checkInComment,
-        is_binary_file: isBinaryFile,
-        version: 1 // This will be automatically incremented by a trigger
+        is_binary_file: isBinaryFile
       };
 
       const { data, error } = await supabase
@@ -600,14 +641,15 @@ export const useDocumentService = () => {
     checkoutAction?: string
   ): Promise<void> => {
     try {
-      const actionType = mapToDocumentActionType(action);
+      // Map action to a valid DocumentActionType
+      const actionType = action;
       
       await supabase.from('document_activities').insert({
         document_id: documentId,
         user_id: userId,
         user_name: userName,
         user_role: userRole,
-        action: action,
+        action: actionType,
         comments,
         version_id: versionId,
         checkout_action: checkoutAction

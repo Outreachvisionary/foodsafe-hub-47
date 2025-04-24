@@ -17,7 +17,7 @@ interface DocumentCheckoutActionsProps {
 export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({ document, onUpdate }) => {
   const [isCheckInDialogOpen, setIsCheckInDialogOpen] = React.useState(false);
   const [checkInComment, setCheckInComment] = React.useState('');
-  const { checkoutDocument, checkinDocument } = useDocumentService();
+  const documentService = useDocumentService();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = React.useState<any>(null);
 
@@ -34,7 +34,13 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     try {
       if (!currentUser) throw new Error('User not authenticated');
 
-      await checkoutDocument(document.id, currentUser.id);
+      await documentService.checkOutDocument(
+        document.id, 
+        currentUser.id,
+        currentUser.user_metadata?.full_name || 'Unknown User',
+        'User'
+      );
+      
       toast({
         title: "Document Checked Out",
         description: "You can now edit this document",
@@ -53,7 +59,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     try {
       if (!currentUser) throw new Error('User not authenticated');
 
-      await checkinDocument(document.id, currentUser.id, checkInComment);
+      await documentService.checkInDocument(document.id, currentUser.id, checkInComment);
       setIsCheckInDialogOpen(false);
       setCheckInComment('');
       toast({
@@ -71,7 +77,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
   };
 
   // Fix the checkout status comparison
-  const isCheckedOut = document.checkout_status === 'Checked Out';
+  const isCheckedOut = document.checkout_status === 'Checked_Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
   return (

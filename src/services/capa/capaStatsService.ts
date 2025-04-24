@@ -16,11 +16,11 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       overdueCount: 0,
       pendingVerificationCount: 0,
       effectivenessRate: 0,
+      byStatus: {},
       byPriority: {},
       bySource: {},
-      byDepartment: {},
-      byStatus: {},
       byMonth: {},
+      byDepartment: {},
       overdue: 0
     };
     

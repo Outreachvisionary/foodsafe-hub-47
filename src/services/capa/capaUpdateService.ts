@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
-import { mapInternalStatusToDb } from './capaStatusMapper';
+import { mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
 import { recordCAPAActivity } from './capaActivityService';
 import { ensureRecord } from '@/utils/jsonUtils';
 

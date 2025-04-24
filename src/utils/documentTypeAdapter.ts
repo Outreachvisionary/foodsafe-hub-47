@@ -14,8 +14,10 @@ export const adaptDocumentToDatabase = (document: Document): any => {
   let category = document.category;
   
   // Map checkout status to match the DB schema
-  let checkout_status = document.checkout_status === 'Checked_Out' ? 
-    'Checked Out' as CheckoutStatus : document.checkout_status;
+  let checkout_status: string = document.checkout_status;
+  if (document.checkout_status === 'Checked_Out') {
+    checkout_status = 'Checked Out';
+  }
   
   return {
     ...document,
@@ -45,6 +47,20 @@ export const mapToDocumentActionType = (action: string): DocumentActionType => {
   // Default to 'view' if not found
   console.warn(`Unknown document action type: ${action}, defaulting to 'view'`);
   return 'view';
+};
+
+/**
+ * Maps DB checkout status to application checkout status
+ */
+export const mapDbToAppCheckoutStatus = (dbStatus: string): CheckoutStatus => {
+  return dbStatus === 'Checked Out' ? 'Checked_Out' : 'Available';
+};
+
+/**
+ * Maps application checkout status to DB checkout status
+ */
+export const mapAppToDbCheckoutStatus = (appStatus: CheckoutStatus): string => {
+  return appStatus === 'Checked_Out' ? 'Checked Out' : 'Available';
 };
 
 /**
@@ -83,5 +99,7 @@ export default {
   adaptDocumentToDatabase,
   mapToDocumentActionType,
   adaptDocumentVersionFromDB,
-  adaptDocumentActivityFromDB
+  adaptDocumentActivityFromDB,
+  mapDbToAppCheckoutStatus,
+  mapAppToDbCheckoutStatus
 };
