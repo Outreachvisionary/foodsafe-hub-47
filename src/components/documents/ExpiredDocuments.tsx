@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Document as DocumentType } from '@/types/document';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,10 @@ import { CalendarX, Clock, RotateCw } from 'lucide-react';
 import DocumentList from '@/components/documents/DocumentList';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
-import { toast } from 'react-toastify';
+import { toast } from '@/hooks/use-toast';
 
 const ExpiredDocuments: React.FC = () => {
-  const { documents, isLoading, updateDocument } = useDocuments();
+  const { documents, isLoading, updateDocument, refreshData } = useDocuments();
   const [expiredDocs, setExpiredDocs] = useState<DocumentType[]>([]);
   const [expiringDocs, setExpiringDocs] = useState<DocumentType[]>([]);
   const [activeTab, setActiveTab] = useState('expired');
@@ -99,7 +100,9 @@ const ExpiredDocuments: React.FC = () => {
         description: `Next review date for "${doc.title}" has been set to ${format(nextReview, 'PP')}`,
       });
       
-      refreshData();
+      if (refreshData) {
+        refreshData();
+      }
     } catch (error) {
       console.error('Error updating review date:', error);
       toast({

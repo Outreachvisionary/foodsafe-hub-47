@@ -69,6 +69,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     }
   };
 
+  // Fix status comparison by using the exact string values from ComplaintStatus type
   const showNewButton = complaint.status === 'New';
   const showInProgressButton = complaint.status === 'New' || complaint.status === 'Reopened';
   const showResolvedButton = complaint.status === 'Under_Investigation';

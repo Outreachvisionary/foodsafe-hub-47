@@ -3,6 +3,7 @@ import { Document, Folder, DocumentNotification, DocumentVersion } from '@/types
 import documentService from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
 import { adaptDatabaseToDocument, adaptDatabaseToFolder, adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentContextProps {
   documents: Document[];
@@ -210,7 +211,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       };
       
       // Need to cast the document to the right type for the database
-      const dbDocument: any = adaptDocumentToDatabase(docWithUpdatedStatus);
+      const dbDocument = adaptDocumentToDatabase(docWithUpdatedStatus);
       
       const updatedDoc = await documentService.updateDocument(document.id, dbDocument);
       
@@ -265,47 +266,127 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setNotifications([]);
   }, []);
   
+  // Use the documentService's specific document checkout function
   const checkoutDocument = useCallback(async (documentId: string) => {
     setIsLoading(true);
     try {
-      const updatedDoc = await documentService.checkoutDocument(documentId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const updatedDoc = await documentService.checkoutDocument(documentId, user.id);
+      
+      // Update document in state
       setDocuments(prev => 
-        prev.map(doc => doc.id === documentId ? updatedDoc : doc)
+        prev.map(doc => doc.id === documentId ? adaptDatabaseToDocument(updatedDoc) : doc)
       );
-    } catch (error) {
+      
+      // Update selected document if applicable
+      if (selectedDocument?.id === documentId) {
+        setSelectedDocument(adaptDatabaseToDocument(updatedDoc));
+      }
+      
+      toast({
+        title: "Success",
+        description: "Document checked out successfully",
+      });
+    } catch (error: any) {
       console.error('Error checking out document:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to check out document",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedDocument, toast]);
 
   const checkinDocument = useCallback(async (documentId: string, comment: string) => {
     setIsLoading(true);
     try {
-      const updatedDoc = await documentService.checkinDocument(documentId, comment);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const updatedDoc = await documentService.checkinDocument(documentId, user.id, comment);
+      
+      // Update document in state
       setDocuments(prev => 
-        prev.map(doc => doc.id === documentId ? updatedDoc : doc)
+        prev.map(doc => doc.id === documentId ? adaptDatabaseToDocument(updatedDoc) : doc)
       );
-    } catch (error) {
+      
+      // Update selected document if applicable
+      if (selectedDocument?.id === documentId) {
+        setSelectedDocument(adaptDatabaseToDocument(updatedDoc));
+      }
+      
+      toast({
+        title: "Success",
+        description: "Document checked in successfully",
+      });
+    } catch (error: any) {
       console.error('Error checking in document:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to check in document",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedDocument, toast]);
 
-  const fetchVersions = useCallback(async (documentId: string) => {
-    return await documentService.fetchDocumentVersions(documentId);
-  }, [documentService]);
+  // Implement the fetchVersions function
+  const fetchVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
+    try {
+      return await documentService.fetchDocumentVersions(documentId);
+    } catch (error) {
+      console.error("Error fetching document versions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch document versions",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [toast]);
 
-  const restoreVersion = useCallback(async (documentId: string, versionId: string) => {
-    return await documentService.restoreVersion(documentId, versionId);
-  }, [documentService]);
+  // Implement restoreVersion function
+  const restoreVersion = useCallback(async (documentId: string, versionId: string): Promise<void> => {
+    try {
+      // Call appropriate service method - this needs to be added to documentService
+      await documentService.restoreVersion(documentId, versionId);
+      toast({
+        title: "Success",
+        description: "Document version restored successfully",
+      });
+    } catch (error) {
+      console.error("Error restoring document version:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore document version",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [toast]);
 
-  const downloadVersion = useCallback(async (versionId: string) => {
-    return await documentService.downloadVersion(versionId);
-  }, [documentService]);
+  // Implement downloadVersion function
+  const downloadVersion = useCallback(async (versionId: string): Promise<void> => {
+    try {
+      // Call appropriate service method - this needs to be added to documentService
+      await documentService.downloadVersion(versionId);
+    } catch (error) {
+      console.error("Error downloading document version:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download document version",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [toast]);
 
   return (
     <DocumentContext.Provider 

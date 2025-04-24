@@ -3,19 +3,13 @@ import { Document as DocumentType, Folder as FolderType, DocumentStatus, Documen
 import { Document as DatabaseDocument, Folder as DatabaseFolder } from '@/types/database';
 
 export const adaptDocumentToDatabase = (doc: DocumentType): DatabaseDocument => {
-  // Create a new object to avoid mutating the original
-  const dbDoc: any = { ...doc };
-  
-  // Ensure category is properly cast to the database enum type
-  if (typeof doc.category === 'string') {
-    // Assuming the database expects specific enum values
-    dbDoc.category = doc.category as DocumentCategory;
-  }
-  
-  // Similarly for status
-  if (typeof doc.status === 'string') {
-    dbDoc.status = doc.status as DocumentStatus;
-  }
+  // Create a new object with the required structure
+  const dbDoc: any = {
+    ...doc,
+    // Ensure these fields have the expected types
+    category: doc.category as any, // Cast to the database enum type
+    status: doc.status as any, // Cast to the database enum type
+  };
   
   return dbDoc as DatabaseDocument;
 };
@@ -23,8 +17,8 @@ export const adaptDocumentToDatabase = (doc: DocumentType): DatabaseDocument => 
 export const adaptDatabaseToDocument = (doc: DatabaseDocument): DocumentType => {
   return {
     ...doc,
-    category: doc.category,
-    status: doc.status,
+    category: doc.category as DocumentCategory,
+    status: doc.status as DocumentStatus,
     // Ensure all required fields are present
     created_by: doc.created_by || 'system',
     title: doc.title || '',
@@ -34,6 +28,7 @@ export const adaptDatabaseToDocument = (doc: DatabaseDocument): DocumentType => 
     file_type: doc.file_type || '',
     file_path: doc.file_path || '',
     is_locked: doc.is_locked === undefined ? false : doc.is_locked,
+    version: doc.version || 1,
   } as DocumentType;
 };
 

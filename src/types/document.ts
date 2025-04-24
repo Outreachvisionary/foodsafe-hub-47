@@ -87,6 +87,8 @@ export interface DocumentActivity {
   timestamp: string;
   comments?: string;
   metadata?: any;
+  checkout_action?: string;
+  version_id?: string;
 }
 
 export interface DocumentComment {
