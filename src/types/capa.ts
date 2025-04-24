@@ -1,5 +1,5 @@
-// This is a placeholder file to fix import errors
-// A more complete implementation would need all types defined properly
+
+// Define the CAPA type and related interfaces for the CAPA system
 
 export type CAPA = {
   id: string;
@@ -10,17 +10,60 @@ export type CAPA = {
   createdAt: string; // Note: this is createdAt, not createdDate
   dueDate: string;
   completionDate?: string;
+  verificationDate?: string;
   assignedTo: string;
   createdBy: string;
   source: string;
   rootCause?: string;
   correctiveAction?: string;
   preventiveAction?: string;
+  department?: string;
+  verificationMethod?: string;
+  effectivenessCriteria?: string;
+  effectivenessRating?: CAPAEffectivenessRating;
+  verifiedBy?: string;
+  isFsma204Compliant?: boolean;
+  relatedDocuments?: RelatedDocument[];
+  relatedTraining?: RelatedTraining[];
+};
+
+// Additional types for reference relationships
+export type RelatedDocument = {
+  id: string;
+  title?: string;
+  documentId: string;
+  documentType?: string;
+  type?: string;
+  addedAt: string;
+};
+
+export type RelatedTraining = {
+  id: string;
+  title?: string;
+  trainingId: string;
+  type?: string;
+  addedAt: string;
 };
 
 export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
+export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
+
+export type CAPASource = 'audit' | 'complaint' | 'internal-qc' | 'supplier-issue' | 'haccp' | 'traceability' | 'other';
+
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
+
+export type CAPAEffectivenessRating = 'excellent' | 'good' | 'poor' | 'not_assessed';
+
+export type CAPAEffectivenessMetrics = {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  notes?: string;
+  rating: CAPAEffectivenessRating;
+};
 
 export type CAPAStats = {
   total: number;
@@ -31,7 +74,7 @@ export type CAPAStats = {
   effectivenessRate: number;
   byPriority: Record<string, number>;
   bySource: Record<string, number>;
-  byDepartment: Record<string, number>; // Added this field
+  byDepartment: Record<string, number>;
 };
 
 export type CAPAFetchParams = {
@@ -39,16 +82,29 @@ export type CAPAFetchParams = {
   priority?: string | 'All';
   assignedTo?: string | 'All';
   source?: string | 'All';
-  startDate?: string; // Use startDate instead of from
-  endDate?: string;   // Use endDate instead of to
+  startDate?: string;
+  endDate?: string;
   searchQuery?: string;
   limit?: number;
   offset?: number;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  dueDate?: string;
 };
 
-// Add the mapDbStatusToInternal function
+export type CAPAFilter = {
+  status?: CAPAStatus;
+  priority?: CAPAPriority;
+  source?: CAPASource;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+  assignedTo?: string;
+};
+
+// Map database status to internal representation
 export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   switch (dbStatus) {
     case 'Open': return 'Open';
@@ -56,7 +112,7 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
     case 'Pending Verification': return 'Pending Verification';
-    case 'Verified': return 'Pending Verification'; // Map Verified to Pending Verification for compatibility
+    case 'Verified': return 'Verified';
     default: return 'Open';
   }
 };
