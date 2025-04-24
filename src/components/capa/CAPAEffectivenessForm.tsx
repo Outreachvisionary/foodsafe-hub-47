@@ -2,37 +2,92 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CAPAEffectivenessRating } from '@/types/capa'; 
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { CAPAEffectivenessRating } from '@/types/capa';
+import { CheckSquare } from 'lucide-react';
 
 interface CAPAEffectivenessFormProps {
   capaId: string;
+  onSubmit: (data: any) => void;
+  implementationDate?: string;
 }
 
-export const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId }) => {
-  const [rating, setRating] = useState<CAPAEffectivenessRating>('Effective');
+export interface CAPAEffectivenessMetrics {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
+}
+
+const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ 
+  capaId, 
+  onSubmit,
+  implementationDate
+}) => {
   const [rootCauseEliminated, setRootCauseEliminated] = useState(false);
   const [preventiveMeasuresImplemented, setPreventiveMeasuresImplemented] = useState(false);
-  const [recurrence, setRecurrence] = useState('No');
+  const [documentationComplete, setDocumentationComplete] = useState(false);
   const [notes, setNotes] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  
+  const { toast } = useToast();
+  
+  const calculateScore = (): number => {
+    let score = 0;
+    if (rootCauseEliminated) score += 40;
+    if (preventiveMeasuresImplemented) score += 40;
+    if (documentationComplete) score += 20;
+    return score;
+  };
+  
+  const calculateRating = (score: number): CAPAEffectivenessRating => {
+    if (score >= 90) return 'Highly_Effective';
+    if (score >= 70) return 'Effective';
+    if (score >= 40) return 'Partially_Effective';
+    return 'Not_Effective';
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Example of form submission
-    console.log({
-      capaId,
-      rating,
-      rootCauseEliminated,
-      preventiveMeasuresImplemented,
-      recurrence,
-      notes
-    });
-    
-    // Here you would typically send this data to your API
+    try {
+      setSubmitting(true);
+      
+      const score = calculateScore();
+      const rating = calculateRating(score);
+      
+      const data: CAPAEffectivenessMetrics = {
+        capaId,
+        rootCauseEliminated,
+        preventiveMeasuresImplemented,
+        documentationComplete,
+        score,
+        rating,
+        notes: notes.trim() || undefined
+      };
+      
+      await onSubmit(data);
+      
+      toast({
+        title: "Effectiveness Assessment Submitted",
+        description: `CAPA effectiveness rated as ${rating.replace('_', ' ')}`
+      });
+    } catch (error) {
+      console.error('Error submitting effectiveness assessment:', error);
+      toast({
+        title: "Submission Failed",
+        description: "Failed to submit the effectiveness assessment",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,88 +97,86 @@ export const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ ca
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <div className="mb-2">
-              <Label>Has the root cause been eliminated?</Label>
-            </div>
-            <div className="flex items-center space-x-2">
+          <div className="grid gap-6">
+            <div className="flex items-start space-x-3">
               <Checkbox 
-                id="rootCauseEliminated" 
+                id="rootCause"
                 checked={rootCauseEliminated}
-                onCheckedChange={(checked) => setRootCauseEliminated(!!checked)}
+                onCheckedChange={(checked) => setRootCauseEliminated(checked === true)}
               />
-              <Label htmlFor="rootCauseEliminated">Yes, root cause has been eliminated</Label>
+              <div className="grid gap-1.5">
+                <Label htmlFor="rootCause" className="font-medium">
+                  Root Cause Eliminated
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  The identified root cause has been fully addressed and eliminated
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <div className="mb-2">
-              <Label>Have preventive measures been implemented?</Label>
-            </div>
-            <div className="flex items-center space-x-2">
+            
+            <div className="flex items-start space-x-3">
               <Checkbox 
-                id="preventiveMeasures" 
+                id="preventive"
                 checked={preventiveMeasuresImplemented}
-                onCheckedChange={(checked) => setPreventiveMeasuresImplemented(!!checked)}
+                onCheckedChange={(checked) => setPreventiveMeasuresImplemented(checked === true)}
               />
-              <Label htmlFor="preventiveMeasures">Yes, preventive measures are in place</Label>
+              <div className="grid gap-1.5">
+                <Label htmlFor="preventive" className="font-medium">
+                  Preventive Measures Implemented
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  All preventive actions have been implemented and are effective
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <Checkbox 
+                id="documentation"
+                checked={documentationComplete}
+                onCheckedChange={(checked) => setDocumentationComplete(checked === true)}
+              />
+              <div className="grid gap-1.5">
+                <Label htmlFor="documentation" className="font-medium">
+                  Documentation Complete
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  All required documentation has been updated to reflect the changes
+                </p>
+              </div>
             </div>
           </div>
           
-          <div>
-            <Label className="mb-2 block">Has the issue recurred?</Label>
-            <RadioGroup value={recurrence} onValueChange={setRecurrence} className="flex space-x-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="No" id="no-recurrence" />
-                <Label htmlFor="no-recurrence">No</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Yes" id="yes-recurrence" />
-                <Label htmlFor="yes-recurrence">Yes</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Unknown" id="unknown-recurrence" />
-                <Label htmlFor="unknown-recurrence">Unknown</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
-          <div>
-            <Label className="mb-2 block">Overall effectiveness rating</Label>
-            <RadioGroup value={rating} onValueChange={setRating as any} className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Highly_Effective" id="highly-effective" />
-                <Label htmlFor="highly-effective">Highly Effective</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Effective" id="effective" />
-                <Label htmlFor="effective">Effective</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Partially_Effective" id="partially-effective" />
-                <Label htmlFor="partially-effective">Partially Effective</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Not_Effective" id="not-effective" />
-                <Label htmlFor="not-effective">Not Effective</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
-          <div>
-            <Label htmlFor="notes" className="mb-2 block">Additional notes</Label>
-            <Textarea
-              id="notes"
+          <div className="space-y-2">
+            <Label htmlFor="notes">Additional Notes</Label>
+            <Textarea 
+              id="notes" 
+              placeholder="Enter any additional observations or comments about the effectiveness of this CAPA..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter any additional observations or comments..."
-              className="min-h-[100px]"
+              rows={4}
             />
           </div>
           
-          <Button type="submit">
-            Submit Assessment
-          </Button>
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
+            <p className="text-sm font-medium text-blue-800">
+              Effectiveness Score: {calculateScore()}%
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Rating: {calculateRating(calculateScore()).replace('_', ' ')}
+            </p>
+            {implementationDate && (
+              <p className="text-xs text-blue-600 mt-1">
+                Implementation Date: {new Date(implementationDate).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          
+          <div className="flex justify-end">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit Assessment"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { DocumentActionType } from '@/types/document';
 
 export const useDocumentService = () => {
   const { toast } = useToast();
@@ -38,7 +39,6 @@ export const useDocumentService = () => {
 
   const downloadVersion = useCallback(async (versionId: string): Promise<void> => {
     try {
-      // Get version details
       const { data: versionData, error: versionError } = await supabase
         .from('document_versions')
         .select('file_name, document_id')
@@ -47,14 +47,12 @@ export const useDocumentService = () => {
 
       if (versionError) throw versionError;
 
-      // Generate download URL
       const { data, error } = await supabase.storage
         .from('documents')
         .createSignedUrl(`versions/${versionData.document_id}/${versionId}`, 60);
 
       if (error) throw error;
 
-      // Trigger download
       const link = document.createElement('a');
       link.href = data.signedUrl;
       link.download = versionData.file_name;
@@ -96,7 +94,6 @@ export const useDocumentService = () => {
         throw error;
       }
 
-      // Record checkout activity
       await supabase.from('document_activities').insert({
         document_id: documentId,
         action: 'update',
@@ -116,7 +113,6 @@ export const useDocumentService = () => {
 
   const checkinDocument = useCallback(async (documentId: string, userId: string, comment: string): Promise<Document> => {
     try {
-      // Get user info
       const { data: userData } = await supabase
         .from('profiles')
         .select('full_name')
@@ -125,7 +121,6 @@ export const useDocumentService = () => {
       
       const userName = userData?.full_name || 'Unknown User';
       
-      // First, check if this user has the document checked out
       const { data: docData, error: docError } = await supabase
         .from('documents')
         .select('*')
@@ -142,7 +137,6 @@ export const useDocumentService = () => {
         throw new Error('Document is checked out by another user');
       }
 
-      // Create a new version
       const { data: versionData, error: versionError } = await supabase
         .from('document_versions')
         .insert({
@@ -159,7 +153,6 @@ export const useDocumentService = () => {
         
       if (versionError) throw versionError;
 
-      // Update document
       const { data, error } = await supabase
         .from('documents')
         .update({
@@ -177,7 +170,6 @@ export const useDocumentService = () => {
 
       if (error) throw error;
 
-      // Record check-in activity
       await supabase.from('document_activities').insert({
         document_id: documentId,
         action: 'update',
@@ -206,7 +198,6 @@ export const useDocumentService = () => {
       
       const userName = userData?.full_name || 'Unknown User';
       
-      // Update document status
       const { data, error } = await supabase
         .from('documents')
         .update({
@@ -219,7 +210,6 @@ export const useDocumentService = () => {
         
       if (error) throw error;
       
-      // Record approval activity
       await supabase.from('document_activities').insert({
         document_id: documentId,
         action: 'approve',
@@ -247,7 +237,6 @@ export const useDocumentService = () => {
       
       const userName = userData?.full_name || 'Unknown User';
       
-      // Update document status
       const { data, error } = await supabase
         .from('documents')
         .update({
@@ -261,7 +250,6 @@ export const useDocumentService = () => {
         
       if (error) throw error;
       
-      // Record rejection activity
       await supabase.from('document_activities').insert({
         document_id: documentId,
         action: 'reject',
@@ -413,7 +401,6 @@ export const useDocumentService = () => {
 
   const getPreviewUrl = useCallback(async (documentId: string, fileName: string, fileType: string) => {
     try {
-      // For now just return a simple URL structure
       const { data, error } = await supabase.storage
         .from('documents')
         .createSignedUrl(`${documentId}/${fileName}`, 3600);
@@ -454,10 +441,9 @@ export const useDocumentService = () => {
         throw new Error('Missing required version fields');
       }
       
-      // Add the version field if not present
       const finalVersionData = {
         ...versionData,
-        version_number: versionData.version_number || versionData.version || 1, // Use version_number or fallback to version or default to 1
+        version_number: versionData.version_number || versionData.version || 1,
       };
       
       const { data, error } = await supabase
@@ -468,7 +454,7 @@ export const useDocumentService = () => {
           file_size: finalVersionData.file_size || 0,
           created_by: finalVersionData.created_by,
           version_number: finalVersionData.version_number,
-          version: finalVersionData.version_number, // For backward compatibility
+          version: finalVersionData.version_number,
           version_type: finalVersionData.version_type || 'minor',
           editor_metadata: finalVersionData.editor_metadata
         })
@@ -489,10 +475,9 @@ export const useDocumentService = () => {
         throw new Error('Missing required activity fields');
       }
       
-      // Ensure action is of the correct type - DocumentActionType is imported from @/types/document
       const activityData = {
         document_id: activity.document_id,
-        action: activity.action, // This should be a DocumentActionType
+        action: activity.action as DocumentActionType,
         user_id: activity.user_id,
         user_name: activity.user_name,
         user_role: activity.user_role,
@@ -518,7 +503,6 @@ export const useDocumentService = () => {
 
   const createDocument = useCallback(async (document: Partial<Document>): Promise<Document> => {
     try {
-      // Use the adapter to ensure the document has the right shape for the database
       const dbDocument = adaptDocumentToDatabase({
         id: document.id || '',
         title: document.title || '',
@@ -549,7 +533,6 @@ export const useDocumentService = () => {
 
   const updateDocument = useCallback(async (documentId: string, updates: Partial<Document>): Promise<Document> => {
     try {
-      // Use the adapter to convert the document to the right shape
       const dbUpdates = adaptDocumentToDatabase({
         ...updates,
         id: documentId,

@@ -1,64 +1,106 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, CheckCircle, AlertTriangle, Calendar, ArrowRight } from 'lucide-react';
+import { getCAPAActivities } from '@/services/capa/capaActivityService';
+import { format } from 'date-fns';
 
 interface CAPATimelineProps {
   capaId: string;
 }
 
-export const CAPATimeline: React.FC<CAPATimelineProps> = ({ capaId }) => {
-  // Sample timeline data - in a real app, this would be fetched based on the capaId
-  const timelineEvents = [
-    { id: 1, date: '2023-01-15', title: 'CAPA Created', description: 'CAPA was created based on audit finding', type: 'creation' },
-    { id: 2, date: '2023-01-20', title: 'Root Cause Analysis Completed', description: 'Root cause identified as equipment calibration issue', type: 'update' },
-    { id: 3, date: '2023-02-01', title: 'Actions Implemented', description: 'New equipment calibration schedule implemented', type: 'action' },
-    { id: 4, date: '2023-02-15', title: 'Status Updated', description: 'Status changed from In Progress to Pending Verification', type: 'status' },
-  ];
+const CAPATimeline: React.FC<CAPATimelineProps> = ({ capaId }) => {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case 'creation':
-        return <Calendar className="h-5 w-5 text-blue-500" />;
-      case 'update':
-        return <Clock className="h-5 w-5 text-amber-500" />;
-      case 'action':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'status':
-        return <ArrowRight className="h-5 w-5 text-purple-500" />;
-      default:
-        return <AlertTriangle className="h-5 w-5 text-gray-500" />;
-    }
-  };
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoading(true);
+        const data = await getCAPAActivities(capaId);
+        setActivities(data);
+      } catch (err) {
+        setError('Failed to load CAPA timeline');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [capaId]);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Timeline</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <p className="text-muted-foreground">Loading activity timeline...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Timeline</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <p className="text-red-500">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Timeline</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <p className="text-muted-foreground">No activity records found</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">CAPA Timeline</CardTitle>
+        <CardTitle className="text-lg">Timeline</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-
-          <ul className="space-y-6 relative">
-            {timelineEvents.map((event) => (
-              <li key={event.id} className="ml-8">
-                {/* Event icon */}
-                <div className="absolute left-0 p-1 bg-white rounded-full border border-gray-200">
-                  {getEventIcon(event.type)}
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(event.date).toLocaleDateString()}
+          <div className="absolute top-0 bottom-0 left-6 w-1 bg-gray-200"></div>
+          <div className="space-y-6">
+            {activities.map((activity) => (
+              <div key={activity.id} className="relative pl-14">
+                <div className="flex items-center">
+                  <div className="absolute left-4 -ml-px h-4 w-4 rounded-full bg-primary border-4 border-white"></div>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(activity.performed_at), 'PPpp')}
                   </p>
-                  <h4 className="text-base font-medium">{event.title}</h4>
-                  <p className="text-sm text-gray-600">{event.description}</p>
                 </div>
-              </li>
+                <div className="mt-2">
+                  <p className="text-sm font-medium">{activity.action_description}</p>
+                  {activity.old_status && activity.new_status && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Status changed from <span className="font-medium">{activity.old_status}</span> to{' '}
+                      <span className="font-medium">{activity.new_status}</span>
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    By: {activity.performed_by}
+                  </p>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </CardContent>
     </Card>

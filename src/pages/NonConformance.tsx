@@ -1,138 +1,181 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, BarChart3 } from 'lucide-react';
-import NCList from '@/components/non-conformance/NCList';
-import NCDetails from '@/components/non-conformance/NCDetails';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import AppLayout from '@/components/layout/AppLayout';
+import { Search, Plus, FilterX, SlidersHorizontal } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { NonConformance } from '@/types/non-conformance';
+import { NCDetails } from '@/components/non-conformance/NCDetails';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import DashboardHeader from '@/components/DashboardHeader';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
-const NonConformanceModule = () => {
-  const { id } = useParams();
+const NonConformancePage = () => {
+  const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedNCId, setSelectedNCId] = useState<string | null>(null);
+  const [showNCDetails, setShowNCDetails] = useState(false);
   const navigate = useNavigate();
-  
-  const [viewingDetails, setViewingDetails] = useState(!!id);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const { toast } = useToast();
 
   useEffect(() => {
-    console.log('NonConformance page loaded with ID:', id);
-    setViewingDetails(!!id);
-  }, [id]);
-  
-  useEffect(() => {
-    const channel = supabase
-      .channel('public:non_conformances')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'non_conformances' }, 
-        (payload) => {
-          console.log('Realtime update:', payload);
-          setRefreshTrigger(prev => prev + 1);
-          
-          const eventType = payload.eventType;
-          if (eventType === 'UPDATE') {
-            toast.info('A non-conformance record was updated');
-          } else if (eventType === 'INSERT') {
-            toast.info('A new non-conformance record was created');
-          } else if (eventType === 'DELETE') {
-            toast.info('A non-conformance record was deleted');
-            if (id && payload.old && payload.old.id === id) {
-              navigate('/non-conformance');
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id, navigate]);
-  
-  useEffect(() => {
-    try {
-      console.log('Loading non-conformance module, ID:', id);
-      
-      if (document.getElementById('nc-module-container')) {
-        console.log('Non-conformance module loaded successfully');
-        setLoadError(null);
+    // Mock data for now
+    const mockData: NonConformance[] = [
+      {
+        id: 'NC-2023-001',
+        title: 'Foreign material in product batch',
+        description: 'Metal fragments detected during quality inspection',
+        item_name: 'Product Batch 12345',
+        item_category: 'Finished Products',
+        reason_category: 'Contamination',
+        status: 'On Hold',
+        reported_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'Quality Inspector',
+        assigned_to: 'Quality Manager',
+        capa_id: 'CAPA-2023-001',
+        reason_details: 'Metal contamination',
+        department: 'Production',
+        location: 'Production Line 3',
+        risk_level: 'Critical',
+        quantity: 100,
+        quantity_on_hold: 100,
+        resolution_date: null,
+        resolution_details: null,
+        review_date: null,
+        reviewer: null
+      },
+      {
+        id: 'NC-2023-002',
+        title: 'Incorrect labeling on packaging',
+        description: 'Incorrect expiration date printed on product labels',
+        item_name: 'Product Batch 67890',
+        item_category: 'Packaged Goods',
+        reason_category: 'Labeling Error',
+        status: 'Under Investigation',
+        reported_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'Packaging Operator',
+        assigned_to: 'Production Supervisor',
+        capa_id: null,
+        reason_details: 'Misprint on labels',
+        department: 'Packaging',
+        location: 'Packaging Line 1',
+        risk_level: 'Major',
+        quantity: 500,
+        quantity_on_hold: 500,
+        resolution_date: null,
+        resolution_details: null,
+        review_date: null,
+        reviewer: null
       }
-    } catch (error) {
-      console.error('Error in non-conformance module:', error);
-      setLoadError('There was an issue loading the non-conformance module');
-      toast.error('There was an issue loading the non-conformance module. Please refresh the page.');
-    }
-  }, [id]);
-  
-  const handleCreateNew = () => {
-    console.log("Creating new non-conformance");
-    navigate('/non-conformance/new');
+    ];
+    setNonConformances(mockData);
+  }, []);
+
+  const handleViewDetails = (id: string) => {
+    setSelectedNCId(id);
+    setShowNCDetails(true);
   };
-  
-  const handleViewDashboard = () => {
-    console.log("Navigating to dashboard");
-    navigate('/non-conformance/dashboard');
+
+  const handleCreateNC = () => {
+    navigate('/non-conformance/create');
   };
-  
-  const handleSelectItem = (selectedId: string) => {
-    console.log("Selecting item with ID:", selectedId);
-    navigate(`/non-conformance/${selectedId}`);
-    setViewingDetails(true);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    toast({
+      title: "Filters Reset",
+      description: "All filters have been cleared"
+    });
   };
-  
-  if (loadError) {
-    return (
-      <div className="space-y-6 p-8 text-center">
-        <h1 className="text-2xl font-semibold text-red-600">Error Loading Non-Conformance Module</h1>
-        <p className="text-gray-700">{loadError}</p>
-        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-      </div>
-    );
-  }
-  
+
   return (
-    <div id="nc-module-container" className="space-y-6 p-6 animate-fade-in">
-      {!viewingDetails && (
-        <div className="flex justify-between items-center mb-4">
-          <Button 
-            variant="outline" 
-            onClick={handleViewDashboard}
-            className="hover:border-primary hover:text-primary transition-colors"
-          >
-            <BarChart3 className="mr-2 h-4 w-4" />
-            View Dashboard
-          </Button>
-          
-          <Button 
-            onClick={handleCreateNew}
-            className="bg-cyan-500 hover:bg-cyan-600 text-white shadow-sm"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Non-Conformance
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader
+        title="Non-Conformance Management"
+        subtitle="Identify, track, and resolve non-conforming materials and products"
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <Breadcrumbs />
+
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+          <div className="flex-1 flex items-center space-x-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search non-conformances..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => toast({
+                title: "Advanced Filters",
+                description: "Advanced filtering options"
+              })}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetFilters}
+            >
+              <FilterX className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Button onClick={handleCreateNC}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Non-Conformance
           </Button>
         </div>
-      )}
-      
-      <div className="bg-gradient-to-br from-white to-accent/5 border border-border/60 rounded-lg shadow-md overflow-hidden">
-        {id && viewingDetails ? (
-          <NCDetails 
-            id={id} 
-            onClose={() => {
-              navigate('/non-conformance');
-              setViewingDetails(false);
-            }} 
-          />
-        ) : (
-          <NCList 
-            onSelectItem={handleSelectItem} 
-            key={`nc-list-${refreshTrigger}`} // Force re-render on updates
-          />
+
+        <div className="space-y-4">
+          {nonConformances.map((nc) => (
+            <Card key={nc.id} className="hover:bg-gray-50 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex-grow">
+                    <h3 className="font-medium">{nc.title}</h3>
+                    <p className="text-sm text-gray-500 mt-1 truncate">{nc.description}</p>
+                  </div>
+
+                  <div className="flex flex-col sm:items-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(nc.id)}>
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {showNCDetails && selectedNCId && (
+          <Dialog open={showNCDetails} onOpenChange={setShowNCDetails}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <NCDetails 
+                id={selectedNCId} 
+                onClose={() => setShowNCDetails(false)} 
+              />
+            </DialogContent>
+          </Dialog>
         )}
-      </div>
+      </main>
     </div>
   );
 };
 
-export default NonConformanceModule;
+export default NonConformancePage;

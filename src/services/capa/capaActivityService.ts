@@ -21,6 +21,7 @@ export const recordCAPAActivity = async (activity: CAPAActivity): Promise<void> 
     const oldStatus = activity.old_status ? mapInternalStatusToDb(activity.old_status) : undefined;
     const newStatus = activity.new_status ? mapInternalStatusToDb(activity.new_status) : undefined;
     
+    // Insert using the fields that match the database schema
     const { error } = await supabase
       .from('capa_activities')
       .insert({
@@ -51,7 +52,22 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
 
     if (error) throw new Error(`Error fetching CAPA activities: ${error.message}`);
     
-    return data || [];
+    // Map database status values to internal application status values
+    return data.map(activity => ({
+      id: activity.id,
+      capa_id: activity.capa_id,
+      performed_at: activity.performed_at,
+      old_status: activity.old_status === 'In Progress' ? 'In_Progress' as CAPAStatus : 
+                  activity.old_status === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
+                  activity.old_status as CAPAStatus,
+      new_status: activity.new_status === 'In Progress' ? 'In_Progress' as CAPAStatus : 
+                  activity.new_status === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
+                  activity.new_status as CAPAStatus,
+      action_type: activity.action_type,
+      action_description: activity.action_description,
+      performed_by: activity.performed_by,
+      metadata: activity.metadata
+    }));
   } catch (error) {
     console.error('Failed to fetch CAPA activities:', error);
     throw error;

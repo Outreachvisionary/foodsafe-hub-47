@@ -1,21 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CAPA, CAPAStatus } from '@/types/capa';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { format } from 'date-fns';
-import { Clock, FileText, AlertTriangle, UserCheck, Calendar } from 'lucide-react';
-import { CAPA } from '@/types/capa';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getCAPAById } from '@/services/capaService';
-import { mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
-import { RelatedDocumentsList } from './RelatedDocumentsList';
-import { RelatedTrainingList } from './RelatedTrainingList';
+import { Loader2, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { updateCAPAStatus } from '@/services/capa/capaUpdateService';
+import { updateCAPA } from '@/services/capaService';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
+import RelatedDocumentsList from './RelatedDocumentsList';
+import RelatedTrainingList from './RelatedTrainingList';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
-import { CAPATimeline } from './CAPATimeline';
-import { CAPAEffectivenessForm } from './CAPAEffectivenessForm';
+import CAPATimeline from './CAPATimeline';
+import CAPAEffectivenessForm from './CAPAEffectivenessForm';
 
 interface CAPADetailsProps {
   capa: CAPA;

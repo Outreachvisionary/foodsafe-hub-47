@@ -5,13 +5,36 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Chart } from '@/components/charts/Chart';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
-import { CAPAStatus, CAPAStats } from '@/types/capa';
+import { CAPAStatus } from '@/types/capa';
 
-interface CAPADashboardProps {
-  stats: CAPAStats;
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  pendingVerificationCount: number;
+  effectivenessRate: number;
+  byPriority: Record<string, number>;
+  bySource: Record<string, number>;
+  byDepartment: Record<string, number>;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
+export interface CAPADashboardProps {
+  stats: CAPAStats;
+  filters?: {
+    status: string;
+    priority: string;
+    source: string;
+    dueDate: string;
+  };
+  searchQuery?: string;
+}
+
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ 
+  stats, 
+  filters = { status: 'all', priority: 'all', source: 'all', dueDate: 'all' },
+  searchQuery = '' 
+}) => {
   const {
     total,
     openCount,
@@ -49,10 +72,10 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
   };
 
   const getEffectivenessRating = (rate: number): string => {
-    if (rate >= 90) return 'Highly Effective';
+    if (rate >= 90) return 'Highly_Effective';
     if (rate >= 70) return 'Effective';
-    if (rate >= 40) return 'Partially Effective';
-    return 'Not Effective';
+    if (rate >= 40) return 'Partially_Effective';
+    return 'Not_Effective';
   };
 
   // For the chart

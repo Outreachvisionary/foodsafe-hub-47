@@ -1,93 +1,66 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ExternalLink, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
+import { getCAPAById } from '@/services/capa/capaFetchService';
+import { CAPA } from '@/types/capa';
 
 interface LinkedCAPAsListProps {
   capaIds: string[];
 }
 
 export const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capaIds }) => {
-  if (!capaIds || capaIds.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Linked CAPAs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">No CAPAs linked to this non-conformance</p>
-        </CardContent>
-      </Card>
-    );
+  const [capas, setCapas] = useState<CAPA[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCapas = async () => {
+      if (!capaIds || capaIds.length === 0) return;
+      
+      setLoading(true);
+      try {
+        const capaPromises = capaIds.map(id => getCAPAById(id));
+        const capaResults = await Promise.all(capaPromises);
+        setCapas(capaResults.filter(Boolean));
+      } catch (error) {
+        console.error('Error fetching linked CAPAs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCapas();
+  }, [capaIds]);
+  
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">Loading linked CAPAs...</p>;
   }
-
-  // Sample CAPA data - in a real app, this would be fetched
-  const capas = capaIds.map(id => ({
-    id,
-    title: `CAPA for ${id}`,
-    status: ['Open', 'In_Progress', 'Closed'][Math.floor(Math.random() * 3)] as 'Open' | 'In_Progress' | 'Closed',
-    priority: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)] as 'High' | 'Medium' | 'Low'
-  }));
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Open':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'In_Progress':
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'Closed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'In_Progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'Closed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
+  
+  if (!capaIds || capaIds.length === 0 || capas.length === 0) {
+    return <p className="text-sm text-muted-foreground">No linked CAPAs</p>;
+  }
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Linked CAPAs</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
-          {capas.map(capa => (
-            <li key={capa.id} className="flex items-center justify-between p-3 border rounded-md bg-gray-50">
-              <div className="flex flex-col">
-                <span className="font-medium">{capa.title}</span>
-                <div className="flex items-center mt-1 space-x-2">
-                  <Badge className={getStatusColor(capa.status)}>
-                    {getStatusIcon(capa.status)}
-                    <span className="ml-1">{capa.status.replace('_', ' ')}</span>
-                  </Badge>
-                  <Badge variant="outline">{capa.priority}</Badge>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={`/capa/${capa.id}`}>
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  View
-                </Link>
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      {capas.map(capa => (
+        <div 
+          key={capa.id}
+          className="flex justify-between items-center p-2 border rounded-md"
+        >
+          <div>
+            <p className="font-medium">{capa.title}</p>
+            <p className="text-xs text-muted-foreground">CAPA #{capa.id.slice(0, 8)}</p>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to={`/capa/${capa.id}`}>
+              <ExternalLink className="h-4 w-4 mr-1" />
+              View
+            </Link>
+          </Button>
+        </div>
+      ))}
+    </div>
   );
 };
 

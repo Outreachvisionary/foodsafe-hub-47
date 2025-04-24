@@ -25,12 +25,17 @@ export const useNonConformanceService = () => {
         updated_at: new Date().toISOString(),
         created_by: 'Quality Inspector',
         assigned_to: 'Quality Manager',
-        capa_id: 'CAPA-2023-001', // Use capa_id consistently
-        severity: 'Critical',
-        category: 'Contamination',
-        source: 'Internal QC',
+        capa_id: 'CAPA-2023-001',
+        reason_details: 'Metal contamination',
+        department: 'Production',
         location: 'Production Line 3',
-        department: 'Production'
+        risk_level: 'Critical',
+        quantity: 100,
+        quantity_on_hold: 100,
+        resolution_date: null,
+        resolution_details: null,
+        review_date: null,
+        reviewer: null
       };
       
       return mockData;

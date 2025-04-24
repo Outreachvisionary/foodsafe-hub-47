@@ -1,598 +1,311 @@
-
 import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import { useDropzone } from 'react-dropzone';
+import { v4 as uuidv4 } from 'uuid';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { 
-  CalendarIcon, 
-  Upload, 
-  FileText, 
-  X, 
-  Loader,
-  CheckCircle,
-  UserCheck,
-  AlertCircle
-} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, File, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
-import { Document, DocumentStatus, DocumentCategory } from '@/types/document';
-import { supabase } from '@/integrations/supabase/client';
-import { useDocumentService } from '@/hooks/useDocumentService';
-import { adaptDatabaseToDocument } from '@/utils/documentTypeAdapter';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useDocument } from '@/contexts/DocumentContext';
+import { DocumentCategory, DocumentStatus, Document } from '@/types/document';
 
 interface DocumentUploaderProps {
-  onUploadComplete?: (document: Document) => void;
-  category?: string;
-  allowedTypes?: string[];
-  maxSize?: number; // In MB
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  selectedFolder?: string | null;
+  onDocumentCreated?: (document: Document) => void;
 }
 
-const DocumentUploader: React.FC<DocumentUploaderProps> = ({
-  onUploadComplete,
-  category = 'Other',
-  allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'],
-  maxSize = 10, // Default 10MB
-  onSuccess,
-  onCancel,
-  selectedFolder
-}) => {
-  const [file, setFile] = useState<File | null>(null);
+const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(category as DocumentCategory);
-  const [selectedStatus, setSelectedStatus] = useState<DocumentStatus>('Draft');
-  const [isLocked, setIsLocked] = useState(false);
-  const [tags, setTags] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('Other');
+  const [status, setStatus] = useState<DocumentStatus>('Draft');
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
-  const [submitForReview, setSubmitForReview] = useState(false);
-  const [approvers, setApprovers] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  
   const { toast } = useToast();
-  const documentService = useDocumentService();
+  const { fetchDocuments } = useDocument();
+  const { documentService } = useDocument();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUploadError(null);
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      
-      if (selectedFile.size > maxSize * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: `Maximum file size is ${maxSize}MB`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
-      if (!allowedTypes.includes('.*') && !allowedTypes.includes(fileExtension)) {
-        toast({
-          title: "Invalid file type",
-          description: `Allowed file types: ${allowedTypes.join(', ')}`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      setFile(selectedFile);
-      // Set a default title based on filename without extension
-      const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
-      setTitle(fileName);
-    }
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const droppedFile = acceptedFiles[0];
+    setFile(droppedFile);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false });
+
+  const handleCategoryChange = (value: DocumentCategory) => {
+    setCategory(value);
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
+  const handleStatusChange = (value: DocumentStatus) => {
+    setStatus(value);
+  };
+
+  const handleExpiryDateChange = (date: Date | undefined) => {
+    setExpiryDate(date);
+  };
+
+  const clearForm = () => {
     setTitle('');
-    setUploadError(null);
+    setDescription('');
+    setCategory('Other');
+    setStatus('Draft');
+    setExpiryDate(undefined);
+    setFile(null);
   };
 
-  const uploadDocument = async () => {
-    if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file to upload",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!title.trim()) {
-      toast({
-        title: "Title required",
-        description: "Please provide a title for the document",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadSuccess(false);
-    setUploadError(null);
-    
-    // Create an interval to simulate progress until we get actual progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev < 90) return prev + 5;
-        return prev;
-      });
-    }, 200);
-    
+  const createNewDocument = async (values: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setUploading(true);
+      setErrorMessage(null);
       
-      if (!user) {
-        throw new Error("Authentication required. You must be logged in to upload documents.");
-      }
+      // Convert string status to DocumentStatus type
+      const documentStatus = values.status as DocumentStatus;
       
-      const documentId = uuidv4();
+      const documentData: Partial<Document> = {
+        id: values.id,
+        title: values.title,
+        description: values.description,
+        file_name: values.file_name,
+        file_path: values.file_path,
+        file_size: values.file_size,
+        file_type: values.file_type,
+        category: values.category,
+        status: documentStatus,
+        version: values.version,
+        created_at: values.created_at,
+        created_by: values.created_by,
+        updated_at: values.updated_at,
+        tags: values.tags,
+        approvers: values.approvers,
+        folder_id: values.folder_id,
+        expiry_date: values.expiry_date,
+        pending_since: values.pending_since
+      };
+
+      const newDocument = await documentService.createDocument(documentData);
       
-      // Create a clean filename without spaces and special characters
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-      const fileName = `${documentId}_${cleanFileName}`;
-      const filePath = `documents/${documentId}/${fileName}`;
-      
-      // Upload the file to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('attachments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+      if (newDocument) {
+        toast({
+          title: "Document Created",
+          description: "New document has been created successfully"
         });
-      
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw new Error(`File upload failed: ${uploadError.message}`);
-      }
-      
-      // Get the public URL for the uploaded file
-      const { data: urlData } = supabase.storage
-        .from('attachments')
-        .getPublicUrl(filePath);
-      
-      if (!urlData || !urlData.publicUrl) {
-        throw new Error("Could not generate public URL for uploaded file");
-      }
-      
-      const tagArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : [];
-      
-      // Create document record in the database - ensure types match database expectations
-      const newDocument = {
-        id: documentId,
-        title: title.trim(),
-        description: description.trim(),
-        file_name: fileName,
-        file_path: urlData.publicUrl, // Store the public URL
-        file_size: file.size,
-        file_type: file.type,
-        category: selectedCategory,
-        status: submitForReview ? 'Pending_Approval' : selectedStatus,
-        version: 1,
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        expiry_date: expiryDate?.toISOString(),
-        is_locked: isLocked,
-        tags: tagArray,
-        folder_id: selectedFolder || null,
-        approvers: submitForReview ? approvers : [],
-        pending_since: submitForReview ? new Date().toISOString() : undefined,
-      };
-      
-      const documentData = await documentService.createDocument(newDocument);
-      
-      // Create version record
-      const versionData = {
-        document_id: documentId,
-        file_name: fileName,
-        file_path: urlData.publicUrl,
-        file_size: file.size,
-        file_type: file.type,
-        created_by: user.id,
-        version: 1,
-        editor_metadata: { 
-          upload_source: 'web',
-          original_filename: file.name
+        
+        // Refresh the document list
+        await fetchDocuments();
+        
+        // Notify parent component
+        if (onDocumentCreated) {
+          onDocumentCreated(newDocument);
         }
-      };
-      
-      const versionResponse = await documentService.createVersion(versionData);
-      
-      // Update document with current version ID
-      await documentService.updateDocument(documentId, { 
-        current_version_id: versionResponse.id 
-      });
-      
-      // Record the activity
-      await documentService.recordActivity({
-        document_id: documentId,
-        action: 'create',
-        user_id: user.id,
-        user_name: user.email || 'Unknown user',
-        user_role: 'User',
-        comments: 'Document created through file upload'
-      });
-      
-      // If the document was uploaded to a folder, update folder document count
-      if (selectedFolder) {
-        try {
-          // Get current folder document count
-          const { data: folderData } = await supabase
-            .from('folders')
-            .select('document_count')
-            .eq('id', selectedFolder)
-            .single();
-            
-          const currentCount = folderData?.document_count || 0;
-          
-          // Update folder document count
-          await supabase
-            .from('folders')
-            .update({ 
-              document_count: currentCount + 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', selectedFolder);
-        } catch (error) {
-          console.error('Error updating folder document count:', error);
-          // Don't fail the whole upload if folder count update fails
-        }
+        
+        clearForm();
+      } else {
+        setErrorMessage("Failed to create document");
       }
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      setUploadSuccess(true);
-      
-      toast({
-        title: "Upload successful",
-        description: "Document has been uploaded successfully.",
-      });
-      
-      if (onUploadComplete && documentData) {
-        // Pass the document directly without using adaptDatabaseToDocument
-        onUploadComplete(documentData);
-      }
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Reset form after a short delay
-      setTimeout(() => {
-        setFile(null);
-        setTitle('');
-        setDescription('');
-        setSelectedCategory(category as DocumentCategory);
-        setIsUploading(false);
-        setUploadSuccess(false);
-      }, 1500);
-      
     } catch (error: any) {
-      clearInterval(progressInterval);
-      console.error('Error uploading document:', error);
-      setUploadError(error.message || "There was a problem uploading your document.");
-      setIsUploading(false);
-      setUploadProgress(0);
-      
+      console.error("Error creating document:", error);
+      setErrorMessage(error.message || "Failed to create document");
       toast({
-        title: "Upload failed",
-        description: error.message || "There was a problem uploading your document.",
+        title: "Error",
+        description: `Failed to create document: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!file) {
+      setErrorMessage('Please select a file to upload');
+      return;
+    }
+
+    const newDocumentId = uuidv4();
+    const now = new Date().toISOString();
+
+    const values = {
+      id: newDocumentId,
+      title: title,
+      description: description,
+      file_name: file.name,
+      file_path: `${newDocumentId}/${file.name}`,
+      file_size: file.size,
+      file_type: file.type,
+      category: category,
+      status: status,
+      version: 1,
+      created_at: now,
+      created_by: 'user',
+      updated_at: now,
+      tags: [],
+      approvers: [],
+      folder_id: null,
+      expiry_date: expiryDate?.toISOString(),
+      pending_since: now
+    };
+
+    await createNewDocument(values);
   };
 
   return (
-    <div className="p-4">
-      <div className="space-y-4">
-        {uploadError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Upload Failed</AlertTitle>
-            <AlertDescription>{uploadError}</AlertDescription>
-          </Alert>
-        )}
-        
-        {!file ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
-            <Input 
-              id="document-upload"
-              type="file"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              className="hidden"
-            />
-            <Label htmlFor="document-upload" className="cursor-pointer flex flex-col items-center justify-center">
-              <FileText className="h-10 w-10 text-muted-foreground mb-3" />
-              <span className="text-lg font-medium mb-1">Drag & drop a file or click to browse</span>
-              <span className="text-sm text-muted-foreground">
-                Allowed file types: {allowedTypes.join(', ')} (Max size: {maxSize}MB)
-              </span>
-            </Label>
-          </div>
-        ) : (
-          <>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-md">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Upload New Document</CardTitle>
+        <CardDescription>Add a new document to the repository</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {errorMessage && (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <X className="h-5 w-5 text-red-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  There was an error creating the document.
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{errorMessage}</p>
                 </div>
-                
-                {!isUploading && !uploadSuccess && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleRemoveFile}
-                    className="text-gray-500 hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              type="text"
+              id="title"
+              placeholder="Document Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Document Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={category} onValueChange={handleCategoryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value="SOP">SOP</SelectItem>
+                  <SelectItem value="Policy">Policy</SelectItem>
+                  <SelectItem value="Form">Form</SelectItem>
+                  <SelectItem value="Certificate">Certificate</SelectItem>
+                  <SelectItem value="Audit Report">Audit Report</SelectItem>
+                  <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
+                  <SelectItem value="Training Material">Training Material</SelectItem>
+                  <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
+                  <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={handleStatusChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Pending Review">Pending Review</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Archived">Archived</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Expiry Date</Label>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={'outline'}
+                  className={cn(
+                    'w-[240px] justify-start text-left font-normal',
+                    !expiryDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {expiryDate ? format(expiryDate, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={expiryDate}
+                  onSelect={handleExpiryDateChange}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div>
+            <Label>Upload Document</Label>
+            <div
+              {...getRootProps()}
+              className="relative border-2 border-dashed rounded-md cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-white"
+            >
+              <input {...getInputProps()} />
+              <div className="text-center py-12">
+                {file ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <File className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm text-gray-500">{file.name}</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="mx-auto h-6 w-6 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Drag 'n' drop some files here, or click to select files
+                    </p>
+                    <p className="text-xs text-gray-500">PDF, DOCX, JPG, PNG up to 10MB</p>
+                  </>
                 )}
               </div>
-              
-              {(isUploading || uploadSuccess) && (
-                <div className="mt-3">
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        uploadSuccess ? "bg-green-500" : "bg-primary"
-                      }`}
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1 text-center">
-                    {uploadSuccess 
-                      ? "Upload complete!" 
-                      : `${uploadProgress}% uploaded`}
-                  </p>
+              {isDragActive ? (
+                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                  <p className="text-white font-semibold">Drop here...</p>
                 </div>
-              )}
+              ) : null}
             </div>
-            
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="document-title">Title</Label>
-                <Input 
-                  id="document-title" 
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Document title"
-                  disabled={isUploading || uploadSuccess}
-                  required
-                  className="border-gray-300"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="document-description">Description (optional)</Label>
-                <Textarea 
-                  id="document-description" 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of this document"
-                  disabled={isUploading || uploadSuccess}
-                  rows={3}
-                  className="border-gray-300"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="document-category">Category</Label>
-                <Select 
-                  value={selectedCategory} 
-                  onValueChange={(value) => setSelectedCategory(value as DocumentCategory)}
-                  disabled={isUploading || uploadSuccess}
-                >
-                  <SelectTrigger id="document-category" className="bg-white border-gray-300">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="SOP">SOP</SelectItem>
-                    <SelectItem value="Policy">Policy</SelectItem>
-                    <SelectItem value="Form">Form</SelectItem>
-                    <SelectItem value="Certificate">Certificate</SelectItem>
-                    <SelectItem value="Audit Report">Audit Report</SelectItem>
-                    <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
-                    <SelectItem value="Training Material">Training Material</SelectItem>
-                    <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
-                    <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="document-status">Status</Label>
-                <Select 
-                  value={selectedStatus} 
-                  onValueChange={(value) => setSelectedStatus(value as DocumentStatus)}
-                  disabled={isUploading || uploadSuccess || submitForReview}
-                >
-                  <SelectTrigger id="document-status" className="bg-white border-gray-300">
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Published">Published</SelectItem>
-                    <SelectItem value="Archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="document-expiry">Expiry Date (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      disabled={isUploading || uploadSuccess}
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-gray-300",
-                        !expiryDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {expiryDate ? format(expiryDate, "PPP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white">
-                    <Calendar
-                      mode="single"
-                      selected={expiryDate}
-                      onSelect={setExpiryDate}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div>
-                <Label htmlFor="document-tags">Tags (comma separated)</Label>
-                <Input 
-                  id="document-tags" 
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="quality, inspection, compliance"
-                  disabled={isUploading || uploadSuccess}
-                  className="border-gray-300"
-                />
-              </div>
-
-              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border border-gray-200 p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base" htmlFor="submit-for-review">Submit for Review</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Send this document for approval
-                  </p>
-                </div>
-                <Switch
-                  id="submit-for-review"
-                  checked={submitForReview}
-                  onCheckedChange={setSubmitForReview}
-                  disabled={isUploading || uploadSuccess}
-                />
-              </div>
-
-              {submitForReview && (
-                <div>
-                  <Label htmlFor="approvers">Approvers</Label>
-                  <Select 
-                    disabled={isUploading || uploadSuccess}
-                    value={approvers[0] || ""}
-                    onValueChange={(value) => setApprovers([value])}
-                  >
-                    <SelectTrigger id="approvers" className="bg-white border-gray-300">
-                      <SelectValue placeholder="Select approver" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="quality_manager">Quality Manager</SelectItem>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="flex flex-row items-center justify-between space-x-2 rounded-lg border border-gray-200 p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base" htmlFor="document-locked">Lock Document</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Prevent further modifications to this document
-                  </p>
-                </div>
-                <Switch
-                  id="document-locked"
-                  checked={isLocked}
-                  onCheckedChange={setIsLocked}
-                  disabled={isUploading || uploadSuccess}
-                />
-              </div>
-              
-              {selectedFolder && (
-                <div className="flex items-center p-3 bg-blue-50 rounded-md border border-blue-200">
-                  <FileText className="h-4 w-4 mr-2 text-primary" />
-                  <span className="text-sm">
-                    This document will be uploaded to folder: <strong>{selectedFolder}</strong>
-                  </span>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-        
-        <div className="flex justify-between gap-3 pt-4 border-t border-gray-100 mt-4">
-          {onCancel && (
-            <Button 
-              onClick={onCancel} 
-              variant="outline" 
-              disabled={isUploading}
-              className="w-full border-gray-300"
-            >
-              Cancel
-            </Button>
-          )}
-          
-          <Button
-            onClick={uploadDocument}
-            disabled={!file || isUploading || !title.trim() || uploadSuccess}
-            className="w-full"
-          >
-            {isUploading ? (
-              <>
-                <Loader className="h-4 w-4 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : uploadSuccess ? (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                Uploaded
-              </>
-            ) : submitForReview ? (
-              <>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Submit for Review
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </>
-            )}
+          </div>
+          <Button type="submit" disabled={uploading} className="w-full">
+            {uploading ? 'Uploading...' : 'Create Document'}
           </Button>
-        </div>
-      </div>
-    </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
