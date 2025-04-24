@@ -76,7 +76,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  // Fix the checkout status comparison using strict equality
+  // Compare checkout status using the correct string value
   const isCheckedOut = document.checkout_status === 'Checked Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 

@@ -530,12 +530,12 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <CAPAActivityList capaId={capaId} activities={activities} loading={isActivitiesLoading} onActivityChange={refreshActivities} />
         
-        <CAPAEffectivenessMonitor 
-          capaId={capaId}
-          title={capa.title}
-          implementationDate={capa.completionDate || capa.dueDate}
-          isEditable={true}
-        />
+        {capa && (
+          <CAPAEffectivenessMonitor 
+            capaId={capaId as string}
+            implementationDate={capa.completionDate || capa.createdAt}
+          />
+        )}
       </div>
     </div>
   );

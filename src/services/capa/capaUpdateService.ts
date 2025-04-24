@@ -46,7 +46,7 @@ export const updateCAPAStatus = async (
       additionalFields.effectiveness_verified = true;
     }
     
-    // Type cast to any to avoid type errors with the db field
+    // Update the CAPA with new status and any additional fields
     const updateFields: any = {
       status: dbNewStatus,
       ...additionalFields,
@@ -95,10 +95,10 @@ export const updateCAPAStatus = async (
       correctiveAction: data.corrective_action,
       preventiveAction: data.preventive_action,
       department: data.department,
-      effectivenessRating: data.effectiveness_rating ? 
-        (data.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' : 
-         data.effectiveness_rating === 'Not Effective' ? 'Not_Effective' : 
-         data.effectiveness_rating as CAPAEffectivenessRating) : undefined,
+      effectivenessRating: data.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' : 
+         data.effectiveness_rating === 'Not Effective' ? 'Not_Effective' :
+         data.effectiveness_rating === 'Highly Effective' ? 'Highly_Effective' :
+         data.effectiveness_rating as CAPAEffectivenessRating,
       effectivenessCriteria: data.effectiveness_criteria,
       verificationMethod: data.verification_method,
       verifiedBy: data.verified_by,

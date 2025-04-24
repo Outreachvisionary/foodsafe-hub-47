@@ -1,36 +1,65 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Facility } from '@/types/facility';
-import { fetchFacilities as fetchFacilitiesFromSupabase } from '@/utils/supabaseHelpers';
 
-/**
- * Get all facilities
- * @returns {Promise<Facility[]>} Array of facilities
- */
+interface Facility {
+  id: string;
+  name: string;
+  description?: string;
+  address?: string;
+  organization_id?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  status?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  zipcode?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const getFacilities = async (): Promise<Facility[]> => {
-  try {
-    // Use the supabaseHelpers function that's already set up correctly
-    const facilities = await fetchFacilitiesFromSupabase();
-    return facilities;
-  } catch (error) {
-    console.error('Error fetching facilities:', error);
-    return [];
-  }
-};
-
-/**
- * Create a new facility
- * @param {Partial<Facility>} facility - The facility data
- * @returns {Promise<Facility | null>} The created facility or null if there was an error
- */
-export const createFacility = async (facility: Partial<Facility>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
-      .insert(facility)
+      .select('*')
+      .order('name', { ascending: true });
+      
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching facilities:', error);
+    throw error;
+  }
+};
+
+export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
+  try {
+    // Ensure we have required fields
+    if (!facilityData.name) {
+      throw new Error('Facility name is required');
+    }
+    
+    // Create properly typed facility object for Supabase
+    const newFacility = {
+      name: facilityData.name,
+      description: facilityData.description,
+      address: facilityData.address,
+      organization_id: facilityData.organization_id,
+      contact_email: facilityData.contact_email,
+      contact_phone: facilityData.contact_phone,
+      status: facilityData.status || 'active',
+      country: facilityData.country,
+      state: facilityData.state,
+      city: facilityData.city,
+      zipcode: facilityData.zipcode
+    };
+    
+    const { data, error } = await supabase
+      .from('facilities')
+      .insert([newFacility])
       .select()
       .single();
-    
+      
     if (error) throw error;
     return data;
   } catch (error) {
@@ -39,54 +68,6 @@ export const createFacility = async (facility: Partial<Facility>): Promise<Facil
   }
 };
 
-/**
- * Update a facility
- * @param {string} id - The facility ID
- * @param {Partial<Facility>} updates - The updates to apply
- * @returns {Promise<Facility | null>} The updated facility or null if there was an error
- */
-export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
-  try {
-    const { data, error } = await supabase
-      .from('facilities')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error(`Error updating facility ${id}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Delete a facility
- * @param {string} id - The facility ID
- * @returns {Promise<boolean>} True if successful, false otherwise
- */
-export const deleteFacility = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('facilities')
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error(`Error deleting facility ${id}:`, error);
-    return false;
-  }
-};
-
-/**
- * Get a facility by ID
- * @param {string} id - The facility ID
- * @returns {Promise<Facility | null>} The facility or null if not found
- */
 export const getFacilityById = async (id: string): Promise<Facility | null> => {
   try {
     const { data, error } = await supabase
@@ -94,33 +75,59 @@ export const getFacilityById = async (id: string): Promise<Facility | null> => {
       .select('*')
       .eq('id', id)
       .single();
+      
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // No rows returned
+      }
+      throw error;
+    }
     
-    if (error) throw error;
     return data;
   } catch (error) {
-    console.error(`Error fetching facility ${id}:`, error);
-    return null;
+    console.error('Error fetching facility by ID:', error);
+    throw error;
   }
 };
 
-/**
- * Get facilities by organization ID
- * @param {string} organizationId - The organization ID
- * @returns {Promise<Facility[]>} Array of facilities
- */
-export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
+export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
-      .select('*')
-      .eq('organization_id', organizationId);
-    
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+      
     if (error) throw error;
-    return data || [];
+    return data;
   } catch (error) {
-    console.error(`Error fetching facilities for organization ${organizationId}:`, error);
-    return [];
+    console.error('Error updating facility:', error);
+    throw error;
   }
 };
 
-export { fetchFacilitiesFromSupabase };
+export const deleteFacility = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('facilities')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting facility:', error);
+    throw error;
+  }
+};
+
+export default {
+  getFacilities,
+  createFacility,
+  getFacilityById,
+  updateFacility,
+  deleteFacility
+};

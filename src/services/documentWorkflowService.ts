@@ -1,28 +1,58 @@
+import { supabase } from '@/integrations/supabase/client';
+import { Document, DocumentStatus } from '@/types/document';
 
-// Fix the default export
-import { Document } from '@/types/document';
-import { v4 as uuidv4 } from 'uuid';
+// Since we need to fix a comparison that appears incorrect, 
+// Let's add a function to map between workflows and document statuses
+export const mapWorkflowStatusToDocumentStatus = (status: string): DocumentStatus => {
+  switch (status) {
+    case 'pending_approval':
+      return 'Pending Approval';
+    case 'approved':
+      return 'Approved';
+    case 'rejected':
+      return 'Rejected';
+    case 'draft':
+      return 'Draft';
+    case 'published':
+      return 'Published';
+    case 'archived':
+      return 'Archived';
+    case 'expired':
+      return 'Expired';
+    case 'pending_review':
+      return 'Pending Review';
+    case 'active':
+      return 'Active';
+    default:
+      return 'Draft';
+  }
+};
 
-// Define missing interfaces that were causing errors
-interface DocumentNotification {
-  id: string;
-  type: string;
-  documentId: string;
-  documentTitle?: string;
-  message: string;
-  createdAt: string;
-  isRead: boolean;
-  targetUserIds: string[];
-}
-
-interface DocumentWorkflowStep {
-  id: string;
-  name: string;
-  description: string;
-  approvers: string[];
-  required_approvals: number;
-  is_final: boolean;
-}
+// And the reverse mapping function
+export const mapDocumentStatusToWorkflow = (status: DocumentStatus): string => {
+  switch (status) {
+    case 'Pending Approval':
+      return 'pending_approval';
+    case 'Approved':
+      return 'approved';
+    case 'Rejected':
+      return 'rejected';
+    case 'Draft':
+      return 'draft';
+    case 'Published':
+      return 'published';
+    case 'Archived':
+      return 'archived';
+    case 'Expired':
+      return 'expired';
+    case 'Pending Review':
+      return 'pending_review';
+    case 'Active':
+      return 'active';
+    default:
+      return 'draft';
+  }
+};
 
 /**
  * Submit a document for approval
@@ -160,6 +190,38 @@ const documentWorkflowService = {
   generateNotifications,
   getDefaultWorkflowSteps,
   getAvailableApprovers
+};
+
+export const updateDocumentStatus = async (documentId: string, newStatus: DocumentStatus): Promise<Document> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to update document status: ${error.message}`);
+
+    // Use correct status comparison
+    if (newStatus === 'Pending Approval') {
+      // Set the pending_since timestamp when a document enters review
+      await supabase
+        .from('documents')
+        .update({
+          pending_since: new Date().toISOString()
+        })
+        .eq('id', documentId);
+    }
+    
+    return data as Document;
+  } catch (error) {
+    console.error('Error in updateDocumentStatus:', error);
+    throw error;
+  }
 };
 
 export default documentWorkflowService;

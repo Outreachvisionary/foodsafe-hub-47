@@ -196,7 +196,6 @@ export const useDocumentService = () => {
         checkout_user_id: data.checkout_user_id,
         checkout_user_name: data.checkout_user_name,
         workflow_status: data.workflow_status
-        // Remove custom_notification_days as it's not in the Document type
       };
       
       return document;
@@ -309,7 +308,6 @@ export const useDocumentService = () => {
         checkout_user_id: data.checkout_user_id,
         checkout_user_name: data.checkout_user_name,
         workflow_status: data.workflow_status
-        // Remove custom_notification_days as it's not in the Document type
       };
 
       return document;
@@ -712,6 +710,11 @@ export const useDocumentService = () => {
         updated_at: new Date().toISOString()
       } as Document);
       
+      // Remove custom_notification_days as it doesn't exist in Document type
+      if (dbUpdates.custom_notification_days) {
+        delete dbUpdates.custom_notification_days;
+      }
+      
       const { data, error } = await supabase
         .from('documents')
         .update(dbUpdates)
@@ -720,7 +723,7 @@ export const useDocumentService = () => {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as Document;
     } catch (error: any) {
       console.error('Error updating document:', error.message);
       throw error;

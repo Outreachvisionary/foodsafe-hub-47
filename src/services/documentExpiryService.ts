@@ -1,111 +1,158 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
+import { addDays, format, parse, isAfter, isBefore, addMonths } from 'date-fns';
+import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 
-interface DocumentNotificationData {
-  document_id: string;
-  recipient_name: string; 
-  recipient_email: string;
-  document_title: string;
-  expiry_date: string;
-  days_until_expiry: number;
-  notification_type: 'expiry_warning' | 'expired';
-}
-
-/**
- * Check documents for upcoming expiration and send notifications
- */
-export const sendExpiryNotifications = async () => {
+export const getExpiringDocuments = async (daysThreshold: number = 30): Promise<Document[]> => {
   try {
-    // Get documents that are expiring soon or already expired
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const today = new Date();
+    const thresholdDate = addDays(today, daysThreshold);
     
-    const { data: documents, error } = await supabase
-      .from('documents')
-      .select('*')
-      .lt('expiry_date', thirtyDaysFromNow.toISOString())
-      .gt('expiry_date', new Date().toISOString());
-    
-    if (error) throw error;
-    
-    if (!documents || documents.length === 0) {
-      console.log('No documents expiring soon');
-      return [];
-    }
-    
-    console.log(`Found ${documents.length} documents expiring soon`);
-    
-    // For each document, create a notification record
-    const notifications: DocumentNotificationData[] = [];
-    
-    for (const document of documents) {
-      const expiryDate = new Date(document.expiry_date);
-      const currentDate = new Date();
-      const daysUntilExpiry = Math.floor((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Get document approvers or owner to notify
-      const recipients = document.approvers || [document.created_by];
-      
-      for (const recipient of recipients) {
-        notifications.push({
-          document_id: document.id,
-          recipient_name: recipient,
-          recipient_email: recipient, // In a real implementation, you would get the email from the user profile
-          document_title: document.title,
-          expiry_date: document.expiry_date,
-          days_until_expiry: daysUntilExpiry,
-          notification_type: 'expiry_warning'
-        });
-      }
-    }
-    
-    // In a real implementation, you would insert these notifications into a database table
-    // and send emails. For now, we'll just return them.
-    console.log(`Created ${notifications.length} notifications`);
-    return notifications;
-  } catch (error) {
-    console.error('Error sending document expiry notifications:', error);
-    throw error;
-  }
-};
-
-/**
- * Get documents that will expire within a specified number of days
- */
-export const getDocumentsExpiringWithinDays = async (days: number = 30): Promise<Document[]> => {
-  try {
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + days);
+    // Format dates for Supabase query
+    const formattedToday = format(today, 'yyyy-MM-dd');
+    const formattedThreshold = format(thresholdDate, 'yyyy-MM-dd');
     
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .lt('expiry_date', targetDate.toISOString())
-      .gt('expiry_date', new Date().toISOString());
-    
-    if (error) throw error;
-    return data || [];
+      .gte('expiry_date', formattedToday)
+      .lte('expiry_date', formattedThreshold)
+      .not('status', 'eq', 'Archived')
+      .order('expiry_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching expiring documents:', error);
+      throw error;
+    }
+
+    // Cast data to Document[] - this usage is safe because we're controlling the type
+    return data as unknown as Document[];
   } catch (error) {
-    console.error(`Error getting documents expiring within ${days} days:`, error);
+    console.error('Error in getExpiringDocuments:', error);
     throw error;
   }
 };
 
-/**
- * Get expired documents
- */
 export const getExpiredDocuments = async (): Promise<Document[]> => {
   try {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .lt('expiry_date', new Date().toISOString());
-    
-    if (error) throw error;
-    return data || [];
+      .lt('expiry_date', today)
+      .not('status', 'eq', 'Archived')
+      .order('expiry_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching expired documents:', error);
+      throw error;
+    }
+
+    // Cast data to Document[] - this usage is safe because we're controlling the type
+    return data as unknown as Document[];
   } catch (error) {
-    console.error('Error getting expired documents:', error);
+    console.error('Error in getExpiredDocuments:', error);
     throw error;
   }
+};
+
+export const scheduleReviewNotifications = async (document: Document): Promise<void> => {
+  try {
+    if (!document.next_review_date) {
+      console.warn(`Document ${document.id} has no next_review_date. Skipping notification scheduling.`);
+      return;
+    }
+
+    // Calculate notification dates (e.g., 30, 15, and 7 days before review)
+    const nextReviewDate = parse(document.next_review_date, 'yyyy-MM-dd', new Date());
+    const notificationDates = [30, 15, 7].map(days => addDays(nextReviewDate, -days));
+
+    // Filter out dates that are in the past
+    const validNotificationDates = notificationDates.filter(date => isAfter(date, new Date()));
+
+    // Schedule notifications for each valid date
+    for (const notificationDate of validNotificationDates) {
+      const notificationTime = format(notificationDate, 'yyyy-MM-dd HH:mm:ss');
+      console.log(`Scheduling notification for document ${document.id} on ${notificationTime}`);
+      // In a real implementation, you would schedule a background task or use a service like Firebase Cloud Messaging
+      // to send the notification at the specified time.
+    }
+  } catch (error) {
+    console.error('Error scheduling review notifications:', error);
+  }
+};
+
+export const updateExpiryDate = async (documentId: string, newExpiryDate: string): Promise<Document | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .update({ expiry_date: newExpiryDate })
+      .eq('id', documentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating expiry date:', error);
+      return null;
+    }
+
+    return data as Document;
+  } catch (error) {
+    console.error('Error in updateExpiryDate:', error);
+    return null;
+  }
+};
+
+export const autoArchiveExpiredDocuments = async (): Promise<void> => {
+  try {
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    // Fetch documents that are expired and not already archived
+    const { data: expiredDocuments, error: fetchError } = await supabase
+      .from('documents')
+      .select('*')
+      .lt('expiry_date', today)
+      .neq('status', 'Archived');
+
+    if (fetchError) {
+      console.error('Error fetching expired documents for archiving:', fetchError);
+      return;
+    }
+
+    if (!expiredDocuments || expiredDocuments.length === 0) {
+      console.log('No documents to auto-archive.');
+      return;
+    }
+
+    // Update the status of each expired document to "Archived"
+    for (const document of expiredDocuments) {
+      const dbDocument = adaptDocumentToDatabase({
+        ...document,
+        status: 'Archived',
+        updated_at: new Date().toISOString()
+      } as Document);
+
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update(dbDocument)
+        .eq('id', document.id);
+
+      if (updateError) {
+        console.error(`Error updating document ${document.id} status to Archived:`, updateError);
+      } else {
+        console.log(`Document ${document.id} auto-archived successfully.`);
+      }
+    }
+  } catch (error) {
+    console.error('Error in autoArchiveExpiredDocuments:', error);
+  }
+};
+
+export default {
+  getExpiringDocuments,
+  getExpiredDocuments,
+  scheduleReviewNotifications,
+  updateExpiryDate,
+  autoArchiveExpiredDocuments
 };

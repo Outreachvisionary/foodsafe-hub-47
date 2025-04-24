@@ -1,6 +1,6 @@
 
 import { CAPAStatus } from '@/types/capa';
-import { mapStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
+import { mapInternalStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
 
 // This function is now deprecated, use the one from capaStatusMapper instead
 export function mapInternalToStatus(status: CAPAStatus): string {
@@ -17,10 +17,10 @@ export function mapStatusToInternal(status: string): CAPAStatus {
     case 'in-progress':
     case 'in-process':
     case 'investigating':
-      return 'In Progress';
+      return 'In_Progress';
     case 'pending-verification':
     case 'pending-review':
-      return 'Pending Verification';
+      return 'Pending_Verification';
     case 'closed':
     case 'complete':
     case 'completed':
@@ -35,17 +35,17 @@ export function mapStatusToInternal(status: string): CAPAStatus {
   }
 }
 
-// These functions are now deprecated, use the ones from capaStatusMapper instead
-export { mapStatusToDb, mapDbStatusToInternal };
-
 // Check if status is equal (case-insensitive)
 export const isStatusEqual = (status1: string, status2: string): boolean => {
   if (!status1 || !status2) return false;
   return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
 };
 
+// Export functions from capaStatusMapper
+export { mapInternalStatusToDb, mapDbStatusToInternal };
+
 export default {
-  mapStatusToDb,
+  mapInternalStatusToDb,
   mapDbStatusToInternal,
   mapInternalToStatus,
   mapStatusToInternal,

@@ -27,7 +27,7 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
     } = params;
     
     // Create payload that matches the database schema, converting status values if they exist
-    const payload = {
+    const payload: any = {
       action_type,
       action_description,
       performed_by,
@@ -37,11 +37,10 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       capa_id
     };
     
-    // Cast to any to bypass the type checking since we've validated the values above
-    // This resolves the issue with DbCAPAStatus not being assignable to the DB expected types
+    // Insert the activity record
     const { error } = await supabase
       .from('capa_activities')
-      .insert(payload as any);
+      .insert(payload);
     
     if (error) {
       console.error('Error recording CAPA activity:', error);
