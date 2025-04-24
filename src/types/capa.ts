@@ -33,7 +33,7 @@ export interface CAPA {
   fsma204Compliant?: boolean;
   effectivenessVerified?: boolean;
   sourceId?: string;
-  sourceReference?: string; // New field
+  sourceReference?: string;
   relatedDocuments: Array<{
     id: string;
     documentId: string;
@@ -66,6 +66,7 @@ export interface CAPAStats {
   byPriority: Record<string, number>;
   bySource: Record<string, number>;
   byMonth: Record<string, number>;
+  byDepartment: Record<string, number>;
   effectivenessRating?: Record<string, number>;
   overdue: number;
   recentItems?: CAPA[];
@@ -75,7 +76,6 @@ export interface CAPAStats {
   overdueCount: number;
   pendingVerificationCount: number;
   effectivenessRate: number;
-  byDepartment: Record<string, number>;
 }
 
 export interface CAPAFormData {

@@ -111,16 +111,27 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  const checkoutDocument = useCallback(async (documentId: string, userId: string): Promise<Document> => {
+  const checkOutDocument = async (
+    documentId: string,
+    userId: string,
+    userName: string,
+    userRole: string
+  ): Promise<Document> => {
     try {
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
+      // Check if document is already checked out
+      const { data: docData, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', documentId)
         .single();
       
-      const userName = userData?.full_name || 'Unknown User';
-
+      if (fetchError) throw fetchError;
+      
+      if (docData.checkout_status === 'Checked Out') {
+        throw new Error('Document is already checked out');
+      }
+      
+      // Update document check out status
       const { data, error } = await supabase
         .from('documents')
         .update({
@@ -132,32 +143,64 @@ export const useDocumentService = () => {
         .eq('id', documentId)
         .select()
         .single();
-
-      if (error) {
-        if (error.code === '23503') {
-          throw new Error('Document is already checked out by another user');
-        }
-        throw error;
-      }
-
-      await supabase.from('document_activities').insert({
-        document_id: documentId,
-        action: 'checkout' as DocumentActionType,
-        checkout_action: 'Document checked out',
-        user_id: userId,
-        user_name: userName,
-        user_role: 'User',
-        timestamp: new Date().toISOString()
-      });
-
-      return data as Document;
-    } catch (error: any) {
-      console.error('Error checking out document:', error.message);
+      
+      if (error) throw error;
+      
+      // Log the check out action
+      await logDocumentActivity(
+        documentId,
+        userId,
+        userName,
+        userRole,
+        'checkout',
+        'Document checked out'
+      );
+      
+      // Convert the database response to our Document type
+      const document: Document = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        file_name: data.file_name,
+        file_path: data.file_path,
+        file_type: data.file_type,
+        file_size: data.file_size,
+        category: data.category,
+        status: data.status,
+        version: data.version,
+        created_by: data.created_by,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        expiry_date: data.expiry_date,
+        folder_id: data.folder_id,
+        tags: data.tags,
+        approvers: data.approvers,
+        linked_module: data.linked_module,
+        linked_item_id: data.linked_item_id,
+        rejection_reason: data.rejection_reason,
+        is_locked: data.is_locked,
+        last_action: data.last_action,
+        last_review_date: data.last_review_date,
+        next_review_date: data.next_review_date,
+        pending_since: data.pending_since,
+        current_version_id: data.current_version_id,
+        is_template: data.is_template,
+        checkout_status: data.checkout_status === 'Checked Out' ? 'Checked_Out' : 'Available',
+        checkout_timestamp: data.checkout_timestamp,
+        checkout_user_id: data.checkout_user_id,
+        checkout_user_name: data.checkout_user_name,
+        workflow_status: data.workflow_status,
+        custom_notification_days: data.custom_notification_days
+      };
+      
+      return document;
+    } catch (error) {
+      console.error('Error checking out document:', error);
       throw error;
     }
-  }, []);
+  };
 
-  const checkinDocument = useCallback(async (documentId: string, userId: string, comment: string): Promise<Document> => {
+  const checkInDocument = useCallback(async (documentId: string, userId: string, comment: string): Promise<Document> => {
     try {
       const { data: userData } = await supabase
         .from('profiles')
@@ -481,98 +524,101 @@ export const useDocumentService = () => {
     return `${documentId}/${fileName}`;
   }, []);
 
-  const createVersion = useCallback(async (versionData: Partial<DocumentVersion>): Promise<DocumentVersion> => {
+  const createDocumentVersion = async (
+    documentId: string,
+    fileName: string,
+    fileSize: number,
+    createdBy: string,
+    editorMetadata: Record<string, any>,
+    versionType: 'major' | 'minor',
+    changeNotes: string,
+    changeSummary: string, 
+    checkInComment: string,
+    isBinaryFile: boolean = false
+  ): Promise<DocumentVersion> => {
     try {
-      if (!versionData.document_id || !versionData.file_name || !versionData.created_by) {
-        throw new Error('Missing required version fields');
-      }
-      
-      const finalVersionType = versionData.version_type === 'major' ? 'major' : 'minor';
+      const versionData = {
+        document_id: documentId,
+        file_name: fileName,
+        file_size: fileSize,
+        created_by: createdBy,
+        editor_metadata: editorMetadata,
+        version_type: versionType,
+        change_notes: changeNotes,
+        change_summary: changeSummary,
+        check_in_comment: checkInComment,
+        is_binary_file: isBinaryFile,
+        version: 1 // This will be automatically incremented by a trigger
+      };
 
       const { data, error } = await supabase
         .from('document_versions')
-        .insert({
-          document_id: versionData.document_id,
-          file_name: versionData.file_name,
-          file_size: versionData.file_size,
-          created_by: versionData.created_by,
-          editor_metadata: versionData.editor_metadata || {},
-          version_type: finalVersionType,
-          change_notes: versionData.change_notes,
-          change_summary: versionData.change_summary,
-          check_in_comment: versionData.check_in_comment,
-          is_binary_file: versionData.is_binary_file || false
-        })
+        .insert(versionData)
         .select()
         .single();
-
+      
       if (error) {
         console.error('Error creating document version:', error);
         throw error;
       }
 
-      const version: DocumentVersion = {
+      // Convert the response to our application type
+      const docVersion: DocumentVersion = {
         id: data.id,
         document_id: data.document_id,
         version: data.version,
-        version_number: data.version_number || 0,
+        version_number: data.version_number,
         file_name: data.file_name,
         file_size: data.file_size,
         created_by: data.created_by,
-        created_at: data.created_at || '',
-        is_binary_file: data.is_binary_file || false,
+        created_at: data.created_at,
         editor_metadata: ensureRecord(data.editor_metadata),
-        diff_data: ensureRecord(data.diff_data),
-        version_type: finalVersionType,
-        change_summary: data.change_summary || '',
-        change_notes: data.change_notes || '',
-        check_in_comment: data.check_in_comment || '',
+        is_binary_file: data.is_binary_file,
+        version_type: data.version_type === 'major' ? 'major' : 'minor',
+        change_summary: data.change_summary,
+        change_notes: data.change_notes,
+        check_in_comment: data.check_in_comment,
         modified_by: data.modified_by,
-        modified_by_name: data.modified_by_name
+        modified_by_name: data.modified_by_name,
       };
 
-      return version;
+      return docVersion;
     } catch (error) {
       console.error('Error in createDocumentVersion:', error);
       throw error;
     }
-  }, []);
+  };
 
-  const recordActivity = useCallback(async (activity: Partial<DocumentActivity>): Promise<DocumentActivity> => {
+  const logDocumentActivity = async (
+    documentId: string,
+    userId: string,
+    userName: string,
+    userRole: string,
+    action: string,
+    comments?: string,
+    versionId?: string,
+    checkoutAction?: string
+  ): Promise<void> => {
     try {
-      if (!activity.document_id || !activity.action || !activity.user_id || !activity.user_name || !activity.user_role) {
-        throw new Error('Missing required activity fields');
-      }
+      const actionType = mapToDocumentActionType(action);
       
-      const validAction = (Object.values(DocumentActionType).includes(activity.action as DocumentActionType)) 
-        ? activity.action 
-        : 'view' as DocumentActionType;
-      
-      const activityData = {
-        document_id: activity.document_id,
-        action: validAction,
-        user_id: activity.user_id,
-        user_name: activity.user_name,
-        user_role: activity.user_role,
-        comments: activity.comments,
-        timestamp: new Date().toISOString(),
-        checkout_action: activity.checkout_action,
-        version_id: activity.version_id
-      };
-      
-      const { data, error } = await supabase
-        .from('document_activities')
-        .insert(activityData)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data as DocumentActivity;
-    } catch (error: any) {
-      console.error('Error recording document activity:', error.message);
-      throw error;
+      await supabase.from('document_activities').insert({
+        document_id: documentId,
+        user_id: userId,
+        user_name: userName,
+        user_role: userRole,
+        action: action,
+        comments,
+        version_id: versionId,
+        checkout_action: checkoutAction
+      });
+
+    } catch (error) {
+      console.error('Error logging document activity:', error);
+      // Don't throw, this is a non-critical operation
+      console.warn('Activity logging failed, but continuing operation');
     }
-  }, []);
+  };
 
   const createDocument = useCallback(async (document: Partial<Document>): Promise<Document> => {
     try {
@@ -720,8 +766,8 @@ export const useDocumentService = () => {
     fetchDocumentVersions,
     restoreVersion,
     downloadVersion,
-    checkoutDocument,
-    checkinDocument,
+    checkOutDocument,
+    checkInDocument,
     approveDocument,
     rejectDocument,
     fetchAccess,
@@ -734,8 +780,8 @@ export const useDocumentService = () => {
     getPreviewUrl,
     getDownloadUrl,
     getStoragePath,
-    createVersion,
-    recordActivity,
+    createDocumentVersion,
+    logDocumentActivity,
     createDocument,
     updateDocument,
     getDocumentVersion,

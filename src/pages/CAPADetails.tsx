@@ -198,7 +198,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
       setIsUpdatingStatus(true);
       
       const result = await updateCAPAStatus(
-        capaId,
+        capaId as string,
         newStatus,
         currentUser?.id || 'system'
       );

@@ -24,6 +24,9 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
     byPriority: {},
     bySource: {},
     byDepartment: {},
+    byStatus: {},
+    byMonth: {},
+    overdue: 0
   };
 
   const safeStats = stats || defaultStats;

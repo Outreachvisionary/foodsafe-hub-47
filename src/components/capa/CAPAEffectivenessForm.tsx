@@ -6,23 +6,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { CAPAEffectivenessRating } from '@/types/capa';
+import { CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
 import { CheckSquare } from 'lucide-react';
 
 interface CAPAEffectivenessFormProps {
   capaId: string;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CAPAEffectivenessMetrics) => void;
   implementationDate?: string;
-}
-
-export interface CAPAEffectivenessMetrics {
-  capaId: string;
-  rootCauseEliminated: boolean;
-  preventiveMeasuresImplemented: boolean;
-  documentationComplete: boolean;
-  score: number;
-  rating: CAPAEffectivenessRating;
-  notes?: string;
 }
 
 const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ 

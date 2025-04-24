@@ -37,20 +37,19 @@ const CAPAPage = () => {
   const [showAutomation, setShowAutomation] = useState(false);
   const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
   
-  // Create empty stats for CAPADashboard
-  const emptyStats: CAPAStats = {
+  const initialStats: CAPAStats = {
     total: 0,
-    byStatus: {},
-    byPriority: {},
-    bySource: {},
-    byMonth: {},
-    overdue: 0,
     openCount: 0,
     closedCount: 0,
     overdueCount: 0,
     pendingVerificationCount: 0,
     effectivenessRate: 0,
-    byDepartment: {}
+    byPriority: {},
+    bySource: {},
+    byDepartment: {},
+    byStatus: {},
+    byMonth: {},
+    overdue: 0
   };
   
   const { toast } = useToast();
@@ -214,7 +213,7 @@ const CAPAPage = () => {
           <TabsContent value="dashboard">
             {activeTab === 'dashboard' && (
               <CAPADashboard 
-                stats={emptyStats}
+                stats={initialStats}
               />
             )}
           </TabsContent>

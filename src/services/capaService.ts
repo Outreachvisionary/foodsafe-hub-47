@@ -28,6 +28,7 @@ export const createCAPA = async (capaData: Partial<CAPA>) => {
       department: capaData.department,
       effectiveness_criteria: capaData.effectivenessCriteria,
       source_id: capaData.sourceId,
+      source_reference: capaData.sourceReference,
       // Only include these fields if they exist
       ...(capaData.completionDate && { completion_date: capaData.completionDate }),
       ...(capaData.verificationDate && { verification_date: capaData.verificationDate }),
@@ -35,13 +36,12 @@ export const createCAPA = async (capaData: Partial<CAPA>) => {
       ...(capaData.verificationMethod && { verification_method: capaData.verificationMethod }),
       ...(capaData.verifiedBy && { verified_by: capaData.verifiedBy }),
       ...(capaData.fsma204Compliant !== undefined && { fsma204_compliant: capaData.fsma204Compliant }),
-      ...(capaData.effectivenessVerified !== undefined && { effectiveness_verified: capaData.effectivenessVerified }),
-      ...(capaData.sourceReference && { source_reference: capaData.sourceReference })
+      ...(capaData.effectivenessVerified !== undefined && { effectiveness_verified: capaData.effectivenessVerified })
     };
 
     const { data, error } = await supabase
       .from('capa_actions')
-      .insert([dbCAPAData])
+      .insert(dbCAPAData)
       .select()
       .single();
 

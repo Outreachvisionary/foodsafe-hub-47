@@ -28,6 +28,6 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   }
 };
 
-// These are renamed to avoid redeclaration issues
+// Export functions with different names to avoid redeclaration issues
 export const internalToDbStatusMap = mapInternalStatusToDb;
 export const dbToInternalStatusMap = mapDbStatusToInternal;

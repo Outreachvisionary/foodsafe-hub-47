@@ -26,17 +26,19 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
     } = params;
     
     // Create payload that matches the database schema
+    const payload = {
+      action_type,
+      action_description,
+      performed_by,
+      old_status,
+      new_status,
+      metadata,
+      capa_id
+    };
+    
     const { error } = await supabase
       .from('capa_activities')
-      .insert([{
-        action_type,
-        action_description,
-        performed_by,
-        old_status,
-        new_status,
-        metadata,
-        capa_id // This property should be recognized by the type system
-      }]);
+      .insert(payload);
     
     if (error) {
       console.error('Error recording CAPA activity:', error);
