@@ -108,12 +108,13 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     'Facility',
     'Finished Product',
     'Raw Material',
-    'Packaging Material',
-    'Personnel',
+    'Packaging',
     'Other'
   ];
   const reasonCategories: NCReasonCategory[] = [
     'Quality Issue',
+    'Food Safety',
+    'Damaged',
     'Process Deviation',
     'Foreign Material',
     'Other'

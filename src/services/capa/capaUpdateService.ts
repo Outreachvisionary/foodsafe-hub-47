@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
-import { DbCAPAStatus, mapInternalStatusToDb } from './capaStatusMapper';
+import { mapInternalStatusToDb } from './capaStatusMapper';
 import { recordCAPAActivity } from './capaActivityService';
 
 export const updateCAPAStatus = async (
@@ -62,8 +62,8 @@ export const updateCAPAStatus = async (
     await recordCAPAActivity({
       capa_id: capaId,
       old_status: currentStatus === 'In Progress' ? 'In_Progress' as CAPAStatus :
-                 currentStatus === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
-                 currentStatus as CAPAStatus,
+                  currentStatus === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
+                  currentStatus as CAPAStatus,
       new_status: newStatus,
       action_type: 'status_change',
       action_description: comments || `Status updated from ${currentStatus} to ${dbNewStatus}`,
@@ -98,9 +98,10 @@ export const updateCAPAStatus = async (
       fsma204Compliant: data.fsma204_compliant,
       effectivenessVerified: data.effectiveness_verified,
       sourceId: data.source_id,
-      relatedDocuments: data.related_documents || [],
-      relatedTraining: data.related_training || [],
-      sourceReference: data.source_reference
+      // Provide empty arrays for these fields since they may not exist in the database response
+      relatedDocuments: [],
+      relatedTraining: [],
+      sourceReference: undefined
     };
 
     return convertedData;

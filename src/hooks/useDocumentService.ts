@@ -35,20 +35,39 @@ export const useDocumentService = () => {
         .select('*')
         .eq('document_id', documentId)
         .order('version', { ascending: false });
-      
-      if (error) throw new Error(`Error fetching document versions: ${error.message}`);
-      
-      // Convert version_type to match our type declaration
-      const formattedVersions: DocumentVersion[] = data.map(version => ({
-        ...version,
-        // Ensure version_type is either 'major' or 'minor'
-        version_type: version.version_type === 'major' ? 'major' : 'minor'
+
+      if (error) {
+        console.error('Error fetching document versions:', error);
+        throw error;
+      }
+
+      // Convert DB format to app format, ensuring proper typing
+      const versions: DocumentVersion[] = data.map(version => ({
+        id: version.id,
+        document_id: version.document_id,
+        version: version.version,
+        version_number: version.version_number,
+        file_name: version.file_name,
+        file_size: version.file_size,
+        created_by: version.created_by,
+        created_at: version.created_at || '',
+        is_binary_file: version.is_binary_file,
+        editor_metadata: version.editor_metadata || {},
+        diff_data: version.diff_data || {},
+        version_type: (version.version_type === 'major' || version.version_type === 'minor') 
+          ? version.version_type 
+          : 'minor',
+        change_summary: version.change_summary || '',
+        change_notes: version.change_notes || '',
+        check_in_comment: version.check_in_comment || '',
+        modified_by: version.modified_by,
+        modified_by_name: version.modified_by_name
       }));
-      
-      return formattedVersions;
+
+      return versions;
     } catch (error) {
       console.error('Error in fetchDocumentVersions:', error);
-      return [];
+      throw error;
     }
   };
 
@@ -469,30 +488,54 @@ export const useDocumentService = () => {
         throw new Error('Missing required version fields');
       }
       
-      const finalVersionData = {
-        ...versionData,
-        version_number: versionData.version_number || versionData.version || 1,
-      };
-      
+      const finalVersionType = versionData.version_type === 'major' ? 'major' : 'minor';
+
       const { data, error } = await supabase
         .from('document_versions')
         .insert({
-          document_id: finalVersionData.document_id,
-          file_name: finalVersionData.file_name,
-          file_size: finalVersionData.file_size || 0,
-          created_by: finalVersionData.created_by,
-          version_number: finalVersionData.version_number,
-          version: finalVersionData.version_number,
-          version_type: finalVersionData.version_type || 'minor',
-          editor_metadata: finalVersionData.editor_metadata
+          document_id: versionData.document_id,
+          file_name: versionData.file_name,
+          file_size: versionData.file_size,
+          created_by: versionData.created_by,
+          editor_metadata: versionData.editor_metadata || {},
+          version_type: finalVersionType,
+          change_notes: versionData.change_notes,
+          change_summary: versionData.change_summary,
+          check_in_comment: versionData.check_in_comment,
+          is_binary_file: versionData.is_binary_file || false
         })
         .select()
         .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error: any) {
-      console.error('Error creating document version:', error.message);
+
+      if (error) {
+        console.error('Error creating document version:', error);
+        throw error;
+      }
+
+      // Convert to properly typed DocumentVersion
+      const version: DocumentVersion = {
+        id: data.id,
+        document_id: data.document_id,
+        version: data.version,
+        version_number: data.version_number,
+        file_name: data.file_name,
+        file_size: data.file_size,
+        created_by: data.created_by,
+        created_at: data.created_at || '',
+        is_binary_file: data.is_binary_file,
+        editor_metadata: data.editor_metadata || {},
+        diff_data: data.diff_data || {},
+        version_type: finalVersionType,
+        change_summary: data.change_summary || '',
+        change_notes: data.change_notes || '',
+        check_in_comment: data.check_in_comment || '',
+        modified_by: data.modified_by,
+        modified_by_name: data.modified_by_name
+      };
+
+      return version;
+    } catch (error) {
+      console.error('Error in createDocumentVersion:', error);
       throw error;
     }
   }, []);
@@ -635,6 +678,40 @@ export const useDocumentService = () => {
     }
   };
 
+  const getDocumentActivities = async (documentId: string): Promise<DocumentActivity[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_activities')
+        .select('*')
+        .eq('document_id', documentId)
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching document activities:', error);
+        throw error;
+      }
+
+      // Convert DB format to app format, ensuring proper typing for DocumentActionType
+      const activities: DocumentActivity[] = data.map(activity => ({
+        id: activity.id,
+        document_id: activity.document_id,
+        timestamp: activity.timestamp,
+        action: activity.action as DocumentActionType, // Type assertion here
+        user_id: activity.user_id,
+        user_name: activity.user_name,
+        user_role: activity.user_role,
+        version_id: activity.version_id,
+        comments: activity.comments,
+        checkout_action: activity.checkout_action
+      }));
+
+      return activities;
+    } catch (error) {
+      console.error('Error in getDocumentActivities:', error);
+      throw error;
+    }
+  };
+
   return {
     fetchDocuments,
     fetchDocumentVersions,
@@ -659,6 +736,7 @@ export const useDocumentService = () => {
     createDocument,
     updateDocument,
     getDocumentVersion,
-    createDocumentActivity
+    createDocumentActivity,
+    getDocumentActivities
   };
 };

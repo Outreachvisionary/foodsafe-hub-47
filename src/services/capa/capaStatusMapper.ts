@@ -27,3 +27,7 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
       return dbStatus as CAPAStatus;
   }
 };
+
+// Export these for backward compatibility
+export const mapStatusToDb = mapInternalStatusToDb;
+export const mapDbStatusToInternal = mapDbStatusToInternal;

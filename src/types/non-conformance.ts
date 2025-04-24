@@ -1,9 +1,42 @@
 
 export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Approved' | 'Rejected' | 'Resolved' | 'Closed' | 'Under Investigation';
 
-export type NCItemCategory = 'Raw Material' | 'Ingredient' | 'Packaging' | 'In-Process Product' | 'Finished Product' | 'Equipment' | 'Facility' | 'Other' | 'Packaged Goods';
+export type NCItemCategory = 
+  | 'Raw Material' 
+  | 'Ingredient' 
+  | 'Packaging' 
+  | 'In-Process Product' 
+  | 'Finished Product' 
+  | 'Equipment' 
+  | 'Facility' 
+  | 'Other'
+  | 'Packaged Goods'
+  | 'Packaging Material'
+  | 'Personnel'
+  | 'Processing Equipment'
+  | 'Product Storage Tanks'
+  | 'Finished Products'
+  | 'Raw Products'
+  | 'Packaging Materials';
 
-export type NCReasonCategory = 'Quality Issue' | 'Food Safety' | 'Damaged' | 'Expired' | 'Process Deviation' | 'Documentation Issue' | 'Customer Complaint' | 'Foreign Material' | 'Other';
+export type NCReasonCategory = 
+  | 'Quality Issue' 
+  | 'Food Safety' 
+  | 'Damaged' 
+  | 'Expired' 
+  | 'Process Deviation' 
+  | 'Documentation Issue' 
+  | 'Customer Complaint' 
+  | 'Foreign Material' 
+  | 'Other'
+  | 'Contamination'
+  | 'Quality Issues'
+  | 'Regulatory Non-Compliance'
+  | 'Equipment Malfunction'
+  | 'Documentation Error'
+  | 'Temperature Abuse'
+  | 'Packaging Defect'
+  | 'Labeling Error';
 
 export type NCRiskLevel = 'low' | 'moderate' | 'high' | 'severe' | 'Critical' | 'Major';
 
@@ -89,4 +122,18 @@ export interface NCFilter {
 export interface NCDetailsProps {
   id: string;
   onClose?: () => void;
+}
+
+export interface NCStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byReasonCategory: Record<string, number>;
+  byRiskLevel: Record<string, number>;
+  overdue: number;
+  pendingReview: number;
+  recentlyResolved: number;
+  totalQuantityOnHold?: number;
+  byReason?: Record<string, number>;
+  recentItems?: NonConformance[];
 }

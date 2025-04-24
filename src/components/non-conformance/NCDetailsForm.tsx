@@ -69,16 +69,18 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
     'Facility',
     'Finished Product',
     'Raw Material',
-    'Packaging Material',
-    'Personnel',
+    'Packaging',
     'Other'
   ];
   
   // Use the valid values from the NCReasonCategory type
   const reasonCategories: NCReasonCategory[] = [
     'Quality Issue',
+    'Food Safety',
+    'Damaged',
     'Process Deviation',
     'Foreign Material',
+    'Expired',
     'Other'
   ];
   

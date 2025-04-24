@@ -53,7 +53,7 @@ const NonConformancePage = () => {
         title: 'Incorrect labeling on packaging',
         description: 'Incorrect expiration date printed on product labels',
         item_name: 'Product Batch 67890',
-        item_category: 'Packaging Material',
+        item_category: 'Packaging',
         reason_category: 'Quality Issue',
         status: 'Under Investigation',
         reported_date: new Date().toISOString(),
