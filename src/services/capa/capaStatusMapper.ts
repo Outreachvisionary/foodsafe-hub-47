@@ -9,6 +9,7 @@ export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
     case 'Pending Verification': return 'Pending_Verification';
+    case 'Verified': return 'Verified';
     default: return ensureValidDbStatus(status as string);
   }
 };
@@ -21,6 +22,7 @@ export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
     case 'Pending_Verification': return 'Pending Verification';
+    case 'Verified': return 'Verified';
     default: return dbStatus as CAPAStatus;
   }
 };
@@ -33,6 +35,7 @@ export const ensureValidDbStatus = (status: string): DbCAPAStatus => {
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
     case 'Pending_Verification': return 'Pending_Verification';
+    case 'Verified': return 'Verified';
     // Map any non-matching status to a default
     default: return 'Open';
   }
@@ -47,6 +50,7 @@ export const normalizeStatus = (status: string): CAPAStatus => {
   if (lowerStatus === 'closed') return 'Closed';
   if (lowerStatus === 'overdue') return 'Overdue';
   if (lowerStatus === 'pending verification' || lowerStatus === 'pending_verification') return 'Pending Verification';
+  if (lowerStatus === 'verified') return 'Verified';
   
   return 'Open'; // Default fallback
 };

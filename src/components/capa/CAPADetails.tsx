@@ -71,7 +71,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
       
       const statusUpdateData = {
         ...capa,
-        status: mapStatusToInternal(newStatus)
+        status: newStatus
       };
       
       if (newStatus === 'Closed') {
@@ -155,11 +155,11 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   };
   
   const getEffectivenessRatingColor = (rating: CAPAEffectivenessRating) => {
-    if (rating === 'excellent') {
+    if (rating === 'Highly Effective') {
       return 'bg-green-100 text-green-800 border-green-200';
-    } else if (rating === 'good') {
+    } else if (rating === 'Effective') {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    } else if (rating === 'poor') {
+    } else if (rating === 'Ineffective') {
       return 'bg-red-100 text-red-800 border-red-200';
     } else {
       return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -178,7 +178,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   };
   
   const isOverdue = () => {
-    if (capa.status === 'closed' || capa.status === 'verified') return false;
+    if (capa.status === 'Closed' || capa.status === 'Verified') return false;
     
     const now = new Date();
     const dueDate = new Date(capa.dueDate);

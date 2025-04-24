@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { mapStatusToDb } from "@/services/capa/capaStatusMapper";
 
 export const recordCAPAActivity = async (
   capaId: string,
@@ -11,14 +12,18 @@ export const recordCAPAActivity = async (
   metadata?: Record<string, any>
 ) => {
   try {
+    // Convert status strings to database enum values if provided
+    const dbOldStatus = oldStatus ? mapStatusToDb(oldStatus) : undefined;
+    const dbNewStatus = newStatus ? mapStatusToDb(newStatus) : undefined;
+    
     const activityData = {
       capa_id: capaId,
       action_type: actionType,
       action_description: actionDescription,
       performed_by: performedBy,
       performed_at: new Date().toISOString(),
-      old_status: oldStatus,
-      new_status: newStatus,
+      old_status: dbOldStatus,
+      new_status: dbNewStatus,
       metadata: metadata || {}
     };
     

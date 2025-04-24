@@ -1,7 +1,12 @@
 
-// This file now just re-exports from the correct location to avoid duplication
-// and prevent confusion in imports
-export { 
+// This file re-exports from the main DocumentContext to maintain backwards compatibility
+import { DocumentProvider, useDocument } from '@/contexts/DocumentContext';
+
+// Re-export for backward compatibility
+export { DocumentProvider, useDocument };
+export const useDocuments = useDocument; // Alias for components that haven't been updated
+
+export default {
   DocumentProvider,
-  useDocuments as useDocumentContext
-} from '@/contexts/DocumentContext';
+  useDocument
+};

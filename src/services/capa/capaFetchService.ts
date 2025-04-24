@@ -1,7 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAFetchParams } from '@/types/capa';
-import { mapStatusToInternal } from '@/services/capa/capaStatusService';
+import { mapInternalToStatus, mapStatusToInternal } from '@/services/capa/capaStatusService';
+import { mapStatusToDb } from '@/services/capa/capaStatusMapper';
 
 // Function to fetch CAPAs with filtering options
 export const fetchCAPAs = async (params: CAPAFetchParams = {}): Promise<CAPA[]> => {
@@ -10,7 +11,9 @@ export const fetchCAPAs = async (params: CAPAFetchParams = {}): Promise<CAPA[]> 
 
     // Apply filters
     if (params.status && params.status !== 'All') {
-      query = query.eq('status', params.status);
+      // Convert the status to database format
+      const dbStatus = mapStatusToDb(params.status);
+      query = query.eq('status', dbStatus);
     }
 
     if (params.priority && params.priority !== 'All') {
@@ -82,7 +85,11 @@ export const fetchCAPAs = async (params: CAPAFetchParams = {}): Promise<CAPA[]> 
       effectivenessCriteria: item.effectiveness_criteria,
       effectivenessRating: item.effectiveness_rating,
       verifiedBy: item.verified_by,
-      isFsma204Compliant: item.fsma204_compliant
+      isFsma204Compliant: item.fsma204_compliant,
+      sourceId: item.source_id,
+      // Add any missing fields to match the CAPA type
+      relatedDocuments: [], // This would be populated elsewhere
+      relatedTraining: []   // This would be populated elsewhere
     }));
   } catch (error) {
     console.error('Error fetching CAPAs:', error);

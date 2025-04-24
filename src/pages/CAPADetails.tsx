@@ -11,6 +11,7 @@ import CAPADetails from '@/components/capa/CAPADetails';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
 
 const CAPADetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +35,7 @@ const CAPADetailsPage = () => {
         setCapa(capaData);
         
         // Show effectiveness monitor for closed CAPAs
-        if (capaData.status === 'closed' || capaData.status === 'verified') {
+        if (isStatusEqual(capaData.status, 'Closed') || isStatusEqual(capaData.status, 'Verified')) {
           setShowEffectivenessMonitor(true);
         }
       } catch (err) {
@@ -61,7 +62,7 @@ const CAPADetailsPage = () => {
     setCapa(updatedCAPA);
     
     // Show effectiveness monitor if status changed to closed or verified
-    if (updatedCAPA.status === 'closed' || updatedCAPA.status === 'verified') {
+    if (isStatusEqual(updatedCAPA.status, 'Closed') || isStatusEqual(updatedCAPA.status, 'Verified')) {
       setShowEffectivenessMonitor(true);
     }
     
@@ -76,10 +77,10 @@ const CAPADetailsPage = () => {
     
     try {
       // Update CAPA status to verified if effectiveness score is sufficient
-      if (effectivenessData.score >= 85 && capa.status !== 'verified') {
+      if (effectivenessData.score >= 85 && !isStatusEqual(capa.status, 'Verified')) {
         const updatedCAPA = await updateCAPA(id, {
           ...capa,
-          status: 'verified'
+          status: 'Verified'
         });
         
         setCapa(updatedCAPA);
@@ -104,7 +105,6 @@ const CAPADetailsPage = () => {
     navigate(capa.sourceReference.url);
   };
 
-  // Render with null checks for sourceReference
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 
@@ -195,7 +195,7 @@ const CAPADetailsPage = () => {
               <CAPAEffectivenessMonitor
                 capaId={capa.id}
                 title={capa.title}
-                implementationDate={capa.completionDate || capa.lastUpdated || capa.createdAt}
+                implementationDate={capa.completionDate || capa.createdAt}
                 onEffectivenessUpdate={handleEffectivenessUpdate}
               />
             )}

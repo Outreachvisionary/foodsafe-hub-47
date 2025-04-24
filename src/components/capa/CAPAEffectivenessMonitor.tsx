@@ -1,25 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { 
-  CAPAEffectivenessRating,
-  CAPAEffectivenessMetrics
-} from '@/types/capa';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle2, AlertTriangle, RefreshCw, XCircle } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { format, differenceInDays } from 'date-fns';
+import { CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
   title: string;
   implementationDate: string;
-  onEffectivenessUpdate?: (data: CAPAEffectivenessMetrics) => void;
+  onEffectivenessUpdate?: (result: CAPAEffectivenessMetrics) => void;
 }
 
 const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
@@ -28,248 +24,190 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   implementationDate,
   onEffectivenessUpdate
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [effectivenessData, setEffectivenessData] = useState<{
-    rootCauseEliminated: boolean;
-    preventiveMeasuresImplemented: boolean;
-    documentationComplete: boolean;
-    recurrenceCheck: string;
-    rating: CAPAEffectivenessRating;
-    score: number;
-  }>({
-    rootCauseEliminated: false,
-    preventiveMeasuresImplemented: false,
-    documentationComplete: false,
-    recurrenceCheck: '',
-    rating: 'Effective',
-    score: 0
-  });
-
-  const calculateEffectivenessScore = () => {
+  const [rootCauseEliminated, setRootCauseEliminated] = useState(false);
+  const [preventiveMeasuresImplemented, setPreventiveMeasuresImplemented] = useState(false);
+  const [documentationComplete, setDocumentationComplete] = useState(false);
+  const [rating, setRating] = useState<CAPAEffectivenessRating>('Effective');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { toast } = useToast();
+  
+  const calculateScore = (): number => {
     let score = 0;
     
-    if (effectivenessData.rootCauseEliminated) score += 40;
-    if (effectivenessData.preventiveMeasuresImplemented) score += 30;
-    if (effectivenessData.documentationComplete) score += 15;
-    if (effectivenessData.recurrenceCheck === 'No recurrence') score += 15;
+    if (rootCauseEliminated) score += 40;
+    if (preventiveMeasuresImplemented) score += 40;
+    if (documentationComplete) score += 20;
     
-    let rating: CAPAEffectivenessRating = 'Ineffective';
-    
-    if (score >= 90) rating = 'Highly Effective';
-    else if (score >= 75) rating = 'Effective';
-    else if (score >= 50) rating = 'Partially Effective';
-    else rating = 'Ineffective';
-    
-    return { score, rating };
+    return score;
   };
-
-  const handleSubmit = async () => {
+  
+  const determineRating = (score: number): CAPAEffectivenessRating => {
+    if (score >= 90) return 'Highly Effective';
+    if (score >= 70) return 'Effective';  
+    if (score >= 40) return 'Partially Effective';
+    return 'Ineffective';
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    setIsSubmitting(true);
+    
     try {
-      setLoading(true);
+      const score = calculateScore();
+      const calculatedRating = determineRating(score);
       
-      const { score, rating } = calculateEffectivenessScore();
+      // Create effectiveness assessment data
+      const effectivenessData: CAPAEffectivenessMetrics = {
+        capaId,
+        rootCauseEliminated,
+        preventiveMeasuresImplemented,
+        documentationComplete,
+        score,
+        rating: calculatedRating,
+        notes
+      };
       
-      // Update state
-      setEffectivenessData(prev => ({ ...prev, score, rating }));
-      
-      // In a real application, you would save this to the backend
-      // For example:
-      // await saveEffectivenessAssessment(capaId, { ...effectivenessData, score, rating });
-      
+      // Call the parent callback with the effectiveness data
       if (onEffectivenessUpdate) {
-        onEffectivenessUpdate({
-          capaId,
-          score,
-          rating,
-          notes: effectivenessData.recurrenceCheck,
-          rootCauseEliminated: effectivenessData.rootCauseEliminated,
-          preventiveMeasuresImplemented: effectivenessData.preventiveMeasuresImplemented,
-          documentationComplete: effectivenessData.documentationComplete
-        });
+        onEffectivenessUpdate(effectivenessData);
       }
       
-      setSubmitted(true);
-      toast.success('Effectiveness assessment submitted successfully');
+      toast({
+        title: 'Effectiveness Assessment Saved',
+        description: `CAPA effectiveness rated as ${calculatedRating}`,
+      });
     } catch (error) {
-      console.error('Error submitting effectiveness assessment:', error);
-      toast.error('Failed to submit effectiveness assessment');
+      console.error('Error saving effectiveness assessment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save effectiveness assessment',
+        variant: 'destructive',
+      });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  const getRatingColor = (rating: CAPAEffectivenessRating) => {
-    switch (rating) {
-      case 'Highly Effective':
-        return 'text-green-600';
-      case 'Effective':
-        return 'text-teal-600';
-      case 'Partially Effective':
-        return 'text-orange-600';
-      case 'Ineffective':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
+  
+  const getRatingIcon = (score: number) => {
+    if (score >= 90) {
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    } else if (score >= 70) {
+      return <CheckCircle2 className="h-5 w-5 text-amber-500" />;
+    } else if (score >= 40) {
+      return <AlertTriangle className="h-5 w-5 text-orange-500" />;
+    } else {
+      return <XCircle className="h-5 w-5 text-red-500" />;
     }
   };
-
-  const daysSinceImplementation = Math.floor(
-    (new Date().getTime() - new Date(implementationDate).getTime()) / (1000 * 3600 * 24)
+  
+  const getRatingColor = (score: number) => {
+    if (score >= 90) {
+      return 'text-green-800 bg-green-100';
+    } else if (score >= 70) {
+      return 'text-amber-800 bg-amber-100';
+    } else if (score >= 40) {
+      return 'text-orange-800 bg-orange-100';
+    } else {
+      return 'text-red-800 bg-red-100';
+    }
+  };
+  
+  const daysSinceImplementation = differenceInDays(
+    new Date(),
+    new Date(implementationDate)
   );
-
-  // For demonstration purposes, automatically update recurrence check based on time elapsed
-  useEffect(() => {
-    if (daysSinceImplementation >= 30) {
-      setEffectivenessData(prev => ({
-        ...prev,
-        recurrenceCheck: 'No recurrence after 30+ days'
-      }));
-    }
-  }, [daysSinceImplementation]);
-
-  if (submitted) {
-    const { score, rating } = calculateEffectivenessScore();
-    
-    return (
-      <Card>
-        <CardHeader className="bg-gray-50">
-          <CardTitle className="text-lg">CAPA Effectiveness Assessment</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center py-4">
-            <div className="text-center mb-6">
-              <div className="text-2xl font-bold mb-1 flex items-center justify-center">
-                <span className={getRatingColor(rating)}>{rating}</span>
-              </div>
-              <div className="text-5xl font-bold mb-2">{score}/100</div>
-              <p className="text-gray-500">
-                Assessment completed {new Date().toLocaleDateString()}
-              </p>
-            </div>
-            
-            <div className="w-full max-w-md border rounded-md p-4">
-              <h3 className="font-medium mb-2">Assessment Summary</h3>
-              <ul className="space-y-2">
-                <li className="flex justify-between">
-                  <span>Root cause eliminated:</span>
-                  <span>{effectivenessData.rootCauseEliminated ? 'Yes' : 'No'}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Preventive measures implemented:</span>
-                  <span>{effectivenessData.preventiveMeasuresImplemented ? 'Yes' : 'No'}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Documentation complete:</span>
-                  <span>{effectivenessData.documentationComplete ? 'Yes' : 'No'}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Recurrence status:</span>
-                  <span>{effectivenessData.recurrenceCheck || 'Not checked'}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  
   return (
     <Card>
-      <CardHeader className="bg-gray-50">
-        <CardTitle className="text-lg">CAPA Effectiveness Monitor</CardTitle>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Effectiveness Monitoring</span>
+          <span className="text-sm font-normal text-gray-500">
+            {daysSinceImplementation} days since implementation
+          </span>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm text-gray-500 mb-2">
-              This CAPA has been implemented for {daysSinceImplementation} days. Please assess its effectiveness.
-            </p>
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
+            <div>
+              <p className="text-muted-foreground mb-4">
+                Assess the effectiveness of this CAPA by evaluating the following criteria:
+              </p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="rootCause" 
+                    checked={rootCauseEliminated}
+                    onCheckedChange={(checked) => setRootCauseEliminated(!!checked)}
+                  />
+                  <Label htmlFor="rootCause">Root cause has been eliminated</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="preventiveMeasures" 
+                    checked={preventiveMeasuresImplemented}
+                    onCheckedChange={(checked) => setPreventiveMeasuresImplemented(!!checked)}
+                  />
+                  <Label htmlFor="preventiveMeasures">Preventive measures are in place</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="documentation" 
+                    checked={documentationComplete}
+                    onCheckedChange={(checked) => setDocumentationComplete(!!checked)}
+                  />
+                  <Label htmlFor="documentation">Documentation is complete and accurate</Label>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes" className="block mb-2">Notes</Label>
+              <Textarea 
+                id="notes"
+                placeholder="Add any additional observations or comments about the effectiveness of this CAPA..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            
+            <div className="pt-2">
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Saving Assessment...
+                  </>
+                ) : (
+                  'Save Assessment'
+                )}
+              </Button>
+            </div>
+            
+            {calculateScore() > 0 && (
+              <div className={`p-4 rounded-md ${getRatingColor(calculateScore())} mt-4`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {getRatingIcon(calculateScore())}
+                    <span className="ml-2 font-medium">
+                      {determineRating(calculateScore())}
+                    </span>
+                  </div>
+                  <span className="font-bold">{calculateScore()}/100</span>
+                </div>
+              </div>
+            )}
           </div>
-          
-          {/* Assessment form would go here */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">1. Has the root cause been eliminated?</h3>
-              <div className="flex space-x-4">
-                <Button 
-                  variant={effectivenessData.rootCauseEliminated ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, rootCauseEliminated: true }))}
-                >
-                  Yes
-                </Button>
-                <Button 
-                  variant={!effectivenessData.rootCauseEliminated ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, rootCauseEliminated: false }))}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">2. Have preventive measures been fully implemented?</h3>
-              <div className="flex space-x-4">
-                <Button 
-                  variant={effectivenessData.preventiveMeasuresImplemented ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, preventiveMeasuresImplemented: true }))}
-                >
-                  Yes
-                </Button>
-                <Button 
-                  variant={!effectivenessData.preventiveMeasuresImplemented ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, preventiveMeasuresImplemented: false }))}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">3. Is all documentation complete?</h3>
-              <div className="flex space-x-4">
-                <Button 
-                  variant={effectivenessData.documentationComplete ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, documentationComplete: true }))}
-                >
-                  Yes
-                </Button>
-                <Button 
-                  variant={!effectivenessData.documentationComplete ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, documentationComplete: false }))}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">4. Has the issue recurred since implementation?</h3>
-              <div className="flex space-x-4">
-                <Button 
-                  variant={effectivenessData.recurrenceCheck === 'No recurrence' ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, recurrenceCheck: 'No recurrence' }))}
-                >
-                  No recurrence
-                </Button>
-                <Button 
-                  variant={effectivenessData.recurrenceCheck === 'Has recurred' ? "default" : "outline"}
-                  onClick={() => setEffectivenessData(prev => ({ ...prev, recurrenceCheck: 'Has recurred' }))}
-                >
-                  Has recurred
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </form>
       </CardContent>
-      <CardFooter className="flex justify-end border-t pt-4">
-        <Button onClick={handleSubmit} disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit Assessment
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

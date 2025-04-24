@@ -13,7 +13,9 @@ interface LinkedCAPAsListProps {
   capas: CAPA[];
   showViewAll?: boolean;
   sourceType?: string;
+  sourceId?: string; // Add sourceId prop
   emptyMessage?: string;
+  onCreateCAPAClick?: () => void; // Add optional handler for creating CAPA
 }
 
 const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
@@ -21,7 +23,9 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   capas,
   showViewAll = true,
   sourceType,
-  emptyMessage = 'No CAPAs found'
+  sourceId,
+  emptyMessage = 'No CAPAs found',
+  onCreateCAPAClick
 }) => {
   const navigate = useNavigate();
 
@@ -31,7 +35,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   
   const viewAllCapas = () => {
     if (sourceType) {
-      navigate(`/capa?source=${sourceType}`);
+      navigate(`/capa?source=${sourceType}${sourceId ? `&sourceId=${sourceId}` : ''}`);
     } else {
       navigate(`/capa`);
     }
@@ -45,6 +49,13 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         </CardHeader>
         <CardContent className="text-center py-6 text-gray-500">
           {emptyMessage}
+          {onCreateCAPAClick && (
+            <div className="mt-4">
+              <Button size="sm" onClick={onCreateCAPAClick}>
+                Create CAPA
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );

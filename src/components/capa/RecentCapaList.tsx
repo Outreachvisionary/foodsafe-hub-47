@@ -65,7 +65,7 @@ const RecentCapaList: React.FC<RecentCapaListProps> = ({
                     <h3 className="font-medium text-sm">{capa.title}</h3>
                     {capa.dueDate && new Date(capa.dueDate) < new Date() && 
                       !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
-                      <AlertCircle className="h-4 w-4 text-red-500" title="Overdue" />
+                      <AlertCircle className="h-4 w-4 text-red-500" aria-label="Overdue" />
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-2">
