@@ -88,5 +88,4 @@ export const deleteCAPA = async (id: string): Promise<void> => {
   }
 };
 
-// Export the function for getCAPAById for other modules to use
-export { getCAPAById };
+// Removed duplicate export of getCAPAById

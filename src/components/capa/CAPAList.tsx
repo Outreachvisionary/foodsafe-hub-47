@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,8 +8,7 @@ import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams
 import { ListActions } from '@/components/ui/list-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteCAPA } from '@/services/capa/capaFetchService';
-import { getCAPAs } from '@/services/capaService';
+import { deleteCAPA, getCAPAs } from '@/services/capaService';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
 
 interface CAPAListProps {

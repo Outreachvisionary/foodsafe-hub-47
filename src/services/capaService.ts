@@ -1,25 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA } from '@/types/capa';
+import { getCAPAById as fetchCAPAById } from './capa/capaFetchService';
 
-export const getCAPAById = async (id: string): Promise<CAPA | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching CAPA by ID:', error);
-      return null;
-    }
-
-    return data as CAPA;
-  } catch (error) {
-    console.error('Error fetching CAPA by ID:', error);
-    return null;
-  }
-};
+// Re-export the function from capaFetchService for backward compatibility
+export const getCAPAById = fetchCAPAById;
 
 export const createCAPA = async (capaData: Partial<CAPA>) => {
   try {
@@ -148,18 +133,8 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
   }
 };
 
-export const deleteCAPA = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('capa_actions')
-      .delete()
-      .eq('id', id);
+// Re-export the deleteCAPA function from capaFetchService
+export { deleteCAPA } from './capa/capaFetchService';
 
-    if (error) {
-      throw new Error(`Could not delete CAPA: ${error.message}`);
-    }
-  } catch (error) {
-    console.error('Error deleting CAPA:', error);
-    throw error;
-  }
-};
+// Add the getCAPAs function that was missing
+export { getCAPAs } from './capa/capaFetchService';
