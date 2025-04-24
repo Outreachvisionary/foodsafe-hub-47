@@ -11,7 +11,7 @@ export const ReviewQueue: React.FC = () => {
   
   useEffect(() => {
     if (documents?.length) {
-      // Filter documents that need review - handle both "Pending Review" and "Pending_Review" formats
+      // Filter documents that need review
       const pending = documents.filter(doc => 
         doc.status === 'Pending Review' || 
         doc.status === 'Pending_Review' || // Support both formats
@@ -41,7 +41,7 @@ export const ReviewQueue: React.FC = () => {
               <p className="text-muted-foreground">No documents pending review</p>
             </div>
           ) : (
-            <DocumentList documents={pendingDocuments} showStatus={true} />
+            <DocumentList documents={pendingDocuments} />
           )}
         </CardContent>
       </Card>

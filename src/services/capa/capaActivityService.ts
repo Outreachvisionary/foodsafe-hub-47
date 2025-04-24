@@ -1,43 +1,47 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus } from '@/types/capa';
-import { DbCAPAStatus, mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
+import { CAPAActivity, CAPAStatus } from '@/types/capa';
 
-export interface CAPAActivity {
-  id?: string;
+interface RecordCAPAActivityParams {
   capa_id: string;
-  performed_at?: string;
-  old_status?: CAPAStatus;
-  new_status?: CAPAStatus;
   action_type: string;
   action_description: string;
   performed_by: string;
+  old_status?: CAPAStatus;
+  new_status?: CAPAStatus;
   metadata?: Record<string, any>;
 }
 
-export const recordCAPAActivity = async (activity: CAPAActivity): Promise<void> => {
+export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Promise<void> => {
   try {
-    // Map statuses to database format
-    const oldStatus = activity.old_status ? mapInternalStatusToDb(activity.old_status) : undefined;
-    const newStatus = activity.new_status ? mapInternalStatusToDb(activity.new_status) : undefined;
+    const {
+      capa_id,
+      action_type,
+      action_description,
+      performed_by,
+      old_status,
+      new_status,
+      metadata = {}
+    } = params;
     
-    // Insert using the fields that match the database schema
     const { error } = await supabase
       .from('capa_activities')
       .insert({
-        capa_id: activity.capa_id,
-        old_status: oldStatus,
-        new_status: newStatus,
-        action_type: activity.action_type,
-        action_description: activity.action_description,
-        performed_by: activity.performed_by,
-        performed_at: new Date().toISOString(),
-        metadata: activity.metadata
+        capa_id,
+        action_type,
+        action_description,
+        performed_by,
+        old_status,
+        new_status,
+        metadata
       });
-
-    if (error) throw new Error(`Error recording CAPA activity: ${error.message}`);
+    
+    if (error) {
+      console.error('Error recording CAPA activity:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Failed to record CAPA activity:', error);
+    console.error('Error in recordCAPAActivity:', error);
     throw error;
   }
 };
@@ -49,23 +53,28 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       .select('*')
       .eq('capa_id', capaId)
       .order('performed_at', { ascending: false });
-
-    if (error) throw new Error(`Error fetching CAPA activities: ${error.message}`);
     
-    // Map database status values to internal application status values
-    return data.map(activity => ({
+    if (error) {
+      console.error('Error fetching CAPA activities:', error);
+      throw error;
+    }
+    
+    // Transform database records to application format
+    const activities: CAPAActivity[] = data.map(activity => ({
       id: activity.id,
       capa_id: activity.capa_id,
       performed_at: activity.performed_at,
-      old_status: activity.old_status ? mapDbStatusToInternal(activity.old_status as DbCAPAStatus) : undefined,
-      new_status: activity.new_status ? mapDbStatusToInternal(activity.new_status as DbCAPAStatus) : undefined,
+      old_status: activity.old_status as CAPAStatus,
+      new_status: activity.new_status as CAPAStatus,
       action_type: activity.action_type,
       action_description: activity.action_description,
       performed_by: activity.performed_by,
-      metadata: activity.metadata
+      metadata: activity.metadata || {}
     }));
+    
+    return activities;
   } catch (error) {
-    console.error('Failed to fetch CAPA activities:', error);
+    console.error('Error in getCAPAActivities:', error);
     throw error;
   }
 };

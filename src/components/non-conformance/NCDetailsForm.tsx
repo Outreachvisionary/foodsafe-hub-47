@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,29 +63,22 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
     }
   };
   
-  // Use the exact values from the NCItemCategory type
+  // Use the valid values from the NCItemCategory type
   const itemCategories: NCItemCategory[] = [
     'Equipment',
     'Facility',
     'Finished Product',
+    'Raw Material',
     'Packaging Material',
     'Personnel',
-    'Raw Material',
     'Other'
   ];
   
-  // Use the exact values from the NCReasonCategory type
+  // Use the valid values from the NCReasonCategory type
   const reasonCategories: NCReasonCategory[] = [
-    'Contamination',
     'Quality Issue',
-    'Regulatory Non-Compliance',
-    'Equipment Malfunction',
-    'Documentation Error',
-    'Process Deviation', 
+    'Process Deviation',
     'Foreign Material',
-    'Temperature Abuse',
-    'Packaging Defect',
-    'Labeling Error',
     'Other'
   ];
   

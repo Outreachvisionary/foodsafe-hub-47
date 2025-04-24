@@ -2,20 +2,19 @@
 export type NCStatus = 
   | 'On Hold' 
   | 'Under Review'
-  | 'Under Investigation'  // Added to match usage
+  | 'Under Investigation'
   | 'Released'
   | 'Disposed'
   | 'Approved'
   | 'Rejected'
   | 'Resolved'
-  | 'Closed'
-  | 'Under Investigation';
+  | 'Closed';
 
 export type NCItemCategory = 
   | 'Processing Equipment'
   | 'Product Storage Tanks'
-  | 'Finished Products'
   | 'Finished Product'
+  | 'Finished Products'
   | 'Raw Products'
   | 'Raw Material'
   | 'Packaging Materials'
@@ -103,7 +102,7 @@ export interface NCFilter {
   search?: string;
 }
 
-// Add the missing NCStats interface
+// Add the NCStats interface
 export interface NCStats {
   total: number;
   byStatus: Record<string, number>;

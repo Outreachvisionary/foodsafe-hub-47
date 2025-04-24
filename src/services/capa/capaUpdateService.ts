@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
 import { DbCAPAStatus, mapInternalStatusToDb } from './capaStatusMapper';
 import { recordCAPAActivity } from './capaActivityService';
 
@@ -77,29 +77,30 @@ export const updateCAPAStatus = async (
       title: data.title,
       description: data.description,
       status: data.status === 'In Progress' ? 'In_Progress' :
-              data.status === 'Pending Verification' ? 'Pending_Verification' : data.status as CAPAStatus,
-      priority: data.priority,
+              data.status === 'Pending Verification' ? 'Pending_Verification' : 
+              data.status as CAPAStatus,
+      priority: data.priority as CAPAPriority,
       createdAt: data.created_at,
       dueDate: data.due_date,
       completionDate: data.completion_date,
       verificationDate: data.verification_date,
       assignedTo: data.assigned_to,
       createdBy: data.created_by,
-      source: data.source,
+      source: data.source as CAPASource,
       rootCause: data.root_cause,
       correctiveAction: data.corrective_action,
       preventiveAction: data.preventive_action,
       department: data.department,
-      effectivenessRating: data.effectiveness_rating,
+      effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
       effectivenessCriteria: data.effectiveness_criteria,
       verificationMethod: data.verification_method,
       verifiedBy: data.verified_by,
       fsma204Compliant: data.fsma204_compliant,
       effectivenessVerified: data.effectiveness_verified,
       sourceId: data.source_id,
-      sourceReference: data.source_reference,
       relatedDocuments: data.related_documents || [],
-      relatedTraining: data.related_training || []
+      relatedTraining: data.related_training || [],
+      sourceReference: data.source_reference
     };
 
     return convertedData;

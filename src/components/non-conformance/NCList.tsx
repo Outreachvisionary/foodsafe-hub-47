@@ -103,21 +103,19 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
   }
   
   const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Approved', 'Rejected', 'Resolved', 'Closed'];
-  const categories: NCItemCategory[] = [
-    'Processing Equipment', 
-    'Product Storage Tanks', 
-    'Finished Products', 
-    'Raw Products', 
-    'Packaging Materials', 
+  const itemCategories: NCItemCategory[] = [
+    'Equipment',
+    'Facility',
+    'Finished Product',
+    'Raw Material',
+    'Packaging Material',
+    'Personnel',
     'Other'
   ];
-  const reasons: NCReasonCategory[] = [
-    'Contamination', 
-    'Quality Issues', 
-    'Regulatory Non-Compliance', 
-    'Equipment Malfunction', 
-    'Documentation Error', 
-    'Process Deviation', 
+  const reasonCategories: NCReasonCategory[] = [
+    'Quality Issue',
+    'Process Deviation',
+    'Foreign Material',
     'Other'
   ];
   
@@ -197,7 +195,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {categories.map(category => (
+              {itemCategories.map(category => (
                 <DropdownMenuCheckboxItem
                   key={category}
                   checked={categoryFilter.includes(category)}
@@ -224,7 +222,7 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {reasons.map(reason => (
+              {reasonCategories.map(reason => (
                 <DropdownMenuCheckboxItem
                   key={reason}
                   checked={reasonFilter.includes(reason)}

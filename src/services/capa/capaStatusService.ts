@@ -1,27 +1,53 @@
 
-import { ComplaintStatus } from '@/types/document';
+import { CAPAStatus } from '@/types/capa';
+import { mapStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
 
-export const mapStatusToInternal = (status: string): ComplaintStatus => {
-  const formattedStatus = status.replace(' ', '_') as ComplaintStatus;
+// This function is now deprecated, use the one from capaStatusMapper instead
+export function mapInternalToStatus(status: CAPAStatus): string {
+  return status;
+}
+
+// This function is now deprecated, use the one from capaStatusMapper instead
+export function mapStatusToInternal(status: string): CAPAStatus {
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
   
-  if (
-    formattedStatus === 'New' ||
-    formattedStatus === 'Under_Investigation' ||
-    formattedStatus === 'Resolved' ||
-    formattedStatus === 'Closed' ||
-    formattedStatus === 'Reopened'
-  ) {
-    return formattedStatus;
+  switch (normalizedStatus) {
+    case 'open':
+      return 'Open';
+    case 'in-progress':
+    case 'in-process':
+    case 'investigating':
+      return 'In_Progress';
+    case 'pending-verification':
+    case 'pending-review':
+      return 'Pending_Verification';
+    case 'closed':
+    case 'complete':
+    case 'completed':
+      return 'Closed';
+    case 'verified':
+    case 'validated':
+      return 'Verified';
+    case 'overdue':
+      return 'Overdue';
+    default:
+      return 'Open';
   }
-  
-  if (formattedStatus === 'Under-Investigation' || formattedStatus === 'UnderInvestigation') {
-    return 'Under_Investigation';
-  }
-  
-  console.warn(`Unknown status format: ${status}, defaulting to New`);
-  return 'New';
+}
+
+// These functions are now deprecated, use the ones from capaStatusMapper instead
+export { mapStatusToDb, mapDbStatusToInternal };
+
+// Check if status is equal (case-insensitive)
+export const isStatusEqual = (status1: string, status2: string): boolean => {
+  if (!status1 || !status2) return false;
+  return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
 };
 
 export default {
-  mapStatusToInternal
+  mapStatusToDb,
+  mapDbStatusToInternal,
+  mapInternalToStatus,
+  mapStatusToInternal,
+  isStatusEqual
 };

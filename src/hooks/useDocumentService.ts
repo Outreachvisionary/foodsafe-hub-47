@@ -15,7 +15,6 @@ const transformVersionData = (versionData: any): DocumentVersion => {
 export const useDocumentService = () => {
   const { toast } = useToast();
 
-  // Add a method to fetch documents that was missing
   const fetchDocuments = useCallback(async (): Promise<Document[]> => {
     try {
       // Mock implementation - in a real app, this would fetch from the database
@@ -29,7 +28,7 @@ export const useDocumentService = () => {
     }
   }, []);
 
-  const fetchDocumentVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
+  const fetchDocumentVersions = async (documentId: string): Promise<DocumentVersion[]> => {
     try {
       const { data, error } = await supabase
         .from('document_versions')
@@ -37,18 +36,21 @@ export const useDocumentService = () => {
         .eq('document_id', documentId)
         .order('version', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching document versions:', error);
-        throw error;
-      }
+      if (error) throw new Error(`Error fetching document versions: ${error.message}`);
       
-      // Transform data to ensure version_type is valid
-      return data.map(transformVersionData) || [];
+      // Convert version_type to match our type declaration
+      const formattedVersions: DocumentVersion[] = data.map(version => ({
+        ...version,
+        // Ensure version_type is either 'major' or 'minor'
+        version_type: version.version_type === 'major' ? 'major' : 'minor'
+      }));
+      
+      return formattedVersions;
     } catch (error) {
-      console.error('Error in getDocumentVersions:', error);
-      throw error;
+      console.error('Error in fetchDocumentVersions:', error);
+      return [];
     }
-  }, []);
+  };
 
   const restoreVersion = useCallback(async (documentId: string, versionId: string): Promise<void> => {
     try {
@@ -580,6 +582,59 @@ export const useDocumentService = () => {
     }
   }, []);
 
+  const getDocumentVersion = async (versionId: string): Promise<DocumentVersion | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_versions')
+        .select('*')
+        .eq('id', versionId)
+        .single();
+      
+      if (error) throw new Error(`Error fetching document version: ${error.message}`);
+      
+      // Ensure version_type is properly typed
+      const formattedVersion: DocumentVersion = {
+        ...data,
+        version_type: data.version_type === 'major' ? 'major' : 'minor'
+      };
+      
+      return formattedVersion;
+    } catch (error) {
+      console.error('Error in getDocumentVersion:', error);
+      return null;
+    }
+  };
+
+  const createDocumentActivity = async (
+    documentId: string,
+    action: DocumentActionType,
+    userName: string,
+    userRole: string,
+    userId: string,
+    comments?: string,
+    versionId?: string
+  ): Promise<void> => {
+    try {
+      const activityData = {
+        document_id: documentId,
+        action,
+        user_name: userName,
+        user_role: userRole,
+        user_id: userId,
+        comments,
+        version_id: versionId
+      };
+      
+      const { error } = await supabase
+        .from('document_activities')
+        .insert(activityData);
+      
+      if (error) throw new Error(`Error creating document activity: ${error.message}`);
+    } catch (error) {
+      console.error('Error in createDocumentActivity:', error);
+    }
+  };
+
   return {
     fetchDocuments,
     fetchDocumentVersions,
@@ -602,6 +657,8 @@ export const useDocumentService = () => {
     createVersion,
     recordActivity,
     createDocument,
-    updateDocument
+    updateDocument,
+    getDocumentVersion,
+    createDocumentActivity
   };
 };

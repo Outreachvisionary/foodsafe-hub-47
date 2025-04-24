@@ -46,8 +46,8 @@ export interface CAPA {
   fsma204Compliant?: boolean;
   effectivenessVerified?: boolean;
   sourceId?: string;
-  relatedDocuments?: any[];
-  relatedTraining?: any[];
+  relatedDocuments?: string[];
+  relatedTraining?: string[];
   sourceReference?: {
     type: string;
     title: string;
@@ -85,4 +85,16 @@ export interface CAPAStats {
   byPriority: Record<string, number>;
   bySource: Record<string, number>;
   byDepartment: Record<string, number>;
+}
+
+export interface CAPAActivity {
+  id: string;
+  capa_id: string;
+  performed_at: string;
+  old_status: CAPAStatus;
+  new_status: CAPAStatus;
+  action_type: string;
+  action_description: string;
+  performed_by: string;
+  metadata: Record<string, any>;
 }
