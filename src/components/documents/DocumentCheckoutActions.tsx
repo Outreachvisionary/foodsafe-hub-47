@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Unlock, History } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
 import { useDocumentService } from '@/hooks/useDocumentService';
 import { Document } from '@/types/document';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -19,19 +19,28 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
   const [checkInComment, setCheckInComment] = React.useState('');
   const { checkoutDocument, checkinDocument } = useDocumentService();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    
+    fetchUser();
+  }, []);
 
   const handleCheckout = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
-      await checkoutDocument(document.id, user.id);
+      await checkoutDocument(document.id, currentUser.id);
       toast({
         title: "Document Checked Out",
         description: "You can now edit this document",
       });
       onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Checkout Failed",
         description: error.message,
@@ -42,10 +51,9 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
 
   const handleCheckIn = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!currentUser) throw new Error('User not authenticated');
 
-      await checkinDocument(document.id, user.id, checkInComment);
+      await checkinDocument(document.id, currentUser.id, checkInComment);
       setIsCheckInDialogOpen(false);
       setCheckInComment('');
       toast({
@@ -53,7 +61,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
         description: "Document has been successfully checked in",
       });
       onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Check-in Failed",
         description: error.message,
@@ -63,8 +71,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
   };
 
   const isCheckedOut = document.checkout_status === 'Checked_Out';
-  const { data: { user } } = await supabase.auth.getUser();
-  const isCurrentUserCheckout = document.checkout_user_id === user?.id;
+  const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
   return (
     <>

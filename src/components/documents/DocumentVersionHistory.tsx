@@ -31,7 +31,7 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     if (open && document.id) {
       fetchDocumentVersions(document.id).then(setVersions);
     }
-  }, [open, document.id]);
+  }, [open, document.id, fetchDocumentVersions]);
 
   const handleRestore = async (version: DocumentVersion) => {
     try {
@@ -101,3 +101,5 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     </Dialog>
   );
 };
+
+export default DocumentVersionHistory;

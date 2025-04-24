@@ -1,59 +1,30 @@
 
-import { CAPAStatus, DbCAPAStatus, mapStatusToDb, mapDbStatusToInternal } from '@/types/capa';
+import { CAPAStatus } from "@/types/capa";
 
-// This function converts internal status to display format
-export function mapInternalToStatus(status: CAPAStatus): string {
-  switch (status) {
-    case 'open':
-      return 'Open';
-    case 'in-progress':
-      return 'In Progress';
-    case 'pending-verification':
-      return 'Pending Verification';
-    case 'closed':
-      return 'Closed';
-    case 'verified':
-      return 'Verified';
-    case 'cancelled':
-      return 'Cancelled';
-    default:
-      return status;
-  }
-}
+export const mapStatusToInternal = (status: string): CAPAStatus => {
+  const statusMap: Record<string, CAPAStatus> = {
+    'open': 'Open',
+    'in-progress': 'In Progress',
+    'closed': 'Closed',
+    'verified': 'Verified',
+    'pending-verification': 'Pending Verification',
+    'overdue': 'Overdue',
+    'cancelled': 'Cancelled',
+  };
 
-// This function converts display status to internal format
-export function mapStatusToInternal(status: string): CAPAStatus {
-  switch (status.toLowerCase().replace(/\s+/g, '-')) {
-    case 'open':
-      return 'open';
-    case 'in-progress':
-    case 'in-process':
-    case 'investigating':
-      return 'in-progress';
-    case 'pending-verification':
-    case 'pending-review':
-      return 'pending-verification';
-    case 'closed':
-    case 'complete':
-    case 'completed':
-      return 'closed';
-    case 'verified':
-    case 'validated':
-      return 'verified';
-    case 'cancelled':
-    case 'canceled':
-      return 'cancelled';
-    default:
-      return 'open';
-  }
-}
+  return statusMap[status.toLowerCase()] || status as CAPAStatus;
+};
 
-// Export the functions from types/capa.ts
-export { mapStatusToDb, mapDbStatusToInternal };
+export const mapInternalToStatus = (status: CAPAStatus): string => {
+  const statusMap: Record<string, string> = {
+    'Open': 'open',
+    'In Progress': 'in-progress',
+    'Closed': 'closed',
+    'Verified': 'verified',
+    'Pending Verification': 'pending-verification',
+    'Overdue': 'overdue',
+    'Cancelled': 'cancelled',
+  };
 
-export default {
-  mapStatusToDb,
-  mapDbStatusToInternal,
-  mapInternalToStatus,
-  mapStatusToInternal
+  return statusMap[status] || status.toLowerCase();
 };
