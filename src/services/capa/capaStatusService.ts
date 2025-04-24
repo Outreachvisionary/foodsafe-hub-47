@@ -1,4 +1,3 @@
-
 import { CAPAStatus } from '@/types/capa';
 import { mapInternalStatusToDb } from './capaStatusMapper';
 
@@ -40,4 +39,37 @@ export const getStatusColor = (status: CAPAStatus): string => {
     return 'text-green-600';
   }
   return 'text-gray-600';
+};
+
+/**
+ * Maps a string status (which could be in any format) to the internal CAPAStatus type
+ */
+export const mapStatusToInternal = (status: string): CAPAStatus => {
+  // Convert spaces to underscores to match our internal format
+  const formattedStatus = status.replace(' ', '_');
+  
+  // Check if it's already a valid CAPAStatus
+  if (
+    formattedStatus === 'Open' ||
+    formattedStatus === 'In_Progress' ||
+    formattedStatus === 'Closed' ||
+    formattedStatus === 'Overdue' ||
+    formattedStatus === 'Pending_Verification' ||
+    formattedStatus === 'Verified'
+  ) {
+    return formattedStatus as CAPAStatus;
+  }
+  
+  // Handle common variations
+  if (formattedStatus === 'In-Progress' || formattedStatus === 'InProgress') {
+    return 'In_Progress';
+  }
+  
+  if (formattedStatus === 'Pending-Verification' || formattedStatus === 'PendingVerification') {
+    return 'Pending_Verification';
+  }
+  
+  // Default to Open if we can't match
+  console.warn(`Unknown status format: ${status}, defaulting to Open`);
+  return 'Open';
 };

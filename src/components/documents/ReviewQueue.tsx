@@ -13,7 +13,7 @@ export const ReviewQueue: React.FC = () => {
     if (documents?.length) {
       // Filter documents that need review
       const pending = documents.filter(doc => 
-        doc.status === 'Pending Review' || 
+        doc.status === 'Pending_Review' || 
         (doc.next_review_date && new Date(doc.next_review_date) <= new Date())
       );
       setPendingDocuments(pending);

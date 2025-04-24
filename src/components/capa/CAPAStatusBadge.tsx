@@ -2,12 +2,23 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CAPAStatus } from '@/types/capa';
+import { 
+  Clock, 
+  CheckCircle, 
+  AlertCircle, 
+  AlertTriangle,
+  HourglassIcon
+} from 'lucide-react';
 
 interface CAPAStatusBadgeProps {
   status: CAPAStatus;
+  showIcon?: boolean;
 }
 
-export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status }) => {
+export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ 
+  status,
+  showIcon = false
+}) => {
   const getStatusColor = (status: CAPAStatus) => {
     switch (status) {
       case 'Open':
@@ -31,11 +42,31 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status }) => {
     return status.replace('_', ' ');
   };
 
+  const getStatusIcon = (status: CAPAStatus) => {
+    switch (status) {
+      case 'Open':
+        return <Clock className="mr-1 h-3 w-3" />;
+      case 'In_Progress':
+        return <HourglassIcon className="mr-1 h-3 w-3" />;
+      case 'Closed':
+        return <CheckCircle className="mr-1 h-3 w-3" />;
+      case 'Overdue':
+        return <AlertCircle className="mr-1 h-3 w-3" />;
+      case 'Pending_Verification':
+        return <AlertTriangle className="mr-1 h-3 w-3" />;
+      case 'Verified':
+        return <CheckCircle className="mr-1 h-3 w-3" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Badge 
       variant="outline" 
-      className={`${getStatusColor(status)} font-medium`}
+      className={`${getStatusColor(status)} font-medium flex items-center`}
     >
+      {showIcon && getStatusIcon(status)}
       {formatStatus(status)}
     </Badge>
   );

@@ -168,7 +168,6 @@ const NonConformancePage = () => {
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <NCDetails 
                 id={selectedNCId} 
-                onClose={() => setShowNCDetails(false)} 
               />
             </DialogContent>
           </Dialog>

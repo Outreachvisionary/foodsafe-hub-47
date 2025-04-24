@@ -25,7 +25,7 @@ interface FilterableComponentProps {
   searchQuery: string;
 }
 
-const CAPA = () => {
+const CAPAPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState({
     status: 'all',
@@ -37,32 +37,17 @@ const CAPA = () => {
   const [showAutomation, setShowAutomation] = useState(false);
   const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
   
-  const mockStats: CAPAStats = {
-    total: 24,
-    openCount: 8,
-    closedCount: 12,
-    overdueCount: 2,
-    pendingVerificationCount: 2,
-    effectivenessRate: 85,
-    byPriority: {
-      'Critical': 4,
-      'High': 8,
-      'Medium': 10,
-      'Low': 2
-    },
-    bySource: {
-      'Audit': 6,
-      'Customer_Complaint': 4,
-      'Internal_QC': 10,
-      'Supplier_Issue': 2,
-      'Other': 2
-    },
-    byDepartment: {
-      'Production': 12,
-      'QA': 6,
-      'Warehouse': 4,
-      'Receiving': 2
-    }
+  // Create empty stats for CAPADashboard
+  const emptyStats: CAPAStats = {
+    total: 0,
+    openCount: 0,
+    closedCount: 0,
+    overdueCount: 0,
+    pendingVerificationCount: 0,
+    effectivenessRate: 0,
+    byPriority: {},
+    bySource: {},
+    byDepartment: {},
   };
   
   const { toast } = useToast();
@@ -224,7 +209,11 @@ const CAPA = () => {
           </TabsList>
           
           <TabsContent value="dashboard">
-            <CAPADashboard filters={filters} searchQuery={searchQuery} stats={mockStats} />
+            {activeTab === 'dashboard' && (
+              <CAPADashboard 
+                stats={emptyStats}
+              />
+            )}
           </TabsContent>
           
           <TabsContent value="list">
@@ -244,4 +233,4 @@ const CAPA = () => {
   );
 };
 
-export default CAPA;
+export default CAPAPage;

@@ -1,28 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
 import { AlertCircle, CheckCircle, Clock, Activity, AlertTriangle } from 'lucide-react';
 import { CAPA, CAPAStats } from '@/types/capa';
-
-ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+import Chart from '@/components/charts/Chart';
 
 // Define the props interface for CAPADashboard
 interface CAPADashboardProps {
-  filters: {
-    status: string;
-    priority: string;
-    source: string;
-    dueDate: string;
-  };
-  searchQuery: string;
   stats: CAPAStats;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery, stats }) => {
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
   // Provide default empty stats if not provided
   const defaultStats: CAPAStats = {
     total: 0,
@@ -187,7 +177,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery, sta
             <CardTitle>CAPA Status Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
-            <Pie data={statusData} />
+            <Chart type="pie" data={statusData} />
           </CardContent>
         </Card>
         
@@ -202,10 +192,10 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery, sta
           </CardHeader>
           <CardContent className="h-80">
             <TabsContent value="priority">
-              <Bar data={priorityData} options={barOptions} />
+              <Chart type="bar" data={priorityData} options={barOptions} />
             </TabsContent>
             <TabsContent value="source">
-              <Bar data={sourceData} options={barOptions} />
+              <Chart type="bar" data={sourceData} options={barOptions} />
             </TabsContent>
           </CardContent>
         </Card>

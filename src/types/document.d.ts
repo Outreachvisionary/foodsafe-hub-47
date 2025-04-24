@@ -1,94 +1,46 @@
 
-export type DocumentActionType = 
-  | 'create'
-  | 'update'
-  | 'delete'
-  | 'view'
-  | 'download'
-  | 'approve'
-  | 'reject'
-  | 'review'
-  | 'comment'
-  | 'checkout'
-  | 'checkin'
-  | 'restore'
-  | 'archive'
-  | 'edit';
+import { User } from './user';
+
+export type DocumentCategory = 
+  | 'SOP'
+  | 'Policy' 
+  | 'Procedure' 
+  | 'Work_Instruction' 
+  | 'Form' 
+  | 'Manual' 
+  | 'Record'
+  | 'Training_Material'
+  | 'Other';
 
 export type DocumentStatus = 
   | 'Draft'
-  | 'Pending Review'
+  | 'Pending_Review'
+  | 'Pending_Approval'
   | 'Approved'
   | 'Active'
   | 'Archived'
   | 'Rejected'
   | 'Expired'
-  | 'Pending Approval'
   | 'Published';
 
-export type DocumentCategory =
-  | 'Other'
-  | 'SOP'
-  | 'Policy'
-  | 'Form'
-  | 'Certificate'
-  | 'Audit Report'
-  | 'HACCP Plan'
-  | 'Training Material'
-  | 'Supplier Documentation'
-  | 'Risk Assessment';
+export type DocumentActionType = 
+  | 'create'
+  | 'view'
+  | 'update'
+  | 'delete'
+  | 'approve'
+  | 'reject'
+  | 'archive'
+  | 'publish'
+  | 'checkout'
+  | 'checkin'
+  | 'review'
+  | 'comment';
 
-export interface DocumentVersion {
-  id: string;
-  document_id: string;
-  version_number: number;
-  version: number;
-  file_name: string;
-  file_size: number;
-  created_at: string;
-  created_by: string;
-  modified_by?: string;
-  modified_by_name?: string;
-  check_in_comment?: string;
-  change_notes?: string;
-  change_summary?: string;
-  version_type: 'major' | 'minor';
-  editor_metadata?: Record<string, any>;
-}
-
-export interface DocumentActivity {
-  id: string;
-  document_id: string;
-  action: DocumentActionType;
-  user_id: string;
-  user_name: string;
-  user_role: string;
-  timestamp: string;
-  comments?: string;
-  version_id?: string;
-  checkout_action?: string;
-}
-
-export interface DocumentAccess {
-  id: string;
-  document_id: string;
-  user_id: string;
-  permission_level: string;
-  granted_by: string;
-  granted_at: string;
-  user_role?: string;
-  folder_id?: string;
-}
-
-export interface DocumentComment {
-  id: string;
-  document_id: string;
-  content: string;
-  user_id: string;
-  user_name: string;
-  created_at: string;
-  updated_at?: string;
-}
+export type CheckoutStatus = 
+  | 'Available'
+  | 'Checked_Out'
+  | 'Locked';
 
 export interface Document {
   id: string;
@@ -102,62 +54,110 @@ export interface Document {
   status: DocumentStatus;
   version: number;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
   created_by: string;
-  expiry_date?: string;
-  last_review_date?: string;
-  next_review_date?: string;
-  tags?: string[];
-  approvers?: string[];
-  current_version_id?: string;
-  is_template?: boolean;
   folder_id?: string;
+  tags?: string[];
+  expiry_date?: string;
+  approvers?: string[];
   linked_module?: string;
   linked_item_id?: string;
-  is_locked?: boolean;
   rejection_reason?: string;
-  checkout_status?: 'Available' | 'Checked_Out';
+  last_action?: string;
+  pending_since?: string;
+  is_template?: boolean;
+  last_review_date?: string;
+  next_review_date?: string;
+  current_version_id?: string;
+  checkout_status?: CheckoutStatus;
   checkout_user_id?: string;
   checkout_user_name?: string;
   checkout_timestamp?: string;
-  pending_since?: string;
-  last_action?: string;
   workflow_status?: string;
   custom_notification_days?: number[];
+  is_locked?: boolean;
+}
+
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version: number;
+  version_number?: number;
+  file_name: string;
+  file_size: number;
+  created_at: string;
+  created_by: string;
+  modified_by?: string;
+  modified_by_name?: string;
+  version_type: "major" | "minor";
+  editor_metadata?: any;
+  is_binary_file?: boolean;
+  diff_data?: any;
+  check_in_comment?: string;
+  change_summary?: string;
+  change_notes?: string;
+}
+
+export interface DocumentActivity {
+  id: string;
+  document_id: string;
+  version_id?: string;
+  action: DocumentActionType;
+  checkout_action?: string;
+  timestamp: string;
+  user_id: string;
+  user_name: string;
+  user_role: string;
+  comments?: string;
 }
 
 export interface DocumentWorkflowStep {
   id: string;
   name: string;
-  type: string;
-  assignees: string[];
-  due_days?: number;
-  requires_all_approvers?: boolean;
-  notifications?: {
-    on_start?: boolean;
-    on_complete?: boolean;
-    on_overdue?: boolean;
-  };
+  description?: string;
+  approvers: string[];
+  required_approvals: number;
+  order: number;
 }
 
-// Adding missing types for Complaint & ComplaintStatus
-export type ComplaintStatus = 'New' | 'Under Investigation' | 'In Progress' | 'Resolved' | 'Closed' | 'Rejected';
+export type ComplaintStatus = 
+  | 'New'
+  | 'Under_Investigation'
+  | 'Resolved'
+  | 'Closed'
+  | 'Reopened';
+
+export type ComplaintCategory =
+  | 'Product_Quality'
+  | 'Food_Safety'
+  | 'Packaging'
+  | 'Labeling'
+  | 'Foreign_Material'
+  | 'Customer_Service'
+  | 'Documentation'
+  | 'Other';
 
 export interface Complaint {
   id: string;
   title: string;
   description: string;
+  category: ComplaintCategory;
   status: ComplaintStatus;
-  category: string;
   reported_date: string;
   resolution_date?: string;
   created_at: string;
   updated_at: string;
-  capa_id?: string;
-  assigned_to?: string;
   created_by: string;
+  assigned_to?: string;
   customer_name?: string;
   customer_contact?: string;
   product_involved?: string;
   lot_number?: string;
+  capa_id?: string;
+}
+
+export interface DocumentListProps {
+  documents: Document[];
+  showStatus?: boolean;
+  onSelect?: (document: Document) => void;
 }
