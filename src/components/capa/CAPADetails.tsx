@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, FileText, NotebookPen, CheckSquare, XSquare, AlertTriangle, RefreshCw, Calendar as CalendarIcon, User, Building, Tag, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { mapInternalToStatus, mapStatusToInternal } from '@/services/capa/capaStatusService';
+import { mapInternalToStatus, isStatusEqual } from '@/services/capa/capaStatusService';
 
 interface CAPADetailsProps {
   capa: CAPA;
@@ -21,7 +21,6 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
-  // Form state
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState(capa);
   
@@ -39,7 +38,6 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   
   const handleToggleEdit = () => {
     if (editMode) {
-      // Cancel editing
       setFormData(capa);
     }
     setEditMode(!editMode);
@@ -71,13 +69,11 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
     try {
       setLoading(true);
       
-      // Prepare data for update
       const statusUpdateData = {
         ...capa,
         status: mapStatusToInternal(newStatus)
       };
       
-      // Additional fields based on status
       if (newStatus === 'Closed') {
         statusUpdateData.completionDate = new Date().toISOString();
       } else if (newStatus === 'Verified') {
@@ -188,6 +184,8 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
     const dueDate = new Date(capa.dueDate);
     return now > dueDate;
   };
+  
+  const showEffectivenessMonitor = isStatusEqual(capa.status, 'Closed') || isStatusEqual(capa.status, 'Verified');
   
   const hasRelatedDocuments = capa.relatedDocuments && Array.isArray(capa.relatedDocuments) && capa.relatedDocuments.length > 0;
   const hasRelatedTraining = capa.relatedTraining && Array.isArray(capa.relatedTraining) && capa.relatedTraining.length > 0;
@@ -402,7 +400,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {capa.status !== 'closed' && capa.status !== 'verified' && (
+                        {!isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
                           <Button 
                             className="w-full justify-start" 
                             variant="outline"
@@ -414,7 +412,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                           </Button>
                         )}
                         
-                        {capa.status === 'closed' && (
+                        {isStatusEqual(capa.status, 'Closed') && (
                           <Button 
                             className="w-full justify-start" 
                             variant="outline"
@@ -426,7 +424,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
                           </Button>
                         )}
                         
-                        {capa.status !== 'open' && (
+                        {!isStatusEqual(capa.status, 'Open') && (
                           <Button 
                             className="w-full justify-start" 
                             variant="outline"

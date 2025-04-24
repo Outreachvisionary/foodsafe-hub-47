@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { deleteCAPA } from '@/services/capa/capaFetchService';
 import { getCAPAs } from '@/services/capaService';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
 
 interface CAPAListProps {
   filters: {
@@ -66,7 +67,6 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
       try {
         setLoading(true);
         
-        // Build filter based on selected options
         const capaFilter: CAPAFilter = {};
         
         if (filters.status !== 'all') {
@@ -92,13 +92,11 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           capaFilter.searchTerm = searchQuery;
         }
         
-        // Convert filter to fetch parameters
         const fetchParams: CAPAFetchParams = {
           status: capaFilter.status,
           priority: capaFilter.priority,
           source: capaFilter.source,
           searchQuery: capaFilter.searchTerm,
-          // Convert dateRange if needed
           ...(capaFilter.dateRange && {
             dueDate: capaFilter.dateRange.end
           })
@@ -115,26 +113,6 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
     
     loadCAPAs();
   }, [filters, searchQuery]);
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'in-progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'closed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'verified': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-  
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
   
   if (loading) {
     return (
@@ -166,7 +144,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                   <div className="flex items-start gap-1">
                     <h3 className="font-medium">{capa.title}</h3>
                     {capa.dueDate && new Date(capa.dueDate) < new Date() && 
-                     capa.status !== 'closed' && capa.status !== 'verified' && (
+                     !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
                       <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
                     )}
                   </div>
@@ -193,7 +171,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                       onView={() => handleView(capa.id)}
                       onEdit={() => handleEdit(capa.id)}
                       onDelete={() => confirmDelete(capa.id)}
-                      disableEdit={capa.status === 'closed' || capa.status === 'verified'}
+                      disableEdit={isStatusEqual(capa.status, 'Closed') || isStatusEqual(capa.status, 'Verified')}
                     />
                   </div>
                   

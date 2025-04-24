@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart, Legend } from 'recharts';
 import { getCAPAs } from '@/services/capaService';
-import { CAPA, CAPAStats, CAPASource } from '@/types/capa';
+import { CAPA, CAPAStats } from '@/types/capa';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Clock, Loader2 } from 'lucide-react';
@@ -35,10 +36,10 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
         
         // Calculate stats
         const totalCount = capaData.length;
-        const openCount = capaData.filter(capa => capa.status === 'Open' || capa.status === 'open').length;
-        const closedCount = capaData.filter(capa => capa.status === 'Closed' || capa.status === 'closed').length;
+        const openCount = capaData.filter(capa => isStatusEqual(capa.status, 'Open')).length;
+        const closedCount = capaData.filter(capa => isStatusEqual(capa.status, 'Closed')).length;
         const overdueCount = capaData.filter(capa => {
-          if (capa.status === 'Open' || capa.status === 'In Progress' || capa.status === 'open' || capa.status === 'in-progress') {
+          if (isStatusEqual(capa.status, 'Open') || isStatusEqual(capa.status, 'In Progress')) {
             const dueDate = new Date(capa.dueDate);
             const now = new Date();
             return dueDate < now;
@@ -46,8 +47,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
           return false;
         }).length;
         const pendingVerificationCount = capaData.filter(capa => 
-          capa.status === 'Pending Verification' || 
-          capa.status === 'pending-verification'
+          isStatusEqual(capa.status, 'Pending Verification')
         ).length;
         
         // By priority
@@ -72,6 +72,13 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
           bySource[source] = (bySource[source] || 0) + 1;
         });
         
+        // By department
+        const byDepartment: Record<string, number> = {};
+        capaData.forEach(capa => {
+          const department = capa.department || 'unassigned';
+          byDepartment[department] = (byDepartment[department] || 0) + 1;
+        });
+        
         // Set stats
         setStats({
           total: totalCount,
@@ -81,6 +88,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
           pendingVerificationCount,
           byPriority,
           bySource,
+          byDepartment,
           effectivenessRate: Math.round((closedCount / (totalCount || 1)) * 100)
         });
       } catch (err) {

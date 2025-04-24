@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -23,7 +23,7 @@ import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler
 import { DocumentEditor } from './DocumentEditor';
 import { Document as DocumentType, Folder as FolderType } from '@/types/document';
 
-export const DocumentRepository = () => {
+export function DocumentRepository() {
   const {
     documents,
     folders,
@@ -117,6 +117,11 @@ export const DocumentRepository = () => {
       );
     }
     return null;
+  };
+
+  const handleError = (err: Error) => {
+    console.error('Document repository error:', err);
+    setError(err.message); // Convert Error to string
   };
 
   return (
@@ -288,4 +293,4 @@ export const DocumentRepository = () => {
       </Dialog>
     </div>
   );
-};
+}

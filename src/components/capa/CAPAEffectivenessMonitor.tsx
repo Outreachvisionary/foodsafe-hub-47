@@ -79,9 +79,13 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
       
       if (onEffectivenessUpdate) {
         onEffectivenessUpdate({
+          capaId,
           score,
           rating,
-          notes: effectivenessData.recurrenceCheck
+          notes: effectivenessData.recurrenceCheck,
+          rootCauseEliminated: effectivenessData.rootCauseEliminated,
+          preventiveMeasuresImplemented: effectivenessData.preventiveMeasuresImplemented,
+          documentationComplete: effectivenessData.documentationComplete
         });
       }
       

@@ -25,6 +25,13 @@ export type CAPA = {
   isFsma204Compliant?: boolean;
   relatedDocuments?: RelatedDocument[];
   relatedTraining?: RelatedTraining[];
+  sourceId?: string; // Adding sourceId for LinkedCAPAsList component
+  sourceReference?: {
+    type: string;
+    title: string;
+    url?: string;
+    date?: string;
+  };
 };
 
 // Additional types for reference relationships
@@ -45,6 +52,7 @@ export type RelatedTraining = {
   addedAt: string;
 };
 
+// Using capitalized values to match database
 export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
 export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
@@ -53,7 +61,8 @@ export type CAPASource = 'audit' | 'complaint' | 'internal-qc' | 'supplier-issue
 
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
-export type CAPAEffectivenessRating = 'excellent' | 'good' | 'poor' | 'not_assessed';
+// Update effectiveness rating to match component usage
+export type CAPAEffectivenessRating = 'Highly Effective' | 'Effective' | 'Partially Effective' | 'Ineffective' | 'not_assessed';
 
 export type CAPAEffectivenessMetrics = {
   capaId: string;
@@ -90,6 +99,8 @@ export type CAPAFetchParams = {
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   dueDate?: string;
+  from?: string; // Adding from for CAPAFetchService
+  to?: string;   // Adding to for CAPAFetchService
 };
 
 export type CAPAFilter = {
@@ -116,3 +127,19 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
     default: return 'Open';
   }
 };
+
+// Map lowercase status to official capitalized status
+export const normalizeStatus = (status: string): CAPAStatus => {
+  switch(status.toLowerCase()) {
+    case 'open': return 'Open';
+    case 'in progress': 
+    case 'in-progress': return 'In Progress';
+    case 'closed': return 'Closed';
+    case 'overdue': return 'Overdue';
+    case 'pending verification':
+    case 'pending-verification': return 'Pending Verification';
+    case 'verified': return 'Verified';
+    default: return 'Open';
+  }
+};
+
