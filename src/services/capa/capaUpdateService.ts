@@ -38,7 +38,7 @@ export const updateCAPAStatus = async (
       // This could set a verification due date, etc.
     }
     
-    if (newStatus === 'Verified' && currentStatus !== 'Verified') {
+    if (newStatus === 'Verified') {
       additionalFields.verification_date = new Date().toISOString();
       additionalFields.verified_by = userId;
       additionalFields.effectiveness_verified = true;
@@ -98,7 +98,7 @@ export const updateCAPAStatus = async (
       fsma204Compliant: data.fsma204_compliant,
       effectivenessVerified: data.effectiveness_verified,
       sourceId: data.source_id,
-      // Provide empty arrays for these fields since they may not exist in the database response
+      // Initialize these fields that might not exist in the database response
       relatedDocuments: [],
       relatedTraining: [],
       sourceReference: undefined

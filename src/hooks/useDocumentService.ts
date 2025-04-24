@@ -1,14 +1,16 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment, DocumentActionType } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { adaptDocumentToDatabase, mapToDocumentActionType } from '@/utils/documentTypeAdapter';
-import { DocumentActionType } from '@/types/document';
+import { ensureRecord } from '@/utils/jsonUtils';
 
 const transformVersionData = (versionData: any): DocumentVersion => {
   return {
     ...versionData,
-    version_type: versionData.version_type === 'major' ? 'major' : 'minor' // Ensure it's a valid version type
+    version_type: versionData.version_type === 'major' ? 'major' : 'minor',
+    editor_metadata: ensureRecord(versionData.editor_metadata),
+    diff_data: ensureRecord(versionData.diff_data)
   };
 };
 
@@ -41,22 +43,19 @@ export const useDocumentService = () => {
         throw error;
       }
 
-      // Convert DB format to app format, ensuring proper typing
       const versions: DocumentVersion[] = data.map(version => ({
         id: version.id,
         document_id: version.document_id,
         version: version.version,
-        version_number: version.version_number,
+        version_number: version.version_number || 0,
         file_name: version.file_name,
         file_size: version.file_size,
         created_by: version.created_by,
         created_at: version.created_at || '',
-        is_binary_file: version.is_binary_file,
-        editor_metadata: version.editor_metadata || {},
-        diff_data: version.diff_data || {},
-        version_type: (version.version_type === 'major' || version.version_type === 'minor') 
-          ? version.version_type 
-          : 'minor',
+        is_binary_file: version.is_binary_file || false,
+        editor_metadata: ensureRecord(version.editor_metadata),
+        diff_data: ensureRecord(version.diff_data),
+        version_type: (version.version_type === 'major') ? 'major' : 'minor',
         change_summary: version.change_summary || '',
         change_notes: version.change_notes || '',
         check_in_comment: version.check_in_comment || '',
@@ -125,7 +124,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Checked_Out',
+          checkout_status: 'Checked Out',
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -143,7 +142,7 @@ export const useDocumentService = () => {
 
       await supabase.from('document_activities').insert({
         document_id: documentId,
-        action: mapToDocumentActionType('update'),  // Use our mapper function
+        action: 'checkout' as DocumentActionType,
         checkout_action: 'Document checked out',
         user_id: userId,
         user_name: userName,
@@ -151,7 +150,7 @@ export const useDocumentService = () => {
         timestamp: new Date().toISOString()
       });
 
-      return data;
+      return data as Document;
     } catch (error: any) {
       console.error('Error checking out document:', error.message);
       throw error;
@@ -176,7 +175,7 @@ export const useDocumentService = () => {
         
       if (docError) throw docError;
       
-      if (docData.checkout_status !== 'Checked_Out') {
+      if (docData.checkout_status !== 'Checked Out') {
         throw new Error('Document is not checked out');
       }
       
@@ -219,7 +218,7 @@ export const useDocumentService = () => {
 
       await supabase.from('document_activities').insert({
         document_id: documentId,
-        action: mapToDocumentActionType('update'),  // Use our mapper function
+        action: 'checkin' as DocumentActionType,
         user_id: userId,
         user_name: userName,
         user_role: 'User',
@@ -228,7 +227,7 @@ export const useDocumentService = () => {
         timestamp: new Date().toISOString()
       });
 
-      return data;
+      return data as Document;
     } catch (error: any) {
       console.error('Error checking in document:', error.message);
       throw error;
@@ -512,19 +511,18 @@ export const useDocumentService = () => {
         throw error;
       }
 
-      // Convert to properly typed DocumentVersion
       const version: DocumentVersion = {
         id: data.id,
         document_id: data.document_id,
         version: data.version,
-        version_number: data.version_number,
+        version_number: data.version_number || 0,
         file_name: data.file_name,
         file_size: data.file_size,
         created_by: data.created_by,
         created_at: data.created_at || '',
-        is_binary_file: data.is_binary_file,
-        editor_metadata: data.editor_metadata || {},
-        diff_data: data.diff_data || {},
+        is_binary_file: data.is_binary_file || false,
+        editor_metadata: ensureRecord(data.editor_metadata),
+        diff_data: ensureRecord(data.diff_data),
         version_type: finalVersionType,
         change_summary: data.change_summary || '',
         change_notes: data.change_notes || '',
@@ -546,9 +544,13 @@ export const useDocumentService = () => {
         throw new Error('Missing required activity fields');
       }
       
+      const validAction = (Object.values(DocumentActionType).includes(activity.action as DocumentActionType)) 
+        ? activity.action 
+        : 'view' as DocumentActionType;
+      
       const activityData = {
         document_id: activity.document_id,
-        action: activity.action as DocumentActionType,
+        action: validAction,
         user_id: activity.user_id,
         user_name: activity.user_name,
         user_role: activity.user_role,
@@ -565,7 +567,7 @@ export const useDocumentService = () => {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as DocumentActivity;
     } catch (error: any) {
       console.error('Error recording document activity:', error.message);
       throw error;
@@ -635,10 +637,12 @@ export const useDocumentService = () => {
       
       if (error) throw new Error(`Error fetching document version: ${error.message}`);
       
-      // Ensure version_type is properly typed
       const formattedVersion: DocumentVersion = {
         ...data,
-        version_type: data.version_type === 'major' ? 'major' : 'minor'
+        version_type: data.version_type === 'major' ? 'major' : 'minor',
+        editor_metadata: ensureRecord(data.editor_metadata),
+        diff_data: ensureRecord(data.diff_data),
+        version_number: data.version_number || 0
       };
       
       return formattedVersion;
@@ -691,12 +695,11 @@ export const useDocumentService = () => {
         throw error;
       }
 
-      // Convert DB format to app format, ensuring proper typing for DocumentActionType
       const activities: DocumentActivity[] = data.map(activity => ({
         id: activity.id,
         document_id: activity.document_id,
         timestamp: activity.timestamp,
-        action: activity.action as DocumentActionType, // Type assertion here
+        action: activity.action as DocumentActionType,
         user_id: activity.user_id,
         user_name: activity.user_name,
         user_role: activity.user_role,

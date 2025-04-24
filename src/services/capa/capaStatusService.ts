@@ -35,14 +35,14 @@ export function mapStatusToInternal(status: string): CAPAStatus {
   }
 }
 
-// These functions are now deprecated, use the ones from capaStatusMapper instead
-export { mapInternalStatusToDb, mapDbStatusToInternal };
-
 // Check if status is equal (case-insensitive)
 export const isStatusEqual = (status1: string, status2: string): boolean => {
   if (!status1 || !status2) return false;
   return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
 };
+
+// These functions are now deprecated, use the ones from capaStatusMapper instead
+export { mapInternalStatusToDb, mapDbStatusToInternal };
 
 export default {
   mapInternalStatusToDb,

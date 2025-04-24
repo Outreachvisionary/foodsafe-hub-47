@@ -70,7 +70,8 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  const isCheckedOut = document.checkout_status === 'Checked_Out';
+  // Fix the checkout status comparison
+  const isCheckedOut = document.checkout_status === 'Checked Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
   return (

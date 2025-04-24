@@ -1,30 +1,42 @@
 
-import { DocumentActionType } from '@/types/document';
+import { Document, DocumentActionType } from '@/types/document';
 
 /**
- * Safely maps a string to a DocumentActionType
- * @param action The string action to convert
- * @returns A valid DocumentActionType
+ * Adapts a Document object to the database schema format
+ * @param document The document to adapt
  */
-export function mapToDocumentActionType(action: string): DocumentActionType {
-  const validActions: DocumentActionType[] = [
-    'create', 'update', 'delete', 'view', 'download', 
-    'approve', 'reject', 'review', 'comment', 'checkout', 
-    'checkin', 'restore', 'archive', 'edit'
-  ];
+export const adaptDocumentToDatabase = (document: Document): any => {
+  // Handle special status values with underscores
+  let status = document.status;
   
-  if (validActions.includes(action as DocumentActionType)) {
+  // Ensure the category is a string that the database accepts
+  let category = document.category;
+  
+  return {
+    ...document,
+    status,
+    category
+  };
+};
+
+/**
+ * Maps string action to DocumentActionType
+ * @param action The action string
+ */
+export const mapToDocumentActionType = (action: string): DocumentActionType => {
+  // Check if the action is valid in our enum
+  const isValidAction = Object.values(DocumentActionType).includes(action as DocumentActionType);
+  
+  if (isValidAction) {
     return action as DocumentActionType;
   }
   
-  // Default to 'view' if not a valid action
-  console.warn(`Invalid document action: ${action}, defaulting to 'view'`);
+  // Default to 'view' if not found
+  console.warn(`Unknown document action type: ${action}, defaulting to 'view'`);
   return 'view';
-}
+};
 
-/**
- * Adapt document data from database to frontend types
- */
-export function adaptDocumentToDatabase(document: any) {
-  return document;
-}
+export default {
+  adaptDocumentToDatabase,
+  mapToDocumentActionType
+};

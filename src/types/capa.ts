@@ -1,26 +1,13 @@
 
-// CAPA types with consistent naming conventions
+// Updated CAPA type definitions
 
 export type CAPAStatus = 'Open' | 'In_Progress' | 'Closed' | 'Overdue' | 'Pending_Verification' | 'Verified';
 
-export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective' | 'Highly_Effective';
+export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
-export type CAPAPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+export type CAPASource = 'Audit' | 'Customer Complaint' | 'Internal' | 'Regulatory' | 'Other';
 
-export type CAPASource = 'Audit' | 'Customer_Complaint' | 'Internal_QC' | 'Supplier_Issue' | 'Other';
-
-// Database-style status values (used for API/DB interactions)
-export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
-
-export interface CAPAEffectivenessMetrics {
-  capaId: string;
-  rootCauseEliminated: boolean;
-  preventiveMeasuresImplemented: boolean;
-  documentationComplete: boolean;
-  score: number;
-  rating: CAPAEffectivenessRating;
-  notes?: string;
-}
+export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective';
 
 export interface CAPA {
   id: string;
@@ -39,62 +26,87 @@ export interface CAPA {
   correctiveAction?: string;
   preventiveAction?: string;
   department?: string;
-  effectivenessRating?: CAPAEffectivenessRating | null;
+  effectivenessRating?: CAPAEffectivenessRating;
   effectivenessCriteria?: string;
   verificationMethod?: string;
   verifiedBy?: string;
   fsma204Compliant?: boolean;
   effectivenessVerified?: boolean;
   sourceId?: string;
-  relatedDocuments?: string[];
-  relatedTraining?: string[];
-  sourceReference?: {
-    type: string;
-    title: string;
-    url?: string;
-    date?: string;
-  };
-}
-
-export interface CAPAFilter {
-  status?: CAPAStatus;
-  priority?: CAPAPriority;
-  source?: CAPASource;
-  searchTerm?: string;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-}
-
-export interface CAPAFetchParams {
-  status?: CAPAStatus;
-  priority?: CAPAPriority;
-  source?: CAPASource;
-  searchQuery?: string;
-  dueDate?: string;
-}
-
-export interface CAPAStats {
-  total: number;
-  openCount: number;
-  closedCount: number;
-  overdueCount: number;
-  pendingVerificationCount: number;
-  effectivenessRate: number;
-  byPriority: Record<string, number>;
-  bySource: Record<string, number>;
-  byDepartment: Record<string, number>;
+  sourceReference?: string; // New field
+  relatedDocuments: Array<{
+    id: string;
+    documentId: string;
+    documentName: string;
+    documentType: string;
+  }>;
+  relatedTraining: Array<{
+    id: string;
+    trainingId: string;
+    trainingName: string;
+    trainingType: string;
+  }>;
 }
 
 export interface CAPAActivity {
   id: string;
   capa_id: string;
   performed_at: string;
-  old_status: CAPAStatus;
-  new_status: CAPAStatus;
+  old_status?: CAPAStatus;
+  new_status?: CAPAStatus;
   action_type: string;
   action_description: string;
   performed_by: string;
   metadata: Record<string, any>;
+}
+
+export interface CAPAStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byPriority: Record<string, number>;
+  bySource: Record<string, number>;
+  byMonth: Record<string, number>;
+  effectivenessRating?: Record<string, number>;
+  overdue: number;
+  recentItems?: CAPA[];
+}
+
+export interface CAPAFormData {
+  title: string;
+  description: string;
+  priority: CAPAPriority;
+  assignedTo: string;
+  dueDate: string;
+  source: CAPASource;
+  rootCause?: string;
+  correctiveAction?: string;
+  preventiveAction?: string;
+  department?: string;
+  effectivenessCriteria?: string;
+  sourceId?: string;
+  sourceReference?: string;
+}
+
+export interface CAPAFilterOptions {
+  status?: CAPAStatus[];
+  priority?: CAPAPriority[];
+  source?: CAPASource[];
+  assignedTo?: string[];
+  department?: string[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  includeCompleted?: boolean;
+  searchTerm?: string;
+}
+
+export interface CAPAHistoryItem {
+  id: string;
+  date: string;
+  user: string;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  comments?: string;
 }

@@ -130,10 +130,10 @@ export interface NCStats {
   byCategory: Record<string, number>;
   byReasonCategory: Record<string, number>;
   byRiskLevel: Record<string, number>;
+  byReason?: Record<string, number>;
   overdue: number;
   pendingReview: number;
   recentlyResolved: number;
   totalQuantityOnHold?: number;
-  byReason?: Record<string, number>;
   recentItems?: NonConformance[];
 }
