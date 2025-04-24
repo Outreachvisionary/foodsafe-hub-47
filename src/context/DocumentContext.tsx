@@ -89,10 +89,10 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const createDocument = useCallback(async (document: Partial<Document>): Promise<Document> => {
     try {
       // Ensure we're sending the right type for the category field
-      const dbDocument = {
+      const dbDocument: any = {
         ...document,
-        // Convert category to the correct type if needed
-        category: document.category as DocumentCategory
+        // Convert category to string to match database expectations
+        category: document.category as string
       };
 
       const { data, error } = await supabase
@@ -115,10 +115,10 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateDocument = useCallback(async (id: string, document: Partial<Document>): Promise<Document> => {
     try {
       // Ensure we're sending the right type for the category field
-      const dbDocument = {
+      const dbDocument: any = {
         ...document,
-        // Convert category to the correct type if needed
-        category: document.category as DocumentCategory
+        // Convert category to string to match database expectations
+        category: document.category as string
       };
 
       const { data, error } = await supabase
@@ -175,11 +175,12 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const createFolder = useCallback(async (folder: Partial<Folder>): Promise<Folder> => {
     try {
-      // Make sure created_by field is included
-      const folderToCreate = {
+      // Make sure created_by field is included and name is provided
+      const folderToCreate: any = {
         ...folder,
         created_by: folder.created_by || 'system', // Default to 'system' if not provided
-        path: folder.path || `/${folder.name}`   // Default path if not provided
+        path: folder.path || `/${folder.name}`,    // Default path if not provided
+        name: folder.name || 'Untitled Folder'     // Ensure name is always provided
       };
 
       const { data, error } = await supabase
@@ -247,24 +248,26 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const uploadDocument = useCallback(async (file: File, document: Partial<Document>): Promise<Document> => {
     try {
       // Create document entry with properly typed fields
+      const dbDocument: any = {
+        title: document.title,
+        description: document.description,
+        category: document.category as string,
+        status: document.status,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: document.created_by || 'system',
+        folder_id: document.folder_id,
+        tags: document.tags,
+        is_locked: document.is_locked || false
+      };
+
       const { data: docData, error: docError } = await supabase
         .from('documents')
-        .insert({
-          title: document.title,
-          description: document.description,
-          category: document.category as DocumentCategory,
-          status: document.status,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          version: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          created_by: document.created_by || 'system',
-          folder_id: document.folder_id,
-          tags: document.tags,
-          is_locked: document.is_locked || false
-        })
+        .insert(dbDocument)
         .select()
         .single();
 
@@ -382,3 +385,4 @@ export const useDocumentContext = (): DocumentContextProps => {
   }
   return context;
 };
+

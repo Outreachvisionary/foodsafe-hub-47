@@ -1,6 +1,7 @@
+
 // Create or update the document type definitions file
 export type DocumentStatus = 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected' | 'Published' | 'Archived' | string;
-export type DocumentCategory = 'SOP' | 'Policy' | 'Work_Instruction' | 'Form' | 'Manual' | 'Record' | string;
+export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Audit Report' | 'HACCP Plan' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment' | 'Other' | string;
 
 export interface DocumentWorkflowStep {
   id: string;
@@ -27,151 +28,117 @@ export interface Document {
   title: string;
   description?: string;
   file_name: string;
+  file_path?: string;
   file_size: number;
   file_type: string;
   category: DocumentCategory;
   status: DocumentStatus;
   version: number;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  expiry_date?: string;
-  tags?: string[];
-  approvers?: string[];
-  folder_id?: string;
-  linked_module?: string;
-  linked_item_id?: string;
-  pending_since?: string | null;
-  custom_notification_days?: number[];
-  is_locked?: boolean;
-  last_review_date?: string;
-  next_review_date?: string;
   current_version_id?: string;
-  is_template?: boolean;
-  checkout_status?: 'Available' | 'Checked_Out';
-  checkout_user_id?: string;
-  checkout_user_name?: string;
-  checkout_timestamp?: string;
-  current_version?: DocumentVersion;
-  file_path?: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+  approved_by?: string;
+  approved_at?: string;
+  expiry_date?: string;
+  is_locked: boolean;
   rejection_reason?: string;
   last_action?: string;
-  workflow_status?: string;
-  metadata?: Record<string, any>;
+  tags?: string[];
+  folder_id?: string;
 }
 
-// Add missing types for Document components
 export interface DocumentVersion {
   id: string;
   document_id: string;
   version: number;
-  version_number: number;
-  file_size: number;
-  created_at: string;
-  editor_metadata?: any;
-  is_binary_file?: boolean;
+  version_number?: number;
   file_name: string;
+  file_size: number;
+  file_type?: string;
   created_by: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_by_name?: string;
   change_notes?: string;
-  change_summary?: string;
   check_in_comment?: string;
-  modified_by: string;
-  modified_by_name: string;
-  version_type: 'major' | 'minor';
-  diff_data?: Record<string, any>;
+  version_type?: string;
+  editor_metadata?: any;
 }
 
 export interface DocumentActivity {
   id: string;
   document_id: string;
-  timestamp: string;
-  action: string;
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download';
   user_id: string;
-  user_name: string;
-  user_role: string;
-  comments?: string;
-}
-
-export interface DocumentAccess {
-  id: string;
-  document_id: string;
-  folder_id?: string;
-  granted_at: string;
-  user_id: string;
+  user_name?: string;
   user_role?: string;
-  permission_level: string;
-  granted_by: string;
-}
-
-export interface Folder {
-  id: string;
-  parent_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  document_count?: number;
-  name: string;
-  path: string;
-  created_by: string;
-}
-
-// Document types from database.ts to ensure compatibility
-export interface DatabaseDocument {
-  id: string;
-  title: string;
-  description?: string;
-  file_name: string;
-  file_size: number;
-  file_type: string;
-  category: DocumentCategory;
-  status: DocumentStatus;
-  version: number;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  expiry_date?: string;
-  tags?: string[];
-  approvers?: string[];
-  folder_id?: string;
-  linked_module?: string;
-  linked_item_id?: string;
-  pending_since?: string | null;
-  custom_notification_days?: number[];
-  is_locked?: boolean;
-  last_review_date?: string;
-  next_review_date?: string;
-  current_version_id?: string;
-  is_template?: boolean;
-  checkout_timestamp?: string;
-  rejection_reason?: string;
-  last_action?: string;
-  checkout_user_id?: string;
-  workflow_status?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface DatabaseFolder {
-  id: string;
-  parent_id?: string;
-  created_at: string;
-  updated_at: string;
-  document_count?: number;
-  name: string;
-  path: string;
-  created_by: string;
+  timestamp: string;
+  comments?: string;
+  metadata?: any;
 }
 
 export interface DocumentComment {
   id: string;
   document_id: string;
-  version_id?: string;
   user_id: string;
   user_name: string;
   content: string;
   created_at: string;
   updated_at?: string;
-  parent_comment_id?: string;
-  position_data?: Record<string, any>;
-  is_resolved: boolean;
-  resolved_by?: string;
-  resolved_at?: string;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  user_id: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at: string;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  path: string;
+  parent_id?: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+  document_count?: number;
+}
+
+export interface DocumentSearchFilters {
+  categories?: DocumentCategory[];
+  status?: DocumentStatus[];
+  createdStart?: string;
+  createdEnd?: string;
+  updatedStart?: string;
+  updatedEnd?: string;
+  expiryStart?: string;
+  expiryEnd?: string;
+  createdBy?: string[];
+  approvedBy?: string[];
+  tags?: string[];
+  searchTerm?: string;
+}
+
+export interface CAPARelatedDocument {
+  id: string;
+  capa_id: string;
+  document_id: string;
+  document_title: string;
+  document_type: string;
+  added_at: string;
+  added_by: string;
+}
+
+export interface CAPARelatedTraining {
+  id: string;
+  capa_id: string;
+  training_id: string;
+  training_title: string;
+  training_type: string;
+  added_at: string;
+  added_by: string;
 }

@@ -178,7 +178,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
             <h3 className="text-sm font-medium text-gray-500">
               Resolution Details
             </h3>
-            <p>{complaint.resolution_details || 'No resolution details available'}</p>
+            <p>{complaint.description || 'No resolution details available'}</p>
           </div>
 
           <div>
@@ -230,3 +230,4 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     </Card>
   );
 };
+

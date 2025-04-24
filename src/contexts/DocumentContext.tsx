@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
-import { Document, Folder, DocumentNotification } from '@/types/document';
+import { Document, Folder, DocumentNotification, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
 import { useToast } from '@/hooks/use-toast';
 import { adaptDatabaseToDocument, adaptDatabaseToFolder, adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
@@ -128,7 +129,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   
   const updateDocument = useCallback(async (document: Document): Promise<Document> => {
     try {
-      const updatedDoc = await documentService.updateDocument(document.id, adaptDocumentToDatabase(document));
+      // Need to cast the document to the right type for the database
+      const dbDocument: any = adaptDocumentToDatabase(document);
+      
+      const updatedDoc = await documentService.updateDocument(document.id, dbDocument);
       
       // Update local state
       setDocuments(prev => prev.map(doc => 
@@ -206,7 +210,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         pending_since: new Date().toISOString()
       };
       
-      const updatedDoc = await documentService.updateDocument(document.id, adaptDocumentToDatabase(docWithUpdatedStatus));
+      // Need to cast the document to the right type for the database
+      const dbDocument: any = adaptDocumentToDatabase(docWithUpdatedStatus);
+      
+      const updatedDoc = await documentService.updateDocument(document.id, dbDocument);
       
       // Update local state
       setDocuments(prev => prev.map(doc => 
