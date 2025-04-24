@@ -82,9 +82,7 @@ export const updateCAPAStatus = async (
       id: data.id,
       title: data.title,
       description: data.description,
-      status: data.status === 'In Progress' ? 'In_Progress' :
-              data.status === 'Pending Verification' ? 'Pending_Verification' : 
-              data.status as CAPAStatus,
+      status: mapDbStatusToInternal(data.status as DbCAPAStatus),
       priority: data.priority as CAPAPriority,
       createdAt: data.created_at,
       dueDate: data.due_date,
@@ -97,7 +95,10 @@ export const updateCAPAStatus = async (
       correctiveAction: data.corrective_action,
       preventiveAction: data.preventive_action,
       department: data.department,
-      effectivenessRating: data.effectiveness_rating as CAPAEffectivenessRating,
+      effectivenessRating: data.effectiveness_rating ? 
+        (data.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' : 
+         data.effectiveness_rating === 'Not Effective' ? 'Not_Effective' : 
+         data.effectiveness_rating as CAPAEffectivenessRating) : undefined,
       effectivenessCriteria: data.effectiveness_criteria,
       verificationMethod: data.verification_method,
       verifiedBy: data.verified_by,

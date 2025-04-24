@@ -534,6 +534,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
           capaId={capaId}
           title={capa.title}
           implementationDate={capa.completionDate || capa.dueDate}
+          isEditable={true}
         />
       </div>
     </div>

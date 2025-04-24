@@ -14,7 +14,7 @@ export const adaptDocumentToDatabase = (document: Document): any => {
   let category = document.category;
   
   // Map checkout status to match the DB schema
-  let checkout_status: string = document.checkout_status === 'Checked_Out' ? 'Checked Out' : 'Available';
+  let checkout_status: string = document.checkout_status === 'Checked Out' ? 'Checked Out' : 'Available';
   
   return {
     ...document,
@@ -50,14 +50,14 @@ export const mapToDocumentActionType = (action: string): DocumentActionType => {
  * Maps DB checkout status to application checkout status
  */
 export const mapDbToAppCheckoutStatus = (dbStatus: string): CheckoutStatus => {
-  return dbStatus === 'Checked Out' ? 'Checked_Out' : 'Available';
+  return dbStatus === 'Checked Out' ? 'Checked Out' : 'Available';
 };
 
 /**
  * Maps application checkout status to DB checkout status
  */
 export const mapAppToDbCheckoutStatus = (appStatus: CheckoutStatus): string => {
-  return appStatus === 'Checked_Out' ? 'Checked Out' : 'Available';
+  return appStatus;
 };
 
 /**

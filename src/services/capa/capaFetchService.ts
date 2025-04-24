@@ -5,15 +5,36 @@ import { DbCAPAStatus, mapDbStatusToInternal } from './capaStatusMapper';
 
 // Helper function to handle type conversions from DB format to app format
 const convertDbToAppFormat = (dbCapa: any): CAPA => {
-  const status: CAPAStatus = dbCapa.status === 'In Progress' ? 'In_Progress' : 
-                            dbCapa.status === 'Pending Verification' ? 'Pending_Verification' : 
-                            dbCapa.status as CAPAStatus;
-                            
-  const effectivenessRating: CAPAEffectivenessRating | undefined = 
-    dbCapa.effectiveness_rating === 'Highly Effective' ? 'Highly_Effective' as CAPAEffectivenessRating :
-    dbCapa.effectiveness_rating === 'Partially Effective' ? 'Partially_Effective' as CAPAEffectivenessRating :
-    dbCapa.effectiveness_rating === 'Not Effective' ? 'Not_Effective' as CAPAEffectivenessRating :
-    dbCapa.effectiveness_rating as CAPAEffectivenessRating;
+  // Convert status strings like 'In Progress' to app format 'In_Progress'
+  let status: CAPAStatus;
+  switch (dbCapa.status) {
+    case 'In Progress':
+      status = 'In_Progress';
+      break;
+    case 'Pending Verification':
+      status = 'Pending_Verification';
+      break;
+    default:
+      status = dbCapa.status as CAPAStatus;
+  }
+
+  // Convert effectiveness rating strings
+  let effectivenessRating: CAPAEffectivenessRating | undefined;
+  if (dbCapa.effectiveness_rating) {
+    switch (dbCapa.effectiveness_rating) {
+      case 'Highly Effective':
+        effectivenessRating = 'Highly_Effective';
+        break;
+      case 'Partially Effective':
+        effectivenessRating = 'Partially_Effective';
+        break;
+      case 'Not Effective':
+        effectivenessRating = 'Not_Effective';
+        break;
+      default:
+        effectivenessRating = dbCapa.effectiveness_rating as CAPAEffectivenessRating;
+    }
+  }
 
   return {
     id: dbCapa.id,
@@ -39,9 +60,9 @@ const convertDbToAppFormat = (dbCapa: any): CAPA => {
     fsma204Compliant: dbCapa.fsma204_compliant,
     effectivenessVerified: dbCapa.effectiveness_verified,
     sourceId: dbCapa.source_id,
-    sourceReference: dbCapa.source_reference,
-    relatedDocuments: dbCapa.related_documents || [],
-    relatedTraining: dbCapa.related_training || []
+    sourceReference: dbCapa.source_reference || '',
+    relatedDocuments: [],
+    relatedTraining: []
   };
 };
 
@@ -51,47 +72,43 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
     const { data, error } = await supabase
       .from('capa_actions')
       .select('*');
-    
+
     if (error) throw new Error(`Failed to fetch CAPAs: ${error.message}`);
-    
     return data.map(convertDbToAppFormat);
   } catch (error) {
-    console.error('Error fetching CAPAs:', error);
+    console.error('Error in getCAPAs:', error);
     throw error;
   }
 };
 
-// Get CAPA by ID
-export const getCAPAById = async (id: string): Promise<CAPA> => {
+// Get a single CAPA by ID
+export const getCAPAById = async (capaId: string): Promise<CAPA> => {
   try {
     const { data, error } = await supabase
       .from('capa_actions')
       .select('*')
-      .eq('id', id)
+      .eq('id', capaId)
       .single();
-    
+
     if (error) throw new Error(`Failed to fetch CAPA: ${error.message}`);
-    
     return convertDbToAppFormat(data);
   } catch (error) {
-    console.error(`Error fetching CAPA ${id}:`, error);
+    console.error('Error in getCAPAById:', error);
     throw error;
   }
 };
 
-// Delete CAPA
-export const deleteCAPA = async (id: string): Promise<void> => {
+// Delete a CAPA by ID
+export const deleteCAPA = async (capaId: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('capa_actions')
       .delete()
-      .eq('id', id);
-    
+      .eq('id', capaId);
+
     if (error) throw new Error(`Failed to delete CAPA: ${error.message}`);
   } catch (error) {
-    console.error(`Error deleting CAPA ${id}:`, error);
+    console.error('Error in deleteCAPA:', error);
     throw error;
   }
 };
-
-// Removed duplicate export of getCAPAById

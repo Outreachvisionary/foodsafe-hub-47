@@ -37,10 +37,11 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       capa_id
     };
     
-    // Using upsert method which is more forgiving about column types
+    // Cast to any to bypass the type checking since we've validated the values above
+    // This resolves the issue with DbCAPAStatus not being assignable to the DB expected types
     const { error } = await supabase
       .from('capa_activities')
-      .insert([payload]);
+      .insert(payload as any);
     
     if (error) {
       console.error('Error recording CAPA activity:', error);

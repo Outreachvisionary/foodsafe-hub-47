@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment, DocumentActionType, CheckoutStatus } from '@/types/document';
@@ -140,7 +141,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .from('documents')
         .update({
-          checkout_status: mapAppToDbCheckoutStatus('Checked_Out'),
+          checkout_status: 'Checked Out',
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -194,8 +195,8 @@ export const useDocumentService = () => {
         checkout_timestamp: data.checkout_timestamp,
         checkout_user_id: data.checkout_user_id,
         checkout_user_name: data.checkout_user_name,
-        workflow_status: data.workflow_status,
-        custom_notification_days: data.custom_notification_days
+        workflow_status: data.workflow_status
+        // Remove custom_notification_days as it's not in the Document type
       };
       
       return document;
@@ -223,7 +224,7 @@ export const useDocumentService = () => {
         
       if (docError) throw docError;
       
-      if (docData.checkout_status !== mapAppToDbCheckoutStatus('Checked_Out')) {
+      if (docData.checkout_status !== 'Checked Out') {
         throw new Error('Document is not checked out');
       }
       
@@ -250,7 +251,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .from('documents')
         .update({
-          checkout_status: mapAppToDbCheckoutStatus('Available'),
+          checkout_status: 'Available',
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
@@ -307,8 +308,8 @@ export const useDocumentService = () => {
         checkout_timestamp: data.checkout_timestamp,
         checkout_user_id: data.checkout_user_id,
         checkout_user_name: data.checkout_user_name,
-        workflow_status: data.workflow_status,
-        custom_notification_days: data.custom_notification_days
+        workflow_status: data.workflow_status
+        // Remove custom_notification_days as it's not in the Document type
       };
 
       return document;
