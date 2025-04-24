@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { FolderOpen, ChevronRight, Folder, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { FolderOpen, ChevronRight, Folder, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Folder as FolderType } from '@/types/document';
@@ -18,6 +18,7 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({
   selectedFolder
 }) => {
   const { folders } = useDocuments();
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   
   const rootFolders = folders.filter(folder => !folder.parent_id);
   
@@ -26,10 +27,19 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({
       onSelectFolder(folder);
     }
   };
+
+  const toggleFolder = (folderId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setExpandedFolders(prev => ({
+      ...prev,
+      [folderId]: !prev[folderId]
+    }));
+  };
   
   const renderFolder = (folder: FolderType) => {
     const childFolders = folders.filter(f => f.parent_id === folder.id);
     const isSelected = selectedFolder?.id === folder.id;
+    const isExpanded = expandedFolders[folder.id] || false;
     
     return (
       <div key={folder.id} className="mb-1">
@@ -41,7 +51,13 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({
           onClick={() => handleFolderClick(folder)}
         >
           {childFolders.length > 0 ? (
-            <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />
+            <div onClick={(e) => toggleFolder(folder.id, e)} className="cursor-pointer p-0.5">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
           ) : (
             <span className="w-5" /> // Spacer
           )}
@@ -63,7 +79,7 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({
           )}
         </div>
         
-        {childFolders.length > 0 && (
+        {childFolders.length > 0 && isExpanded && (
           <div className="ml-6 pl-2 border-l border-gray-100">
             {childFolders.map(childFolder => renderFolder(childFolder))}
           </div>
