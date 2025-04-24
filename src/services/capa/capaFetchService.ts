@@ -1,104 +1,129 @@
+// Update the imports and fix the effectivenessRating typing
+import { CAPAStatus, CAPAEffectivenessRating, CAPA } from '@/types/capa';
+import { supabase } from '@/integrations/supabase/client';
+import { DbCAPAStatus, mapDbStatusToInternal } from './capaStatusMapper';
 
-// Add any imports needed for the capaFetchService
-import { supabase } from "@/integrations/supabase/client";
-import { CAPA, CAPAFetchParams, CAPAStatus, DbCAPAStatus } from "@/types/capa";
-import { mapDbStatusToInternal } from "./capaStatusMapper";
-
-export const fetchCAPAs = async (params: CAPAFetchParams) => {
+export const fetchCAPAs = async (
+  page: number = 1,
+  pageSize: number = 10,
+  sortBy: string = 'created_at',
+  sortOrder: 'asc' | 'desc' = 'desc',
+  searchTerm: string = '',
+  statusFilter: CAPAStatus | '' = '',
+  priorityFilter: string = '',
+  departmentFilter: string = ''
+): Promise<{ data: CAPA[]; total: number; }> => {
   try {
-    let query = supabase.from('capa_actions').select('*');
+    let query = supabase
+      .from('capas')
+      .select('*', { count: 'exact' });
     
-    // Apply filters
-    if (params.status && params.status !== 'All') {
-      // Cast the status to any to bypass TypeScript's type checking
-      // We know the database accepts these statuses
-      query = query.eq('status', params.status as any);
+    if (searchTerm) {
+      query = query.ilike('title', `%${searchTerm}%`);
     }
     
-    // Continue with other filters
-    if (params.priority && params.priority !== 'All') {
-      query = query.eq('priority', params.priority);
+    if (statusFilter) {
+      query = query.eq('status', statusFilter);
+    }
+
+    if (priorityFilter) {
+      query = query.eq('priority', priorityFilter);
+    }
+
+    if (departmentFilter) {
+      query = query.eq('department', departmentFilter);
     }
     
-    if (params.source && params.source !== 'All') {
-      query = query.eq('source', params.source);
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+    
+    const startIndex = (page - 1) * pageSize;
+    query = query.range(startIndex, startIndex + pageSize - 1);
+    
+    const { data, error, count } = await query;
+    
+    if (error) {
+      throw error;
     }
     
-    // Date filters
-    if (params.from) {
-      query = query.gte('created_at', params.from);
-    }
+    const transformedData = data ? data.map(transformDbCapaToClientCapa) : [];
     
-    if (params.to) {
-      query = query.lte('created_at', params.to);
-    }
-    
-    // Sorting
-    if (params.sortBy) {
-      const direction = params.sortDirection || 'desc';
-      query = query.order(params.sortBy, { ascending: direction === 'asc' });
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-    
-    // Pagination
-    if (params.limit) {
-      query = query.limit(params.limit);
-    }
-    
-    if (params.offset) {
-      query = query.range(params.offset, params.offset + (params.limit || 20) - 1);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Convert database records to CAPA objects
-    const capas: CAPA[] = data.map(item => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      status: mapDbStatusToInternal(item.status),
-      priority: item.priority,
-      createdAt: item.created_at,
-      dueDate: item.due_date,
-      completionDate: item.completion_date,
-      verificationDate: item.verification_date,
-      assignedTo: item.assigned_to,
-      createdBy: item.created_by,
-      source: item.source,
-      rootCause: item.root_cause,
-      correctiveAction: item.corrective_action,
-      preventiveAction: item.preventive_action,
-      department: item.department,
-      verificationMethod: item.verification_method,
-      effectivenessCriteria: item.effectiveness_criteria,
-      effectivenessRating: item.effectiveness_rating,
-      verifiedBy: item.verified_by,
-      isFsma204Compliant: item.fsma204_compliant,
-      sourceId: item.source_id
-    }));
-    
-    return capas;
+    return {
+      data: transformedData,
+      total: count || 0,
+    };
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
     throw error;
   }
 };
 
-export const deleteCAPA = async (id: string) => {
+export const fetchCAPA = async (id: string): Promise<CAPA | null> => {
   try {
-    const { error } = await supabase
-      .from('capa_actions')
-      .delete()
-      .eq('id', id);
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching CAPA:', error);
+      return null;
+    }
     
-    return true;
+    return transformDbCapaToClientCapa(data);
   } catch (error) {
-    console.error('Error deleting CAPA:', error);
-    throw error;
+    console.error('Error fetching CAPA:', error);
+    return null;
   }
+};
+
+// Update the transformDbCapaToClientCapa function to handle effectiveness ratings
+const transformDbCapaToClientCapa = (dbCapa: any): CAPA => {
+  // Map effectiveness rating to ensure it matches the allowed values
+  let effectivenessRating: CAPAEffectivenessRating | null = null;
+  
+  if (dbCapa.effectiveness_rating) {
+    switch(dbCapa.effectiveness_rating) {
+      case 'Effective':
+        effectivenessRating = 'Effective';
+        break;
+      case 'Partially Effective':
+      case 'Partially_Effective':
+        effectivenessRating = 'Partially_Effective';
+        break;
+      case 'Not Effective':
+      case 'Not_Effective':
+        effectivenessRating = 'Not_Effective';
+        break;
+      default:
+        effectivenessRating = null;
+    }
+  }
+
+  return {
+    id: dbCapa.id,
+    title: dbCapa.title,
+    description: dbCapa.description,
+    status: mapDbStatusToInternal(dbCapa.status as DbCAPAStatus),
+    priority: dbCapa.priority,
+    createdAt: dbCapa.created_at,
+    dueDate: dbCapa.due_date,
+    completionDate: dbCapa.completion_date,
+    verificationDate: dbCapa.verification_date,
+    assignedTo: dbCapa.assigned_to,
+    createdBy: dbCapa.created_by,
+    source: dbCapa.source,
+    rootCause: dbCapa.root_cause,
+    correctiveAction: dbCapa.corrective_action,
+    preventiveAction: dbCapa.preventive_action,
+    departmentId: dbCapa.department_id,
+    effectivenessRating: effectivenessRating,
+    effectivenessCriteria: dbCapa.effectiveness_criteria,
+    verificationMethod: dbCapa.verification_method,
+    verifiedBy: dbCapa.verified_by,
+    fsma204Compliant: dbCapa.fsma204_compliant || false,
+    effectivenessVerified: dbCapa.effectiveness_verified || false,
+    sourceId: dbCapa.source_id,
+    department: dbCapa.department
+  };
 };

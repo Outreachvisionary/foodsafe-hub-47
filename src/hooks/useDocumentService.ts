@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
@@ -457,7 +458,7 @@ export const useDocumentService = () => {
       // Add the version field if not present
       const finalVersionData = {
         ...versionData,
-        version: versionData.version || 1, // Default to version 1 if not provided
+        version_number: versionData.version_number || versionData.version || 1, // Use version_number or fallback to version or default to 1
       };
       
       const { data, error } = await supabase
@@ -467,7 +468,8 @@ export const useDocumentService = () => {
           file_name: finalVersionData.file_name,
           file_size: finalVersionData.file_size || 0,
           created_by: finalVersionData.created_by,
-          version: finalVersionData.version,
+          version_number: finalVersionData.version_number,
+          version: finalVersionData.version_number, // For backward compatibility
           version_type: finalVersionData.version_type || 'minor',
           editor_metadata: finalVersionData.editor_metadata
         })
@@ -489,7 +491,7 @@ export const useDocumentService = () => {
       }
       
       // Ensure action is of the correct type
-      const validAction = activity.action as "create" | "update" | "delete" | "approve" | "reject" | "submit" | "view" | "download";
+      const validAction = activity.action as DocumentActionType;
       
       const activityData = {
         document_id: activity.document_id,

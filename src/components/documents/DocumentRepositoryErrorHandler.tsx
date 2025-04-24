@@ -2,7 +2,7 @@
 import React from 'react';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertTriangle, ArchiveRestore, Database } from 'lucide-react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface DocumentRepositoryErrorHandlerProps {
   error: string | null;

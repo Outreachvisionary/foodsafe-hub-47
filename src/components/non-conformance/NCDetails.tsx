@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Check, XCircle } from 'lucide-react';
+import { ArrowLeft, Check, XCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import NCDetailsHeader from './NCDetailsHeader';
@@ -13,6 +13,47 @@ interface NCDetailsProps {
   id: string;
   onClose: () => void;
 }
+
+interface LinkedCAPAsListProps {
+  sourceId: string;
+  sourceType: string;
+  capas: any[];
+  onCreateCAPAClick: () => void;
+}
+
+const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ sourceId, sourceType, capas = [], onCreateCAPAClick }) => {
+  return (
+    <div className="mt-4">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold">Linked CAPAs</h3>
+        <Button onClick={onCreateCAPAClick} variant="outline" size="sm">
+          <Plus className="h-4 w-4 mr-2" /> Create CAPA
+        </Button>
+      </div>
+      {capas.length > 0 ? (
+        <div className="space-y-2">
+          {capas.map((capa) => (
+            <div key={capa.id} className="p-3 border rounded-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">{capa.title}</h4>
+                  <span className="text-sm text-gray-500">ID: {capa.id}</span>
+                </div>
+                <Badge variant={capa.status === 'Open' ? 'outline' : 'default'}>
+                  {capa.status}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center p-4 border border-dashed rounded-md">
+          <p className="text-gray-500">No CAPAs linked yet</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   const [loading, setLoading] = useState(true);
@@ -137,17 +178,16 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
         
         <TabsContent value="capas" className="pt-4">
           <LinkedCAPAsList 
-            sourceId={id} 
+            sourceId={id}
             sourceType="non_conformance"
-            capas={[]} // Provide an empty array as the required property
-            onCreateCAPAClick={handleCreateCAPAClick}
+            capas={[]} // Pass an empty array or fetch linked CAPAs
+            onCreateCAPAClick={() => handleCreateCAPAClick()}
           />
         </TabsContent>
       </Tabs>
       
       {showCreateCapaDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          {/* Placeholder for CreateCAPADialog component */}
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
             <h2 className="text-xl font-semibold mb-4">Create CAPA from Non-Conformance</h2>
             <p className="mb-4">This would open the CAPA creation dialog</p>

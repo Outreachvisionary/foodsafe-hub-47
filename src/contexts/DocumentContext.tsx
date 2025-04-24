@@ -45,7 +45,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      const fetchedDocuments = await documentService.fetchDocuments();
+      // Use the mock data service for now
+      const fetchedDocuments = await documentService.default.fetchDocuments();
       setDocuments(fetchedDocuments);
     } catch (err) {
       setError((err as Error).message);
@@ -58,13 +59,13 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      const document = await documentService.fetchDocument(id);
+      const document = await documentService.default.fetchDocument(id);
       if (!document) {
         setError('Document not found');
         return undefined;
       }
       const adaptedDoc = adaptDocumentToDatabase(document);
-      return documentService.fetchDocument(adaptedDoc.id);
+      return documentService.default.fetchDocument(adaptedDoc.id);
     } catch (err) {
       setError((err as Error).message);
       return undefined;
@@ -78,7 +79,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setError(null);
     try {
       const adaptedDoc = adaptDocumentToDatabase(document);
-      const newDocument = await documentService.createDocument(adaptedDoc);
+      const newDocument = await documentService.default.createDocument(adaptedDoc);
       setDocuments(prevDocuments => [...prevDocuments, newDocument]);
       return newDocument;
     } catch (err) {
@@ -94,7 +95,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setError(null);
     try {
       const adaptedDoc = adaptDocumentToDatabase(document);
-      const updatedDocument = await documentService.updateDocument(adaptedDoc);
+      const updatedDocument = await documentService.default.updateDocument(adaptedDoc);
       setDocuments(prevDocuments =>
         prevDocuments.map(doc => (doc.id === updatedDocument.id ? updatedDocument : doc))
       );
@@ -111,7 +112,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      await documentService.deleteDocument(id);
+      await documentService.default.deleteDocument(id);
       setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
     } catch (err) {
       setError((err as Error).message);
@@ -206,4 +207,4 @@ export const useDocument = () => {
 };
 
 // Add an alias for backward compatibility
-export const useDocuments = useDocument;
+export { useDocument as useDocuments };

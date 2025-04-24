@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Document } from '@/types/document';
+import { Document, DocumentVersion } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Download, Edit, Copy, Save, X } from 'lucide-react';
+import { Download, Edit, X, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentService } from '@/hooks/useDocumentService';
-import RichTextEditor from './TinyMCEEditorWrapper';
-import { DocumentComment } from '@/types/document-comment';
-import DocumentComments from './DocumentComments';
+
+interface EnhancedDocumentVersion extends DocumentVersion {
+  editor_metadata?: {
+    content?: string;
+    [key: string]: any;
+  };
+}
 
 interface DocumentPreviewDialogProps {
   document: Document;
-  open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
 }
 
 const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({ 
   document, 
-  open,
   onOpenChange,
   onClose 
 }) => {
@@ -61,7 +63,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
             // Use fetchDocumentVersions instead of fetchVersions
             const versions = await documentService.fetchDocumentVersions(document.id);
             if (versions && versions.length > 0) {
-              const latestVersion = versions[0];
+              const latestVersion = versions[0] as EnhancedDocumentVersion;
               if (latestVersion.editor_metadata && latestVersion.editor_metadata.content) {
                 setDocumentContent(latestVersion.editor_metadata.content);
               } else {
@@ -97,6 +99,43 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
     loadDocumentPreview();
   }, [document]);
 
+  const handleSaveContent = async () => {
+    try {
+      // Create a new document version with the edited content
+      await documentService.createVersion({
+        document_id: document.id,
+        file_name: document.file_name,
+        file_size: document.file_size,
+        created_by: 'admin',
+        version_number: document.version + 1,
+        editor_metadata: { content: documentContent }
+      } as EnhancedDocumentVersion);
+
+      // Record the activity
+      await documentService.recordActivity({
+        document_id: document.id,
+        action: 'edit',
+        user_id: 'admin',
+        user_name: 'Administrator',
+        user_role: 'Admin',
+        comments: 'Edited document content'
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Document content updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving document content:', error);
+      toast({
+        title: "Save failed",
+        description: "Could not save the document content",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDownload = async () => {
     try {
       const url = await documentService.getDownloadUrl(
@@ -120,42 +159,6 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       toast({
         title: "Download failed",
         description: "Could not download the document",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSaveContent = async () => {
-    try {
-      // Create a new document version with the edited content
-      await documentService.createVersion({
-        document_id: document.id,
-        file_name: document.file_name,
-        file_size: document.file_size,
-        created_by: 'admin',
-        editor_metadata: { content: documentContent }
-      });
-
-      // Record the activity
-      await documentService.recordActivity({
-        document_id: document.id,
-        action: 'edit',
-        user_id: 'admin',
-        user_name: 'Administrator',
-        user_role: 'Admin',
-        comments: 'Edited document content'
-      });
-
-      setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Document content updated successfully",
-      });
-    } catch (error) {
-      console.error('Error saving document content:', error);
-      toast({
-        title: "Save failed",
-        description: "Could not save the document content",
         variant: "destructive",
       });
     }

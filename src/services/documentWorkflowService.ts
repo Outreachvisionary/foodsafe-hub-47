@@ -1,7 +1,28 @@
 
 // Fix the default export
-import { Document, DocumentNotification, DocumentWorkflowStep } from '@/types/document';
+import { Document } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
+
+// Define missing interfaces that were causing errors
+interface DocumentNotification {
+  id: string;
+  type: string;
+  documentId: string;
+  documentTitle?: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+  targetUserIds: string[];
+}
+
+interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description: string;
+  approvers: string[];
+  required_approvals: number;
+  is_final: boolean;
+}
 
 /**
  * Submit a document for approval
