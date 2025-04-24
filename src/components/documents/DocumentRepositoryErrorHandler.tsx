@@ -48,3 +48,5 @@ export const DocumentRepositoryErrorHandler: React.FC<DocumentRepositoryErrorHan
     </div>
   );
 };
+
+export default DocumentRepositoryErrorHandler;

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, FileText } from 'lucide-react';
+import { AlertTriangle, Clock, FileText, CheckCircle2 } from 'lucide-react';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Badge } from '@/components/ui/badge';
 
@@ -49,7 +49,7 @@ const ExpiredDocuments = () => {
           </div>
         ) : (
           <div className="p-6 text-center text-gray-500">
-            <CheckCircle className="mx-auto h-10 w-10 text-green-500 mb-2" />
+            <CheckCircle2 className="mx-auto h-10 w-10 text-green-500 mb-2" />
             <p>No expired documents</p>
           </div>
         )}

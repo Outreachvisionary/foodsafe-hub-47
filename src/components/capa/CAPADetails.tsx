@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, FileText, NotebookPen, CheckSquare, XSquare, AlertTriangle, RefreshCw, Calendar as CalendarIcon, User, Building, Tag, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
-import { mapStatusToInternal } from '@/services/capa/capaStatusMapper';
+import { normalizeStatus } from '@/services/capa/capaStatusMapper';
 
 interface CAPADetailsProps {
   capa: CAPA;
@@ -47,10 +47,10 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   const handleSave = async () => {
     try {
       setLoading(true);
-      const statusAsCAPAStatus = formData.status as CAPAStatus;
+      const normalizedStatus = normalizeStatus(formData.status);
       const updatedFormData = {
         ...formData,
-        status: statusAsCAPAStatus
+        status: normalizedStatus
       };
       
       const result = await updateCAPA(capa.id, updatedFormData);
@@ -78,7 +78,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
       
       const statusUpdateData = {
         ...capa,
-        status: newStatus
+        status: normalizeStatus(newStatus)
       };
       
       if (newStatus === 'Closed') {
@@ -225,7 +225,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
           
           <div className="flex flex-wrap gap-2">
             <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(capa.status)}`}>
-              {mapStatusToInternal(capa.status)}
+              {capa.status}
             </div>
             <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(capa.priority)}`}>
               {capa.priority.charAt(0).toUpperCase() + capa.priority.slice(1)}

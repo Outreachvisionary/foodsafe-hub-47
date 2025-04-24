@@ -8,7 +8,7 @@ const adaptDocumentToDatabase = (doc: any) => {
   // Handle category conversion from string to DocumentCategory
   return {
     ...doc,
-    category: doc.category as any // Force conversion
+    category: doc.category as DocumentCategory // Force conversion
   };
 };
 
@@ -45,8 +45,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      // Replace this with an actual implementation when documentService.fetchDocuments is available
-      const fetchedDocuments = await documentService.fetchDocuments?.() || [];
+      const fetchedDocuments = await documentService.fetchDocuments();
       setDocuments(fetchedDocuments);
     } catch (err) {
       setError((err as Error).message);
@@ -59,14 +58,13 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      // Replace this with an actual implementation when documentService.fetchDocument is available
-      const document = await documentService.fetchDocument?.(id);
+      const document = await documentService.fetchDocument(id);
       if (!document) {
         setError('Document not found');
         return undefined;
       }
       const adaptedDoc = adaptDocumentToDatabase(document);
-      return documentService.fetchDocument?.(adaptedDoc.id);
+      return documentService.fetchDocument(adaptedDoc.id);
     } catch (err) {
       setError((err as Error).message);
       return undefined;
@@ -80,8 +78,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setError(null);
     try {
       const adaptedDoc = adaptDocumentToDatabase(document);
-      // Replace this with an actual implementation when documentService.createDocument is available
-      const newDocument = await documentService.createDocument?.(adaptedDoc as any) || document;
+      const newDocument = await documentService.createDocument(adaptedDoc);
       setDocuments(prevDocuments => [...prevDocuments, newDocument]);
       return newDocument;
     } catch (err) {
@@ -97,8 +94,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setError(null);
     try {
       const adaptedDoc = adaptDocumentToDatabase(document);
-      // Replace this with an actual implementation when documentService.updateDocument is available
-      const updatedDocument = await documentService.updateDocument?.(adaptedDoc as any) || document;
+      const updatedDocument = await documentService.updateDocument(adaptedDoc);
       setDocuments(prevDocuments =>
         prevDocuments.map(doc => (doc.id === updatedDocument.id ? updatedDocument : doc))
       );
@@ -115,8 +111,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setLoading(true);
     setError(null);
     try {
-      // Replace this with an actual implementation when documentService.deleteDocument is available
-      await documentService.deleteDocument?.(id);
+      await documentService.deleteDocument(id);
       setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
     } catch (err) {
       setError((err as Error).message);

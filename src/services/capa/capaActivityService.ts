@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { CAPAStatus, DbCAPAStatus } from "@/types/capa";
+import { normalizeStatus, mapStatusToDb } from "./capaStatusMapper";
 
 export const recordCAPAActivity = async (
   capaId: string,
@@ -18,12 +19,12 @@ export const recordCAPAActivity = async (
     
     if (oldStatus) {
       // Convert to proper database enum value
-      dbOldStatus = oldStatus as DbCAPAStatus;
+      dbOldStatus = mapStatusToDb(normalizeStatus(oldStatus));
     }
     
     if (newStatus) {
       // Convert to proper database enum value
-      dbNewStatus = newStatus as DbCAPAStatus;
+      dbNewStatus = mapStatusToDb(normalizeStatus(newStatus));
     }
     
     const activityData = {
@@ -37,8 +38,8 @@ export const recordCAPAActivity = async (
       metadata: metadata || {}
     };
     
-    // Insert the activity record - using as any to bypass the type check
-    // We know that the database accepts these values even if TypeScript doesn't recognize them
+    // Cast the data to any to bypass TypeScript type checking
+    // This is because we know the data structure is correct even if TS doesn't recognize it
     const { data, error } = await supabase
       .from('capa_activities')
       .insert(activityData as any)

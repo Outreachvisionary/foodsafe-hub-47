@@ -1,95 +1,78 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
 import { CAPA } from '@/types/capa';
-import { CAPAStatusBadge } from './CAPAStatusBadge';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Check, Clock } from 'lucide-react';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { Link } from 'react-router-dom';
 
 interface RecentCapaListProps {
   capas: CAPA[];
-  maxItems?: number;
   showViewAll?: boolean;
 }
 
-const RecentCapaList: React.FC<RecentCapaListProps> = ({ 
-  capas, 
-  maxItems = 5, 
-  showViewAll = true
-}) => {
-  const navigate = useNavigate();
-  
-  // Take only the first maxItems
-  const displayCapas = capas.slice(0, maxItems);
-  
-  const viewCapa = (id: string) => {
-    navigate(`/capa/${id}`);
-  };
-  
-  const viewAllCapas = () => {
-    navigate('/capa');
-  };
-  
-  if (displayCapas.length === 0) {
+const RecentCapaList: React.FC<RecentCapaListProps> = ({ capas, showViewAll = false }) => {
+  if (!capas || capas.length === 0) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Recent CAPAs</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-6 text-gray-500">
-          No recent CAPAs found
-        </CardContent>
-      </Card>
+      <div className="p-6 text-center bg-gray-50 rounded-md border">
+        <p className="text-gray-500">No recent CAPAs to display</p>
+      </div>
     );
   }
-  
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, { 
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    if (isStatusEqual(status, 'Open')) return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (isStatusEqual(status, 'In Progress')) return 'bg-amber-100 text-amber-800 border-amber-200';
+    if (isStatusEqual(status, 'Closed') || isStatusEqual(status, 'Verified')) return 'bg-green-100 text-green-800 border-green-200';
+    if (isStatusEqual(status, 'Overdue')) return 'bg-red-100 text-red-800 border-red-200';
+    return 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Recent CAPAs</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {displayCapas.map((capa) => (
-            <div 
-              key={capa.id} 
-              className="p-4 hover:bg-gray-50 cursor-pointer" 
-              onClick={() => viewCapa(capa.id)}
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-sm">{capa.title}</h3>
-                    {capa.dueDate && new Date(capa.dueDate) < new Date() && 
-                      !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
-                      <AlertCircle className="h-4 w-4 text-red-500" aria-label="Overdue" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <CAPAStatusBadge status={capa.status} showIcon={false} />
-                    <span className="text-xs text-gray-500">
-                      {format(new Date(capa.createdAt), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+    <div className="divide-y">
+      {capas.map(capa => (
+        <div key={capa.id} className="p-3 hover:bg-gray-50">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-medium text-sm">{capa.title}</h4>
+              <div className="flex items-center text-xs text-gray-500 mt-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Created {formatDate(capa.createdAt)}
+                {capa.dueDate && <span className="ml-2">• Due {formatDate(capa.dueDate)}</span>}
               </div>
             </div>
-          ))}
-        </div>
-        
-        {showViewAll && capas.length > maxItems && (
-          <div className="p-3 border-t text-center">
-            <Button variant="ghost" size="sm" onClick={viewAllCapas}>
-              View All CAPAs
-            </Button>
+            <Badge 
+              variant="outline" 
+              className={`${getStatusColor(capa.status)}`}
+            >
+              {capa.status}
+            </Badge>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      ))}
+
+      {showViewAll && (
+        <div className="p-3">
+          <Link to="/capa">
+            <Button variant="ghost" size="sm" className="w-full justify-between">
+              View all CAPAs
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      )}
+    </div>
   );
 };
 

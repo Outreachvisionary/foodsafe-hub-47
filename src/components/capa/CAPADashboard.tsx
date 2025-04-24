@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -5,6 +6,7 @@ import { getCAPAs } from '@/services/capaService';
 import { CAPA, CAPAStats, CAPASource } from '@/types/capa';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { AlertCircle } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -17,6 +19,7 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
+import RecentCapaList from './RecentCapaList';
 
 interface CAPADashboardProps {
   filters: {
@@ -48,7 +51,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
     const fetchCapas = async () => {
       try {
         setLoading(true);
-        const fetchedCapas = await getCAPAs({ status: 'All' });
+        const fetchedCapas = await getCAPAs();
         setCapas(fetchedCapas);
 
         // Calculate stats
@@ -179,9 +182,9 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) =
             </span>
           </div>
           {stats.effectivenessRate < 70 && (
-            <Alert className="mt-2 p-2" variant="warning">
+            <Alert className="mt-2 p-2">
               <AlertTitle className="text-xs flex items-center">
-                <InfoIcon className="h-3 w-3 mr-1" />
+                <AlertCircle className="h-3 w-3 mr-1" />
                 Action needed
               </AlertTitle>
               <AlertDescription className="text-xs">
