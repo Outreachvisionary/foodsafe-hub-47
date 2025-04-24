@@ -43,4 +43,7 @@ export const mapInternalStatusToDb = (internalStatus: CAPAStatus): DbCAPAStatus 
   }
 };
 
+// Aliases for more consistent naming
 export const mapStatusToInternal = mapDbStatusToInternal;
+export const mapStatusToDb = mapInternalStatusToDb;
+export const normalizeStatus = mapDbStatusToInternal;

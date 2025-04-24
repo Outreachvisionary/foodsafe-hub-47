@@ -1,151 +1,165 @@
+import { supabase } from '@/integrations/supabase/client';
+import { CAPA } from '@/types/capa';
 
-import { supabase } from "@/integrations/supabase/client";
-import { CAPA, CAPAStatus } from "@/types/capa";
-
-// Get a single CAPA by ID
-export const getCAPAById = async (id: string): Promise<CAPA> => {
+export const getCAPAById = async (id: string): Promise<CAPA | null> => {
   try {
     const { data, error } = await supabase
       .from('capa_actions')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error) throw error;
-    return adaptCAPAFromDb(data);
+
+    if (error) {
+      console.error('Error fetching CAPA by ID:', error);
+      return null;
+    }
+
+    return data as CAPA;
   } catch (error) {
     console.error('Error fetching CAPA by ID:', error);
-    throw error;
+    return null;
   }
 };
 
-// Get all CAPAs with optional filtering
-export const getCAPAs = async (): Promise<CAPA[]> => {
+export const createCAPA = async (capaData: Partial<CAPA>) => {
   try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .select('*');
-    
-    if (error) throw error;
-    return data.map(item => adaptCAPAFromDb(item));
-  } catch (error) {
-    console.error('Error fetching CAPAs:', error);
-    throw error;
-  }
-};
+    const dbCAPAData = {
+      title: capaData.title,
+      description: capaData.description,
+      priority: capaData.priority,
+      created_at: capaData.createdAt,
+      due_date: capaData.dueDate,
+      completion_date: capaData.completionDate,
+      verification_date: capaData.verificationDate,
+      assigned_to: capaData.assignedTo,
+      created_by: capaData.createdBy,
+      source: capaData.source,
+      root_cause: capaData.rootCause,
+      corrective_action: capaData.correctiveAction,
+      preventive_action: capaData.preventiveAction,
+      department: capaData.department,
+      effectiveness_rating: capaData.effectivenessRating,
+      effectiveness_criteria: capaData.effectivenessCriteria,
+      verification_method: capaData.verificationMethod,
+      verified_by: capaData.verifiedBy,
+      fsma204_compliant: capaData.fsma204Compliant,
+      effectiveness_verified: capaData.effectivenessVerified,
+      source_id: capaData.sourceId,
+      status: capaData.status
+    };
 
-// Create a new CAPA
-export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
-  try {
-    const dbData = adaptCAPAToDb(capaData);
-    
     const { data, error } = await supabase
       .from('capa_actions')
-      .insert(dbData)
+      .insert([dbCAPAData])
       .select()
       .single();
-    
-    if (error) throw error;
-    return adaptCAPAFromDb(data);
+
+    if (error) {
+      throw new Error(`Could not create CAPA: ${error.message}`);
+    }
+
+    return data;
   } catch (error) {
     console.error('Error creating CAPA:', error);
     throw error;
   }
 };
 
-// Update an existing CAPA
-export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
+export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
   try {
-    const dbData = adaptCAPAToDb(updates);
-    
+    const updateData: { [key: string]: any } = {};
+
+    if (capaData.title !== undefined) {
+      updateData.title = capaData.title;
+    }
+    if (capaData.description !== undefined) {
+      updateData.description = capaData.description;
+    }
+    if (capaData.status !== undefined) {
+      updateData.status = capaData.status;
+    }
+    if (capaData.priority !== undefined) {
+      updateData.priority = capaData.priority;
+    }
+    if (capaData.dueDate !== undefined) {
+      updateData.due_date = capaData.dueDate;
+    }
+    if (capaData.completionDate !== undefined) {
+      updateData.completion_date = capaData.completionDate;
+    }
+    if (capaData.verificationDate !== undefined) {
+      updateData.verification_date = capaData.verificationDate;
+    }
+    if (capaData.assignedTo !== undefined) {
+      updateData.assigned_to = capaData.assignedTo;
+    }
+    if (capaData.source !== undefined) {
+      updateData.source = capaData.source;
+    }
+    if (capaData.rootCause !== undefined) {
+      updateData.root_cause = capaData.rootCause;
+    }
+    if (capaData.correctiveAction !== undefined) {
+      updateData.corrective_action = capaData.correctiveAction;
+    }
+    if (capaData.preventiveAction !== undefined) {
+      updateData.preventive_action = capaData.preventiveAction;
+    }
+    if (capaData.department !== undefined) {
+      updateData.department = capaData.department;
+    }
+    if (capaData.effectivenessRating !== undefined) {
+      updateData.effectiveness_rating = capaData.effectivenessRating;
+    }
+    if (capaData.effectivenessCriteria !== undefined) {
+      updateData.effectiveness_criteria = capaData.effectivenessCriteria;
+    }
+    if (capaData.verificationMethod !== undefined) {
+      updateData.verification_method = capaData.verificationMethod;
+    }
+    if (capaData.verifiedBy !== undefined) {
+      updateData.verified_by = capaData.verifiedBy;
+    }
+    if (capaData.fsma204Compliant !== undefined) {
+      updateData.fsma204_compliant = capaData.fsma204Compliant;
+    }
+    if (capaData.effectivenessVerified !== undefined) {
+      updateData.effectiveness_verified = capaData.effectivenessVerified;
+    }
+    if (capaData.sourceId !== undefined) {
+      updateData.source_id = capaData.sourceId;
+    }
+
     const { data, error } = await supabase
       .from('capa_actions')
-      .update(dbData)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    return adaptCAPAFromDb(data);
+
+    if (error) {
+      throw new Error(`Could not update CAPA: ${error.message}`);
+    }
+
+    return data as CAPA;
   } catch (error) {
     console.error('Error updating CAPA:', error);
     throw error;
   }
 };
 
-// Helper function to adapt database CAPA format to application format
-const adaptCAPAFromDb = (dbData: any): CAPA => {
-  return {
-    id: dbData.id,
-    title: dbData.title,
-    description: dbData.description,
-    status: dbData.status as CAPAStatus,
-    priority: dbData.priority,
-    createdAt: dbData.created_at,
-    dueDate: dbData.due_date,
-    completionDate: dbData.completion_date,
-    verificationDate: dbData.verification_date,
-    assignedTo: dbData.assigned_to,
-    createdBy: dbData.created_by,
-    source: dbData.source,
-    rootCause: dbData.root_cause,
-    correctiveAction: dbData.corrective_action,
-    preventiveAction: dbData.preventive_action,
-    department: dbData.department,
-    verificationMethod: dbData.verification_method,
-    effectivenessCriteria: dbData.effectiveness_criteria,
-    effectivenessRating: dbData.effectiveness_rating,
-    verifiedBy: dbData.verified_by,
-    isFsma204Compliant: dbData.fsma204_compliant,
-    // These would require additional queries to populate
-    relatedDocuments: [],
-    relatedTraining: []
-  };
-};
+export const deleteCAPA = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
 
-// Helper function to adapt application CAPA format to database format
-const adaptCAPAToDb = (capaData: Partial<CAPA>): any => {
-  return {
-    ...(capaData.title && { title: capaData.title }),
-    ...(capaData.description && { description: capaData.description }),
-    ...(capaData.status && { status: capaData.status }),
-    ...(capaData.priority && { priority: capaData.priority }),
-    ...(capaData.dueDate && { due_date: capaData.dueDate }),
-    ...(capaData.completionDate && { completion_date: capaData.completionDate }),
-    ...(capaData.verificationDate && { verification_date: capaData.verificationDate }),
-    ...(capaData.assignedTo && { assigned_to: capaData.assignedTo }),
-    ...(capaData.createdBy && { created_by: capaData.createdBy }),
-    ...(capaData.source && { source: capaData.source }),
-    ...(capaData.rootCause && { root_cause: capaData.rootCause }),
-    ...(capaData.correctiveAction && { corrective_action: capaData.correctiveAction }),
-    ...(capaData.preventiveAction && { preventive_action: capaData.preventiveAction }),
-    ...(capaData.department && { department: capaData.department }),
-    ...(capaData.verificationMethod && { verification_method: capaData.verificationMethod }),
-    ...(capaData.effectivenessCriteria && { effectiveness_criteria: capaData.effectivenessCriteria }),
-    ...(capaData.effectivenessRating && { effectiveness_rating: capaData.effectivenessRating }),
-    ...(capaData.verifiedBy && { verified_by: capaData.verifiedBy }),
-    ...(capaData.isFsma204Compliant !== undefined && { fsma204_compliant: capaData.isFsma204Compliant })
-  };
-};
-
-export const mapStatusToInternal = (status: string) => {
-  // Map external status to internal status format
-  switch(status) {
-    case 'Open': return 'Open';
-    case 'In Progress': return 'In Progress';
-    case 'Closed': return 'Closed';
-    case 'Overdue': return 'Overdue';
-    case 'Verified': 
-    case 'Pending Verification': return 'Pending Verification';
-    default: return 'Open';
+    if (error) {
+      throw new Error(`Could not delete CAPA: ${error.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting CAPA:', error);
+    throw error;
   }
-};
-
-// Export other needed functions
-export default {
-  getCAPAById,
-  mapStatusToInternal,
-  getCAPAs,
-  createCAPA,
-  updateCAPA
 };

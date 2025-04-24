@@ -1,5 +1,5 @@
 
-// If the file doesn't exist, creating it with some basic types to fix errors
+// CAPA types with consistent naming conventions
 
 export type CAPAStatus = 'Open' | 'In_Progress' | 'Closed' | 'Overdue' | 'Pending_Verification' | 'Verified';
 
@@ -8,6 +8,9 @@ export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not
 export type CAPAPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export type CAPASource = 'Audit' | 'Customer_Complaint' | 'Internal_QC' | 'Supplier_Issue' | 'Other';
+
+// Database-style status values (used for API/DB interactions)
+export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
 export interface CAPAEffectivenessMetrics {
   capaId: string;

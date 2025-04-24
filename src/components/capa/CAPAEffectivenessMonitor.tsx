@@ -4,22 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, AlertTriangle, RefreshCw, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { format, differenceInDays } from 'date-fns';
-import { CAPAEffectivenessRating } from '@/types/capa';
-
-export interface CAPAEffectivenessMetrics {
-  capaId: string;
-  rootCauseEliminated: boolean;
-  preventiveMeasuresImplemented: boolean;
-  documentationComplete: boolean;
-  score: number;
-  rating: CAPAEffectivenessRating;
-  notes?: string;
-}
+import { CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;

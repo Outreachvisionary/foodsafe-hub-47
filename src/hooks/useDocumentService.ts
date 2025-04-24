@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
@@ -490,12 +489,10 @@ export const useDocumentService = () => {
         throw new Error('Missing required activity fields');
       }
       
-      // Ensure action is of the correct type
-      const validAction = activity.action as DocumentActionType;
-      
+      // Ensure action is of the correct type - DocumentActionType is imported from @/types/document
       const activityData = {
         document_id: activity.document_id,
-        action: validAction,
+        action: activity.action, // This should be a DocumentActionType
         user_id: activity.user_id,
         user_name: activity.user_name,
         user_role: activity.user_role,

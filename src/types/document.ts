@@ -14,11 +14,13 @@ export type DocumentCategory =
 export type DocumentStatus = 
   | 'Draft'
   | 'Pending Review'
+  | 'Pending Approval'  // Added to match actual usage
   | 'Approved'
   | 'Active'
   | 'Archived'
   | 'Rejected'
-  | 'Expired';
+  | 'Expired'
+  | 'Published';  // Added to match actual usage
 
 export type DocumentPermission = 
   | 'view'

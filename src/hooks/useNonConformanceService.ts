@@ -25,8 +25,7 @@ export const useNonConformanceService = () => {
         updated_at: new Date().toISOString(),
         created_by: 'Quality Inspector',
         assigned_to: 'Quality Manager',
-        capa_id: 'CAPA-2023-001',
-        capaId: 'CAPA-2023-001',
+        capa_id: 'CAPA-2023-001', // Use capa_id consistently
         severity: 'Critical',
         category: 'Contamination',
         source: 'Internal QC',

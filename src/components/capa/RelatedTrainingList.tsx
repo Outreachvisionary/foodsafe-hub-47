@@ -8,7 +8,7 @@ interface RelatedTrainingListProps {
   trainingIds: string[];
 }
 
-const RelatedTrainingList: React.FC<RelatedTrainingListProps> = ({ trainingIds }) => {
+export const RelatedTrainingList: React.FC<RelatedTrainingListProps> = ({ trainingIds }) => {
   if (!trainingIds || trainingIds.length === 0) {
     return (
       <Card>

@@ -8,7 +8,7 @@ interface RelatedDocumentsListProps {
   documentIds: string[];
 }
 
-const RelatedDocumentsList: React.FC<RelatedDocumentsListProps> = ({ documentIds }) => {
+export const RelatedDocumentsList: React.FC<RelatedDocumentsListProps> = ({ documentIds }) => {
   if (!documentIds || documentIds.length === 0) {
     return (
       <Card>

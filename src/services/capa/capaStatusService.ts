@@ -1,5 +1,6 @@
 
 import { CAPAStatus } from '@/types/capa';
+import { mapInternalStatusToDb } from '@/services/capa/capaStatusMapper';
 
 // Simple mapping functions for CAPA status values
 export const mapStatusToInternal = (status: string): CAPAStatus => {

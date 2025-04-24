@@ -1,82 +1,91 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { NonConformance } from '@/types/non-conformance';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, CheckCircle, AlertTriangle, User } from 'lucide-react';
 
 interface NCWorkflowTimelineProps {
-  nonConformance: NonConformance;
+  ncId: string;
 }
 
-const NCWorkflowTimeline: React.FC<NCWorkflowTimelineProps> = ({ nonConformance }) => {
-  const steps = [
-    {
-      name: 'Created',
-      completed: true,
-      date: nonConformance.created_at,
-      by: nonConformance.created_by,
+export const NCWorkflowTimeline: React.FC<NCWorkflowTimelineProps> = ({ ncId }) => {
+  // Sample timeline data - in a real app, this would be fetched
+  const timeline = [
+    { 
+      id: '1', 
+      date: '2023-06-15', 
+      action: 'Created', 
+      user: 'John Doe', 
+      details: 'Non-conformance reported' 
     },
-    {
-      name: 'Under Review',
-      completed: ['Under Review', 'Released', 'Approved', 'Resolved', 'Closed'].includes(nonConformance.status),
-      date: nonConformance.review_date,
-      by: nonConformance.reviewer,
+    { 
+      id: '2', 
+      date: '2023-06-16', 
+      action: 'Status Change', 
+      user: 'Jane Smith', 
+      details: 'Status changed from "On Hold" to "Under Review"' 
     },
-    {
-      name: 'Disposition Decision',
-      completed: ['Released', 'Disposed', 'Approved', 'Rejected', 'Resolved', 'Closed'].includes(nonConformance.status),
-      date: nonConformance.updated_at,
-      by: nonConformance.assigned_to,
-    },
-    {
-      name: 'Resolved',
-      completed: ['Resolved', 'Closed'].includes(nonConformance.status),
-      date: nonConformance.resolution_date,
-      by: nonConformance.assigned_to,
-    },
-    {
-      name: 'Closed',
-      completed: ['Closed'].includes(nonConformance.status),
-      date: nonConformance.resolution_date,
-      by: nonConformance.assigned_to,
+    { 
+      id: '3', 
+      date: '2023-06-20', 
+      action: 'CAPA Created', 
+      user: 'Mike Johnson', 
+      details: 'CAPA-2023-001 created to address root cause' 
     },
   ];
 
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'Created':
+        return <Calendar className="h-4 w-4 text-blue-500" />;
+      case 'Status Change':
+        return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'CAPA Created':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
   return (
-    <div className="space-y-2">
-      {steps.map((step, index) => (
-        <div
-          key={index}
-          className={`flex items-start space-x-3 ${
-            step.completed ? 'text-gray-900' : 'text-gray-400'
-          }`}
-        >
-          <div
-            className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
-              step.completed
-                ? 'bg-green-100 text-green-600'
-                : 'bg-gray-100 text-gray-400'
-            }`}
-          >
-            {step.completed ? (
-              <CheckCircle className="h-3 w-3" />
-            ) : (
-              <Clock className="h-3 w-3" />
-            )}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">{step.name}</p>
-            {step.completed && step.date && (
-              <p className="text-xs text-gray-500 mt-0.5">
-                {format(new Date(step.date), 'MMM d, yyyy')}
-                {step.by && ` by ${step.by}`}
-              </p>
-            )}
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Timeline</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="relative pl-6 space-y-6">
+          {/* Timeline line */}
+          <div className="absolute left-0 top-0 h-full w-px bg-gray-200"></div>
+
+          {timeline.map((item) => (
+            <div key={item.id} className="relative">
+              {/* Timeline dot */}
+              <div className="absolute -left-6 mt-1.5 flex items-center justify-center w-4 h-4 rounded-full border border-white bg-white">
+                {getActionIcon(item.action)}
+              </div>
+
+              <div className="mb-1">
+                <div className="flex items-center">
+                  <Badge variant="outline" className="text-xs font-normal mr-2">
+                    {item.action}
+                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    {new Date(item.date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm">{item.details}</p>
+
+              <div className="flex items-center mt-1 text-xs text-gray-500">
+                <User className="h-3 w-3 mr-1" />
+                {item.user}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

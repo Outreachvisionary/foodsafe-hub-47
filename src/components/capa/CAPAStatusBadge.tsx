@@ -99,3 +99,5 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({
     </div>
   );
 };
+
+export default CAPAStatusBadge;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,72 +11,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getCAPAById } from '@/services/capaService';
 import { mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
-import RelatedDocumentsList from './RelatedDocumentsList';
-import RelatedTrainingList from './RelatedTrainingList';
-import CAPAStatusBadge from './CAPAStatusBadge';
-import CAPATimeline from './CAPATimeline';
-import CAPAEffectivenessForm from './CAPAEffectivenessForm';
+import { RelatedDocumentsList } from './RelatedDocumentsList';
+import { RelatedTrainingList } from './RelatedTrainingList';
+import { CAPAStatusBadge } from './CAPAStatusBadge';
+import { CAPATimeline } from './CAPATimeline';
+import { CAPAEffectivenessForm } from './CAPAEffectivenessForm';
 
 interface CAPADetailsProps {
-  // You can define props here if needed
+  capa: CAPA;
+  onClose: () => void;
+  onUpdate: (updatedCAPA: CAPA) => void;
 }
 
-const CAPADetails = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) => {
   const { toast } = useToast();
 
-  const [capa, setCapa] = useState<CAPA | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadCAPADetails();
-  }, [id]);
-
-  const loadCAPADetails = async () => {
-    try {
-      setIsLoading(true);
-      
-      const capaData = await getCAPAById(id as string);
-      if (capaData) {
-        // Ensure status is properly mapped to a CAPAStatus type
-        const formattedData: CAPA = {
-          ...capaData,
-          status: mapDbStatusToInternal(capaData.status as any)
-        };
-        setCapa(formattedData);
-      } else {
-        setError("CAPA not found");
-      }
-    } catch (err) {
-      console.error('Error loading CAPA details:', err);
-      setError("Failed to load CAPA details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleEdit = () => {
-    navigate(`/capa/${id}/edit`);
+    // Implementation
   };
 
   const handleDelete = async () => {
-    // Implement delete functionality here
-    console.log('Delete CAPA:', id);
+    // Implementation
+    console.log('Delete CAPA:', capa.id);
     toast({
       title: "CAPA Deleted",
       description: "The CAPA has been successfully deleted.",
     });
   };
-
-  if (isLoading) {
-    return <p>Loading CAPA details...</p>;
-  }
-
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
 
   if (!capa) {
     return <p>CAPA not found.</p>;
@@ -193,9 +155,9 @@ const CAPADetails = () => {
         </div>
       </div>
 
-      <CAPATimeline capaId={id} />
+      <CAPATimeline capaId={capa.id} />
 
-      <CAPAEffectivenessForm capaId={id} />
+      <CAPAEffectivenessForm capaId={capa.id} />
     </div>
   );
 };

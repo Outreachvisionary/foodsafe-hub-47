@@ -1,113 +1,64 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Clock, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
-
-interface CAPAActivity {
-  id: string;
-  action_type: string;
-  action_description: string;
-  performed_by: string;
-  performed_at: string;
-  old_status?: string;
-  new_status?: string;
-}
+import { Clock, CheckCircle, AlertTriangle, Calendar, ArrowRight } from 'lucide-react';
 
 interface CAPATimelineProps {
-  capaId?: string;
+  capaId: string;
 }
 
-const CAPATimeline: React.FC<CAPATimelineProps> = ({ capaId }) => {
-  const [activities, setActivities] = useState<CAPAActivity[]>([]);
-  const [loading, setLoading] = useState(true);
+export const CAPATimeline: React.FC<CAPATimelineProps> = ({ capaId }) => {
+  // Sample timeline data - in a real app, this would be fetched based on the capaId
+  const timelineEvents = [
+    { id: 1, date: '2023-01-15', title: 'CAPA Created', description: 'CAPA was created based on audit finding', type: 'creation' },
+    { id: 2, date: '2023-01-20', title: 'Root Cause Analysis Completed', description: 'Root cause identified as equipment calibration issue', type: 'update' },
+    { id: 3, date: '2023-02-01', title: 'Actions Implemented', description: 'New equipment calibration schedule implemented', type: 'action' },
+    { id: 4, date: '2023-02-15', title: 'Status Updated', description: 'Status changed from In Progress to Pending Verification', type: 'status' },
+  ];
 
-  useEffect(() => {
-    // Mock data for now
-    const mockActivities: CAPAActivity[] = [
-      {
-        id: '1',
-        action_type: 'create',
-        action_description: 'CAPA created',
-        performed_by: 'System',
-        performed_at: new Date().toISOString(),
-        old_status: '',
-        new_status: 'Open'
-      },
-      {
-        id: '2',
-        action_type: 'update',
-        action_description: 'Root cause identified',
-        performed_by: 'Quality Manager',
-        performed_at: new Date(Date.now() - 86400000).toISOString(),
-        old_status: 'Open',
-        new_status: 'In_Progress'
-      }
-    ];
-    
-    setActivities(mockActivities);
-    setLoading(false);
-  }, [capaId]);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Activity Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center py-4">Loading activity timeline...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (activities.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Activity Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center py-4">No activities recorded yet.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'creation':
+        return <Calendar className="h-5 w-5 text-blue-500" />;
+      case 'update':
+        return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'action':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'status':
+        return <ArrowRight className="h-5 w-5 text-purple-500" />;
+      default:
+        return <AlertTriangle className="h-5 w-5 text-gray-500" />;
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Activity Timeline</CardTitle>
+        <CardTitle className="text-lg">CAPA Timeline</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative border-l-2 border-gray-200 ml-4 space-y-6 py-2">
-          {activities.map((activity) => (
-            <div key={activity.id} className="relative pl-8 pb-4">
-              <div className="absolute -left-3 h-6 w-6 rounded-full bg-white border-2 border-primary flex items-center justify-center">
-                {activity.action_type === 'create' && <AlertCircle className="h-3 w-3 text-primary" />}
-                {activity.action_type === 'update' && <Clock className="h-3 w-3 text-amber-500" />}
-                {activity.action_type === 'complete' && <CheckCircle className="h-3 w-3 text-green-500" />}
-              </div>
-              
-              <div className="flex flex-col">
-                <h4 className="text-sm font-medium">{activity.action_description}</h4>
-                <div className="flex items-center text-xs text-gray-500 mt-1">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {format(new Date(activity.performed_at), 'PPp')}
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+          <ul className="space-y-6 relative">
+            {timelineEvents.map((event) => (
+              <li key={event.id} className="ml-8">
+                {/* Event icon */}
+                <div className="absolute left-0 p-1 bg-white rounded-full border border-gray-200">
+                  {getEventIcon(event.type)}
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">By {activity.performed_by}</p>
                 
-                {activity.old_status && activity.new_status && (
-                  <p className="text-xs mt-1">
-                    Status changed from <span className="font-medium">{activity.old_status.replace('_', ' ')}</span> to{' '}
-                    <span className="font-medium">{activity.new_status.replace('_', ' ')}</span>
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {new Date(event.date).toLocaleDateString()}
                   </p>
-                )}
-              </div>
-            </div>
-          ))}
+                  <h4 className="text-base font-medium">{event.title}</h4>
+                  <p className="text-sm text-gray-600">{event.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </CardContent>
     </Card>

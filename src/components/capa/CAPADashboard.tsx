@@ -1,238 +1,168 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { getCAPAs } from '@/services/capaService';
-import { CAPA, CAPAStats, CAPASource } from '@/types/capa';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { isStatusEqual } from '@/services/capa/capaStatusService';
-import { AlertCircle } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend
-} from 'recharts';
-import RecentCapaList from './RecentCapaList';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Chart } from '@/components/charts/Chart';
+import { CAPAStatusBadge } from './CAPAStatusBadge';
+import { CAPAStatus, CAPAStats } from '@/types/capa';
 
 interface CAPADashboardProps {
-  filters: {
-    status: string;
-    priority: string;
-    source: string;
-    dueDate: string;
-  };
-  searchQuery: string;
+  stats: CAPAStats;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
-  const [capas, setCapas] = useState<CAPA[]>([]);
-  const [stats, setStats] = useState<CAPAStats>({
-    total: 0,
-    openCount: 0,
-    closedCount: 0,
-    overdueCount: 0,
-    pendingVerificationCount: 0,
-    effectivenessRate: 0,
-    byPriority: {},
-    bySource: {},
-    byDepartment: {}
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
+  const {
+    total,
+    openCount,
+    closedCount,
+    overdueCount,
+    pendingVerificationCount,
+    effectivenessRate,
+    byPriority,
+    bySource,
+    byDepartment
+  } = stats;
 
-  useEffect(() => {
-    const fetchCapas = async () => {
-      try {
-        setLoading(true);
-        const fetchedCapas = await getCAPAs();
-        setCapas(fetchedCapas);
+  const formatPercentage = (value: number, total: number): string => {
+    if (total === 0) return '0%';
+    return `${Math.round((value / total) * 100)}%`;
+  };
 
-        // Calculate stats
-        const totalCount = fetchedCapas.length;
-        const openCount = fetchedCapas.filter(c => isStatusEqual(c.status, 'Open')).length;
-        const closedCount = fetchedCapas.filter(c => isStatusEqual(c.status, 'Closed')).length;
-        const overdueCount = fetchedCapas.filter(c => 
-          (isStatusEqual(c.status, 'Open') || isStatusEqual(c.status, 'In Progress')) && 
-          new Date(c.dueDate) < new Date()
-        ).length;
-        const pendingVerificationCount = fetchedCapas.filter(c => 
-          isStatusEqual(c.status, 'Pending Verification')
-        ).length;
+  const getProgressColor = (status: string): string => {
+    switch (status) {
+      case 'Closed':
+        return 'bg-green-500';
+      case 'Overdue':
+        return 'bg-red-500';
+      case 'Pending_Verification':
+        return 'bg-amber-500';
+      default:
+        return 'bg-blue-500';
+    }
+  };
 
-        // Calculate effectiveness rate (% of closed CAPAs with positive effectiveness)
-        const closedWithEffectiveness = fetchedCapas.filter(c => 
-          isStatusEqual(c.status, 'Verified') && 
-          c.effectivenessRating && 
-          (c.effectivenessRating === 'Effective' || c.effectivenessRating === 'Highly Effective')
-        ).length;
-        
-        const effectivenessRate = closedCount > 0 
-          ? Math.round((closedWithEffectiveness / closedCount) * 100) 
-          : 0;
+  const getEffectivenessColor = (rate: number): string => {
+    if (rate >= 90) return 'text-green-600';
+    if (rate >= 70) return 'text-amber-600';
+    return 'text-red-600';
+  };
 
-        // Group by priority
-        const byPriority: Record<string, number> = {};
-        fetchedCapas.forEach(capa => {
-          const priority = capa.priority || 'unknown';
-          byPriority[priority] = (byPriority[priority] || 0) + 1;
-        });
+  const getEffectivenessRating = (rate: number): string => {
+    if (rate >= 90) return 'Highly Effective';
+    if (rate >= 70) return 'Effective';
+    if (rate >= 40) return 'Partially Effective';
+    return 'Not Effective';
+  };
 
-        // Group by source
-        const bySource: Record<string, number> = {};
-        fetchedCapas.forEach(capa => {
-          const source = capa.source || 'unknown';
-          bySource[source] = (bySource[source] || 0) + 1;
-        });
-        
-        // Group by department
-        const byDepartment: Record<string, number> = {};
-        fetchedCapas.forEach(capa => {
-          const department = capa.department || 'unknown';
-          byDepartment[department] = (byDepartment[department] || 0) + 1;
-        });
+  // For the chart
+  const priorityData = Object.entries(byPriority).map(([key, value]) => ({
+    name: key,
+    value: value
+  }));
 
-        setStats({
-          total: totalCount,
-          openCount,
-          closedCount,
-          overdueCount,
-          pendingVerificationCount,
-          byPriority,
-          bySource,
-          byDepartment,
-          effectivenessRate
-        });
-
-      } catch (err) {
-        console.error('Error fetching CAPA data:', err);
-        setError('Failed to load CAPA data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCapas();
-  }, []);
-
-  if (loading) {
-    return <div className="space-y-4">{/* Loading skeletons */}</div>;
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Error loading CAPA data</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  const recentCapas = [...capas]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const sourceData = Object.entries(bySource).map(([key, value]) => ({
+    name: key.replace('_', ' '),
+    value: value
+  }));
 
   return (
     <div className="space-y-6">
-      {/* Main stats cards */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500">Total CAPAs</p>
+              <p className="text-3xl font-bold">{total}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500">Open</p>
+              <p className="text-3xl font-bold">{openCount}</p>
+              <p className="text-sm text-gray-500">{formatPercentage(openCount, total)} of total</p>
+              <Progress value={(openCount / total) * 100} className="h-1 bg-gray-100" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500">Closed</p>
+              <p className="text-3xl font-bold">{closedCount}</p>
+              <p className="text-sm text-gray-500">{formatPercentage(closedCount, total)} of total</p>
+              <Progress value={(closedCount / total) * 100} className={`h-1 ${getProgressColor('Closed')}`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500">Overdue</p>
+              <p className="text-3xl font-bold">{overdueCount}</p>
+              <p className="text-sm text-gray-500">{formatPercentage(overdueCount, total)} of total</p>
+              <Progress value={(overdueCount / total) * 100} className={`h-1 ${getProgressColor('Overdue')}`} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Effectiveness Rate */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Total CAPAs</CardTitle>
-          <CardDescription>Overall tracking</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">{stats.total}</div>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <div className="flex flex-col">
-              <span className="text-muted-foreground">Open</span>
-              <span className="font-medium">{stats.openCount}</span>
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-medium">Overall Effectiveness</h3>
+              <p className="text-sm text-gray-500">Based on closed CAPAs</p>
             </div>
-            <div className="flex flex-col">
-              <span className="text-muted-foreground">Closed</span>
-              <span className="font-medium">{stats.closedCount}</span>
-            </div>
-            <div className="flex flex-col text-red-500">
-              <span className="text-muted-foreground">Overdue</span>
-              <span className="font-medium">{stats.overdueCount}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-muted-foreground">Pending</span>
-              <span className="font-medium">{stats.pendingVerificationCount}</span>
+            <div className="text-right">
+              <p className={`text-3xl font-bold ${getEffectivenessColor(effectivenessRate)}`}>
+                {effectivenessRate}%
+              </p>
+              <p className="text-sm">{getEffectivenessRating(effectivenessRate)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Effectiveness Rate</CardTitle>
-          <CardDescription>Verified vs. closed actions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">{stats.effectivenessRate}%</div>
-          <div className="mt-2">
-            <span className="text-xs text-muted-foreground">
-              Based on {stats.closedCount} closed CAPAs
-            </span>
-          </div>
-          {stats.effectivenessRate < 70 && (
-            <Alert className="mt-2 p-2">
-              <AlertTitle className="text-xs flex items-center">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Action needed
-              </AlertTitle>
-              <AlertDescription className="text-xs">
-                Low effectiveness rate requires attention
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+      {/* Charts */}
+      <Tabs defaultValue="priority" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="priority">By Priority</TabsTrigger>
+          <TabsTrigger value="source">By Source</TabsTrigger>
+          <TabsTrigger value="department">By Department</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">By Priority</CardTitle>
-          <CardDescription>Distribution of CAPAs</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {Object.keys(stats.byPriority).map((priority) => (
-            <div key={priority} className="flex justify-between text-sm">
-              <span className="capitalize">{priority}</span>
-              <span className="font-medium">{stats.byPriority[priority]}</span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+        <TabsContent value="priority" className="mt-0">
+          <Card>
+            <CardContent className="p-6 h-[300px]">
+              <Chart data={priorityData} type="pie" />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Card className="md:col-span-2">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Recent CAPAs</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <RecentCapaList capas={recentCapas} showViewAll={true} />
-        </CardContent>
-      </Card>
+        <TabsContent value="source" className="mt-0">
+          <Card>
+            <CardContent className="p-6 h-[300px]">
+              <Chart data={sourceData} type="bar" />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">By Source</CardTitle>
-          <CardDescription>Origin of CAPAs</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {Object.keys(stats.bySource).map((source) => (
-            <div key={source} className="flex justify-between text-sm">
-              <span className="capitalize">{source.replace('-', ' ')}</span>
-              <span className="font-medium">{stats.bySource[source]}</span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+        <TabsContent value="department" className="mt-0">
+          <Card>
+            <CardContent className="p-6 h-[300px]">
+              <Chart data={Object.entries(byDepartment).map(([key, value]) => ({ name: key, value }))} type="bar" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
