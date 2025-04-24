@@ -2,6 +2,7 @@
 export type NCStatus = 
   | 'On Hold' 
   | 'Under Review'
+  | 'Under Investigation'  // Added to match usage
   | 'Released'
   | 'Disposed'
   | 'Approved'
@@ -102,6 +103,7 @@ export interface NCFilter {
   search?: string;
 }
 
+// Add the missing NCStats interface
 export interface NCStats {
   total: number;
   byStatus: Record<string, number>;

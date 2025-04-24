@@ -59,10 +59,10 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
     if (document && user) {
       createActivityLog({
         document_id: document.id,
-        action: "update" as DocumentActionType, // Using "update" instead of "edit"
-        userId: user.id,
-        userName: user.email || '', // Using email instead of full_name
-        userRole: userRole?.userRole?.role_name || 'User',
+        action: "edit" as DocumentActionType, // Using "edit" as a valid DocumentActionType now
+        user_id: user.id, // Changed from userId to user_id
+        user_name: user.email || '', // Using email instead of full_name
+        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
         comments: `Started editing document ${document.title}`
       });
       
@@ -76,9 +76,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "download" as DocumentActionType,
-        userId: user.id,
-        userName: user.email || '', // Using email instead of full_name
-        userRole: userRole?.userRole?.role_name || 'User',
+        user_id: user.id, // Changed from userId to user_id
+        user_name: user.email || '', // Using email instead of full_name
+        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
         comments: `Downloaded document ${document.title}`
       });
 
@@ -92,9 +92,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "delete" as DocumentActionType,
-        userId: user.id,
-        userName: user.email || '', // Using email instead of full_name
-        userRole: userRole?.userRole?.role_name || 'User',
+        user_id: user.id, // Changed from userId to user_id
+        user_name: user.email || '', // Using email instead of full_name
+        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
         comments: `Deleted document ${document.title}`
       });
 
@@ -112,9 +112,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "archive" as DocumentActionType,
-        userId: user.id,
-        userName: user.email || '', // Using email instead of full_name
-        userRole: userRole?.userRole?.role_name || 'User',
+        user_id: user.id, // Changed from userId to user_id
+        user_name: user.email || '', // Using email instead of full_name
+        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
         comments: `Archived document ${document.title}`
       });
 

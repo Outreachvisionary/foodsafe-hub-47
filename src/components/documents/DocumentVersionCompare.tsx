@@ -1,97 +1,61 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { DocumentVersion } from '@/types/document';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
+import { Diff } from 'lucide-react';
 
 interface DocumentVersionCompareProps {
-  versions: {
-    previousVersion: DocumentVersion;
-    currentVersion: DocumentVersion;
-  };
+  currentVersion: DocumentVersion;
+  previousVersion?: DocumentVersion;
 }
 
-const DocumentVersionCompare: React.FC<DocumentVersionCompareProps> = ({ versions }) => {
-  const { previousVersion, currentVersion } = versions;
-
-  // Helper function to format date
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'MMM d, yyyy h:mm a');
+const DocumentVersionCompare: React.FC<DocumentVersionCompareProps> = ({
+  currentVersion,
+  previousVersion
+}) => {
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch (e) {
+      return dateString;
+    }
   };
-
-  // Helper function to get version number (handling both version and version_number)
-  const getVersionNumber = (version: DocumentVersion) => {
-    return version.version_number || version.version;
-  };
-
-  // Helper function to get change notes (handling both change_notes and change_summary)
-  const getChangeNotes = (version: DocumentVersion) => {
-    return version.change_summary || version.change_notes || 'No change notes provided';
-  };
-
+  
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-muted">
-        <CardTitle className="text-lg">Version Comparison</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl flex items-center">
+          <Diff className="h-5 w-5 mr-2" />
+          Version Comparison
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid grid-cols-2 divide-x">
-          {/* Previous Version */}
-          <div className="p-4">
-            <div className="mb-4">
-              <h3 className="text-md font-medium flex items-center justify-between">
-                <span>Previous Version</span>
-                <Badge variant="outline" className="bg-muted">
-                  v{getVersionNumber(previousVersion)}
-                </Badge>
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(previousVersion.created_at)}
-              </p>
+      <CardContent>
+        <div className="grid gap-4">
+          <div className="border rounded-md p-4 bg-gray-50">
+            <h3 className="font-medium mb-2">Version {currentVersion.version}</h3>
+            <p className="text-sm">{currentVersion.change_summary || 'No summary available'}</p>
+            <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+              {currentVersion.change_notes || 'No detailed change notes available'}
             </div>
-            
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-1">Change Notes</h4>
-              <p className="text-sm bg-muted p-2 rounded">
-                {getChangeNotes(previousVersion)}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-1">Created By</h4>
-              <p className="text-sm">{previousVersion.created_by}</p>
+            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+              <span>Created by: {currentVersion.created_by}</span>
+              <span>Date: {formatDate(currentVersion.created_at)}</span>
             </div>
           </div>
           
-          {/* Current Version */}
-          <div className="p-4">
-            <div className="mb-4">
-              <h3 className="text-md font-medium flex items-center justify-between">
-                <span>Current Version</span>
-                <Badge variant="outline" className="bg-primary/10 text-primary">
-                  v{getVersionNumber(currentVersion)}
-                </Badge>
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(currentVersion.created_at)}
-              </p>
+          {previousVersion && (
+            <div className="border rounded-md p-4">
+              <h3 className="font-medium mb-2">Version {previousVersion.version}</h3>
+              <p className="text-sm">{previousVersion.change_summary || 'No summary available'}</p>
+              <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                {previousVersion.change_notes || 'No detailed change notes available'}
+              </div>
+              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>Created by: {previousVersion.created_by}</span>
+                <span>Date: {formatDate(previousVersion.created_at)}</span>
+              </div>
             </div>
-            
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-1">Change Notes</h4>
-              <p className="text-sm bg-muted p-2 rounded">
-                {getChangeNotes(currentVersion)}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-1">Created By</h4>
-              <p className="text-sm">{currentVersion.created_by}</p>
-            </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

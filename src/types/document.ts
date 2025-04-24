@@ -13,11 +13,13 @@ export type DocumentActionType =
   | 'checkout'
   | 'checkin'
   | 'restore'
-  | 'archive';
+  | 'archive'
+  | 'edit';  // Added 'edit' to fix DocumentPreviewDialog.tsx error
 
 export type DocumentStatus = 
   | 'Draft'
   | 'Pending Review'
+  | 'Pending_Review'  // Added to fix ReviewQueue.tsx comparison
   | 'Approved'
   | 'Active'
   | 'Archived'
@@ -52,6 +54,8 @@ export interface DocumentVersion {
   check_in_comment?: string;
   version_type: 'major' | 'minor';
   editor_metadata?: Record<string, any>;
+  change_notes?: string;  // Added to fix DocumentVersionCompare.tsx error
+  change_summary?: string;  // Added to fix DocumentVersionCompare.tsx error
 }
 
 export interface DocumentActivity {
@@ -122,4 +126,57 @@ export interface Document {
   last_action?: string;
   workflow_status?: string;
   custom_notification_days?: number[];
+}
+
+// Add the missing interfaces for complaints
+export interface Complaint {
+  id: string;
+  title: string;
+  description: string;
+  category: ComplaintCategory;
+  status: ComplaintStatus;
+  reported_date: string;
+  resolution_date?: string;
+  created_at: string;
+  updated_at: string;
+  capa_id?: string;
+  assigned_to?: string;
+  created_by: string;
+  customer_name?: string;
+  customer_contact?: string;
+  product_involved?: string;
+  lot_number?: string;
+  resolution_details?: string;
+  priority?: string;
+}
+
+export type ComplaintCategory =
+  | 'Product Quality'
+  | 'Foreign Material'
+  | 'Labeling'
+  | 'Customer Service'
+  | 'Shipping'
+  | 'Other';
+
+export type ComplaintStatus =
+  | 'New'
+  | 'Under_Investigation'
+  | 'Resolved'
+  | 'Closed'
+  | 'Reopened';
+
+// Add DocumentWorkflowStep interface
+export interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description: string;
+  required_approvals: number;
+  approvers: string[];
+}
+
+// Add DocumentListProps interface
+export interface DocumentListProps {
+  documents: Document[];
+  showStatus?: boolean;
+  onSelect?: (document: Document) => void;
 }

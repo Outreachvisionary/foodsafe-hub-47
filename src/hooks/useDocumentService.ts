@@ -2,18 +2,32 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
-import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { adaptDocumentToDatabase, mapToDocumentActionType } from '@/utils/documentTypeAdapter';
 import { DocumentActionType } from '@/types/document';
 
 const transformVersionData = (versionData: any): DocumentVersion => {
   return {
     ...versionData,
-    version_type: versionData.version_type || 'minor' // Ensure it's a valid version type
+    version_type: versionData.version_type === 'major' ? 'major' : 'minor' // Ensure it's a valid version type
   };
 };
 
 export const useDocumentService = () => {
   const { toast } = useToast();
+
+  // Add a method to fetch documents that was missing
+  const fetchDocuments = useCallback(async (): Promise<Document[]> => {
+    try {
+      // Mock implementation - in a real app, this would fetch from the database
+      return supabase.from('documents').select('*').then(({ data, error }) => {
+        if (error) throw error;
+        return data as Document[];
+      });
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      throw error;
+    }
+  }, []);
 
   const fetchDocumentVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
     try {
@@ -108,7 +122,7 @@ export const useDocumentService = () => {
 
       await supabase.from('document_activities').insert({
         document_id: documentId,
-        action: 'update',
+        action: mapToDocumentActionType('update'),  // Use our mapper function
         checkout_action: 'Document checked out',
         user_id: userId,
         user_name: userName,
@@ -184,7 +198,7 @@ export const useDocumentService = () => {
 
       await supabase.from('document_activities').insert({
         document_id: documentId,
-        action: 'update',
+        action: mapToDocumentActionType('update'),  // Use our mapper function
         user_id: userId,
         user_name: userName,
         user_role: 'User',
@@ -567,6 +581,7 @@ export const useDocumentService = () => {
   }, []);
 
   return {
+    fetchDocuments,
     fetchDocumentVersions,
     restoreVersion,
     downloadVersion,

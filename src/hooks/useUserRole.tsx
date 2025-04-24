@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-interface UserRole {
+export interface UserRole {
   id: string;
   user_id: string;
   role_name: string;
