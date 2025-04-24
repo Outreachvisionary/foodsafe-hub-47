@@ -8,6 +8,7 @@ import DocumentStatusCard from './DocumentStatusCard';
 import RecentActivitiesCard from './RecentActivitiesCard';
 import TeamPerformanceCard from './TeamPerformanceCard';
 import { ListChecks, AlertCircle, ShieldCheck, CalendarDays } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const DashboardOverview: React.FC = () => {
   // Sample data for upcoming audits
@@ -61,35 +62,86 @@ const DashboardOverview: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Top row cards with staggered animation */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ComplianceOverviewCard 
-          compliancePercentage={87} 
-          changePercentage={2.5} 
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <ComplianceOverviewCard 
+            compliancePercentage={87} 
+            changePercentage={2.5} 
+          />
+        </motion.div>
         
-        <OpenIssuesCard 
-          totalIssues={12} 
-          criticalIssues={2} 
-          majorIssues={4} 
-          minorIssues={6} 
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <OpenIssuesCard 
+            totalIssues={12} 
+            criticalIssues={2} 
+            majorIssues={4} 
+            minorIssues={6} 
+          />
+        </motion.div>
         
-        <UpcomingAuditsCard audits={upcomingAudits} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <UpcomingAuditsCard audits={upcomingAudits} />
+        </motion.div>
       </div>
       
+      {/* Middle row with charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ComplianceTrendChart />
+        <motion.div
+          className="lg:col-span-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <ComplianceTrendChart />
+        </motion.div>
         
-        <DocumentStatusCard documents={documentStatus} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <DocumentStatusCard documents={documentStatus} />
+        </motion.div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in delay-500">
-        <RecentActivitiesCard activities={recentActivities} />
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <RecentActivitiesCard activities={recentActivities} />
+        </motion.div>
         
-        <TeamPerformanceCard teams={teamPerformance} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <TeamPerformanceCard teams={teamPerformance} />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

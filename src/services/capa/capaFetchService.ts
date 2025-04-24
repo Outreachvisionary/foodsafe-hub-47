@@ -1,114 +1,93 @@
 
+/**
+ * CAPA Fetch Service
+ * 
+ * Service for fetching CAPA data from the database
+ */
+
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
-import { DbCAPAStatus, mapDbStatusToInternal } from './capaStatusMapper';
+import { CAPA } from '@/types/capa';
+import { mapStatusFromDb, mapEffectivenessRatingFromDb } from './capaStatusMapper';
 
-// Helper function to handle type conversions from DB format to app format
-const convertDbToAppFormat = (dbCapa: any): CAPA => {
-  // Convert status strings like 'In Progress' to app format 'In_Progress'
-  let status: CAPAStatus;
-  switch (dbCapa.status) {
-    case 'In Progress':
-      status = 'In_Progress';
-      break;
-    case 'Pending Verification':
-      status = 'Pending_Verification';
-      break;
-    default:
-      status = dbCapa.status as CAPAStatus;
+/**
+ * Fetches all CAPAs from the database
+ */
+export const fetchAllCAPAs = async (): Promise<CAPA[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data.map(adaptCAPAFromDb);
+  } catch (error) {
+    console.error('Error fetching CAPAs:', error);
+    throw error;
   }
+};
 
-  // Convert effectiveness rating strings
-  let effectivenessRating: CAPAEffectivenessRating | undefined;
-  if (dbCapa.effectiveness_rating) {
-    switch (dbCapa.effectiveness_rating) {
-      case 'Highly Effective':
-        effectivenessRating = 'Highly_Effective';
-        break;
-      case 'Partially Effective':
-        effectivenessRating = 'Partially_Effective';
-        break;
-      case 'Not Effective':
-        effectivenessRating = 'Not_Effective';
-        break;
-      default:
-        effectivenessRating = dbCapa.effectiveness_rating as CAPAEffectivenessRating;
-    }
+/**
+ * Fetches a single CAPA by ID
+ */
+export const fetchCAPAById = async (id: string): Promise<CAPA> => {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) throw error;
+    if (!data) throw new Error(`CAPA with ID ${id} not found`);
+    
+    return adaptCAPAFromDb(data);
+  } catch (error) {
+    console.error(`Error fetching CAPA with ID ${id}:`, error);
+    throw error;
   }
+};
 
+/**
+ * Adapts a CAPA from the database format to the application format
+ */
+export const adaptCAPAFromDb = (dbCapa: any): CAPA => {
   return {
     id: dbCapa.id,
     title: dbCapa.title,
     description: dbCapa.description,
-    status: status,
+    status: mapStatusFromDb(dbCapa.status),
     priority: dbCapa.priority,
-    createdAt: dbCapa.created_at,
-    dueDate: dbCapa.due_date,
-    completionDate: dbCapa.completion_date,
-    verificationDate: dbCapa.verification_date,
-    assignedTo: dbCapa.assigned_to,
-    createdBy: dbCapa.created_by,
     source: dbCapa.source,
+    sourceReference: dbCapa.source_reference || '',
     rootCause: dbCapa.root_cause,
     correctiveAction: dbCapa.corrective_action,
     preventiveAction: dbCapa.preventive_action,
+    assignedTo: dbCapa.assigned_to,
+    createdBy: dbCapa.created_by,
+    createdAt: dbCapa.created_at,
+    dueDate: dbCapa.due_date,
     department: dbCapa.department,
-    effectivenessRating: effectivenessRating,
+    completionDate: dbCapa.completion_date,
     effectivenessCriteria: dbCapa.effectiveness_criteria,
-    verificationMethod: dbCapa.verification_method,
-    verifiedBy: dbCapa.verified_by,
+    attachments: dbCapa.attachments || [],
+    comments: dbCapa.comments || [],
     fsma204Compliant: dbCapa.fsma204_compliant,
+    location: dbCapa.location,
+    verificationMethod: dbCapa.verification_method,
     effectivenessVerified: dbCapa.effectiveness_verified,
-    sourceId: dbCapa.source_id,
-    sourceReference: dbCapa.source_reference || '',
-    relatedDocuments: [],
-    relatedTraining: []
+    effectivenessRating: dbCapa.effectiveness_rating ? 
+      mapEffectivenessRatingFromDb(dbCapa.effectiveness_rating) : 
+      undefined,
+    verifiedBy: dbCapa.verified_by,
+    verificationDate: dbCapa.verification_date,
+    verificationComments: dbCapa.verification_comments,
   };
 };
 
-// Get all CAPAs
-export const getCAPAs = async (): Promise<CAPA[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .select('*');
-
-    if (error) throw new Error(`Failed to fetch CAPAs: ${error.message}`);
-    return data.map(convertDbToAppFormat);
-  } catch (error) {
-    console.error('Error in getCAPAs:', error);
-    throw error;
-  }
-};
-
-// Get a single CAPA by ID
-export const getCAPAById = async (capaId: string): Promise<CAPA> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .select('*')
-      .eq('id', capaId)
-      .single();
-
-    if (error) throw new Error(`Failed to fetch CAPA: ${error.message}`);
-    return convertDbToAppFormat(data);
-  } catch (error) {
-    console.error('Error in getCAPAById:', error);
-    throw error;
-  }
-};
-
-// Delete a CAPA by ID
-export const deleteCAPA = async (capaId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('capa_actions')
-      .delete()
-      .eq('id', capaId);
-
-    if (error) throw new Error(`Failed to delete CAPA: ${error.message}`);
-  } catch (error) {
-    console.error('Error in deleteCAPA:', error);
-    throw error;
-  }
+export default {
+  fetchAllCAPAs,
+  fetchCAPAById,
+  adaptCAPAFromDb
 };

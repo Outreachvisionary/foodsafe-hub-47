@@ -44,7 +44,8 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked Out",
         description: "You can now edit this document",
-        variant: "success",
+        // Fix: Using valid toast variant
+        variant: "default",
       });
       onUpdate();
     } catch (error: any) {
@@ -66,7 +67,8 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked In",
         description: "Document has been successfully checked in",
-        variant: "success",
+        // Fix: Using valid toast variant
+        variant: "default",
       });
       onUpdate();
     } catch (error: any) {

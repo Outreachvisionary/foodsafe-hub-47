@@ -17,10 +17,18 @@ const Dashboard = () => {
     console.log('Profile listener active:', isListening);
   }, [user, isListening]);
   
+  // Get display name from user profile, safely
+  const displayName = user?.displayName || user?.email?.split('@')[0] || '';
+  
   return (
-    <div className="container mx-auto p-4 space-y-8">
+    <div className="container mx-auto space-y-8">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <motion.header 
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div>
           <h1 className="text-3xl font-display font-bold flex items-center gap-3">
             <LayoutDashboard className="h-8 w-8 text-accent" />
@@ -29,7 +37,7 @@ const Dashboard = () => {
             </span>
           </h1>
           <p className="text-foreground-secondary mt-1">
-            Welcome back{user?.firstName ? `, ${user.firstName}` : ''}. Here's your compliance overview.
+            Welcome back{displayName ? `, ${displayName}` : ''}. Here's your compliance overview.
           </p>
         </div>
         
@@ -43,7 +51,7 @@ const Dashboard = () => {
             <span>Run Compliance Check</span>
           </Button>
         </div>
-      </header>
+      </motion.header>
       
       {/* Welcome Card */}
       <motion.div
@@ -129,7 +137,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ title, value, status, descripti
   };
   
   return (
-    <div className={`p-4 rounded-lg ${bgColor[status]} border border-${status}/20`}>
+    <div className={`p-4 rounded-lg ${bgColor[status]} border border-${status === 'success' ? 'success' : status === 'warning' ? 'warning' : 'destructive'}/20`}>
       <h3 className="text-sm font-medium text-foreground-secondary">{title}</h3>
       <p className={`text-2xl font-bold ${textColor[status]}`}>{value}</p>
       <p className="text-xs text-foreground-muted">{description}</p>

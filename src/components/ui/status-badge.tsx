@@ -2,9 +2,9 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, CheckCircle, Clock, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Info, FileCheck, AlertCircle } from 'lucide-react';
 
-export type StatusType = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type StatusType = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending';
 
 interface StatusBadgeProps {
   status: string;
@@ -35,6 +35,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     danger: "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20",
     info: "bg-info-muted text-info border-info/20 hover:bg-info-muted/80",
     neutral: "bg-secondary text-foreground-secondary border-border hover:bg-secondary/80",
+    pending: "bg-accent-muted text-accent border-accent/20 hover:bg-accent-muted/80",
   };
   
   // Select the appropriate icon based on status type
@@ -106,6 +107,14 @@ function getStatusType(status: string): StatusType {
   ) {
     return 'info';
   }
+
+  if (
+    lowerStatus.includes('pending') ||
+    lowerStatus.includes('waiting') ||
+    lowerStatus.includes('scheduled')
+  ) {
+    return 'pending';
+  }
   
   return 'neutral';
 }
@@ -123,8 +132,10 @@ function getStatusIcon(type: StatusType): React.ElementType {
       return AlertTriangle;
     case 'info':
       return Info;
+    case 'pending':
+      return FileCheck;
     default:
-      return (props: any) => <span {...props}>•</span>;
+      return AlertCircle;
   }
 }
 

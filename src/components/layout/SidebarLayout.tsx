@@ -5,20 +5,20 @@ import AppSidebar from '@/components/layout/AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SidebarLayoutProps {
-  children?: ReactNode; // Make children prop optional
+  children?: ReactNode;
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen w-full bg-background">
       {/* Sidebar with proper navigation */}
       <AppSidebar />
       
-      {/* Main content */}
+      {/* Main content - adjusted to respect sidebar width */}
       <div className="flex-1 overflow-auto">
-        <div className="p-4">
+        <div className="container mx-auto px-4 py-6 max-w-7xl">
           {children ? children : <Outlet />}
         </div>
       </div>

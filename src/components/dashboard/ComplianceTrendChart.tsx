@@ -2,11 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent
-} from '@/components/ui/chart';
-import { 
   BarChart, 
   Bar, 
   XAxis, 
@@ -17,6 +12,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTheme } from '@/components/ui/theme-provider';
 
 // Sample data for compliance trends over the past 6 months
 const complianceData = [
@@ -28,57 +24,30 @@ const complianceData = [
   { month: 'Jun', sqf: 92, iso22000: 89, fssc22000: 91, haccp: 95, brcgs2: 89 },
 ];
 
-// Define chart config for standards
-const chartConfig = {
-  sqf: {
-    label: "SQF",
-    theme: {
-      light: '#4f46e5',  // fsms-indigo
-      dark: '#6366f1'
-    }
-  },
-  iso22000: {
-    label: "ISO 22000",
-    theme: {
-      light: '#0ea5e9',  // fsms-blue
-      dark: '#38bdf8'
-    }
-  },
-  fssc22000: {
-    label: "FSSC 22000",
-    theme: {
-      light: '#10b981',  // green
-      dark: '#34d399'
-    }
-  },
-  haccp: {
-    label: "HACCP",
-    theme: {
-      light: '#f59e0b',  // amber
-      dark: '#fbbf24'
-    }
-  },
-  brcgs2: {
-    label: "BRC GS2",
-    theme: {
-      light: '#6366f1',  // indigo
-      dark: '#818cf8'
-    }
-  },
-};
-
 const ComplianceTrendChart: React.FC = () => {
   const isMobile = useIsMobile();
+  const { theme } = useTheme();
+  
+  // Define chart colors based on theme
+  const colors = {
+    sqf: theme === 'dark' ? '#6366f1' : '#4f46e5',
+    iso22000: theme === 'dark' ? '#38bdf8' : '#0ea5e9',
+    fssc22000: theme === 'dark' ? '#34d399' : '#10b981',
+    haccp: theme === 'dark' ? '#fbbf24' : '#f59e0b',
+    brcgs2: theme === 'dark' ? '#818cf8' : '#6366f1',
+  };
   
   // Custom tooltip content for the Recharts Tooltip
   const CustomTooltipContent = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-2 border rounded shadow-md">
-          <p className="font-medium text-xs mb-1">{`Month: ${label}`}</p>
+        <div className="bg-card p-3 border rounded-md shadow-lg border-border text-card-foreground">
+          <p className="font-medium text-sm mb-1">{`Month: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
-            <p key={`item-${index}`} className="text-xs" style={{ color: entry.color }}>
-              {`${entry.name}: ${entry.value}%`}
+            <p key={`item-${index}`} className="text-xs flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+              <span className="font-medium">{entry.name}:</span>
+              <span>{entry.value}%</span>
             </p>
           ))}
         </div>
@@ -88,17 +57,18 @@ const ComplianceTrendChart: React.FC = () => {
   };
   
   return (
-    <Card className="lg:col-span-2 animate-fade-in delay-300">
-      <CardHeader>
-        <CardTitle>Compliance Trend</CardTitle>
+    <Card className="overflow-hidden border-accent/10">
+      {/* Add subtle gradient background to header */}
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="flex items-center gap-2">
+          <span className="w-2 h-6 bg-primary rounded-full"></span>
+          Compliance Trend
+        </CardTitle>
         <CardDescription>Last 6 months performance across standards</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="w-full h-80">
-          <ChartContainer
-            config={chartConfig}
-            className="w-full aspect-[4/3] h-full"
-          >
+      <CardContent className="pt-6">
+        <div className="w-full h-72">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={complianceData}
               margin={{ 
@@ -113,6 +83,7 @@ const ComplianceTrendChart: React.FC = () => {
                 dataKey="month" 
                 fontSize={12}
                 tickMargin={5}
+                stroke={theme === 'dark' ? '#94a3b8' : '#64748b'}
               />
               <YAxis 
                 domain={[50, 100]} 
@@ -120,55 +91,58 @@ const ComplianceTrendChart: React.FC = () => {
                   value: 'Compliance %', 
                   angle: -90, 
                   position: 'insideLeft',
-                  style: { textAnchor: 'middle' },
+                  style: { textAnchor: 'middle', fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748b' },
                   offset: isMobile ? -5 : 0
                 }} 
                 fontSize={12}
                 tickMargin={5}
+                stroke={theme === 'dark' ? '#94a3b8' : '#64748b'}
               />
               <Tooltip content={<CustomTooltipContent />} />
               <Legend 
                 verticalAlign="bottom" 
                 height={36} 
                 fontSize={12}
+                iconType="circle"
+                iconSize={8}
               />
               <Bar 
                 dataKey="sqf" 
                 name="SQF" 
                 radius={[4, 4, 0, 0]} 
-                fillOpacity={0.9}
-                className="fill-[--color-sqf]" 
+                fillOpacity={0.85}
+                fill={colors.sqf}
               />
               <Bar 
                 dataKey="iso22000" 
                 name="ISO 22000" 
                 radius={[4, 4, 0, 0]} 
-                fillOpacity={0.9}
-                className="fill-[--color-iso22000]" 
+                fillOpacity={0.85}
+                fill={colors.iso22000}
               />
               <Bar 
                 dataKey="fssc22000" 
                 name="FSSC 22000" 
                 radius={[4, 4, 0, 0]} 
-                fillOpacity={0.9}
-                className="fill-[--color-fssc22000]" 
+                fillOpacity={0.85}
+                fill={colors.fssc22000}
               />
               <Bar 
                 dataKey="haccp" 
                 name="HACCP" 
                 radius={[4, 4, 0, 0]} 
-                fillOpacity={0.9}
-                className="fill-[--color-haccp]" 
+                fillOpacity={0.85}
+                fill={colors.haccp}
               />
               <Bar 
                 dataKey="brcgs2" 
                 name="BRC GS2" 
                 radius={[4, 4, 0, 0]} 
-                fillOpacity={0.9}
-                className="fill-[--color-brcgs2]" 
+                fillOpacity={0.85}
+                fill={colors.brcgs2}
               />
             </BarChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>
