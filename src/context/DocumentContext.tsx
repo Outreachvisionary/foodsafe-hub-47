@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, Folder } from '@/types/document';
+import { Document, Folder, DocumentCategory } from '@/types/document';
 
 interface DocumentContextProps {
   documents: Document[];
@@ -88,9 +88,16 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const createDocument = useCallback(async (document: Partial<Document>): Promise<Document> => {
     try {
+      // Ensure we're sending the right type for the category field
+      const dbDocument = {
+        ...document,
+        // Convert category to the correct type if needed
+        category: document.category as DocumentCategory
+      };
+
       const { data, error } = await supabase
         .from('documents')
-        .insert(document)
+        .insert(dbDocument)
         .select()
         .single();
 
@@ -107,9 +114,16 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateDocument = useCallback(async (id: string, document: Partial<Document>): Promise<Document> => {
     try {
+      // Ensure we're sending the right type for the category field
+      const dbDocument = {
+        ...document,
+        // Convert category to the correct type if needed
+        category: document.category as DocumentCategory
+      };
+
       const { data, error } = await supabase
         .from('documents')
-        .update(document)
+        .update(dbDocument)
         .eq('id', id)
         .select()
         .single();
@@ -161,9 +175,16 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const createFolder = useCallback(async (folder: Partial<Folder>): Promise<Folder> => {
     try {
+      // Make sure created_by field is included
+      const folderToCreate = {
+        ...folder,
+        created_by: folder.created_by || 'system', // Default to 'system' if not provided
+        path: folder.path || `/${folder.name}`   // Default path if not provided
+      };
+
       const { data, error } = await supabase
         .from('folders')
-        .insert(folder)
+        .insert(folderToCreate)
         .select()
         .single();
 
@@ -225,17 +246,24 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const uploadDocument = useCallback(async (file: File, document: Partial<Document>): Promise<Document> => {
     try {
-      // Create document entry
+      // Create document entry with properly typed fields
       const { data: docData, error: docError } = await supabase
         .from('documents')
         .insert({
-          ...document,
+          title: document.title,
+          description: document.description,
+          category: document.category as DocumentCategory,
+          status: document.status,
           file_name: file.name,
           file_size: file.size,
           file_type: file.type,
           version: 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          created_by: document.created_by || 'system',
+          folder_id: document.folder_id,
+          tags: document.tags,
+          is_locked: document.is_locked || false
         })
         .select()
         .single();
@@ -258,10 +286,11 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         .from('document_versions')
         .insert({
           document_id: docData.id,
+          version: 1,
           file_name: file.name,
           file_size: file.size,
-          created_by: document.created_by,
-          modified_by: document.created_by,
+          created_by: document.created_by || 'system',
+          modified_by: document.created_by || 'system',
           modified_by_name: 'User', // This should be fetched from user profile
           version_type: 'major'
         })

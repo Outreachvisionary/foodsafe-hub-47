@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -50,12 +51,31 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     setOpen(false);
   };
 
-  const showNewButton = complaint.status === mapStatusToInternal('new');
-  const showInProgressButton = complaint.status === mapStatusToInternal('new') || complaint.status === mapStatusToInternal('reopened');
-  const showResolvedButton = complaint.status === mapStatusToInternal('in-progress');
-  const showReopenButton = complaint.status === mapStatusToInternal('resolved');
-  const showArchiveButton = complaint.status !== mapStatusToInternal('new');
-  const showCloseButton = complaint.status !== mapStatusToInternal('new');
+  // Convert database status values to UI display format
+  const getStatusForDisplay = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case 'new':
+        return 'New';
+      case 'under investigation':
+      case 'under_investigation':
+        return 'Under Investigation';
+      case 'resolved':
+        return 'Resolved';
+      case 'closed':
+        return 'Closed';
+      case 'reopened':
+        return 'Reopened';
+      default:
+        return status;
+    }
+  };
+
+  const showNewButton = complaint.status === 'New';
+  const showInProgressButton = complaint.status === 'New' || complaint.status === 'Reopened';
+  const showResolvedButton = complaint.status === 'Under Investigation';
+  const showReopenButton = complaint.status === 'Resolved';
+  const showArchiveButton = complaint.status !== 'New';
+  const showCloseButton = complaint.status !== 'New';
 
   return (
     <Card className="w-full">
@@ -78,31 +98,31 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
               <h3 className="text-sm font-medium text-gray-500">
                 Date Reported
               </h3>
-              <p>{format(new Date(complaint.dateReported), 'PPP')}</p>
+              <p>{format(new Date(complaint.reported_date), 'PPP')}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
                 Customer Name
               </h3>
-              <p>{complaint.customerName}</p>
+              <p>{complaint.customer_name}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
                 Contact Information
               </h3>
-              <p>{complaint.contactInformation}</p>
+              <p>{complaint.customer_contact}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
                 Product Involved
               </h3>
-              <p>{complaint.productInvolved}</p>
+              <p>{complaint.product_involved}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
                 Lot Number
               </h3>
-              <p>{complaint.lotNumber}</p>
+              <p>{complaint.lot_number}</p>
             </div>
           </div>
 
@@ -110,7 +130,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
             <h3 className="text-sm font-medium text-gray-500">
               Complaint Details
             </h3>
-            <p>{complaint.complaintDetails}</p>
+            <p>{complaint.description}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -122,9 +142,9 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
-                Severity
+                Priority
               </h3>
-              <p>{complaint.severity}</p>
+              <p>{complaint.priority}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">
@@ -133,16 +153,16 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
               <p>
                 <Badge
                   className={
-                    complaint.status === mapStatusToInternal('new')
+                    complaint.status === 'New'
                       ? 'bg-blue-100 text-blue-800'
-                      : complaint.status === mapStatusToInternal('in-progress')
+                      : complaint.status === 'Under Investigation'
                       ? 'bg-yellow-100 text-yellow-800'
-                      : complaint.status === mapStatusToInternal('resolved')
+                      : complaint.status === 'Resolved'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-800'
                   }
                 >
-                  {complaint.status}
+                  {getStatusForDisplay(complaint.status)}
                 </Badge>
               </p>
             </div>
@@ -150,15 +170,15 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
               <h3 className="text-sm font-medium text-gray-500">
                 Assigned To
               </h3>
-              <p>{complaint.assignedTo}</p>
+              <p>{complaint.assigned_to}</p>
             </div>
           </div>
 
           <div>
             <h3 className="text-sm font-medium text-gray-500">
-              Corrective Actions Taken
+              Resolution Details
             </h3>
-            <p>{complaint.correctiveActionsTaken}</p>
+            <p>{complaint.resolution_details || 'No resolution details available'}</p>
           </div>
 
           <div>
@@ -189,7 +209,6 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
                             />
                           </div>
                         </div>
-                        {/* @ts-expect-error */}
                         <Button onClick={handleAddNote}>Add Note</Button>
                       </DialogContent>
                     </Dialog>

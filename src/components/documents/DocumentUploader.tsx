@@ -178,7 +178,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       
       const tagArray = tags.trim() ? tags.split(',').map(tag => tag.trim()) : [];
       
-      // Create document record in the database
+      // Create document record in the database - ensure types match database expectations
       const newDocument = {
         id: documentId,
         title: title.trim(),
@@ -188,7 +188,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         file_size: file.size,
         file_type: file.type,
         category: selectedCategory,
-        status: submitForReview ? 'Pending Approval' : selectedStatus,
+        status: submitForReview ? 'Pending_Approval' : selectedStatus,
         version: 1,
         created_by: user.id,
         created_at: new Date().toISOString(),
@@ -271,7 +271,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       });
       
       if (onUploadComplete && documentData) {
-        onUploadComplete(adaptDatabaseToDocument(documentData));
+        // Pass the document directly without using adaptDatabaseToDocument
+        onUploadComplete(documentData);
       }
       
       if (onSuccess) {

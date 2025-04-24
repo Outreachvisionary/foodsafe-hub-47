@@ -102,5 +102,5 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
   );
 };
 
-// Fix the default export issue
+// Add default export to fix import issues
 export default DocumentVersionHistory;
