@@ -6,21 +6,35 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CAPA, CAPAEffectivenessRating, CAPAEffectivenessMetrics } from '@/types/capa';
+import { CAPAEffectivenessRating } from '@/types/capa';
 import { useToast } from '@/hooks/use-toast';
+
+export interface CAPAEffectivenessMetrics {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
+}
 
 interface CAPAEffectivenessMonitorProps {
   capaId: string;
   isEditable?: boolean;
   onMetricsUpdate?: (metrics: CAPAEffectivenessMetrics) => void;
   existingMetrics?: CAPAEffectivenessMetrics;
+  title?: string;
+  implementationDate?: string;
 }
 
 const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   capaId,
   isEditable = true,
   onMetricsUpdate,
-  existingMetrics
+  existingMetrics,
+  title,
+  implementationDate
 }) => {
   const { toast } = useToast();
   const [rootCauseEliminated, setRootCauseEliminated] = useState(existingMetrics?.rootCauseEliminated || false);
@@ -74,9 +88,17 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Effectiveness Assessment</CardTitle>
+        <CardTitle>
+          {title ? `Effectiveness Assessment: ${title}` : 'Effectiveness Assessment'}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {implementationDate && (
+          <div className="text-sm text-gray-500 mb-4">
+            Implementation date: {implementationDate}
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <Checkbox 

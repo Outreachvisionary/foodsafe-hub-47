@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
-import { mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
+import { mapInternalStatusToDb, mapDbStatusToInternal, DbCAPAStatus } from './capaStatusMapper';
 import { recordCAPAActivity } from './capaActivityService';
 import { ensureRecord } from '@/utils/jsonUtils';
 
@@ -21,7 +21,7 @@ export const updateCAPAStatus = async (
     
     if (fetchError) throw new Error(`Failed to fetch current CAPA: ${fetchError.message}`);
     
-    const currentStatus = currentCAPA.status;
+    const currentStatus = currentCAPA.status as DbCAPAStatus;
     const dbNewStatus = mapInternalStatusToDb(newStatus);
     
     // Prepare additional fields for specific status changes
@@ -46,26 +46,30 @@ export const updateCAPAStatus = async (
       additionalFields.effectiveness_verified = true;
     }
     
+    // Type cast to any to avoid type errors with the db field
+    const updateFields: any = {
+      status: dbNewStatus,
+      ...additionalFields,
+      updated_at: new Date().toISOString()
+    };
+
     // Update the CAPA with new status and any additional fields
     const { data, error } = await supabase
       .from('capa_actions')
-      .update({
-        status: dbNewStatus,
-        ...additionalFields,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateFields)
       .eq('id', capaId)
       .select()
       .single();
     
     if (error) throw new Error(`Failed to update CAPA status: ${error.message}`);
     
+    // Convert current status to app format for activity record
+    const oldAppStatus = mapDbStatusToInternal(currentStatus);
+    
     // Record the activity
     await recordCAPAActivity({
       capa_id: capaId,
-      old_status: currentStatus === 'In Progress' ? 'In_Progress' as CAPAStatus :
-                  currentStatus === 'Pending Verification' ? 'Pending_Verification' as CAPAStatus :
-                  currentStatus as CAPAStatus,
+      old_status: oldAppStatus,
       new_status: newStatus,
       action_type: 'status_change',
       action_description: comments || `Status updated from ${currentStatus} to ${dbNewStatus}`,

@@ -14,7 +14,7 @@ export function mapInternalStatusToDb(status: CAPAStatus): DbCAPAStatus {
     default:
       return status as DbCAPAStatus;
   }
-};
+}
 
 // Map database status to internal application status
 export function mapDbStatusToInternal(dbStatus: DbCAPAStatus): CAPAStatus {
@@ -26,7 +26,7 @@ export function mapDbStatusToInternal(dbStatus: DbCAPAStatus): CAPAStatus {
     default:
       return dbStatus as CAPAStatus;
   }
-};
+}
 
 // Export convenience aliases
 export const internalToDbStatusMap = mapInternalStatusToDb;

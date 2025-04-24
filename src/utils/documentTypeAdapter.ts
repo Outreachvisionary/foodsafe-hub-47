@@ -14,10 +14,7 @@ export const adaptDocumentToDatabase = (document: Document): any => {
   let category = document.category;
   
   // Map checkout status to match the DB schema
-  let checkout_status: string = document.checkout_status;
-  if (document.checkout_status === 'Checked_Out') {
-    checkout_status = 'Checked Out';
-  }
+  let checkout_status: string = document.checkout_status === 'Checked_Out' ? 'Checked Out' : 'Available';
   
   return {
     ...document,

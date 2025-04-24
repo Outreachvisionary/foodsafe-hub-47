@@ -140,7 +140,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Checked Out',
+          checkout_status: mapAppToDbCheckoutStatus('Checked_Out'),
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -223,7 +223,7 @@ export const useDocumentService = () => {
         
       if (docError) throw docError;
       
-      if (docData.checkout_status !== 'Checked Out') {
+      if (docData.checkout_status !== mapAppToDbCheckoutStatus('Checked_Out')) {
         throw new Error('Document is not checked out');
       }
       
@@ -250,7 +250,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Available',
+          checkout_status: mapAppToDbCheckoutStatus('Available'),
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
@@ -578,12 +578,23 @@ export const useDocumentService = () => {
     isBinaryFile: boolean = false
   ): Promise<DocumentVersion> => {
     try {
+      // Get current document version
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .select('version')
+        .eq('id', documentId)
+        .single();
+      
+      if (docError) throw new Error(`Error fetching document: ${docError.message}`);
+      
+      const currentVersion = docData?.version || 0;
+      
       const versionData = {
         document_id: documentId,
         file_name: fileName,
         file_size: fileSize,
         created_by: createdBy,
-        version: 1, // This will be automatically incremented by a trigger
+        version: currentVersion + 1, // Use calculated version instead of default
         editor_metadata: editorMetadata,
         version_type: versionType,
         change_notes: changeNotes,
@@ -594,7 +605,7 @@ export const useDocumentService = () => {
 
       const { data, error } = await supabase
         .from('document_versions')
-        .insert(versionData)
+        .insert([versionData])
         .select()
         .single();
       

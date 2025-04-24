@@ -138,7 +138,7 @@ export interface CAPAHistoryItem {
   comments?: string;
 }
 
-// Add CAPAEffectivenessMetrics interface
+// Export CAPAEffectivenessMetrics interface here
 export interface CAPAEffectivenessMetrics {
   capaId: string;
   rootCauseEliminated: boolean;

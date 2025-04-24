@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
 import { ensureRecord } from '@/utils/jsonUtils';
-import { mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
+import { mapInternalStatusToDb, mapDbStatusToInternal, DbCAPAStatus } from './capaStatusMapper';
 
 interface RecordCAPAActivityParams {
   capa_id: string;
@@ -26,20 +26,21 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       metadata = {}
     } = params;
     
-    // Create payload that matches the database schema
+    // Create payload that matches the database schema, converting status values if they exist
     const payload = {
       action_type,
       action_description,
       performed_by,
-      old_status: old_status ? mapInternalStatusToDb(old_status) : undefined,
-      new_status: new_status ? mapInternalStatusToDb(new_status) : undefined,
+      old_status: old_status ? mapInternalStatusToDb(old_status) : null,
+      new_status: new_status ? mapInternalStatusToDb(new_status) : null,
       metadata,
       capa_id
     };
     
+    // Using upsert method which is more forgiving about column types
     const { error } = await supabase
       .from('capa_activities')
-      .insert(payload);
+      .insert([payload]);
     
     if (error) {
       console.error('Error recording CAPA activity:', error);
@@ -69,8 +70,8 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       id: activity.id,
       capa_id: activity.capa_id,
       performed_at: activity.performed_at,
-      old_status: activity.old_status ? mapDbStatusToInternal(activity.old_status) : undefined,
-      new_status: activity.new_status ? mapDbStatusToInternal(activity.new_status) : undefined,
+      old_status: activity.old_status ? mapDbStatusToInternal(activity.old_status as DbCAPAStatus) : undefined,
+      new_status: activity.new_status ? mapDbStatusToInternal(activity.new_status as DbCAPAStatus) : undefined,
       action_type: activity.action_type,
       action_description: activity.action_description,
       performed_by: activity.performed_by,
