@@ -2,6 +2,8 @@
 // Create or update the document type definitions file
 export type DocumentStatus = 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected' | 'Published' | 'Archived' | string;
 export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Audit Report' | 'HACCP Plan' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment' | 'Other' | string;
+export type CheckoutStatus = 'Available' | 'Checked_Out' | string;
+export type ComplaintStatus = 'New' | 'Under_Investigation' | 'Resolved' | 'Closed' | 'Reopened' | string;
 
 export interface DocumentWorkflowStep {
   id: string;
@@ -46,6 +48,14 @@ export interface Document {
   last_action?: string;
   tags?: string[];
   folder_id?: string;
+  checkout_status?: CheckoutStatus;
+  checkout_user_id?: string;
+  checkout_user_name?: string;
+  checkout_timestamp?: string;
+  workflow_status?: string;
+  approvers?: string[];
+  last_review_date?: string;
+  next_review_date?: string;
 }
 
 export interface DocumentVersion {
@@ -64,12 +74,13 @@ export interface DocumentVersion {
   check_in_comment?: string;
   version_type?: string;
   editor_metadata?: any;
+  change_summary?: string;
 }
 
 export interface DocumentActivity {
   id: string;
   document_id: string;
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download';
+  action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'submit' | 'view' | 'download' | 'edit';
   user_id: string;
   user_name?: string;
   user_role?: string;
@@ -92,6 +103,7 @@ export interface DocumentAccess {
   id: string;
   document_id: string;
   user_id: string;
+  user_role?: string;
   permission_level: string;
   granted_by: string;
   granted_at: string;
@@ -141,4 +153,24 @@ export interface CAPARelatedTraining {
   training_type: string;
   added_at: string;
   added_by: string;
+}
+
+export interface Complaint {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: ComplaintStatus;
+  priority: string;
+  reported_date: string;
+  resolution_date?: string;
+  created_at: string;
+  updated_at: string;
+  assigned_to?: string;
+  created_by: string;
+  customer_name?: string;
+  customer_contact?: string;
+  product_involved?: string;
+  lot_number?: string;
+  resolution_details?: string;
 }

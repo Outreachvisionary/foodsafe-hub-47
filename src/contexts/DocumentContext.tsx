@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { Document, Folder, DocumentNotification, DocumentVersion } from '@/types/document';
 import documentService from '@/services/documentService';
@@ -130,7 +129,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const updateDocument = useCallback(async (document: Document): Promise<Document> => {
     try {
       // Need to cast the document to the right type for the database
-      const dbDocument: any = adaptDocumentToDatabase(document);
+      const dbDocument = adaptDocumentToDatabase(document);
       
       const updatedDoc = await documentService.updateDocument(document.id, dbDocument);
       
@@ -297,16 +296,16 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   }, []);
 
   const fetchVersions = useCallback(async (documentId: string) => {
-    return await documentService.fetchVersions(documentId);
-  }, []);
+    return await documentService.fetchDocumentVersions(documentId);
+  }, [documentService]);
 
   const restoreVersion = useCallback(async (documentId: string, versionId: string) => {
     return await documentService.restoreVersion(documentId, versionId);
-  }, []);
+  }, [documentService]);
 
   const downloadVersion = useCallback(async (versionId: string) => {
     return await documentService.downloadVersion(versionId);
-  }, []);
+  }, [documentService]);
 
   return (
     <DocumentContext.Provider 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Document as DocumentType } from '@/types/document';
 import { Button } from '@/components/ui/button';
@@ -8,12 +7,14 @@ import { CalendarX, Clock, RotateCw } from 'lucide-react';
 import DocumentList from '@/components/documents/DocumentList';
 import { useDocuments } from '@/contexts/DocumentContext';
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns';
+import { toast } from 'react-toastify';
 
 const ExpiredDocuments: React.FC = () => {
   const { documents, isLoading, updateDocument } = useDocuments();
   const [expiredDocs, setExpiredDocs] = useState<DocumentType[]>([]);
   const [expiringDocs, setExpiringDocs] = useState<DocumentType[]>([]);
   const [activeTab, setActiveTab] = useState('expired');
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (!documents) return;
@@ -74,6 +75,40 @@ const ExpiredDocuments: React.FC = () => {
       });
     } catch (error) {
       console.error('Error marking document for renewal:', error);
+    }
+  };
+
+  const handleUpdateReviewDate = async (doc: DocumentType) => {
+    try {
+      setProcessing(true);
+      
+      // Calculate next review date (6 months from now)
+      const nextReview = new Date();
+      nextReview.setMonth(nextReview.getMonth() + 6);
+      
+      const updatedDoc = {
+        ...doc,
+        updated_at: new Date().toISOString(),
+        next_review_date: nextReview.toISOString()
+      };
+      
+      await updateDocument(updatedDoc);
+      
+      toast({
+        title: "Review Date Updated",
+        description: `Next review date for "${doc.title}" has been set to ${format(nextReview, 'PP')}`,
+      });
+      
+      refreshData();
+    } catch (error) {
+      console.error('Error updating review date:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update review date",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessing(false);
     }
   };
 

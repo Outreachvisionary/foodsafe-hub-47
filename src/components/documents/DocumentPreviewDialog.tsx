@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
@@ -32,6 +31,7 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const documentService = useDocumentService();
+  const currentUser = { id: '123', name: 'John Doe' }; // Example user data
 
   useEffect(() => {
     const loadDocumentPreview = async () => {
@@ -155,6 +155,33 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
       toast({
         title: "Save failed",
         description: "Could not save the document content",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkAsEdited = async () => {
+    try {
+      // Record this activity
+      await documentService.recordActivity({
+        document_id: document.id,
+        action: 'update',
+        user_id: currentUser?.id || 'unknown',
+        user_name: currentUser?.name || 'Unknown User',
+        user_role: 'Editor',
+        comments: `Manually marked as edited - ${document.title}`
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Document marked as edited successfully",
+      });
+    } catch (error) {
+      console.error('Error marking document as edited:', error);
+      toast({
+        title: "Mark as edited failed",
+        description: "Could not mark the document as edited",
         variant: "destructive",
       });
     }

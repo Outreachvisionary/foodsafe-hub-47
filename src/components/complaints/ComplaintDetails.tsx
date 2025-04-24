@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Complaint } from '@/types/complaint';
+import { Complaint, ComplaintStatus } from '@/types/document';
 import { Badge } from '@/components/ui/badge';
 import {
   Accordion,
@@ -56,7 +56,6 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     switch (status.toLowerCase()) {
       case 'new':
         return 'New';
-      case 'under investigation':
       case 'under_investigation':
         return 'Under Investigation';
       case 'resolved':
@@ -72,7 +71,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
 
   const showNewButton = complaint.status === 'New';
   const showInProgressButton = complaint.status === 'New' || complaint.status === 'Reopened';
-  const showResolvedButton = complaint.status === 'Under Investigation';
+  const showResolvedButton = complaint.status === 'Under_Investigation';
   const showReopenButton = complaint.status === 'Resolved';
   const showArchiveButton = complaint.status !== 'New';
   const showCloseButton = complaint.status !== 'New';
@@ -155,7 +154,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
                   className={
                     complaint.status === 'New'
                       ? 'bg-blue-100 text-blue-800'
-                      : complaint.status === 'Under Investigation'
+                      : complaint.status === 'Under_Investigation'
                       ? 'bg-yellow-100 text-yellow-800'
                       : complaint.status === 'Resolved'
                       ? 'bg-green-100 text-green-800'
@@ -178,7 +177,7 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
             <h3 className="text-sm font-medium text-gray-500">
               Resolution Details
             </h3>
-            <p>{complaint.description || 'No resolution details available'}</p>
+            <p>{complaint.resolution_details || 'No resolution details available'}</p>
           </div>
 
           <div>
@@ -230,4 +229,3 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     </Card>
   );
 };
-
