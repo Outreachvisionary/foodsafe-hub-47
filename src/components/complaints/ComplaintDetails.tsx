@@ -1,261 +1,213 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { format } from 'date-fns';
 import { Complaint } from '@/types/complaint';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Timeline, TimelineItem } from '@/components/ui/timeline';
-import { Calendar, Clock, FileText, MessageSquare, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CheckCircle, AlertTriangle, ArchiveRestore, Database } from 'lucide-react';
+import { mapStatusToInternal } from '@/services/capa/capaStatusService';
 
 interface ComplaintDetailsProps {
   complaint: Complaint;
-  onStatusChange: (newStatus: string, comment: string) => Promise<void>;
-  onClose: () => void;
 }
 
-const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint, onStatusChange, onClose }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [comment, setComment] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint }) => {
+  const [open, setOpen] = React.useState(false);
+  const [note, setNote] = React.useState('');
 
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      setLoading(true);
-      await onStatusChange(newStatus, comment);
-      setComment('');
-      toast({
-        title: 'Status Updated',
-        description: `Complaint status changed to ${newStatus}`,
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update complaint status',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleAddNote = () => {
+    // Implement add note logic here
+    setOpen(false);
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not specified';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const showNewButton = complaint.status === mapStatusToInternal('new');
+  const showInProgressButton = complaint.status === mapStatusToInternal('new') || complaint.status === mapStatusToInternal('reopened');
+  const showResolvedButton = complaint.status === mapStatusToInternal('in-progress');
+  const showReopenButton = complaint.status === mapStatusToInternal('resolved');
+  const showArchiveButton = complaint.status !== mapStatusToInternal('new');
+  const showCloseButton = complaint.status !== mapStatusToInternal('new');
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">{complaint.title}</h2>
-          <div className="flex gap-2 mt-1">
-            <Badge variant="outline">{complaint.category}</Badge>
-            <Badge>{complaint.status}</Badge>
-            {complaint.priority && (
-              <Badge variant="outline" className="capitalize">{complaint.priority}</Badge>
-            )}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Complaint Details</CardTitle>
+        <CardDescription>
+          Information about the selected complaint
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Complaint ID
+              </h3>
+              <p>{complaint.id}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Date Reported
+              </h3>
+              <p>{format(new Date(complaint.dateReported), 'PPP')}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Customer Name
+              </h3>
+              <p>{complaint.customerName}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Contact Information
+              </h3>
+              <p>{complaint.contactInformation}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Product Involved
+              </h3>
+              <p>{complaint.productInvolved}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Lot Number
+              </h3>
+              <p>{complaint.lotNumber}</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">
+              Complaint Details
+            </h3>
+            <p>{complaint.complaintDetails}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Category
+              </h3>
+              <p>{complaint.category}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Severity
+              </h3>
+              <p>{complaint.severity}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Status
+              </h3>
+              <p>
+                <Badge
+                  className={
+                    complaint.status === mapStatusToInternal('new')
+                      ? 'bg-blue-100 text-blue-800'
+                      : complaint.status === mapStatusToInternal('in-progress')
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : complaint.status === mapStatusToInternal('resolved')
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }
+                >
+                  {complaint.status}
+                </Badge>
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">
+                Assigned To
+              </h3>
+              <p>{complaint.assignedTo}</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">
+              Corrective Actions Taken
+            </h3>
+            <p>{complaint.correctiveActionsTaken}</p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Notes</h3>
+            <ScrollArea className="h-40">
+              <Accordion type="single" collapsible>
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>Add Note</AccordionTrigger>
+                  <AccordionContent>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Add Note</DialogTitle>
+                          <DialogDescription>
+                            Add a note to the complaint.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="note" className="text-right">
+                              Note
+                            </Label>
+                            <Textarea
+                              id="note"
+                              value={note}
+                              onChange={(e) => setNote(e.target.value)}
+                              className="col-span-3"
+                            />
+                          </div>
+                        </div>
+                        {/* @ts-expect-error */}
+                        <Button onClick={handleAddNote}>Add Note</Button>
+                      </DialogContent>
+                    </Dialog>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2">
+                  <AccordionTrigger>View Notes</AccordionTrigger>
+                  <AccordionContent>
+                    <p>
+                      There are no notes for this complaint.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </ScrollArea>
           </div>
         </div>
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="resolution">Resolution</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{complaint.description}</p>
-
-                  {complaint.product_involved && (
-                    <div className="mt-4">
-                      <h4 className="font-medium mb-2">Product Information</h4>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="font-medium">Product:</div>
-                        <div>{complaint.product_involved}</div>
-                        {complaint.lot_number && (
-                          <>
-                            <div className="font-medium">Lot Number:</div>
-                            <div>{complaint.lot_number}</div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Timeline>
-                    <TimelineItem title="Complaint Reported">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(complaint.reported_date)}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Reported by: {complaint.created_by}
-                        </div>
-                      </div>
-                    </TimelineItem>
-
-                    {complaint.assigned_to && (
-                      <TimelineItem title="Assigned for Investigation">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {formatDate(complaint.updated_at)}
-                          </div>
-                          <div className="text-sm">
-                            Assigned to: {complaint.assigned_to}
-                          </div>
-                        </div>
-                      </TimelineItem>
-                    )}
-
-                    {complaint.resolution_date && (
-                      <TimelineItem title="Complaint Resolved">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {formatDate(complaint.resolution_date)}
-                          </div>
-                        </div>
-                      </TimelineItem>
-                    )}
-                  </Timeline>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500">Customer Name</h4>
-                      <p>{complaint.customer_name || 'Not provided'}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500">Contact Information</h4>
-                      <p>{complaint.customer_contact || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-2">
-                    {complaint.status === 'new' && (
-                      <Button
-                        onClick={() => handleStatusChange('in-progress')}
-                        className="w-full justify-start"
-                        disabled={loading}
-                      >
-                        <Clock className="mr-2 h-4 w-4" />
-                        Start Investigation
-                      </Button>
-                    )}
-                    {complaint.status === 'in-progress' && (
-                      <Button
-                        onClick={() => handleStatusChange('resolved')}
-                        className="w-full justify-start"
-                        disabled={loading}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark as Resolved
-                      </Button>
-                    )}
-                    {complaint.status === 'resolved' && (
-                      <Button
-                        onClick={() => handleStatusChange('closed')}
-                        className="w-full justify-start"
-                        disabled={loading}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Close Complaint
-                      </Button>
-                    )}
-                    {complaint.status !== 'new' && complaint.status !== 'reopened' && (
-                      <Button
-                        onClick={() => handleStatusChange('reopened')}
-                        variant="outline"
-                        className="w-full justify-start"
-                        disabled={loading}
-                      >
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Reopen Complaint
-                      </Button>
-                    )}
-                    {!complaint.capa_required && complaint.status !== 'new' && (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        disabled={loading}
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Create CAPA
-                      </Button>
-                    )}
-                    {complaint.capa_id && (
-                      <Button
-                        variant="secondary"
-                        className="w-full justify-start"
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        View CAPA
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="resolution">
-          {/* Resolution tab content */}
-        </TabsContent>
-
-        <TabsContent value="history">
-          {/* History tab content */}
-        </TabsContent>
-      </Tabs>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
-
-export default ComplaintDetails;

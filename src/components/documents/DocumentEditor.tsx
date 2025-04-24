@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileIcon, CheckCircle, History, FileText } from 'lucide-react';
 import { useDocumentContext } from '@/context/DocumentContext';
 import { DocumentCheckoutActions } from './DocumentCheckoutActions';
-import { DocumentVersionHistory } from './DocumentVersionHistory';
+import { DocumentVersionHistory } from '@/components/documents/DocumentVersionHistory';
 
 export const DocumentEditor = () => {
   const { selectedDocument, refreshDocuments } = useDocumentContext();

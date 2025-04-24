@@ -1,6 +1,7 @@
+
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 
 export const useDocumentService = () => {
@@ -192,10 +193,41 @@ export const useDocumentService = () => {
     }
   }, []);
 
+  // Add missing methods needed by other components
   const approveDocument = useCallback(async (documentId: string, userId: string, comments?: string) => {
     try {
-      // Implementation for document approval
-      console.log('Approving document', documentId);
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+      
+      const userName = userData?.full_name || 'Unknown User';
+      
+      // Update document status
+      const { data, error } = await supabase
+        .from('documents')
+        .update({
+          status: 'Approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Record approval activity
+      await supabase.from('document_activities').insert({
+        document_id: documentId,
+        action: 'Document approved',
+        user_id: userId,
+        user_name: userName,
+        user_role: 'Approver',
+        comments: comments || 'Approved without comments'
+      });
+      
+      return data;
     } catch (error: any) {
       console.error('Error approving document:', error.message);
       throw error;
@@ -204,10 +236,278 @@ export const useDocumentService = () => {
 
   const rejectDocument = useCallback(async (documentId: string, userId: string, reason: string) => {
     try {
-      // Implementation for document rejection
-      console.log('Rejecting document', documentId, 'with reason:', reason);
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+      
+      const userName = userData?.full_name || 'Unknown User';
+      
+      // Update document status
+      const { data, error } = await supabase
+        .from('documents')
+        .update({
+          status: 'Draft',
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Record rejection activity
+      await supabase.from('document_activities').insert({
+        document_id: documentId,
+        action: 'Document rejected',
+        user_id: userId,
+        user_name: userName,
+        user_role: 'Approver',
+        comments: reason
+      });
+      
+      return data;
     } catch (error: any) {
       console.error('Error rejecting document:', error.message);
+      throw error;
+    }
+  }, []);
+
+  // Add methods for document access control
+  const fetchAccess = useCallback(async (documentId: string): Promise<DocumentAccess[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_access')
+        .select('*')
+        .eq('document_id', documentId);
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching document access:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const grantAccess = useCallback(async (
+    documentId: string,
+    userId: string,
+    permissionLevel: string,
+    grantedBy: string
+  ): Promise<DocumentAccess> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_access')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          permission_level: permissionLevel,
+          granted_by: grantedBy,
+          granted_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error granting access:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const revokeAccess = useCallback(async (accessId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('document_access')
+        .delete()
+        .eq('id', accessId);
+        
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error revoking access:', error.message);
+      throw error;
+    }
+  }, []);
+
+  // Add methods for document comments
+  const getDocumentComments = useCallback(async (documentId: string): Promise<DocumentComment[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_comments')
+        .select('*')
+        .eq('document_id', documentId)
+        .order('created_at', { ascending: true });
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching document comments:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const createDocumentComment = useCallback(async (comment: Partial<DocumentComment>): Promise<DocumentComment> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_comments')
+        .insert(comment)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error creating document comment:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const updateDocumentComment = useCallback(async (commentId: string, updates: Partial<DocumentComment>): Promise<DocumentComment> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_comments')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', commentId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error updating document comment:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const deleteDocumentComment = useCallback(async (commentId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('document_comments')
+        .delete()
+        .eq('id', commentId);
+        
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error deleting document comment:', error.message);
+      throw error;
+    }
+  }, []);
+
+  // Add preview and download methods
+  const getPreviewUrl = useCallback(async (documentId: string, fileName: string, fileType: string) => {
+    try {
+      // For now just return a simple URL structure
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(`${documentId}/${fileName}`, 3600);
+        
+      if (error) throw error;
+      
+      return {
+        url: data.signedUrl,
+        fileType
+      };
+    } catch (error: any) {
+      console.error('Error generating preview URL:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const getDownloadUrl = useCallback(async (path: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(path, 60);
+        
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error: any) {
+      console.error('Error getting download URL:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const getStoragePath = useCallback((documentId: string, fileName: string): string => {
+    return `${documentId}/${fileName}`;
+  }, []);
+
+  const fetchVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
+    return fetchDocumentVersions(documentId);
+  }, [fetchDocumentVersions]);
+
+  const createVersion = useCallback(async (version: Partial<DocumentVersion>): Promise<DocumentVersion> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_versions')
+        .insert(version)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error creating document version:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const recordActivity = useCallback(async (activity: Partial<DocumentActivity>): Promise<DocumentActivity> => {
+    try {
+      const { data, error } = await supabase
+        .from('document_activities')
+        .insert({
+          ...activity,
+          timestamp: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error recording document activity:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const createDocument = useCallback(async (document: Partial<Document>): Promise<Document> => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .insert(document)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error creating document:', error.message);
+      throw error;
+    }
+  }, []);
+
+  const updateDocument = useCallback(async (documentId: string, updates: Partial<Document>): Promise<Document> => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Error updating document:', error.message);
       throw error;
     }
   }, []);
@@ -219,6 +519,21 @@ export const useDocumentService = () => {
     checkoutDocument,
     checkinDocument,
     approveDocument,
-    rejectDocument
+    rejectDocument,
+    fetchAccess,
+    grantAccess,
+    revokeAccess,
+    getDocumentComments,
+    createDocumentComment,
+    updateDocumentComment,
+    deleteDocumentComment,
+    getPreviewUrl,
+    getDownloadUrl,
+    getStoragePath,
+    fetchVersions,
+    createVersion,
+    recordActivity,
+    createDocument,
+    updateDocument
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -202,7 +201,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-1">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
-                Created: {formatDate(capa.createdDate)}
+                Created: {formatDate(capa.createdAt)}
               </div>
               <span>•</span>
               <div className="flex items-center">
