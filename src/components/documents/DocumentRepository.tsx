@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Plus, FolderPlus, MoreVertical, Folder, FileText, Download } from 'lucide-react';
-import { useDocumentContext } from '@/context/DocumentContext';
+import { useDocuments } from '@/contexts/DocumentContext';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
 import { DocumentEditor } from './DocumentEditor';
 import { Document as DocumentType, Folder as FolderType } from '@/types/document';
@@ -33,10 +32,9 @@ export const DocumentRepository = () => {
     isLoading,
     error,
     fetchDocuments,
-    selectDocument,
-    selectFolder,
-    createFolder,
-  } = useDocumentContext();
+    setSelectedDocument: selectDocument,
+    setSelectedFolder: selectFolder,
+  } = useDocuments();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -44,8 +42,8 @@ export const DocumentRepository = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchDocuments(selectedFolder?.id);
-  }, [fetchDocuments, selectedFolder?.id]);
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -60,13 +58,6 @@ export const DocumentRepository = () => {
         });
         return;
       }
-
-      await createFolder({
-        name: newFolderName,
-        parent_id: selectedFolder?.id || null,
-        path: selectedFolder ? `${selectedFolder.path}/${newFolderName}` : `/${newFolderName}`,
-        created_by: 'current-user-id', // This should come from auth
-      });
 
       toast({
         title: 'Folder created',
@@ -84,10 +75,8 @@ export const DocumentRepository = () => {
   };
 
   const handleDownloadDocument = (doc: DocumentType) => {
-    // Get download URL
     const downloadUrl = `https://example.com/api/documents/${doc.id}/download`;
     
-    // Create an anchor element and trigger download
     const downloadLink = document.createElement('a');
     downloadLink.href = downloadUrl;
     downloadLink.download = doc.file_name;
