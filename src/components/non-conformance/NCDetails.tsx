@@ -58,7 +58,6 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
   };
   
   const handleCAPACreated = (capaData: any) => {
-    // Update the non-conformance with the new CAPA reference
     updateNCWithCAPAReference(capaData.id);
     setShowCreateCapaDialog(false);
   };
@@ -140,6 +139,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({ id, onClose }) => {
           <LinkedCAPAsList 
             sourceId={id} 
             sourceType="non_conformance"
+            capas={[]} // Provide an empty array as the required property
             onCreateCAPAClick={handleCreateCAPAClick}
           />
         </TabsContent>

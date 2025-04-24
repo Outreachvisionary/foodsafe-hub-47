@@ -15,6 +15,17 @@ import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
+// Define props interfaces for child components
+interface FilterableComponentProps {
+  filters: {
+    status: string;
+    priority: string;
+    source: string;
+    dueDate: string;
+  };
+  searchQuery: string;
+}
+
 const CAPA = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState({

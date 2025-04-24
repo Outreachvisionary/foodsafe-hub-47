@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CAPA, CAPAEffectivenessRating } from '@/types/capa';
+import { CAPA, CAPAEffectivenessRating, CAPAStatus } from '@/types/capa';
 import { updateCAPA } from '@/services/capaService';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, FileText, NotebookPen, CheckSquare, XSquare, AlertTriangle, RefreshCw, Calendar as CalendarIcon, User, Building, Tag, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { mapInternalToStatus, isStatusEqual } from '@/services/capa/capaStatusService';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { mapStatusToInternal } from '@/services/capa/capaStatusMapper';
 
 interface CAPADetailsProps {
   capa: CAPA;
@@ -46,7 +47,13 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
   const handleSave = async () => {
     try {
       setLoading(true);
-      const result = await updateCAPA(capa.id, formData);
+      const statusAsCAPAStatus = formData.status as CAPAStatus;
+      const updatedFormData = {
+        ...formData,
+        status: statusAsCAPAStatus
+      };
+      
+      const result = await updateCAPA(capa.id, updatedFormData);
       onUpdate(result);
       setEditMode(false);
       toast({
@@ -159,6 +166,8 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
       return 'bg-green-100 text-green-800 border-green-200';
     } else if (rating === 'Effective') {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    } else if (rating === 'Partially Effective') {
+      return 'bg-orange-100 text-orange-800 border-orange-200';
     } else if (rating === 'Ineffective') {
       return 'bg-red-100 text-red-800 border-red-200';
     } else {
@@ -216,7 +225,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
           
           <div className="flex flex-wrap gap-2">
             <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(capa.status)}`}>
-              {mapInternalToStatus(capa.status)}
+              {mapStatusToInternal(capa.status)}
             </div>
             <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(capa.priority)}`}>
               {capa.priority.charAt(0).toUpperCase() + capa.priority.slice(1)}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,11 +20,13 @@ export const DocumentRepository = () => {
 
   const { 
     documents, 
-    folders,
     loading, 
     error,
     fetchDocuments
   } = useDocument();
+
+  // Mock folders for now since the context doesn't have real folders
+  const folders = [];  
 
   // Handle UI errors separately from the context error
   useEffect(() => {

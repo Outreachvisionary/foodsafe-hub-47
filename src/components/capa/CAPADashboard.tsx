@@ -1,17 +1,35 @@
-
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
-import RecentCapaList from './RecentCapaList';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getCAPAs } from '@/services/capaService';
 import { CAPA, CAPAStats, CAPASource } from '@/types/capa';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend
+} from 'recharts';
 
-const CAPADashboard = () => {
+interface CAPADashboardProps {
+  filters: {
+    status: string;
+    priority: string;
+    source: string;
+    dueDate: string;
+  };
+  searchQuery: string;
+}
+
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ filters, searchQuery }) => {
   const [capas, setCapas] = useState<CAPA[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<CAPAStats>({
     total: 0,
     openCount: 0,
@@ -23,84 +41,102 @@ const CAPADashboard = () => {
     bySource: {},
     byDepartment: {}
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCAPAs = async () => {
+    const fetchCapas = async () => {
       try {
         setLoading(true);
-        const data = await getCAPAs();
-        setCapas(data);
-        calculateStats(data);
+        const fetchedCapas = await getCAPAs({ status: 'All' });
+        setCapas(fetchedCapas);
+
+        // Calculate stats
+        const totalCount = fetchedCapas.length;
+        const openCount = fetchedCapas.filter(c => isStatusEqual(c.status, 'Open')).length;
+        const closedCount = fetchedCapas.filter(c => isStatusEqual(c.status, 'Closed')).length;
+        const overdueCount = fetchedCapas.filter(c => 
+          (isStatusEqual(c.status, 'Open') || isStatusEqual(c.status, 'In Progress')) && 
+          new Date(c.dueDate) < new Date()
+        ).length;
+        const pendingVerificationCount = fetchedCapas.filter(c => 
+          isStatusEqual(c.status, 'Pending Verification')
+        ).length;
+
+        // Calculate effectiveness rate (% of closed CAPAs with positive effectiveness)
+        const closedWithEffectiveness = fetchedCapas.filter(c => 
+          isStatusEqual(c.status, 'Verified') && 
+          c.effectivenessRating && 
+          (c.effectivenessRating === 'Effective' || c.effectivenessRating === 'Highly Effective')
+        ).length;
+        
+        const effectivenessRate = closedCount > 0 
+          ? Math.round((closedWithEffectiveness / closedCount) * 100) 
+          : 0;
+
+        // Group by priority
+        const byPriority: Record<string, number> = {};
+        fetchedCapas.forEach(capa => {
+          const priority = capa.priority || 'unknown';
+          byPriority[priority] = (byPriority[priority] || 0) + 1;
+        });
+
+        // Group by source
+        const bySource: Record<string, number> = {};
+        fetchedCapas.forEach(capa => {
+          const source = capa.source || 'unknown';
+          bySource[source] = (bySource[source] || 0) + 1;
+        });
+        
+        // Group by department
+        const byDepartment: Record<string, number> = {};
+        fetchedCapas.forEach(capa => {
+          const department = capa.department || 'unknown';
+          byDepartment[department] = (byDepartment[department] || 0) + 1;
+        });
+
+        setStats({
+          total: totalCount,
+          openCount,
+          closedCount,
+          overdueCount,
+          pendingVerificationCount,
+          byPriority,
+          bySource,
+          byDepartment,
+          effectivenessRate
+        });
+
       } catch (err) {
-        console.error('Error fetching CAPAs:', err);
-        setError('Failed to fetch CAPA data');
+        console.error('Error fetching CAPA data:', err);
+        setError('Failed to load CAPA data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCAPAs();
+    fetchCapas();
   }, []);
 
-  const calculateStats = (data: CAPA[]) => {
-    const openCount = data.filter(capa => isStatusEqual(capa.status, 'Open')).length;
-    const closedCount = data.filter(capa => isStatusEqual(capa.status, 'Closed')).length;
-    const overdueCount = data.filter(capa => 
-      !isStatusEqual(capa.status, 'Closed') && 
-      !isStatusEqual(capa.status, 'Verified') && 
-      new Date(capa.dueDate) < new Date()
-    ).length;
-    const pendingVerificationCount = data.filter(capa => 
-      isStatusEqual(capa.status, 'Pending Verification')
-    ).length;
+  if (loading) {
+    return <div className="space-y-4">{/* Loading skeletons */}</div>;
+  }
 
-    // Group by priority
-    const byPriority: Record<string, number> = {};
-    data.forEach(capa => {
-      byPriority[capa.priority] = (byPriority[capa.priority] || 0) + 1;
-    });
-
-    // Group by source
-    const bySource: Record<string, number> = {};
-    data.forEach(capa => {
-      bySource[capa.source] = (bySource[capa.source] || 0) + 1;
-    });
-
-    // Group by department
-    const byDepartment: Record<string, number> = {};
-    data.forEach(capa => {
-      if (capa.department) {
-        byDepartment[capa.department] = (byDepartment[capa.department] || 0) + 1;
-      }
-    });
-
-    // Calculate effectiveness rate (simplified)
-    const verifiedCount = data.filter(capa => 
-      isStatusEqual(capa.status, 'Verified')
-    ).length;
-    const effectivenessRate = closedCount > 0 
-      ? (verifiedCount / closedCount) * 100 
-      : 0;
-
-    setStats({
-      total: data.length,
-      openCount,
-      closedCount,
-      overdueCount,
-      pendingVerificationCount,
-      byPriority,
-      bySource,
-      byDepartment,
-      effectivenessRate: Math.round(effectivenessRate)
-    });
-  };
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error loading CAPA data</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   const recentCapas = [...capas]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
       {/* Main stats cards */}
       <Card>
         <CardHeader className="pb-2">

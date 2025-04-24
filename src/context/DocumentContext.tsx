@@ -1,12 +1,12 @@
 
 // This file re-exports from the main DocumentContext to maintain backwards compatibility
-import { DocumentProvider, useDocument } from '@/contexts/DocumentContext';
+import { DocumentProvider, useDocument, useDocuments } from '@/contexts/DocumentContext';
 
 // Re-export for backward compatibility
-export { DocumentProvider, useDocument };
-export const useDocuments = useDocument; // Alias for components that haven't been updated
+export { DocumentProvider, useDocument, useDocuments };
 
 export default {
   DocumentProvider,
-  useDocument
+  useDocument,
+  useDocuments
 };

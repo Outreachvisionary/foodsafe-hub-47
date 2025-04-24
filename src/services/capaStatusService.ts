@@ -1,59 +1,53 @@
 
-import { CAPAStatus, mapStatusToDb, mapDbStatusToInternal } from '@/types/capa';
+import { CAPAStatus } from '@/types/capa';
+import { mapStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
 
-// This function is now deprecated, use the one from @/types/capa instead
+// This function is now deprecated, use the one from capaStatusMapper instead
 export function mapInternalToStatus(status: CAPAStatus): string {
-  switch (status) {
+  return status;
+}
+
+// This function is now deprecated, use the one from capaStatusMapper instead
+export function mapStatusToInternal(status: string): CAPAStatus {
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+  
+  switch (normalizedStatus) {
     case 'open':
       return 'Open';
     case 'in-progress':
-      return 'In Progress';
-    case 'pending-verification':
-      return 'Pending Verification';
-    case 'closed':
-      return 'Closed';
-    case 'verified':
-      return 'Verified';
-    case 'cancelled':
-      return 'Cancelled';
-    default:
-      return status;
-  }
-}
-
-// This function is now deprecated, use the one from @/types/capa instead
-export function mapStatusToInternal(status: string): CAPAStatus {
-  switch (status.toLowerCase().replace(/\s+/g, '-')) {
-    case 'open':
-      return 'open';
-    case 'in-progress':
     case 'in-process':
     case 'investigating':
-      return 'in-progress';
+      return 'In Progress';
     case 'pending-verification':
     case 'pending-review':
-      return 'pending-verification';
+      return 'Pending Verification';
     case 'closed':
     case 'complete':
     case 'completed':
-      return 'closed';
+      return 'Closed';
     case 'verified':
     case 'validated':
-      return 'verified';
-    case 'cancelled':
-    case 'canceled':
-      return 'cancelled';
+      return 'Verified';
+    case 'overdue':
+      return 'Overdue';
     default:
-      return 'open';
+      return 'Open';
   }
 }
 
-// These functions are now deprecated, use the ones from @/types/capa instead
+// These functions are now deprecated, use the ones from capaStatusMapper instead
 export { mapStatusToDb, mapDbStatusToInternal };
+
+// Check if status is equal (case-insensitive)
+export const isStatusEqual = (status1: string, status2: string): boolean => {
+  if (!status1 || !status2) return false;
+  return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
+};
 
 export default {
   mapStatusToDb,
   mapDbStatusToInternal,
   mapInternalToStatus,
-  mapStatusToInternal
+  mapStatusToInternal,
+  isStatusEqual
 };

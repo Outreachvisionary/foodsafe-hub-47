@@ -2,10 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { File, Clock, CheckCircle, AlertTriangle, Folder } from 'lucide-react';
-import { useDocuments } from '@/contexts/DocumentContext';
+import { useDocument } from '@/contexts/DocumentContext';
 
 const DocumentDashboard = () => {
-  const { documents } = useDocuments();
+  const { documents } = useDocument();
 
   // Calculate statistics
   const stats = {

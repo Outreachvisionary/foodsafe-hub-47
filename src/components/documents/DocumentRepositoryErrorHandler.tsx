@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useDocumentContext } from '@/context/DocumentContext';
+import { useDocument } from '@/contexts/DocumentContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertTriangle, ArchiveRestore, Database } from 'lucide-react';
 
@@ -11,7 +11,7 @@ interface DocumentRepositoryErrorHandlerProps {
 export const DocumentRepositoryErrorHandler: React.FC<DocumentRepositoryErrorHandlerProps> = ({
   error,
 }) => {
-  const { fetchDocuments } = useDocumentContext();
+  const { fetchDocuments } = useDocument();
 
   const retryFetchDocuments = () => {
     fetchDocuments();

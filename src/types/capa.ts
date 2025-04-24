@@ -59,6 +59,7 @@ export type CAPAPriority = 'critical' | 'high' | 'medium' | 'low';
 
 export type CAPASource = 'audit' | 'complaint' | 'internal-qc' | 'supplier-issue' | 'haccp' | 'traceability' | 'other';
 
+// Updating the DbCAPAStatus to match the actual database values
 export type DbCAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Verified';
 
 // Update effectiveness rating to match component usage
@@ -128,6 +129,19 @@ export const mapDbStatusToInternal = (dbStatus: DbCAPAStatus): CAPAStatus => {
   }
 };
 
+// Export mapStatusToDb for backward compatibility
+export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
+  switch (status) {
+    case 'Open': return 'Open';
+    case 'In Progress': return 'In Progress';
+    case 'Closed': return 'Closed';
+    case 'Overdue': return 'Overdue';
+    case 'Pending Verification': return 'Pending Verification';
+    case 'Verified': return 'Verified';
+    default: return 'Open';
+  }
+};
+
 // Map lowercase status to official capitalized status
 export const normalizeStatus = (status: string): CAPAStatus => {
   switch(status.toLowerCase()) {
@@ -142,4 +156,3 @@ export const normalizeStatus = (status: string): CAPAStatus => {
     default: return 'Open';
   }
 };
-

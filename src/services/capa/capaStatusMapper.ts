@@ -5,10 +5,10 @@ import { CAPAStatus, DbCAPAStatus } from '@/types/capa';
 export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
   switch (status) {
     case 'Open': return 'Open';
-    case 'In Progress': return 'In_Progress';
+    case 'In Progress': return 'In Progress';
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
-    case 'Pending Verification': return 'Pending_Verification';
+    case 'Pending Verification': return 'Pending Verification';
     case 'Verified': return 'Verified';
     default: return ensureValidDbStatus(status as string);
   }
@@ -18,10 +18,10 @@ export const mapStatusToDb = (status: CAPAStatus): DbCAPAStatus => {
 export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
   switch (dbStatus) {
     case 'Open': return 'Open';
-    case 'In_Progress': return 'In Progress';
+    case 'In Progress': return 'In Progress';
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
-    case 'Pending_Verification': return 'Pending Verification';
+    case 'Pending Verification': return 'Pending Verification';
     case 'Verified': return 'Verified';
     default: return dbStatus as CAPAStatus;
   }
@@ -31,10 +31,12 @@ export const mapDbStatusToInternal = (dbStatus: string): CAPAStatus => {
 export const ensureValidDbStatus = (status: string): DbCAPAStatus => {
   switch (status.replace(' ', '_')) {
     case 'Open': return 'Open';
-    case 'In_Progress': return 'In_Progress';
+    case 'In_Progress': 
+    case 'In Progress': return 'In Progress';
     case 'Closed': return 'Closed';
     case 'Overdue': return 'Overdue';
-    case 'Pending_Verification': return 'Pending_Verification';
+    case 'Pending_Verification':
+    case 'Pending Verification': return 'Pending Verification';
     case 'Verified': return 'Verified';
     // Map any non-matching status to a default
     default: return 'Open';
