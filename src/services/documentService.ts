@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
 import { v4 as uuidv4 } from 'uuid';
@@ -433,6 +432,57 @@ const documentService = {
       console.error('Error uploading file:', error);
       throw error;
     }
+  },
+  
+  // Document checkout
+  async checkoutDocument(documentId: string): Promise<Document> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        checkout_status: 'Checked_Out',
+        checkout_user_id: user.id,
+        checkout_user_name: user.email,
+        checkout_timestamp: new Date().toISOString()
+      })
+      .eq('id', documentId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to checkout document');
+
+    await this.createDocumentActivity({
+      document_id: documentId,
+      action: 'checkout',
+      user_id: user.id,
+      user_name: user.email || 'Unknown user',
+      user_role: 'User',
+      checkout_action: 'checkout'
+    });
+
+    return data;
+  },
+
+  // Document checkin
+  async checkinDocument(documentId: string, comment: string): Promise<Document> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Start a transaction
+    const { data, error } = await supabase.rpc('checkin_document', {
+      p_document_id: documentId,
+      p_user_id: user.id,
+      p_user_name: user.email,
+      p_comment: comment
+    });
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to checkin document');
+
+    return data;
   }
 };
 

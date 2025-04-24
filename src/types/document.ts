@@ -1,4 +1,3 @@
-
 // Create or update the document type definitions file
 export type DocumentStatus = 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected' | 'Published' | 'Archived' | string;
 export type DocumentCategory = 'SOP' | 'Policy' | 'Work_Instruction' | 'Form' | 'Manual' | 'Record' | string;
@@ -49,10 +48,14 @@ export interface Document {
   next_review_date?: string;
   current_version_id?: string;
   is_template?: boolean;
+  checkout_status?: 'Available' | 'Checked_Out';
+  checkout_user_id?: string;
+  checkout_user_name?: string;
   checkout_timestamp?: string;
+  current_version?: DocumentVersion;
+  file_path?: string;
   rejection_reason?: string;
   last_action?: string;
-  checkout_user_id?: string;
   workflow_status?: string;
   metadata?: Record<string, any>;
 }
@@ -62,7 +65,7 @@ export interface DocumentVersion {
   id: string;
   document_id: string;
   version: number;
-  version_number?: number; // Alias for version
+  version_number: number;
   file_size: number;
   created_at: string;
   editor_metadata?: any;
@@ -70,7 +73,12 @@ export interface DocumentVersion {
   file_name: string;
   created_by: string;
   change_notes?: string;
-  change_summary?: string; // Alias for change_notes
+  change_summary?: string;
+  check_in_comment?: string;
+  modified_by: string;
+  modified_by_name: string;
+  version_type: 'major' | 'minor';
+  diff_data?: Record<string, any>;
 }
 
 export interface DocumentActivity {
@@ -150,4 +158,20 @@ export interface DatabaseFolder {
   name: string;
   path: string;
   created_by: string;
+}
+
+export interface DocumentComment {
+  id: string;
+  document_id: string;
+  version_id?: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  parent_comment_id?: string;
+  position_data?: Record<string, any>;
+  is_resolved: boolean;
+  resolved_by?: string;
+  resolved_at?: string;
 }

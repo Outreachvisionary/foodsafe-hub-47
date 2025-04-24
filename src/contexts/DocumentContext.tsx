@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { Document, Folder, DocumentNotification } from '@/types/document';
 import documentService from '@/services/documentService';
@@ -22,6 +21,11 @@ interface DocumentContextProps {
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   fetchDocuments: () => Promise<void>;
+  checkoutDocument: (documentId: string) => Promise<void>;
+  checkinDocument: (documentId: string, comment: string) => Promise<void>;
+  fetchVersions: (documentId: string) => Promise<DocumentVersion[]>;
+  restoreVersion: (documentId: string, versionId: string) => Promise<void>;
+  downloadVersion: (versionId: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextProps>({
@@ -41,6 +45,11 @@ const DocumentContext = createContext<DocumentContextProps>({
   markNotificationAsRead: () => {},
   clearAllNotifications: () => {},
   fetchDocuments: async () => {},
+  checkoutDocument: async () => {},
+  checkinDocument: async () => {},
+  fetchVersions: async () => [],
+  restoreVersion: async () => {},
+  downloadVersion: async () => {},
 });
 
 export const useDocuments = () => useContext(DocumentContext);
@@ -250,6 +259,48 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     setNotifications([]);
   }, []);
   
+  const checkoutDocument = useCallback(async (documentId: string) => {
+    setIsLoading(true);
+    try {
+      const updatedDoc = await documentService.checkoutDocument(documentId);
+      setDocuments(prev => 
+        prev.map(doc => doc.id === documentId ? updatedDoc : doc)
+      );
+    } catch (error) {
+      console.error('Error checking out document:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const checkinDocument = useCallback(async (documentId: string, comment: string) => {
+    setIsLoading(true);
+    try {
+      const updatedDoc = await documentService.checkinDocument(documentId, comment);
+      setDocuments(prev => 
+        prev.map(doc => doc.id === documentId ? updatedDoc : doc)
+      );
+    } catch (error) {
+      console.error('Error checking in document:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchVersions = useCallback(async (documentId: string) => {
+    return await documentService.fetchVersions(documentId);
+  }, []);
+
+  const restoreVersion = useCallback(async (documentId: string, versionId: string) => {
+    return await documentService.restoreVersion(documentId, versionId);
+  }, []);
+
+  const downloadVersion = useCallback(async (versionId: string) => {
+    return await documentService.downloadVersion(versionId);
+  }, []);
+
   return (
     <DocumentContext.Provider 
       value={{
@@ -268,7 +319,12 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         submitForApproval,
         markNotificationAsRead,
         clearAllNotifications,
-        fetchDocuments
+        fetchDocuments,
+        checkoutDocument,
+        checkinDocument,
+        fetchVersions,
+        restoreVersion,
+        downloadVersion
       }}
     >
       {children}

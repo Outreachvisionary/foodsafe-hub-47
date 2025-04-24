@@ -198,50 +198,28 @@ export const useDocumentService = () => {
   }, [getStoragePath, getDownloadUrl]);
 
   const checkoutDocument = useCallback(async (documentId: string, userId: string) => {
+    setIsLoading(true);
     try {
-      const updatedDocument = await documentService.updateDocument(documentId, {
-        checkout_user_id: userId,
-        checkout_timestamp: new Date().toISOString(),
-        is_locked: true
-      });
-      
-      await documentService.createDocumentActivity({
-        document_id: documentId,
-        action: 'checkout',
-        user_id: userId,
-        user_name: userId,
-        user_role: 'User',
-        comments: 'Document checked out for editing'
-      });
-      
-      return updatedDocument;
-    } catch (err: any) {
-      setError(err.message || 'Failed to checkout document');
-      throw err;
+      const document = await documentService.checkoutDocument(documentId);
+      return document;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const checkinDocument = useCallback(async (documentId: string, userId: string) => {
+  const checkinDocument = useCallback(async (documentId: string, userId: string, comment: string) => {
+    setIsLoading(true);
     try {
-      const updatedDocument = await documentService.updateDocument(documentId, {
-        checkout_user_id: null,
-        checkout_timestamp: null,
-        is_locked: false
-      });
-      
-      await documentService.createDocumentActivity({
-        document_id: documentId,
-        action: 'checkin',
-        user_id: userId,
-        user_name: userId,
-        user_role: 'User',
-        comments: 'Document checked in after editing'
-      });
-      
-      return updatedDocument;
-    } catch (err: any) {
-      setError(err.message || 'Failed to checkin document');
-      throw err;
+      const document = await documentService.checkinDocument(documentId, comment);
+      return document;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 

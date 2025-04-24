@@ -648,6 +648,7 @@ export type Database = {
       document_activities: {
         Row: {
           action: string
+          checkout_action: string | null
           comments: string | null
           document_id: string
           id: string
@@ -655,9 +656,11 @@ export type Database = {
           user_id: string
           user_name: string
           user_role: string
+          version_id: string | null
         }
         Insert: {
           action: string
+          checkout_action?: string | null
           comments?: string | null
           document_id: string
           id?: string
@@ -665,9 +668,11 @@ export type Database = {
           user_id: string
           user_name: string
           user_role: string
+          version_id?: string | null
         }
         Update: {
           action?: string
+          checkout_action?: string | null
           comments?: string | null
           document_id?: string
           id?: string
@@ -675,6 +680,7 @@ export type Database = {
           user_id?: string
           user_name?: string
           user_role?: string
+          version_id?: string | null
         }
         Relationships: [
           {
@@ -900,39 +906,60 @@ export type Database = {
       document_versions: {
         Row: {
           change_notes: string | null
+          change_summary: string | null
+          check_in_comment: string | null
           created_at: string | null
           created_by: string
+          diff_data: Json | null
           document_id: string
           editor_metadata: Json | null
           file_name: string
           file_size: number
           id: string
           is_binary_file: boolean | null
+          modified_by: string | null
+          modified_by_name: string | null
           version: number
+          version_number: number | null
+          version_type: string | null
         }
         Insert: {
           change_notes?: string | null
+          change_summary?: string | null
+          check_in_comment?: string | null
           created_at?: string | null
           created_by: string
+          diff_data?: Json | null
           document_id: string
           editor_metadata?: Json | null
           file_name: string
           file_size: number
           id?: string
           is_binary_file?: boolean | null
+          modified_by?: string | null
+          modified_by_name?: string | null
           version: number
+          version_number?: number | null
+          version_type?: string | null
         }
         Update: {
           change_notes?: string | null
+          change_summary?: string | null
+          check_in_comment?: string | null
           created_at?: string | null
           created_by?: string
+          diff_data?: Json | null
           document_id?: string
           editor_metadata?: Json | null
           file_name?: string
           file_size?: number
           id?: string
           is_binary_file?: boolean | null
+          modified_by?: string | null
+          modified_by_name?: string | null
           version?: number
+          version_number?: number | null
+          version_type?: string | null
         }
         Relationships: [
           {
@@ -1026,8 +1053,10 @@ export type Database = {
         Row: {
           approvers: string[] | null
           category: Database["public"]["Enums"]["document_category"]
+          checkout_status: Database["public"]["Enums"]["checkout_status"] | null
           checkout_timestamp: string | null
           checkout_user_id: string | null
+          checkout_user_name: string | null
           created_at: string | null
           created_by: string
           current_version_id: string | null
@@ -1035,6 +1064,7 @@ export type Database = {
           description: string | null
           expiry_date: string | null
           file_name: string
+          file_path: string | null
           file_size: number
           file_type: string
           folder_id: string | null
@@ -1058,8 +1088,12 @@ export type Database = {
         Insert: {
           approvers?: string[] | null
           category: Database["public"]["Enums"]["document_category"]
+          checkout_status?:
+            | Database["public"]["Enums"]["checkout_status"]
+            | null
           checkout_timestamp?: string | null
           checkout_user_id?: string | null
+          checkout_user_name?: string | null
           created_at?: string | null
           created_by: string
           current_version_id?: string | null
@@ -1067,6 +1101,7 @@ export type Database = {
           description?: string | null
           expiry_date?: string | null
           file_name: string
+          file_path?: string | null
           file_size: number
           file_type: string
           folder_id?: string | null
@@ -1090,8 +1125,12 @@ export type Database = {
         Update: {
           approvers?: string[] | null
           category?: Database["public"]["Enums"]["document_category"]
+          checkout_status?:
+            | Database["public"]["Enums"]["checkout_status"]
+            | null
           checkout_timestamp?: string | null
           checkout_user_id?: string | null
+          checkout_user_name?: string | null
           created_at?: string | null
           created_by?: string
           current_version_id?: string | null
@@ -1099,6 +1138,7 @@ export type Database = {
           description?: string | null
           expiry_date?: string | null
           file_name?: string
+          file_path?: string | null
           file_size?: number
           file_type?: string
           folder_id?: string | null
@@ -3056,6 +3096,7 @@ export type Database = {
         | "Pending Verification"
         | "Closed"
         | "Overdue"
+      checkout_status: "Available" | "Checked_Out"
       complaint_category:
         | "Product Quality"
         | "Foreign Material"
@@ -3266,6 +3307,7 @@ export const Constants = {
         "Closed",
         "Overdue",
       ],
+      checkout_status: ["Available", "Checked_Out"],
       complaint_category: [
         "Product Quality",
         "Foreign Material",
