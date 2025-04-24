@@ -1,123 +1,37 @@
+import { supabase } from "@/integrations/supabase/client";
 
-import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
-
-export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
+// This is a placeholder implementation that will need to be properly implemented
+export const getCAPAById = async (id: string) => {
   try {
-    // Ensure proper casing for status
-    const status = capaData.status?.charAt(0).toUpperCase() + capaData.status?.slice(1) as CAPAStatus;
-
     const { data, error } = await supabase
-      .from('capas')
-      .insert({
-        ...capaData,
-        status: status
-      })
+      .from('capa_actions')
       .select('*')
-      .single();
-
-    if (error) throw error;
-    return data as CAPA;
-  } catch (error) {
-    console.error('Error creating CAPA:', error);
-    throw error;
-  }
-};
-
-export const updateCAPA = async (id: string, capaData: Partial<CAPA>): Promise<CAPA> => {
-  try {
-    const { data, error } = await supabase
-      .from('capas')
-      .update(capaData)
       .eq('id', id)
-      .select('*')
       .single();
-
+    
     if (error) throw error;
-    return data as CAPA;
+    return data;
   } catch (error) {
-    console.error('Error updating CAPA:', error);
+    console.error('Error fetching CAPA by ID:', error);
     throw error;
   }
 };
 
-export const getCAPAs = async (filters?: any): Promise<CAPA[]> => {
-  try {
-    let query = supabase.from('capas').select('*');
-
-    // Apply filters if provided
-    if (filters) {
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters.priority) {
-        query = query.eq('priority', filters.priority);
-      }
-      if (filters.source) {
-        query = query.eq('source', filters.source);
-      }
-      if (filters.searchQuery) {
-        query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`);
-      }
-    }
-
-    const { data, error } = await query.order('createdAt', { ascending: false });
-
-    if (error) throw error;
-
-    // Transform data to match our UI expectations
-    return (data as any[]).map(item => ({
-      ...item,
-      id: item.id || '',
-      title: item.title || '',
-      description: item.description || '',
-      status: item.status || 'Open',
-      priority: item.priority || 'Medium',
-      source: item.source || 'other',
-      dueDate: item.due_date || new Date().toISOString(),
-      createdAt: item.created_at || new Date().toISOString(),
-      lastUpdated: item.updated_at || new Date().toISOString(),
-      assignedTo: item.assigned_to || '',
-      createdBy: item.created_by || 'System',
-    })) as CAPA[];
-  } catch (error) {
-    console.error('Error getting CAPAs:', error);
-    return [];
+export const mapStatusToInternal = (status: string) => {
+  // Map external status to internal status format
+  switch(status) {
+    case 'Open': return 'Open';
+    case 'In Progress': return 'In Progress';
+    case 'Closed': return 'Closed';
+    case 'Overdue': return 'Overdue';
+    case 'Verified': 
+    case 'Pending Verification': return 'Pending Verification';
+    default: return 'Open';
   }
 };
 
-export const getPotentialCAPAs = async (module: string, id: string): Promise<any[]> => {
-  try {
-    // This is a mock function to simulate getting potential CAPAs
-    // In a real app, you would query an AI model or database
-    return [
-      {
-        id: 'mock-potential-1',
-        title: 'Potential issue identified in ' + module,
-        description: 'AI identified a potential issue that may need a CAPA',
-        source: module as CAPASource,
-        sourceId: id,
-        date: new Date().toISOString(),
-        severity: 'major',
-        confidence: 0.89
-      }
-    ];
-  } catch (error) {
-    console.error('Error getting potential CAPAs:', error);
-    return [];
-  }
-};
-
-export const deleteCAPA = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('capas')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error deleting CAPA:', error);
-    throw error;
-  }
+// Export other needed functions
+export default {
+  getCAPAById,
+  mapStatusToInternal
 };

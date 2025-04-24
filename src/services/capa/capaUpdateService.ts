@@ -1,91 +1,75 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus } from '@/types/capa';
-import { mapStatusToDb, mapDbStatusToInternal, ensureValidDbStatus } from './capaStatusMapper';
-
+import { supabase } from "@/integrations/supabase/client";
+import { recordCAPAActivity } from "./capaActivityService";
+import { CAPAStatus, DbCAPAStatus } from "@/types/capa";
+ 
 export const updateCAPAStatus = async (
-  capaId: string,
-  newStatus: CAPAStatus,
+  capaId: string, 
+  newStatus: CAPAStatus, 
   userId: string,
-  comment?: string
-): Promise<CAPA | null> => {
+  notes?: string
+) => {
   try {
-    const { data: capa, error: fetchError } = await supabase
+    // Map the status if necessary to match the database enum
+    let dbStatus: DbCAPAStatus;
+    
+    switch (newStatus) {
+      case 'Open': 
+        dbStatus = 'Open';
+        break;
+      case 'In Progress': 
+        dbStatus = 'In Progress';
+        break;
+      case 'Closed': 
+        dbStatus = 'Closed';
+        break;
+      case 'Overdue': 
+        dbStatus = 'Overdue';
+        break;
+      case 'Pending Verification': 
+        dbStatus = 'Pending Verification';
+        break;
+      default:
+        dbStatus = 'Open';
+    }
+    
+    // Get the current status
+    const { data: currentCAPA, error: fetchError } = await supabase
       .from('capa_actions')
-      .select('*')
+      .select('status')
       .eq('id', capaId)
       .single();
-
-    if (fetchError) throw fetchError;
-    if (!capa) throw new Error('CAPA not found');
-
-    // Map the new status to database format
-    const dbStatus = mapStatusToDb(newStatus);
     
-    const { error: updateError } = await supabase
+    if (fetchError) throw fetchError;
+    
+    const oldStatus = currentCAPA?.status;
+    
+    // Update the CAPA record
+    const { data, error } = await supabase
       .from('capa_actions')
-      .update({
+      .update({ 
         status: dbStatus,
         updated_at: new Date().toISOString(),
+        completion_date: newStatus === 'Closed' ? new Date().toISOString() : undefined 
       })
-      .eq('id', capaId);
-
-    if (updateError) throw updateError;
-
-    // Record the activity - ensure valid status formats for the database
-    const oldDbStatus = ensureValidDbStatus(capa.status);
-    const newDbStatus = ensureValidDbStatus(dbStatus);
-    
-    const activityData = {
-      capa_id: capaId,
-      action_type: 'status_change',
-      action_description: `Status updated to ${newStatus}`,
-      performed_by: userId,
-      old_status: oldDbStatus,
-      new_status: newDbStatus,
-      metadata: comment ? { comment } : {}
-    };
-
-    const { error: activityError } = await supabase
-      .from('capa_activities')
-      .insert(activityData);
-
-    if (activityError) throw activityError;
-
-    // Fetch the updated CAPA
-    const { data: updatedCapa, error: refetchError } = await supabase
-      .from('capa_actions')
-      .select('*')
       .eq('id', capaId)
+      .select()
       .single();
-
-    if (refetchError) throw refetchError;
-    if (!updatedCapa) throw new Error('Failed to fetch updated CAPA');
-
-    return {
-      id: updatedCapa.id,
-      title: updatedCapa.title,
-      description: updatedCapa.description,
-      status: mapDbStatusToInternal(updatedCapa.status),
-      priority: updatedCapa.priority,
-      source: updatedCapa.source,
-      dueDate: updatedCapa.due_date,
-      createdAt: updatedCapa.created_at,
-      lastUpdated: updatedCapa.updated_at,
-      rootCause: updatedCapa.root_cause,
-      correctiveAction: updatedCapa.corrective_action,
-      preventiveAction: updatedCapa.preventive_action,
-      assignedTo: updatedCapa.assigned_to,
-      createdBy: updatedCapa.created_by,
-      department: updatedCapa.department,
-      verificationMethod: updatedCapa.verification_method,
-      verifiedBy: updatedCapa.verified_by,
-      completionDate: updatedCapa.completion_date,
-      verificationDate: updatedCapa.verification_date,
-      effectivenessRating: updatedCapa.effectiveness_rating,
-      effectivenessVerified: updatedCapa.effectiveness_verified,
-      isFsma204Compliant: updatedCapa.fsma204_compliant
-    };
+    
+    if (error) throw error;
+    
+    // Record the status change activity
+    await recordCAPAActivity(
+      capaId,
+      'status_change',
+      `Status changed from ${oldStatus} to ${dbStatus}`,
+      userId,
+      oldStatus,
+      dbStatus,
+      { notes }
+    );
+    
+    return data;
   } catch (error) {
     console.error('Error updating CAPA status:', error);
     throw error;

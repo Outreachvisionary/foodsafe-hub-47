@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
@@ -449,25 +448,29 @@ export const useDocumentService = () => {
     return `${documentId}/${fileName}`;
   }, []);
 
-  const createVersion = useCallback(async (version: Partial<DocumentVersion>): Promise<DocumentVersion> => {
+  const createVersion = useCallback(async (versionData: Partial<DocumentVersion>): Promise<DocumentVersion> => {
     try {
-      if (!version.document_id || !version.file_name || !version.created_by) {
+      if (!versionData.document_id || !versionData.file_name || !versionData.created_by) {
         throw new Error('Missing required version fields');
       }
       
-      // Make sure to include the version field
-      const versionData = {
-        document_id: version.document_id,
-        file_name: version.file_name,
-        file_size: version.file_size || 0,
-        created_by: version.created_by,
-        version: version.version || 1,
-        version_type: version.version_type || 'minor'
+      // Add the version field if not present
+      const finalVersionData = {
+        ...versionData,
+        version: versionData.version || 1, // Default to version 1 if not provided
       };
       
       const { data, error } = await supabase
         .from('document_versions')
-        .insert(versionData)
+        .insert({
+          document_id: finalVersionData.document_id,
+          file_name: finalVersionData.file_name,
+          file_size: finalVersionData.file_size || 0,
+          created_by: finalVersionData.created_by,
+          version: finalVersionData.version,
+          version_type: finalVersionData.version_type || 'minor',
+          editor_metadata: finalVersionData.editor_metadata
+        })
         .select()
         .single();
       
@@ -485,9 +488,12 @@ export const useDocumentService = () => {
         throw new Error('Missing required activity fields');
       }
       
+      // Ensure action is of the correct type
+      const validAction = activity.action as "create" | "update" | "delete" | "approve" | "reject" | "submit" | "view" | "download";
+      
       const activityData = {
         document_id: activity.document_id,
-        action: activity.action,
+        action: validAction,
         user_id: activity.user_id,
         user_name: activity.user_name,
         user_role: activity.user_role,

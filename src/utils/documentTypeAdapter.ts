@@ -44,7 +44,7 @@ export const adaptDatabaseArray = (docs: DatabaseDocument[]): DocumentType[] => 
 export const adaptFolderToDatabase = (folder: FolderType): DatabaseFolder => {
   return {
     ...folder,
-    name: folder.name,
+    name: folder.name || '',
     path: folder.path,
     created_by: folder.created_by,
     parent_id: folder.parent_id,

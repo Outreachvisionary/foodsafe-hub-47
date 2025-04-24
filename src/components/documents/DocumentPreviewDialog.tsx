@@ -58,7 +58,8 @@ const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
         } else if (document.file_type === 'text/plain' || document.file_type === 'text/html' || document.file_type?.includes('document')) {
           // Handle text and document files
           try {
-            const versions = await documentService.fetchVersions(document.id);
+            // Use fetchDocumentVersions instead of fetchVersions
+            const versions = await documentService.fetchDocumentVersions(document.id);
             if (versions && versions.length > 0) {
               const latestVersion = versions[0];
               if (latestVersion.editor_metadata && latestVersion.editor_metadata.content) {
