@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 import { Download, Edit, X, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentService } from '@/hooks/useDocumentService';
+import RichTextEditor from '@/components/editor/RichTextEditor';
+import DocumentComments from '@/components/documents/DocumentComments';
 
 interface EnhancedDocumentVersion extends DocumentVersion {
   editor_metadata?: {

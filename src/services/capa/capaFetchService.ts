@@ -1,7 +1,11 @@
+
 // Update the imports and fix the effectivenessRating typing
 import { CAPAStatus, CAPAEffectivenessRating, CAPA } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
 import { DbCAPAStatus, mapDbStatusToInternal } from './capaStatusMapper';
+
+// Export DbCAPAStatus from the capaStatusMapper module
+export type { DbCAPAStatus } from './capaStatusMapper';
 
 export const fetchCAPAs = async (
   page: number = 1,
@@ -15,7 +19,7 @@ export const fetchCAPAs = async (
 ): Promise<{ data: CAPA[]; total: number; }> => {
   try {
     let query = supabase
-      .from('capas')
+      .from('capa_actions')
       .select('*', { count: 'exact' });
     
     if (searchTerm) {
@@ -60,7 +64,7 @@ export const fetchCAPAs = async (
 export const fetchCAPA = async (id: string): Promise<CAPA | null> => {
   try {
     const { data, error } = await supabase
-      .from('capas')
+      .from('capa_actions')
       .select('*')
       .eq('id', id)
       .single();
@@ -74,6 +78,23 @@ export const fetchCAPA = async (id: string): Promise<CAPA | null> => {
   } catch (error) {
     console.error('Error fetching CAPA:', error);
     return null;
+  }
+};
+
+// Add the deleteCAPA function
+export const deleteCAPA = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error deleting CAPA:', error);
+    throw error;
   }
 };
 
@@ -116,7 +137,7 @@ const transformDbCapaToClientCapa = (dbCapa: any): CAPA => {
     rootCause: dbCapa.root_cause,
     correctiveAction: dbCapa.corrective_action,
     preventiveAction: dbCapa.preventive_action,
-    departmentId: dbCapa.department_id,
+    department: dbCapa.department,
     effectivenessRating: effectivenessRating,
     effectivenessCriteria: dbCapa.effectiveness_criteria,
     verificationMethod: dbCapa.verification_method,
@@ -124,6 +145,5 @@ const transformDbCapaToClientCapa = (dbCapa: any): CAPA => {
     fsma204Compliant: dbCapa.fsma204_compliant || false,
     effectivenessVerified: dbCapa.effectiveness_verified || false,
     sourceId: dbCapa.source_id,
-    department: dbCapa.department
   };
 };

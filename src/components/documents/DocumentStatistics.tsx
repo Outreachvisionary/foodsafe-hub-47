@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
-import { PieChart, FileCheck, FileBarChart2 } from 'lucide-react';
+import { PieChart, FileCheck, BarChart2 } from 'lucide-react';
 
 const DocumentStatistics = () => {
   const { documents } = useDocument();
@@ -21,7 +21,7 @@ const DocumentStatistics = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center">
-              <FileBarChart2 className="h-5 w-5 mr-2 text-blue-500" />
+              <BarChart2 className="h-5 w-5 mr-2 text-blue-500" />
               Total Documents
             </CardTitle>
           </CardHeader>

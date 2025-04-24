@@ -1,4 +1,3 @@
-
 export type DocumentCategory = 
   | 'Other' 
   | 'SOP' 
@@ -77,9 +76,9 @@ export interface DocumentActivity {
   user_id: string;
   user_name: string;
   user_role: string;
+  timestamp: string;
   action: DocumentActionType;
   checkout_action?: string;
-  timestamp: string;
   comments?: string;
 }
 

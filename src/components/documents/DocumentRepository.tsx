@@ -18,6 +18,8 @@ export const DocumentRepository = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
   const { 
     documents, 
@@ -109,6 +111,11 @@ export const DocumentRepository = () => {
     fetchDocuments();
   };
 
+  const handleDocumentClick = (document: DocumentType) => {
+    setSelectedDocument(document);
+    setShowDocumentPreview(true);
+  };
+
   return (
     <div className="space-y-4">
       <DocumentRepositoryErrorHandler error={repositoryError} />
@@ -191,7 +198,7 @@ export const DocumentRepository = () => {
                 </p>
               </div>
             ) : (
-              <DocumentGrid documents={filteredDocs} />
+              <DocumentGrid documents={filteredDocs} onDocumentClick={handleDocumentClick} />
             )}
           </div>
         </div>
