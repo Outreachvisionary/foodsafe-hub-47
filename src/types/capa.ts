@@ -7,7 +7,7 @@ export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export type CAPASource = 'Audit' | 'Customer Complaint' | 'Internal' | 'Regulatory' | 'Other';
 
-export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective';
+export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective' | 'Highly_Effective';
 
 export interface CAPA {
   id: string;
@@ -69,6 +69,13 @@ export interface CAPAStats {
   effectivenessRating?: Record<string, number>;
   overdue: number;
   recentItems?: CAPA[];
+  // Add the missing properties used in CAPADashboard and capaStatsService
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  pendingVerificationCount: number;
+  effectivenessRate: number;
+  byDepartment: Record<string, number>;
 }
 
 export interface CAPAFormData {
@@ -101,6 +108,26 @@ export interface CAPAFilterOptions {
   searchTerm?: string;
 }
 
+// Add the missing CAPAFilter and CAPAFetchParams interfaces
+export interface CAPAFilter {
+  status?: CAPAStatus;
+  priority?: CAPAPriority;
+  source?: CAPASource;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+}
+
+export interface CAPAFetchParams {
+  status?: CAPAStatus;
+  priority?: CAPAPriority;
+  source?: CAPASource;
+  searchQuery?: string;
+  dueDate?: string;
+}
+
 export interface CAPAHistoryItem {
   id: string;
   date: string;
@@ -109,4 +136,15 @@ export interface CAPAHistoryItem {
   oldValue?: string;
   newValue?: string;
   comments?: string;
+}
+
+// Add CAPAEffectivenessMetrics interface
+export interface CAPAEffectivenessMetrics {
+  capaId: string;
+  rootCauseEliminated: boolean;
+  preventiveMeasuresImplemented: boolean;
+  documentationComplete: boolean;
+  score: number;
+  rating: CAPAEffectivenessRating;
+  notes?: string;
 }

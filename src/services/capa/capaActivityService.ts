@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
+import { ensureRecord } from '@/utils/jsonUtils';
 
 interface RecordCAPAActivityParams {
   capa_id: string;
@@ -27,15 +28,15 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
     // Create payload that matches the database schema
     const { error } = await supabase
       .from('capa_activities')
-      .insert({
-        capa_id,
+      .insert([{
         action_type,
         action_description,
         performed_by,
         old_status,
         new_status,
-        metadata
-      });
+        metadata,
+        capa_id // This property should be recognized by the type system
+      }]);
     
     if (error) {
       console.error('Error recording CAPA activity:', error);
@@ -70,7 +71,7 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       action_type: activity.action_type,
       action_description: activity.action_description,
       performed_by: activity.performed_by,
-      metadata: activity.metadata as Record<string, any> || {}
+      metadata: ensureRecord(activity.metadata)
     }));
     
     return activities;

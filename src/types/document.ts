@@ -30,6 +30,8 @@ export type DocumentActionType =
   | 'archive'
   | 'edit';
 
+export type CheckoutStatus = 'Available' | 'Checked Out';
+
 export interface Document {
   id: string;
   title: string;
@@ -51,7 +53,7 @@ export interface Document {
   linked_item_id?: string;
   last_review_date?: string;
   next_review_date?: string;
-  checkout_status?: 'Available' | 'Checked Out';
+  checkout_status?: CheckoutStatus;
   checkout_user_id?: string;
   checkout_user_name?: string;
   checkout_timestamp?: string;
@@ -159,6 +161,8 @@ export interface Complaint {
   product_involved?: string;
   lot_number?: string;
   capa_id?: string;
+  priority?: string;
+  resolution_details?: string;
 }
 
 export type ComplaintStatus =

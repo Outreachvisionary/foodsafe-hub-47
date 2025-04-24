@@ -1,21 +1,24 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA } from '@/types/capa';
+import { CAPA, CAPAStatus } from '@/types/capa';
 import { getCAPAById as fetchCAPAById } from './capa/capaFetchService';
+import { mapInternalStatusToDb } from './capa/capaStatusMapper';
 
 // Re-export the function from capaFetchService for backward compatibility
 export const getCAPAById = fetchCAPAById;
 
 export const createCAPA = async (capaData: Partial<CAPA>) => {
   try {
+    // Map the status to DB format if it exists
+    const status = capaData.status ? mapInternalStatusToDb(capaData.status) : 'Open';
+    
     const dbCAPAData = {
       title: capaData.title,
       description: capaData.description,
       priority: capaData.priority,
-      created_at: capaData.createdAt,
+      status: status,
+      created_at: capaData.createdAt || new Date().toISOString(),
       due_date: capaData.dueDate,
-      completion_date: capaData.completionDate,
-      verification_date: capaData.verificationDate,
       assigned_to: capaData.assignedTo,
       created_by: capaData.createdBy,
       source: capaData.source,
@@ -23,14 +26,17 @@ export const createCAPA = async (capaData: Partial<CAPA>) => {
       corrective_action: capaData.correctiveAction,
       preventive_action: capaData.preventiveAction,
       department: capaData.department,
-      effectiveness_rating: capaData.effectivenessRating,
       effectiveness_criteria: capaData.effectivenessCriteria,
-      verification_method: capaData.verificationMethod,
-      verified_by: capaData.verifiedBy,
-      fsma204_compliant: capaData.fsma204Compliant,
-      effectiveness_verified: capaData.effectivenessVerified,
       source_id: capaData.sourceId,
-      status: capaData.status
+      // Only include these fields if they exist
+      ...(capaData.completionDate && { completion_date: capaData.completionDate }),
+      ...(capaData.verificationDate && { verification_date: capaData.verificationDate }),
+      ...(capaData.effectivenessRating && { effectiveness_rating: capaData.effectivenessRating }),
+      ...(capaData.verificationMethod && { verification_method: capaData.verificationMethod }),
+      ...(capaData.verifiedBy && { verified_by: capaData.verifiedBy }),
+      ...(capaData.fsma204Compliant !== undefined && { fsma204_compliant: capaData.fsma204Compliant }),
+      ...(capaData.effectivenessVerified !== undefined && { effectiveness_verified: capaData.effectivenessVerified }),
+      ...(capaData.sourceReference && { source_reference: capaData.sourceReference })
     };
 
     const { data, error } = await supabase
@@ -61,7 +67,7 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
       updateData.description = capaData.description;
     }
     if (capaData.status !== undefined) {
-      updateData.status = capaData.status;
+      updateData.status = mapInternalStatusToDb(capaData.status);
     }
     if (capaData.priority !== undefined) {
       updateData.priority = capaData.priority;
@@ -113,6 +119,9 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
     }
     if (capaData.sourceId !== undefined) {
       updateData.source_id = capaData.sourceId;
+    }
+    if (capaData.sourceReference !== undefined) {
+      updateData.source_reference = capaData.sourceReference;
     }
 
     const { data, error } = await supabase

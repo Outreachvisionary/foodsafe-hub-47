@@ -1,6 +1,11 @@
 
 import { CAPAStatus } from '@/types/capa';
-import { mapInternalStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
+import { 
+  mapInternalStatusToDb, 
+  mapDbStatusToInternal, 
+  internalToDbStatusMap, 
+  dbToInternalStatusMap 
+} from '@/services/capa/capaStatusMapper';
 
 // This function is now deprecated, use the one from capaStatusMapper instead
 export function mapInternalToStatus(status: CAPAStatus): string {
@@ -41,7 +46,7 @@ export const isStatusEqual = (status1: string, status2: string): boolean => {
   return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
 };
 
-// These functions are now deprecated, use the ones from capaStatusMapper instead
+// These functions are now using the ones from capaStatusMapper
 export { mapInternalStatusToDb, mapDbStatusToInternal };
 
 export default {

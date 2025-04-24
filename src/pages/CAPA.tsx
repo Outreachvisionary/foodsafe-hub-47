@@ -40,14 +40,17 @@ const CAPAPage = () => {
   // Create empty stats for CAPADashboard
   const emptyStats: CAPAStats = {
     total: 0,
+    byStatus: {},
+    byPriority: {},
+    bySource: {},
+    byMonth: {},
+    overdue: 0,
     openCount: 0,
     closedCount: 0,
     overdueCount: 0,
     pendingVerificationCount: 0,
     effectivenessRate: 0,
-    byPriority: {},
-    bySource: {},
-    byDepartment: {},
+    byDepartment: {}
   };
   
   const { toast } = useToast();

@@ -13,6 +13,17 @@ export function ensureRecord(jsonValue: any): Record<string, any> {
     return jsonValue as Record<string, any>;
   }
   
+  // If it's a string that might be JSON, try to parse it
+  if (typeof jsonValue === 'string') {
+    try {
+      const parsed = JSON.parse(jsonValue);
+      return typeof parsed === 'object' && parsed !== null ? parsed : { value: jsonValue };
+    } catch (e) {
+      // If it's not valid JSON, wrap it
+      return { value: jsonValue };
+    }
+  }
+  
   // If it's not an object, wrap it in an object
   return { value: jsonValue };
 }

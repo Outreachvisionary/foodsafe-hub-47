@@ -1,90 +1,233 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, AlertCircle, CheckCircle, XCircle, Calendar } from 'lucide-react';
-import { updateCAPAStatus } from '@/services/capa/capaUpdateService';
-import { getCAPAById, updateCAPA } from '@/services/capaService';
-import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Save, ArrowLeft, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-import { CAPAStatusBadge } from '@/components/capa/CAPAStatusBadge';
-import RelatedDocumentsList from '@/components/capa/RelatedDocumentsList';
-import RelatedTrainingList from '@/components/capa/RelatedTrainingList';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAActivity } from '@/types/capa';
+import { useToast } from '@/components/ui/use-toast';
+import { getCAPAById, updateCAPA } from '@/services/capaService';
+import { updateCAPAStatus } from '@/services/capa/capaUpdateService';
+import { useUser } from '@/contexts/UserContext';
+import { getCAPAActivities } from '@/services/capa/capaActivityService';
+import CAPAActivityList from '@/components/capa/CAPAActivityList';
+import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
+import { isStatusEqual } from '@/services/capa/capaStatusService';
 
-interface CAPADetailsProps {
-  // Define props if needed
-}
+interface CAPADetailsProps {}
 
-const CAPADetails: React.FC<CAPADetailsProps> = ({ /* props */ }) => {
-  const { id } = useParams<{ id: string }>();
-  const [capa, setCapa] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState('');
+const CAPADetails: React.FC<CAPADetailsProps> = () => {
+  const { capaId } = useParams<{ capaId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-
+  const { user: currentUser } = useUser();
+  
+  const [capa, setCapa] = useState<CAPA | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [activities, setActivities] = useState<CAPAActivity[]>([]);
+  const [isActivitiesLoading, setIsActivitiesLoading] = useState(true);
+  
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<CAPAPriority>('Low');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [source, setSource] = useState<CAPASource>('Audit');
+  const [rootCause, setRootCause] = useState('');
+  const [correctiveAction, setCorrectiveAction] = useState('');
+  const [preventiveAction, setPreventiveAction] = useState('');
+  const [department, setDepartment] = useState('');
+  const [fsma204Compliant, setFsma204Compliant] = useState(false);
+  const [sourceId, setSourceId] = useState('');
+  const [sourceReference, setSourceReference] = useState('');
+  
   useEffect(() => {
     const loadCAPA = async () => {
+      if (!capaId) {
+        toast({
+          title: "Error",
+          description: "CAPA ID is missing",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
-        const capaData = await getCAPAById(id);
+        const capaData = await getCAPAById(capaId);
         setCapa(capaData);
+        
+        // Initialize form fields
+        setTitle(capaData.title);
+        setDescription(capaData.description);
+        setPriority(capaData.priority);
+        setAssignedTo(capaData.assignedTo);
+        setDueDate(capaData.dueDate);
+        setSource(capaData.source);
+        setRootCause(capaData.rootCause || '');
+        setCorrectiveAction(capaData.correctiveAction || '');
+        setPreventiveAction(capaData.preventiveAction || '');
+        setDepartment(capaData.department || '');
+        setFsma204Compliant(capaData.fsma204Compliant || false);
+        setSourceId(capaData.sourceId || '');
+        setSourceReference(capaData.sourceReference || '');
       } catch (error) {
-        console.error('Error loading CAPA:', error);
+        console.error("Error loading CAPA:", error);
         toast({
-          title: 'Error',
-          description: 'Failed to load CAPA details.',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load CAPA details",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
-
+    
     loadCAPA();
-  }, [id, toast]);
-
-  const handleStatusUpdate = async (newStatus: string) => {
+  }, [capaId, toast]);
+  
+  useEffect(() => {
+    refreshActivities();
+  }, [capaId]);
+  
+  const refreshActivities = useCallback(async () => {
+    if (!capaId) return;
+    
+    try {
+      setIsActivitiesLoading(true);
+      const activityData = await getCAPAActivities(capaId);
+      setActivities(activityData);
+    } catch (error) {
+      console.error("Error loading CAPA activities:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load CAPA activities",
+        variant: "destructive",
+      });
+    } finally {
+      setIsActivitiesLoading(false);
+    }
+  }, [capaId, toast]);
+  
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    
+    // Reset form fields to original values
+    if (capa) {
+      setTitle(capa.title);
+      setDescription(capa.description);
+      setPriority(capa.priority);
+      setAssignedTo(capa.assignedTo);
+      setDueDate(capa.dueDate);
+      setSource(capa.source);
+      setRootCause(capa.rootCause || '');
+      setCorrectiveAction(capa.correctiveAction || '');
+      setPreventiveAction(capa.preventiveAction || '');
+      setDepartment(capa.department || '');
+      setFsma204Compliant(capa.fsma204Compliant || false);
+      setSourceId(capa.sourceId || '');
+      setSourceReference(capa.sourceReference || '');
+    }
+  };
+  
+  const handleSaveClick = async () => {
+    if (!capaId) {
+      toast({
+        title: "Error",
+        description: "CAPA ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setLoading(true);
-      // Assuming you have a user ID available
-      const userId = 'user-123';
-      const updatedCAPA = await updateCAPAStatus(id, newStatus, userId, comments);
-      setCapa(updatedCAPA);
+      
+      const updatedCAPA = {
+        id: capaId,
+        title: title,
+        description: description,
+        priority: priority,
+        assignedTo: assignedTo,
+        dueDate: dueDate,
+        source: source,
+        rootCause: rootCause,
+        correctiveAction: correctiveAction,
+        preventiveAction: preventiveAction,
+        department: department,
+        fsma204Compliant: fsma204Compliant,
+        sourceId: sourceId,
+        sourceReference: sourceReference
+      };
+      
+      await updateCAPA(capaId, updatedCAPA);
+      
+      setCapa({ ...capa, ...updatedCAPA } as CAPA);
+      setIsEditing(false);
       toast({
-        title: 'CAPA Updated',
-        description: `CAPA status updated to ${newStatus}.`,
+        title: "CAPA Updated",
+        description: "CAPA details have been successfully updated",
       });
     } catch (error) {
-      console.error('Error updating CAPA status:', error);
+      console.error("Error updating CAPA:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update CAPA status.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update CAPA details",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
-
-  const handleEdit = () => {
-    navigate(`/capa/${id}/edit`);
+  
+  const updateCapaStatus = async (newStatus: CAPAStatus) => {
+    try {
+      setIsUpdatingStatus(true);
+      
+      const result = await updateCAPAStatus(
+        capaId,
+        newStatus,
+        currentUser?.id || 'system'
+      );
+      
+      setCapa(result);
+      
+      toast({
+        title: "CAPA Status Updated",
+        description: `Status updated to ${newStatus.replace('_', ' ')}`,
+      });
+      
+      refreshActivities();
+    } catch (error) {
+      console.error("Error updating CAPA status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update CAPA status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
-
-  const handleDelete = async () => {
-    // Implementation
-    console.log('Delete CAPA:', id);
-    toast({
-      title: "CAPA Deleted",
-      description: "The CAPA has been successfully deleted.",
-    });
+  
+  const handleGoBack = () => {
+    navigate('/capa');
   };
-
-  if (loading) {
+  
+  if (loading || !capa) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -92,164 +235,306 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ /* props */ }) => {
       </div>
     );
   }
-
-  if (!capa) {
-    return <p>CAPA not found.</p>;
-  }
-
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">CAPA Details</h2>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleEdit}>
-            Edit
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{capa.title}</h1>
+          <p className="text-gray-500">
+            <Clock className="inline-block h-4 w-4 mr-1 align-middle" />
+            Created on {format(new Date(capa.createdAt), 'MMM d, yyyy')}
+          </p>
+        </div>
+        <div>
+          <Button variant="outline" onClick={handleGoBack} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to List
           </Button>
-          <Button size="sm" variant="destructive" onClick={handleDelete}>
-            Delete
-          </Button>
+          {isEditing ? (
+            <>
+              <Button variant="ghost" onClick={handleCancelEdit} className="mr-2">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveClick} disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleEditClick}>Edit Details</Button>
+          )}
         </div>
       </div>
-
-      <Card>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">{capa.title}</h3>
-            <CAPAStatusBadge status={capa.status} />
-          </div>
-
-          <p className="text-sm text-gray-500">{capa.description}</p>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs font-medium text-gray-500">Priority</div>
-              <div className="text-sm">{capa.priority}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Source</div>
-              <div className="text-sm">{capa.source}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Assigned To</div>
-              <div className="text-sm">{capa.assignedTo}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Created By</div>
-              <div className="text-sm">{capa.createdBy}</div>
-            </div>
-             <div>
-              <div className="text-xs font-medium text-gray-500">Due Date</div>
-              <div className="text-sm">
-                <Clock className="h-3 w-3 mr-1 inline-block" />
-                {format(new Date(capa.dueDate), 'MMM d, yyyy')}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Created At</div>
-              <div className="text-sm">
-                <Calendar className="h-3 w-3 mr-1 inline-block" />
-                {format(new Date(capa.createdAt), 'MMM d, yyyy')}
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs font-medium text-gray-500">Root Cause</div>
-              <div className="text-sm">{capa.rootCause || 'Not specified'}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Corrective Action</div>
-              <div className="text-sm">{capa.correctiveAction || 'Not specified'}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Preventive Action</div>
-              <div className="text-sm">{capa.preventiveAction || 'Not specified'}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Verification Method</div>
-              <div className="text-sm">{capa.verificationMethod || 'Not specified'}</div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <div className="text-xs font-medium text-gray-500">Effectiveness Criteria</div>
-            <div className="text-sm">{capa.effectivenessCriteria || 'Not specified'}</div>
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs font-medium text-gray-500">Verified By</div>
-              <div className="text-sm">{capa.verifiedBy || 'Not specified'}</div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-500">Completion Date</div>
-              <div className="text-sm">
-                {capa.completionDate ? format(new Date(capa.completionDate), 'MMM d, yyyy') : 'Not completed'}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
+      
       <Card>
         <CardHeader>
-          <CardTitle>Update Status</CardTitle>
+          <CardTitle>CAPA Details</CardTitle>
+          <CardDescription>
+            View and manage details for this Corrective and Preventive Action.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Textarea
-                placeholder="Comments"
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={!isEditing}
               />
             </div>
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => handleStatusUpdate('In_Progress')}
-                disabled={isStatusEqual(capa.status, 'In_Progress')}
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="priority">Priority</Label>
+              <Select
+                value={priority}
+                onValueChange={(value) => setPriority(value as CAPAPriority)}
+                disabled={!isEditing}
               >
-                Mark In Progress
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleStatusUpdate('Pending_Verification')}
-                disabled={isStatusEqual(capa.status, 'Pending_Verification')}
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Input
+                id="assignedTo"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Input
+                type="date"
+                id="dueDate"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+            <div>
+              <Label htmlFor="source">Source</Label>
+              <Select
+                value={source}
+                onValueChange={(value) => setSource(value as CAPASource)}
+                disabled={!isEditing}
               >
-                Mark Pending Verification
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleStatusUpdate('Verified')}
-                disabled={isStatusEqual(capa.status, 'Verified')}
-              >
-                Mark Verified
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleStatusUpdate('Closed')}
-                disabled={isStatusEqual(capa.status, 'Closed')}
-              >
-                Mark Closed
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Audit">Audit</SelectItem>
+                  <SelectItem value="Customer Complaint">Customer Complaint</SelectItem>
+                  <SelectItem value="Internal">Internal</SelectItem>
+                  <SelectItem value="Regulatory">Regulatory</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sourceId">Source ID</Label>
+              <Input
+                id="sourceId"
+                value={sourceId}
+                onChange={(e) => setSourceId(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+            <div>
+              <Label htmlFor="sourceReference">Source Reference</Label>
+              <Input
+                id="sourceReference"
+                value={sourceReference}
+                onChange={(e) => setSourceReference(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="rootCause">Root Cause</Label>
+              <Textarea
+                id="rootCause"
+                value={rootCause}
+                onChange={(e) => setRootCause(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+            <div>
+              <Label htmlFor="correctiveAction">Corrective Action</Label>
+              <Textarea
+                id="correctiveAction"
+                value={correctiveAction}
+                onChange={(e) => setCorrectiveAction(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+            <div>
+              <Label htmlFor="preventiveAction">Preventive Action</Label>
+              <Textarea
+                id="preventiveAction"
+                value={preventiveAction}
+                onChange={(e) => setPreventiveAction(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                disabled={!isEditing}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="fsma204Compliant"
+                checked={fsma204Compliant}
+                onCheckedChange={(checked) => setFsma204Compliant(!!checked)}
+                disabled={!isEditing}
+              />
+              <Label htmlFor="fsma204Compliant">FSMA 204 Compliant</Label>
             </div>
           </div>
         </CardContent>
       </Card>
-
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Status</CardTitle>
+          <CardDescription>
+            Current status of the CAPA: {capa.status}
+            {capa.dueDate && new Date(capa.dueDate) < new Date() && !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
+              <AlertTriangle className="h-4 w-4 text-red-500 inline-block ml-1 align-middle" />
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2">
+            <Button
+              variant="outline"
+              onClick={() => updateCapaStatus('Open')}
+              disabled={isUpdatingStatus || isStatusEqual(capa.status, 'Open')}
+            >
+              {isStatusEqual(capa.status, 'Open') ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Open
+                </>
+              ) : (
+                'Mark as Open'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => updateCapaStatus('In_Progress')}
+              disabled={isUpdatingStatus || isStatusEqual(capa.status, 'In_Progress')}
+            >
+              {isStatusEqual(capa.status, 'In_Progress') ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  In Progress
+                </>
+              ) : (
+                'Mark as In Progress'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => updateCapaStatus('Pending_Verification')}
+              disabled={isUpdatingStatus || isStatusEqual(capa.status, 'Pending_Verification')}
+            >
+              {isStatusEqual(capa.status, 'Pending_Verification') ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Pending Verification
+                </>
+              ) : (
+                'Mark as Pending Verification'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => updateCapaStatus('Verified')}
+              disabled={isUpdatingStatus || isStatusEqual(capa.status, 'Verified')}
+            >
+              {isStatusEqual(capa.status, 'Verified') ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Verified
+                </>
+              ) : (
+                'Mark as Verified'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => updateCapaStatus('Closed')}
+              disabled={isUpdatingStatus || isStatusEqual(capa.status, 'Closed')}
+            >
+              {isStatusEqual(capa.status, 'Closed') ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Closed
+                </>
+              ) : (
+                'Mark as Closed'
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RelatedDocumentsList documentIds={capa.relatedDocuments || []} />
-        <RelatedTrainingList trainingIds={capa.relatedTraining || []} />
+        <CAPAActivityList capaId={capaId} activities={activities} loading={isActivitiesLoading} onActivityChange={refreshActivities} />
+        
+        <CAPAEffectivenessMonitor 
+          capaId={capaId}
+          title={capa.title}
+          implementationDate={capa.completionDate || capa.dueDate}
+        />
       </div>
     </div>
   );

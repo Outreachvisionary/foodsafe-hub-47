@@ -18,7 +18,10 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       effectivenessRate: 0,
       byPriority: {},
       bySource: {},
-      byDepartment: {} // Include the byDepartment property
+      byDepartment: {},
+      byStatus: {},
+      byMonth: {},
+      overdue: 0
     };
     
     if (!data || data.length === 0) {
@@ -70,6 +73,9 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     stats.effectivenessRate = stats.closedCount > 0 
       ? (effectiveCount / stats.closedCount) * 100 
       : 0;
+
+    // Set overdue count to be consistent with other usage
+    stats.overdue = stats.overdueCount;
     
     return stats;
     
