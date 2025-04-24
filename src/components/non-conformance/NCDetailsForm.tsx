@@ -64,27 +64,34 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
     }
   };
   
+  // Use the exact values from the NCItemCategory type
   const itemCategories: NCItemCategory[] = [
-    'Processing Equipment', 
-    'Product Storage Tanks', 
-    'Finished Products', 
-    'Raw Products', 
-    'Packaging Materials', 
+    'Equipment',
+    'Facility',
+    'Finished Product',
+    'Packaging Material',
+    'Personnel',
+    'Raw Material',
     'Other'
   ];
   
+  // Use the exact values from the NCReasonCategory type
   const reasonCategories: NCReasonCategory[] = [
-    'Contamination', 
-    'Quality Issues', 
-    'Regulatory Non-Compliance', 
-    'Equipment Malfunction', 
-    'Documentation Error', 
+    'Contamination',
+    'Quality Issue',
+    'Regulatory Non-Compliance',
+    'Equipment Malfunction',
+    'Documentation Error',
     'Process Deviation', 
+    'Foreign Material',
+    'Temperature Abuse',
+    'Packaging Defect',
+    'Labeling Error',
     'Other'
   ];
   
   const priorities = ['Critical', 'High', 'Medium', 'Low'];
-  const riskLevels = ['High', 'Medium', 'Low'];
+  const riskLevels = ['high', 'moderate', 'low'];
   
   return (
     <form onSubmit={handleSubmit}>

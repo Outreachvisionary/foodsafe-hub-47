@@ -1,7 +1,8 @@
-
 // Mock document service implementation
 
 import { Document, DocumentCategory, DocumentStatus } from '@/types/document';
+import { supabase } from '@/integrations/supabase/client';
+import { DocumentActivity, DocumentActionType } from '@/types/document';
 
 let mockDocuments: Document[] = [
   {
@@ -97,10 +98,59 @@ export const deleteDocument = async (id: string): Promise<void> => {
   mockDocuments.splice(index, 1);
 };
 
+export const createDocumentActivity = async (activityData: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> => {
+  try {
+    const dataToInsert = {
+      document_id: activityData.document_id,
+      action: activityData.action,
+      user_id: activityData.userId,
+      user_name: activityData.userName,
+      user_role: activityData.userRole,
+      comments: activityData.comments,
+      version_id: activityData.version_id,
+      checkout_action: activityData.checkout_action
+    };
+    
+    const { data, error } = await supabase
+      .from('document_activities')
+      .insert([dataToInsert])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating document activity:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      throw new Error('Failed to create document activity');
+    }
+    
+    const activity: DocumentActivity = {
+      id: data.id,
+      document_id: data.document_id,
+      action: data.action as DocumentActionType,
+      userId: data.user_id,
+      userName: data.user_name,
+      userRole: data.user_role,
+      timestamp: data.timestamp,
+      comments: data.comments,
+      version_id: data.version_id,
+      checkout_action: data.checkout_action
+    };
+    
+    return activity;
+  } catch (error) {
+    console.error('Error in createDocumentActivity:', error);
+    throw error;
+  }
+};
+
 export default {
   fetchDocuments,
   fetchDocument,
   createDocument,
   updateDocument,
-  deleteDocument
+  deleteDocument,
+  createDocumentActivity
 };

@@ -3,29 +3,36 @@ import React from 'react';
 import { BarChartComponent, PieChartComponent } from './NCDashboardCharts';
 import { NCStats } from '@/types/non-conformance';
 
+// Define ChartData interface
+interface ChartData {
+  name: string;
+  value: number;
+  fill?: string;
+}
+
 interface NCDashboardProps {
   stats: NCStats;
 }
 
 const NCDashboard: React.FC<NCDashboardProps> = ({ stats }) => {
   // Transform stats into chart data
-  const statusData = Object.entries(stats.byStatus).map(([name, value]) => ({
+  const statusData: ChartData[] = Object.entries(stats.byStatus).map(([name, value]) => ({
     name: name.replace('_', ' '),
-    value,
+    value: value as number, // Cast to number to satisfy type
     fill: name === 'On Hold' ? '#f59e0b' : 
           name === 'Resolved' ? '#10b981' : 
           name === 'Under Review' ? '#3b82f6' : 
           name === 'Closed' ? '#6b7280' : '#ef4444'
   }));
 
-  const categoryData = Object.entries(stats.byCategory).map(([name, value]) => ({
+  const categoryData: ChartData[] = Object.entries(stats.byCategory).map(([name, value]) => ({
     name,
-    value,
+    value: value as number, // Cast to number to satisfy type
   }));
 
-  const reasonData = Object.entries(stats.byReasonCategory).map(([name, value]) => ({
+  const reasonData: ChartData[] = Object.entries(stats.byReasonCategory).map(([name, value]) => ({
     name,
-    value,
+    value: value as number, // Cast to number to satisfy type
   }));
 
   return (

@@ -24,6 +24,8 @@ const DocumentPreviewDialogWrapper: React.FC<DocumentPreviewDialogWrapperProps> 
         {document ? (
           <DocumentPreviewDialog 
             document={document} 
+            isOpen={open}
+            onClose={() => onOpenChange(false)}
             onOpenChange={onOpenChange}
           />
         ) : (

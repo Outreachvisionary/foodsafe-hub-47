@@ -35,7 +35,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CheckCircle, AlertTriangle, ArchiveRestore, Database } from 'lucide-react';
-import { mapStatusToInternal } from '@/services/capa/capaStatusService';
+
+const mapStatusToInternal = (status: string): ComplaintStatus => {
+  const formattedStatus = status.replace(' ', '_') as ComplaintStatus;
+  
+  if (
+    formattedStatus === 'New' ||
+    formattedStatus === 'Under_Investigation' ||
+    formattedStatus === 'Resolved' ||
+    formattedStatus === 'Closed' ||
+    formattedStatus === 'Reopened'
+  ) {
+    return formattedStatus;
+  }
+  
+  if (formattedStatus === 'Under-Investigation' || formattedStatus === 'UnderInvestigation') {
+    return 'Under_Investigation';
+  }
+  
+  console.warn(`Unknown status format: ${status}, defaulting to New`);
+  return 'New';
+};
 
 interface ComplaintDetailsProps {
   complaint: Complaint;
@@ -46,11 +66,9 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
   const [note, setNote] = React.useState('');
 
   const handleAddNote = () => {
-    // Implement add note logic here
     setOpen(false);
   };
 
-  // Convert database status values to UI display format
   const getStatusForDisplay = (status: string): string => {
     switch (status.toLowerCase()) {
       case 'new':
@@ -68,7 +86,6 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     }
   };
 
-  // Fix status comparison by using the exact string values from ComplaintStatus type
   const showNewButton = complaint.status === 'New';
   const showInProgressButton = complaint.status === 'New' || complaint.status === 'Reopened';
   const showResolvedButton = complaint.status === 'Under_Investigation';
@@ -229,3 +246,5 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({ complaint })
     </Card>
   );
 };
+
+export default ComplaintDetails;

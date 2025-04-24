@@ -5,6 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
 import { DocumentActionType } from '@/types/document';
 
+const transformVersionData = (versionData: any): DocumentVersion => {
+  return {
+    ...versionData,
+    version_type: versionData.version_type || 'minor' // Ensure it's a valid version type
+  };
+};
+
 export const useDocumentService = () => {
   const { toast } = useToast();
 
@@ -14,12 +21,17 @@ export const useDocumentService = () => {
         .from('document_versions')
         .select('*')
         .eq('document_id', documentId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching document versions:', error.message);
+        .order('version', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching document versions:', error);
+        throw error;
+      }
+      
+      // Transform data to ensure version_type is valid
+      return data.map(transformVersionData) || [];
+    } catch (error) {
+      console.error('Error in getDocumentVersions:', error);
       throw error;
     }
   }, []);

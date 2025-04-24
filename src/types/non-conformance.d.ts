@@ -8,16 +8,16 @@ export type NCStatus =
   | 'Rejected'
   | 'Resolved'
   | 'Closed'
-  | 'Under Investigation'; // Added this to match code usage
+  | 'Under Investigation';
 
 export type NCItemCategory = 
   | 'Processing Equipment'
   | 'Product Storage Tanks'
   | 'Finished Products'
-  | 'Raw Products'
-  | 'Packaging Materials'
   | 'Finished Product'
+  | 'Raw Products'
   | 'Raw Material'
+  | 'Packaging Materials'
   | 'Packaging Material'
   | 'Equipment'
   | 'Facility'
@@ -80,13 +80,50 @@ export interface NonConformance {
   source?: string;
 }
 
+export interface NCActivity {
+  id: string;
+  non_conformance_id: string;
+  action: string;
+  performed_by: string;
+  performed_at: string;
+  previous_status?: NCStatus;
+  new_status?: NCStatus;
+  comments?: string;
+}
+
+export interface NCFilter {
+  status?: NCStatus[];
+  item_category?: NCItemCategory[];
+  reason_category?: NCReasonCategory[];
+  date_range?: {
+    start?: string;
+    end?: string;
+  };
+  search?: string;
+}
+
 export interface NCStats {
   total: number;
-  byStatus: Record<NCStatus, number>;
-  byCategory: Record<NCItemCategory, number>;
-  byReasonCategory: Record<NCReasonCategory, number>;
-  byRiskLevel: Record<NCRiskLevel, number>;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byReasonCategory: Record<string, number>;
+  byRiskLevel: Record<string, number>;
   overdue: number;
   pendingReview: number;
   recentlyResolved: number;
+  totalQuantityOnHold?: number;
+  byReason?: Record<string, number>;
+  recentItems?: NonConformance[];
+}
+
+export interface NCAttachment {
+  id: string;
+  non_conformance_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  description?: string;
+  uploaded_at: string;
+  uploaded_by: string;
 }

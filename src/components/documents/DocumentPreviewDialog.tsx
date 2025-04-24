@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -21,12 +22,13 @@ interface DocumentPreviewDialogProps {
   document: Document | null;
   isOpen: boolean;
   onClose: () => void;
+  onOpenChange?: (open: boolean) => void; // Added to match usage
 }
 
-const DocumentPreviewDialog = ({ document, isOpen, onClose }: DocumentPreviewDialogProps) => {
+const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: DocumentPreviewDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const userRole = useUserRole();
+  const { userRole } = useUserRole();
   const [activityLog, setActivityLog] = useState<DocumentActivity | null>(null);
 
   useEffect(() => {
@@ -56,11 +58,11 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose }: DocumentPreviewDia
     // When edit is clicked, create an activity log
     if (document && user) {
       createActivityLog({
-        documentId: document.id,
-        action: "update" as DocumentActionType, // Changed from 'edit' to 'update'
+        document_id: document.id,
+        action: "update" as DocumentActionType, // Using "update" instead of "edit"
         userId: user.id,
-        userName: user.full_name || user.email,
-        userRole: userRole?.role_name || 'User',
+        userName: user.email || '', // Using email instead of full_name
+        userRole: userRole?.userRole?.role_name || 'User',
         comments: `Started editing document ${document.title}`
       });
       
@@ -72,11 +74,11 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose }: DocumentPreviewDia
   const handleDownloadClick = () => {
     if (document && user) {
       createActivityLog({
-        documentId: document.id,
+        document_id: document.id,
         action: "download" as DocumentActionType,
         userId: user.id,
-        userName: user.full_name || user.email,
-        userRole: userRole?.role_name || 'User',
+        userName: user.email || '', // Using email instead of full_name
+        userRole: userRole?.userRole?.role_name || 'User',
         comments: `Downloaded document ${document.title}`
       });
 
@@ -88,11 +90,11 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose }: DocumentPreviewDia
   const handleDeleteClick = () => {
     if (document && user) {
       createActivityLog({
-        documentId: document.id,
+        document_id: document.id,
         action: "delete" as DocumentActionType,
         userId: user.id,
-        userName: user.full_name || user.email,
-        userRole: userRole?.role_name || 'User',
+        userName: user.email || '', // Using email instead of full_name
+        userRole: userRole?.userRole?.role_name || 'User',
         comments: `Deleted document ${document.title}`
       });
 
@@ -108,11 +110,11 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose }: DocumentPreviewDia
   const handleArchiveClick = () => {
     if (document && user) {
       createActivityLog({
-        documentId: document.id,
+        document_id: document.id,
         action: "archive" as DocumentActionType,
         userId: user.id,
-        userName: user.full_name || user.email,
-        userRole: userRole?.role_name || 'User',
+        userName: user.email || '', // Using email instead of full_name
+        userRole: userRole?.userRole?.role_name || 'User',
         comments: `Archived document ${document.title}`
       });
 
