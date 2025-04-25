@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/toaster';
@@ -32,6 +31,8 @@ const ModuleContent = lazy(() => import('@/components/standards/ModuleContent'))
 const TestingVerification = lazy(() => import('@/pages/TestingVerification'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const CAPA = lazy(() => import('@/pages/CAPA'));
+import ScheduleAuditPage from "./pages/ScheduleAuditPage";
+import NewSupplierPage from "./pages/NewSupplierPage";
 
 function App() {
   return (
@@ -81,6 +82,8 @@ function App() {
             <Route path="haccp" element={<NotFound />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
             <Route path="roles" element={<RoleManagement />} />
+            <Route path="/audits/schedule" element={<ScheduleAuditPage />} />
+            <Route path="/suppliers/new" element={<NewSupplierPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

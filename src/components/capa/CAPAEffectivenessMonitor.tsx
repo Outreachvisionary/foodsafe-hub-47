@@ -1,93 +1,139 @@
 
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { FaCheckCircle, FaTimesCircle, FaExclamationCircle, FaQuestionCircle } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { CAPA } from '@/types/capa';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 interface CAPAEffectivenessMonitorProps {
-  capas: CAPA[];
+  id: string;
+  implementationDate?: string;
 }
 
-type EffectivenessRating = 'Highly Effective' | 'Effective' | 'Partially Effective' | 'Not Effective';
-type RatingSummary = Record<string, { count: number; color: string; icon: React.FC }>;
+const getStatusIcon = (verified: boolean | undefined, rating: string | undefined) => {
+  if (!verified) {
+    return <Clock className="h-8 w-8 text-warning" />;
+  }
+  if (rating === "Highly_Effective" || rating === "Effective") {
+    return <CheckCircle className="h-8 w-8 text-success" />;
+  }
+  return <AlertCircle className="h-8 w-8 text-destructive" />;
+};
 
-const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ capas }) => {
-  const ratingSummary = React.useMemo(() => {
-    const summary: RatingSummary = {
-      'Highly Effective': { count: 0, color: 'text-green-600', icon: FaCheckCircle },
-      'Effective': { count: 0, color: 'text-green-500', icon: FaCheckCircle },
-      'Partially Effective': { count: 0, color: 'text-yellow-500', icon: FaExclamationCircle },
-      'Not Effective': { count: 0, color: 'text-red-500', icon: FaTimesCircle },
-      'Not Verified': { count: 0, color: 'text-gray-400', icon: FaQuestionCircle }
-    };
-    
-    capas.forEach(capa => {
-      if (!capa.effectiveness_verified) {
-        summary['Not Verified'].count++;
-      } else {
-        // Ensure we're using the correct type comparison
-        const rating = capa.effectiveness_rating;
-        if (rating === 'Highly_Effective') {
-          summary['Highly Effective'].count++;
-        } else if (rating === 'Effective') {
-          summary['Effective'].count++;
-        } else if (rating === 'Partially_Effective') {
-          summary['Partially Effective'].count++;
-        } else if (rating === 'Not_Effective') {
-          summary['Not Effective'].count++;
-        } else {
-          summary['Not Verified'].count++;
-        }
+const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id, implementationDate }) => {
+  const [capa, setCapa] = useState<CAPA | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const capaData = await fetchCAPAById(id);
+        setCapa(capaData);
+      } catch (err) {
+        setError('Failed to load CAPA effectiveness data');
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  if (loading) {
+    return <Card className="animate-pulse bg-secondary/30"><CardContent className="p-6 h-40"></CardContent></Card>;
+  }
+
+  if (error || !capa) {
+    return (
+      <Card className="bg-destructive/10 border-destructive/20">
+        <CardContent className="p-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-destructive mr-2" />
+            <p className="text-destructive">{error || 'CAPA data not available'}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const getStatusText = () => {
+    if (!capa.effectivenessVerified) {
+      return 'Effectiveness verification pending';
+    }
     
-    return summary;
-  }, [capas]);
-  
-  const totalVerified = React.useMemo(() => {
-    return capas.filter(capa => capa.effectiveness_verified).length;
-  }, [capas]);
-  
-  const totalCapas = capas.length;
-  
+    switch (capa.effectivenessRating) {
+      case 'Highly_Effective':
+        return 'Highly effective - No recurrence';
+      case 'Effective':
+        return 'Effective - Meets criteria';
+      case 'Partially_Effective':
+        return 'Partially effective - Needs improvement';
+      case 'Not_Effective':
+        return 'Not effective - Recurrence or failure';
+      default:
+        return 'Status unknown';
+    }
+  };
+
+  const getEffectivenessClass = () => {
+    if (!capa.effectivenessVerified) {
+      return 'bg-warning-muted text-warning-foreground';
+    }
+    
+    switch (capa.effectivenessRating) {
+      case 'Highly_Effective':
+      case 'Effective':
+        return 'bg-success-muted text-success';
+      case 'Partially_Effective':
+        return 'bg-warning-muted text-warning-foreground';
+      case 'Not_Effective':
+        return 'bg-destructive/10 text-destructive';
+      default:
+        return 'bg-secondary text-foreground-secondary';
+    }
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>CAPA Effectiveness</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium">Effectiveness Monitor</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {/* Verification Progress */}
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm">Verification Progress</span>
-              <span className="text-sm font-semibold">{totalVerified}/{totalCapas}</span>
+        <div className="flex flex-col">
+          <div className="flex items-center mb-4">
+            {getStatusIcon(capa.effectivenessVerified, capa.effectivenessRating)}
+            <div className="ml-3">
+              <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getEffectivenessClass()}`}>
+                {getStatusText()}
+              </div>
+              <p className="text-sm text-foreground-muted mt-1">
+                {implementationDate 
+                  ? `Implemented on ${implementationDate}` 
+                  : capa.completionDate 
+                    ? `Implemented on ${new Date(capa.completionDate).toLocaleDateString()}` 
+                    : 'Implementation date not set'}
+              </p>
             </div>
-            <Progress value={(totalVerified / totalCapas) * 100} className="h-2" />
           </div>
           
-          {/* Effectiveness Ratings */}
-          <div className="pt-4 space-y-3">
-            {Object.entries(ratingSummary).map(([rating, { count, color, icon: Icon }]) => {
-              if (rating === 'Not Verified' && count === 0) return null;
-              
-              const percentage = totalCapas > 0 ? Math.round((count / totalCapas) * 100) : 0;
-              
-              return (
-                <div key={rating} className="flex items-center">
-                  <Icon className={`${color} mr-2`} />
-                  <div className="flex-1">
-                    <div className="flex justify-between text-sm">
-                      <span>{rating}</span>
-                      <span className="font-semibold">{count}</span>
-                    </div>
-                    <Progress value={percentage} className="h-1.5 mt-1" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {capa.effectivenessVerified && (
+            <div className="text-sm">
+              <p className="font-medium">Verification Details:</p>
+              <p className="text-foreground-muted">
+                {capa.verificationMethod || 'No verification method specified'}
+              </p>
+              {capa.verificationDate && (
+                <p className="text-foreground-muted mt-1">
+                  Verified on {new Date(capa.verificationDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

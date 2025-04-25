@@ -124,10 +124,31 @@ export const deleteFacility = async (id: string): Promise<void> => {
   }
 };
 
+export const adaptFacility = (facility: any): Facility => {
+  return {
+    id: facility.id,
+    name: facility.name,
+    description: facility.description || '',
+    address: facility.address || '',
+    contact_email: facility.contact_email || '',
+    contact_phone: facility.contact_phone || '',
+    organization_id: facility.organization_id || '',
+    location_data: facility.location_data || {},
+    created_at: facility.created_at,
+    updated_at: facility.updated_at,
+    country: facility.country || '',
+    state: facility.state || '',
+    city: facility.city || '',
+    zipcode: facility.zipcode || '',
+    status: facility.status || 'active', // Ensure status has a default value
+  };
+};
+
 export default {
   getFacilities,
   createFacility,
   getFacilityById,
   updateFacility,
-  deleteFacility
+  deleteFacility,
+  adaptFacility
 };

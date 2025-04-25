@@ -532,7 +532,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
         
         {capa && (
           <CAPAEffectivenessMonitor 
-            capaId={capaId as string}
+            id={capaId}
             implementationDate={capa.completionDate || capa.createdAt}
           />
         )}
