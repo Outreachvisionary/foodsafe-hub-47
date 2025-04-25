@@ -1,8 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity, CAPAStatus } from '@/types/capa';
 import { ensureRecord } from '@/utils/jsonUtils';
-import { mapInternalStatusToDb, mapDbStatusToInternal, DbCAPAStatus } from './capaStatusMapper';
+import { mapInternalStatusToDb, mapDbStatusToInternal } from './capaStatusMapper';
 
 interface RecordCAPAActivityParams {
   capa_id: string;
@@ -26,7 +25,6 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       metadata = {}
     } = params;
     
-    // Create payload that matches the database schema, converting status values if they exist
     const payload: any = {
       action_type,
       action_description,
@@ -37,7 +35,6 @@ export const recordCAPAActivity = async (params: RecordCAPAActivityParams): Prom
       capa_id
     };
     
-    // Insert the activity record
     const { error } = await supabase
       .from('capa_activities')
       .insert(payload);
@@ -65,7 +62,6 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       throw error;
     }
     
-    // Transform database records to application format with proper typing
     const activities: CAPAActivity[] = data.map(activity => ({
       id: activity.id,
       capa_id: activity.capa_id,

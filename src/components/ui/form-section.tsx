@@ -2,6 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
+import { LucideIcon } from "lucide-react";
 
 interface FormSectionProps {
   title: string;
@@ -9,6 +10,7 @@ interface FormSectionProps {
   className?: string;
   description?: string;
   collapsible?: boolean;
+  icon?: LucideIcon;
 }
 
 export const FormSection: React.FC<FormSectionProps> = ({
@@ -17,6 +19,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
   className,
   description,
   collapsible = false,
+  icon: Icon,
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
@@ -36,7 +39,10 @@ export const FormSection: React.FC<FormSectionProps> = ({
         onClick={toggleCollapse}
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+          <div className="flex items-center gap-2">
+            {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
+            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+          </div>
           {collapsible && (
             <button 
               type="button"

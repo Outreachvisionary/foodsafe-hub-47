@@ -1,9 +1,9 @@
 
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Calendar, CheckCircle, ChevronLeft, Clipboard, Clock, Info, MapPin, Users } from "lucide-react";
+import { Calendar as CalendarIcon, CheckCircle, ChevronLeft, Clipboard, Clock, Info, MapPin, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -32,9 +32,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { FormSection } from "@/components/ui/form-section";
-import { Card, CardContent } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 
 // Animation variants
 const fadeIn = {
@@ -93,11 +93,12 @@ const departments = [
   "Procurement",
   "Human Resources",
   "R&D"
-];
+] as const;
 
 const ScheduleAuditForm: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { toast } = useToast();
   
   // Initialize form with default values
   const form = useForm<AuditFormValues>({
@@ -132,7 +133,7 @@ const ScheduleAuditForm: React.FC = () => {
       toast({
         title: "Audit Scheduled",
         description: `Successfully scheduled "${values.name}" for ${format(values.auditDate, 'PP')}`,
-        variant: "success",
+        variant: "default",
       });
       
       // Navigate back to audits page
@@ -180,7 +181,7 @@ const ScheduleAuditForm: React.FC = () => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Audit Name</FormLabel>
+                      <FormLabel>Audit Name</FormLabel>
                       <FormControl>
                         <Input placeholder="E.g. Annual Food Safety Audit" {...field} />
                       </FormControl>
@@ -195,7 +196,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="auditType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Audit Type</FormLabel>
+                    <FormLabel>Audit Type</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -223,7 +224,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="standard"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Standard/Framework</FormLabel>
+                    <FormLabel>Standard/Framework</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -248,14 +249,14 @@ const ScheduleAuditForm: React.FC = () => {
             </div>
           </FormSection>
           
-          <FormSection title="Scheduling Details" icon={Clock}>
+          <FormSection title="Scheduling Details">
             <div className="grid gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="auditDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel required>Audit Date</FormLabel>
+                    <FormLabel>Audit Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -270,7 +271,7 @@ const ScheduleAuditForm: React.FC = () => {
                             ) : (
                               <span>Pick a date</span>
                             )}
-                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -294,7 +295,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="duration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Duration (hours)</FormLabel>
+                    <FormLabel>Duration (hours)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -314,7 +315,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Location</FormLabel>
+                    <FormLabel>Location</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -346,7 +347,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="auditor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Auditor</FormLabel>
+                    <FormLabel>Auditor</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -379,7 +380,7 @@ const ScheduleAuditForm: React.FC = () => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Description</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Enter audit scope and objectives..."
@@ -398,7 +399,7 @@ const ScheduleAuditForm: React.FC = () => {
                 name="priorityLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Priority Level</FormLabel>
+                    <FormLabel>Priority Level</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -428,7 +429,7 @@ const ScheduleAuditForm: React.FC = () => {
                   render={() => (
                     <FormItem>
                       <div className="mb-4">
-                        <FormLabel required>Departments to Audit</FormLabel>
+                        <FormLabel>Departments to Audit</FormLabel>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {departments.map((department) => (

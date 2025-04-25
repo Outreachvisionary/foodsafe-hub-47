@@ -15,5 +15,6 @@ export interface Facility {
   state?: string;
   city?: string;
   zipcode?: string;
+  facility_type?: string;
   status: string; // Make sure status is required
 }

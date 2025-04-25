@@ -3,7 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Building, ChevronLeft } from "lucide-react";
+import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { FormSection } from "@/components/ui/form-section";
 import StatusBadge from "@/components/ui/status-badge";
 
@@ -76,7 +76,7 @@ const approvalLevels = [
   "Tier 3 (Basic Qualification)"
 ];
 
-const certifications = [
+const certificationOptions = [
   "GFSI Recognized Certification",
   "HACCP Plan",
   "ISO 22000",
@@ -87,11 +87,12 @@ const certifications = [
   "Organic Certification",
   "Kosher Certification",
   "Halal Certification"
-];
+] as const;
 
 const NewSupplierForm: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { toast } = useToast();
   
   // Initialize form with default values
   const form = useForm<SupplierFormValues>({
@@ -156,7 +157,7 @@ const NewSupplierForm: React.FC = () => {
       toast({
         title: "Supplier Added",
         description: `Successfully added ${values.companyName} to your suppliers`,
-        variant: "success",
+        variant: "default",
       });
       
       // Navigate back to suppliers page
@@ -215,7 +216,7 @@ const NewSupplierForm: React.FC = () => {
                   name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Company Name</FormLabel>
+                      <FormLabel>Company Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter company name" {...field} />
                       </FormControl>
@@ -230,7 +231,7 @@ const NewSupplierForm: React.FC = () => {
                 name="supplierType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Supplier Type</FormLabel>
+                    <FormLabel>Supplier Type</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -258,7 +259,7 @@ const NewSupplierForm: React.FC = () => {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Category</FormLabel>
+                    <FormLabel>Category</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -286,7 +287,7 @@ const NewSupplierForm: React.FC = () => {
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Status</FormLabel>
+                    <FormLabel>Status</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
@@ -315,7 +316,7 @@ const NewSupplierForm: React.FC = () => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Description</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Describe the supplier and products/services they provide..."
@@ -338,7 +339,7 @@ const NewSupplierForm: React.FC = () => {
                 name="contactName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Contact Name</FormLabel>
+                    <FormLabel>Contact Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter contact person's name" {...field} />
                     </FormControl>
@@ -352,7 +353,7 @@ const NewSupplierForm: React.FC = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Email Address</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <Input placeholder="contact@example.com" type="email" {...field} />
                     </FormControl>
@@ -366,7 +367,7 @@ const NewSupplierForm: React.FC = () => {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Phone Number</FormLabel>
+                    <FormLabel>Phone Number</FormLabel>
                     <FormControl>
                       <Input placeholder="+1 (555) 123-4567" {...field} />
                     </FormControl>
@@ -399,7 +400,7 @@ const NewSupplierForm: React.FC = () => {
                   name="streetAddress"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Street Address</FormLabel>
+                      <FormLabel>Street Address</FormLabel>
                       <FormControl>
                         <Input placeholder="123 Main St" {...field} />
                       </FormControl>
@@ -414,7 +415,7 @@ const NewSupplierForm: React.FC = () => {
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>City</FormLabel>
+                    <FormLabel>City</FormLabel>
                     <FormControl>
                       <Input placeholder="City" {...field} />
                     </FormControl>
@@ -428,7 +429,7 @@ const NewSupplierForm: React.FC = () => {
                 name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>State/Province</FormLabel>
+                    <FormLabel>State/Province</FormLabel>
                     <FormControl>
                       <Input placeholder="State/Province" {...field} />
                     </FormControl>
@@ -442,7 +443,7 @@ const NewSupplierForm: React.FC = () => {
                 name="postalCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Postal Code</FormLabel>
+                    <FormLabel>Postal Code</FormLabel>
                     <FormControl>
                       <Input placeholder="Postal/ZIP code" {...field} />
                     </FormControl>
@@ -456,7 +457,7 @@ const NewSupplierForm: React.FC = () => {
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>Country</FormLabel>
+                    <FormLabel>Country</FormLabel>
                     <FormControl>
                       <Input placeholder="Country" {...field} />
                     </FormControl>
@@ -475,7 +476,7 @@ const NewSupplierForm: React.FC = () => {
                   name="approvalLevel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel required>Approval Level</FormLabel>
+                      <FormLabel>Approval Level</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
@@ -518,7 +519,7 @@ const NewSupplierForm: React.FC = () => {
                               ) : (
                                 <span>Schedule next audit</span>
                               )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -548,7 +549,7 @@ const NewSupplierForm: React.FC = () => {
                         <FormLabel>Certifications</FormLabel>
                       </div>
                       <div className="grid sm:grid-cols-2 gap-2">
-                        {certifications.map((certification) => (
+                        {certificationOptions.map((certification) => (
                           <FormField
                             key={certification}
                             control={form.control}
