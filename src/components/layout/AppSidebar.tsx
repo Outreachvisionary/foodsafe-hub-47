@@ -1,105 +1,120 @@
 
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  FileText,
-  AlertTriangle,
-  ClipboardCheck,
   BarChart2,
-  Users,
+  FileText,
+  ClipboardCheck,
+  AlertTriangle,
   Settings,
-  BookOpen,
-  Check,
-  Boxes,
-  CreditCard,
+  Users,
   Building,
-  ShieldCheck
-} from "lucide-react";
-import { ThemeToggle } from './ThemeToggle';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
+  BoxesIcon,
+  FileCheck,
+  ShieldCheck,
+  BookOpen,
+  Library,
+  Gauge,
+  GraduationCap,
+  ChevronDown
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const AppSidebar = () => {
   const location = useLocation();
-  const isMobile = useIsMobile();
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
 
-  const renderNavItem = (to: string, label: string, icon: React.ReactNode, exact: boolean = false) => {
-    const active = exact ? location.pathname === to : isActive(to);
-    
-    return (
-      <NavLink
-        to={to}
-        className={`
-          flex items-center px-3 py-2 my-1 rounded-md text-sm font-medium transition-colors
-          ${active 
-            ? 'text-foreground bg-accent/10' 
-            : 'text-foreground-secondary hover:text-foreground hover:bg-secondary'
-          }
-        `}
-      >
-        <span className={`mr-2 ${active ? 'text-accent' : 'text-foreground-secondary'}`}>
-          {icon}
-        </span>
-        <span>{label}</span>
-        {active && (
-          <span className="ml-auto">
-            <div className="h-1.5 w-1.5 rounded-full bg-accent"></div>
-          </span>
-        )}
-      </NavLink>
-    );
-  };
+  const navItems = [
+    {
+      section: 'Core',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: BarChart2 },
+        { name: 'Documents', path: '/documents', icon: FileText },
+        { name: 'CAPA', path: '/capa', icon: ClipboardCheck },
+        { name: 'Non-Conformance', path: '/non-conformance', icon: AlertTriangle },
+      ]
+    },
+    {
+      section: 'Quality Management',
+      items: [
+        { name: 'Audits', path: '/audits', icon: FileCheck },
+        { name: 'Standards', path: '/standards', icon: BookOpen },
+        { name: 'Training', path: '/training', icon: GraduationCap },
+        { name: 'Complaints', path: '/complaints', icon: AlertTriangle },
+      ]
+    },
+    {
+      section: 'Supply Chain',
+      items: [
+        { name: 'Traceability', path: '/traceability', icon: BoxesIcon },
+        { name: 'Suppliers', path: '/suppliers', icon: Building },
+        { name: 'Product Testing', path: '/testing', icon: ShieldCheck },
+      ]
+    },
+    {
+      section: 'Administration',
+      items: [
+        { name: 'Organizations', path: '/organizations', icon: Building },
+        { name: 'Facilities', path: '/facilities', icon: Building },
+        { name: 'Users', path: '/users', icon: Users },
+        { name: 'Settings', path: '/settings', icon: Settings },
+      ]
+    },
+  ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex items-center justify-center py-6">
-        <h1 className="text-xl font-bold text-foreground">ComplianceCore</h1>
-      </SidebarHeader>
-      
-      <SidebarContent className="px-3">
-        {/* Main Navigation */}
-        <div className="space-y-1 mb-6">
-          {renderNavItem("/", "Dashboard", <BarChart2 size={18} />, true)}
-          {renderNavItem("/documents", "Documents", <FileText size={18} />)}
-          {renderNavItem("/capa", "CAPA", <ClipboardCheck size={18} />)}
-          {renderNavItem("/non-conformance", "Non-Conformance", <AlertTriangle size={18} />)}
-          {renderNavItem("/audits", "Audits", <Check size={18} />)}
-          {renderNavItem("/standards", "Standards", <BookOpen size={18} />)}
-          {renderNavItem("/traceability", "Traceability", <Boxes size={18} />)}
-          {renderNavItem("/supplier-management", "Suppliers", <CreditCard size={18} />)}
-        </div>
-        
-        {/* Administration */}
-        <div className="mb-2">
-          <h3 className="text-xs uppercase tracking-wider text-foreground-muted font-medium px-3 mb-2">
-            Administration
-          </h3>
-          <div className="space-y-1">
-            {renderNavItem("/facilities", "Facilities", <Building size={18} />)}
-            {renderNavItem("/user-management", "Users", <Users size={18} />)}
-            {renderNavItem("/settings", "Settings", <Settings size={18} />)}
+    <div className="w-64 min-h-screen bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col">
+      <div className="p-4 border-b border-border/60">
+        <Link to="/" className="flex items-center space-x-2">
+          <div className="bg-gradient-to-r from-primary to-accent rounded-md p-1.5">
+            <span className="text-white font-bold">CC</span>
           </div>
-        </div>
-      </SidebarContent>
-      
-      <SidebarFooter className="p-3 border-t border-border mt-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-              <ShieldCheck size={16} />
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            ComplianceCore
+          </span>
+        </Link>
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-4 px-2">
+        {navItems.map((section, index) => (
+          <div key={section.section} className={cn("mb-6", index !== 0 && "mt-2")}>
+            <div className="px-3 mb-2">
+              <h2 className="text-xs font-semibold text-foreground-muted tracking-wider uppercase">
+                {section.section}
+              </h2>
             </div>
-            <div>
-              <div className="text-sm font-medium">Admin User</div>
-              <div className="text-xs text-foreground-muted">Quality Manager</div>
+            <div className="space-y-1">
+              {section.items.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors",
+                    isActive(item.path)
+                      ? "bg-accent/10 text-accent font-medium"
+                      : "text-foreground hover:bg-secondary/80 hover:text-accent"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                  {isActive(item.path) && (
+                    <div className="ml-auto h-1.5 w-1.5 rounded-full bg-accent"></div>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
-          <ThemeToggle />
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+        ))}
+      </div>
+    </div>
   );
 };
 

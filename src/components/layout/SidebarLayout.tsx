@@ -1,26 +1,16 @@
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-import AppSidebar from '@/components/layout/AppSidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
+import AppSidebar from './AppSidebar';
 
-interface SidebarLayoutProps {
-  children?: ReactNode;
-}
-
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
-  const isMobile = useIsMobile();
-
+const SidebarLayout = () => {
   return (
-    <div className="flex h-screen w-full bg-background">
-      {/* Sidebar with proper navigation */}
+    <div className="min-h-screen flex w-full">
       <AppSidebar />
-      
-      {/* Main content - adjusted to respect sidebar width */}
-      <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
-          {children ? children : <Outlet />}
-        </div>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <main className="flex-1 overflow-y-auto bg-background/95">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
