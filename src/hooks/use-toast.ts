@@ -10,7 +10,8 @@ type ToastProps = {
 export const useToast = () => {
   const toast = ({ title, description, variant = "default" }: ToastProps) => {
     // Map our variants to sonner's variants
-    const sonnerVariant = variant === "destructive" ? "error" : variant;
+    const sonnerVariant = variant === "destructive" ? "error" : 
+                         variant === "success" ? "success" : "default";
     
     sonnerToast[sonnerVariant === "default" ? "message" : sonnerVariant](
       title,
@@ -21,6 +22,12 @@ export const useToast = () => {
   };
 
   return { toast };
+};
+
+// Export named toast function for direct use
+export const toast = ({ title, description, variant = "default" }: ToastProps) => {
+  const { toast: toastFn } = useToast();
+  toastFn({ title, description, variant });
 };
 
 export { toast as sonnerToast } from "sonner";

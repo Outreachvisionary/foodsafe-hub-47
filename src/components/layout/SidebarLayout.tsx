@@ -8,7 +8,7 @@ const SidebarLayout = () => {
     <div className="min-h-screen flex w-full">
       <AppSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
-        <main className="flex-1 overflow-y-auto bg-background/95">
+        <main className="flex-1 overflow-y-auto bg-background/95 p-6">
           <Outlet />
         </main>
       </div>

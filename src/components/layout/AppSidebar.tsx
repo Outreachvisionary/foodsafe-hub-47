@@ -15,15 +15,10 @@ import {
   Library,
   Gauge,
   GraduationCap,
-  ChevronDown
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 
 const AppSidebar = () => {
   const location = useLocation();
@@ -38,8 +33,11 @@ const AppSidebar = () => {
       items: [
         { name: 'Dashboard', path: '/dashboard', icon: BarChart2 },
         { name: 'Documents', path: '/documents', icon: FileText },
-        { name: 'CAPA', path: '/capa', icon: ClipboardCheck },
+        { name: 'CAPAs', path: '/capa', icon: ClipboardCheck },
         { name: 'Non-Conformance', path: '/non-conformance', icon: AlertTriangle },
+        { name: 'Training', path: '/training', icon: GraduationCap },
+        { name: 'Facilities', path: '/facilities', icon: Building },
+        { name: 'Reports', path: '/reports', icon: FileCheck },
       ]
     },
     {
@@ -47,8 +45,7 @@ const AppSidebar = () => {
       items: [
         { name: 'Audits', path: '/audits', icon: FileCheck },
         { name: 'Standards', path: '/standards', icon: BookOpen },
-        { name: 'Training', path: '/training', icon: GraduationCap },
-        { name: 'Complaints', path: '/complaints', icon: AlertTriangle },
+        { name: 'Complaints', path: '/complaints', icon: MessageSquare },
       ]
     },
     {
@@ -60,10 +57,9 @@ const AppSidebar = () => {
       ]
     },
     {
-      section: 'Administration',
+      section: 'System',
       items: [
         { name: 'Organizations', path: '/organizations', icon: Building },
-        { name: 'Facilities', path: '/facilities', icon: Building },
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Settings', path: '/settings', icon: Settings },
       ]
@@ -71,7 +67,7 @@ const AppSidebar = () => {
   ];
 
   return (
-    <div className="w-64 min-h-screen bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col">
+    <div className="w-64 min-h-screen bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col overflow-hidden">
       <div className="p-4 border-b border-border/60">
         <Link to="/" className="flex items-center space-x-2">
           <div className="bg-gradient-to-r from-primary to-accent rounded-md p-1.5">
@@ -83,11 +79,11 @@ const AppSidebar = () => {
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4 px-2">
+      <div className="flex-1 overflow-y-auto py-2 px-2">
         {navItems.map((section, index) => (
-          <div key={section.section} className={cn("mb-6", index !== 0 && "mt-2")}>
+          <div key={section.section} className={cn("mb-4", index !== 0 && "mt-2")}>
             <div className="px-3 mb-2">
-              <h2 className="text-xs font-semibold text-foreground-muted tracking-wider uppercase">
+              <h2 className="text-xs font-semibold text-foreground/60 tracking-wider uppercase">
                 {section.section}
               </h2>
             </div>
@@ -113,6 +109,18 @@ const AppSidebar = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="p-4 border-t border-border/60 bg-secondary/30">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+            CC
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Admin User</span>
+            <span className="text-xs text-muted-foreground">admin@company.com</span>
+          </div>
+        </div>
       </div>
     </div>
   );
