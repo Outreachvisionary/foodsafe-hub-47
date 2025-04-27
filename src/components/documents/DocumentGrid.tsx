@@ -12,7 +12,7 @@ import {
   FileQuestion,
   Calendar,
 } from 'lucide-react';
-import { mapDbToAppDocStatus } from '@/utils/documentTypeAdapter';
+import { isDocumentStatus } from '@/utils/typeAdapters';
 
 interface DocumentGridProps {
   documents: Document[];
@@ -24,44 +24,42 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   onDocumentClick,
 }) => {
   const getDocumentIcon = (document: Document) => {
-    switch (document.status) {
-      case 'Active':
-        return <FileCheck className="w-10 h-10 text-green-500" />;
-      case 'Archived':
-        return <FileArchive className="w-10 h-10 text-gray-500" />;
-      case 'Draft':
-        return <FileCog className="w-10 h-10 text-blue-500" />;
-      case 'Rejected':
-        return <FileX className="w-10 h-10 text-red-500" />;
-      case 'Pending_Review':
-        return <FileQuestion className="w-10 h-10 text-amber-500" />;
-      default:
-        return <FileText className="w-10 h-10 text-gray-500" />;
+    if (isDocumentStatus(document.status, 'Active')) {
+      return <FileCheck className="w-10 h-10 text-green-500" />;
+    } else if (isDocumentStatus(document.status, 'Archived')) {
+      return <FileArchive className="w-10 h-10 text-gray-500" />;
+    } else if (isDocumentStatus(document.status, 'Draft')) {
+      return <FileCog className="w-10 h-10 text-blue-500" />;
+    } else if (isDocumentStatus(document.status, 'Rejected')) {
+      return <FileX className="w-10 h-10 text-red-500" />;
+    } else if (isDocumentStatus(document.status, 'Pending_Review')) {
+      return <FileQuestion className="w-10 h-10 text-amber-500" />;
+    } else {
+      return <FileText className="w-10 h-10 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: DocumentStatus) => {
-    switch (status) {
-      case 'Active':
-        return 'bg-green-100 text-green-800';
-      case 'Archived':
-        return 'bg-gray-100 text-gray-800';
-      case 'Draft':
-        return 'bg-blue-100 text-blue-800';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800';
-      case 'Pending_Review':
-        return 'bg-amber-100 text-amber-800';
-      case 'Expired':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (isDocumentStatus(status, 'Active')) {
+      return 'bg-green-100 text-green-800';
+    } else if (isDocumentStatus(status, 'Archived')) {
+      return 'bg-gray-100 text-gray-800';
+    } else if (isDocumentStatus(status, 'Draft')) {
+      return 'bg-blue-100 text-blue-800';
+    } else if (isDocumentStatus(status, 'Rejected')) {
+      return 'bg-red-100 text-red-800';
+    } else if (isDocumentStatus(status, 'Pending_Review')) {
+      return 'bg-amber-100 text-amber-800';
+    } else if (isDocumentStatus(status, 'Expired')) {
+      return 'bg-red-100 text-red-800';
+    } else {
+      return 'bg-gray-100 text-gray-800';
     }
   };
 
   // Helper function to format document status for display
   const formatStatus = (status: DocumentStatus): string => {
-    return status.replace('_', ' ');
+    return status.replace(/_/g, ' ');
   };
 
   if (documents.length === 0) {

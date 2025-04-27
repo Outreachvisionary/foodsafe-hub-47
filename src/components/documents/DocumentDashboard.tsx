@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { File, Clock, CheckCircle, AlertTriangle, Folder } from 'lucide-react';
 import { useDocument } from '@/contexts/DocumentContext';
+import { isDocumentStatus } from '@/utils/typeAdapters';
 
 const DocumentDashboard = () => {
   const { documents } = useDocument();
@@ -10,10 +11,10 @@ const DocumentDashboard = () => {
   // Calculate statistics
   const stats = {
     total: documents.length,
-    drafts: documents.filter(doc => doc.status === 'Draft').length,
-    pending: documents.filter(doc => doc.status === 'Pending Approval').length,
-    published: documents.filter(doc => doc.status === 'Published').length,
-    expired: documents.filter(doc => doc.status === 'Expired').length,
+    drafts: documents.filter(doc => isDocumentStatus(doc.status, 'Draft')).length,
+    pending: documents.filter(doc => isDocumentStatus(doc.status, 'Pending_Approval')).length,
+    published: documents.filter(doc => isDocumentStatus(doc.status, 'Published')).length,
+    expired: documents.filter(doc => isDocumentStatus(doc.status, 'Expired')).length,
     expiringSoon: documents.filter(doc => {
       if (!doc.expiry_date) return false;
       const expiryDate = new Date(doc.expiry_date);

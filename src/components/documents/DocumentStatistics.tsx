@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
 import { PieChart, FileCheck, BarChart2 } from 'lucide-react';
+import { isDocumentStatus } from '@/utils/typeAdapters';
 
 const DocumentStatistics = () => {
   const { documents } = useDocument();
@@ -10,8 +10,12 @@ const DocumentStatistics = () => {
   // Example statistics calculation
   const totalDocuments = documents.length;
   const expiredDocuments = documents.filter(doc => doc.expiry_date && new Date(doc.expiry_date) < new Date()).length;
-  const pendingReviewDocuments = documents.filter(doc => doc.status === 'Pending_Review').length;
-  const activeDocuments = documents.filter(doc => doc.status === 'Active').length;
+  const pendingReviewCount = documents.filter(doc => 
+    isDocumentStatus(doc.status, 'Pending_Review')
+  ).length;
+  const activeCount = documents.filter(doc => 
+    isDocumentStatus(doc.status, 'Active')
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -38,7 +42,7 @@ const DocumentStatistics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{activeDocuments}</div>
+            <div className="text-3xl font-bold">{activeCount}</div>
           </CardContent>
         </Card>
         
@@ -50,7 +54,7 @@ const DocumentStatistics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{pendingReviewDocuments}</div>
+            <div className="text-3xl font-bold">{pendingReviewCount}</div>
           </CardContent>
         </Card>
       </div>

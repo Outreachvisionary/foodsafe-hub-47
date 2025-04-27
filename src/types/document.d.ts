@@ -1,4 +1,3 @@
-
 export type DocumentStatus = 
   | 'Draft'
   | 'In_Review'
@@ -99,5 +98,6 @@ export interface DocumentWorkflowStep {
 
 export interface DocumentListProps {
   documents: Document[];
-  onDocumentClick?: (document: Document) => void;
+  showStatus?: boolean;
+  onSelect?: (document: Document) => void;
 }

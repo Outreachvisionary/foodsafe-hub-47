@@ -1,122 +1,91 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
+import useDocumentService from '@/hooks/useDocumentService';
 
-interface DocumentContextProps {
+interface DocumentContextType {
   documents: Document[];
   loading: boolean;
   error: string | null;
-  fetchDocuments: () => Promise<void>;
-  documentService: any; // Add this to match usage in DocumentUploader
-  approveDocument?: (id: string) => Promise<void>; // Added for ApprovalWorkflow.tsx
-  rejectDocument?: (id: string, reason: string) => Promise<void>; // Added for ApprovalWorkflow.tsx
-  refreshDocuments?: () => Promise<void>; // Added for DocumentEditor.tsx
-  createDocument?: (document: any) => Promise<Document>; // Added for UploadDocumentDialog.tsx
+  fetchDocuments: (filter?: any) => Promise<void>;
+  fetchDocumentById: (id: string) => Promise<Document | null>;
+  createDocument: (newDocument: Partial<Document>) => Promise<Document | null>;
+  updateDocument: (id: string, updates: Partial<Document>) => Promise<Document | null>;
+  deleteDocument: (id: string) => Promise<void>;
+  checkoutDocument: (id: string, userId: string, userName: string, userRole: string) => Promise<void>;
+  checkinDocument: (id: string, userId: string, comments?: string) => Promise<void>;
+  getDocumentVersions: (documentId: string) => Promise<any[]>;
+  getDocumentActivities: (documentId: string) => Promise<any[]>;
+  uploadFile: (file: File, path: string) => Promise<string | null>;
+  deleteFile: (filePath: string) => Promise<void>;
+  getDocumentComments: (documentId: string) => Promise<any[]>;
+  createDocumentComment: (comment: any) => Promise<any>;
+  fetchAccess: (documentId: string) => Promise<any[]>;
+  grantAccess: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<any>;
+  revokeAccess: (accessId: string) => Promise<void>;
+  restoreVersion: (documentId: string, versionId: string) => Promise<void>;
+  downloadVersion: (versionId: string) => Promise<void>;
 }
 
-const DocumentContext = createContext<DocumentContextProps>({
-  documents: [],
-  loading: false,
-  error: null,
-  fetchDocuments: async () => {},
-  documentService: {} // Add default value
-});
+const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
-export const useDocument = () => useContext(DocumentContext);
+export function DocumentProvider({ children }: { children: ReactNode }) {
+  const {
+    documents,
+    loading,
+    error,
+    fetchDocuments,
+    fetchDocumentById,
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    checkOutDocument,
+    checkInDocument,
+    getDocumentVersions,
+    getDocumentActivities,
+    uploadFile,
+    deleteFile,
+    getDocumentComments,
+    createDocumentComment,
+    fetchAccess,
+    grantAccess,
+    revokeAccess,
+    restoreVersion,
+    downloadVersion
+  } = useDocumentService();
 
-interface DocumentProviderProps {
-  children: ReactNode;
-}
-
-export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Get document service
-  const documentService = useDocumentService();
-  
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Changed from documentService.getDocuments() to fetchDocuments() based on error
-      const data = await documentService.fetchDocuments();
-      setDocuments(data);
-    } catch (err) {
-      console.error('Error fetching documents:', err);
-      setError('Failed to load documents. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Add the missing methods
-  const approveDocument = async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      await documentService.approveDocument(id, 'system', 'System approval');
-      await fetchDocuments(); // Refresh the documents list
-    } catch (err) {
-      console.error('Error approving document:', err);
-      setError('Failed to approve document. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const rejectDocument = async (id: string, reason: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      await documentService.rejectDocument(id, 'system', reason);
-      await fetchDocuments(); // Refresh the documents list
-    } catch (err) {
-      console.error('Error rejecting document:', err);
-      setError('Failed to reject document. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshDocuments = fetchDocuments; // Alias for fetchDocuments
-
-  const createDocument = async (document: any) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const newDoc = await documentService.createDocument(document);
-      await fetchDocuments(); // Refresh the documents list
-      return newDoc;
-    } catch (err) {
-      console.error('Error creating document:', err);
-      setError('Failed to create document. Please try again.');
-      throw err; // Re-throw to handle in the component
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-  
   return (
-    <DocumentContext.Provider value={{ 
-      documents, 
-      loading, 
-      error, 
+    <DocumentContext.Provider value={{
+      documents,
+      loading,
+      error,
       fetchDocuments,
-      documentService, // Expose document service
-      approveDocument,
-      rejectDocument,
-      refreshDocuments,
-      createDocument
+      fetchDocumentById,
+      createDocument,
+      updateDocument,
+      deleteDocument,
+      checkoutDocument,
+      checkinDocument,
+      getDocumentVersions,
+      getDocumentActivities,
+      uploadFile,
+      deleteFile,
+      getDocumentComments,
+      createDocumentComment,
+      fetchAccess,
+      grantAccess,
+      revokeAccess,
+      restoreVersion,
+      downloadVersion
     }}>
       {children}
     </DocumentContext.Provider>
   );
-};
+}
+
+export function useDocument(): DocumentContextType {
+  const context = useContext(DocumentContext);
+  if (!context) {
+    throw new Error("useDocument must be used within a DocumentProvider");
+  }
+  return context;
+}

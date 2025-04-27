@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Loader2, ArrowLeft, MessageSquare, CheckCircle } from 'lucide-react';
 import { Complaint, ComplaintStatus } from '@/types/complaint';
 import { fetchComplaintById, updateComplaintStatus } from '@/services/complaintService';
 import { useUser } from '@/contexts/UserContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface ComplaintDetailsProps {}
 
@@ -53,7 +54,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
   }, [complaintId, toast]);
 
   const handleStatusUpdate = async (newStatus: ComplaintStatus) => {
-    if (!complaintId) {
+    if (!complaintId || !complaint) {
       toast({
         title: "Error",
         description: "Complaint ID is missing",
@@ -71,7 +72,7 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
 
       toast({
         title: "Complaint Status Updated",
-        description: `Complaint status updated to ${newStatus}`,
+        description: `Complaint status updated to ${newStatus.replace(/_/g, " ")}`,
       });
     } catch (error) {
       console.error("Error updating complaint status:", error);
@@ -124,11 +125,11 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium">Category</p>
-              <Badge variant="secondary">{complaint.category}</Badge>
+              <Badge variant="secondary">{complaint.category.replace(/_/g, " ")}</Badge>
             </div>
             <div>
               <p className="text-sm font-medium">Status</p>
-              <Badge variant="secondary">{complaint.status}</Badge>
+              <Badge variant="secondary">{complaint.status.replace(/_/g, " ")}</Badge>
             </div>
           </div>
           <div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -102,5 +101,4 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
   );
 };
 
-// Add default export to fix import issues
 export default DocumentVersionHistory;

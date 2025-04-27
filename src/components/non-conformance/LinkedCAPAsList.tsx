@@ -1,154 +1,160 @@
 
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronRight, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CAPA, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { CAPA } from '@/types/capa';
+import { fetchCAPAById } from '@/services/capa/capaFetchService';
+import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
-interface LinkedCAPAsListProps {
-  capaIds: string[];
+interface CAPAStatusBadgeProps {
+  status: string;
+  showIcon?: boolean;
 }
 
-const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capaIds }) => {
+export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, showIcon = false }) => {
+  return <Badge variant="outline">{status}</Badge>;
+};
+
+interface LinkedCAPAsListProps {
+  caption?: string;
+  capaIds: string[];
+  showViewAll?: boolean;
+  sourceType?: string;
+  sourceId?: string;
+  emptyMessage?: string;
+  onCreateCAPAClick?: () => void;
+}
+
+const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
+  caption = 'Related CAPAs',
+  capaIds,
+  showViewAll = true,
+  sourceType,
+  sourceId,
+  emptyMessage = 'No CAPAs found',
+  onCreateCAPAClick
+}) => {
+  const navigate = useNavigate();
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCAPAs = async () => {
+    const fetchCapas = async () => {
       if (!capaIds || capaIds.length === 0) {
         setCapas([]);
         setLoading(false);
         return;
       }
-      
+
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('capa_actions')
-          .select('*')
-          .in('id', capaIds);
+        setError(null);
 
-        if (error) throw error;
+        const capaPromises = capaIds.map(async (id) => {
+          const capaData = await fetchCAPAById(id);
+          
+          // Transform to match the CAPA interface
+          return {
+            id: capaData.id,
+            title: capaData.title,
+            description: capaData.description,
+            status: convertToCAPAStatus(capaData.status),
+            priority: capaData.priority,
+            createdAt: capaData.created_at,
+            createdBy: capaData.created_by,
+            dueDate: capaData.due_date,
+            assignedTo: capaData.assigned_to,
+            source: capaData.source,
+            completionDate: capaData.completion_date,
+            rootCause: capaData.root_cause,
+            correctiveAction: capaData.corrective_action,
+            preventiveAction: capaData.preventive_action,
+            effectivenessCriteria: capaData.effectiveness_criteria,
+            effectivenessRating: capaData.effectiveness_rating,
+            effectivenessVerified: capaData.effectiveness_verified,
+            sourceId: capaData.source_id,
+            sourceReference: capaData.source_reference || '',
+            verificationDate: capaData.verification_date,
+            verificationMethod: capaData.verification_method,
+            verifiedBy: capaData.verified_by,
+            department: capaData.department,
+            fsma204Compliant: capaData.fsma204_compliant,
+            relatedDocuments: [],
+            relatedTraining: []
+          } as CAPA;
+        });
 
-        // Convert DB data to CAPA objects
-        const transformedCapas = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          status: mapStatusToEnum(item.status),
-          priority: mapPriorityToEnum(item.priority),
-          createdAt: item.created_at,
-          createdBy: item.created_by,
-          dueDate: item.due_date,
-          assignedTo: item.assigned_to,
-          source: item.source,
-          completionDate: item.completion_date,
-          rootCause: item.root_cause,
-          correctiveAction: item.corrective_action,
-          preventiveAction: item.preventive_action,
-          effectivenessCriteria: item.effectiveness_criteria,
-          effectivenessRating: mapEffectivenessRatingToEnum(item.effectiveness_rating),
-          effectivenessVerified: item.effectiveness_verified,
-          verificationDate: item.verification_date,
-          verificationMethod: item.verification_method,
-          verifiedBy: item.verified_by,
-          department: item.department,
-          sourceId: item.source_id,
-          fsma204Compliant: item.fsma204_compliant,
-          sourceReference: item.source_reference || '',
-          relatedDocuments: [],
-          relatedTraining: [],
-        }));
-        
-        setCapas(transformedCapas as CAPA[]);
-      } catch (err) {
-        console.error('Error fetching linked CAPAs:', err);
-        setError('Failed to load linked CAPAs');
+        const fetchedCapas = await Promise.all(capaPromises);
+        setCapas(fetchedCapas);
+      } catch (error) {
+        console.error('Error fetching linked CAPAs:', error);
+        setError('Failed to load linked CAPA items');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCAPAs();
+    fetchCapas();
   }, [capaIds]);
 
-  // Helper functions to map string values to enum types
-  const mapStatusToEnum = (status: string): CAPAStatus => {
-    if (!status) return 'Open';
-    
-    // Convert spaces to underscores first
-    status = status.replace(/ /g, '_');
-    
-    switch(status.toLowerCase()) {
-      case 'open': return 'Open';
-      case 'in_progress': return 'In_Progress';
-      case 'under_review': return 'Under_Review';
-      case 'completed': return 'Completed';
-      case 'closed': return 'Closed';
-      case 'rejected': return 'Rejected';
-      case 'on_hold': return 'On_Hold';
-      case 'overdue': return 'Overdue';
-      case 'pending_verification': return 'Pending_Verification';
-      case 'verified': return 'Verified';
-      default: return 'Open';
-    }
+  const viewCapa = (id: string) => {
+    navigate(`/capa/${id}`);
   };
-
-  const mapPriorityToEnum = (priority: string): string => {
-    if (priority === 'Low' || priority === 'Medium' || priority === 'High' || priority === 'Critical') {
-      return priority;
-    }
-    return 'Medium';
-  };
-
-  const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
-    if (!rating) return undefined;
-    
-    // Convert spaces to underscores first
-    rating = rating.replace(/ /g, '_');
-    
-    switch(rating.toLowerCase()) {
-      case 'not_effective': return 'Not_Effective';
-      case 'partially_effective': return 'Partially_Effective';
-      case 'effective': return 'Effective';
-      case 'highly_effective': return 'Highly_Effective';
-      default: return undefined;
+  
+  const viewAllCapas = () => {
+    if (sourceType) {
+      navigate(`/capa?source=${sourceType}${sourceId ? `&sourceId=${sourceId}` : ''}`);
+    } else {
+      navigate(`/capa`);
     }
   };
 
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium flex items-center">
-            <div className="animate-spin mr-2">
-              <Loader2 size={16} />
-            </div>
-            Loading Linked CAPAs...
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">{caption}</CardTitle>
         </CardHeader>
+        <CardContent className="text-center py-6 text-gray-500">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+          Loading CAPAs...
+        </CardContent>
       </Card>
     );
   }
 
   if (error) {
     return (
-      <Card className="border-destructive/20 bg-destructive/10">
-        <CardContent className="p-4">
-          <p className="text-sm text-destructive">{error}</p>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">{caption}</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-6 text-red-500">
+          {error}
         </CardContent>
       </Card>
     );
   }
 
-  if (!capaIds || capaIds.length === 0 || capas.length === 0) {
+  if (!capas || capas.length === 0) {
     return (
       <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-foreground-muted">No linked CAPA items found</p>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">{caption}</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-6 text-gray-500">
+          {emptyMessage}
+          {onCreateCAPAClick && (
+            <div className="mt-4">
+              <Button size="sm" onClick={onCreateCAPAClick}>
+                Create CAPA
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -156,28 +162,38 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capaIds }) => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">Linked CAPAs</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">{caption}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <ul className="divide-y divide-border">
+        <div className="divide-y">
           {capas.map((capa) => (
-            <li key={capa.id} className="px-4 py-3 hover:bg-secondary/30 transition-colors">
-              <Link to={`/capa/${capa.id}`} className="flex items-center justify-between">
+            <div key={capa.id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => viewCapa(capa.id)}>
+              <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-sm font-medium text-foreground">{capa.title}</h3>
-                  <div className="flex items-center mt-1 space-x-2">
-                    <StatusBadge status={capa.status} />
-                    <span className="text-xs text-foreground-muted">
-                      {new Date(capa.createdAt).toLocaleDateString()}
-                    </span>
+                  <h3 className="font-medium text-sm">{capa.title}</h3>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{capa.description}</p>
+                  <div className="flex gap-2 mt-2">
+                    <CAPAStatusBadge status={capa.status.toString().replace(/_/g, ' ')} />
+                    {capa.source && (
+                      <Badge variant="outline" className="text-xs">
+                        {capa.source}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <ChevronRight size={16} className="text-foreground-muted" />
-              </Link>
-            </li>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
+        {showViewAll && capas.length > 0 && (
+          <div className="p-3 border-t text-center">
+            <Button variant="ghost" size="sm" onClick={viewAllCapas}>
+              View All
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

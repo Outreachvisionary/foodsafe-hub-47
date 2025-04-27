@@ -4,6 +4,7 @@ import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { convertToCAPAStatus, convertToEffectivenessRating } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessMonitorProps {
   id: string;
@@ -36,19 +37,19 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           id: capaData.id,
           title: capaData.title,
           description: capaData.description,
-          status: mapStatusToEnum(capaData.status),
-          priority: mapPriorityToEnum(capaData.priority),
+          status: convertToCAPAStatus(capaData.status),
+          priority: capaData.priority as CAPAPriority,
           createdAt: capaData.created_at,
           createdBy: capaData.created_by,
           dueDate: capaData.due_date,
           assignedTo: capaData.assigned_to,
-          source: mapSourceToEnum(capaData.source),
+          source: capaData.source as CAPASource,
           completionDate: capaData.completion_date,
           rootCause: capaData.root_cause,
           correctiveAction: capaData.corrective_action,
           preventiveAction: capaData.preventive_action,
           effectivenessCriteria: capaData.effectiveness_criteria,
-          effectivenessRating: mapEffectivenessRatingToEnum(capaData.effectiveness_rating),
+          effectivenessRating: convertToEffectivenessRating(capaData.effectiveness_rating),
           effectivenessVerified: capaData.effectiveness_verified,
           verificationDate: capaData.verification_date,
           verificationMethod: capaData.verification_method,
@@ -75,55 +76,41 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
     }
   }, [id]);
 
-  // Helper functions to map string values to enum types
-  const mapStatusToEnum = (status: string): CAPAStatus => {
-    if (!status) return 'Open';
+  // Using the type-safe utility functions from typeAdapters.ts instead of custom functions
+  const getStatusText = () => {
+    if (!capa?.effectivenessVerified) {
+      return 'Effectiveness verification pending';
+    }
     
-    // Convert spaces to underscores first
-    status = status.replace(/ /g, '_');
-    
-    switch(status.toLowerCase()) {
-      case 'open': return 'Open';
-      case 'in_progress': return 'In_Progress';
-      case 'under_review': return 'Under_Review';
-      case 'completed': return 'Completed';
-      case 'closed': return 'Closed';
-      case 'rejected': return 'Rejected';
-      case 'on_hold': return 'On_Hold';
-      case 'overdue': return 'Overdue';
-      case 'pending_verification': return 'Pending_Verification';
-      case 'verified': return 'Verified';
-      default: return 'Open';
+    switch (capa.effectivenessRating) {
+      case 'Highly_Effective':
+        return 'Highly effective - No recurrence';
+      case 'Effective':
+        return 'Effective - Meets criteria';
+      case 'Partially_Effective':
+        return 'Partially effective - Needs improvement';
+      case 'Not_Effective':
+        return 'Not effective - Recurrence or failure';
+      default:
+        return 'Status unknown';
     }
   };
 
-  const mapPriorityToEnum = (priority: string): CAPAPriority => {
-    if (priority === 'Low' || priority === 'Medium' || priority === 'High' || priority === 'Critical') {
-      return priority as CAPAPriority;
+  const getEffectivenessClass = () => {
+    if (!capa?.effectivenessVerified) {
+      return 'bg-warning-muted text-warning-foreground';
     }
-    return 'Medium';
-  };
-
-  const mapSourceToEnum = (source: string): CAPASource => {
-    if (source === 'Audit' || source === 'Customer Complaint' || source === 'Internal' || 
-        source === 'Regulatory' || source === 'Other') {
-      return source as CAPASource;
-    }
-    return 'Other';
-  };
-
-  const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
-    if (!rating) return undefined;
     
-    // Convert spaces to underscores first
-    rating = rating.replace(/ /g, '_');
-    
-    switch(rating.toLowerCase()) {
-      case 'not_effective': return 'Not_Effective';
-      case 'partially_effective': return 'Partially_Effective';
-      case 'effective': return 'Effective';
-      case 'highly_effective': return 'Highly_Effective';
-      default: return undefined;
+    switch (capa.effectivenessRating) {
+      case 'Highly_Effective':
+      case 'Effective':
+        return 'bg-success-muted text-success';
+      case 'Partially_Effective':
+        return 'bg-warning-muted text-warning-foreground';
+      case 'Not_Effective':
+        return 'bg-destructive/10 text-destructive';
+      default:
+        return 'bg-secondary text-foreground-secondary';
     }
   };
 
@@ -143,43 +130,6 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
       </Card>
     );
   }
-
-  const getStatusText = () => {
-    if (!capa.effectivenessVerified) {
-      return 'Effectiveness verification pending';
-    }
-    
-    switch (capa.effectivenessRating) {
-      case 'Highly_Effective':
-        return 'Highly effective - No recurrence';
-      case 'Effective':
-        return 'Effective - Meets criteria';
-      case 'Partially_Effective':
-        return 'Partially effective - Needs improvement';
-      case 'Not_Effective':
-        return 'Not effective - Recurrence or failure';
-      default:
-        return 'Status unknown';
-    }
-  };
-
-  const getEffectivenessClass = () => {
-    if (!capa.effectivenessVerified) {
-      return 'bg-warning-muted text-warning-foreground';
-    }
-    
-    switch (capa.effectivenessRating) {
-      case 'Highly_Effective':
-      case 'Effective':
-        return 'bg-success-muted text-success';
-      case 'Partially_Effective':
-        return 'bg-warning-muted text-warning-foreground';
-      case 'Not_Effective':
-        return 'bg-destructive/10 text-destructive';
-      default:
-        return 'bg-secondary text-foreground-secondary';
-    }
-  };
 
   return (
     <Card>

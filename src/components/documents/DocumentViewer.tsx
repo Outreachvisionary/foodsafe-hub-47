@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { isDocumentStatus } from '@/utils/typeAdapters';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -151,9 +152,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
               <Badge variant="outline">{document.category}</Badge>
               <Badge 
                 variant={
-                  document.status === 'Draft' ? 'outline' :
-                  document.status === 'Published' ? 'default' :
-                  document.status === 'Archived' ? 'secondary' :
+                  isDocumentStatus(document.status, 'Published') ? 'default' :
+                  isDocumentStatus(document.status, 'Draft') ? 'outline' :
+                  isDocumentStatus(document.status, 'Archived') ? 'secondary' :
                   'outline'
                 }
               >

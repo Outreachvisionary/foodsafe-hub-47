@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
-import { CAPA } from '@/types/capa';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { CAPA, CAPAStatus } from '@/types/capa';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
+import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
 interface CAPAStatusBadgeProps {
   status: string;
@@ -61,7 +62,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             id: capaData.id,
             title: capaData.title,
             description: capaData.description,
-            status: capaData.status,
+            status: convertToCAPAStatus(capaData.status),
             priority: capaData.priority,
             createdAt: capaData.created_at,
             createdBy: capaData.created_by,
@@ -75,7 +76,15 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             effectivenessCriteria: capaData.effectiveness_criteria,
             effectivenessRating: capaData.effectiveness_rating,
             effectivenessVerified: capaData.effectiveness_verified,
-            sourceId: capaData.source_id
+            sourceId: capaData.source_id,
+            sourceReference: capaData.source_reference || '',
+            verificationDate: capaData.verification_date,
+            verificationMethod: capaData.verification_method,
+            verifiedBy: capaData.verified_by,
+            department: capaData.department,
+            fsma204Compliant: capaData.fsma204_compliant,
+            relatedDocuments: [],
+            relatedTraining: []
           } as CAPA;
         });
 
@@ -111,6 +120,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
           <CardTitle className="text-lg">{caption}</CardTitle>
         </CardHeader>
         <CardContent className="text-center py-6 text-gray-500">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
           Loading CAPAs...
         </CardContent>
       </Card>
@@ -164,7 +174,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
                   <h3 className="font-medium text-sm">{capa.title}</h3>
                   <p className="text-xs text-gray-500 mt-1 line-clamp-2">{capa.description}</p>
                   <div className="flex gap-2 mt-2">
-                    <CAPAStatusBadge status={capa.status} showIcon={false} />
+                    <CAPAStatusBadge status={capa.status.toString().replace(/_/g, ' ')} showIcon={false} />
                     {capa.source && (
                       <Badge variant="outline" className="text-xs">
                         {capa.source}

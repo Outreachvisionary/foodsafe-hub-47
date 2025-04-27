@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +43,6 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked Out",
         description: "You can now edit this document",
-        // Fix: Using valid toast variant
         variant: "default",
       });
       onUpdate();
@@ -67,7 +65,6 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
       toast({
         title: "Document Checked In",
         description: "Document has been successfully checked in",
-        // Fix: Using valid toast variant
         variant: "default",
       });
       onUpdate();
@@ -80,7 +77,6 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  // Using string comparison for "Checked Out" status instead of enum
   const isCheckedOut = document.checkout_status === 'Checked Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 

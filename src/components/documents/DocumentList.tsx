@@ -1,11 +1,21 @@
 
 import React from 'react';
-import { Document, DocumentListProps } from '@/types/document';
+import { Document } from '@/types/document';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, showStatus = false, onSelect }) => {
+interface DocumentListProps {
+  documents: Document[];
+  showStatus?: boolean;
+  onSelect?: (document: Document) => void;
+}
+
+const DocumentList: React.FC<DocumentListProps> = ({ 
+  documents, 
+  showStatus = false, 
+  onSelect 
+}) => {
   if (!documents || documents.length === 0) {
     return <p className="text-muted-foreground">No documents available</p>;
   }
