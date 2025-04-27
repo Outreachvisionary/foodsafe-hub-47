@@ -38,7 +38,7 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
         setLoading(true);
         setError(null);
         
-        let facilityData: Facility[] = await getFacilities();
+        let facilityData: any[] = await getFacilities();
         
         // Filter by organization ID if provided
         if (organizationId) {
@@ -47,12 +47,18 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
           );
         }
         
-        console.log('Loaded facilities:', facilityData);
-        setFacilities(facilityData);
+        // Ensure each facility has a status property set to 'active' if not present
+        const validatedFacilities = facilityData.map(facility => ({
+          ...facility,
+          status: facility.status || 'active'
+        })) as Facility[];
+        
+        console.log('Loaded facilities:', validatedFacilities);
+        setFacilities(validatedFacilities);
         
         // If there's only one facility and no value is selected, select it automatically
-        if (facilityData.length === 1 && !value) {
-          onChange(facilityData[0].id);
+        if (validatedFacilities.length === 1 && !value) {
+          onChange(validatedFacilities[0].id);
         }
       } catch (err) {
         console.error('Error loading facilities:', err);

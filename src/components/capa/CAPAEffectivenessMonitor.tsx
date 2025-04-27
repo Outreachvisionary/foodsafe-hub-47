@@ -30,7 +30,35 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
       try {
         setLoading(true);
         const capaData = await fetchCAPAById(id);
-        setCapa(capaData);
+        
+        // Transform the API data to match the CAPA interface
+        const transformedCapa: CAPA = {
+          id: capaData.id,
+          title: capaData.title,
+          description: capaData.description,
+          status: capaData.status,
+          priority: capaData.priority,
+          createdAt: capaData.created_at,
+          createdBy: capaData.created_by,
+          dueDate: capaData.due_date,
+          assignedTo: capaData.assigned_to,
+          source: capaData.source,
+          completionDate: capaData.completion_date,
+          rootCause: capaData.root_cause,
+          correctiveAction: capaData.corrective_action,
+          preventiveAction: capaData.preventive_action,
+          effectivenessCriteria: capaData.effectiveness_criteria,
+          effectivenessRating: capaData.effectiveness_rating,
+          effectivenessVerified: capaData.effectiveness_verified,
+          verificationDate: capaData.verification_date,
+          verificationMethod: capaData.verification_method,
+          verifiedBy: capaData.verified_by,
+          department: capaData.department,
+          sourceId: capaData.source_id,
+          fsma204Compliant: capaData.fsma204_compliant
+        };
+        
+        setCapa(transformedCapa);
       } catch (err) {
         setError('Failed to load CAPA effectiveness data');
         console.error(err);

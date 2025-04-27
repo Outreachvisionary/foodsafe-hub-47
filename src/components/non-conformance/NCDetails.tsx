@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,12 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, Clock, File, FileText, MessageSquare, Users } from "lucide-react";
 import { NonConformance } from "@/types/non-conformance";
-import LinkedCAPAsList from "./LinkedCAPAsList";
+import LinkedCAPAsList from "@/components/capa/LinkedCAPAsList";
 import NCActionButtons from "./NCActionButtons";
-import NCActivityTimeline from "./NCActivityTimeline";
+
+interface NCActivityTimelineProps {
+  nonConformanceId: string;
+}
+
+const NCActivityTimeline: React.FC<NCActivityTimelineProps> = ({ nonConformanceId }) => {
+  // Placeholder component
+  return <div>Activity timeline for NC #{nonConformanceId}</div>;
+};
 
 const NCDetails = ({ nonConformance }: { nonConformance: NonConformance }) => {
   const [activeTab, setActiveTab] = useState("details");
+  
+  const handleUpdate = (updated: NonConformance) => {
+    console.log("Updating non-conformance:", updated);
+    // In a real app, this would update the state and save to backend
+  };
   
   return (
     <Card className="col-span-4">
@@ -36,78 +50,69 @@ const NCDetails = ({ nonConformance }: { nonConformance: NonConformance }) => {
               </div>
               <div>
                 <h4 className="font-semibold">Priority</h4>
-                <p>{nonConformance.priority}</p>
+                <p>{nonConformance.priority || 'Not specified'}</p>
               </div>
               <div>
-                <h4 className="font-semibold">Raised By</h4>
-                <p>{nonConformance.raised_by}</p>
+                <h4 className="font-semibold">Created By</h4>
+                <p>{nonConformance.created_by}</p>
               </div>
               <div>
-                <h4 className="font-semibold">Date Raised</h4>
+                <h4 className="font-semibold">Report Date</h4>
                 <p>
                   <Calendar className="mr-2 h-4 w-4 inline-block" />
-                  {new Date(nonConformance.date_raised).toLocaleDateString()}
+                  {new Date(nonConformance.reported_date).toLocaleDateString()}
                 </p>
               </div>
-              <div>
-                <h4 className="font-semibold">Due Date</h4>
-                <p>
-                  <Clock className="mr-2 h-4 w-4 inline-block" />
-                  {new Date(nonConformance.due_date).toLocaleDateString()}
-                </p>
-              </div>
+              {nonConformance.resolution_date && (
+                <div>
+                  <h4 className="font-semibold">Resolution Date</h4>
+                  <p>
+                    <Clock className="mr-2 h-4 w-4 inline-block" />
+                    {new Date(nonConformance.resolution_date).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
               <div>
                 <h4 className="font-semibold">Category</h4>
-                <p>{nonConformance.category}</p>
+                <p>{nonConformance.item_category}</p>
               </div>
               <div>
                 <h4 className="font-semibold">Severity</h4>
-                <p>{nonConformance.severity}</p>
+                <p>{nonConformance.risk_level || 'Not specified'}</p>
               </div>
               <div className="md:col-span-2">
                 <h4 className="font-semibold">Description</h4>
-                <p>{nonConformance.description}</p>
+                <p>{nonConformance.description || 'No description provided'}</p>
               </div>
               <div className="md:col-span-2">
-                <h4 className="font-semibold">Immediate Actions Taken</h4>
-                <p>{nonConformance.immediate_actions}</p>
+                <h4 className="font-semibold">Reason Details</h4>
+                <p>{nonConformance.reason_details || 'No immediate actions recorded'}</p>
               </div>
               <div>
                 <h4 className="font-semibold">Root Cause</h4>
-                <p>{nonConformance.root_cause}</p>
+                <p>{nonConformance.reason_category || 'Not specified'}</p>
               </div>
               <div>
-                <h4 className="font-semibold">Corrective Actions</h4>
-                <p>{nonConformance.corrective_actions}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Preventive Actions</h4>
-                <p>{nonConformance.preventive_actions}</p>
+                <h4 className="font-semibold">Resolution Details</h4>
+                <p>{nonConformance.resolution_details || 'Not specified'}</p>
               </div>
               <div>
                 <h4 className="font-semibold">Assigned To</h4>
                 <p>
                   <Users className="mr-2 h-4 w-4 inline-block" />
-                  {nonConformance.assigned_to}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Attachments</h4>
-                <p>
-                  <FileText className="mr-2 h-4 w-4 inline-block" />
-                  {nonConformance.attachments || "No attachments"}
+                  {nonConformance.assigned_to || 'Unassigned'}
                 </p>
               </div>
             </div>
           </TabsContent>
           <TabsContent value="related">
-            <LinkedCAPAsList ncId={nonConformance.id} />
+            <LinkedCAPAsList capaIds={nonConformance.capa_id ? [nonConformance.capa_id] : []} />
           </TabsContent>
           <TabsContent value="activity">
-            <NCActivityTimeline ncId={nonConformance.id} />
+            <NCActivityTimeline nonConformanceId={nonConformance.id} />
           </TabsContent>
         </Tabs>
-        <NCActionButtons ncId={nonConformance.id} status={nonConformance.status} />
+        <NCActionButtons nonConformance={nonConformance} onUpdate={handleUpdate} />
       </CardContent>
     </Card>
   );

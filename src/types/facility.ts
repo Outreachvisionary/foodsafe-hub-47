@@ -1,5 +1,4 @@
 
-// Add this at the bottom of the file to ensure status is required
 export interface Facility {
   id: string;
   name: string;

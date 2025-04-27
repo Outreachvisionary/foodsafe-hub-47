@@ -22,12 +22,15 @@ const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ organizationId }) => {
         setLoading(true);
         
         // Get all facilities
-        const allFacilities = await getFacilities();
+        const allFacilities: any[] = await getFacilities();
         
-        // Filter facilities by organization ID
-        const orgFacilities = allFacilities.filter(facility => 
-          facility.organization_id === organizationId
-        );
+        // Filter facilities by organization ID and ensure status property exists
+        const orgFacilities = allFacilities
+          .filter(facility => facility.organization_id === organizationId)
+          .map(facility => ({
+            ...facility,
+            status: facility.status || 'active'
+          })) as Facility[];
         
         setFacilities(orgFacilities);
       } catch (error) {

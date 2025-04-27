@@ -1,5 +1,5 @@
 
-export type DocumentStatus = 'Draft' | 'In_Review' | 'Approved' | 'Published' | 'Archived' | 'Rejected' | 'Obsolete';
+export type DocumentStatus = 'Draft' | 'In_Review' | 'Approved' | 'Published' | 'Archived' | 'Rejected' | 'Obsolete' | 'Pending_Review' | 'Pending_Approval' | 'Active' | 'Expired';
 export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Other' | 'HACCP Plan' | 'Audit Report' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment';
 export type CheckoutStatus = 'Available' | 'Checked_Out';
 
@@ -122,4 +122,42 @@ export interface DocumentComment {
   content: string;
   created_at: string;
   updated_at?: string;
+}
+
+export interface DocumentListProps {
+  documents: Document[];
+  showStatus?: boolean;
+  onSelect?: (document: Document) => void;
+}
+
+export interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description: string;
+  required_approvals: number;
+  approvers: string[];
+}
+
+export type ComplaintStatus = 'New' | 'Under_Investigation' | 'Resolved' | 'Closed' | 'Reopened';
+export type ComplaintCategory = 'Product_Quality' | 'Food_Safety' | 'Packaging' | 'Delivery' | 'Service' | 'Other';
+
+export interface Complaint {
+  id: string;
+  title: string;
+  description: string;
+  category: ComplaintCategory;
+  status: ComplaintStatus;
+  priority: string;
+  reported_date: string;
+  resolution_date?: string;
+  assigned_to?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  customer_name?: string;
+  customer_contact?: string;
+  product_involved?: string;
+  lot_number?: string;
+  capa_id?: string;
+  resolution_details?: string;
 }

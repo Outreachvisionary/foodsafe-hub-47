@@ -1,26 +1,35 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { CAPA } from '@/types/capa';
-import { CAPAStatusBadge } from './CAPAStatusBadge';
+import { fetchCAPAById } from '@/services/capa/capaFetchService';
+
+interface CAPAStatusBadgeProps {
+  status: string;
+  showIcon?: boolean;
+}
+
+export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, showIcon = false }) => {
+  return <Badge variant="outline">{status}</Badge>;
+};
 
 interface LinkedCAPAsListProps {
   caption?: string;
-  capas: CAPA[];
+  capaIds: string[];
   showViewAll?: boolean;
   sourceType?: string;
-  sourceId?: string; // Add sourceId prop
+  sourceId?: string;
   emptyMessage?: string;
-  onCreateCAPAClick?: () => void; // Add optional handler for creating CAPA
+  onCreateCAPAClick?: () => void;
 }
 
 const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   caption = 'Related CAPAs',
-  capas,
+  capaIds,
   showViewAll = true,
   sourceType,
   sourceId,
@@ -28,6 +37,60 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   onCreateCAPAClick
 }) => {
   const navigate = useNavigate();
+  const [capas, setCapas] = useState<CAPA[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCapas = async () => {
+      if (!capaIds || capaIds.length === 0) {
+        setCapas([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const capaPromises = capaIds.map(async (id) => {
+          const capaData = await fetchCAPAById(id);
+          
+          // Transform to match the CAPA interface
+          return {
+            id: capaData.id,
+            title: capaData.title,
+            description: capaData.description,
+            status: capaData.status,
+            priority: capaData.priority,
+            createdAt: capaData.created_at,
+            createdBy: capaData.created_by,
+            dueDate: capaData.due_date,
+            assignedTo: capaData.assigned_to,
+            source: capaData.source,
+            completionDate: capaData.completion_date,
+            rootCause: capaData.root_cause,
+            correctiveAction: capaData.corrective_action,
+            preventiveAction: capaData.preventive_action,
+            effectivenessCriteria: capaData.effectiveness_criteria,
+            effectivenessRating: capaData.effectiveness_rating,
+            effectivenessVerified: capaData.effectiveness_verified,
+            sourceId: capaData.source_id
+          } as CAPA;
+        });
+
+        const fetchedCapas = await Promise.all(capaPromises);
+        setCapas(fetchedCapas);
+      } catch (error) {
+        console.error('Error fetching linked CAPAs:', error);
+        setError('Failed to load linked CAPA items');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCapas();
+  }, [capaIds]);
 
   const viewCapa = (id: string) => {
     navigate(`/capa/${id}`);
@@ -40,6 +103,32 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
       navigate(`/capa`);
     }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">{caption}</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-6 text-gray-500">
+          Loading CAPAs...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">{caption}</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-6 text-red-500">
+          {error}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!capas || capas.length === 0) {
     return (
