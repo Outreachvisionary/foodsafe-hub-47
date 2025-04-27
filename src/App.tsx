@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,9 +10,16 @@ import Loading from '@/components/Loading';
 import Auth from '@/pages/Auth';
 import UserOnboarding from '@/pages/UserOnboarding';
 
+// Creation forms
+const Create = lazy(() => import('@/pages/Create'));
+const DocumentCreate = lazy(() => import('@/pages/DocumentCreate'));
+const UserCreate = lazy(() => import('@/pages/UserCreate'));
+const TaskCreate = lazy(() => import('@/pages/TaskCreate'));
+
 // Lazy-loaded pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Documents = lazy(() => import('@/pages/Documents'));
+const Tasks = lazy(() => import('@/pages/Tasks'));
 const OrganizationsList = lazy(() => import('@/pages/OrganizationsList'));
 const OrganizationManagement = lazy(() => import('@/pages/OrganizationManagement'));
 const FacilityManagement = lazy(() => import('@/pages/FacilityManagement'));
@@ -47,7 +55,19 @@ function App() {
           <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
+            
+            {/* Create routes */}
+            <Route path="create" element={<Create />} />
+            <Route path="documents/new" element={<DocumentCreate />} />
+            <Route path="users/new" element={<UserCreate />} />
+            <Route path="tasks/new" element={<TaskCreate />} />
+            
+            {/* Documents routes */}
             <Route path="documents" element={<Documents />} />
+            
+            {/* Tasks routes */}
+            <Route path="tasks" element={<Tasks />} />
+            
             <Route path="organizations" element={<OrganizationsList />} />
             <Route path="organization" element={<OrganizationManagement />} />
             <Route path="facilities" element={<FacilityManagement />} />

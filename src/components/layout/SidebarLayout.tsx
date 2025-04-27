@@ -9,7 +9,9 @@ const SidebarLayout = () => {
       <AppSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <main className="flex-1 overflow-y-auto bg-background/95 p-6">
-          <Outlet />
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

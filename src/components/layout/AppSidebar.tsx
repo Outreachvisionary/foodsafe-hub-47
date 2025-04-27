@@ -15,7 +15,10 @@ import {
   Library,
   Gauge,
   GraduationCap,
-  MessageSquare
+  MessageSquare,
+  CheckSquare,
+  PlusSquare,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,12 +30,14 @@ const AppSidebar = () => {
     return location.pathname.startsWith(path);
   };
 
+  // Define all navigation sections with their items
   const navItems = [
     {
       section: 'Core',
       items: [
         { name: 'Dashboard', path: '/dashboard', icon: BarChart2 },
         { name: 'Documents', path: '/documents', icon: FileText },
+        { name: 'Tasks', path: '/tasks', icon: CheckSquare },
         { name: 'CAPAs', path: '/capa', icon: ClipboardCheck },
         { name: 'Non-Conformance', path: '/non-conformance', icon: AlertTriangle },
         { name: 'Training', path: '/training', icon: GraduationCap },
@@ -59,8 +64,8 @@ const AppSidebar = () => {
     {
       section: 'System',
       items: [
-        { name: 'Organizations', path: '/organizations', icon: Building },
         { name: 'Users', path: '/users', icon: Users },
+        { name: 'Organizations', path: '/organizations', icon: Building },
         { name: 'Settings', path: '/settings', icon: Settings },
       ]
     },
@@ -80,6 +85,15 @@ const AppSidebar = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 px-2">
+        <div className="p-2 mb-3">
+          <Button variant="accent" className="w-full flex items-center gap-2" asChild>
+            <Link to="/create">
+              <Plus size={16} />
+              <span>Create New</span>
+            </Link>
+          </Button>
+        </div>
+        
         {navItems.map((section, index) => (
           <div key={section.section} className={cn("mb-4", index !== 0 && "mt-2")}>
             <div className="px-3 mb-2">

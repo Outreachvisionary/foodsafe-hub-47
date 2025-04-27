@@ -10,7 +10,7 @@ export const getCAPAs = async () => {
 export const getCAPAById = async (id: string) => {
   try {
     const { data, error } = await supabase
-      .from('capas')
+      .from('capa_actions')
       .select('*')
       .eq('id', id)
       .single();
