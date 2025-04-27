@@ -32,6 +32,9 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
         setLoading(true);
         const capaData = await fetchCAPAById(id);
         
+        // Add empty string for sourceReference if it doesn't exist
+        const sourceReference = capaData.source_reference || '';
+        
         // Transform the API data to match the CAPA interface
         const transformedCapa: CAPA = {
           id: capaData.id,
@@ -57,7 +60,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           department: capaData.department,
           sourceId: capaData.source_id,
           fsma204Compliant: capaData.fsma204_compliant,
-          sourceReference: capaData.source_reference || '',
+          sourceReference: sourceReference,
           relatedDocuments: [],
           relatedTraining: []
         };
@@ -76,7 +79,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
     }
   }, [id]);
 
-  // Using the type-safe utility functions from typeAdapters.ts instead of custom functions
+  // Using the type-safe utility functions from typeAdapters.ts
   const getStatusText = () => {
     if (!capa?.effectivenessVerified) {
       return 'Effectiveness verification pending';

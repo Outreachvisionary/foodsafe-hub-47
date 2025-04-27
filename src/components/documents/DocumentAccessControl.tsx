@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -82,7 +83,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
         'admin' // current user ID
       );
       
-      setAccessList(prev => [...prev, newAccess]);
+      setAccessList((prev) => [...prev, newAccess]);
       setIsAddDialogOpen(false);
       resetForm();
       

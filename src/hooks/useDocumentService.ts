@@ -1,38 +1,47 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Document, CheckoutStatus, DocumentStatus } from '@/types/document';
+import { Document, CheckoutStatus, DocumentStatus, DocumentAccess } from '@/types/document';
 import { convertToDocumentStatus, convertToCheckoutStatus } from '@/utils/typeAdapters';
 
-interface UseDocumentService {
-  documents: Document[];
-  loading: boolean;
-  error: string | null;
-  fetchDocuments: (filter?: any) => Promise<void>;
-  fetchDocumentById: (id: string) => Promise<Document | null>;
-  createDocument: (newDocument: Partial<Document>) => Promise<Document | null>;
-  updateDocument: (id: string, updates: Partial<Document>) => Promise<Document | null>;
-  deleteDocument: (id: string) => Promise<void>;
-  checkOutDocument: (id: string, userId: string, userName: string, userRole: string) => Promise<void>;
-  checkInDocument: (id: string, userId: string, comments?: string) => Promise<void>;
-  getDocumentVersions: (documentId: string) => Promise<any[]>;
-  getDocumentActivities: (documentId: string) => Promise<any[]>;
-  uploadFile: (file: File, path: string) => Promise<string | null>;
-  deleteFile: (filePath: string) => Promise<void>;
-  getDocumentComments: (documentId: string) => Promise<any[]>;
-  createDocumentComment: (documentId: string, comment: string) => Promise<void>;
-  fetchAccess: (documentId: string) => Promise<any[]>;
-  grantAccess: (documentId: string, userId: string) => Promise<void>;
-  revokeAccess: (documentId: string, userId: string) => Promise<void>;
-  restoreVersion: (documentId: string, versionId: string) => Promise<void>;
-  downloadVersion: (documentId: string, versionId: string) => Promise<void>;
-}
+// Functions to adapt between app format and database format
+const adaptDocumentToDatabase = (document: Partial<Document>) => {
+  // Convert to database format
+  return {
+    ...document,
+    // Ensure we use the database expected formats
+    status: document.status?.toString().replace(/_/g, ' '),
+    checkout_status: document.checkout_status?.toString().replace(/_/g, ' ')
+  };
+};
+
+const adaptDatabaseToDocument = (dbDocument: any): Document => {
+  // Convert database format to app format
+  return {
+    ...dbDocument,
+    status: convertToDocumentStatus(dbDocument.status),
+    checkout_status: dbDocument.checkout_status ? 
+      convertToCheckoutStatus(dbDocument.checkout_status) : 'Available'
+  } as Document;
+};
 
 const useDocumentService = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Helper to get storage path
+  const getStoragePath = (documentId: string, fileName: string) => {
+    return `${documentId}/${fileName}`;
+  };
+
+  // Helper to get download URL
+  const getDownloadUrl = async (path: string) => {
+    const { data } = supabase.storage.from('documents').getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const fetchDocuments = useCallback(async (filter: any = {}) => {
     setLoading(true);
@@ -54,9 +63,9 @@ const useDocumentService = () => {
       }
       if (filter.ownedByMe) {
         // Get the current user ID
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          query = query.eq('created_by', user.id);
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          query = query.eq('created_by', data.user.id);
         }
       }
       if (filter.dateRange && filter.dateRange.start && filter.dateRange.end) {
@@ -68,19 +77,16 @@ const useDocumentService = () => {
         query = query.order(filter.sortBy, { ascending });
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
       // Convert database documents to application format
-      const adaptedDocuments = data.map((dbDocument: any) => ({
-        ...dbDocument,
-        status: convertToDocumentStatus(dbDocument.status),
-        checkout_status: dbDocument.checkout_status ? 
-          convertToCheckoutStatus(dbDocument.checkout_status) : 'Available'
-      })) as Document[];
+      const adaptedDocuments = data.map((dbDocument: any) => 
+        adaptDatabaseToDocument(dbDocument)
+      );
 
       setDocuments(adaptedDocuments);
     } catch (err: any) {
@@ -95,23 +101,18 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
       // Convert to application format
-      return {
-        ...data,
-        status: convertToDocumentStatus(data.status),
-        checkout_status: data.checkout_status ? 
-          convertToCheckoutStatus(data.checkout_status) : 'Available'
-      } as Document;
+      return adaptDatabaseToDocument(data);
     } catch (err: any) {
       setError(err.message);
       console.error(`Error fetching document with ID ${id}:`, err);
@@ -125,14 +126,17 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      // Convert to database format
+      const dbDocument = adaptDocumentToDatabase(newDocument);
+      
+      const { data, error: createError } = await supabase
         .from('documents')
-        .insert(adaptDocumentToDatabase(newDocument))
+        .insert(dbDocument)
         .select()
         .single();
 
-      if (error) {
-        throw new Error(error.message);
+      if (createError) {
+        throw new Error(createError.message);
       }
 
       toast({
@@ -153,21 +157,24 @@ const useDocumentService = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const updateDocument = useCallback(async (id: string, updates: Partial<Document>): Promise<Document | null> => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      // Convert to database format
+      const dbDocument = adaptDocumentToDatabase(updates);
+      
+      const { data, error: updateError } = await supabase
         .from('documents')
-        .update(adaptDocumentToDatabase(updates))
+        .update(dbDocument)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) {
-        throw new Error(error.message);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
       toast({
@@ -188,19 +195,19 @@ const useDocumentService = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const deleteDocument = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('documents')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (deleteError) {
+        throw new Error(deleteError.message);
       }
 
       setDocuments(prevDocuments => prevDocuments.filter(document => document.id !== id));
@@ -220,7 +227,7 @@ const useDocumentService = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const checkOutDocument = useCallback(async (
     id: string, 
@@ -246,23 +253,25 @@ const useDocumentService = () => {
         throw new Error('Document not found');
       }
 
-      if (convertToCheckoutStatus(dbDocument.checkout_status) === 'Checked_Out') {
+      const checkoutStatus = convertToCheckoutStatus(dbDocument.checkout_status);
+      
+      if (checkoutStatus === 'Checked_Out') {
         throw new Error('Document is already checked out');
       }
 
       // Proceed with the checkout
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Checked_Out',
+          checkout_status: 'Checked Out',
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
         })
         .eq('id', id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
       // Record activity
@@ -315,12 +324,13 @@ const useDocumentService = () => {
         throw new Error('Document not found');
       }
 
-      if (convertToCheckoutStatus(dbDocument.checkout_status) === 'Checked_Out' && 
-          dbDocument.checkout_user_id !== userId) {
+      const checkoutStatus = convertToCheckoutStatus(dbDocument.checkout_status);
+      
+      if (checkoutStatus === 'Checked_Out' && dbDocument.checkout_user_id !== userId) {
         throw new Error('Document is checked out by another user');
       }
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('documents')
         .update({
           checkout_status: 'Available',
@@ -329,8 +339,8 @@ const useDocumentService = () => {
         })
         .eq('id', id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
       // Get user info for activity record
@@ -401,13 +411,13 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('document_versions')
         .select('*')
         .eq('document_id', documentId);
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
       return data || [];
@@ -424,14 +434,14 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('document_activities')
         .select('*')
         .eq('document_id', documentId)
         .order('timestamp', { ascending: false });
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
       return data || [];
@@ -448,18 +458,20 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(path, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) {
-        throw new Error(error.message);
+      if (uploadError) {
+        throw new Error(uploadError.message);
       }
 
-      return `${supabase.supabaseUrl}/storage/v1/object/public/documents/${path}`;
+      // Get the public URL
+      const { data } = supabase.storage.from('documents').getPublicUrl(path);
+      return data.publicUrl;
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -478,12 +490,12 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.storage
+      const { error: deleteError } = await supabase.storage
         .from('documents')
         .remove([filePath]);
 
-      if (error) {
-        throw new Error(error.message);
+      if (deleteError) {
+        throw new Error(deleteError.message);
       }
 
       toast({
@@ -507,14 +519,14 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('document_comments')
         .select('*')
         .eq('document_id', documentId)
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
       return data || [];
@@ -527,49 +539,54 @@ const useDocumentService = () => {
     }
   }, []);
 
-  const createDocumentComment = useCallback(async (documentId: string, comment: string): Promise<void> => {
+  const createDocumentComment = useCallback(async (commentData: {
+    document_id: string;
+    content: string;
+    user_id: string;
+    user_name: string;
+  }): Promise<any> => {
     setLoading(true);
     setError(null);
     try {
-      await supabase
+      const { data, error: createError } = await supabase
         .from('document_comments')
         .insert({
-          document_id: documentId,
-          comment,
-          timestamp: new Date().toISOString()
-        });
+          document_id: commentData.document_id,
+          content: commentData.content,
+          user_id: commentData.user_id,
+          user_name: commentData.user_name
+        })
+        .select()
+        .single();
 
-      toast({
-        title: "Comment Created",
-        description: "The comment has been created successfully.",
-      });
+      if (createError) {
+        throw new Error(createError.message);
+      }
+
+      return data;
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to create the comment.",
-        variant: "destructive",
-      });
-      console.error("Error creating comment:", err);
+      console.error(`Error creating comment for document ID ${commentData.document_id}:`, err);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchAccess = useCallback(async (documentId: string): Promise<any[]> => {
+  const fetchAccess = useCallback(async (documentId: string): Promise<DocumentAccess[]> => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('document_access')
         .select('*')
         .eq('document_id', documentId);
 
-      if (error) {
-        throw new Error(error.message);
+      if (fetchError) {
+        throw new Error(fetchError.message);
       }
 
-      return data || [];
+      return (data || []) as DocumentAccess[];
     } catch (err: any) {
       setError(err.message);
       console.error(`Error fetching access for document ID ${documentId}:`, err);
@@ -579,57 +596,56 @@ const useDocumentService = () => {
     }
   }, []);
 
-  const grantAccess = useCallback(async (documentId: string, userId: string): Promise<void> => {
+  const grantAccess = useCallback(async (
+    documentId: string, 
+    userId: string,
+    permissionLevel: string, 
+    grantedBy: string
+  ): Promise<DocumentAccess> => {
     setLoading(true);
     setError(null);
     try {
-      await supabase
+      const { data, error: createError } = await supabase
         .from('document_access')
         .insert({
           document_id: documentId,
           user_id: userId,
-          timestamp: new Date().toISOString()
-        });
+          permission_level: permissionLevel,
+          granted_by: grantedBy,
+        })
+        .select()
+        .single();
 
-      toast({
-        title: "Access Granted",
-        description: "Access has been granted successfully.",
-      });
+      if (createError) {
+        throw new Error(createError.message);
+      }
+
+      return data as DocumentAccess;
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to grant access.",
-        variant: "destructive",
-      });
-      console.error("Error granting access:", err);
+      console.error(`Error granting access for document ID ${documentId}:`, err);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const revokeAccess = useCallback(async (documentId: string, userId: string): Promise<void> => {
+  const revokeAccess = useCallback(async (accessId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      await supabase
+      const { error: deleteError } = await supabase
         .from('document_access')
         .delete()
-        .eq('document_id', documentId)
-        .eq('user_id', userId);
+        .eq('id', accessId);
 
-      toast({
-        title: "Access Revoked",
-        description: "Access has been revoked successfully.",
-      });
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to revoke access.",
-        variant: "destructive",
-      });
-      console.error("Error revoking access:", err);
+      console.error(`Error revoking access with ID ${accessId}:`, err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -639,63 +655,159 @@ const useDocumentService = () => {
     setLoading(true);
     setError(null);
     try {
-      await supabase
-        .from('document_versions')
-        .update({
-          status: 'Active'
-        })
-        .eq('document_id', documentId)
-        .eq('id', versionId);
-
-      toast({
-        title: "Version Restored",
-        description: "The version has been restored successfully.",
-      });
+      // Implementation depends on your version management logic
+      console.log(`Restoring document ${documentId} to version ${versionId}`);
+      // This is a placeholder for actual restore implementation
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to restore the version.",
-        variant: "destructive",
-      });
-      console.error("Error restoring version:", err);
+      console.error(`Error restoring version for document ID ${documentId}:`, err);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const downloadVersion = useCallback(async (documentId: string, versionId: string): Promise<void> => {
+  const downloadVersion = useCallback(async (versionId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .download(`${documentId}/${versionId}`);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${documentId}-${versionId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Implementation depends on your version management and file storage
+      console.log(`Downloading version ${versionId}`);
+      // This is a placeholder for actual download implementation
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to download the version.",
-        variant: "destructive",
-      });
-      console.error("Error downloading version:", err);
+      console.error(`Error downloading version ${versionId}:`, err);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Additional methods for approval workflow
+  const approveDocument = useCallback(async (documentId: string, comment: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({ 
+          status: 'Approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      // Record the approval action
+      // Get current user info from auth
+      const { data } = await supabase.auth.getUser();
+      const userId = data?.user?.id || 'unknown';
+      
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', userId)
+        .single();
+
+      const userName = profile?.full_name || 'Unknown User';
+      const userRole = profile?.role || 'User';
+
+      await recordDocumentActivity(
+        documentId,
+        'approve',
+        userId,
+        userName,
+        userRole,
+        comment
+      );
+
+      toast({
+        title: "Document Approved",
+        description: "The document has been approved successfully.",
+      });
+      
+      // Refresh document list
+      await fetchDocuments();
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        title: "Error",
+        description: "Failed to approve the document.",
+        variant: "destructive",
+      });
+      console.error(`Error approving document ${documentId}:`, err);
+    } finally {
+      setLoading(false);
+    }
+  }, [toast, fetchDocuments]);
+
+  const rejectDocument = useCallback(async (documentId: string, reason: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!reason) {
+        throw new Error("Rejection reason is required");
+      }
+
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({ 
+          status: 'Rejected',
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      // Record the rejection action
+      // Get current user info from auth
+      const { data } = await supabase.auth.getUser();
+      const userId = data?.user?.id || 'unknown';
+      
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', userId)
+        .single();
+
+      const userName = profile?.full_name || 'Unknown User';
+      const userRole = profile?.role || 'User';
+
+      await recordDocumentActivity(
+        documentId,
+        'reject',
+        userId,
+        userName,
+        userRole,
+        reason
+      );
+
+      toast({
+        title: "Document Rejected",
+        description: "The document has been rejected with provided reason.",
+      });
+      
+      // Refresh document list
+      await fetchDocuments();
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to reject the document.",
+        variant: "destructive",
+      });
+      console.error(`Error rejecting document ${documentId}:`, err);
+    } finally {
+      setLoading(false);
+    }
+  }, [toast, fetchDocuments]);
 
   return {
     documents,
@@ -718,7 +830,11 @@ const useDocumentService = () => {
     grantAccess,
     revokeAccess,
     restoreVersion,
-    downloadVersion
+    downloadVersion,
+    approveDocument,
+    rejectDocument,
+    getStoragePath,
+    getDownloadUrl
   };
 };
 

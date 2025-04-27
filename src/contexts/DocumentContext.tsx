@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
 import useDocumentService from '@/hooks/useDocumentService';
@@ -24,11 +25,14 @@ interface DocumentContextType {
   revokeAccess: (accessId: string) => Promise<void>;
   restoreVersion: (documentId: string, versionId: string) => Promise<void>;
   downloadVersion: (versionId: string) => Promise<void>;
+  approveDocument: (documentId: string, comment: string) => Promise<void>;
+  rejectDocument: (documentId: string, reason: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 export function DocumentProvider({ children }: { children: ReactNode }) {
+  const documentService = useDocumentService();
   const {
     documents,
     loading,
@@ -50,8 +54,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     grantAccess,
     revokeAccess,
     restoreVersion,
-    downloadVersion
-  } = useDocumentService();
+    downloadVersion,
+    approveDocument,
+    rejectDocument
+  } = documentService;
 
   return (
     <DocumentContext.Provider value={{
@@ -63,8 +69,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       createDocument,
       updateDocument,
       deleteDocument,
-      checkoutDocument,
-      checkinDocument,
+      checkoutDocument: checkOutDocument,
+      checkinDocument: checkInDocument,
       getDocumentVersions,
       getDocumentActivities,
       uploadFile,
@@ -75,7 +81,9 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       grantAccess,
       revokeAccess,
       restoreVersion,
-      downloadVersion
+      downloadVersion,
+      approveDocument,
+      rejectDocument
     }}>
       {children}
     </DocumentContext.Provider>

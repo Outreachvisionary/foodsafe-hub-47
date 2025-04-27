@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Unlock } from 'lucide-react';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import useDocumentService from '@/hooks/useDocumentService';
 import { Document } from '@/types/document';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -77,7 +78,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  const isCheckedOut = document.checkout_status === 'Checked Out';
+  const isCheckedOut = document.checkout_status === 'Checked_Out';
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
   return (
@@ -134,3 +135,5 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     </>
   );
 };
+
+export default DocumentCheckoutActions;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -8,7 +9,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Document, DocumentVersion } from '@/types/document';
 import { format } from 'date-fns';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import useDocumentService from '@/hooks/useDocumentService';
 import { Button } from '@/components/ui/button';
 import { Download, RotateCcw } from 'lucide-react';
 
@@ -23,18 +24,18 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
   open,
   onOpenChange,
 }) => {
-  const { fetchDocumentVersions, restoreVersion, downloadVersion } = useDocumentService();
+  const documentService = useDocumentService();
   const [versions, setVersions] = React.useState<DocumentVersion[]>([]);
 
   React.useEffect(() => {
     if (open && document.id) {
-      fetchDocumentVersions(document.id).then(setVersions);
+      documentService.getDocumentVersions(document.id).then(setVersions);
     }
-  }, [open, document.id, fetchDocumentVersions]);
+  }, [open, document.id, documentService]);
 
   const handleRestore = async (version: DocumentVersion) => {
     try {
-      await restoreVersion(document.id, version.id);
+      await documentService.restoreVersion(document.id, version.id);
       onOpenChange(false);
     } catch (error) {
       console.error('Error restoring version:', error);
@@ -43,7 +44,7 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
 
   const handleDownload = async (version: DocumentVersion) => {
     try {
-      await downloadVersion(version.id);
+      await documentService.downloadVersion(version.id);
     } catch (error) {
       console.error('Error downloading version:', error);
     }
@@ -64,13 +65,13 @@ export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
               >
                 <div className="space-y-1">
                   <div className="font-medium">
-                    Version {version.version_number}
+                    Version {version.version_number || version.version}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {format(new Date(version.created_at), 'PPpp')}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Modified by {version.modified_by_name}
+                    Modified by {version.modified_by_name || "Unknown"}
                   </div>
                   {version.check_in_comment && (
                     <div className="mt-2 text-sm">{version.check_in_comment}</div>

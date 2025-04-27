@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { isDocumentStatus } from '@/utils/typeAdapters';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Download, Eye, Code, FileCode } from 'lucide-react';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import useDocumentService from '@/hooks/useDocumentService';
 
 interface DocumentViewerProps {
   document: Document;
@@ -158,7 +159,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
                   'outline'
                 }
               >
-                {document.status}
+                {document.status.replace(/_/g, ' ')}
               </Badge>
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 export type DocumentStatus = 
   | 'Draft'
   | 'In_Review'
@@ -48,6 +49,16 @@ export interface Document {
   file_path?: string;
   tags?: string[];
   approvers?: string[];
+  next_review_date?: string;
+  pending_since?: string;
+  rejection_reason?: string;
+  is_locked?: boolean;
+  last_action?: string;
+  last_review_date?: string;
+  current_version_id?: string;
+  is_template?: boolean;
+  folder_id?: string;
+  workflow_status?: string;
 }
 
 export interface DocumentVersion {
@@ -63,6 +74,7 @@ export interface DocumentVersion {
   check_in_comment?: string;
   change_notes?: string;
   change_summary?: string;
+  version_number?: number;
 }
 
 export interface DocumentActivity {
@@ -94,6 +106,17 @@ export interface DocumentWorkflowStep {
   description?: string;
   approvers: string[];
   status?: 'Pending' | 'Approved' | 'Rejected';
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  folder_id?: string;
+  user_id?: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at: string;
 }
 
 export interface DocumentListProps {

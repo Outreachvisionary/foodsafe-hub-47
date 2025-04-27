@@ -33,15 +33,13 @@ export function isDocumentStatus(status: string, compareStatus: DocumentStatus):
 
 // Checkout status conversions
 export function convertToCheckoutStatus(status: string): CheckoutStatus {
-  switch(status.replace(/ /g, '_')) {
-    case 'Available': return 'Available';
-    case 'Checked_Out': return 'Checked_Out';
-    default: return 'Available';
-  }
+  if (status === 'Checked Out') return 'Checked_Out';
+  return 'Available';
 }
 
 // CAPA status conversions
 export function convertToCAPAStatus(status: string): CAPAStatus {
+  // Map string status to our enum type
   switch(status.replace(/ /g, '_')) {
     case 'Open': return 'Open';
     case 'In_Progress': return 'In_Progress';
