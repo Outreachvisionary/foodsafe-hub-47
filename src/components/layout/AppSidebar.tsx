@@ -17,11 +17,16 @@ import {
   GraduationCap,
   MessageSquare,
   CheckSquare,
-  PlusSquare,
-  Plus
+  Plus,
+  LayoutDashboard,
+  Warehouse,
+  Activity,
+  LineChart,
+  Award
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import type { NavSection } from '@/types/navigation';
 
 const AppSidebar = () => {
   const location = useLocation();
@@ -30,19 +35,17 @@ const AppSidebar = () => {
     return location.pathname.startsWith(path);
   };
 
-  // Define all navigation sections with their items
-  const navItems = [
+  const navItems: NavSection[] = [
     {
       section: 'Core',
       items: [
-        { name: 'Dashboard', path: '/dashboard', icon: BarChart2 },
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Documents', path: '/documents', icon: FileText },
         { name: 'Tasks', path: '/tasks', icon: CheckSquare },
         { name: 'CAPAs', path: '/capa', icon: ClipboardCheck },
         { name: 'Non-Conformance', path: '/non-conformance', icon: AlertTriangle },
         { name: 'Training', path: '/training', icon: GraduationCap },
-        { name: 'Facilities', path: '/facilities', icon: Building },
-        { name: 'Reports', path: '/reports', icon: FileCheck },
+        { name: 'Facilities', path: '/facilities', icon: Warehouse },
       ]
     },
     {
@@ -51,6 +54,7 @@ const AppSidebar = () => {
         { name: 'Audits', path: '/audits', icon: FileCheck },
         { name: 'Standards', path: '/standards', icon: BookOpen },
         { name: 'Complaints', path: '/complaints', icon: MessageSquare },
+        { name: 'KPIs', path: '/kpis', icon: Activity },
       ]
     },
     {
@@ -62,10 +66,19 @@ const AppSidebar = () => {
       ]
     },
     {
+      section: 'Monitoring',
+      items: [
+        { name: 'Reports', path: '/reports', icon: BarChart2 },
+        { name: 'Analytics', path: '/analytics', icon: LineChart },
+        { name: 'Performance', path: '/performance', icon: Gauge },
+      ]
+    },
+    {
       section: 'System',
       items: [
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Organizations', path: '/organizations', icon: Building },
+        { name: 'Certifications', path: '/certifications', icon: Award },
         { name: 'Settings', path: '/settings', icon: Settings },
       ]
     },
@@ -73,6 +86,7 @@ const AppSidebar = () => {
 
   return (
     <div className="w-64 min-h-screen bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col overflow-hidden">
+      {/* Logo and brand section */}
       <div className="p-4 border-b border-border/60">
         <Link to="/" className="flex items-center space-x-2">
           <div className="bg-gradient-to-r from-primary to-accent rounded-md p-1.5">
@@ -84,18 +98,20 @@ const AppSidebar = () => {
         </Link>
       </div>
 
+      {/* Create New button */}
+      <div className="flex-none p-2">
+        <Button variant="accent" className="w-full flex items-center gap-2" asChild>
+          <Link to="/create">
+            <Plus size={16} />
+            <span>Create New</span>
+          </Link>
+        </Button>
+      </div>
+
+      {/* Navigation items */}
       <div className="flex-1 overflow-y-auto py-2 px-2">
-        <div className="p-2 mb-3">
-          <Button variant="accent" className="w-full flex items-center gap-2" asChild>
-            <Link to="/create">
-              <Plus size={16} />
-              <span>Create New</span>
-            </Link>
-          </Button>
-        </div>
-        
-        {navItems.map((section, index) => (
-          <div key={section.section} className={cn("mb-4", index !== 0 && "mt-2")}>
+        {navItems.map((section) => (
+          <div key={section.section} className="mb-4">
             <div className="px-3 mb-2">
               <h2 className="text-xs font-semibold text-foreground/60 tracking-wider uppercase">
                 {section.section}
@@ -125,6 +141,7 @@ const AppSidebar = () => {
         ))}
       </div>
 
+      {/* User profile section */}
       <div className="p-4 border-t border-border/60 bg-secondary/30">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
