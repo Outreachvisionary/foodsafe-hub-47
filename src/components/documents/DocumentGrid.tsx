@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Document } from '@/types/document';
+import { Document, DocumentStatus } from '@/types/document';
 import {
   FileText,
   FileArchive,
@@ -12,6 +12,7 @@ import {
   FileQuestion,
   Calendar,
 } from 'lucide-react';
+import { mapDbToAppDocStatus } from '@/utils/documentTypeAdapter';
 
 interface DocumentGridProps {
   documents: Document[];
@@ -32,14 +33,14 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
         return <FileCog className="w-10 h-10 text-blue-500" />;
       case 'Rejected':
         return <FileX className="w-10 h-10 text-red-500" />;
-      case 'Pending Review':
+      case 'Pending_Review':
         return <FileQuestion className="w-10 h-10 text-amber-500" />;
       default:
         return <FileText className="w-10 h-10 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
       case 'Active':
         return 'bg-green-100 text-green-800';
@@ -49,13 +50,18 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
         return 'bg-blue-100 text-blue-800';
       case 'Rejected':
         return 'bg-red-100 text-red-800';
-      case 'Pending Review':
+      case 'Pending_Review':
         return 'bg-amber-100 text-amber-800';
       case 'Expired':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Helper function to format document status for display
+  const formatStatus = (status: DocumentStatus): string => {
+    return status.replace('_', ' ');
   };
 
   if (documents.length === 0) {
@@ -86,7 +92,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
 
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Badge className={getStatusColor(document.status)}>
-                    {document.status}
+                    {formatStatus(document.status)}
                   </Badge>
                   <Badge variant="outline">{document.category}</Badge>
                 </div>

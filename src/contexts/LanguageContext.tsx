@@ -72,7 +72,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       // Update user profile if they're logged in
       if (user?.id) {
-        await updateProfile({ preferred_language: language } as any);
+        await updateProfile({ preferred_language: language });
       }
 
       // Store in localStorage as fallback

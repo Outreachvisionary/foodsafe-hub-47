@@ -1,75 +1,86 @@
 
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
-import { fetchCAPAById } from '@/services/capa/capaFetchService';
+import { ChevronRight, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Loader2 } from 'lucide-react';
-import StatusBadge from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { CAPA, CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
+import { supabase } from '@/integrations/supabase/client';
 
-const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
+interface LinkedCAPAsListProps {
+  capaIds: string[];
+}
+
+const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capaIds }) => {
   const [capas, setCapas] = useState<CAPA[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLinkedCAPAs = async () => {
-      if (!capaIds || capaIds.length === 0) return;
-      
-      setLoading(true);
-      setError(null);
+    const fetchCAPAs = async () => {
+      if (!capaIds || capaIds.length === 0) {
+        setCapas([]);
+        setLoading(false);
+        return;
+      }
       
       try {
-        const capaPromises = capaIds.map(id => fetchCAPAById(id));
-        const fetchedCapasData = await Promise.all(capaPromises);
-        
-        // Transform API response to match CAPA interface
-        const transformedCapas: CAPA[] = fetchedCapasData.map(data => ({
-          id: data.id,
-          title: data.title,
-          description: data.description,
-          status: mapStatusToEnum(data.status),
-          priority: mapPriorityToEnum(data.priority),
-          createdAt: data.created_at,
-          createdBy: data.created_by,
-          dueDate: data.due_date,
-          assignedTo: data.assigned_to,
-          source: mapSourceToEnum(data.source),
-          completionDate: data.completion_date,
-          rootCause: data.root_cause,
-          correctiveAction: data.corrective_action,
-          preventiveAction: data.preventive_action,
-          effectivenessCriteria: data.effectiveness_criteria,
-          effectivenessRating: mapEffectivenessRatingToEnum(data.effectiveness_rating),
-          effectivenessVerified: data.effectiveness_verified,
-          verificationDate: data.verification_date,
-          verificationMethod: data.verification_method,
-          verifiedBy: data.verified_by,
-          department: data.department,
-          sourceId: data.source_id,
-          fsma204Compliant: data.fsma204_compliant,
-          sourceReference: data.source_reference,
-          relatedDocuments: [],
-          relatedTraining: []
-        }));
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('capa_actions')
+          .select('*')
+          .in('id', capaIds);
 
-        setCapas(transformedCapas);
-      } catch (error) {
-        console.error('Error fetching linked CAPAs:', error);
-        setError('Failed to load linked CAPA items');
+        if (error) throw error;
+
+        // Convert DB data to CAPA objects
+        const transformedCapas = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          status: mapStatusToEnum(item.status),
+          priority: mapPriorityToEnum(item.priority),
+          createdAt: item.created_at,
+          createdBy: item.created_by,
+          dueDate: item.due_date,
+          assignedTo: item.assigned_to,
+          source: item.source,
+          completionDate: item.completion_date,
+          rootCause: item.root_cause,
+          correctiveAction: item.corrective_action,
+          preventiveAction: item.preventive_action,
+          effectivenessCriteria: item.effectiveness_criteria,
+          effectivenessRating: mapEffectivenessRatingToEnum(item.effectiveness_rating),
+          effectivenessVerified: item.effectiveness_verified,
+          verificationDate: item.verification_date,
+          verificationMethod: item.verification_method,
+          verifiedBy: item.verified_by,
+          department: item.department,
+          sourceId: item.source_id,
+          fsma204Compliant: item.fsma204_compliant,
+          sourceReference: item.source_reference || '',
+          relatedDocuments: [],
+          relatedTraining: [],
+        }));
+        
+        setCapas(transformedCapas as CAPA[]);
+      } catch (err) {
+        console.error('Error fetching linked CAPAs:', err);
+        setError('Failed to load linked CAPAs');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLinkedCAPAs();
+    fetchCAPAs();
   }, [capaIds]);
 
   // Helper functions to map string values to enum types
   const mapStatusToEnum = (status: string): CAPAStatus => {
     if (!status) return 'Open';
     
-    status = status.replace(' ', '_');
+    // Convert spaces to underscores first
+    status = status.replace(/ /g, '_');
     
     switch(status.toLowerCase()) {
       case 'open': return 'Open';
@@ -86,25 +97,18 @@ const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
     }
   };
 
-  const mapPriorityToEnum = (priority: string): CAPAPriority => {
+  const mapPriorityToEnum = (priority: string): string => {
     if (priority === 'Low' || priority === 'Medium' || priority === 'High' || priority === 'Critical') {
-      return priority as CAPAPriority;
+      return priority;
     }
     return 'Medium';
   };
 
-  const mapSourceToEnum = (source: string): CAPASource => {
-    if (source === 'Audit' || source === 'Customer Complaint' || source === 'Internal' || 
-        source === 'Regulatory' || source === 'Other') {
-      return source as CAPASource;
-    }
-    return 'Other';
-  };
-  
-  const mapEffectivenessRatingToEnum = (rating: string | undefined) => {
+  const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
     if (!rating) return undefined;
     
-    rating = rating.replace(' ', '_');
+    // Convert spaces to underscores first
+    rating = rating.replace(/ /g, '_');
     
     switch(rating.toLowerCase()) {
       case 'not_effective': return 'Not_Effective';

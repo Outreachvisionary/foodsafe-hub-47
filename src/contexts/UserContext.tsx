@@ -2,6 +2,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface UserPreferences {
+  theme?: 'light' | 'dark' | 'system';
+  notifications?: boolean;
+  sidebar_collapsed?: boolean;
+}
+
 interface UserProfile {
   id: string;
   email: string;
@@ -9,11 +15,7 @@ interface UserProfile {
   avatar_url?: string;
   organization_id?: string;
   department?: string;
-  preferences?: {
-    theme?: 'light' | 'dark' | 'system';
-    notifications?: boolean;
-    sidebar_collapsed?: boolean;
-  };
+  preferences?: UserPreferences;
   assigned_facility_ids?: string[];
   status?: 'active' | 'inactive' | 'pending';
   role?: string;
@@ -52,6 +54,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
             
           if (profileError) throw profileError;
           
+          // Convert preferences to proper type
+          let preferences: UserPreferences = {};
+          if (typeof profileData.preferences === 'object' && profileData.preferences !== null) {
+            preferences = {
+              theme: profileData.preferences.theme as 'light' | 'dark' | 'system' | undefined,
+              notifications: !!profileData.preferences.notifications,
+              sidebar_collapsed: !!profileData.preferences.sidebar_collapsed
+            };
+          }
+          
           setUser({
             id: authUser.id,
             email: authUser.email || '',
@@ -59,10 +71,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             avatar_url: profileData.avatar_url,
             organization_id: profileData.organization_id,
             department: profileData.department,
-            preferences: typeof profileData.preferences === 'object' ? profileData.preferences : {},
+            preferences: preferences,
             assigned_facility_ids: profileData.assigned_facility_ids,
-            status: profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending' 
-              ? profileData.status 
+            status: (profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending') 
+              ? profileData.status as 'active' | 'inactive' | 'pending'
               : 'active',
             role: profileData.role,
             preferred_language: profileData.preferred_language
@@ -126,6 +138,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
           
         if (profileError) throw profileError;
         
+        // Convert preferences to proper type
+        let preferences: UserPreferences = {};
+        if (typeof profileData.preferences === 'object' && profileData.preferences !== null) {
+          preferences = {
+            theme: profileData.preferences.theme as 'light' | 'dark' | 'system' | undefined,
+            notifications: !!profileData.preferences.notifications,
+            sidebar_collapsed: !!profileData.preferences.sidebar_collapsed
+          };
+        }
+        
         setUser({
           id: authUser.id,
           email: authUser.email || '',
@@ -133,41 +155,42 @@ export function UserProvider({ children }: { children: ReactNode }) {
           avatar_url: profileData.avatar_url,
           organization_id: profileData.organization_id,
           department: profileData.department,
-          preferences: typeof profileData.preferences === 'object' ? profileData.preferences : {},
+          preferences: preferences,
           assigned_facility_ids: profileData.assigned_facility_ids,
-          status: profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending' 
-            ? profileData.status 
+          status: (profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending') 
+            ? profileData.status as 'active' | 'inactive' | 'pending'
             : 'active',
           role: profileData.role,
           preferred_language: profileData.preferred_language
         });
       }
-    } catch (err) {
-      console.error('Error refreshing user:', err);
-      setError(err as Error);
-      throw err;
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      throw error;
     }
   };
-  
+
+  const contextValue: UserContextType = {
+    user,
+    loading,
+    error,
+    updateProfile,
+    logout,
+    signOut, // Include the signOut alias
+    refreshUser
+  };
+
   return (
-    <UserContext.Provider value={{ 
-      user, 
-      loading, 
-      error, 
-      updateProfile, 
-      logout,
-      signOut,
-      refreshUser
-    }}>
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
 }
 
-export function useUser() {
+export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-}
+};

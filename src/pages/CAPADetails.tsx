@@ -64,22 +64,53 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
       try {
         setLoading(true);
         const capaData = await getCAPAById(capaId);
-        setCapa(capaData);
+        
+        // Convert DB format to CAPA type
+        const transformedCapa: CAPA = {
+          id: capaData.id,
+          title: capaData.title,
+          description: capaData.description,
+          status: mapStatusToEnum(capaData.status),
+          priority: mapPriorityToEnum(capaData.priority),
+          createdAt: capaData.created_at,
+          createdBy: capaData.created_by,
+          dueDate: capaData.due_date,
+          assignedTo: capaData.assigned_to,
+          source: mapSourceToEnum(capaData.source),
+          completionDate: capaData.completion_date,
+          rootCause: capaData.root_cause || '',
+          correctiveAction: capaData.corrective_action || '',
+          preventiveAction: capaData.preventive_action || '',
+          effectivenessCriteria: capaData.effectiveness_criteria,
+          effectivenessRating: mapEffectivenessRatingToEnum(capaData.effectiveness_rating),
+          effectivenessVerified: capaData.effectiveness_verified,
+          verificationDate: capaData.verification_date,
+          verificationMethod: capaData.verification_method,
+          verifiedBy: capaData.verified_by,
+          department: capaData.department || '',
+          sourceId: capaData.source_id || '',
+          sourceReference: capaData.source_reference || '',
+          fsma204Compliant: capaData.fsma204_compliant || false,
+          relatedDocuments: [],
+          relatedTraining: []
+        };
+        
+        setCapa(transformedCapa);
         
         // Initialize form fields
-        setTitle(capaData.title);
-        setDescription(capaData.description);
-        setPriority(capaData.priority);
-        setAssignedTo(capaData.assignedTo);
-        setDueDate(capaData.dueDate);
-        setSource(capaData.source);
-        setRootCause(capaData.rootCause || '');
-        setCorrectiveAction(capaData.correctiveAction || '');
-        setPreventiveAction(capaData.preventiveAction || '');
-        setDepartment(capaData.department || '');
-        setFsma204Compliant(capaData.fsma204Compliant || false);
-        setSourceId(capaData.sourceId || '');
-        setSourceReference(capaData.sourceReference || '');
+        setTitle(transformedCapa.title);
+        setDescription(transformedCapa.description);
+        setPriority(transformedCapa.priority);
+        setAssignedTo(transformedCapa.assignedTo);
+        setDueDate(transformedCapa.dueDate);
+        setSource(transformedCapa.source);
+        setRootCause(transformedCapa.rootCause || '');
+        setCorrectiveAction(transformedCapa.correctiveAction || '');
+        setPreventiveAction(transformedCapa.preventiveAction || '');
+        setDepartment(transformedCapa.department || '');
+        setFsma204Compliant(transformedCapa.fsma204Compliant || false);
+        setSourceId(transformedCapa.sourceId || '');
+        setSourceReference(transformedCapa.sourceReference || '');
       } catch (error) {
         console.error("Error loading CAPA:", error);
         toast({
@@ -95,6 +126,57 @@ const CAPADetails: React.FC<CAPADetailsProps> = () => {
     loadCAPA();
   }, [capaId, toast]);
   
+  const mapStatusToEnum = (status: string): CAPAStatus => {
+    if (!status) return 'Open';
+    
+    // Convert spaces to underscores first
+    status = status.replace(/ /g, '_');
+    
+    switch(status.toLowerCase()) {
+      case 'open': return 'Open';
+      case 'in_progress': return 'In_Progress';
+      case 'under_review': return 'Under_Review';
+      case 'completed': return 'Completed';
+      case 'closed': return 'Closed';
+      case 'rejected': return 'Rejected';
+      case 'on_hold': return 'On_Hold';
+      case 'overdue': return 'Overdue';
+      case 'pending_verification': return 'Pending_Verification';
+      case 'verified': return 'Verified';
+      default: return 'Open';
+    }
+  };
+
+  const mapPriorityToEnum = (priority: string): CAPAPriority => {
+    if (priority === 'Low' || priority === 'Medium' || priority === 'High' || priority === 'Critical') {
+      return priority as CAPAPriority;
+    }
+    return 'Medium';
+  };
+
+  const mapSourceToEnum = (source: string): CAPASource => {
+    if (source === 'Audit' || source === 'Customer Complaint' || source === 'Internal' || 
+        source === 'Regulatory' || source === 'Other') {
+      return source as CAPASource;
+    }
+    return 'Other';
+  };
+
+  const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
+    if (!rating) return undefined;
+    
+    // Convert spaces to underscores first
+    rating = rating.replace(/ /g, '_');
+    
+    switch(rating.toLowerCase()) {
+      case 'not_effective': return 'Not_Effective';
+      case 'partially_effective': return 'Partially_Effective';
+      case 'effective': return 'Effective';
+      case 'highly_effective': return 'Highly_Effective';
+      default: return undefined;
+    }
+  };
+
   useEffect(() => {
     refreshActivities();
   }, [capaId]);

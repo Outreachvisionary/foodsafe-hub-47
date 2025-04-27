@@ -34,7 +34,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { FormSection } from "@/components/ui/form-section";
+import FormSection from "@/components/ui/form-section";
 import StatusBadge from "@/components/ui/status-badge";
 
 // Animation variants

@@ -1,58 +1,61 @@
 
 import { CAPAStatus } from '@/types/capa';
-import { 
-  mapInternalStatusToDb, 
-  mapDbStatusToInternal, 
-  internalToDbStatusMap, 
-  dbToInternalStatusMap 
-} from '@/services/capa/capaStatusMapper';
 
-// This function is now deprecated, use the one from capaStatusMapper instead
-export function mapInternalToStatus(status: CAPAStatus): string {
-  return status;
-}
-
-// This function is now deprecated, use the one from capaStatusMapper instead
-export function mapStatusToInternal(status: string): CAPAStatus {
-  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
-  
-  switch (normalizedStatus) {
-    case 'open':
-      return 'Open';
-    case 'in-progress':
-    case 'in-process':
-    case 'investigating':
-      return 'In_Progress';
-    case 'pending-verification':
-    case 'pending-review':
-      return 'Pending_Verification';
-    case 'closed':
-    case 'complete':
-    case 'completed':
-      return 'Closed';
-    case 'verified':
-    case 'validated':
-      return 'Verified';
-    case 'overdue':
-      return 'Overdue';
-    default:
-      return 'Open';
-  }
-}
-
-// Check if status is equal (case-insensitive)
-export const isStatusEqual = (status1: string, status2: string): boolean => {
-  if (!status1 || !status2) return false;
-  return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
+/**
+ * Compares two CAPA statuses for equality, handling both string formats (with spaces or underscores)
+ * @param status1 First status to compare
+ * @param status2 Second status to compare
+ * @returns true if the statuses are equivalent
+ */
+export const isStatusEqual = (status1: string | CAPAStatus, status2: string | CAPAStatus): boolean => {
+  const normalized1 = normalizeStatus(status1);
+  const normalized2 = normalizeStatus(status2);
+  return normalized1 === normalized2;
 };
 
-// These functions are now using the ones from capaStatusMapper
-export { mapInternalStatusToDb, mapDbStatusToInternal };
+/**
+ * Normalizes a status string by replacing spaces with underscores and converting to lowercase
+ * @param status Status to normalize
+ * @returns Normalized status string
+ */
+export const normalizeStatus = (status: string | CAPAStatus): string => {
+  if (!status) return '';
+  return status.toString().toLowerCase().replace(/ /g, '_');
+};
 
-export default {
-  mapInternalStatusToDb,
-  mapDbStatusToInternal,
-  mapInternalToStatus,
-  mapStatusToInternal,
-  isStatusEqual
+/**
+ * Maps a string status to the CAPAStatus enum value
+ * @param status Status string to map
+ * @returns The corresponding CAPAStatus enum value
+ */
+export const mapToCAPAStatus = (status: string): CAPAStatus => {
+  const normalized = normalizeStatus(status);
+  
+  switch(normalized) {
+    case 'open': return 'Open';
+    case 'in_progress': return 'In_Progress';
+    case 'under_review': return 'Under_Review';
+    case 'completed': return 'Completed';
+    case 'closed': return 'Closed';
+    case 'rejected': return 'Rejected';
+    case 'on_hold': return 'On_Hold';
+    case 'overdue': return 'Overdue';
+    case 'pending_verification': return 'Pending_Verification';
+    case 'verified': return 'Verified';
+    default: return 'Open';
+  }
+};
+
+/**
+ * Maps a CAPAStatus enum value to a display-friendly string
+ * @param status CAPAStatus enum value
+ * @returns A human-readable status string
+ */
+export const getCAPAStatusLabel = (status: CAPAStatus): string => {
+  switch(status) {
+    case 'In_Progress': return 'In Progress';
+    case 'Under_Review': return 'Under Review';
+    case 'Pending_Verification': return 'Pending Verification';
+    default: return status;
+  }
 };

@@ -1,4 +1,5 @@
 
+
 export type DocumentStatus = 
   | 'Draft' 
   | 'In_Review' 
@@ -161,5 +162,4 @@ export interface DocumentWorkflowStep {
   approvers: string[];
 }
 
-// Re-export these from document to maintain compatibility
-export type { Complaint, ComplaintStatus, ComplaintCategory } from './complaint';
+// Do not re-export these types from complaint.d.ts as we're creating separate files for them

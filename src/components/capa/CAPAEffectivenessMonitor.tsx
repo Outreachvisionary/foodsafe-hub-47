@@ -56,7 +56,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           department: capaData.department,
           sourceId: capaData.source_id,
           fsma204Compliant: capaData.fsma204_compliant,
-          sourceReference: capaData.source_reference,
+          sourceReference: capaData.source_reference || '',
           relatedDocuments: [],
           relatedTraining: []
         };
@@ -79,7 +79,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
   const mapStatusToEnum = (status: string): CAPAStatus => {
     if (!status) return 'Open';
     
-    status = status.replace(' ', '_');
+    // Convert spaces to underscores first
+    status = status.replace(/ /g, '_');
     
     switch(status.toLowerCase()) {
       case 'open': return 'Open';
@@ -114,7 +115,8 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
   const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
     if (!rating) return undefined;
     
-    rating = rating.replace(' ', '_');
+    // Convert spaces to underscores first
+    rating = rating.replace(/ /g, '_');
     
     switch(rating.toLowerCase()) {
       case 'not_effective': return 'Not_Effective';
