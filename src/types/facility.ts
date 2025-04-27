@@ -15,5 +15,5 @@ export interface Facility {
   city?: string;
   zipcode?: string;
   facility_type?: string;
-  status: string; // Make sure status is required
+  status: string; // Required property
 }

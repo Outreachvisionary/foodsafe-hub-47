@@ -10,7 +10,7 @@ const DocumentStatistics = () => {
   // Example statistics calculation
   const totalDocuments = documents.length;
   const expiredDocuments = documents.filter(doc => doc.expiry_date && new Date(doc.expiry_date) < new Date()).length;
-  const pendingReviewDocuments = documents.filter(doc => doc.status === 'Pending Review').length;
+  const pendingReviewDocuments = documents.filter(doc => doc.status === 'Pending_Review').length;
   const activeDocuments = documents.filter(doc => doc.status === 'Active').length;
 
   return (

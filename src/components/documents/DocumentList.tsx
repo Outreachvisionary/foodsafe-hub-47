@@ -11,23 +11,25 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, showStatus = fal
   }
 
   const getStatusBadgeColor = (status: string) => {
-    switch(status) {
-      case 'Draft':
+    const statusLower = status.replace('_', ' ').toLowerCase();
+    
+    switch(statusLower) {
+      case 'draft':
         return 'bg-gray-100 text-gray-800';
-      case 'Pending_Review':
-      case 'Pending_Approval':
+      case 'pending review':
+      case 'pending approval':
         return 'bg-blue-100 text-blue-800';
-      case 'Approved':
+      case 'approved':
         return 'bg-green-100 text-green-800';
-      case 'Active':
+      case 'active':
         return 'bg-emerald-100 text-emerald-800';
-      case 'Rejected':
+      case 'rejected':
         return 'bg-red-100 text-red-800';
-      case 'Expired':
+      case 'expired':
         return 'bg-amber-100 text-amber-800';
-      case 'Archived':
+      case 'archived':
         return 'bg-purple-100 text-purple-800';
-      case 'Published':
+      case 'published':
         return 'bg-indigo-100 text-indigo-800';
       default:
         return 'bg-gray-100 text-gray-800';

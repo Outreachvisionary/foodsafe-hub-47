@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
-import { CAPA } from '@/types/capa';
+import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
@@ -36,26 +36,29 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           id: capaData.id,
           title: capaData.title,
           description: capaData.description,
-          status: capaData.status,
-          priority: capaData.priority,
+          status: mapStatusToEnum(capaData.status),
+          priority: mapPriorityToEnum(capaData.priority),
           createdAt: capaData.created_at,
           createdBy: capaData.created_by,
           dueDate: capaData.due_date,
           assignedTo: capaData.assigned_to,
-          source: capaData.source,
+          source: mapSourceToEnum(capaData.source),
           completionDate: capaData.completion_date,
           rootCause: capaData.root_cause,
           correctiveAction: capaData.corrective_action,
           preventiveAction: capaData.preventive_action,
           effectivenessCriteria: capaData.effectiveness_criteria,
-          effectivenessRating: capaData.effectiveness_rating,
+          effectivenessRating: mapEffectivenessRatingToEnum(capaData.effectiveness_rating),
           effectivenessVerified: capaData.effectiveness_verified,
           verificationDate: capaData.verification_date,
           verificationMethod: capaData.verification_method,
           verifiedBy: capaData.verified_by,
           department: capaData.department,
           sourceId: capaData.source_id,
-          fsma204Compliant: capaData.fsma204_compliant
+          fsma204Compliant: capaData.fsma204_compliant,
+          sourceReference: capaData.source_reference || '',
+          relatedDocuments: [],
+          relatedTraining: []
         };
         
         setCapa(transformedCapa);
@@ -71,6 +74,50 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
       fetchData();
     }
   }, [id]);
+
+  // Helper functions to map string values to enum types
+  const mapStatusToEnum = (status: string): CAPAStatus => {
+    const statusMap: Record<string, CAPAStatus> = {
+      'open': 'Open',
+      'in_progress': 'In_Progress',
+      'under_review': 'Under_Review',
+      'completed': 'Completed',
+      'closed': 'Closed',
+      'rejected': 'Rejected',
+      'on_hold': 'On_Hold',
+      'overdue': 'Overdue',
+      'pending_verification': 'Pending_Verification',
+      'verified': 'Verified'
+    };
+    return statusMap[status.toLowerCase()] || 'Open';
+  };
+
+  const mapPriorityToEnum = (priority: string): CAPAPriority => {
+    if (priority === 'Low' || priority === 'Medium' || priority === 'High' || priority === 'Critical') {
+      return priority as CAPAPriority;
+    }
+    return 'Medium';
+  };
+
+  const mapSourceToEnum = (source: string): CAPASource => {
+    if (source === 'Audit' || source === 'Customer Complaint' || source === 'Internal' || 
+        source === 'Regulatory' || source === 'Other') {
+      return source as CAPASource;
+    }
+    return 'Other';
+  };
+
+  const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
+    if (!rating) return undefined;
+    
+    const ratingMap: Record<string, CAPAEffectivenessRating> = {
+      'not effective': 'Not_Effective',
+      'partially effective': 'Partially_Effective',
+      'effective': 'Effective',
+      'highly effective': 'Highly_Effective'
+    };
+    return ratingMap[rating.toLowerCase()] || undefined;
+  };
 
   if (loading) {
     return <Card className="animate-pulse bg-secondary/30"><CardContent className="p-6 h-40"></CardContent></Card>;

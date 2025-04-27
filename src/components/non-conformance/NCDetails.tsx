@@ -5,9 +5,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, Clock, File, FileText, MessageSquare, Users } from "lucide-react";
-import { NonConformance } from "@/types/non-conformance";
 import LinkedCAPAsList from "@/components/capa/LinkedCAPAsList";
-import NCActionButtons from "./NCActionButtons";
+
+// Define the NonConformance interface since it's missing
+interface NonConformance {
+  id: string;
+  title: string;
+  description: string;
+  status: string; // Using string instead of enum for flexibility
+  item_category: string;
+  reason_category: string;
+  reported_date: string;
+  resolution_date?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  assigned_to?: string;
+  reason_details?: string;
+  resolution_details?: string;
+  risk_level?: string;
+  priority?: string;
+  capa_id?: string;
+}
 
 interface NCActivityTimelineProps {
   nonConformanceId: string;
@@ -16,6 +35,19 @@ interface NCActivityTimelineProps {
 const NCActivityTimeline: React.FC<NCActivityTimelineProps> = ({ nonConformanceId }) => {
   // Placeholder component
   return <div>Activity timeline for NC #{nonConformanceId}</div>;
+};
+
+interface NCActionButtonsProps {
+  nonConformance: NonConformance;
+  onUpdate: (updated: NonConformance) => void;
+}
+
+const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance, onUpdate }) => {
+  // Placeholder component
+  return <div className="flex justify-end mt-4">
+    <Button variant="outline" className="mr-2">Edit</Button>
+    <Button>Take Action</Button>
+  </div>;
 };
 
 const NCDetails = ({ nonConformance }: { nonConformance: NonConformance }) => {

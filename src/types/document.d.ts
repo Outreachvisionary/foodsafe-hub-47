@@ -1,6 +1,29 @@
 
-export type DocumentStatus = 'Draft' | 'In_Review' | 'Approved' | 'Published' | 'Archived' | 'Rejected' | 'Obsolete' | 'Pending_Review' | 'Pending_Approval' | 'Active' | 'Expired';
-export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Other' | 'HACCP Plan' | 'Audit Report' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment';
+export type DocumentStatus = 
+  | 'Draft' 
+  | 'In_Review' 
+  | 'Approved' 
+  | 'Published' 
+  | 'Archived' 
+  | 'Rejected' 
+  | 'Obsolete' 
+  | 'Pending_Review' 
+  | 'Pending_Approval' 
+  | 'Active' 
+  | 'Expired';
+
+export type DocumentCategory = 
+  | 'SOP' 
+  | 'Policy' 
+  | 'Form' 
+  | 'Certificate' 
+  | 'Other' 
+  | 'HACCP Plan' 
+  | 'Audit Report' 
+  | 'Training Material' 
+  | 'Supplier Documentation' 
+  | 'Risk Assessment';
+
 export type CheckoutStatus = 'Available' | 'Checked_Out';
 
 export type DocumentActionType = 

@@ -1,243 +1,161 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/user';
-import { Session } from '@supabase/supabase-js';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+  organization_id?: string;
+  department?: string;
+  preferences?: {
+    theme?: 'light' | 'dark' | 'system';
+    notifications?: boolean;
+    sidebar_collapsed?: boolean;
+  };
+  assigned_facility_ids?: string[];
+  status?: 'active' | 'inactive' | 'pending';
+  role?: string;
+}
 
 interface UserContextType {
   user: UserProfile | null;
-  session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updateUser: (updates: Partial<UserProfile>) => void;
+  error: Error | null;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Helper function to build user profile to avoid code duplication
-const buildUserProfile = (sessionUser: any, profileData: any): UserProfile => {
-  return {
-    id: sessionUser.id,
-    email: sessionUser.email || '',
-    full_name: profileData?.full_name,
-    avatar_url: profileData?.avatar_url,
-    role: profileData?.role,
-    department: profileData?.department,
-    // Set these properties if they exist in the profile
-    organization_id: profileData?.organization_id,
-    assigned_facility_ids: profileData?.assigned_facility_ids,
-    preferred_language: profileData?.preferred_language,
-    preferences: profileData?.preferences ? 
-      (typeof profileData.preferences === 'object' ? profileData.preferences : {}) : {},
-    // Use department directly instead of department_id
-    department: profileData?.department_id || profileData?.department,
-    status: profileData?.status,
-  };
-};
-
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
-
-  // Add a safety timeout to prevent infinite loading
-  useEffect(() => {
-    if (!initialCheckDone) return; // Don't start safety timeout until initial check is done
-    
-    const safetyTimeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Loading state timeout - forcing completion');
-        setLoading(false);
-      }
-    }, 5000); // 5 second safety timeout (reduced from 10s)
-    
-    return () => clearTimeout(safetyTimeout);
-  }, [loading, initialCheckDone]);
-
-  // Fetch user profile data - extracted as a separate function to avoid duplication
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (profileError) {
-        console.error('Error fetching profile data:', profileError);
-        return null;
-      }
-      
-      return profile;
-    } catch (error) {
-      console.error('Exception fetching profile:', error);
-      return null;
-    }
-  };
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // IMPORTANT: First set up auth state listener before checking current session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log('Auth state changed:', event);
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          setLoading(true);
-          
-          // Use setTimeout to prevent potential Supabase callback deadlocks
-          setTimeout(async () => {
-            try {
-              const profile = await fetchUserProfile(currentSession.user.id);
-              
-              if (profile) {
-                setUser(buildUserProfile(currentSession.user, profile));
-              } else {
-                // Set minimal user data if profile fetch fails
-                setUser({
-                  id: currentSession.user.id,
-                  email: currentSession.user.email || '',
-                  // Other fields will be undefined
-                } as UserProfile);
-              }
-            } catch (error) {
-              console.error('Error in auth state change handler:', error);
-              setUser(null);
-            } finally {
-              setLoading(false);
-            }
-          }, 0);
-        } else {
-          setUser(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    // Now check for active session on mount
-    const getInitialSession = async () => {
+    const fetchUser = async () => {
       try {
-        console.log('Checking for initial session...');
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setLoading(true);
+        const { data: { user: authUser } } = await supabase.auth.getUser();
         
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          const profile = await fetchUserProfile(currentSession.user.id);
+        if (authUser) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
+            
+          if (profileError) throw profileError;
           
-          if (profile) {
-            setUser(buildUserProfile(currentSession.user, profile));
-          } else {
-            // Set minimal user data if profile fetch fails
-            setUser({
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              // Other fields will be undefined
-            } as UserProfile);
-          }
-        } else {
-          setUser(null);
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            full_name: profileData.full_name,
+            avatar_url: profileData.avatar_url,
+            organization_id: profileData.organization_id,
+            department: profileData.department,
+            preferences: profileData.preferences || {},
+            assigned_facility_ids: profileData.assigned_facility_ids,
+            status: profileData.status,
+            role: profileData.role
+          });
         }
-      } catch (error) {
-        console.error('Error fetching user session:', error);
-        setUser(null);
+      } catch (err) {
+        console.error('Error fetching user:', err);
+        setError(err as Error);
       } finally {
         setLoading(false);
-        setInitialCheckDone(true);
       }
     };
-
-    getInitialSession();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    
+    fetchUser();
   }, []);
-
-  const signIn = async (email: string, password: string) => {
+  
+  const updateProfile = async (data: Partial<UserProfile>) => {
     try {
-      setLoading(true);
-      console.log('Attempting sign in with email:', email);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing in:', error);
-      setLoading(false); // Important: set loading to false on error
-      throw error;
+      if (!user) throw new Error('No user logged in');
+      
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', user.id);
+      
+      if (updateError) throw updateError;
+      
+      setUser(prev => prev ? { ...prev, ...data } : null);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError(err as Error);
+      throw err;
     }
-    // Note: we don't setLoading(false) here on success because
-    // the auth state change will handle that when it fires
   };
-
-  const signOut = async () => {
+  
+  const logout = async () => {
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-    } catch (error) {
-      console.error('Error signing out:', error);
-      setLoading(false); // Important: set loading to false on error
-      throw error;
+      setUser(null);
+    } catch (err) {
+      console.error('Error signing out:', err);
+      setError(err as Error);
+      throw err;
     }
-    // Note: we don't setLoading(false) here on success because
-    // the auth state change will handle that when it fires
   };
-
-  const updateProfile = async (updates: Partial<UserProfile>) => {
+  
+  const refreshUser = async () => {
     try {
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      setUser({ ...user, ...updates });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
-    }
-  };
-
-  const updateUser = (updates: Partial<UserProfile>) => {
-    if (user) {
-      // Ensure we're not removing the email field
-      const updatedUser = {
-        ...user,
-        ...updates,
-        email: updates.email || user.email // Ensure email is always available
-      };
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      setUser(updatedUser);
+      if (authUser) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+          
+        if (profileError) throw profileError;
+        
+        setUser({
+          id: authUser.id,
+          email: authUser.email || '',
+          full_name: profileData.full_name,
+          avatar_url: profileData.avatar_url,
+          organization_id: profileData.organization_id,
+          department: profileData.department,
+          preferences: profileData.preferences || {},
+          assigned_facility_ids: profileData.assigned_facility_ids,
+          status: profileData.status,
+          role: profileData.role
+        });
+      }
+    } catch (err) {
+      console.error('Error refreshing user:', err);
+      setError(err as Error);
+      throw err;
     }
   };
-
-  // Memoize the context value to prevent unnecessary rerenders
-  const value = useMemo(() => ({
-    user,
-    session,
-    loading,
-    signIn,
-    signOut,
-    updateProfile,
-    updateUser
-  }), [user, session, loading]);
-
+  
   return (
-    <UserContext.Provider value={value}>
+    <UserContext.Provider value={{ 
+      user, 
+      loading, 
+      error, 
+      updateProfile, 
+      logout,
+      refreshUser
+    }}>
       {children}
     </UserContext.Provider>
   );
-};
+}
 
-export const useUser = () => {
+export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-};
+}
