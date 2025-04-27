@@ -8,6 +8,7 @@ import { Document } from '@/types/document';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+import { isCheckoutStatus } from '@/utils/typeAdapters';
 
 interface DocumentCheckoutActionsProps {
   document: Document;
@@ -78,7 +79,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
-  const isCheckedOut = document.checkout_status === 'Checked_Out';
+  const isCheckedOut = isCheckoutStatus(document.checkout_status || 'Available', 'Checked_Out');
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
   return (

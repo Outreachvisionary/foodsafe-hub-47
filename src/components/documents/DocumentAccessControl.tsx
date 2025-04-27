@@ -83,14 +83,16 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
         'admin' // current user ID
       );
       
-      setAccessList((prev) => [...prev, newAccess]);
-      setIsAddDialogOpen(false);
-      resetForm();
-      
-      toast({
-        title: 'Access Granted',
-        description: `Access has been granted to user ${newUserId}`,
-      });
+      if (newAccess) {
+        setAccessList((prev) => [...prev, newAccess]);
+        setIsAddDialogOpen(false);
+        resetForm();
+        
+        toast({
+          title: 'Access Granted',
+          description: `Access has been granted to user ${newUserId}`,
+        });
+      }
     } catch (error) {
       console.error('Error granting access:', error);
       toast({

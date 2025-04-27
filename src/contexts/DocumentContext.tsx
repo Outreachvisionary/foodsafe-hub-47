@@ -27,6 +27,7 @@ interface DocumentContextType {
   downloadVersion: (versionId: string) => Promise<void>;
   approveDocument: (documentId: string, comment: string) => Promise<void>;
   rejectDocument: (documentId: string, reason: string) => Promise<void>;
+  refreshDocuments: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -59,6 +60,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     rejectDocument
   } = documentService;
 
+  // Add refreshDocuments method
+  const refreshDocuments = async () => {
+    await fetchDocuments();
+  };
+
   return (
     <DocumentContext.Provider value={{
       documents,
@@ -83,7 +89,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       restoreVersion,
       downloadVersion,
       approveDocument,
-      rejectDocument
+      rejectDocument,
+      refreshDocuments
     }}>
       {children}
     </DocumentContext.Provider>
@@ -97,3 +104,4 @@ export function useDocument(): DocumentContextType {
   }
   return context;
 }
+

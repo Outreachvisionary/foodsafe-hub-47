@@ -1,4 +1,4 @@
-// Add placeholder implementations for the missing methods
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,23 +10,20 @@ export function ApprovalWorkflow() {
     documents, 
     loading, 
     error,
-    // Define these methods if they don't exist
-    approveDocument = async (id: string) => { 
-      console.error('approveDocument not implemented');
-    },
-    rejectDocument = async (id: string, reason: string) => {
-      console.error('rejectDocument not implemented');
-    }
+    approveDocument,
+    rejectDocument
   } = useDocument();
   
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
 
   const handleApprove = async (documentId: string) => {
     setIsApproving(true);
     try {
-      await approveDocument(documentId);
+      await approveDocument(documentId, currentComment || "Approved");
       // Handle success (e.g., refresh the document list)
+      setCurrentComment("");
     } catch (err) {
       console.error("Failed to approve document:", err);
       // Handle error (e.g., display an error message)
@@ -38,8 +35,9 @@ export function ApprovalWorkflow() {
   const handleReject = async (documentId: string, reason: string) => {
     setIsRejecting(true);
     try {
-      await rejectDocument(documentId, reason);
+      await rejectDocument(documentId, reason || "Rejected");
       // Handle success
+      setCurrentComment("");
     } catch (err) {
       console.error("Failed to reject document:", err);
       // Handle error
@@ -88,7 +86,7 @@ export function ApprovalWorkflow() {
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => handleReject(doc.id, "Reason")}
+                      onClick={() => handleReject(doc.id, "Rejected")}
                       disabled={isRejecting}
                     >
                       {isRejecting ? (
@@ -115,3 +113,5 @@ export function ApprovalWorkflow() {
     </Card>
   );
 }
+
+export default ApprovalWorkflow;

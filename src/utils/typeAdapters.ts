@@ -33,8 +33,12 @@ export function isDocumentStatus(status: string, compareStatus: DocumentStatus):
 
 // Checkout status conversions
 export function convertToCheckoutStatus(status: string): CheckoutStatus {
-  if (status === 'Checked Out') return 'Checked_Out';
+  if (status === 'Checked Out' || status === 'Checked_Out') return 'Checked_Out';
   return 'Available';
+}
+
+export function isCheckoutStatus(status: string, compareStatus: CheckoutStatus): boolean {
+  return convertToCheckoutStatus(status) === compareStatus;
 }
 
 // CAPA status conversions
@@ -53,6 +57,10 @@ export function convertToCAPAStatus(status: string): CAPAStatus {
     case 'Verified': return 'Verified';
     default: return 'Open';
   }
+}
+
+export function isCAPAStatus(status: string, compareStatus: CAPAStatus): boolean {
+  return convertToCAPAStatus(status) === compareStatus;
 }
 
 // CAPA effectiveness rating conversions
@@ -87,3 +95,23 @@ export function safeJsonAccess<T>(jsonObj: any, defaultValue: T): T {
   }
   return defaultValue;
 }
+
+// Database to Application model adapters
+export function adaptDatabaseToDocument(dbDocument: any): Document {
+  return {
+    ...dbDocument,
+    status: convertToDocumentStatus(dbDocument.status),
+    checkout_status: convertToCheckoutStatus(dbDocument.checkout_status || 'Available')
+  };
+}
+
+export function adaptDocumentToDatabase(document: Partial<Document>): any {
+  // Ensure required fields for database
+  return {
+    ...document,
+    category: document.category || 'Other',
+    status: document.status || 'Draft',
+    checkout_status: document.checkout_status || 'Available'
+  };
+}
+

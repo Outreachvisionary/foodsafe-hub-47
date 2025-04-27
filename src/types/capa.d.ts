@@ -1,4 +1,5 @@
 
+
 export type CAPAStatus = 
   | 'Open'
   | 'In_Progress' 
@@ -56,7 +57,7 @@ export interface CAPA {
   verifiedBy?: string;
   department?: string;
   sourceId?: string;
-  sourceReference?: string;
+  sourceReference: string;
   fsma204Compliant?: boolean;
   relatedDocuments?: string[];
   relatedTraining?: string[];
@@ -66,3 +67,4 @@ export interface CAPAListProps {
   capas: CAPA[];
   onCAPAClick?: (capa: CAPA) => void;
 }
+

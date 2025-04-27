@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Document, DocumentStatus } from '@/types/document';
+import { Document } from '@/types/document';
 import {
   FileText,
   FileArchive,
@@ -39,7 +39,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     }
   };
 
-  const getStatusColor = (status: DocumentStatus) => {
+  const getStatusColor = (status: string) => {
     if (isDocumentStatus(status, 'Active')) {
       return 'bg-green-100 text-green-800';
     } else if (isDocumentStatus(status, 'Archived')) {
@@ -58,7 +58,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   };
 
   // Helper function to format document status for display
-  const formatStatus = (status: DocumentStatus): string => {
+  const formatStatus = (status: string): string => {
     return status.replace(/_/g, ' ');
   };
 

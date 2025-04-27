@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useDocument } from '@/contexts/DocumentContext';
 import { DocumentCategory, DocumentStatus, Document } from '@/types/document';
+import useDocumentService from '@/hooks/useDocumentService';
 
 interface DocumentUploaderProps {
   onDocumentCreated?: (document: Document) => void;
@@ -32,8 +34,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   
   const { toast } = useToast();
-  const { fetchDocuments } = useDocument();
-  const { documentService } = useDocument();
+  const { fetchDocuments, createDocument } = useDocument();
+  const documentService = useDocumentService();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const droppedFile = acceptedFiles[0];
@@ -92,7 +94,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
         pending_since: values.pending_since
       };
 
-      const newDocument = await documentService.createDocument(documentData);
+      const newDocument = await createDocument(documentData);
       
       if (newDocument) {
         toast({
@@ -234,7 +236,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="Pending Review">Pending Review</SelectItem>
+                  <SelectItem value="Pending_Review">Pending Review</SelectItem>
                   <SelectItem value="Approved">Approved</SelectItem>
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Archived">Archived</SelectItem>
