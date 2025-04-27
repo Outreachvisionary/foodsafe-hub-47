@@ -1,5 +1,3 @@
-
-
 export type DocumentStatus = 
   | 'Draft'
   | 'In_Review'
@@ -41,7 +39,7 @@ export interface Document {
   created_at: string;
   updated_at: string;
   expiry_date?: string;
-  checkout_status?: CheckoutStatus;
+  checkout_status: CheckoutStatus;
   checkout_user_id?: string;
   checkout_user_name?: string;
   checkout_timestamp?: string;
@@ -61,68 +59,3 @@ export interface Document {
   folder_id?: string;
   workflow_status?: string;
 }
-
-export interface DocumentVersion {
-  id: string;
-  document_id: string;
-  version: number;
-  file_name: string;
-  file_size: number;
-  created_at: string;
-  created_by: string;
-  modified_by?: string;
-  modified_by_name?: string;
-  check_in_comment?: string;
-  change_notes?: string;
-  change_summary?: string;
-  version_number?: number;
-}
-
-export interface DocumentActivity {
-  id: string;
-  document_id: string;
-  timestamp: string;
-  action: string;
-  user_id: string;
-  user_name: string;
-  user_role: string;
-  comments?: string;
-  checkout_action?: string;
-  version_id?: string;
-}
-
-export interface DocumentComment {
-  id: string;
-  document_id: string;
-  user_id: string;
-  user_name: string;
-  content: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface DocumentWorkflowStep {
-  id: string;
-  name: string;
-  description?: string;
-  approvers: string[];
-  status?: 'Pending' | 'Approved' | 'Rejected';
-}
-
-export interface DocumentAccess {
-  id: string;
-  document_id: string;
-  folder_id?: string;
-  user_id?: string;
-  user_role?: string;
-  permission_level: string;
-  granted_by: string;
-  granted_at: string;
-}
-
-export interface DocumentListProps {
-  documents: Document[];
-  showStatus?: boolean;
-  onSelect?: (document: Document) => void;
-}
-

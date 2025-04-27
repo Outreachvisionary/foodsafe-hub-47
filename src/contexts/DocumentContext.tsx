@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
 import useDocumentService from '@/hooks/useDocumentService';
@@ -12,8 +11,8 @@ interface DocumentContextType {
   createDocument: (newDocument: Partial<Document>) => Promise<Document | null>;
   updateDocument: (id: string, updates: Partial<Document>) => Promise<Document | null>;
   deleteDocument: (id: string) => Promise<void>;
-  checkoutDocument: (id: string, userId: string, userName: string, userRole: string) => Promise<void>;
-  checkinDocument: (id: string, userId: string, comments?: string) => Promise<void>;
+  checkOutDocument: (id: string, userId: string, userName: string, userRole: string) => Promise<void>;
+  checkInDocument: (id: string, userId: string, comments?: string) => Promise<void>;
   getDocumentVersions: (documentId: string) => Promise<any[]>;
   getDocumentActivities: (documentId: string) => Promise<any[]>;
   uploadFile: (file: File, path: string) => Promise<string | null>;
@@ -21,7 +20,7 @@ interface DocumentContextType {
   getDocumentComments: (documentId: string) => Promise<any[]>;
   createDocumentComment: (comment: any) => Promise<any>;
   fetchAccess: (documentId: string) => Promise<any[]>;
-  grantAccess: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<any>;
+  grantAccess: (documentId: string, userId: string, permissionLevel: string) => Promise<any>;
   revokeAccess: (accessId: string) => Promise<void>;
   restoreVersion: (documentId: string, versionId: string) => Promise<void>;
   downloadVersion: (versionId: string) => Promise<void>;
@@ -104,4 +103,3 @@ export function useDocument(): DocumentContextType {
   }
   return context;
 }
-

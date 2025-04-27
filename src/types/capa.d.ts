@@ -1,5 +1,3 @@
-
-
 export type CAPAStatus = 
   | 'Open'
   | 'In_Progress' 
@@ -67,4 +65,3 @@ export interface CAPAListProps {
   capas: CAPA[];
   onCAPAClick?: (capa: CAPA) => void;
 }
-
