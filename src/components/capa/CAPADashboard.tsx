@@ -1,20 +1,45 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Clock, Activity, AlertTriangle } from 'lucide-react';
-import { CAPA, CAPAStats } from '@/types/capa';
+import { CAPAStats } from '@/types/capa';
 import Chart from '@/components/charts/Chart';
+import { getCAPAStats } from '@/services/capa/capaService';
 
 // Define the props interface for CAPADashboard
 interface CAPADashboardProps {
-  stats: CAPAStats;
+  stats?: CAPAStats;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
-  // Provide default empty stats if not provided
-  const defaultStats: CAPAStats = {
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
+  const [stats, setStats] = useState<CAPAStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    const loadStats = async () => {
+      if (propStats) {
+        setStats(propStats);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const capaStats = await getCAPAStats();
+        setStats(capaStats);
+      } catch (error) {
+        console.error('Error loading CAPA stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadStats();
+  }, [propStats]);
+
+  // Provide default empty stats if not provided or not loaded yet
+  const safeStats: CAPAStats = stats || {
     total: 0,
     openCount: 0,
     closedCount: 0,
@@ -29,16 +54,14 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
     overdue: 0
   };
 
-  const safeStats = stats || defaultStats;
-
   // Status distribution data
   const statusData = {
-    labels: ['Open', 'Closed', 'Overdue', 'Pending Verification'],
+    labels: ['Open', 'In Progress', 'Overdue', 'Pending Verification'],
     datasets: [
       {
         data: [
           safeStats.openCount,
-          safeStats.closedCount,
+          safeStats.byStatus['In Progress'] || 0,
           safeStats.overdueCount,
           safeStats.pendingVerificationCount,
         ],
@@ -100,6 +123,14 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
       }
     }
   };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

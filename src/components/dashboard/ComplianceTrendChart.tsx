@@ -13,20 +13,14 @@ import {
 } from 'recharts';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/components/ui/theme-provider';
-
-// Sample data for compliance trends over the past 6 months
-const complianceData = [
-  { month: 'Jan', sqf: 82, iso22000: 78, fssc22000: 85, haccp: 90, brcgs2: 76 },
-  { month: 'Feb', sqf: 85, iso22000: 80, fssc22000: 82, haccp: 88, brcgs2: 79 },
-  { month: 'Mar', sqf: 83, iso22000: 82, fssc22000: 84, haccp: 91, brcgs2: 81 },
-  { month: 'Apr', sqf: 87, iso22000: 85, fssc22000: 86, haccp: 93, brcgs2: 84 },
-  { month: 'May', sqf: 90, iso22000: 88, fssc22000: 89, haccp: 94, brcgs2: 86 },
-  { month: 'Jun', sqf: 92, iso22000: 89, fssc22000: 91, haccp: 95, brcgs2: 89 },
-];
+import { getMockComplianceTrendData } from '@/services/mockDataService';
 
 const ComplianceTrendChart: React.FC = () => {
   const isMobile = useIsMobile();
   const { theme } = useTheme();
+  
+  // Get data from mock service instead of hardcoding
+  const complianceData = getMockComplianceTrendData();
   
   // Define chart colors based on theme
   const colors = {

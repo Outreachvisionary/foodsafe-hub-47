@@ -1,50 +1,27 @@
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DepartmentTrainingStats } from '@/types/training';
+import { getMockTrainingStats } from '@/services/mockDataService';
 
-// Sample data for the dashboard
-const sampleData: DepartmentTrainingStats[] = [
-  {
-    department: 'production',
-    name: 'Production',
-    completed: 42,
-    overdue: 8,
-    totalAssigned: 50,
-    complianceRate: 84
-  },
-  {
-    department: 'quality',
-    name: 'Quality',
-    completed: 18,
-    overdue: 2,
-    totalAssigned: 20,
-    complianceRate: 90
-  },
-  {
-    department: 'maintenance',
-    name: 'Maintenance',
-    completed: 12,
-    overdue: 3,
-    totalAssigned: 15,
-    complianceRate: 80
-  },
-  {
-    department: 'warehouse',
-    name: 'Warehouse',
-    completed: 22,
-    overdue: 3,
-    totalAssigned: 25,
-    complianceRate: 88
-  }
-];
+// Interface for department training stats
+interface DepartmentTrainingStats {
+  department: string;
+  name: string;
+  completed: number;
+  overdue: number;
+  totalAssigned: number;
+  complianceRate: number;
+}
 
 const DepartmentComplianceChart = () => {
+  // Get data from mock service instead of hardcoding
+  const { departmentStats } = getMockTrainingStats();
+  
   return (
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
-          data={sampleData}
+          data={departmentStats}
           margin={{
             top: 5,
             right: 30,

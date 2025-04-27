@@ -3,7 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award, AlertCircle, Calendar } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { getMockTrainingStats } from '@/services/mockDataService';
 
 interface ExpiringCertification {
   id: string;
@@ -15,7 +16,7 @@ interface ExpiringCertification {
 }
 
 interface ExpiringCertificationsCardProps {
-  count: number;
+  count?: number;
   certifications?: ExpiringCertification[];
   onViewAll?: () => void;
   onScheduleAudit?: (certification: ExpiringCertification) => void;
@@ -27,38 +28,15 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
   onViewAll,
   onScheduleAudit
 }) => {
-  // Sample expiring certifications data - show only the next 3
-  const expiringCertifications = certifications || [
-    { 
-      id: '1', 
-      name: 'Food Safety Manager Certification', 
-      employee: 'Robert Johnson',
-      expiryDate: '2025-05-20', 
-      daysLeft: 14,
-      auditRequired: true
-    },
-    { 
-      id: '2', 
-      name: 'HACCP Certification', 
-      employee: 'Maria Garcia',
-      expiryDate: '2025-05-28', 
-      daysLeft: 22,
-      auditRequired: true
-    },
-    { 
-      id: '3', 
-      name: 'ISO 9001 Lead Auditor', 
-      employee: 'John Smith',
-      expiryDate: '2025-06-05', 
-      daysLeft: 30,
-      auditRequired: false
-    }
-  ];
-
+  // Get expirations from mock service if not provided as props
+  const mockData = getMockTrainingStats();
+  const expiringCertifications = certifications || mockData.expiringCertifications;
+  const totalCount = count || expiringCertifications.length;
+  
   // Format date for display
   const formatExpiryDate = (dateStr: string) => {
     try {
-      return format(new Date(dateStr), 'MMM d, yyyy');
+      return format(parseISO(dateStr), 'MMM d, yyyy');
     } catch (error) {
       return dateStr; // Return original string if parsing fails
     }
@@ -118,9 +96,9 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
             ))
           )}
           
-          {count > 3 && (
+          {totalCount > 3 && (
             <Button variant="outline" className="w-full" onClick={onViewAll}>
-              View all {count} expiring certifications
+              View all {totalCount} expiring certifications
             </Button>
           )}
         </div>

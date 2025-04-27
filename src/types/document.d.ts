@@ -1,141 +1,82 @@
 
-
 export type DocumentStatus = 
-  | 'Draft' 
-  | 'In_Review' 
-  | 'Approved' 
-  | 'Published' 
-  | 'Archived' 
-  | 'Rejected' 
-  | 'Obsolete' 
-  | 'Pending_Review' 
-  | 'Pending_Approval' 
-  | 'Active' 
+  | 'Draft'
+  | 'In_Review'
+  | 'Pending_Review'
+  | 'Pending_Approval'
+  | 'Approved'
+  | 'Published'
+  | 'Archived'
+  | 'Rejected'
+  | 'Obsolete'
+  | 'Active'
   | 'Expired';
+
+export type CheckoutStatus = 'Available' | 'Checked_Out';
 
 export type DocumentCategory = 
   | 'SOP' 
   | 'Policy' 
   | 'Form' 
   | 'Certificate' 
-  | 'Other' 
-  | 'HACCP Plan' 
   | 'Audit Report' 
-  | 'Training Material' 
-  | 'Supplier Documentation' 
-  | 'Risk Assessment';
-
-export type CheckoutStatus = 'Available' | 'Checked_Out';
-
-export type DocumentActionType = 
-  | 'created' 
-  | 'updated' 
-  | 'approved' 
-  | 'rejected' 
-  | 'published' 
-  | 'archived' 
-  | 'expired'
-  | 'checked_out' 
-  | 'checked_in' 
-  | 'downloaded' 
-  | 'viewed'
-  | 'create'
-  | 'update'
-  | 'delete'
-  | 'view'
-  | 'download'
-  | 'approve'
-  | 'reject'
-  | 'review'
-  | 'comment'
-  | 'checkout'
-  | 'checkin'
-  | 'restore'
-  | 'archive'
-  | 'edit';
+  | 'HACCP Plan' 
+  | 'Training Material'
+  | 'Supplier Documentation'
+  | 'Risk Assessment'
+  | 'Other';
 
 export interface Document {
   id: string;
   title: string;
-  description: string;
-  file_name: string;
-  file_path?: string;
-  file_type: string;
-  file_size: number;
+  description?: string;
   category: DocumentCategory;
   status: DocumentStatus;
+  file_name: string;
+  file_type: string;
+  file_size: number;
   version: number;
   created_by: string;
   created_at: string;
   updated_at: string;
   expiry_date?: string;
-  folder_id?: string;
-  tags?: string[];
-  approvers?: string[];
-  linked_module?: string;
-  linked_item_id?: string;
-  rejection_reason?: string;
-  is_locked: boolean;
-  last_action?: string;
-  last_review_date?: string;
-  next_review_date?: string;
-  pending_since?: string;
-  current_version_id?: string;
-  is_template: boolean;
-  checkout_status: CheckoutStatus;
-  checkout_timestamp?: string;
+  checkout_status?: CheckoutStatus;
   checkout_user_id?: string;
   checkout_user_name?: string;
-  workflow_status?: string;
-  custom_notification_days?: number[];
+  checkout_timestamp?: string;
+  linked_module?: string;
+  linked_item_id?: string;
+  file_path?: string;
+  tags?: string[];
+  approvers?: string[];
 }
 
 export interface DocumentVersion {
   id: string;
   document_id: string;
   version: number;
-  version_number: number;
   file_name: string;
   file_size: number;
-  created_by: string;
   created_at: string;
-  editor_metadata: Record<string, any>;
-  is_binary_file: boolean;
-  version_type: 'major' | 'minor';
-  change_summary?: string;
-  change_notes?: string;
-  check_in_comment?: string;
+  created_by: string;
   modified_by?: string;
   modified_by_name?: string;
-  diff_data?: Record<string, any>;
+  check_in_comment?: string;
+  change_notes?: string;
+  change_summary?: string;
 }
 
 export interface DocumentActivity {
   id: string;
   document_id: string;
+  timestamp: string;
+  action: string;
   user_id: string;
   user_name: string;
   user_role: string;
-  timestamp: string;
-  action: DocumentActionType;
   comments?: string;
-  version_id?: string;
   checkout_action?: string;
-}
-
-export interface DocumentFilter {
-  searchTerm?: string;
-  status?: DocumentStatus | DocumentStatus[];
-  category?: DocumentCategory | DocumentCategory[];
-  tag?: string;
-  ownedByMe?: boolean;
-  reviewer?: boolean;
-  dateRange?: {
-    start?: string;
-    end?: string;
-  };
-  sortBy?: 'title' | 'updated_at' | 'created_at' | 'status';
-  sortDirection?: 'asc' | 'desc';
+  version_id?: string;
 }
 
 export interface DocumentComment {
@@ -148,18 +89,15 @@ export interface DocumentComment {
   updated_at?: string;
 }
 
-export interface DocumentListProps {
-  documents: Document[];
-  showStatus?: boolean;
-  onSelect?: (document: Document) => void;
-}
-
 export interface DocumentWorkflowStep {
   id: string;
   name: string;
-  description: string;
-  required_approvals: number;
+  description?: string;
   approvers: string[];
+  status?: 'Pending' | 'Approved' | 'Rejected';
 }
 
-// Do not re-export these types from complaint.d.ts as we're creating separate files for them
+export interface DocumentListProps {
+  documents: Document[];
+  onDocumentClick?: (document: Document) => void;
+}

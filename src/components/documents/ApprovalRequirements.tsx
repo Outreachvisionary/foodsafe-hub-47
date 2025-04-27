@@ -1,14 +1,26 @@
+
 import React from 'react';
-import { DocumentWorkflowStep } from '@/types/document';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, FileCheck, User } from 'lucide-react';
+import { getMockDocumentWorkflowSteps } from '@/services/mockDataService';
+
+interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description?: string;
+  approvers: string[];
+  status?: 'Pending' | 'Approved' | 'Rejected';
+}
 
 interface ApprovalRequirementsProps {
-  workflowSteps: DocumentWorkflowStep[];
+  workflowSteps?: DocumentWorkflowStep[];
 }
 
 const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSteps }) => {
+  // If no steps are provided, use mock data
+  const steps = workflowSteps || getMockDocumentWorkflowSteps();
+  
   return (
     <Card>
       <CardHeader>
@@ -16,7 +28,7 @@ const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSte
       </CardHeader>
       <CardContent className="p-0">
         <ul className="divide-y divide-border">
-          {workflowSteps.map((step, index) => (
+          {steps.map((step, index) => (
             <li key={step.id} className="px-4 py-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -45,7 +57,7 @@ const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSte
             </li>
           ))}
         </ul>
-        {workflowSteps.length === 0 && (
+        {steps.length === 0 && (
           <div className="p-4 text-center text-foreground-muted">
             No approval steps defined.
           </div>

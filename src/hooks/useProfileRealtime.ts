@@ -1,14 +1,17 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 
 export default function useProfileRealtime() {
   const { user, refreshUser } = useUser();
+  const [isListening, setIsListening] = useState<boolean>(false);
 
   useEffect(() => {
     if (!user) return;
 
+    // Set up real-time listener for profile updates
+    setIsListening(true);
     const channel = supabase
       .channel(`profile-updates-${user.id}`)
       .on(
@@ -27,9 +30,10 @@ export default function useProfileRealtime() {
       .subscribe();
 
     return () => {
+      setIsListening(false);
       supabase.removeChannel(channel);
     };
   }, [user, refreshUser]);
 
-  return null;
+  return { isListening };
 }

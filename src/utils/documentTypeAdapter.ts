@@ -3,38 +3,40 @@ import { DocumentStatus, Document, CheckoutStatus } from '@/types/document';
 
 export function mapDbToAppDocStatus(dbStatus: string): DocumentStatus {
   // Map database status values to DocumentStatus enum values
-  switch (dbStatus) {
-    case 'Draft': return 'Draft';
-    case 'In Review': return 'In_Review';
-    case 'Pending Review': return 'Pending_Review';
-    case 'Pending Approval': return 'Pending_Approval';
-    case 'Approved': return 'Approved';
-    case 'Published': return 'Published';
-    case 'Archived': return 'Archived';
-    case 'Rejected': return 'Rejected';
-    case 'Obsolete': return 'Obsolete';
-    case 'Active': return 'Active';
-    case 'Expired': return 'Expired';
-    default: return 'Draft';
-  }
+  const statusMap: Record<string, DocumentStatus> = {
+    'Draft': 'Draft',
+    'In Review': 'In_Review',
+    'Pending Review': 'Pending_Review',
+    'Pending Approval': 'Pending_Approval',
+    'Approved': 'Approved',
+    'Published': 'Published',
+    'Archived': 'Archived',
+    'Rejected': 'Rejected',
+    'Obsolete': 'Obsolete',
+    'Active': 'Active',
+    'Expired': 'Expired'
+  };
+  
+  return statusMap[dbStatus] || 'Draft';
 }
 
 export function mapAppToDbDocStatus(appStatus: DocumentStatus): string {
   // Map DocumentStatus enum values to database status values
-  switch (appStatus) {
-    case 'Draft': return 'Draft';
-    case 'In_Review': return 'In Review';
-    case 'Pending_Review': return 'Pending Review';
-    case 'Pending_Approval': return 'Pending Approval';
-    case 'Approved': return 'Approved';
-    case 'Published': return 'Published';
-    case 'Archived': return 'Archived';
-    case 'Rejected': return 'Rejected';
-    case 'Obsolete': return 'Obsolete';
-    case 'Active': return 'Active';
-    case 'Expired': return 'Expired';
-    default: return 'Draft';
-  }
+  const statusMap: Record<string, string> = {
+    'Draft': 'Draft',
+    'In_Review': 'In Review',
+    'Pending_Review': 'Pending Review',
+    'Pending_Approval': 'Pending Approval',
+    'Approved': 'Approved',
+    'Published': 'Published',
+    'Archived': 'Archived',
+    'Rejected': 'Rejected',
+    'Obsolete': 'Obsolete',
+    'Active': 'Active',
+    'Expired': 'Expired'
+  };
+  
+  return statusMap[appStatus] || 'Draft';
 }
 
 export function mapDbToAppCheckoutStatus(dbStatus: string): CheckoutStatus {
@@ -71,4 +73,17 @@ export function adaptDatabaseToDocument(dbDocument: Record<string, any>): Docume
 
 export function mapToDocumentActionType(action: string): string {
   return action.toLowerCase();
+}
+
+// New function for comparing document statuses
+export function isDocumentStatusEqual(status1: string | DocumentStatus, status2: string | DocumentStatus): boolean {
+  const normalized1 = normalizeDocStatus(status1);
+  const normalized2 = normalizeDocStatus(status2);
+  return normalized1 === normalized2;
+}
+
+// Helper to normalize document statuses
+export function normalizeDocStatus(status: string | DocumentStatus): string {
+  if (!status) return '';
+  return status.toString().toLowerCase().replace(/ /g, '_');
 }

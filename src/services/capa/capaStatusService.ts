@@ -56,6 +56,51 @@ export const getCAPAStatusLabel = (status: CAPAStatus): string => {
     case 'In_Progress': return 'In Progress';
     case 'Under_Review': return 'Under Review';
     case 'Pending_Verification': return 'Pending Verification';
-    default: return status;
+    case 'On_Hold': return 'On Hold';
+    default: return status.replace(/_/g, ' ');
   }
+};
+
+/**
+ * Maps a database status string to the CAPAStatus enum value
+ * @param dbStatus Status string from database
+ * @returns The corresponding CAPAStatus enum value
+ */
+export const mapDBToCAPAStatus = (dbStatus: string): CAPAStatus => {
+  const statusMap: Record<string, CAPAStatus> = {
+    'Open': 'Open',
+    'In Progress': 'In_Progress',
+    'Under Review': 'Under_Review',
+    'Completed': 'Completed',
+    'Closed': 'Closed',
+    'Rejected': 'Rejected',
+    'On Hold': 'On_Hold',
+    'Overdue': 'Overdue',
+    'Pending Verification': 'Pending_Verification',
+    'Verified': 'Verified'
+  };
+  
+  return statusMap[dbStatus] || 'Open';
+};
+
+/**
+ * Maps a CAPAStatus enum value to a database-friendly string
+ * @param status CAPAStatus enum value
+ * @returns A database-compatible status string
+ */
+export const mapCAPAStatusToDB = (status: CAPAStatus): string => {
+  const statusMap: Record<string, string> = {
+    'Open': 'Open',
+    'In_Progress': 'In Progress',
+    'Under_Review': 'Under Review',
+    'Completed': 'Completed',
+    'Closed': 'Closed',
+    'Rejected': 'Rejected',
+    'On_Hold': 'On Hold',
+    'Overdue': 'Overdue',
+    'Pending_Verification': 'Pending Verification',
+    'Verified': 'Verified'
+  };
+  
+  return statusMap[status] || 'Open';
 };
