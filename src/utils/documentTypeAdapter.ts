@@ -1,49 +1,76 @@
 
-import { Document, CheckoutStatus } from '@/types/document';
+import { DocumentStatus, Document, CheckoutStatus } from '@/types/document';
+
+export function mapDbToAppDocStatus(dbStatus: string): DocumentStatus {
+  // Map database status values to DocumentStatus enum values
+  const statusMap: Record<string, DocumentStatus> = {
+    'Draft': 'Draft',
+    'In Review': 'In_Review',
+    'Pending Review': 'Pending_Review',
+    'Pending Approval': 'Pending_Approval',
+    'Approved': 'Approved',
+    'Published': 'Published',
+    'Archived': 'Archived',
+    'Rejected': 'Rejected',
+    'Obsolete': 'Obsolete',
+    'Active': 'Active',
+    'Expired': 'Expired'
+  };
+
+  return statusMap[dbStatus] || 'Draft';
+}
+
+export function mapAppToDbDocStatus(appStatus: DocumentStatus): string {
+  // Map DocumentStatus enum values to database status values
+  const statusMap: Record<DocumentStatus, string> = {
+    'Draft': 'Draft',
+    'In_Review': 'In Review',
+    'Pending_Review': 'Pending Review',
+    'Pending_Approval': 'Pending Approval',
+    'Approved': 'Approved',
+    'Published': 'Published',
+    'Archived': 'Archived',
+    'Rejected': 'Rejected',
+    'Obsolete': 'Obsolete',
+    'Active': 'Active',
+    'Expired': 'Expired'
+  };
+
+  return statusMap[appStatus] || 'Draft';
+}
+
+export function mapDbToAppCheckoutStatus(dbStatus: string): CheckoutStatus {
+  return dbStatus === 'Checked Out' ? 'Checked_Out' : 'Available';
+}
+
+export function mapAppToDbCheckoutStatus(appStatus: CheckoutStatus): string {
+  return appStatus === 'Checked_Out' ? 'Checked Out' : 'Available';
+}
 
 export function adaptDocumentToDatabase(document: Partial<Document>): Record<string, any> {
+  const dbDocument: Record<string, any> = { ...document };
+  
+  // Convert status values if they exist
+  if (document.status) {
+    dbDocument.status = mapAppToDbDocStatus(document.status);
+  }
+  
+  // Convert checkout status if it exists
+  if (document.checkout_status) {
+    dbDocument.checkout_status = mapAppToDbCheckoutStatus(document.checkout_status);
+  }
+  
+  return dbDocument;
+}
+
+export function adaptDatabaseToDocument(dbDocument: Record<string, any>): Document {
   return {
-    ...document,
-    checkout_status: mapAppToDbCheckoutStatus(document.checkout_status)
-  };
+    ...dbDocument,
+    status: mapDbToAppDocStatus(dbDocument.status),
+    checkout_status: mapDbToAppCheckoutStatus(dbDocument.checkout_status)
+  } as Document;
 }
 
 export function mapToDocumentActionType(action: string): string {
-  return action;
-}
-
-export function mapDbToAppCheckoutStatus(dbStatus?: string): CheckoutStatus | undefined {
-  if (!dbStatus) return undefined;
-  
-  if (dbStatus === 'Checked Out' || dbStatus === 'Checked_Out') {
-    return 'Checked Out';
-  }
-  return 'Available';
-}
-
-export function mapAppToDbCheckoutStatus(appStatus?: CheckoutStatus): string | undefined {
-  if (!appStatus) return undefined;
-  
-  if (appStatus === 'Checked Out') {
-    return 'Checked_Out';
-  }
-  return appStatus;
-}
-
-// Helper function to convert between document status formats
-export function normalizeDocumentStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    'Published': 'Active',
-    'Active': 'Active',
-    'Pending Review': 'Pending Review',
-    'Pending Approval': 'Pending Approval',
-    'Approved': 'Approved',
-    'Archived': 'Archived',
-    'Expired': 'Expired',
-    'Rejected': 'Rejected',
-    'In Review': 'In Review',
-    'Draft': 'Draft'
-  };
-  
-  return statusMap[status] || status;
+  return action.toLowerCase();
 }

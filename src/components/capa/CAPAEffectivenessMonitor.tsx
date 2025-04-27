@@ -56,7 +56,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           department: capaData.department,
           sourceId: capaData.source_id,
           fsma204Compliant: capaData.fsma204_compliant,
-          sourceReference: capaData.source_reference || '',
+          sourceReference: capaData.source_reference,
           relatedDocuments: [],
           relatedTraining: []
         };
@@ -77,19 +77,23 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
 
   // Helper functions to map string values to enum types
   const mapStatusToEnum = (status: string): CAPAStatus => {
-    const statusMap: Record<string, CAPAStatus> = {
-      'open': 'Open',
-      'in_progress': 'In_Progress',
-      'under_review': 'Under_Review',
-      'completed': 'Completed',
-      'closed': 'Closed',
-      'rejected': 'Rejected',
-      'on_hold': 'On_Hold',
-      'overdue': 'Overdue',
-      'pending_verification': 'Pending_Verification',
-      'verified': 'Verified'
-    };
-    return statusMap[status.toLowerCase()] || 'Open';
+    if (!status) return 'Open';
+    
+    status = status.replace(' ', '_');
+    
+    switch(status.toLowerCase()) {
+      case 'open': return 'Open';
+      case 'in_progress': return 'In_Progress';
+      case 'under_review': return 'Under_Review';
+      case 'completed': return 'Completed';
+      case 'closed': return 'Closed';
+      case 'rejected': return 'Rejected';
+      case 'on_hold': return 'On_Hold';
+      case 'overdue': return 'Overdue';
+      case 'pending_verification': return 'Pending_Verification';
+      case 'verified': return 'Verified';
+      default: return 'Open';
+    }
   };
 
   const mapPriorityToEnum = (priority: string): CAPAPriority => {
@@ -110,13 +114,15 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
   const mapEffectivenessRatingToEnum = (rating: string | undefined): CAPAEffectivenessRating | undefined => {
     if (!rating) return undefined;
     
-    const ratingMap: Record<string, CAPAEffectivenessRating> = {
-      'not effective': 'Not_Effective',
-      'partially effective': 'Partially_Effective',
-      'effective': 'Effective',
-      'highly effective': 'Highly_Effective'
-    };
-    return ratingMap[rating.toLowerCase()] || undefined;
+    rating = rating.replace(' ', '_');
+    
+    switch(rating.toLowerCase()) {
+      case 'not_effective': return 'Not_Effective';
+      case 'partially_effective': return 'Partially_Effective';
+      case 'effective': return 'Effective';
+      case 'highly_effective': return 'Highly_Effective';
+      default: return undefined;
+    }
   };
 
   if (loading) {

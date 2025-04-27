@@ -17,6 +17,7 @@ interface UserProfile {
   assigned_facility_ids?: string[];
   status?: 'active' | 'inactive' | 'pending';
   role?: string;
+  preferred_language?: string;
 }
 
 interface UserContextType {
@@ -25,6 +26,7 @@ interface UserContextType {
   error: Error | null;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   logout: () => Promise<void>;
+  signOut: () => Promise<void>; // Added signOut alias for logout
   refreshUser: () => Promise<void>;
 }
 
@@ -57,10 +59,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
             avatar_url: profileData.avatar_url,
             organization_id: profileData.organization_id,
             department: profileData.department,
-            preferences: profileData.preferences || {},
+            preferences: typeof profileData.preferences === 'object' ? profileData.preferences : {},
             assigned_facility_ids: profileData.assigned_facility_ids,
-            status: profileData.status,
-            role: profileData.role
+            status: profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending' 
+              ? profileData.status 
+              : 'active',
+            role: profileData.role,
+            preferred_language: profileData.preferred_language
           });
         }
       } catch (err) {
@@ -104,6 +109,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
+
+  // Add signOut as an alias for logout
+  const signOut = logout;
   
   const refreshUser = async () => {
     try {
@@ -125,10 +133,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
           avatar_url: profileData.avatar_url,
           organization_id: profileData.organization_id,
           department: profileData.department,
-          preferences: profileData.preferences || {},
+          preferences: typeof profileData.preferences === 'object' ? profileData.preferences : {},
           assigned_facility_ids: profileData.assigned_facility_ids,
-          status: profileData.status,
-          role: profileData.role
+          status: profileData.status === 'active' || profileData.status === 'inactive' || profileData.status === 'pending' 
+            ? profileData.status 
+            : 'active',
+          role: profileData.role,
+          preferred_language: profileData.preferred_language
         });
       }
     } catch (err) {
@@ -145,6 +156,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       error, 
       updateProfile, 
       logout,
+      signOut,
       refreshUser
     }}>
       {children}

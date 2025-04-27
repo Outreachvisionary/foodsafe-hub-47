@@ -40,13 +40,7 @@ const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
           correctiveAction: data.corrective_action,
           preventiveAction: data.preventive_action,
           effectivenessCriteria: data.effectiveness_criteria,
-          effectivenessRating: data.effectiveness_rating === 'Partially Effective' 
-            ? 'Partially_Effective' 
-            : data.effectiveness_rating === 'Not Effective' 
-              ? 'Not_Effective'
-              : data.effectiveness_rating === 'Highly Effective'
-                ? 'Highly_Effective'
-                : data.effectiveness_rating as any,
+          effectivenessRating: mapEffectivenessRatingToEnum(data.effectiveness_rating),
           effectivenessVerified: data.effectiveness_verified,
           verificationDate: data.verification_date,
           verificationMethod: data.verification_method,
@@ -54,7 +48,7 @@ const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
           department: data.department,
           sourceId: data.source_id,
           fsma204Compliant: data.fsma204_compliant,
-          sourceReference: data.source_reference || '',
+          sourceReference: data.source_reference,
           relatedDocuments: [],
           relatedTraining: []
         }));
@@ -73,19 +67,23 @@ const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
 
   // Helper functions to map string values to enum types
   const mapStatusToEnum = (status: string): CAPAStatus => {
-    const statusMap: Record<string, CAPAStatus> = {
-      'open': 'Open',
-      'in_progress': 'In_Progress',
-      'under_review': 'Under_Review',
-      'completed': 'Completed',
-      'closed': 'Closed',
-      'rejected': 'Rejected',
-      'on_hold': 'On_Hold',
-      'overdue': 'Overdue',
-      'pending_verification': 'Pending_Verification',
-      'verified': 'Verified'
-    };
-    return statusMap[status.toLowerCase()] || 'Open';
+    if (!status) return 'Open';
+    
+    status = status.replace(' ', '_');
+    
+    switch(status.toLowerCase()) {
+      case 'open': return 'Open';
+      case 'in_progress': return 'In_Progress';
+      case 'under_review': return 'Under_Review';
+      case 'completed': return 'Completed';
+      case 'closed': return 'Closed';
+      case 'rejected': return 'Rejected';
+      case 'on_hold': return 'On_Hold';
+      case 'overdue': return 'Overdue';
+      case 'pending_verification': return 'Pending_Verification';
+      case 'verified': return 'Verified';
+      default: return 'Open';
+    }
   };
 
   const mapPriorityToEnum = (priority: string): CAPAPriority => {
@@ -101,6 +99,20 @@ const LinkedCAPAsList = ({ capaIds }: { capaIds: string[] }) => {
       return source as CAPASource;
     }
     return 'Other';
+  };
+  
+  const mapEffectivenessRatingToEnum = (rating: string | undefined) => {
+    if (!rating) return undefined;
+    
+    rating = rating.replace(' ', '_');
+    
+    switch(rating.toLowerCase()) {
+      case 'not_effective': return 'Not_Effective';
+      case 'partially_effective': return 'Partially_Effective';
+      case 'effective': return 'Effective';
+      case 'highly_effective': return 'Highly_Effective';
+      default: return undefined;
+    }
   };
 
   if (loading) {

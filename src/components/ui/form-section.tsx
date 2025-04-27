@@ -1,27 +1,52 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
-import { LucideIcon } from 'lucide-react';
 
 export interface FormSectionProps {
   title: string;
   children: React.ReactNode;
-  icon?: LucideIcon;
+  className?: string;
+  collapsible?: boolean;
 }
 
-export function FormSection({ title, children, icon: Icon }: FormSectionProps) {
+const FormSection: React.FC<FormSectionProps> = ({ 
+  title, 
+  children, 
+  className,
+  collapsible = false 
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+    if (collapsible) {
+      setIsCollapsed(!isCollapsed);
+    }
+  };
+
   return (
-    <Card className="border shadow-sm mb-6">
-      <CardHeader className="pb-3 border-b">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
-          <CardTitle className="text-lg">{title}</CardTitle>
-        </div>
+    <Card className={cn("mb-6", className)}>
+      <CardHeader 
+        className={cn("pb-3", collapsible && "cursor-pointer")}
+        onClick={toggleCollapse}
+      >
+        <CardTitle className="text-xl flex justify-between items-center">
+          {title}
+          {collapsible && (
+            isCollapsed ? 
+              <ChevronDown className="h-5 w-5 text-muted-foreground" /> : 
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+          )}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
-        {children}
-      </CardContent>
+      {!isCollapsed && (
+        <CardContent>
+          {children}
+        </CardContent>
+      )}
     </Card>
   );
-}
+};
+
+export default FormSection;

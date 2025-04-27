@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +7,7 @@ interface LanguageContextType {
   currentLanguage: string;
   supportedLanguages: { code: string; name: string }[];
   changeLanguage: (language: string) => Promise<void>;
-  loadingTranslations: boolean; // Add the missing property
+  loadingTranslations: boolean;
 }
 
 const defaultLanguage = 'en';
@@ -25,7 +24,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const { i18n } = useTranslation();
   const { user, updateProfile } = useUser();
   const [currentLanguage, setCurrentLanguage] = useState(defaultLanguage);
-  const [loadingTranslations, setLoadingTranslations] = useState(false); // Add state for loading translations
+  const [loadingTranslations, setLoadingTranslations] = useState(false);
 
   // Initialize language from user preferences or browser settings
   useEffect(() => {
@@ -57,13 +56,13 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const setUserLanguage = async (language: string) => {
     try {
-      setLoadingTranslations(true); // Set loading state
+      setLoadingTranslations(true);
       await i18n.changeLanguage(language);
       setCurrentLanguage(language);
     } catch (error) {
       console.error('Error setting language:', error);
     } finally {
-      setLoadingTranslations(false); // Reset loading state
+      setLoadingTranslations(false);
     }
   };
 
@@ -73,7 +72,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       // Update user profile if they're logged in
       if (user?.id) {
-        await updateProfile({ preferred_language: language });
+        await updateProfile({ preferred_language: language } as any);
       }
 
       // Store in localStorage as fallback
@@ -87,7 +86,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     currentLanguage,
     supportedLanguages,
     changeLanguage,
-    loadingTranslations // Add to the context value
+    loadingTranslations
   };
 
   return (
