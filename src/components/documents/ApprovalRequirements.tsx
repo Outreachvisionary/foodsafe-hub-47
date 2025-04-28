@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, FileCheck, User } from 'lucide-react';
@@ -18,8 +18,18 @@ interface ApprovalRequirementsProps {
 }
 
 const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSteps }) => {
-  // If no steps are provided, use mock data
-  const steps = workflowSteps || getMockDocumentWorkflowSteps();
+  // Get workflow steps from props or use mock data
+  const [steps, setSteps] = useState<DocumentWorkflowStep[]>([]);
+  
+  useEffect(() => {
+    if (workflowSteps) {
+      setSteps(workflowSteps);
+    } else {
+      // Use synchronous mock data instead of a Promise
+      const mockSteps = getMockDocumentWorkflowSteps();
+      setSteps(mockSteps);
+    }
+  }, [workflowSteps]);
   
   return (
     <Card>

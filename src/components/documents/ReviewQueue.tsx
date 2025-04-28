@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDocument } from '@/contexts/DocumentContext';
-import { Document } from '@/types/document';
+import { Document, DocumentStatus } from '@/types/document';
 import DocumentList from './DocumentList';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { isDocumentStatus } from '@/utils/typeAdapters';

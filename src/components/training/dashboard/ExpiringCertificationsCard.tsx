@@ -1,107 +1,82 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Award, AlertCircle, Calendar } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { getMockTrainingStats } from '@/services/mockDataService';
+import React, { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, Calendar, User } from 'lucide-react';
+import { getMockTrainingStatistics } from '@/services/mockDataService';
 
 interface ExpiringCertification {
-  id: string;
   name: string;
   employee: string;
-  expiryDate: string;
-  daysLeft: number;
-  auditRequired?: boolean;
+  expires: string;
 }
 
-interface ExpiringCertificationsCardProps {
-  count?: number;
-  certifications?: ExpiringCertification[];
-  onViewAll?: () => void;
-  onScheduleAudit?: (certification: ExpiringCertification) => void;
-}
+const getDaysRemaining = (expiryDate: string): number => {
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
-const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({ 
-  count, 
-  certifications,
-  onViewAll,
-  onScheduleAudit
-}) => {
-  // Get expirations from mock service if not provided as props
-  const mockData = getMockTrainingStats();
-  const expiringCertifications = certifications || mockData.expiringCertifications;
-  const totalCount = count || expiringCertifications.length;
+const ExpiringCertificationsCard = () => {
+  const [expiringCerts, setExpiringCerts] = useState<ExpiringCertification[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Format date for display
-  const formatExpiryDate = (dateStr: string) => {
-    try {
-      return format(parseISO(dateStr), 'MMM d, yyyy');
-    } catch (error) {
-      return dateStr; // Return original string if parsing fails
-    }
-  };
-  
+  useEffect(() => {
+    // Use synchronous mock data
+    const mockStats = getMockTrainingStatistics();
+    setExpiringCerts(mockStats.expiringCertifications);
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return <Card className="w-full h-96 animate-pulse bg-muted"></Card>;
+  }
+
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-medium flex items-center">
-            <Award className="h-5 w-5 text-amber-500 mr-2" />
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xl font-bold">
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2 text-amber-500" />
             Expiring Certifications
-          </CardTitle>
-          <Button variant="outline" size="sm" onClick={onViewAll}>View All</Button>
-        </div>
-        <CardDescription>Certifications expiring in the next 45 days</CardDescription>
+          </div>
+        </CardTitle>
+        <Badge variant="outline">{expiringCerts.length}</Badge>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {expiringCertifications.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              No certifications expiring soon
-            </div>
-          ) : (
-            expiringCertifications.slice(0, 3).map((cert) => (
-              <div key={cert.id} className="flex items-start space-x-3 border-b pb-3 last:border-0">
-                {cert.daysLeft <= 14 ? (
-                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <Calendar className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                )}
-                <div className="flex-grow">
-                  <h4 className="text-sm font-medium">{cert.name}</h4>
-                  <p className="text-xs text-muted-foreground">{cert.employee}</p>
-                  <div className="flex items-center mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      Expires: {formatExpiryDate(cert.expiryDate)}
-                    </span>
-                    <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-sm ${
-                      cert.daysLeft <= 14 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {cert.daysLeft} days left
+        {expiringCerts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+            <Calendar className="w-8 h-8 mb-2" />
+            <p>No certifications expiring soon</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {expiringCerts.map((cert, index) => {
+              const daysRemaining = getDaysRemaining(cert.expires);
+              const isUrgent = daysRemaining <= 7;
+              
+              return (
+                <div key={index} className="flex justify-between items-center p-3 bg-background rounded border">
+                  <div>
+                    <h4 className="text-sm font-medium">{cert.name}</h4>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <User className="w-3 h-3 mr-1" /> {cert.employee}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <Badge variant={isUrgent ? "destructive" : "outline"}>
+                      {daysRemaining} days
+                    </Badge>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      Expires {new Date(cert.expires).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-                {cert.auditRequired && onScheduleAudit && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs mt-0.5"
-                    onClick={() => onScheduleAudit(cert)}
-                  >
-                    Schedule Audit
-                  </Button>
-                )}
-              </div>
-            ))
-          )}
-          
-          {totalCount > 3 && (
-            <Button variant="outline" className="w-full" onClick={onViewAll}>
-              View all {totalCount} expiring certifications
-            </Button>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

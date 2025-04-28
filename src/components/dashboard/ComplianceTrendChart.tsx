@@ -19,7 +19,7 @@ const ComplianceTrendChart: React.FC = () => {
   const isMobile = useIsMobile();
   const { theme } = useTheme();
   
-  // Get data from mock service instead of hardcoding
+  // Get data from mock service - ensure it's synchronous
   const complianceData = getMockComplianceTrendData();
   
   // Define chart colors based on theme

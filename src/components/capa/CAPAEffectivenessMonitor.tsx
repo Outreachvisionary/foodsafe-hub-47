@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
@@ -56,7 +55,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           verifiedBy: capaData.verified_by,
           department: capaData.department,
           sourceId: capaData.source_id,
-          sourceReference: capaData.source_reference || '',
+          source_reference: capaData.source_reference || '',
           fsma204Compliant: capaData.fsma204_compliant,
           relatedDocuments: [],
           relatedTraining: []

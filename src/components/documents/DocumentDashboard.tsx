@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { File, Clock, CheckCircle, AlertTriangle, Folder } from 'lucide-react';
 import { useDocument } from '@/contexts/DocumentContext';
+import { DocumentStatus } from '@/types/document';
 import { isDocumentStatus } from '@/utils/typeAdapters';
 
 const DocumentDashboard = () => {

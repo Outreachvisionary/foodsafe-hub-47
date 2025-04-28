@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
 import { PieChart, FileCheck, BarChart2 } from 'lucide-react';
+import { DocumentStatus } from '@/types/document';
 import { isDocumentStatus } from '@/utils/typeAdapters';
 
 const DocumentStatistics = () => {

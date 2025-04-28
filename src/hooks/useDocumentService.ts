@@ -1,8 +1,15 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment } from '@/types/document';
-import { adaptDatabaseToDocument, adaptDocumentToDatabase, convertToCheckoutStatus, isCheckoutStatus } from '@/utils/typeAdapters';
+import { Document, DocumentVersion, DocumentActivity, DocumentAccess, DocumentComment, DocumentStatus, CheckoutStatus } from '@/types/document';
+import { convertToDocumentStatus, convertToCheckoutStatus } from '@/utils/typeAdapters';
+
+const adaptDatabaseToDocument = (dbDocument: any): Document => {
+  return {
+    ...dbDocument,
+    status: convertToDocumentStatus(dbDocument.status),
+    checkout_status: convertToCheckoutStatus(dbDocument.checkout_status || 'Available'),
+  } as Document;
+};
 
 const useDocumentService = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -81,7 +88,11 @@ const useDocumentService = () => {
       setLoading(true);
       setError(null);
 
-      const documentData = adaptDocumentToDatabase(newDocument);
+      const documentData = {
+        ...newDocument,
+        status: newDocument.status || 'Draft',
+        checkout_status: newDocument.checkout_status || 'Available'
+      };
 
       const { data, error } = await supabase
         .from('documents')
@@ -100,7 +111,7 @@ const useDocumentService = () => {
       }
 
       const createdDocument = adaptDatabaseToDocument(data);
-      setDocuments(prev => [createdDocument, ...prev]);
+      setDocuments(prevDocuments => [createdDocument, ...prevDocuments]);
       return createdDocument;
     } catch (err: any) {
       console.error('Error creating document:', err);
@@ -116,7 +127,11 @@ const useDocumentService = () => {
       setLoading(true);
       setError(null);
 
-      const documentData = adaptDocumentToDatabase(updates);
+      const documentData = {
+        ...updates,
+        status: updates.status || 'Draft',
+        checkout_status: updates.checkout_status || 'Available'
+      };
 
       const { data, error } = await supabase
         .from('documents')
@@ -130,9 +145,11 @@ const useDocumentService = () => {
       }
 
       const updatedDocument = adaptDatabaseToDocument(data);
-      setDocuments(prev => 
-        prev.map(doc => doc.id === id ? updatedDocument : doc)
+      
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => doc.id === id ? updatedDocument : doc)
       );
+      
       return updatedDocument;
     } catch (err: any) {
       console.error('Error updating document:', err);
@@ -157,7 +174,7 @@ const useDocumentService = () => {
         throw error;
       }
 
-      setDocuments(prev => prev.filter(doc => doc.id !== id));
+      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
     } catch (err: any) {
       console.error('Error deleting document:', err);
       setError(err.message || 'Failed to delete document');
@@ -183,7 +200,7 @@ const useDocumentService = () => {
       }
 
       // Check if document is already checked out
-      if (isCheckoutStatus(docData.checkout_status, 'Checked_Out')) {
+      if (docData.checkout_status === 'Checked_Out') {
         throw new Error('Document is already checked out by another user');
       }
 
@@ -216,12 +233,12 @@ const useDocumentService = () => {
         });
 
       // Update the state
-      setDocuments(prev => 
-        prev.map(doc => {
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => {
           if (doc.id === id) {
             return {
               ...doc,
-              checkout_status: 'Checked_Out',
+              checkout_status: 'Checked_Out' as CheckoutStatus,
               checkout_user_id: userId,
               checkout_user_name: userName,
               checkout_timestamp: new Date().toISOString()
@@ -256,7 +273,7 @@ const useDocumentService = () => {
       }
 
       // Check if document is checked out and by this user
-      if (!isCheckoutStatus(docData.checkout_status, 'Checked_Out')) {
+      if (docData.checkout_status !== 'Checked_Out') {
         throw new Error('Document is not checked out');
       }
 
@@ -313,12 +330,12 @@ const useDocumentService = () => {
         });
 
       // Update the state
-      setDocuments(prev => 
-        prev.map(doc => {
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => {
           if (doc.id === id) {
             return {
               ...doc,
-              checkout_status: 'Available',
+              checkout_status: 'Available' as CheckoutStatus,
               checkout_user_id: undefined,
               checkout_user_name: undefined,
               checkout_timestamp: undefined,
@@ -332,6 +349,129 @@ const useDocumentService = () => {
       console.error('Error checking in document:', err);
       setError(err.message || 'Failed to check in document');
       throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const approveDocument = useCallback(async (documentId: string, comment: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch the current document
+      const { data: docData, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', documentId)
+        .single();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      // Update the document status to Approved
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          status: 'Approved',
+          last_action: 'Approved'
+        })
+        .eq('id', documentId);
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Record the approval activity
+      const { error: activityError } = await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          action: 'approve',
+          user_id: 'currentUser', // This should come from user context
+          user_name: 'Current User', // This should come from user context
+          user_role: 'Approver', // This should come from user context
+          comments: comment
+        });
+        
+      if (activityError) {
+        throw activityError;
+      }
+      
+      // Update the state
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => {
+          if (doc.id === documentId) {
+            return {
+              ...doc,
+              status: 'Approved' as DocumentStatus,
+              last_action: 'Approved'
+            };
+          }
+          return doc;
+        })
+      );
+    } catch (err: any) {
+      console.error('Error approving document:', err);
+      setError(err.message || 'Failed to approve document');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const rejectDocument = useCallback(async (documentId: string, reason: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update the document status to Rejected
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          status: 'Rejected',
+          last_action: 'Rejected',
+          rejection_reason: reason
+        })
+        .eq('id', documentId);
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Record the rejection activity
+      const { error: activityError } = await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          action: 'reject',
+          user_id: 'currentUser', // This should come from user context
+          user_name: 'Current User', // This should come from user context
+          user_role: 'Approver', // This should come from user context
+          comments: reason
+        });
+        
+      if (activityError) {
+        throw activityError;
+      }
+      
+      // Update the state
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => {
+          if (doc.id === documentId) {
+            return {
+              ...doc,
+              status: 'Rejected' as DocumentStatus,
+              last_action: 'Rejected',
+              rejection_reason: reason
+            };
+          }
+          return doc;
+        })
+      );
+    } catch (err: any) {
+      console.error('Error rejecting document:', err);
+      setError(err.message || 'Failed to reject document');
     } finally {
       setLoading(false);
     }
@@ -572,129 +712,6 @@ const useDocumentService = () => {
     } catch (err: any) {
       console.error('Error downloading version:', err);
       setError(err.message || 'Failed to download version');
-    }
-  }, []);
-
-  const approveDocument = useCallback(async (documentId: string, comment: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch the current document
-      const { data: docData, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single();
-        
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      // Update the document status to Approved
-      const { error: updateError } = await supabase
-        .from('documents')
-        .update({
-          status: 'Approved',
-          last_action: 'Approved'
-        })
-        .eq('id', documentId);
-        
-      if (updateError) {
-        throw updateError;
-      }
-      
-      // Record the approval activity
-      const { error: activityError } = await supabase
-        .from('document_activities')
-        .insert({
-          document_id: documentId,
-          action: 'approve',
-          user_id: 'currentUser', // This should come from user context
-          user_name: 'Current User', // This should come from user context
-          user_role: 'Approver', // This should come from user context
-          comments: comment
-        });
-        
-      if (activityError) {
-        throw activityError;
-      }
-      
-      // Update the state
-      setDocuments(prev => 
-        prev.map(doc => {
-          if (doc.id === documentId) {
-            return {
-              ...doc,
-              status: 'Approved',
-              last_action: 'Approved'
-            };
-          }
-          return doc;
-        })
-      );
-    } catch (err: any) {
-      console.error('Error approving document:', err);
-      setError(err.message || 'Failed to approve document');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const rejectDocument = useCallback(async (documentId: string, reason: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Update the document status to Rejected
-      const { error: updateError } = await supabase
-        .from('documents')
-        .update({
-          status: 'Rejected',
-          last_action: 'Rejected',
-          rejection_reason: reason
-        })
-        .eq('id', documentId);
-        
-      if (updateError) {
-        throw updateError;
-      }
-      
-      // Record the rejection activity
-      const { error: activityError } = await supabase
-        .from('document_activities')
-        .insert({
-          document_id: documentId,
-          action: 'reject',
-          user_id: 'currentUser', // This should come from user context
-          user_name: 'Current User', // This should come from user context
-          user_role: 'Approver', // This should come from user context
-          comments: reason
-        });
-        
-      if (activityError) {
-        throw activityError;
-      }
-      
-      // Update the state
-      setDocuments(prev => 
-        prev.map(doc => {
-          if (doc.id === documentId) {
-            return {
-              ...doc,
-              status: 'Rejected',
-              last_action: 'Rejected',
-              rejection_reason: reason
-            };
-          }
-          return doc;
-        })
-      );
-    } catch (err: any) {
-      console.error('Error rejecting document:', err);
-      setError(err.message || 'Failed to reject document');
-    } finally {
-      setLoading(false);
     }
   }, []);
 

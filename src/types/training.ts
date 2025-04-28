@@ -1,113 +1,75 @@
 
-// Define the types for Training
+export type TrainingStatus = 
+  | 'Not Started' 
+  | 'In Progress' 
+  | 'Completed' 
+  | 'Overdue' 
+  | 'Failed';
 
-export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled';
-export type TrainingCompletionStatus = 'not-started' | 'in-progress' | 'completed' | 'overdue' | 'cancelled';
-export type TrainingType = 'classroom' | 'online' | 'self-study' | 'on-the-job' | 'workshop' | 'certification';
-export type TrainingCategory = 'food-safety' | 'gmp' | 'haccp' | 'quality' | 'regulatory' | 'technical' | 'leadership' | 'other';
-export type TrainingPriority = 'critical' | 'high' | 'medium' | 'low';
-export type EmployeeRole = 'operator' | 'supervisor' | 'manager' | 'qc' | 'maintenance' | 'administrative' | 'executive';
-export type Department = 'production' | 'quality' | 'maintenance' | 'warehouse' | 'rd' | 'admin' | 'executive' | 'sales' | 'it';
-export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
-
-export interface TrainingRecord {
-  id: string;
-  employee_id: string;
-  session_id: string;
-  status: TrainingStatus;
-  completion_date?: string;
-  score?: number;
-  due_date: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  assigned_date: string;
-}
-
-export interface ExtendedTrainingRecord extends TrainingRecord {
-  courseName: string;
-  instructorName: string;
-  created_at: string;
-  updated_at: string;
-}
+export type TrainingCategory = 
+  | 'haccp' 
+  | 'gmp' 
+  | 'food-safety' 
+  | 'regulatory' 
+  | 'quality-control' 
+  | 'equipment' 
+  | 'allergen-management' 
+  | 'sanitation' 
+  | 'workplace-safety' 
+  | 'other';
 
 export interface TrainingSession {
   id: string;
   title: string;
-  description: string;
-  training_type: TrainingType;
+  description?: string;
+  training_type: 'classroom' | 'online' | 'on-job' | 'self-study';
   training_category: TrainingCategory;
-  department: string;
-  start_date: string;
+  department?: string;
+  start_date?: string;
   due_date: string;
   assigned_to: string[];
-  materials_id: string[];
-  required_roles: string[];
-  is_recurring: boolean;
-  recurring_interval: string;
-  completion_status: TrainingCompletionStatus;
+  materials_id?: string[];
+  is_recurring?: boolean;
+  recurring_interval?: number;
+  required_roles?: string[];
+  completion_status?: TrainingStatus;
   created_by: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface DepartmentTrainingStats {
-  department: string;
-  name: string;
-  completed: number;
-  overdue: number;
-  totalAssigned: number;
-  complianceRate: number;
-}
-
-export interface TrainingPlan {
+export interface TrainingRecord {
   id: string;
-  name: string;
-  description: string;
-  target_roles: string[];
-  courses: string[];
-  duration_days: number;
-  is_required: boolean;
-  priority: TrainingPriority;
-  status: string;
-  start_date: string;
-  end_date: string;
-  is_automated: boolean;
-  automation_trigger?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  target_departments: string[];
-  related_standards: string[];
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date: string;
+  completion_date?: string;
+  score?: number;
+  pass_threshold?: number;
+  notes?: string;
+  last_recurrence?: string;
+  next_recurrence?: string;
 }
 
-export interface TrainingAutomationConfig {
-  id: string;
-  enabled: boolean;
-  rules: any[];
-  documentChangesTrigger: boolean;
-  newEmployeeTrigger: boolean;
-  roleCangeTrigger: boolean;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-}
-
-export interface AutoAssignRule {
-  id: string;
-  name: string;
-  conditions: {
-    key: string;
-    operator: string;
-    value: any;
-  }[];
-  training_plan_id: string;
-}
-
-export interface DocumentControlIntegration {
-  enabled: boolean;
-  documentTypes: string[];
-  assignToViewers: boolean;
-  assignToEditors: boolean;
-  assignToApprovers: boolean;
+export interface TrainingStatistics {
+  overallCompliance: number;
+  departmentCompliance: Array<{
+    department: string;
+    completed: number;
+    total: number;
+    compliance: number;
+  }>;
+  expiringCertifications: Array<{
+    name: string;
+    employee: string;
+    expires: string;
+  }>;
+  upcomingTrainings: Array<{
+    name: string;
+    date: string;
+    participants: number;
+  }>;
 }

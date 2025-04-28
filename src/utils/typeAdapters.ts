@@ -1,6 +1,6 @@
 
 import { DocumentStatus, CheckoutStatus } from '@/types/document';
-import { CAPAStatus, CAPAEffectivenessRating } from '@/types/capa';
+import { CAPAStatus, CAPAEffectivenessRating, CAPASource, CAPAPriority } from '@/types/capa';
 
 /**
  * Type guard to check if a string value matches a DocumentStatus enum
@@ -20,37 +20,65 @@ export const isCheckoutStatus = (status: string | undefined, compareStatus: Chec
  * Converts a string value to a valid CAPAStatus, defaulting to 'Open' if invalid
  */
 export const convertToCAPAStatus = (status: string): CAPAStatus => {
-  if (!Object.values(CAPAStatus).includes(status as CAPAStatus)) {
-    return 'Open'; // Default status
-  }
-  return status as CAPAStatus;
+  const validStatuses = [
+    'Open', 'In_Progress', 'Under_Review', 'Completed', 
+    'Closed', 'Rejected', 'On_Hold', 'Overdue', 
+    'Pending_Verification', 'Verified'
+  ];
+  
+  return validStatuses.includes(status) ? status as CAPAStatus : 'Open';
+}
+
+/**
+ * Converts a string value to a valid CAPASource, defaulting to 'Other' if invalid
+ */
+export const convertToCAPASource = (source: string): CAPASource => {
+  const validSources = [
+    'Audit', 'Customer_Complaint', 'Internal_Issue', 'Regulatory',
+    'Supplier_Issue', 'Non_Conformance', 'Management_Review', 'Other'
+  ];
+  
+  return validSources.includes(source) ? source as CAPASource : 'Other';
 }
 
 /**
  * Converts a string value to a valid DocumentStatus, defaulting to 'Draft' if invalid
  */
 export const convertToDocumentStatus = (status: string): DocumentStatus => {
-  if (!Object.values(DocumentStatus).includes(status as DocumentStatus)) {
-    return 'Draft'; // Default status
-  }
-  return status as DocumentStatus;
+  const validStatuses = [
+    'Draft', 'In_Review', 'Pending_Review', 'Pending_Approval',
+    'Approved', 'Published', 'Archived', 'Rejected',
+    'Obsolete', 'Active', 'Expired'
+  ];
+  
+  return validStatuses.includes(status) ? status as DocumentStatus : 'Draft';
 }
 
 /**
  * Converts a string value to a valid CheckoutStatus, defaulting to 'Available' if invalid
  */
 export const convertToCheckoutStatus = (status: string | undefined): CheckoutStatus => {
-  return (status as CheckoutStatus) === 'Checked_Out' ? 'Checked_Out' : 'Available';
+  return status === 'Checked_Out' ? 'Checked_Out' : 'Available';
 }
 
 /**
  * Converts a string value to a valid CAPAEffectivenessRating, defaulting to 'Not_Effective' if invalid
  */
 export const convertToEffectivenessRating = (rating: string | undefined): CAPAEffectivenessRating => {
-  if (!rating || !Object.values(CAPAEffectivenessRating).includes(rating as CAPAEffectivenessRating)) {
-    return 'Not_Effective'; // Default rating
-  }
-  return rating as CAPAEffectivenessRating;
+  const validRatings = [
+    'Not_Effective', 'Partially_Effective', 'Effective', 'Highly_Effective'
+  ];
+  
+  return rating && validRatings.includes(rating) ? rating as CAPAEffectivenessRating : 'Not_Effective';
+}
+
+/**
+ * Converts a string value to a valid CAPAPriority, defaulting to 'Medium' if invalid
+ */
+export const convertToCAPAPriority = (priority: string): CAPAPriority => {
+  const validPriorities = ['Low', 'Medium', 'High', 'Critical'];
+  
+  return validPriorities.includes(priority) ? priority as CAPAPriority : 'Medium';
 }
 
 /**
@@ -70,27 +98,4 @@ export const safeJsonAccess = <T>(obj: any, path: string, defaultValue: T): T =>
   } catch (error) {
     return defaultValue;
   }
-}
-
-/**
- * Adapter to convert database document to frontend Document type
- */
-export const adaptDatabaseToDocument = (dbDocument: any): Document => {
-  return {
-    ...dbDocument,
-    status: convertToDocumentStatus(dbDocument.status),
-    checkout_status: convertToCheckoutStatus(dbDocument.checkout_status || 'Available')
-  };
-}
-
-/**
- * Adapter to convert frontend Document to database format
- */
-export const adaptDocumentToDatabase = (document: Partial<Document>): any => {
-  return {
-    ...document,
-    category: document.category || 'Other',
-    status: document.status || 'Draft',
-    checkout_status: document.checkout_status || 'Available'
-  };
 }

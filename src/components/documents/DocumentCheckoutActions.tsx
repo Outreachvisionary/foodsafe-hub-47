@@ -79,6 +79,7 @@ export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = (
     }
   };
 
+  // Use the correct enum value
   const isCheckedOut = isCheckoutStatus(document.checkout_status || 'Available', 'Checked_Out');
   const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
 
