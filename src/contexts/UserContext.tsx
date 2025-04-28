@@ -1,15 +1,17 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 // Import User from supabase types or define our own
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define our own User interface to avoid conflicts
-interface AppUser extends SupabaseUser {
+// Define our own AppUser interface that extends the Supabase User
+interface AppUser extends Omit<User, 'user_metadata'> {
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
   };
+  full_name?: string;
+  avatar_url?: string;
 }
 
 interface UserProfile {
@@ -26,6 +28,7 @@ interface UserContextType {
   user: AppUser | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  loading: boolean; // Added for backward compatibility
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -35,6 +38,7 @@ const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
   isLoading: true,
+  loading: true,
   signIn: async () => {},
   signOut: async () => {},
   updateUserProfile: async () => {},
@@ -53,7 +57,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data } = await supabase.auth.getUser();
         
         if (data?.user) {
-          setUser(data.user as AppUser);
+          const appUser = data.user as unknown as AppUser;
+          
+          // Map metadata to direct properties for compatibility
+          if (appUser.user_metadata) {
+            appUser.full_name = appUser.user_metadata.full_name;
+            appUser.avatar_url = appUser.user_metadata.avatar_url;
+          }
+          
+          setUser(appUser);
           
           // Also get the user's profile
           const { data: profileData } = await supabase
@@ -78,7 +90,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user as AppUser);
+        const appUser = session.user as unknown as AppUser;
+        
+        // Map metadata to direct properties for compatibility
+        if (appUser.user_metadata) {
+          appUser.full_name = appUser.user_metadata.full_name;
+          appUser.avatar_url = appUser.user_metadata.avatar_url;
+        }
+        
+        setUser(appUser);
         
         // Get profile for the user
         const { data: profileData } = await supabase
@@ -149,6 +169,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       profile,
       isLoading,
+      loading: isLoading, // Added for backward compatibility
       signIn,
       signOut,
       updateUserProfile

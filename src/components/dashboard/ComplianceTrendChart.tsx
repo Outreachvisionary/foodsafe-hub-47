@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Line } from 'react-chartjs-2';
+import { getMockComplianceTrendData } from '@/services/mockDataService';
 
 interface ComplianceTrendChartProps {
   title?: string;
@@ -17,33 +18,10 @@ const ComplianceTrendChart: React.FC<ComplianceTrendChartProps> = ({ title = "Co
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Mock data - in a real app, this would be fetched from an API
-    const generateMockData = () => {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentMonth = new Date().getMonth();
-      
-      // Generate last 6 months of data
-      const data = [];
-      let startValue = 70 + Math.random() * 10;
-      
-      for (let i = 5; i >= 0; i--) {
-        const monthIndex = (currentMonth - i + 12) % 12;
-        const randomChange = (Math.random() - 0.3) * 5; // Slightly biased toward improvement
-        startValue = Math.min(100, Math.max(50, startValue + randomChange));
-        
-        data.push({
-          month: months[monthIndex],
-          compliance: parseFloat(startValue.toFixed(1))
-        });
-      }
-      
-      return data;
-    };
-
-    // Simulate API call
+    // Use the mock data service function
     setLoading(true);
     setTimeout(() => {
-      const mockData = generateMockData();
+      const mockData = getMockComplianceTrendData();
       setTrendData(mockData);
       setLoading(false);
     }, 500);

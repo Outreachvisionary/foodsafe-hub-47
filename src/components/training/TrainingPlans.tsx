@@ -39,7 +39,7 @@ const TrainingPlans = () => {
         description: "Standard onboarding for new employees",
         target_roles: ["Production Staff", "Quality Team"],
         courses: [],
-        priority: "Medium" as TrainingPriority, // Fixed type
+        priority: "Medium" as TrainingPriority,
         status: "Active"
       });
     } catch (error) {

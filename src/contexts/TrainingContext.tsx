@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingSession, TrainingRecord, TrainingStatus, TrainingCategory, TrainingStatistics, TrainingPlan, TrainingPriority, DepartmentStat } from '@/types/training';
+import { TrainingSession, TrainingRecord, TrainingStatus, TrainingCategory, TrainingStatistics, TrainingPlan, TrainingPriority, DepartmentStat, TrainingType } from '@/types/training';
 import { getMockTrainingStatistics } from '@/services/mockDataService';
 import { convertToTrainingStatus } from '@/utils/typeAdapters';
 
@@ -62,9 +63,9 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     const mockDeptStats: DepartmentStat[] = [
-      { department: "Production", totalAssigned: 50, completed: 42, overdue: 5, compliance: 84 },
-      { department: "Quality", totalAssigned: 20, completed: 18, overdue: 1, compliance: 90 },
-      { department: "Warehouse", totalAssigned: 25, completed: 15, overdue: 8, compliance: 60 }
+      { department: "Production", name: "Production", totalAssigned: 50, completed: 42, overdue: 5, compliance: 84, complianceRate: 84 },
+      { department: "Quality", name: "Quality", totalAssigned: 20, completed: 18, overdue: 1, compliance: 90, complianceRate: 90 },
+      { department: "Warehouse", name: "Warehouse", totalAssigned: 25, completed: 15, overdue: 8, compliance: 60, complianceRate: 60 }
     ];
     setDepartmentStats(mockDeptStats);
   }, []);
@@ -170,11 +171,16 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         session.assigned_to = [];
       }
       
+      // Convert TrainingStatus to string literal expected by the database
+      const dbCompletionStatus = session.completion_status ? 
+        convertTrainingStatusForDb(session.completion_status) : 
+        'Not Started';
+      
       const sessionData = {
         title: session.title,
         description: session.description,
-        training_type: session.training_type,
-        training_category: session.training_category,
+        training_type: session.training_type || 'classroom' as TrainingType,
+        training_category: session.training_category || 'other' as TrainingCategory,
         department: session.department,
         start_date: session.start_date,
         due_date: session.due_date,
@@ -183,18 +189,19 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         is_recurring: session.is_recurring,
         recurring_interval: session.recurring_interval,
         required_roles: session.required_roles,
-        completion_status: session.completion_status,
+        completion_status: dbCompletionStatus,
         created_by: session.created_by || 'system'
       };
       
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(sessionData)
-        .select();
+        .insert([sessionData]);
       
       if (error) throw error;
       
-      setTrainingSessions([...trainingSessions, data[0] as TrainingSession]);
+      if (data) {
+        setTrainingSessions([...trainingSessions, data[0] as TrainingSession]);
+      }
     } catch (err: any) {
       console.error('Error creating training session:', err);
       setError(err.message);
@@ -208,9 +215,12 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      const updateData: any = {
-        ...updates
-      };
+      const updateData: any = { ...updates };
+      
+      // Convert TrainingStatus to string literal expected by the database
+      if (updateData.completion_status) {
+        updateData.completion_status = convertTrainingStatusForDb(updateData.completion_status);
+      }
       
       Object.keys(updateData).forEach(key => {
         if (updateData[key] === undefined) {
@@ -265,8 +275,10 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setError(null);
       
       const recordData: any = { ...updates };
-      if (updates.status) {
-        // Handle status conversion if needed
+      
+      // Convert TrainingStatus to string literal expected by the database
+      if (recordData.status) {
+        recordData.status = convertTrainingStatusForDb(recordData.status);
       }
       
       const { error } = await supabase
@@ -314,12 +326,13 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const { data, error } = await supabase
         .from('training_plans')
-        .insert(planData)
-        .select();
+        .insert([planData]);
       
       if (error) throw error;
       
-      setTrainingPlans([...trainingPlans, data[0] as TrainingPlan]);
+      if (data) {
+        setTrainingPlans([...trainingPlans, data[0] as TrainingPlan]);
+      }
     } catch (err: any) {
       console.error('Error creating training plan:', err);
       setError(err.message);
@@ -346,6 +359,19 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to convert TrainingStatus to database format
+  const convertTrainingStatusForDb = (status: TrainingStatus): string => {
+    switch(status) {
+      case 'Not Started': return 'Not Started';
+      case 'In Progress': return 'In Progress';
+      case 'Completed': return 'Completed';
+      case 'Overdue': return 'Overdue';
+      case 'Failed': return 'Failed';
+      case 'Cancelled': return 'Cancelled';
+      default: return 'Not Started';
     }
   };
 

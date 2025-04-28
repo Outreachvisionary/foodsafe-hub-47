@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,7 +77,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             effectivenessRating: capaData.effectiveness_rating,
             effectivenessVerified: capaData.effectiveness_verified,
             sourceId: capaData.source_id,
-            sourceReference: capaData.source_reference || '', // Changed from source_reference to sourceReference
+            sourceReference: capaData.source_reference || '',
             verificationDate: capaData.verification_date,
             verificationMethod: capaData.verification_method,
             verifiedBy: capaData.verified_by,

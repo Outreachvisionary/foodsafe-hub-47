@@ -41,25 +41,19 @@ const LanguageContext = createContext<LanguageContextValue>({
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<string>('en');
   const [loadingTranslations, setLoadingTranslations] = useState<boolean>(false);
-  const { user } = useUser();
+  const { user, profile } = useUser();
 
   useEffect(() => {
     // Set default language from browser if no user preference
     const defaultLang = navigator.language.split('-')[0];
     
     // If user is logged in, try to get their preference from profile
-    if (user) {
+    if (profile) {
       const fetchUserLanguage = async () => {
         try {
           setLoadingTranslations(true);
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('preferred_language')
-            .eq('id', user.id)
-            .single();
-          
-          if (data && data.preferred_language) {
-            const userLang = data.preferred_language;
+          if (profile.preferred_language) {
+            const userLang = profile.preferred_language;
             await i18n.changeLanguage(userLang);
             setLanguage(userLang);
           } else {
@@ -67,7 +61,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
             setLanguage(defaultLang);
           }
         } catch (error) {
-          console.error('Error fetching user language preference:', error);
+          console.error('Error setting user language preference:', error);
           await i18n.changeLanguage(defaultLang);
           setLanguage(defaultLang);
         } finally {
@@ -81,7 +75,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       i18n.changeLanguage(defaultLang);
       setLanguage(defaultLang);
     }
-  }, [user]);
+  }, [profile]);
   
   const changeLanguage = async (lang: string) => {
     try {

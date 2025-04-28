@@ -33,12 +33,14 @@ const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
         <Button variant="ghost" className={`w-full justify-between px-2 hover:bg-accent/10 transition-all group ${collapsed ? 'justify-center' : ''}`}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/60 transition-all shadow-glow">
-              <AvatarImage src={user?.avatar_url || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white">{user?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
+              <AvatarImage src={user?.avatar_url || user?.user_metadata?.avatar_url || ''} />
+              <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white">
+                {(user?.full_name || user?.user_metadata?.full_name || user?.email || 'U')[0]}
+              </AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="text-sm font-medium truncate">
-                {user?.full_name || user?.email || t('common.user')}
+                {user?.full_name || user?.user_metadata?.full_name || user?.email || t('common.user')}
               </div>
             )}
           </div>

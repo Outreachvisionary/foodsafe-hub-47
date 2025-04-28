@@ -49,7 +49,7 @@ export function convertToTrainingStatus(status: string): TrainingStatus {
 export function isDocumentStatus(status: string, expectedStatus: DocumentStatus): boolean {
   if (status === 'Pending_Approval' && expectedStatus === 'Pending Approval') return true;
   if (status === 'In_Review' && expectedStatus === 'In Review') return true;
-  if (status === 'Pending_Review' && expectedStatus === 'Pending_Review') return true;
+  if (status === 'Pending_Review' && expectedStatus === 'Pending Review') return true;
   return status === expectedStatus;
 }
 

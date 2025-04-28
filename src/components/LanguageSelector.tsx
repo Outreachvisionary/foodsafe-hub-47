@@ -28,13 +28,13 @@ const LanguageSelector = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {supportedLanguages.map((language) => (
+        {supportedLanguages.map((lang) => (
           <DropdownMenuItem
-            key={language.code}
-            onClick={() => handleLanguageChange(language.code)}
-            className={language.code === language ? 'bg-accent font-medium' : ''}
+            key={lang.code}
+            onClick={() => handleLanguageChange(lang.code)}
+            className={lang.code === language ? 'bg-accent font-medium' : ''}
           >
-            {t(`common.${language.code === 'en' ? 'english' : language.code === 'es' ? 'spanish' : language.code === 'fr' ? 'french' : language.code === 'de' ? 'german' : 'arabic'}`)}
+            {t(`common.${lang.code === 'en' ? 'english' : lang.code === 'es' ? 'spanish' : lang.code === 'fr' ? 'french' : lang.code === 'de' ? 'german' : 'arabic'}`)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

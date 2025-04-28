@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,18 @@ import DepartmentComplianceChart from './DepartmentComplianceChart';
 import TrainingSessionsTimeline from './TrainingSessionsTimeline';
 import UpcomingTrainings from './UpcomingTrainings';
 import { Check, AlertTriangle, Calendar, Users, BookOpen, BarChart } from 'lucide-react';
+import { DepartmentStat } from '@/types/training';
 
 const TrainingDashboard: React.FC = () => {
   const { sessions, departmentStats, isLoading } = useTrainingContext();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('month');
+  
+  // Ensure departmentStats matches the required format for DepartmentComplianceChart
+  const formattedDepartmentStats: DepartmentStat[] = departmentStats.map(stat => ({
+    ...stat,
+    name: stat.department,
+    complianceRate: stat.compliance
+  }));
   
   // Calculate overall compliance
   const totalAssigned = departmentStats.reduce((sum, dept) => sum + dept.totalAssigned, 0);
@@ -117,7 +125,7 @@ const TrainingDashboard: React.FC = () => {
             <CardDescription>Training compliance rate across departments</CardDescription>
           </CardHeader>
           <CardContent>
-            <DepartmentComplianceChart departmentStats={departmentStats} />
+            <DepartmentComplianceChart departmentStats={formattedDepartmentStats} />
           </CardContent>
         </Card>
         
