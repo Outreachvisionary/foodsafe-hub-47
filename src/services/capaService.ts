@@ -1,6 +1,7 @@
 
 import { CAPA, CAPAStatus } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
+import { convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
 
 // Mock function to fetch CAPAs
 export const getCAPAs = async (): Promise<CAPA[]> => {
@@ -52,6 +53,35 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
       relatedTraining: ['train-456']
     }
   ];
+};
+
+// Mock function to get CAPA by ID
+export const getCAPAById = async (id: string): Promise<CAPA> => {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return mock data for a single CAPA
+  const mockCapa = {
+    id: id,
+    title: `CAPA-${id.substring(0,3)}`,
+    description: 'Product temperature deviation in cold storage',
+    status: 'In_Progress',
+    priority: 'High',
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_by: 'John Doe',
+    due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    assigned_to: 'Jane Smith',
+    source: 'Audit',
+    source_reference: 'Audit-2023-001',
+    root_cause: 'Refrigeration unit malfunction',
+    corrective_action: 'Replace refrigeration unit and implement daily temperature checks',
+    preventive_action: 'Scheduled maintenance program for all refrigeration units',
+    effectiveness_criteria: 'No temperature deviations for 90 days',
+    department: 'Production',
+    fsma204_compliant: true,
+  };
+  
+  return convertDatabaseCAPAToModel(mockCapa);
 };
 
 // Mock function to create a CAPA

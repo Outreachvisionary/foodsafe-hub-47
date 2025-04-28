@@ -1,142 +1,77 @@
 
-import React, { useEffect, useState } from 'react';
-import { fetchCAPAById } from '@/services/capa/capaFetchService';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { convertToCAPAStatus, convertToEffectivenessRating, convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
+import { CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { convertToEffectivenessRating } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessMonitorProps {
   id: string;
-  implementationDate?: string;
+  implementationDate: string;
 }
 
-const getStatusIcon = (verified: boolean | undefined, rating: string | undefined) => {
-  if (!verified) {
-    return <Clock className="h-8 w-8 text-warning" />;
-  }
-  if (rating === "Highly_Effective" || rating === "Effective") {
-    return <CheckCircle className="h-8 w-8 text-success" />;
-  }
-  return <AlertCircle className="h-8 w-8 text-destructive" />;
-};
-
-const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id, implementationDate }) => {
-  const [capa, setCapa] = useState<CAPA | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const capaData = await fetchCAPAById(id);
-        
-        const transformedCapa = convertDatabaseCAPAToModel(capaData);
-        setCapa(transformedCapa);
-      } catch (err) {
-        console.error('Failed to load CAPA effectiveness data:', err);
-        setError('Failed to load CAPA effectiveness data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
-
-  const getStatusText = () => {
-    if (!capa?.effectivenessVerified) {
-      return 'Effectiveness verification pending';
-    }
-    
-    switch (capa.effectivenessRating) {
-      case 'Highly_Effective':
-        return 'Highly effective - No recurrence';
-      case 'Effective':
-        return 'Effective - Meets criteria';
-      case 'Partially_Effective':
-        return 'Partially effective - Needs improvement';
-      case 'Not_Effective':
-        return 'Not effective - Recurrence or failure';
-      default:
-        return 'Status unknown';
+const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
+  id,
+  implementationDate,
+}) => {
+  // This is a placeholder component - in a real app, this would fetch actual data
+  // For now, we'll just show mock data
+  const mockProgress = 75;
+  
+  const getStatusIcon = () => {
+    if (mockProgress >= 80) {
+      return <CheckCircle className="h-5 w-5 text-green-500" />;
+    } else if (mockProgress >= 50) {
+      return <HelpCircle className="h-5 w-5 text-amber-500" />;
+    } else {
+      return <AlertCircle className="h-5 w-5 text-red-500" />;
     }
   };
-
-  const getEffectivenessClass = () => {
-    if (!capa?.effectivenessVerified) {
-      return 'bg-warning-muted text-warning-foreground';
-    }
-    
-    switch (capa.effectivenessRating) {
-      case 'Highly_Effective':
-      case 'Effective':
-        return 'bg-success-muted text-success';
-      case 'Partially_Effective':
-        return 'bg-warning-muted text-warning-foreground';
-      case 'Not_Effective':
-        return 'bg-destructive/10 text-destructive';
-      default:
-        return 'bg-secondary text-foreground-secondary';
-    }
-  };
-
-  if (loading) {
-    return <Card className="animate-pulse bg-secondary/30"><CardContent className="p-6 h-40"></CardContent></Card>;
-  }
-
-  if (error || !capa) {
-    return (
-      <Card className="bg-destructive/10 border-destructive/20">
-        <CardContent className="p-6">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-destructive mr-2" />
-            <p className="text-destructive">{error || 'CAPA data not available'}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  
+  // Calculate days since implementation
+  const daysSinceImplementation = Math.floor(
+    (new Date().getTime() - new Date(implementationDate).getTime()) / (1000 * 3600 * 24)
+  );
+  
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium">Effectiveness Monitor</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center justify-between">
+          <span>Effectiveness Monitoring</span>
+          {getStatusIcon()}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col">
-          <div className="flex items-center mb-4">
-            {getStatusIcon(capa.effectivenessVerified, capa.effectivenessRating)}
-            <div className="ml-3">
-              <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getEffectivenessClass()}`}>
-                {getStatusText()}
-              </div>
-              <p className="text-sm text-foreground-muted mt-1">
-                {implementationDate 
-                  ? `Implemented on ${implementationDate}` 
-                  : capa.completionDate 
-                    ? `Implemented on ${new Date(capa.completionDate).toLocaleDateString()}` 
-                    : 'Implementation date not set'}
+      <CardContent className="space-y-3">
+        <div>
+          <div className="flex justify-between text-sm mb-1">
+            <span>Implementation: {daysSinceImplementation} days ago</span>
+            <span className="font-medium">{mockProgress}%</span>
+          </div>
+          <Progress value={mockProgress} className="h-2" />
+        </div>
+        
+        <div className="text-sm">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-muted-foreground">Verification Status</p>
+              <p className="font-medium">Pending</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Due Date</p>
+              <p className="font-medium">
+                {new Date(new Date(implementationDate).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}
               </p>
             </div>
           </div>
-          
-          {capa.effectivenessVerified && (
-            <div className="text-sm">
-              <p className="font-medium">Verification Details:</p>
-              <p className="text-foreground-muted">
-                {capa.verificationMethod || 'No verification method specified'}
-              </p>
-              {capa.verificationDate && (
-                <p className="text-foreground-muted mt-1">
-                  Verified on {new Date(capa.verificationDate).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          )}
+        </div>
+        
+        <div className="text-sm">
+          <p className="text-muted-foreground mb-1">Effectiveness Criteria</p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>No recurrence for 90 days</li>
+            <li>Training completion rate &gt; 95%</li>
+            <li>Process audit score &gt; 90%</li>
+          </ul>
         </div>
       </CardContent>
     </Card>
