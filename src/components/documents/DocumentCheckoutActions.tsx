@@ -1,139 +1,313 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Lock, Unlock } from 'lucide-react';
-import useDocumentService from '@/hooks/useDocumentService';
+import { Lock, Unlock, CheckSquare, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Document } from '@/types/document';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/contexts/UserContext';
+import { checkoutDocument, checkinDocument } from '@/hooks/useDocumentService';
+import { useToast } from '@/components/ui/use-toast';
+import { CheckoutStatus } from '@/types/enums';
+import { isCheckoutStatus } from '@/utils/typeAdapters';
 
 interface DocumentCheckoutActionsProps {
   document: Document;
-  onUpdate: () => void;
+  onDocumentUpdate?: (updatedDoc: Document) => void;
+  disabled?: boolean;
+  compact?: boolean;
 }
 
-export const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({ document, onUpdate }) => {
-  const [isCheckInDialogOpen, setIsCheckInDialogOpen] = React.useState(false);
-  const [checkInComment, setCheckInComment] = React.useState('');
-  const documentService = useDocumentService();
+const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
+  document,
+  onDocumentUpdate,
+  disabled = false,
+  compact = false
+}) => {
+  const { user } = useUser();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = React.useState<any>(null);
-
-  React.useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setCurrentUser(data.user);
-    };
-    
-    fetchUser();
-  }, []);
+  const [showCheckinDialog, setShowCheckinDialog] = useState(false);
+  const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
+  const [checkinComment, setCheckinComment] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
-    try {
-      if (!currentUser) throw new Error('User not authenticated');
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to check out a document",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      await documentService.checkOutDocument(
-        document.id, 
-        currentUser.id,
-        currentUser.user_metadata?.full_name || 'Unknown User',
-        'User'
-      );
-      
+    try {
+      setLoading(true);
+      const updatedDoc = await checkoutDocument(document.id, user.id);
+      if (onDocumentUpdate && updatedDoc) {
+        onDocumentUpdate(updatedDoc);
+      }
       toast({
         title: "Document Checked Out",
-        description: "You can now edit this document",
-        variant: "default",
+        description: "You can now edit this document"
       });
-      onUpdate();
-    } catch (error: any) {
+      setShowCheckoutDialog(false);
+    } catch (error) {
+      console.error("Error checking out document:", error);
       toast({
         title: "Checkout Failed",
-        description: error.message,
-        variant: "destructive",
+        description: "There was an error checking out the document",
+        variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCheckIn = async () => {
-    try {
-      if (!currentUser) throw new Error('User not authenticated');
+  const handleCheckin = async () => {
+    if (!user) return;
 
-      await documentService.checkInDocument(document.id, currentUser.id, checkInComment);
-      setIsCheckInDialogOpen(false);
-      setCheckInComment('');
+    try {
+      setLoading(true);
+      const updatedDoc = await checkinDocument(document.id, checkinComment);
+      if (onDocumentUpdate && updatedDoc) {
+        onDocumentUpdate(updatedDoc);
+      }
       toast({
         title: "Document Checked In",
-        description: "Document has been successfully checked in",
-        variant: "default",
+        description: "Document has been successfully checked in"
       });
-      onUpdate();
-    } catch (error: any) {
+      setCheckinComment('');
+      setShowCheckinDialog(false);
+    } catch (error) {
+      console.error("Error checking in document:", error);
       toast({
-        title: "Check-in Failed",
-        description: error.message,
-        variant: "destructive",
+        title: "Checkin Failed",
+        description: "There was an error checking in the document",
+        variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Check if document is checked out
-  const isCheckedOut = document.checkout_status === 'Checked_Out';
-  const isCurrentUserCheckout = document.checkout_user_id === currentUser?.id;
+  const isCheckedOut = isCheckoutStatus(document.checkout_status || CheckoutStatus.Available, CheckoutStatus.CheckedOut);
+  
+  const isCheckedOutByCurrentUser = isCheckedOut && 
+    user && 
+    document.checkout_user_id === user.id;
 
-  return (
-    <>
-      {!isCheckedOut ? (
-        <Button
-          onClick={handleCheckout}
-          variant="outline"
+  if (compact) {
+    if (isCheckedOutByCurrentUser) {
+      return (
+        <>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowCheckinDialog(true)}
+            disabled={disabled || loading}
+            className="gap-1"
+          >
+            <CheckSquare className="h-4 w-4" />
+            <span className="hidden md:inline">Check In</span>
+          </Button>
+          
+          {showCheckinDialog && (
+            <CheckInDialog 
+              open={showCheckinDialog}
+              onOpenChange={setShowCheckinDialog}
+              comment={checkinComment}
+              onCommentChange={setCheckinComment}
+              onConfirm={handleCheckin}
+              loading={loading}
+            />
+          )}
+        </>
+      );
+    } else if (isCheckedOut) {
+      return (
+        <Button 
+          variant="outline" 
           size="sm"
-          className="gap-2 text-info hover:border-info/30 hover:bg-info-muted/50"
+          disabled={true}
+          className="gap-1 text-amber-600"
         >
           <Lock className="h-4 w-4" />
-          Check Out
+          <span className="hidden md:inline">Checked Out</span>
         </Button>
-      ) : (
-        isCurrentUserCheckout && (
-          <Button
-            onClick={() => setIsCheckInDialogOpen(true)}
-            variant="outline"
+      );
+    } else {
+      return (
+        <>
+          <Button 
+            variant="outline" 
             size="sm"
-            className="gap-2 text-success hover:border-success/30 hover:bg-success-muted/50"
+            onClick={() => setShowCheckoutDialog(true)}
+            disabled={disabled || loading}
+            className="gap-1"
           >
             <Unlock className="h-4 w-4" />
-            Check In
+            <span className="hidden md:inline">Check Out</span>
           </Button>
-        )
-      )}
-
-      <Dialog open={isCheckInDialogOpen} onOpenChange={setIsCheckInDialogOpen}>
-        <DialogContent className="glass-card">
-          <DialogHeader>
-            <DialogTitle>Check In Document</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="Describe the changes you made..."
-              value={checkInComment}
-              onChange={(e) => setCheckInComment(e.target.value)}
-              rows={4}
-              className="border-border-light focus:border-accent"
+          
+          {showCheckoutDialog && (
+            <CheckoutDialog 
+              open={showCheckoutDialog}
+              onOpenChange={setShowCheckoutDialog}
+              onConfirm={handleCheckout}
+              loading={loading}
             />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCheckInDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCheckIn} className="gap-2">
-              <Unlock className="h-4 w-4" />
-              Check In
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+        </>
+      );
+    }
+  }
+
+  if (isCheckedOutByCurrentUser) {
+    return (
+      <>
+        <div className="flex items-center gap-2 text-green-600 text-sm mb-2">
+          <CheckSquare className="h-4 w-4" />
+          <span>You have checked out this document</span>
+        </div>
+        <Button 
+          onClick={() => setShowCheckinDialog(true)}
+          disabled={disabled || loading}
+          className="w-full"
+        >
+          Check In Document
+        </Button>
+        
+        {showCheckinDialog && (
+          <CheckInDialog 
+            open={showCheckinDialog}
+            onOpenChange={setShowCheckinDialog}
+            comment={checkinComment}
+            onCommentChange={setCheckinComment}
+            onConfirm={handleCheckin}
+            loading={loading}
+          />
+        )}
+      </>
+    );
+  } else if (isCheckedOut) {
+    return (
+      <div className="border rounded-md p-3 bg-amber-50">
+        <div className="flex items-center gap-2 text-amber-600">
+          <AlertTriangle className="h-4 w-4" />
+          <span className="font-medium">Document is checked out</span>
+        </div>
+        <p className="text-sm mt-1">
+          This document is currently checked out by {document.checkout_user_name || "another user"}.
+        </p>
+      </div>
+    );
+  } else {
+    return (
+      <>
+        <Button 
+          onClick={() => setShowCheckoutDialog(true)}
+          disabled={disabled || loading}
+          className="w-full"
+        >
+          Check Out Document
+        </Button>
+        
+        {showCheckoutDialog && (
+          <CheckoutDialog 
+            open={showCheckoutDialog}
+            onOpenChange={setShowCheckoutDialog}
+            onConfirm={handleCheckout}
+            loading={loading}
+          />
+        )}
+      </>
+    );
+  }
+};
+
+interface CheckInDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  comment: string;
+  onCommentChange: (comment: string) => void;
+  onConfirm: () => void;
+  loading: boolean;
+}
+
+const CheckInDialog: React.FC<CheckInDialogProps> = ({
+  open,
+  onOpenChange,
+  comment,
+  onCommentChange,
+  onConfirm,
+  loading
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Check In Document</DialogTitle>
+          <DialogDescription>
+            Check in this document to release it for others to edit.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <label className="block text-sm font-medium mb-1" htmlFor="checkin-comment">
+            Check In Comment
+          </label>
+          <Textarea
+            id="checkin-comment"
+            placeholder="Describe the changes you made"
+            value={comment}
+            onChange={(e) => onCommentChange(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} disabled={loading}>
+            {loading ? "Checking In..." : "Check In"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface CheckoutDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  loading: boolean;
+}
+
+const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
+  open,
+  onOpenChange,
+  onConfirm,
+  loading
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Check Out Document</DialogTitle>
+          <DialogDescription>
+            Checking out this document will prevent others from making changes until you check it back in.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} disabled={loading}>
+            {loading ? "Checking Out..." : "Check Out"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

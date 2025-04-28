@@ -1,77 +1,61 @@
 
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings } from 'lucide-react';
-import { useUser } from '@/contexts/UserContext';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import LanguageSelector from '@/components/LanguageSelector';
+import { User } from '@/types/user';
 
 interface ProfileTileProps {
-  collapsed?: boolean;
+  user: User | null;
+  showRole?: boolean;
+  showDepartment?: boolean;
 }
 
-const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
-  const { t } = useTranslation();
-  const { user, signOut } = useUser();
-  const navigate = useNavigate();
-  
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-  
-  // Get display name from user email or profile
-  const displayName = user?.profile?.full_name || user?.email?.split('@')[0] || t('common.user');
-  const avatarUrl = user?.profile?.avatar_url || '';
+const ProfileTile: React.FC<ProfileTileProps> = ({ 
+  user, 
+  showRole = false, 
+  showDepartment = false 
+}) => {
+  if (!user) {
+    return (
+      <Card className="w-full bg-muted/30">
+        <CardContent className="flex items-center p-4">
+          <Avatar className="h-10 w-10 mr-4">
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <p className="font-medium">No user data</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Get initials for avatar
+  const initials = user.profile?.full_name 
+    ? user.profile.full_name.split(' ').map(n => n[0]).join('')
+    : user.email?.charAt(0).toUpperCase() || 'U';
+
+  // Support both profile.full_name and full_name for backward compatibility
+  const displayName = user.profile?.full_name || user.full_name || user.email || 'Unknown User';
   
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className={`w-full justify-between px-2 hover:bg-accent/10 transition-all group ${collapsed ? 'justify-center' : ''}`}>
-          <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-            <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/60 transition-all shadow-glow">
-              <AvatarImage src={avatarUrl} />
-              <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white">
-                {displayName[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {!collapsed && (
-              <div className="text-sm font-medium truncate">
-                {displayName}
-              </div>
-            )}
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white/90 backdrop-blur-md border-accent/20 shadow-lg animate-fade-in">
-        <DropdownMenuLabel className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t('profile.title')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer hover:bg-accent/10 transition-all">
-          <User className="mr-2 h-4 w-4 text-accent" />
-          {t('profile.viewProfile')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer hover:bg-primary/10 transition-all">
-          <Settings className="mr-2 h-4 w-4 text-primary" />
-          {t('profile.settings')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <div className="px-2 py-1.5">
-          <LanguageSelector />
+    <Card className="w-full">
+      <CardContent className="flex items-center p-4">
+        <Avatar className="h-10 w-10 mr-4">
+          <AvatarImage src={user.profile?.avatar_url || user.avatar_url || ''} />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+        <div className="space-y-1">
+          <p className="font-medium">{displayName}</p>
+          {showRole && user.role && (
+            <p className="text-xs text-gray-500">{user.role}</p>
+          )}
+          {showDepartment && user.profile?.department && (
+            <p className="text-xs text-gray-500">{user.profile.department}</p>
+          )}
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all">
-          <LogOut className="mr-2 h-4 w-4" />
-          {t('auth.signOut')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </CardContent>
+    </Card>
   );
 };
 

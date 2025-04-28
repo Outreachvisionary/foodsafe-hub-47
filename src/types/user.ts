@@ -24,3 +24,31 @@ export interface AppUser {
   avatar_url?: string;
   user_metadata?: Record<string, any>;
 }
+
+// Extended User type for compatibility with components expecting profile property
+export interface User {
+  id: string;
+  email: string;
+  profile: {
+    full_name?: string;
+    avatar_url?: string;
+    department?: string;
+  };
+  full_name?: string;
+  avatar_url?: string;
+}
+
+// Convert AppUser to User format for component compatibility
+export const adaptAppUserToUser = (appUser: AppUser): User => {
+  return {
+    id: appUser.id,
+    email: appUser.email,
+    full_name: appUser.full_name || appUser.profile?.full_name,
+    avatar_url: appUser.avatar_url || appUser.profile?.avatar_url,
+    profile: {
+      full_name: appUser.full_name || appUser.profile?.full_name,
+      avatar_url: appUser.avatar_url || appUser.profile?.avatar_url,
+      department: appUser.profile?.department
+    }
+  };
+};

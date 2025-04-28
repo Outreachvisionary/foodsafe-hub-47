@@ -1,17 +1,7 @@
 
-export type CAPAStatus = 
-  | 'Open'
-  | 'In_Progress'
-  | 'Under_Review'
-  | 'Completed'
-  | 'Closed'
-  | 'Rejected'
-  | 'On_Hold'
-  | 'Overdue'
-  | 'Pending_Verification'
-  | 'Verified';
+import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
 
-export type CAPAPriority = 
+export type CAPAPriority =
   | 'Low'
   | 'Medium'
   | 'High'
@@ -29,12 +19,6 @@ export type CAPASource =
   | 'Regulatory'
   | 'Other'
   | 'Internal_QC';
-
-export type CAPAEffectivenessRating = 
-  | 'Effective'
-  | 'Partially_Effective'
-  | 'Not_Effective'
-  | 'Not_Verified';
 
 export interface CAPA {
   id: string;
@@ -54,7 +38,7 @@ export interface CAPA {
   correctiveAction?: string;
   preventiveAction?: string;
   effectivenessCriteria?: string;
-  effectivenessRating?: string;
+  effectivenessRating?: CAPAEffectivenessRating;
   effectivenessVerified?: boolean;
   verificationDate?: string;
   verificationMethod?: string;
@@ -72,8 +56,8 @@ export interface CAPAActivity {
   actionDescription: string;
   performedAt: string;
   performedBy: string;
-  oldStatus?: string;
-  newStatus?: string;
+  oldStatus?: CAPAStatus;
+  newStatus?: CAPAStatus;
   metadata?: Record<string, any>;
 }
 

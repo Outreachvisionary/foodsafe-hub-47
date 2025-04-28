@@ -1,8 +1,7 @@
 
-// Document types with consistent status values
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 
-export type CheckoutStatus = 'Available' | 'Checked Out';
-
+// Document interface with consistent types
 export interface Document {
   id: string;
   title: string;
@@ -51,22 +50,6 @@ export type DocumentCategory =
   | 'Risk Assessment' 
   | 'Other';
 
-// Document status type - unified to match code usage 
-export type DocumentStatus = 
-  | 'Draft' 
-  | 'In Review' 
-  | 'In_Review'
-  | 'Approved' 
-  | 'Archived' 
-  | 'Rejected' 
-  | 'Expired' 
-  | 'Pending Approval'
-  | 'Pending_Approval'
-  | 'Pending_Review'
-  | 'Published'
-  | 'Active'
-  | 'Obsolete';
-
 // Document version interface
 export interface DocumentVersion {
   id: string;
@@ -80,7 +63,7 @@ export interface DocumentVersion {
   is_binary_file?: boolean;
   editor_metadata?: Record<string, any>;
   diff_data?: Record<string, any>;
-  version_type: 'major' | 'minor';
+  version_type: "major" | "minor";
   change_summary?: string;
   change_notes?: string;
   check_in_comment?: string;

@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { CAPAEffectivenessRating } from '@/types/enums';
 import { convertToEffectivenessRating } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessMonitorProps {

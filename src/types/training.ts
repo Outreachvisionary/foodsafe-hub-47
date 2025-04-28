@@ -3,6 +3,7 @@ export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Canc
 export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type TrainingType = 'Onboarding' | 'Compliance' | 'Technical' | 'Safety' | 'Leadership';
 export type TrainingCategory = 'Food Safety' | 'Quality' | 'Regulatory' | 'Operations' | 'Management' | 'Other';
+export type TrainingCompletionStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
 
 export interface TrainingPlan {
   id: string;
@@ -72,4 +73,22 @@ export interface TrainingRecord {
   notes?: string;
   last_recurrence?: string;
   next_recurrence?: string;
+}
+
+export interface DepartmentStat {
+  department: string;
+  compliance: number;
+}
+
+export interface TrainingStatistics {
+  totalTrainingSessions: number;
+  completedTrainingSessions: number;
+  pendingTrainingSessions: number;
+  completionRate: number;
+  expiringCertifications: Array<{ 
+    name: string;
+    employee: string;
+    expiryDate: string;
+  }>;
+  departmentCompliance: DepartmentStat[];
 }

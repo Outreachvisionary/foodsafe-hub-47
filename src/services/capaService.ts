@@ -2,6 +2,7 @@
 import { CAPA, CAPAStatus } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
 import { convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
+import { CAPAEffectivenessRating } from '@/types/enums';
 
 // Mock function to fetch CAPAs
 export const getCAPAs = async (): Promise<CAPA[]> => {
@@ -14,7 +15,7 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
       id: '1',
       title: 'CAPA-001',
       description: 'Product temperature deviation in cold storage',
-      status: 'In_Progress',
+      status: CAPAStatus.InProgress,
       priority: 'High',
       createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       createdBy: 'John Doe',
@@ -35,7 +36,7 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
       id: '2',
       title: 'CAPA-002',
       description: 'Allergen cross-contamination risk identified',
-      status: 'Open',
+      status: CAPAStatus.Open,
       priority: 'Critical',
       createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
       createdBy: 'Robert Johnson',
@@ -79,6 +80,12 @@ export const getCAPAById = async (id: string): Promise<CAPA> => {
     effectiveness_criteria: 'No temperature deviations for 90 days',
     department: 'Production',
     fsma204_compliant: true,
+    effectiveness_rating: 'Effective',
+    effectiveness_verified: false,
+    verification_date: null,
+    verification_method: 'Visual inspection and data review',
+    verified_by: null,
+    completion_date: null,
   };
   
   return convertDatabaseCAPAToModel(mockCapa);
@@ -94,7 +101,7 @@ export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
     id: `capa-${Date.now()}`,
     title: capaData.title || '',
     description: capaData.description || '',
-    status: (capaData.status || 'Open') as CAPAStatus,
+    status: capaData.status || CAPAStatus.Open,
     priority: capaData.priority || 'Medium',
     createdAt: new Date().toISOString(),
     createdBy: capaData.createdBy || 'System',
@@ -109,7 +116,14 @@ export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
     department: capaData.department || '',
     fsma204Compliant: capaData.fsma204Compliant || false,
     relatedDocuments: capaData.relatedDocuments || [],
-    relatedTraining: capaData.relatedTraining || []
+    relatedTraining: capaData.relatedTraining || [],
+    effectivenessRating: capaData.effectivenessRating || undefined,
+    effectivenessVerified: capaData.effectivenessVerified || false,
+    verificationMethod: capaData.verificationMethod,
+    verificationDate: capaData.verificationDate,
+    verifiedBy: capaData.verifiedBy,
+    completionDate: capaData.completionDate,
+    sourceId: capaData.sourceId
   };
   
   return newCAPA;
@@ -132,7 +146,7 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
     id,
     title: updates.title || 'Updated CAPA',
     description: updates.description || '',
-    status: updates.status || 'In_Progress',
+    status: updates.status || CAPAStatus.InProgress,
     priority: updates.priority || 'Medium',
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     createdBy: 'John Doe',
@@ -147,7 +161,14 @@ export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CA
     department: updates.department || 'Quality',
     fsma204Compliant: updates.fsma204Compliant || false,
     relatedDocuments: updates.relatedDocuments || [],
-    relatedTraining: updates.relatedTraining || []
+    relatedTraining: updates.relatedTraining || [],
+    effectivenessRating: updates.effectivenessRating || undefined,
+    effectivenessVerified: updates.effectivenessVerified || false,
+    verificationMethod: updates.verificationMethod,
+    verificationDate: updates.verificationDate,
+    verifiedBy: updates.verifiedBy,
+    completionDate: updates.completionDate,
+    sourceId: updates.sourceId
   };
   
   return mockCAPA;
