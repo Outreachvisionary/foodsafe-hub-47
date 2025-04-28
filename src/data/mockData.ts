@@ -1,219 +1,228 @@
 
-import { Document, DocumentStatus, DocumentCategory, CheckoutStatus } from '@/types/document';
-import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
-import { TrainingSession, TrainingPriority, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
+import { Document } from '@/types/document';
+import { CAPA } from '@/types/capa';
+import { TrainingRecord, TrainingSession, TrainingStatus, TrainingCategory } from '@/types/training';
 
 // Mock Document Data
 export const mockDocuments: Document[] = [
   {
-    id: '1',
-    title: 'Food Safety Policy',
-    description: 'Comprehensive food safety policy for the organization',
-    category: 'Policy',
-    status: 'Published',
-    file_name: 'food-safety-policy.pdf',
+    id: 'doc-1',
+    title: 'HACCP Plan for Production Line A',
+    description: 'Hazard Analysis Critical Control Point plan for the main production line',
+    file_name: 'haccp_plan_line_a.pdf',
     file_type: 'application/pdf',
-    file_size: 245000,
-    version: 1,
-    created_by: 'admin',
-    created_at: '2023-03-15T10:30:00Z',
-    updated_at: '2023-03-15T10:30:00Z',
-    checkout_status: 'Available',
-    tags: ['food-safety', 'policy', 'compliance']
-  },
-  {
-    id: '2',
-    title: 'HACCP Plan - Production Line A',
-    description: 'HACCP plan for the main production line',
+    file_size: 1024000,
     category: 'HACCP Plan',
-    status: 'Pending_Review',
-    file_name: 'haccp-plan-production-a.docx',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 385000,
-    version: 2,
-    created_by: 'quality_manager',
-    created_at: '2023-04-10T14:25:00Z',
-    updated_at: '2023-04-20T09:15:00Z',
-    checkout_status: 'Available',
-    tags: ['haccp', 'production', 'food-safety']
-  },
-  {
-    id: '3',
-    title: 'Equipment Cleaning SOP',
-    description: 'Standard operating procedure for equipment cleaning',
-    category: 'SOP',
-    status: 'Active',
-    file_name: 'equipment-cleaning-sop.pdf',
-    file_type: 'application/pdf',
-    file_size: 320000,
-    version: 3,
-    created_by: 'operations_manager',
-    created_at: '2023-01-20T11:45:00Z',
-    updated_at: '2023-05-05T16:30:00Z',
-    checkout_status: 'Available',
-    tags: ['sop', 'cleaning', 'equipment']
-  },
-  {
-    id: '4',
-    title: 'Allergen Control Form',
-    description: 'Form for documenting allergen control measures',
-    category: 'Form',
-    status: 'Pending_Approval',
-    file_name: 'allergen-control-form.xlsx',
-    file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    file_size: 125000,
+    status: 'Published', // Updated to match DocumentStatus type
     version: 1,
-    created_by: 'quality_specialist',
-    created_at: '2023-05-12T09:20:00Z',
-    updated_at: '2023-05-12T09:20:00Z',
-    checkout_status: 'Available',
-    tags: ['allergen', 'control', 'form']
+    created_by: 'john.doe',
+    created_at: '2023-08-01T10:30:00Z',
+    updated_at: '2023-08-01T10:30:00Z',
+  },
+  {
+    id: 'doc-2',
+    title: 'Good Manufacturing Practices SOP',
+    description: 'Standard Operating Procedure for GMP compliance',
+    file_name: 'gmp_sop_v2.docx',
+    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    file_size: 512000,
+    category: 'SOP',
+    status: 'Pending_Review', // Updated to match DocumentStatus type
+    version: 2,
+    created_by: 'jane.smith',
+    created_at: '2023-08-05T14:15:00Z',
+    updated_at: '2023-08-10T09:45:00Z',
+  },
+  {
+    id: 'doc-3',
+    title: 'Allergen Control Policy',
+    description: 'Company policy for allergen control and management',
+    file_name: 'allergen_policy.pdf',
+    file_type: 'application/pdf',
+    file_size: 768000,
+    category: 'Policy',
+    status: 'Active', // Updated to match DocumentStatus type
+    version: 3,
+    created_by: 'quality.manager',
+    created_at: '2023-07-15T11:20:00Z',
+    updated_at: '2023-08-12T16:30:00Z',
+  },
+  {
+    id: 'doc-4',
+    title: 'Sanitation Verification Form',
+    description: 'Form for verifying sanitation procedures',
+    file_name: 'sanitation_form.xlsx',
+    file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    file_size: 256000,
+    category: 'Form',
+    status: 'Pending_Approval', // Updated to match DocumentStatus type
+    version: 1,
+    created_by: 'sanitation.lead',
+    created_at: '2023-08-14T08:00:00Z',
+    updated_at: '2023-08-14T08:00:00Z',
   }
 ];
 
 // Mock CAPA Data
-export const mockCapaActions: CAPA[] = [
+export const mockCAPAs: CAPA[] = [
   {
-    id: 'capa-001',
-    title: 'Foreign Material in Product Line A',
-    description: 'Metal fragments found in finished product during inspection',
+    id: 'capa-1',
+    title: 'Temperature Control Deviation',
+    description: 'Temperature exceeded critical limits during processing',
     status: 'Open',
     priority: 'High',
-    createdAt: '2023-04-10T08:30:00Z',
-    createdBy: 'quality_inspector',
-    dueDate: '2023-05-10T00:00:00Z',
-    assignedTo: 'production_manager',
-    source: 'Internal_Issue',
-    source_reference: 'NC-2023-042',
-    rootCause: 'Metal detector calibration drift',
-    correctiveAction: 'Re-calibrate all metal detectors on Line A',
-    preventiveAction: 'Implement daily verification checks',
+    createdAt: '2023-08-01T10:30:00Z',
+    dueDate: '2023-09-01T00:00:00Z',
+    assignedTo: 'jane.smith',
+    createdBy: 'john.doe',
+    source: 'Internal_Issue', // Updated to match CAPASource type
+    rootCause: 'Faulty temperature sensor',
+    correctiveAction: 'Replace temperature sensor',
+    preventiveAction: 'Implement daily calibration checks',
     department: 'Production',
-    fsma204Compliant: true
+    fsma204Compliant: true,
+    effectivenessVerified: false,
+    relatedDocuments: [],
+    relatedTraining: [],
+    sourceReference: 'NC-2023-0125'
   },
   {
-    id: 'capa-002',
-    title: 'Temperature Deviation in Cold Storage',
-    description: 'Temperature exceeded critical limits for 3 hours',
+    id: 'capa-2',
+    title: 'Foreign Material Contamination',
+    description: 'Metal fragments found during routine inspection',
     status: 'In_Progress',
     priority: 'Critical',
-    createdAt: '2023-05-02T14:15:00Z',
-    createdBy: 'facility_manager',
-    dueDate: '2023-05-09T00:00:00Z',
-    assignedTo: 'maintenance_supervisor',
-    source: 'Non_Conformance',
-    source_reference: 'NC-2023-056',
-    rootCause: 'Compressor failure',
-    department: 'Warehouse',
-    fsma204Compliant: true
+    createdAt: '2023-08-05T14:15:00Z',
+    dueDate: '2023-08-20T00:00:00Z',
+    assignedTo: 'maintenance.manager',
+    createdBy: 'quality.manager',
+    source: 'Non_Conformance', // Updated to match CAPASource type
+    rootCause: 'Worn equipment part',
+    correctiveAction: 'Replace damaged equipment',
+    preventiveAction: 'Increase frequency of equipment inspections',
+    department: 'Maintenance',
+    effectivenessCriteria: 'No foreign material findings for 30 days',
+    fsma204Compliant: true,
+    effectivenessVerified: false,
+    relatedDocuments: [],
+    relatedTraining: [],
+    sourceReference: 'NC-2023-0138'
   },
   {
-    id: 'capa-003',
-    title: 'Missing GMP Training Records',
-    description: 'Audit found 5 employees without documented GMP training',
+    id: 'capa-3',
+    title: 'Missing Documentation',
+    description: 'Required records not completed during production',
     status: 'Completed',
     priority: 'Medium',
-    createdAt: '2023-03-20T10:00:00Z',
-    createdBy: 'compliance_officer',
-    dueDate: '2023-04-20T00:00:00Z',
-    assignedTo: 'hr_manager',
+    createdAt: '2023-07-15T11:20:00Z',
+    dueDate: '2023-08-15T00:00:00Z',
+    completionDate: '2023-08-10T09:45:00Z',
+    assignedTo: 'production.supervisor',
+    createdBy: 'documentation.specialist',
     source: 'Audit',
-    source_reference: 'AUDIT-2023-012',
-    completionDate: '2023-04-15T16:30:00Z',
-    rootCause: 'Training records not properly documented during onboarding',
-    correctiveAction: 'Conduct GMP training for all identified employees',
-    preventiveAction: 'Update onboarding checklist to include training documentation',
+    rootCause: 'Lack of training on documentation requirements',
+    correctiveAction: 'Retrain production staff',
+    preventiveAction: 'Implement documentation verification step',
+    department: 'Production',
     effectivenessRating: 'Effective',
-    department: 'HR',
-    fsma204Compliant: false,
-    source_reference: 'AUDIT-2023-012-F3'
+    effectivenessVerified: true,
+    verificationDate: '2023-08-17T00:00:00Z',
+    verifiedBy: 'quality.manager',
+    fsma204Compliant: true,
+    relatedDocuments: [
+      {
+        id: 'rd-1',
+        documentId: 'doc-1',
+        documentName: 'Documentation Procedure',
+        documentType: 'SOP'
+      }
+    ],
+    relatedTraining: [
+      {
+        id: 'rt-1',
+        trainingId: 'training-1',
+        trainingName: 'Documentation Requirements',
+        trainingType: 'online'
+      }
+    ],
+    sourceReference: 'Audit-2023-042'
   }
 ];
 
-// Mock Training Data
-export const mockTrainingSessions: TrainingSession[] = [
+// Mock Training Records
+export const mockTrainingRecords: TrainingRecord[] = [
   {
-    id: 'ts-001',
-    title: 'Food Safety Fundamentals',
-    description: 'Basic food safety training for all employees',
-    training_type: 'online',
-    training_category: 'food-safety',
-    department: 'All',
-    start_date: '2023-06-01T09:00:00Z',
-    due_date: '2023-06-15T17:00:00Z',
-    assigned_to: ['emp-001', 'emp-002', 'emp-003'],
-    materials_id: ['doc-001', 'doc-002'],
-    required_roles: ['line-worker', 'supervisor'],
-    is_recurring: true,
-    recurring_interval: '365', // Annual
-    completion_status: 'in-progress',
-    created_by: 'training_manager',
-    created_at: '2023-05-15T14:30:00Z',
-    updated_at: '2023-05-15T14:30:00Z'
+    id: 'tr-1',
+    session_id: 'ts-1',
+    employee_id: 'emp-101',
+    employee_name: 'John Doe',
+    status: 'Completed',
+    assigned_date: '2023-07-01T00:00:00Z',
+    due_date: '2023-07-15T00:00:00Z',
+    completion_date: '2023-07-12T14:30:00Z',
+    score: 95,
+    pass_threshold: 80
   },
   {
-    id: 'ts-002',
-    title: 'HACCP Principles',
-    description: 'Comprehensive HACCP training for quality team',
+    id: 'tr-2',
+    session_id: 'ts-2',
+    employee_id: 'emp-102',
+    employee_name: 'Jane Smith',
+    status: 'In Progress',
+    assigned_date: '2023-08-01T00:00:00Z',
+    due_date: '2023-08-20T00:00:00Z'
+  },
+  {
+    id: 'tr-3',
+    session_id: 'ts-1',
+    employee_id: 'emp-103',
+    employee_name: 'David Wilson',
+    status: 'Not Started',
+    assigned_date: '2023-08-05T00:00:00Z',
+    due_date: '2023-08-25T00:00:00Z'
+  }
+];
+
+// Mock Training Sessions
+export const mockTrainingSessions: TrainingSession[] = [
+  {
+    id: 'ts-1',
+    title: 'HACCP Principles Training',
+    description: 'Comprehensive training on HACCP principles and implementation',
     training_type: 'classroom',
     training_category: 'haccp',
     department: 'Quality',
-    start_date: '2023-06-10T09:00:00Z',
-    due_date: '2023-06-10T17:00:00Z',
-    assigned_to: ['emp-004', 'emp-005'],
-    materials_id: ['doc-003'],
-    required_roles: ['quality-specialist'],
-    is_recurring: false,
-    completion_status: 'not-started',
-    created_by: 'quality_director',
-    created_at: '2023-05-20T11:15:00Z',
-    updated_at: '2023-05-20T11:15:00Z'
+    start_date: '2023-07-10T09:00:00Z',
+    due_date: '2023-07-10T17:00:00Z',
+    assigned_to: ['emp-101', 'emp-103', 'emp-105'],
+    materials_id: ['doc-5', 'doc-6'],
+    is_recurring: true,
+    recurring_interval: 365,
+    required_roles: ['quality', 'production-supervisor'],
+    completion_status: 'Completed',
+    created_by: 'training.manager',
+    created_at: '2023-06-15T10:30:00Z',
+    updated_at: '2023-06-15T10:30:00Z'
   },
   {
-    id: 'ts-003',
+    id: 'ts-2',
     title: 'Allergen Management',
-    description: 'Training on allergen control and prevention',
+    description: 'Training on allergen control and cross-contamination prevention',
     training_type: 'online',
-    training_category: 'allergen-control',
+    training_category: 'allergen-management',
     department: 'Production',
-    start_date: '2023-05-20T00:00:00Z',
-    due_date: '2023-05-27T00:00:00Z',
-    assigned_to: ['emp-001', 'emp-006', 'emp-007'],
-    materials_id: ['doc-004'],
-    required_roles: ['line-worker', 'supervisor'],
+    start_date: '2023-08-05T00:00:00Z',
+    due_date: '2023-08-20T00:00:00Z',
+    assigned_to: ['emp-102', 'emp-104', 'emp-106'],
+    materials_id: ['doc-7'],
     is_recurring: true,
-    recurring_interval: '180', // Every 6 months
-    completion_status: 'completed',
-    created_by: 'training_manager',
-    created_at: '2023-05-10T09:00:00Z',
-    updated_at: '2023-05-28T10:30:00Z'
+    recurring_interval: 180,
+    required_roles: ['production'],
+    completion_status: 'In Progress',
+    created_by: 'training.manager',
+    created_at: '2023-07-25T14:15:00Z',
+    updated_at: '2023-07-25T14:15:00Z'
   }
 ];
 
-// Mock Department Statistics
-export const mockDepartmentStats = [
-  { department: 'Production', name: 'Production', completed: 45, overdue: 5, totalAssigned: 50, complianceRate: 90 },
-  { department: 'Quality', name: 'Quality', completed: 38, overdue: 2, totalAssigned: 40, complianceRate: 95 },
-  { department: 'Maintenance', name: 'Maintenance', completed: 18, overdue: 7, totalAssigned: 25, complianceRate: 72 },
-  { department: 'R&D', name: 'R&D', completed: 12, overdue: 3, totalAssigned: 15, complianceRate: 80 },
-];
-
-// Mock Employees
-export const mockEmployees = [
-  { id: 'emp-001', name: 'John Smith', department: 'Production', position: 'Line Supervisor' },
-  { id: 'emp-002', name: 'Maria Garcia', department: 'Quality', position: 'Quality Specialist' },
-  { id: 'emp-003', name: 'Robert Johnson', department: 'Maintenance', position: 'Technician' },
-  { id: 'emp-004', name: 'Lisa Chen', department: 'Quality', position: 'QA Manager' },
-  { id: 'emp-005', name: 'David Rodriguez', department: 'Production', position: 'Line Worker' },
-  { id: 'emp-006', name: 'Sarah Williams', department: 'R&D', position: 'Food Scientist' },
-  { id: 'emp-007', name: 'Michael Brown', department: 'Production', position: 'Production Manager' },
-];
-
-// Helper function to get mock data with a delay to simulate API calls
-export const getMockData = <T>(data: T, delay: number = 500): Promise<T> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(data);
-    }, delay);
-  });
-};
+// Export additional mock data as needed

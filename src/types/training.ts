@@ -18,11 +18,28 @@ export type TrainingCategory =
   | 'workplace-safety' 
   | 'other';
 
+// Add missing TrainingType
+export type TrainingType = 
+  | 'classroom' 
+  | 'online' 
+  | 'on-job' 
+  | 'self-study';
+
+// Add missing TrainingPriority
+export type TrainingPriority =
+  | 'Low'
+  | 'Medium'
+  | 'High'
+  | 'Critical';
+
+// Add missing TrainingCompletionStatus for backward compatibility
+export type TrainingCompletionStatus = TrainingStatus;
+
 export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
-  training_type: 'classroom' | 'online' | 'on-job' | 'self-study';
+  training_type: TrainingType;
   training_category: TrainingCategory;
   department?: string;
   start_date?: string;
@@ -72,4 +89,26 @@ export interface TrainingStatistics {
     date: string;
     participants: number;
   }>;
+}
+
+// Add missing TrainingPlan interface
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  description?: string;
+  courses?: string[];
+  target_roles?: string[];
+  target_departments?: string[];
+  duration_days?: number;
+  is_required?: boolean;
+  is_automated?: boolean;
+  automation_trigger?: string;
+  start_date?: string;
+  end_date?: string;
+  priority?: TrainingPriority;
+  status?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  related_standards?: string[];
 }

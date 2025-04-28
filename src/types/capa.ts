@@ -1,13 +1,39 @@
 
 // Updated CAPA type definitions
 
-export type CAPAStatus = 'Open' | 'In_Progress' | 'Closed' | 'Overdue' | 'Pending_Verification' | 'Verified';
+export type CAPAStatus = 
+  | 'Open'
+  | 'In_Progress' 
+  | 'Under_Review'
+  | 'Completed'
+  | 'Closed'
+  | 'Rejected'
+  | 'On_Hold'
+  | 'Overdue'
+  | 'Pending_Verification'
+  | 'Verified';
 
-export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type CAPAPriority =
+  | 'Low'
+  | 'Medium'
+  | 'High'
+  | 'Critical';
 
-export type CAPASource = 'Audit' | 'Customer Complaint' | 'Internal' | 'Regulatory' | 'Other';
+export type CAPASource =
+  | 'Audit'
+  | 'Customer_Complaint'
+  | 'Internal_Issue'
+  | 'Regulatory'
+  | 'Supplier_Issue'
+  | 'Non_Conformance'
+  | 'Management_Review'
+  | 'Other';
 
-export type CAPAEffectivenessRating = 'Effective' | 'Partially_Effective' | 'Not_Effective' | 'Highly_Effective';
+export type CAPAEffectivenessRating =
+  | 'Not_Effective'
+  | 'Partially_Effective'
+  | 'Effective'
+  | 'Highly_Effective';
 
 export interface CAPA {
   id: string;
@@ -33,7 +59,7 @@ export interface CAPA {
   fsma204Compliant?: boolean;
   effectivenessVerified?: boolean;
   sourceId?: string;
-  sourceReference?: string;
+  sourceReference?: string; // Changed from source_reference to match property naming convention
   relatedDocuments: Array<{
     id: string;
     documentId: string;
@@ -91,7 +117,7 @@ export interface CAPAFormData {
   department?: string;
   effectivenessCriteria?: string;
   sourceId?: string;
-  sourceReference?: string;
+  sourceReference?: string; // Changed from source_reference
 }
 
 export interface CAPAFilterOptions {

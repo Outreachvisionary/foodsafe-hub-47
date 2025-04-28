@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,34 +9,12 @@ import { CAPA } from '@/types/capa';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
-interface CAPAStatusBadgeProps {
-  status: string;
-  showIcon?: boolean;
-}
-
-export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, showIcon = false }) => {
-  return <Badge variant="outline">{status}</Badge>;
-};
-
-interface LinkedCAPAsListProps {
-  caption?: string;
+interface LinkedCapasProps {
   capaIds: string[];
-  showViewAll?: boolean;
-  sourceType?: string;
-  sourceId?: string;
-  emptyMessage?: string;
-  onCreateCAPAClick?: () => void;
+  nonConformanceId?: string;
 }
 
-const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
-  caption = 'Related CAPAs',
-  capaIds,
-  showViewAll = true,
-  sourceType,
-  sourceId,
-  emptyMessage = 'No CAPAs found',
-  onCreateCAPAClick
-}) => {
+const LinkedCAPAsList: React.FC<LinkedCapasProps> = ({ capaIds, nonConformanceId }) => {
   const navigate = useNavigate();
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +29,6 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
       }
 
       try {
-        setLoading(true);
-        setError(null);
-
         const capaPromises = capaIds.map(async (id) => {
           const capaData = await fetchCAPAById(id);
           
@@ -76,7 +52,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             effectivenessRating: capaData.effectiveness_rating,
             effectivenessVerified: capaData.effectiveness_verified,
             sourceId: capaData.source_id,
-            source_reference: capaData.source_reference || '',
+            sourceReference: capaData.source_reference || '', // Changed from source_reference to sourceReference
             verificationDate: capaData.verification_date,
             verificationMethod: capaData.verification_method,
             verifiedBy: capaData.verified_by,
@@ -91,7 +67,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         setCapas(fetchedCapas);
       } catch (error) {
         console.error('Error fetching linked CAPAs:', error);
-        setError('Failed to load linked CAPA items');
+        setError('Failed to fetch CAPA data');
       } finally {
         setLoading(false);
       }
@@ -103,22 +79,18 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   const viewCapa = (id: string) => {
     navigate(`/capa/${id}`);
   };
-  
-  const viewAllCapas = () => {
-    if (sourceType) {
-      navigate(`/capa?source=${sourceType}${sourceId ? `&sourceId=${sourceId}` : ''}`);
-    } else {
-      navigate(`/capa`);
-    }
+
+  const createCapa = () => {
+    navigate(`/capa/new?sourceType=NonConformance&sourceId=${nonConformanceId}`);
   };
 
   if (loading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-lg">Related CAPAs</CardTitle>
         </CardHeader>
-        <CardContent className="text-center py-6 text-gray-500">
+        <CardContent className="text-center py-6">
           <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
           Loading CAPAs...
         </CardContent>
@@ -129,8 +101,8 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
   if (error) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-lg">Related CAPAs</CardTitle>
         </CardHeader>
         <CardContent className="text-center py-6 text-red-500">
           {error}
@@ -139,59 +111,50 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
     );
   }
 
-  if (!capas || capas.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-6 text-gray-500">
-          {emptyMessage}
-          {onCreateCAPAClick && (
-            <div className="mt-4">
-              <Button size="sm" onClick={onCreateCAPAClick}>
-                Create CAPA
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">{caption}</CardTitle>
+      <CardHeader>
+        <CardTitle className="text-lg">Related CAPAs</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="divide-y">
-          {capas.map((capa) => (
-            <div key={capa.id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => viewCapa(capa.id)}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium text-sm">{capa.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{capa.description}</p>
-                  <div className="flex gap-2 mt-2">
-                    <CAPAStatusBadge status={capa.status.toString().replace(/_/g, ' ')} />
-                    {capa.source && (
-                      <Badge variant="outline" className="text-xs">
-                        {capa.source}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-              </div>
-            </div>
-          ))}
-        </div>
-        {showViewAll && capas.length > 0 && (
-          <div className="p-3 border-t text-center">
-            <Button variant="ghost" size="sm" onClick={viewAllCapas}>
-              View All
-            </Button>
+        {capas.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <p className="mb-4">No CAPAs linked to this non-conformance</p>
+            {nonConformanceId && (
+              <Button onClick={createCapa} size="sm">Create CAPA</Button>
+            )}
           </div>
+        ) : (
+          <>
+            <ul className="divide-y divide-border">
+              {capas.map((capa) => (
+                <li 
+                  key={capa.id}
+                  className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => viewCapa(capa.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{capa.title}</h3>
+                      <div className="flex items-center text-sm text-muted-foreground mt-1 space-x-4">
+                        <Badge variant={capa.status === 'Open' ? 'outline' : 'secondary'}>
+                          {capa.status.replace(/_/g, ' ')}
+                        </Badge>
+                        <span>Priority: {capa.priority}</span>
+                        <span>Due: {new Date(capa.dueDate).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {nonConformanceId && (
+              <div className="p-4 border-t text-center">
+                <Button onClick={createCapa} size="sm">Create Another CAPA</Button>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

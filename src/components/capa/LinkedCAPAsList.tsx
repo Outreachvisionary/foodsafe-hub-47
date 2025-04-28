@@ -56,9 +56,6 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         const capaPromises = capaIds.map(async (id) => {
           const capaData = await fetchCAPAById(id);
           
-          // Add an empty string for source_reference if it doesn't exist
-          const sourceReference = capaData.source_reference || '';
-          
           // Transform to match the CAPA interface
           return {
             id: capaData.id,
@@ -79,7 +76,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             effectivenessRating: capaData.effectiveness_rating,
             effectivenessVerified: capaData.effectiveness_verified,
             sourceId: capaData.source_id,
-            source_reference: sourceReference,
+            sourceReference: capaData.source_reference || '', // Changed from source_reference to sourceReference
             verificationDate: capaData.verification_date,
             verificationMethod: capaData.verification_method,
             verifiedBy: capaData.verified_by,

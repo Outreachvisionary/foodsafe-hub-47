@@ -1,231 +1,290 @@
-import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingPlan, TrainingPriority } from '@/types/training';
+import { TrainingSession, TrainingRecord, TrainingStatus, TrainingCategory, TrainingStatistics, TrainingPlan, TrainingPriority } from '@/types/training';
+import { getMockTrainingStatistics } from '@/services/mockDataService';
 
-export interface TrainingContextType {
+interface TrainingContextType {
+  trainingSessions: TrainingSession[];
+  trainingRecords: TrainingRecord[];
   trainingPlans: TrainingPlan[];
-  isLoading: boolean;
-  error: Error | null;
-  fetchTrainingPlans: () => Promise<void>;
-  createTrainingPlan: (planData: Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>) => Promise<TrainingPlan>;
-  updateTrainingPlan: (id: string, updates: Partial<TrainingPlan>) => Promise<void>;
-  deleteTrainingPlan: (id: string) => Promise<void>;
-  // Mock data for dashboard
-  sessions: any[];
-  departmentStats: {
-    department: string;
-    name: string;
-    completed: number;
-    overdue: number;
-    totalAssigned: number;
-    complianceRate: number;
-  }[];
-  plans: TrainingPlan[];
-  createPlan: (planData: Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>) => Promise<TrainingPlan>;
-  deletePlan: (id: string) => Promise<void>;
+  statistics: TrainingStatistics | null;
+  loading: boolean;
+  error: string | null;
+  fetchSessions: () => Promise<void>;
+  fetchRecords: (employeeId?: string) => Promise<void>;
+  fetchPlans: () => Promise<void>;
+  fetchStatistics: () => Promise<void>;
+  createSession: (session: Partial<TrainingSession>) => Promise<void>;
+  updateSession: (id: string, updates: Partial<TrainingSession>) => Promise<void>;
+  deleteSession: (id: string) => Promise<void>;
+  updateTrainingRecord: (id: string, updates: Partial<TrainingRecord>) => Promise<void>;
+  createTrainingPlan: (plan: Partial<TrainingPlan>) => Promise<void>;
 }
 
-const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
+const TrainingContext = createContext<TrainingContextType>({
+  trainingSessions: [],
+  trainingRecords: [],
+  trainingPlans: [],
+  statistics: null,
+  loading: false,
+  error: null,
+  fetchSessions: async () => {},
+  fetchRecords: async () => {},
+  fetchPlans: async () => {},
+  fetchStatistics: async () => {},
+  createSession: async () => {},
+  updateSession: async () => {},
+  deleteSession: async () => {},
+  updateTrainingRecord: async () => {},
+  createTrainingPlan: async () => {}
+});
 
-// Create a hook to use the TrainingContext
-export const useTrainingContext = () => {
-  const context = useContext(TrainingContext);
-  if (!context) {
-    throw new Error('useTrainingContext must be used within a TrainingProvider');
-  }
-  return context;
-};
+export const useTraining = () => useContext(TrainingContext);
 
-interface TrainingProviderProps {
-  children: React.ReactNode;
-}
-
-export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) => {
+export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
+  const [trainingRecords, setTrainingRecords] = useState<TrainingRecord[]>([]);
   const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [statistics, setStatistics] = useState<TrainingStatistics | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for dashboard
-  const mockSessions = [
-    { id: '1', title: 'Food Safety Basics', due_date: new Date().toISOString(), assigned_to: ['user1', 'user2'], training_type: 'classroom', completion_status: 'in-progress' },
-    { id: '2', title: 'GMP Training', due_date: new Date(Date.now() + 86400000).toISOString(), assigned_to: ['user3'], training_type: 'online', completion_status: 'not-started' },
-  ];
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // In a real app, this would fetch from Supabase
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .select('*');
+      
+      if (error) throw error;
+      
+      setTrainingSessions(data as TrainingSession[]);
+    } catch (err: any) {
+      console.error('Error fetching training sessions:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const mockDepartmentStats = [
-    { department: 'Production', name: 'Production', completed: 45, overdue: 5, totalAssigned: 50, complianceRate: 90 },
-    { department: 'Quality', name: 'Quality', completed: 38, overdue: 2, totalAssigned: 40, complianceRate: 95 },
-    { department: 'Maintenance', name: 'Maintenance', completed: 18, overdue: 7, totalAssigned: 25, complianceRate: 72 },
-    { department: 'R&D', name: 'R&D', completed: 12, overdue: 3, totalAssigned: 15, complianceRate: 80 },
-  ];
-
-  const fetchTrainingPlans = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchRecords = async (employeeId?: string) => {
     try {
-      const { data, error } = await supabase
-        .from('training_plans')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
+      setLoading(true);
+      setError(null);
+      
+      let query = supabase
+        .from('training_records')
+        .select('*');
+      
+      if (employeeId) {
+        query = query.eq('employee_id', employeeId);
       }
-
-      // Transform data to ensure priority is of type TrainingPriority
-      const formattedPlans: TrainingPlan[] = (data || []).map(plan => ({
-        id: plan.id,
-        name: plan.name,
-        description: plan.description,
-        target_roles: Array.isArray(plan.target_roles) ? plan.target_roles : [],
-        courses: Array.isArray(plan.courses) ? plan.courses : [],
-        duration_days: plan.duration_days || 0,
-        is_required: Boolean(plan.is_required),
-        priority: (plan.priority as TrainingPriority) || 'medium',
-        status: plan.status,
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        is_automated: Boolean(plan.is_automated),
-        automation_trigger: plan.automation_trigger,
-        created_by: plan.created_by,
-        created_at: plan.created_at,
-        updated_at: plan.updated_at,
-        target_departments: Array.isArray(plan.target_departments) ? plan.target_departments : [],
-        related_standards: Array.isArray(plan.related_standards) ? plan.related_standards : []
-      }));
-
-      setTrainingPlans(formattedPlans);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch training plans'));
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setTrainingRecords(data as TrainingRecord[]);
+    } catch (err: any) {
+      console.error('Error fetching training records:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const handleCreateTrainingPlan = useCallback(async (planData: Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>): Promise<TrainingPlan> => {
-    setLoading(true);
-    setError(null);
+  };
+  
+  const fetchPlans = async () => {
     try {
-      // Ensure required fields are present
-      const completeData = {
-        ...planData,
-        name: planData.name || 'Unnamed Plan',
-        description: planData.description || '',
-        target_roles: planData.target_roles || [],
-        courses: planData.courses || [],
-        priority: planData.priority || 'medium' as TrainingPriority,
-        status: planData.status || 'Active'
-      };
-
+      setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('training_plans')
-        .insert([completeData])
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      // Transform to ensure priority is of type TrainingPriority
-      const newPlan: TrainingPlan = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
-        courses: Array.isArray(data.courses) ? data.courses : [],
-        duration_days: data.duration_days || 0,
-        is_required: Boolean(data.is_required),
-        priority: (data.priority as TrainingPriority) || 'medium',
-        status: data.status,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        is_automated: Boolean(data.is_automated),
-        automation_trigger: data.automation_trigger,
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
-        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
-      };
-
-      setTrainingPlans(prev => [newPlan, ...prev]);
-      return newPlan;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to create training plan'));
-      throw err;
+        .select('*');
+      
+      if (error) throw error;
+      
+      setTrainingPlans(data as TrainingPlan[]);
+    } catch (err: any) {
+      console.error('Error fetching training plans:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const updateTrainingPlan = useCallback(async (id: string, updates: Partial<TrainingPlan>) => {
-    setLoading(true);
-    setError(null);
+  };
+  
+  const fetchStatistics = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
+      // Mock data for now
+      const mockStats = getMockTrainingStatistics();
+      setStatistics(mockStats);
+    } catch (err: any) {
+      console.error('Error fetching training statistics:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createSession = async (session: Partial<TrainingSession>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!session.created_by) {
+        throw new Error('created_by is required');
+      }
+      
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .insert(session)
+        .select();
+      
+      if (error) throw error;
+      
+      setTrainingSessions([...trainingSessions, data[0] as TrainingSession]);
+    } catch (err: any) {
+      console.error('Error creating training session:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateSession = async (id: string, updates: Partial<TrainingSession>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
-        .from('training_plans')
+        .from('training_sessions')
         .update(updates)
         .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setTrainingPlans(prevPlans =>
-        prevPlans.map(plan => (plan.id === id ? { ...plan, ...updates } : plan))
+      
+      if (error) throw error;
+      
+      setTrainingSessions(
+        trainingSessions.map(session => 
+          session.id === id ? { ...session, ...updates } : session
+        )
       );
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to update training plan'));
+    } catch (err: any) {
+      console.error('Error updating training session:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const deleteTrainingPlan = useCallback(async (id: string) => {
-    setLoading(true);
-    setError(null);
+  };
+  
+  const deleteSession = async (id: string) => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
-        .from('training_plans')
+        .from('training_sessions')
         .delete()
         .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setTrainingPlans(prevPlans => prevPlans.filter(plan => plan.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to delete training plan'));
+      
+      if (error) throw error;
+      
+      setTrainingSessions(trainingSessions.filter(session => session.id !== id));
+    } catch (err: any) {
+      console.error('Error deleting training session:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
-
+  };
+  
+  const updateTrainingRecord = async (id: string, updates: Partial<TrainingRecord>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('training_records')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setTrainingRecords(
+        trainingRecords.map(record => 
+          record.id === id ? { ...record, ...updates } : record
+        )
+      );
+    } catch (err: any) {
+      console.error('Error updating training record:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createTrainingPlan = async (plan: Partial<TrainingPlan>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!plan.created_by) {
+        throw new Error('created_by is required');
+      }
+      
+      const { data, error } = await supabase
+        .from('training_plans')
+        .insert(plan)
+        .select();
+      
+      if (error) throw error;
+      
+      setTrainingPlans([...trainingPlans, data[0] as TrainingPlan]);
+    } catch (err: any) {
+      console.error('Error creating training plan:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Load initial data
   useEffect(() => {
-    fetchTrainingPlans();
-  }, [fetchTrainingPlans]);
-
+    const loadInitialData = async () => {
+      await fetchStatistics();
+      await fetchSessions();
+      // Other data will be loaded on demand
+    };
+    
+    loadInitialData();
+  }, []);
+  
   return (
     <TrainingContext.Provider
       value={{
+        trainingSessions,
+        trainingRecords,
         trainingPlans,
-        isLoading: loading,
+        statistics,
+        loading,
         error,
-        fetchTrainingPlans,
-        createTrainingPlan: handleCreateTrainingPlan,
-        updateTrainingPlan,
-        deleteTrainingPlan,
-        sessions: mockSessions,
-        departmentStats: mockDepartmentStats,
-        plans: trainingPlans,
-        createPlan: handleCreateTrainingPlan,
-        deletePlan: deleteTrainingPlan
+        fetchSessions,
+        fetchRecords,
+        fetchPlans,
+        fetchStatistics,
+        createSession,
+        updateSession,
+        deleteSession,
+        updateTrainingRecord,
+        createTrainingPlan
       }}
     >
       {children}
     </TrainingContext.Provider>
   );
 };
-
-export default TrainingContext;

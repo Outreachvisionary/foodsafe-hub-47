@@ -31,7 +31,6 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
         setLoading(true);
         const capaData = await fetchCAPAById(id);
         
-        // Transform the API data to match the CAPA interface
         const transformedCapa: CAPA = {
           id: capaData.id,
           title: capaData.title,
@@ -55,7 +54,7 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
           verifiedBy: capaData.verified_by,
           department: capaData.department,
           sourceId: capaData.source_id,
-          source_reference: capaData.source_reference || '',
+          sourceReference: capaData.source_reference || '',
           fsma204Compliant: capaData.fsma204_compliant,
           relatedDocuments: [],
           relatedTraining: []

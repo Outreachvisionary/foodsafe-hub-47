@@ -1,154 +1,184 @@
 
-// Add the missing code to fix the user context
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define proper types for the context
-interface UserContextType {
-  user: any | null;
-  loading: boolean;
-  error: string | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateUser: (userData: any) => Promise<void>;
+interface User {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+  department?: string;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+interface UserContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
+}
+
+const UserContext = createContext<UserContextType>({
+  user: null,
+  loading: true,
+  error: null,
+  login: async () => {},
+  logout: async () => {},
+  updateProfile: async () => {},
+});
+
+export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load the user on mount
   useEffect(() => {
     const fetchUser = async () => {
-      setLoading(true);
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          throw error;
+        setLoading(true);
+        
+        const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        
+        if (currentUser) {
+          // If user exists in auth, fetch their profile
+          const { data, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Error fetching profile:', profileError);
+          }
+          
+          // Set user with combined auth and profile data
+          setUser({
+            id: currentUser.id,
+            email: currentUser.email,
+            full_name: data?.full_name || currentUser.user_metadata?.full_name,
+            avatar_url: data?.avatar_url,
+            role: data?.role,
+            department: data?.department
+          });
+        } else {
+          setUser(null);
         }
-        setUser(data?.user || null);
-      } catch (err: any) {
-        console.error('Error loading user:', err);
-        setError(err.message);
+      } catch (error: any) {
+        console.error('Error fetching user:', error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-
+    
+    // Initial fetch
     fetchUser();
-
-    // Set up auth listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
+    
+    // Subscribe to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUser();
+      } else {
+        setUser(null);
       }
-    );
-
+    });
+    
+    // Clean up subscription
     return () => {
-      authListener?.subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
+  
+  const login = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+    } catch (error: any) {
+      console.error('Error logging in:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const signOut = async () => {
+  
+  const logout = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { error } = await supabase.auth.signOut();
+      
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
-  };
-
-  const signUp = async (email: string, password: string, userData: any) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Add the third parameter (options) to fix the error
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: userData
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+      
+      setUser(null);
+    } catch (error: any) {
+      console.error('Error logging out:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const resetPassword = async (email: string) => {
-    setLoading(true);
-    setError(null);
+  
+  const updateProfile = async (updates: Partial<User>) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      setLoading(true);
+      setError(null);
+      
+      if (!user) throw new Error('No user logged in');
+      
+      // Update auth user_metadata if needed
+      if (updates.full_name) {
+        await supabase.auth.updateUser({
+          data: { full_name: updates.full_name }
+        });
+      }
+      
+      // Update profile record
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.full_name || user.full_name,
+          avatar_url: updates.avatar_url || user.avatar_url,
+          role: updates.role || user.role,
+          department: updates.department || user.department,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+      
+      // Update local state
+      setUser({ ...user, ...updates });
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const updateUser = async (userData: any) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.updateUser(userData);
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+  
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    updateProfile
   };
-
+  
   return (
-    <UserContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        signIn,
-        signOut,
-        signUp,
-        resetPassword,
-        updateUser,
-      }}
-    >
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
-};
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
 };

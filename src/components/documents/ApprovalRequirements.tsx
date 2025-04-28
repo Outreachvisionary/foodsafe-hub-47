@@ -4,14 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, FileCheck, User } from 'lucide-react';
 import { getMockDocumentWorkflowSteps } from '@/services/mockDataService';
-
-interface DocumentWorkflowStep {
-  id: string;
-  name: string;
-  description?: string;
-  approvers: string[];
-  status?: 'Pending' | 'Approved' | 'Rejected';
-}
+import { DocumentWorkflowStep } from '@/types/document';
 
 interface ApprovalRequirementsProps {
   workflowSteps?: DocumentWorkflowStep[];
@@ -27,7 +20,12 @@ const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSte
     } else {
       // Use synchronous mock data instead of a Promise
       const mockSteps = getMockDocumentWorkflowSteps();
-      setSteps(mockSteps);
+      // Ensure status is of the correct type
+      const typedSteps = mockSteps.map(step => ({
+        ...step,
+        status: (step.status as 'Pending' | 'Approved' | 'Rejected') || 'Pending'
+      }));
+      setSteps(typedSteps);
     }
   }, [workflowSteps]);
   

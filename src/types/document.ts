@@ -50,15 +50,21 @@ export type DocumentCategory =
   | 'Risk Assessment' 
   | 'Other';
 
-// Document status type  
+// Document status type - update to include underscore versions to match code usage 
 export type DocumentStatus = 
   | 'Draft' 
   | 'In Review' 
+  | 'In_Review'
   | 'Approved' 
   | 'Archived' 
   | 'Rejected' 
   | 'Expired' 
-  | 'Pending Approval';
+  | 'Pending Approval'
+  | 'Pending_Approval'
+  | 'Pending_Review'
+  | 'Published'
+  | 'Active'
+  | 'Obsolete';
 
 // Document version interface
 export interface DocumentVersion {
@@ -125,4 +131,12 @@ export interface DocumentComment {
   content: string;
   created_at: string;
   updated_at?: string;
+}
+
+export interface DocumentWorkflowStep {
+  id: string;
+  name: string;
+  description?: string;
+  approvers: string[];
+  status?: 'Pending' | 'Approved' | 'Rejected';
 }
