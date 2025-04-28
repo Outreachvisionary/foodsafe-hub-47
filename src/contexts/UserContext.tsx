@@ -1,184 +1,124 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// Import User from supabase types or define our own
-import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-// Define our own AppUser interface that extends the Supabase User
-interface AppUser extends Omit<User, 'user_metadata'> {
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-  full_name?: string;
-  avatar_url?: string;
-}
-
-interface UserProfile {
-  id: string;
-  full_name?: string;
-  avatar_url?: string;
-  role?: string;
-  department?: string;
-  organization_id?: string;
-  status?: string;
-}
+import { User } from '@supabase/supabase-js';
+import { UserProfile, AppUser } from '@/types/user';
 
 interface UserContextType {
-  user: AppUser | null;
+  user: User | null;
   profile: UserProfile | null;
-  isLoading: boolean;
-  loading: boolean; // Added for backward compatibility
-  signIn: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  loading: boolean; // Add loading property
   signOut: () => Promise<void>;
-  updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
-  isLoading: true,
-  loading: true,
-  signIn: async () => {},
+  isAuthenticated: false,
+  loading: true, // Initialize as true
   signOut: async () => {},
-  updateUserProfile: async () => {},
+  updateProfile: async () => {},
 });
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const useUser = () => useContext(UserContext);
 
-  // Check for user on initial load
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        setIsLoading(true);
-        const { data } = await supabase.auth.getUser();
-        
-        if (data?.user) {
-          const appUser = data.user as unknown as AppUser;
-          
-          // Map metadata to direct properties for compatibility
-          if (appUser.user_metadata) {
-            appUser.full_name = appUser.user_metadata.full_name;
-            appUser.avatar_url = appUser.user_metadata.avatar_url;
-          }
-          
-          setUser(appUser);
-          
-          // Also get the user's profile
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-            
-          if (profileData) {
-            setProfile(profileData as UserProfile);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    getUser();
-    
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const appUser = session.user as unknown as AppUser;
-        
-        // Map metadata to direct properties for compatibility
-        if (appUser.user_metadata) {
-          appUser.full_name = appUser.user_metadata.full_name;
-          appUser.avatar_url = appUser.user_metadata.avatar_url;
-        }
-        
-        setUser(appUser);
-        
-        // Get profile for the user
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profileData) {
-          setProfile(profileData as UserProfile);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
+    const session = supabase.auth.getSession();
+
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      setIsAuthenticated(!!session?.user);
+      
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
         setProfile(null);
       }
+      setLoading(false);
     });
-    
-    return () => {
-      authListener.subscription.unsubscribe();
+
+    const fetchProfile = async (userId: string) => {
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(profileData || null);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, []);
-  
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
+
+    if ((session as any)?.data?.session?.user) {
+      setUser((session as any)?.data?.session?.user);
+      setIsAuthenticated(true);
+      fetchProfile((session as any)?.data?.session?.user.id);
+    } else {
+      setLoading(false);
     }
-  };
-  
+  }, []);
+
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Error signing out:', error);
-      throw error;
     }
   };
-  
-  const updateUserProfile = async (updates: Partial<UserProfile>) => {
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return;
+
     try {
-      if (!user) throw new Error('No user logged in');
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
-      // Update the local profile state
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+      } else if (data) {
+        setProfile(data);
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
+      console.error('Unexpected error updating profile:', error);
     }
   };
-  
+
+  const value = {
+    user,
+    profile,
+    isAuthenticated,
+    loading,
+    signOut,
+    updateProfile,
+  };
+
   return (
-    <UserContext.Provider value={{
-      user,
-      profile,
-      isLoading,
-      loading: isLoading, // Added for backward compatibility
-      signIn,
-      signOut,
-      updateUserProfile
-    }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
 };
-
-export const useUser = () => useContext(UserContext);
 
 export default UserContext;

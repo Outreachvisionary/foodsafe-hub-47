@@ -84,7 +84,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       setLanguage(lang);
       
       // Save language preference to user profile if logged in
-      if (user) {
+      if (user && profile) {
         await supabase
           .from('profiles')
           .update({ preferred_language: lang })
