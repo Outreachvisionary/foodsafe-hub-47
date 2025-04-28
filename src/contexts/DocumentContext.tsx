@@ -21,7 +21,7 @@ interface DocumentContextType {
   getDocumentComments: (documentId: string) => Promise<any[]>;
   createDocumentComment: (comment: any) => Promise<any>;
   fetchAccess: (documentId: string) => Promise<any[]>;
-  grantAccess: (documentId: string, userId: string, permissionLevel: string) => Promise<any>;
+  grantAccess: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<any>;
   revokeAccess: (accessId: string) => Promise<void>;
   restoreVersion: (documentId: string, versionId: string) => Promise<void>;
   downloadVersion: (versionId: string) => Promise<void>;

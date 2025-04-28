@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentStatus } from '@/types/document';
 
@@ -6,7 +7,7 @@ import { Document, DocumentStatus } from '@/types/document';
 export const mapWorkflowStatusToDocumentStatus = (status: string): DocumentStatus => {
   switch (status) {
     case 'pending_approval':
-      return 'Pending Approval';
+      return 'Pending_Approval';
     case 'approved':
       return 'Approved';
     case 'rejected':
@@ -20,7 +21,7 @@ export const mapWorkflowStatusToDocumentStatus = (status: string): DocumentStatu
     case 'expired':
       return 'Expired';
     case 'pending_review':
-      return 'Pending Review';
+      return 'Pending_Review';
     case 'active':
       return 'Active';
     default:
@@ -31,7 +32,7 @@ export const mapWorkflowStatusToDocumentStatus = (status: string): DocumentStatu
 // And the reverse mapping function
 export const mapDocumentStatusToWorkflow = (status: DocumentStatus): string => {
   switch (status) {
-    case 'Pending Approval':
+    case 'Pending_Approval':
       return 'pending_approval';
     case 'Approved':
       return 'approved';
@@ -45,7 +46,7 @@ export const mapDocumentStatusToWorkflow = (status: DocumentStatus): string => {
       return 'archived';
     case 'Expired':
       return 'expired';
-    case 'Pending Review':
+    case 'Pending_Review':
       return 'pending_review';
     case 'Active':
       return 'active';
@@ -109,42 +110,13 @@ const rejectDocument = (document: Document, reason: string) => {
 };
 
 /**
- * Generate notifications based on document status
- * @param documents List of documents
- * @returns List of notifications
- */
-const generateNotifications = (documents: Document[]): DocumentNotification[] => {
-  const notifications: DocumentNotification[] = [];
-  
-  // Generate notifications for pending approvals
-  documents.forEach(doc => {
-    if (doc.status === 'Pending_Approval' && doc.approvers && doc.approvers.length > 0) {
-      notifications.push({
-        id: uuidv4(),
-        documentId: doc.id,
-        documentTitle: doc.title,
-        type: 'approval_request',
-        message: `${doc.title} needs your approval`,
-        createdAt: doc.pending_since || new Date().toISOString(),
-        isRead: false,
-        targetUserIds: doc.approvers
-      });
-    }
-    
-    // Add other notification types as needed
-  });
-  
-  return notifications;
-};
-
-/**
  * Get default workflow steps
  * @returns Default workflow steps
  */
-const getDefaultWorkflowSteps = (): DocumentWorkflowStep[] => {
+const getDefaultWorkflowSteps = () => {
   return [
     {
-      id: uuidv4(),
+      id: '1',
       name: 'Initial Review',
       description: 'Initial review by department head',
       approvers: [],
@@ -152,7 +124,7 @@ const getDefaultWorkflowSteps = (): DocumentWorkflowStep[] => {
       is_final: false
     },
     {
-      id: uuidv4(),
+      id: '2',
       name: 'Quality Approval',
       description: 'Approval by quality department',
       approvers: [],
@@ -160,7 +132,7 @@ const getDefaultWorkflowSteps = (): DocumentWorkflowStep[] => {
       is_final: false
     },
     {
-      id: uuidv4(),
+      id: '3',
       name: 'Final Approval',
       description: 'Final approval by management',
       approvers: [],
@@ -183,15 +155,9 @@ const getAvailableApprovers = async () => {
   ];
 };
 
-const documentWorkflowService = {
-  submitForApproval,
-  approveDocument,
-  rejectDocument,
-  generateNotifications,
-  getDefaultWorkflowSteps,
-  getAvailableApprovers
-};
-
+/**
+ * Update the status of a document
+ */
 export const updateDocumentStatus = async (documentId: string, newStatus: DocumentStatus): Promise<Document> => {
   try {
     const { data, error } = await supabase
@@ -207,7 +173,7 @@ export const updateDocumentStatus = async (documentId: string, newStatus: Docume
     if (error) throw new Error(`Failed to update document status: ${error.message}`);
 
     // Use correct status comparison
-    if (newStatus === 'Pending Approval') {
+    if (newStatus === 'Pending_Approval') {
       // Set the pending_since timestamp when a document enters review
       await supabase
         .from('documents')
@@ -222,6 +188,15 @@ export const updateDocumentStatus = async (documentId: string, newStatus: Docume
     console.error('Error in updateDocumentStatus:', error);
     throw error;
   }
+};
+
+const documentWorkflowService = {
+  submitForApproval,
+  approveDocument,
+  rejectDocument,
+  getDefaultWorkflowSteps,
+  getAvailableApprovers,
+  updateDocumentStatus
 };
 
 export default documentWorkflowService;

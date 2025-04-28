@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Unlock } from 'lucide-react';
 import useDocumentService from '@/hooks/useDocumentService';
-import { Document } from '@/types/document';
+import { Document, CheckoutStatus } from '@/types/document';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';

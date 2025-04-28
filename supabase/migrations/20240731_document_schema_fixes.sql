@@ -6,11 +6,16 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'document_status') THEN
         CREATE TYPE public.document_status AS ENUM (
             'Draft',
-            'Pending Approval',
+            'Pending_Approval',
             'Approved',
             'Published',
             'Archived',
-            'Expired'
+            'Expired',
+            'Active',
+            'In_Review',
+            'Pending_Review',
+            'Rejected',
+            'Obsolete'
         );
     END IF;
 
@@ -26,6 +31,13 @@ BEGIN
             'Supplier Documentation',
             'Risk Assessment',
             'Other'
+        );
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'checkout_status') THEN
+        CREATE TYPE public.checkout_status AS ENUM (
+            'Available',
+            'Checked_Out'
         );
     END IF;
 END$$;
@@ -58,8 +70,13 @@ CREATE TABLE IF NOT EXISTS public.documents (
     linked_item_id UUID,
     checkout_user_id TEXT,
     checkout_timestamp TIMESTAMP WITH TIME ZONE,
+    checkout_status checkout_status DEFAULT 'Available',
     workflow_status TEXT,
-    is_template BOOLEAN DEFAULT false
+    is_template BOOLEAN DEFAULT false,
+    checkout_user_name TEXT,
+    file_path TEXT,
+    last_action TEXT,
+    approvers TEXT[]
 );
 
 -- Ensure document_versions table has the right schema
@@ -83,7 +100,9 @@ CREATE TABLE IF NOT EXISTS public.document_activities (
     user_name TEXT NOT NULL,
     user_role TEXT NOT NULL,
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    comments TEXT
+    comments TEXT,
+    version_id UUID,
+    checkout_action TEXT
 );
 
 -- Ensure document_workflows table has the right schema
