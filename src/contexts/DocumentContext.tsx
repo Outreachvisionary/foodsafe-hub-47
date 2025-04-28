@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
 import useDocumentService from '@/hooks/useDocumentService';
@@ -74,8 +75,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       createDocument,
       updateDocument,
       deleteDocument,
-      checkoutDocument: checkOutDocument,
-      checkinDocument: checkInDocument,
+      checkOutDocument,
+      checkInDocument,
       getDocumentVersions,
       getDocumentActivities,
       uploadFile,
