@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { CAPA, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/capa';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { convertToCAPAStatus, convertToEffectivenessRating } from '@/utils/typeAdapters';
+import { convertToCAPAStatus, convertToEffectivenessRating, convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessMonitorProps {
   id: string;
@@ -31,39 +32,11 @@ const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({ id,
         setLoading(true);
         const capaData = await fetchCAPAById(id);
         
-        const transformedCapa: CAPA = {
-          id: capaData.id,
-          title: capaData.title,
-          description: capaData.description,
-          status: convertToCAPAStatus(capaData.status),
-          priority: capaData.priority as CAPAPriority,
-          createdAt: capaData.created_at,
-          createdBy: capaData.created_by,
-          dueDate: capaData.due_date,
-          assignedTo: capaData.assigned_to,
-          source: capaData.source as CAPASource,
-          completionDate: capaData.completion_date,
-          rootCause: capaData.root_cause,
-          correctiveAction: capaData.corrective_action,
-          preventiveAction: capaData.preventive_action,
-          effectivenessCriteria: capaData.effectiveness_criteria,
-          effectivenessRating: convertToEffectivenessRating(capaData.effectiveness_rating),
-          effectivenessVerified: capaData.effectiveness_verified,
-          verificationDate: capaData.verification_date,
-          verificationMethod: capaData.verification_method,
-          verifiedBy: capaData.verified_by,
-          department: capaData.department,
-          sourceId: capaData.source_id,
-          sourceReference: capaData.source_reference || '',
-          fsma204Compliant: capaData.fsma204_compliant,
-          relatedDocuments: [],
-          relatedTraining: []
-        };
-        
+        const transformedCapa = convertDatabaseCAPAToModel(capaData);
         setCapa(transformedCapa);
       } catch (err) {
+        console.error('Failed to load CAPA effectiveness data:', err);
         setError('Failed to load CAPA effectiveness data');
-        console.error(err);
       } finally {
         setLoading(false);
       }

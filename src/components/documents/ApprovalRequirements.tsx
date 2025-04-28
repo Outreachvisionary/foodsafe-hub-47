@@ -18,14 +18,9 @@ const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSte
     if (workflowSteps) {
       setSteps(workflowSteps);
     } else {
-      // Use synchronous mock data instead of a Promise
+      // Use synchronous mock data
       const mockSteps = getMockDocumentWorkflowSteps();
-      // Ensure status is of the correct type
-      const typedSteps = mockSteps.map(step => ({
-        ...step,
-        status: (step.status as 'Pending' | 'Approved' | 'Rejected') || 'Pending'
-      }));
-      setSteps(typedSteps);
+      setSteps(mockSteps);
     }
   }, [workflowSteps]);
   

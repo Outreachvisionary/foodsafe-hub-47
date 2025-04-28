@@ -56,7 +56,7 @@ export const getMockCAPAById = (id: string): CAPA => {
     effectivenessCriteria: "No temperature deviations for 30 days",
     effectivenessVerified: false,
     sourceId: "audit-456",
-    sourceReference: "Audit #456 from 2023-08-10", // Use sourceReference instead of source_reference
+    sourceReference: "Audit #456 from 2023-08-10", // Use sourceReference
     relatedDocuments: [],
     relatedTraining: []
   };
@@ -86,6 +86,69 @@ export const getMockTrainingStatistics = (): TrainingStatistics => {
       { name: "FSMA Updates", date: "2023-10-05", participants: 12 }
     ]
   };
+};
+
+/**
+ * Get mock compliance trend data
+ */
+export const getMockComplianceTrendData = (): Array<{
+  month: string;
+  sqf: number;
+  iso22000: number;
+  fssc22000: number;
+  haccp: number;
+  brcgs2: number;
+}> => {
+  return [
+    {
+      month: 'Jan',
+      sqf: 87,
+      iso22000: 85,
+      fssc22000: 90,
+      haccp: 95,
+      brcgs2: 89
+    },
+    {
+      month: 'Feb',
+      sqf: 88,
+      iso22000: 86,
+      fssc22000: 91,
+      haccp: 94,
+      brcgs2: 90
+    },
+    {
+      month: 'Mar',
+      sqf: 90,
+      iso22000: 88,
+      fssc22000: 92,
+      haccp: 95,
+      brcgs2: 92
+    },
+    {
+      month: 'Apr',
+      sqf: 89,
+      iso22000: 87,
+      fssc22000: 90,
+      haccp: 93,
+      brcgs2: 91
+    },
+    {
+      month: 'May',
+      sqf: 91,
+      iso22000: 89,
+      fssc22000: 93,
+      haccp: 96,
+      brcgs2: 93
+    },
+    {
+      month: 'Jun',
+      sqf: 92,
+      iso22000: 90,
+      fssc22000: 94,
+      haccp: 97,
+      brcgs2: 94
+    }
+  ];
 };
 
 /**

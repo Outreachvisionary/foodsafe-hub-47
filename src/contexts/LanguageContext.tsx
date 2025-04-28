@@ -1,105 +1,88 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/contexts/UserContext';
 
-interface LanguageContextType {
-  currentLanguage: string;
-  supportedLanguages: { code: string; name: string }[];
-  changeLanguage: (language: string) => Promise<void>;
-  loadingTranslations: boolean;
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import i18n from 'i18next';
+import { useUser } from './UserContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface LanguageProviderProps {
+  children: React.ReactNode;
 }
 
-const defaultLanguage = 'en';
+interface LanguageContextValue {
+  language: string;
+  changeLanguage: (lang: string) => void;
+}
 
-const supportedLanguages = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español' },
-  { code: 'fr', name: 'Français' },
-];
+const LanguageContext = createContext<LanguageContextValue>({
+  language: 'en',
+  changeLanguage: () => {}
+});
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  const [language, setLanguage] = useState<string>('en');
+  const { user, updateUserProfile } = useUser();
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { i18n } = useTranslation();
-  const { user, updateProfile } = useUser();
-  const [currentLanguage, setCurrentLanguage] = useState(defaultLanguage);
-  const [loadingTranslations, setLoadingTranslations] = useState(false);
-
-  // Initialize language from user preferences or browser settings
   useEffect(() => {
-    const initLanguage = async () => {
-      try {
-        // If user has a preferred language in their profile, use that
-        if (user?.preferred_language) {
-          await setUserLanguage(user.preferred_language);
-          return;
+    // Set default language from browser if no user preference
+    const defaultLang = navigator.language.split('-')[0];
+    
+    // If user is logged in, try to get their preference from profile
+    if (user) {
+      const fetchUserLanguage = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('preferred_language')
+            .eq('id', user.id)
+            .single();
+          
+          if (data && data.preferred_language) {
+            const userLang = data.preferred_language;
+            await i18n.changeLanguage(userLang);
+            setLanguage(userLang);
+          } else {
+            await i18n.changeLanguage(defaultLang);
+            setLanguage(defaultLang);
+          }
+        } catch (error) {
+          console.error('Error fetching user language preference:', error);
+          await i18n.changeLanguage(defaultLang);
+          setLanguage(defaultLang);
         }
-
-        // Otherwise, check browser language
-        const browserLang = navigator.language.split('-')[0];
-        const isSupported = supportedLanguages.some(lang => lang.code === browserLang);
-
-        if (isSupported) {
-          await setUserLanguage(browserLang);
-        } else {
-          await setUserLanguage(defaultLanguage);
-        }
-      } catch (error) {
-        console.error('Error initializing language:', error);
-        await setUserLanguage(defaultLanguage);
-      }
-    };
-
-    initLanguage();
-  }, [user?.id, user?.preferred_language]);
-
-  const setUserLanguage = async (language: string) => {
-    try {
-      setLoadingTranslations(true);
-      await i18n.changeLanguage(language);
-      setCurrentLanguage(language);
-    } catch (error) {
-      console.error('Error setting language:', error);
-    } finally {
-      setLoadingTranslations(false);
+      };
+      
+      fetchUserLanguage();
+    } else {
+      // No user, use default language
+      i18n.changeLanguage(defaultLang);
+      setLanguage(defaultLang);
     }
-  };
-
-  const changeLanguage = async (language: string) => {
+  }, [user]);
+  
+  const changeLanguage = async (lang: string) => {
     try {
-      await setUserLanguage(language);
-
-      // Update user profile if they're logged in
-      if (user?.id) {
-        await updateProfile({ preferred_language: language });
+      await i18n.changeLanguage(lang);
+      setLanguage(lang);
+      
+      // Save language preference to user profile if logged in
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ preferred_language: lang })
+          .eq('id', user.id);
       }
-
-      // Store in localStorage as fallback
-      localStorage.setItem('preferredLanguage', language);
     } catch (error) {
       console.error('Error changing language:', error);
     }
   };
-
-  const contextValue: LanguageContextType = {
-    currentLanguage,
-    supportedLanguages,
-    changeLanguage,
-    loadingTranslations
-  };
-
+  
   return (
-    <LanguageContext.Provider value={contextValue}>
+    <LanguageContext.Provider value={{ language, changeLanguage }}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-};
+export const useLanguage = () => useContext(LanguageContext);
+
+export default LanguageContext;

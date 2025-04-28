@@ -1,4 +1,3 @@
-
 // Updated CAPA type definitions
 
 export type CAPAStatus = 
@@ -59,7 +58,7 @@ export interface CAPA {
   fsma204Compliant?: boolean;
   effectivenessVerified?: boolean;
   sourceId?: string;
-  sourceReference?: string; // Changed from source_reference to match property naming convention
+  sourceReference?: string; // Added to match database
   relatedDocuments: Array<{
     id: string;
     documentId: string;

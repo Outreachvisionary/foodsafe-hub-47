@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
-import { convertToCAPAStatus } from '@/utils/typeAdapters';
+import { convertToCAPAStatus, convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
 
 interface LinkedCapasProps {
   capaIds: string[];
@@ -31,36 +31,7 @@ const LinkedCAPAsList: React.FC<LinkedCapasProps> = ({ capaIds, nonConformanceId
       try {
         const capaPromises = capaIds.map(async (id) => {
           const capaData = await fetchCAPAById(id);
-          
-          // Transform to match the CAPA interface
-          return {
-            id: capaData.id,
-            title: capaData.title,
-            description: capaData.description,
-            status: convertToCAPAStatus(capaData.status),
-            priority: capaData.priority,
-            createdAt: capaData.created_at,
-            createdBy: capaData.created_by,
-            dueDate: capaData.due_date,
-            assignedTo: capaData.assigned_to,
-            source: capaData.source,
-            completionDate: capaData.completion_date,
-            rootCause: capaData.root_cause,
-            correctiveAction: capaData.corrective_action,
-            preventiveAction: capaData.preventive_action,
-            effectivenessCriteria: capaData.effectiveness_criteria,
-            effectivenessRating: capaData.effectiveness_rating,
-            effectivenessVerified: capaData.effectiveness_verified,
-            sourceId: capaData.source_id,
-            sourceReference: capaData.source_reference || '', // Changed from source_reference to sourceReference
-            verificationDate: capaData.verification_date,
-            verificationMethod: capaData.verification_method,
-            verifiedBy: capaData.verified_by,
-            department: capaData.department,
-            fsma204Compliant: capaData.fsma204_compliant,
-            relatedDocuments: [],
-            relatedTraining: []
-          } as CAPA;
+          return convertDatabaseCAPAToModel(capaData);
         });
 
         const fetchedCapas = await Promise.all(capaPromises);

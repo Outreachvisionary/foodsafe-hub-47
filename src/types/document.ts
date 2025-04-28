@@ -1,5 +1,6 @@
 
-// Create this file if it doesn't exist or update if it does
+// Document types with consistent status values
+
 export type CheckoutStatus = 'Available' | 'Checked Out';
 
 export interface Document {
@@ -50,7 +51,7 @@ export type DocumentCategory =
   | 'Risk Assessment' 
   | 'Other';
 
-// Document status type - update to include underscore versions to match code usage 
+// Document status type - unified to match code usage 
 export type DocumentStatus = 
   | 'Draft' 
   | 'In Review' 

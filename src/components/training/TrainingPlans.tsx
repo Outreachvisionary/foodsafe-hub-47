@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +24,7 @@ const TrainingPlans = () => {
   const [planForm, setPlanForm] = useState<Omit<TrainingPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: '',
     description: '',
-    priority: 'medium',
+    priority: 'Medium',
     is_required: false,
     target_roles: [],
     courses: [],
@@ -70,9 +69,7 @@ const TrainingPlans = () => {
     });
   };
   
-  // Custom handler for array inputs
   const handleArrayInputChange = (name: string, value: string) => {
-    // Split the input by commas and trim whitespace
     const arrayValues = value.split(',').map(item => item.trim());
     
     setPlanForm({
@@ -83,7 +80,6 @@ const TrainingPlans = () => {
   
   const handleSubmit = async () => {
     try {
-      // Ensure all required fields are present
       if (!planForm.name || !planForm.description) {
         toast({
           title: "Missing Information",
@@ -115,7 +111,7 @@ const TrainingPlans = () => {
       setPlanForm({
         name: '',
         description: '',
-        priority: 'medium',
+        priority: 'Medium',
         is_required: false,
         target_roles: [],
         courses: [],

@@ -4,7 +4,8 @@ export type TrainingStatus =
   | 'In Progress' 
   | 'Completed' 
   | 'Overdue' 
-  | 'Failed';
+  | 'Failed'
+  | 'Cancelled';
 
 export type TrainingCategory = 
   | 'haccp' 
@@ -18,14 +19,12 @@ export type TrainingCategory =
   | 'workplace-safety' 
   | 'other';
 
-// Add missing TrainingType
 export type TrainingType = 
   | 'classroom' 
   | 'online' 
   | 'on-job' 
   | 'self-study';
 
-// Add missing TrainingPriority
 export type TrainingPriority =
   | 'Low'
   | 'Medium'
@@ -91,7 +90,6 @@ export interface TrainingStatistics {
   }>;
 }
 
-// Add missing TrainingPlan interface
 export interface TrainingPlan {
   id: string;
   name: string;
@@ -111,4 +109,13 @@ export interface TrainingPlan {
   created_at: string;
   updated_at: string;
   related_standards?: string[];
+}
+
+// Department statistics interface for dashboard component
+export interface DepartmentStat {
+  department: string;
+  totalAssigned: number;
+  completed: number;
+  overdue: number;
+  compliance: number;
 }

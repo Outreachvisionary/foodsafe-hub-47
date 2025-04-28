@@ -1,6 +1,6 @@
-
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -13,26 +13,33 @@ interface User {
 
 interface UserContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  signUp: (email: string, password: string, metadata?: { full_name?: string }) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateUserProfile: (updates: any) => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
+  session: null,
   loading: true,
-  error: null,
-  login: async () => {},
-  logout: async () => {},
-  updateProfile: async () => {},
+  signIn: async () => {},
+  signOut: async () => {},
+  signUp: async () => {},
+  resetPassword: async () => {},
+  updateUserProfile: async () => {},
+  refreshSession: async () => {}
 });
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,7 +102,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
   
-  const login = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -111,7 +118,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  const logout = async () => {
+  const signOut = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -129,7 +136,39 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  const updateProfile = async (updates: Partial<User>) => {
+  const signUp = async (email: string, password: string, metadata?: { full_name?: string }) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase.auth.signUp({ email, password }, { data: metadata });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const resetPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateUserProfile = async (updates: any) => {
     try {
       setLoading(true);
       setError(null);
@@ -167,13 +206,57 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
+  const refreshSession = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      if (currentUser) {
+        // If user exists in auth, fetch their profile
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching profile:', profileError);
+        }
+        
+        // Set user with combined auth and profile data
+        setUser({
+          id: currentUser.id,
+          email: currentUser.email,
+          full_name: data?.full_name || currentUser.user_metadata?.full_name,
+          avatar_url: data?.avatar_url,
+          role: data?.role,
+          department: data?.department
+        });
+      } else {
+        setUser(null);
+      }
+    } catch (error: any) {
+      console.error('Error refreshing session:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const value = {
     user,
+    session,
     loading,
-    error,
-    login,
-    logout,
-    updateProfile
+    signIn,
+    signOut,
+    signUp,
+    resetPassword,
+    updateUserProfile,
+    refreshSession
   };
   
   return (
