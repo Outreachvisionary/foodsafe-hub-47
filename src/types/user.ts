@@ -1,3 +1,4 @@
+
 export interface UserProfile {
   id?: string;
   full_name?: string;
@@ -19,4 +20,6 @@ export interface AppUser {
   email: string;
   role: string;
   profile?: UserProfile;
+  full_name?: string;
+  avatar_url?: string;
 }

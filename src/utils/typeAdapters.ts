@@ -4,7 +4,7 @@ import {
   CheckoutStatus, 
   DocumentPermission 
 } from '@/types/document';
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, CAPAEffectivenessRating, CAPA } from '@/types/capa';
 import { 
   TrainingStatus, 
   TrainingCategory, 
@@ -65,6 +65,49 @@ export function convertToCAPAStatus(status: string): CAPAStatus {
     case 'Verified': return 'Verified';
     default: return 'Open';
   }
+}
+
+// CAPA Effectiveness Rating
+export function convertToEffectivenessRating(rating: string): CAPAEffectivenessRating {
+  switch (rating) {
+    case 'Effective': return 'Effective';
+    case 'Partially_Effective': return 'Partially_Effective';
+    case 'Not_Effective': return 'Not_Effective';
+    case 'Not_Verified': return 'Not_Verified';
+    default: return 'Not_Verified';
+  }
+}
+
+// Convert database CAPA to model
+export function convertDatabaseCAPAToModel(dbCapa: any): CAPA {
+  return {
+    id: dbCapa.id,
+    title: dbCapa.title,
+    description: dbCapa.description,
+    status: convertToCAPAStatus(dbCapa.status),
+    priority: dbCapa.priority,
+    createdAt: dbCapa.created_at,
+    createdBy: dbCapa.created_by,
+    dueDate: dbCapa.due_date,
+    assignedTo: dbCapa.assigned_to,
+    source: dbCapa.source,
+    sourceId: dbCapa.source_id,
+    sourceReference: dbCapa.source_reference,
+    completionDate: dbCapa.completion_date,
+    rootCause: dbCapa.root_cause,
+    correctiveAction: dbCapa.corrective_action,
+    preventiveAction: dbCapa.preventive_action,
+    effectivenessCriteria: dbCapa.effectiveness_criteria,
+    effectivenessRating: dbCapa.effectiveness_rating,
+    effectivenessVerified: dbCapa.effectiveness_verified,
+    verificationDate: dbCapa.verification_date,
+    verificationMethod: dbCapa.verification_method,
+    verifiedBy: dbCapa.verified_by,
+    department: dbCapa.department,
+    fsma204Compliant: dbCapa.fsma204_compliant,
+    relatedDocuments: dbCapa.related_documents || [],
+    relatedTraining: dbCapa.related_training || []
+  };
 }
 
 // Training Status

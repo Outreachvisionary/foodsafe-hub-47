@@ -1,13 +1,14 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { UserProfile, AppUser } from '@/types/user';
 
 interface UserContextType {
   user: User | null;
   profile: UserProfile | null;
   isAuthenticated: boolean;
-  loading: boolean; // Add loading property
+  loading: boolean;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -16,7 +17,7 @@ const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
   isAuthenticated: false,
-  loading: true, // Initialize as true
+  loading: true,
   signOut: async () => {},
   updateProfile: async () => {},
 });
@@ -55,7 +56,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error('Error fetching profile:', error);
         } else {
-          setProfile(profileData || null);
+          setProfile(profileData as UserProfile || null);
         }
       } catch (error) {
         console.error('Unexpected error fetching profile:', error);
@@ -98,7 +99,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error updating profile:', error);
       } else if (data) {
-        setProfile(data);
+        setProfile(data as UserProfile);
       }
     } catch (error) {
       console.error('Unexpected error updating profile:', error);

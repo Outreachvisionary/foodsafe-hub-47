@@ -1,57 +1,70 @@
 
 import React from 'react';
-import { 
+import {
   Chart as ChartJS,
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
-  Legend,
+  CategoryScale,
+  LinearScale,
   BarElement,
-  ArcElement
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
 } from 'chart.js';
-import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
+import { Bar, Line, Pie } from 'react-chartjs-2';
 
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   BarElement,
+  LineElement,
+  PointElement,
   ArcElement,
   Title,
   Tooltip,
   Legend
 );
 
-type ChartType = 'line' | 'bar' | 'pie' | 'doughnut';
-
 interface ChartProps {
-  type: ChartType;
+  type: 'bar' | 'line' | 'pie';
   data: any;
   options?: any;
-  height?: number;
+  height?: number | string;
+  width?: number | string;
 }
 
-const Chart: React.FC<ChartProps> = ({ type, data, options = {}, height }) => {
+const Chart: React.FC<ChartProps> = ({ type, data, options, height = '100%', width = '100%' }) => {
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    ...options
+  };
+
+  const style = {
+    height,
+    width
+  };
+
   const renderChart = () => {
     switch (type) {
-      case 'line':
-        return <Line data={data} options={options} height={height} />;
       case 'bar':
-        return <Bar data={data} options={options} height={height} />;
+        return <Bar data={data} options={chartOptions} />;
+      case 'line':
+        return <Line data={data} options={chartOptions} />;
       case 'pie':
-        return <Pie data={data} options={options} height={height} />;
-      case 'doughnut':
-        return <Doughnut data={data} options={options} height={height} />;
+        return <Pie data={data} options={chartOptions} />;
       default:
-        return <p>Unsupported chart type</p>;
+        return <div>Unsupported chart type</div>;
     }
   };
 
-  return <div className="chart-container">{renderChart()}</div>;
+  return (
+    <div style={style}>
+      {renderChart()}
+    </div>
+  );
 };
 
 export default Chart;

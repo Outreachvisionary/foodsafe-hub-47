@@ -1,8 +1,31 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Chart as ChartJS, 
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  Title, 
+  Tooltip, 
+  Legend,
+  Filler
+} from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getMockComplianceTrendData } from '@/services/mockDataService';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface ComplianceTrendChartProps {
   title?: string;
@@ -84,7 +107,7 @@ const ComplianceTrendChart: React.FC<ComplianceTrendChartProps> = ({ title = "Co
           </div>
         ) : (
           <div className="h-64">
-            <Line data={chartData} options={chartOptions as any} />
+            <Line data={chartData} options={chartOptions} />
           </div>
         )}
       </CardContent>
