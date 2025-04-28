@@ -8,15 +8,15 @@ import { Globe } from 'lucide-react';
 
 const LanguageSelector = () => {
   const { t } = useTranslation();
-  const { currentLanguage, changeLanguage, supportedLanguages, loadingTranslations } = useLanguage();
+  const { language, changeLanguage, supportedLanguages, loadingTranslations } = useLanguage();
 
   const handleLanguageChange = (languageCode: string) => {
     changeLanguage(languageCode);
   };
 
   const getCurrentLanguageName = () => {
-    const language = supportedLanguages.find(lang => lang.code === currentLanguage);
-    return language ? t(`common.${language.code === 'en' ? 'english' : language.code === 'es' ? 'spanish' : language.code === 'fr' ? 'french' : language.code === 'de' ? 'german' : 'arabic'}`) : '';
+    const currentLang = supportedLanguages.find(lang => lang.code === language);
+    return currentLang ? t(`common.${currentLang.code === 'en' ? 'english' : currentLang.code === 'es' ? 'spanish' : currentLang.code === 'fr' ? 'french' : currentLang.code === 'de' ? 'german' : 'arabic'}`) : '';
   };
 
   return (
@@ -32,7 +32,7 @@ const LanguageSelector = () => {
           <DropdownMenuItem
             key={language.code}
             onClick={() => handleLanguageChange(language.code)}
-            className={currentLanguage === language.code ? 'bg-accent font-medium' : ''}
+            className={language.code === language ? 'bg-accent font-medium' : ''}
           >
             {t(`common.${language.code === 'en' ? 'english' : language.code === 'es' ? 'spanish' : language.code === 'fr' ? 'french' : language.code === 'de' ? 'german' : 'arabic'}`)}
           </DropdownMenuItem>

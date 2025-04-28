@@ -44,6 +44,24 @@ export function convertToTrainingStatus(status: string): TrainingStatus {
 }
 
 /**
+ * Check if a value is a valid Document Status
+ */
+export function isDocumentStatus(status: string, expectedStatus: DocumentStatus): boolean {
+  if (status === 'Pending_Approval' && expectedStatus === 'Pending Approval') return true;
+  if (status === 'In_Review' && expectedStatus === 'In Review') return true;
+  if (status === 'Pending_Review' && expectedStatus === 'Pending_Review') return true;
+  return status === expectedStatus;
+}
+
+/**
+ * Check if a value is a valid Checkout Status
+ */
+export function isCheckoutStatus(status: string, expectedStatus: CheckoutStatus): boolean {
+  if (status === 'Checked_Out' && expectedStatus === 'Checked Out') return true;
+  return status === expectedStatus;
+}
+
+/**
  * Convert database CAPA to frontend CAPA model
  */
 export function convertDatabaseCAPAToModel(data: any): CAPA {

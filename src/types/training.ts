@@ -118,4 +118,7 @@ export interface DepartmentStat {
   completed: number;
   overdue: number;
   compliance: number;
+  // Added these properties to fix type errors
+  name?: string;
+  complianceRate?: number;
 }

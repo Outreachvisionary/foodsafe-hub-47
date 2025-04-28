@@ -1,143 +1,114 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useTheme } from '@/components/ui/theme-provider';
-import { getMockComplianceTrendData } from '@/services/mockDataService';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Line } from 'react-chartjs-2';
 
-const ComplianceTrendChart: React.FC = () => {
-  const isMobile = useIsMobile();
-  const { theme } = useTheme();
-  
-  // Get data from mock service - ensure it's synchronous
-  const complianceData = getMockComplianceTrendData();
-  
-  // Define chart colors based on theme
-  const colors = {
-    sqf: theme === 'dark' ? '#6366f1' : '#4f46e5',
-    iso22000: theme === 'dark' ? '#38bdf8' : '#0ea5e9',
-    fssc22000: theme === 'dark' ? '#34d399' : '#10b981',
-    haccp: theme === 'dark' ? '#fbbf24' : '#f59e0b',
-    brcgs2: theme === 'dark' ? '#818cf8' : '#6366f1',
+interface ComplianceTrendChartProps {
+  title?: string;
+}
+
+interface TrendDataPoint {
+  month: string;
+  compliance: number;
+}
+
+const ComplianceTrendChart: React.FC<ComplianceTrendChartProps> = ({ title = "Compliance Trend" }) => {
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    // Mock data - in a real app, this would be fetched from an API
+    const generateMockData = () => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentMonth = new Date().getMonth();
+      
+      // Generate last 6 months of data
+      const data = [];
+      let startValue = 70 + Math.random() * 10;
+      
+      for (let i = 5; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        const randomChange = (Math.random() - 0.3) * 5; // Slightly biased toward improvement
+        startValue = Math.min(100, Math.max(50, startValue + randomChange));
+        
+        data.push({
+          month: months[monthIndex],
+          compliance: parseFloat(startValue.toFixed(1))
+        });
+      }
+      
+      return data;
+    };
+
+    // Simulate API call
+    setLoading(true);
+    setTimeout(() => {
+      const mockData = generateMockData();
+      setTrendData(mockData);
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  const chartData = {
+    labels: trendData.map(d => d.month),
+    datasets: [
+      {
+        label: 'Compliance %',
+        data: trendData.map(d => d.compliance),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointRadius: 4,
+      },
+    ],
   };
-  
-  // Custom tooltip content for the Recharts Tooltip
-  const CustomTooltipContent = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card p-3 border rounded-md shadow-lg border-border text-card-foreground">
-          <p className="font-medium text-sm mb-1">{`Month: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={`item-${index}`} className="text-xs flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
-              <span className="font-medium">{entry.name}:</span>
-              <span>{entry.value}%</span>
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.parsed.y}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+        min: 50,
+        max: 100,
+        ticks: {
+          callback: function(value: any) {
+            return value + '%';
+          }
+        }
+      }
+    },
+    maintainAspectRatio: false
   };
-  
+
   return (
-    <Card className="overflow-hidden border-accent/10">
-      {/* Add subtle gradient background to header */}
-      <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
-        <CardTitle className="flex items-center gap-2">
-          <span className="w-2 h-6 bg-primary rounded-full"></span>
-          Compliance Trend
-        </CardTitle>
-        <CardDescription>Last 6 months performance across standards</CardDescription>
+    <Card className="shadow">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="w-full h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={complianceData}
-              margin={{ 
-                top: 20, 
-                right: isMobile ? 10 : 30, 
-                left: isMobile ? 0 : 10, 
-                bottom: 5 
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis 
-                dataKey="month" 
-                fontSize={12}
-                tickMargin={5}
-                stroke={theme === 'dark' ? '#94a3b8' : '#64748b'}
-              />
-              <YAxis 
-                domain={[50, 100]} 
-                label={{ 
-                  value: 'Compliance %', 
-                  angle: -90, 
-                  position: 'insideLeft',
-                  style: { textAnchor: 'middle', fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748b' },
-                  offset: isMobile ? -5 : 0
-                }} 
-                fontSize={12}
-                tickMargin={5}
-                stroke={theme === 'dark' ? '#94a3b8' : '#64748b'}
-              />
-              <Tooltip content={<CustomTooltipContent />} />
-              <Legend 
-                verticalAlign="bottom" 
-                height={36} 
-                fontSize={12}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Bar 
-                dataKey="sqf" 
-                name="SQF" 
-                radius={[4, 4, 0, 0]} 
-                fillOpacity={0.85}
-                fill={colors.sqf}
-              />
-              <Bar 
-                dataKey="iso22000" 
-                name="ISO 22000" 
-                radius={[4, 4, 0, 0]} 
-                fillOpacity={0.85}
-                fill={colors.iso22000}
-              />
-              <Bar 
-                dataKey="fssc22000" 
-                name="FSSC 22000" 
-                radius={[4, 4, 0, 0]} 
-                fillOpacity={0.85}
-                fill={colors.fssc22000}
-              />
-              <Bar 
-                dataKey="haccp" 
-                name="HACCP" 
-                radius={[4, 4, 0, 0]} 
-                fillOpacity={0.85}
-                fill={colors.haccp}
-              />
-              <Bar 
-                dataKey="brcgs2" 
-                name="BRC GS2" 
-                radius={[4, 4, 0, 0]} 
-                fillOpacity={0.85}
-                fill={colors.brcgs2}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      <CardContent>
+        {loading ? (
+          <div className="h-64 flex items-center justify-center text-gray-500">
+            Loading chart data...
+          </div>
+        ) : (
+          <div className="h-64">
+            <Line data={chartData} options={chartOptions as any} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

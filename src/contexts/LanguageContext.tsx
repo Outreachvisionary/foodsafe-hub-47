@@ -4,23 +4,44 @@ import i18n from 'i18next';
 import { useUser } from './UserContext';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define supported languages
+export type SupportedLanguage = {
+  code: string;
+  name: string;
+};
+
 interface LanguageProviderProps {
   children: React.ReactNode;
 }
 
 interface LanguageContextValue {
   language: string;
+  currentLanguage: string;  // Added for backward compatibility
+  supportedLanguages: SupportedLanguage[];
+  loadingTranslations: boolean;
   changeLanguage: (lang: string) => void;
 }
 
+const supportedLanguagesList: SupportedLanguage[] = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'ar', name: 'Arabic' }
+];
+
 const LanguageContext = createContext<LanguageContextValue>({
   language: 'en',
+  currentLanguage: 'en',
+  supportedLanguages: supportedLanguagesList,
+  loadingTranslations: false,
   changeLanguage: () => {}
 });
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<string>('en');
-  const { user, updateUserProfile } = useUser();
+  const [loadingTranslations, setLoadingTranslations] = useState<boolean>(false);
+  const { user } = useUser();
 
   useEffect(() => {
     // Set default language from browser if no user preference
@@ -30,6 +51,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     if (user) {
       const fetchUserLanguage = async () => {
         try {
+          setLoadingTranslations(true);
           const { data, error } = await supabase
             .from('profiles')
             .select('preferred_language')
@@ -48,6 +70,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
           console.error('Error fetching user language preference:', error);
           await i18n.changeLanguage(defaultLang);
           setLanguage(defaultLang);
+        } finally {
+          setLoadingTranslations(false);
         }
       };
       
@@ -61,6 +85,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   
   const changeLanguage = async (lang: string) => {
     try {
+      setLoadingTranslations(true);
       await i18n.changeLanguage(lang);
       setLanguage(lang);
       
@@ -73,11 +98,19 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       }
     } catch (error) {
       console.error('Error changing language:', error);
+    } finally {
+      setLoadingTranslations(false);
     }
   };
   
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      currentLanguage: language, // Alias for backward compatibility
+      supportedLanguages: supportedLanguagesList,
+      loadingTranslations,
+      changeLanguage 
+    }}>
       {children}
     </LanguageContext.Provider>
   );

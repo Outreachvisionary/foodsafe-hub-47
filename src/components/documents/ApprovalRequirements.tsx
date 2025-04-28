@@ -20,7 +20,7 @@ const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSte
     } else {
       // Use synchronous mock data
       const mockSteps = getMockDocumentWorkflowSteps();
-      setSteps(mockSteps);
+      setSteps(mockSteps as DocumentWorkflowStep[]); // Cast to ensure type compatibility
     }
   }, [workflowSteps]);
   

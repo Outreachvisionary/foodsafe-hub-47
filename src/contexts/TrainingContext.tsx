@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingSession, TrainingRecord, TrainingStatus, TrainingCategory, TrainingStatistics, TrainingPlan, TrainingPriority, DepartmentStat } from '@/types/training';
@@ -24,6 +23,7 @@ interface TrainingContextType {
   deleteSession: (id: string) => Promise<void>;
   updateTrainingRecord: (id: string, updates: Partial<TrainingRecord>) => Promise<void>;
   createTrainingPlan: (plan: Partial<TrainingPlan>) => Promise<void>;
+  deleteTrainingPlan: (id: string) => Promise<void>;
 }
 
 const TrainingContext = createContext<TrainingContextType>({
@@ -44,11 +44,11 @@ const TrainingContext = createContext<TrainingContextType>({
   updateSession: async () => {},
   deleteSession: async () => {},
   updateTrainingRecord: async () => {},
-  createTrainingPlan: async () => {}
+  createTrainingPlan: async () => {},
+  deleteTrainingPlan: async () => {}
 });
 
-export const useTraining = useContext(TrainingContext);
-
+export const useTraining = () => useContext(TrainingContext);
 export const useTrainingContext = () => useContext(TrainingContext);
 
 export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,7 +60,6 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize mock department stats
   useEffect(() => {
     const mockDeptStats: DepartmentStat[] = [
       { department: "Production", totalAssigned: 50, completed: 42, overdue: 5, compliance: 84 },
@@ -75,14 +74,12 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      // In a real app, this would fetch from Supabase
       const { data, error } = await supabase
         .from('training_sessions')
         .select('*');
       
       if (error) throw error;
       
-      // Convert data to match TrainingSession interface
       const formattedSessions = data.map((session: any) => ({
         ...session,
         training_type: session.training_type || 'classroom',
@@ -150,7 +147,6 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      // Mock data for now
       const mockStats = getMockTrainingStatistics();
       setStatistics(mockStats);
     } catch (err: any) {
@@ -166,7 +162,6 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      // Ensure required fields have values before sending to Supabase
       if (!session.created_by) {
         session.created_by = 'system';
       }
@@ -175,24 +170,26 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         session.assigned_to = [];
       }
       
+      const sessionData = {
+        title: session.title,
+        description: session.description,
+        training_type: session.training_type,
+        training_category: session.training_category,
+        department: session.department,
+        start_date: session.start_date,
+        due_date: session.due_date,
+        assigned_to: session.assigned_to || [],
+        materials_id: session.materials_id,
+        is_recurring: session.is_recurring,
+        recurring_interval: session.recurring_interval,
+        required_roles: session.required_roles,
+        completion_status: session.completion_status,
+        created_by: session.created_by || 'system'
+      };
+      
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert({
-          title: session.title,
-          description: session.description,
-          training_type: session.training_type,
-          training_category: session.training_category,
-          department: session.department,
-          start_date: session.start_date,
-          due_date: session.due_date,
-          assigned_to: session.assigned_to,
-          materials_id: session.materials_id,
-          is_recurring: session.is_recurring,
-          recurring_interval: session.recurring_interval,
-          required_roles: session.required_roles,
-          completion_status: session.completion_status,
-          created_by: session.created_by
-        })
+        .insert(sessionData)
         .select();
       
       if (error) throw error;
@@ -211,12 +208,10 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      // Prepare updates with proper field types
       const updateData: any = {
         ...updates
       };
       
-      // Delete undefined fields
       Object.keys(updateData).forEach(key => {
         if (updateData[key] === undefined) {
           delete updateData[key];
@@ -269,9 +264,14 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
+      const recordData: any = { ...updates };
+      if (updates.status) {
+        // Handle status conversion if needed
+      }
+      
       const { error } = await supabase
         .from('training_records')
-        .update(updates)
+        .update(recordData)
         .eq('id', id);
       
       if (error) throw error;
@@ -294,30 +294,27 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
       
-      // Ensure required fields
-      if (!plan.created_by) {
-        plan.created_by = 'system';
-      }
+      const planData = {
+        name: plan.name,
+        description: plan.description,
+        courses: plan.courses,
+        target_roles: plan.target_roles,
+        target_departments: plan.target_departments,
+        duration_days: plan.duration_days,
+        is_required: plan.is_required,
+        is_automated: plan.is_automated,
+        automation_trigger: plan.automation_trigger,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        priority: plan.priority,
+        status: plan.status,
+        created_by: plan.created_by || 'system',
+        related_standards: plan.related_standards
+      };
       
       const { data, error } = await supabase
         .from('training_plans')
-        .insert({
-          name: plan.name,
-          description: plan.description,
-          courses: plan.courses,
-          target_roles: plan.target_roles,
-          target_departments: plan.target_departments,
-          duration_days: plan.duration_days,
-          is_required: plan.is_required,
-          is_automated: plan.is_automated,
-          automation_trigger: plan.automation_trigger,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          priority: plan.priority,
-          status: plan.status,
-          created_by: plan.created_by,
-          related_standards: plan.related_standards
-        })
+        .insert(planData)
         .select();
       
       if (error) throw error;
@@ -325,6 +322,27 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTrainingPlans([...trainingPlans, data[0] as TrainingPlan]);
     } catch (err: any) {
       console.error('Error creating training plan:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const deleteTrainingPlan = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('training_plans')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setTrainingPlans(trainingPlans.filter(plan => plan.id !== id));
+    } catch (err: any) {
+      console.error('Error deleting training plan:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -338,9 +356,9 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       trainingPlans,
       statistics,
       departmentStats,
-      sessions: trainingSessions, // Alias for components expecting 'sessions'
+      sessions: trainingSessions,
       loading,
-      isLoading: loading, // Alias for components expecting 'isLoading'
+      isLoading: loading,
       error,
       fetchSessions,
       fetchRecords,
@@ -350,7 +368,8 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updateSession,
       deleteSession,
       updateTrainingRecord,
-      createTrainingPlan
+      createTrainingPlan,
+      deleteTrainingPlan
     }}>
       {children}
     </TrainingContext.Provider>
