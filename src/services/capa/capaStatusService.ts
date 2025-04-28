@@ -1,106 +1,55 @@
 
-import { CAPAStatus } from '@/types/capa';
+import { CAPAStatus, CAPA } from '@/types/capa';
 
-/**
- * Compares two CAPA statuses for equality, handling both string formats (with spaces or underscores)
- * @param status1 First status to compare
- * @param status2 Second status to compare
- * @returns true if the statuses are equivalent
- */
-export const isStatusEqual = (status1: string | CAPAStatus, status2: string | CAPAStatus): boolean => {
-  const normalized1 = normalizeStatus(status1);
-  const normalized2 = normalizeStatus(status2);
-  return normalized1 === normalized2;
-};
-
-/**
- * Normalizes a status string by replacing spaces with underscores and converting to lowercase
- * @param status Status to normalize
- * @returns Normalized status string
- */
-export const normalizeStatus = (status: string | CAPAStatus): string => {
-  if (!status) return '';
-  return status.toString().toLowerCase().replace(/ /g, '_');
-};
-
-/**
- * Maps a string status to the CAPAStatus enum value
- * @param status Status string to map
- * @returns The corresponding CAPAStatus enum value
- */
-export const mapToCAPAStatus = (status: string): CAPAStatus => {
-  const normalized = normalizeStatus(status);
+// Helper function to compare statuses, accounting for format differences
+export function isStatusEqual(status1: string, status2?: string): boolean {
+  if (!status2) return false;
   
-  switch(normalized) {
-    case 'open': return 'Open';
-    case 'in_progress': return 'In_Progress';
-    case 'under_review': return 'Under_Review';
-    case 'completed': return 'Completed';
-    case 'closed': return 'Closed';
-    case 'rejected': return 'Rejected';
-    case 'on_hold': return 'On_Hold';
-    case 'overdue': return 'Overdue';
-    case 'pending_verification': return 'Pending_Verification';
-    case 'verified': return 'Verified';
-    default: return 'Open';
-  }
-};
+  // Normalize both statuses by replacing underscores with spaces
+  const normalizedStatus1 = status1.replace(/_/g, ' ');
+  const normalizedStatus2 = status2.replace(/_/g, ' ');
+  
+  return normalizedStatus1 === normalizedStatus2;
+}
 
-/**
- * Maps a CAPAStatus enum value to a display-friendly string
- * @param status CAPAStatus enum value
- * @returns A human-readable status string
- */
-export const getCAPAStatusLabel = (status: CAPAStatus): string => {
-  switch(status) {
-    case 'In_Progress': return 'In Progress';
-    case 'Under_Review': return 'Under Review';
-    case 'Pending_Verification': return 'Pending Verification';
-    case 'On_Hold': return 'On Hold';
-    default: return status.replace(/_/g, ' ');
-  }
-};
-
-/**
- * Maps a database status string to the CAPAStatus enum value
- * @param dbStatus Status string from database
- * @returns The corresponding CAPAStatus enum value
- */
-export const mapDBToCAPAStatus = (dbStatus: string): CAPAStatus => {
-  const statusMap: Record<string, CAPAStatus> = {
-    'Open': 'Open',
-    'In Progress': 'In_Progress',
-    'Under Review': 'Under_Review',
-    'Completed': 'Completed',
-    'Closed': 'Closed',
-    'Rejected': 'Rejected',
-    'On Hold': 'On_Hold',
-    'Overdue': 'Overdue',
-    'Pending Verification': 'Pending_Verification',
-    'Verified': 'Verified'
+// Mock function to update CAPA status
+export async function updateCAPAStatus(
+  capaId: string, 
+  newStatus: CAPAStatus, 
+  userId: string
+): Promise<CAPA> {
+  // In production, this would call the API to update the status
+  console.log(`Updating CAPA ${capaId} to status ${newStatus} by user ${userId}`);
+  
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return a mock updated CAPA
+  return {
+    id: capaId,
+    title: `CAPA-${capaId}`,
+    description: "Updated CAPA description",
+    status: newStatus,
+    priority: 'High',
+    createdAt: new Date().toISOString(),
+    createdBy: 'John Doe',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: 'Jane Smith',
+    source: 'Audit',
+    sourceReference: 'Audit-2023-001',
+    completionDate: newStatus === 'Closed' ? new Date().toISOString() : undefined,
+    rootCause: 'Process failure',
+    correctiveAction: 'Update process documentation',
+    preventiveAction: 'Staff training',
+    effectivenessCriteria: 'No recurrence for 90 days',
+    effectivenessRating: newStatus === 'Verified' ? 'Effective' : undefined,
+    effectivenessVerified: newStatus === 'Verified',
+    verificationDate: newStatus === 'Verified' ? new Date().toISOString() : undefined,
+    verificationMethod: newStatus === 'Verified' ? 'Review of records' : undefined,
+    verifiedBy: newStatus === 'Verified' ? userId : undefined,
+    department: 'Quality',
+    fsma204Compliant: true,
+    relatedDocuments: [],
+    relatedTraining: []
   };
-  
-  return statusMap[dbStatus] || 'Open';
-};
-
-/**
- * Maps a CAPAStatus enum value to a database-friendly string
- * @param status CAPAStatus enum value
- * @returns A database-compatible status string
- */
-export const mapCAPAStatusToDB = (status: CAPAStatus): string => {
-  const statusMap: Record<string, string> = {
-    'Open': 'Open',
-    'In_Progress': 'In Progress',
-    'Under_Review': 'Under Review',
-    'Completed': 'Completed',
-    'Closed': 'Closed',
-    'Rejected': 'Rejected',
-    'On_Hold': 'On Hold',
-    'Overdue': 'Overdue',
-    'Pending_Verification': 'Pending Verification',
-    'Verified': 'Verified'
-  };
-  
-  return statusMap[status] || 'Open';
-};
+}

@@ -29,6 +29,14 @@ export function isDocumentStatus(status: string): status is DocumentStatus {
   return ['Draft', 'Pending_Review', 'Approved', 'Published', 'Archived', 'Rejected'].includes(status);
 }
 
+// Improved isDocumentStatus to take the second parameter as optional
+export function isDocumentStatus(status: string, targetStatus?: string): boolean {
+  if (targetStatus) {
+    return status === targetStatus;
+  }
+  return ['Draft', 'Pending_Review', 'Approved', 'Published', 'Archived', 'Rejected'].includes(status);
+}
+
 // Checkout Status
 export function convertToCheckoutStatus(status: string): CheckoutStatus {
   switch (status) {
@@ -67,6 +75,14 @@ export function convertToCAPAStatus(status: string): CAPAStatus {
   }
 }
 
+// CAPA Status comparator - this fixes the isStatusEqual function to accept 1 or 2 arguments
+export function isStatusEqual(status1: string, status2?: string): boolean {
+  if (status2) {
+    return status1.replace(/_/g, ' ') === status2.replace(/_/g, ' ');
+  }
+  return false;
+}
+
 // CAPA Effectiveness Rating
 export function convertToEffectivenessRating(rating: string): CAPAEffectivenessRating {
   switch (rating) {
@@ -92,7 +108,7 @@ export function convertDatabaseCAPAToModel(dbCapa: any): CAPA {
     assignedTo: dbCapa.assigned_to,
     source: dbCapa.source,
     sourceId: dbCapa.source_id,
-    sourceReference: dbCapa.source_reference,
+    sourceReference: dbCapa.source_reference || '',
     completionDate: dbCapa.completion_date,
     rootCause: dbCapa.root_cause,
     correctiveAction: dbCapa.corrective_action,

@@ -1,228 +1,166 @@
-
-import { Document } from '@/types/document';
-import { CAPA } from '@/types/capa';
-import { TrainingRecord, TrainingSession, TrainingStatus, TrainingCategory, TrainingType, TrainingPriority, TrainingCompletionStatus } from '@/types/training';
-
-// Mock Document Data
-export const mockDocuments: Document[] = [
+// Mock data for documents
+export const mockDocuments = [
   {
-    id: 'doc-1',
-    title: 'HACCP Plan for Production Line A',
-    description: 'Hazard Analysis Critical Control Point plan for the main production line',
-    file_name: 'haccp_plan_line_a.pdf',
-    file_type: 'application/pdf',
-    file_size: 1024000,
-    category: 'HACCP Plan',
-    status: 'Published' as any, // Cast to any to avoid type error
-    version: 1,
-    created_by: 'john.doe',
-    created_at: '2023-08-01T10:30:00Z',
-    updated_at: '2023-08-01T10:30:00Z',
-  },
-  {
-    id: 'doc-2',
-    title: 'Good Manufacturing Practices SOP',
-    description: 'Standard Operating Procedure for GMP compliance',
-    file_name: 'gmp_sop_v2.docx',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 512000,
-    category: 'SOP',
-    status: 'Pending_Review' as any, // Cast to any to avoid type error
-    version: 2,
-    created_by: 'jane.smith',
-    created_at: '2023-08-05T14:15:00Z',
-    updated_at: '2023-08-10T09:45:00Z',
-  },
-  {
-    id: 'doc-3',
-    title: 'Allergen Control Policy',
-    description: 'Company policy for allergen control and management',
-    file_name: 'allergen_policy.pdf',
-    file_type: 'application/pdf',
-    file_size: 768000,
+    id: '1',
+    title: 'Quality Manual',
+    description: 'Main quality management system documentation',
+    status: 'Published',
     category: 'Policy',
-    status: 'Active' as any, // Cast to any to avoid type error
-    version: 3,
-    created_by: 'quality.manager',
-    created_at: '2023-07-15T11:20:00Z',
-    updated_at: '2023-08-12T16:30:00Z',
+    version: 2,
+    file_name: 'quality_manual_v2.pdf',
+    file_size: 1024 * 1024,
+    file_type: 'application/pdf',
+    created_at: new Date().toISOString(),
+    created_by: 'John Doe',
+    checkout_status: 'Available'
   },
   {
-    id: 'doc-4',
-    title: 'Sanitation Verification Form',
-    description: 'Form for verifying sanitation procedures',
-    file_name: 'sanitation_form.xlsx',
-    file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    file_size: 256000,
-    category: 'Form',
-    status: 'Pending_Approval' as any, // Cast to any to avoid type error
+    id: '2',
+    title: 'Sanitation SOP',
+    description: 'Standard operating procedure for sanitation',
+    status: 'Draft',
+    category: 'SOP',
     version: 1,
-    created_by: 'sanitation.lead',
-    created_at: '2023-08-14T08:00:00Z',
-    updated_at: '2023-08-14T08:00:00Z',
+    file_name: 'sanitation_sop.docx',
+    file_size: 512 * 1024,
+    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    created_at: new Date().toISOString(),
+    created_by: 'Maria Garcia',
+    checkout_status: 'Available'
   }
 ];
 
-// Mock CAPA Data
-export const mockCAPAs: CAPA[] = [
+// Mock data for training sessions
+export const mockTrainingSessions = [
   {
-    id: 'capa-1',
-    title: 'Temperature Control Deviation',
-    description: 'Temperature exceeded critical limits during processing',
+    id: '1',
+    title: 'HACCP Training',
+    description: 'Basic HACCP principles and application',
+    training_type: 'classroom',
+    training_category: 'food-safety',
+    department: 'Production',
+    start_date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    completion_status: 'Not Started',
+    is_recurring: true,
+    recurring_interval: 'annually',
+    assigned_to: ['user1', 'user2'],
+    required_roles: ['Production Staff'],
+    materials_id: ['mat-001', 'mat-002'],
+    created_by: 'admin'
+  },
+  {
+    id: '2',
+    title: 'GMP Refresher',
+    description: 'Good Manufacturing Practices refresher course',
+    training_type: 'online',
+    training_category: 'gmp',
+    department: 'All Departments',
+    start_date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+    completion_status: 'In Progress',
+    is_recurring: true,
+    recurring_interval: 'bi-annually',
+    assigned_to: ['user3', 'user4'],
+    required_roles: ['All Staff'],
+    materials_id: ['mat-003'],
+    created_by: 'admin'
+  }
+];
+
+// Mock data for CAPAs
+export const mockCAPAs = [
+  {
+    id: '1',
+    title: 'Raw Material Quality Issue',
+    description: 'Supplier delivered raw materials below quality standards',
     status: 'Open',
     priority: 'High',
-    createdAt: '2023-08-01T10:30:00Z',
-    dueDate: '2023-09-01T00:00:00Z',
-    assignedTo: 'jane.smith',
-    createdBy: 'john.doe',
-    source: 'Internal_Issue' as any, // Cast to any to avoid type error
-    rootCause: 'Faulty temperature sensor',
-    correctiveAction: 'Replace temperature sensor',
-    preventiveAction: 'Implement daily calibration checks',
-    department: 'Production',
-    fsma204Compliant: true,
+    createdAt: new Date().toISOString(),
+    createdBy: 'John Doe',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: 'Maria Rodriguez',
+    source: 'Supplier_Issue',
+    sourceId: 'SUP-001',
+    sourceReference: 'QC-Check-2023-42',
+    completionDate: undefined,
+    rootCause: 'Supplier changed process without notification',
+    correctiveAction: 'Return materials and request replacement',
+    preventiveAction: 'Implement supplier pre-shipment testing',
+    effectivenessCriteria: 'No quality issues for 3 consecutive shipments',
+    effectivenessRating: undefined,
     effectivenessVerified: false,
-    relatedDocuments: [],
-    relatedTraining: [],
-    sourceReference: 'NC-2023-0125'
-  },
-  {
-    id: 'capa-2',
-    title: 'Foreign Material Contamination',
-    description: 'Metal fragments found during routine inspection',
-    status: 'In_Progress',
-    priority: 'Critical',
-    createdAt: '2023-08-05T14:15:00Z',
-    dueDate: '2023-08-20T00:00:00Z',
-    assignedTo: 'maintenance.manager',
-    createdBy: 'quality.manager',
-    source: 'Non_Conformance' as any, // Cast to any to avoid type error
-    rootCause: 'Worn equipment part',
-    correctiveAction: 'Replace damaged equipment',
-    preventiveAction: 'Increase frequency of equipment inspections',
-    department: 'Maintenance',
-    effectivenessCriteria: 'No foreign material findings for 30 days',
+    department: 'Quality Control',
     fsma204Compliant: true,
-    effectivenessVerified: false,
-    relatedDocuments: [],
-    relatedTraining: [],
-    sourceReference: 'NC-2023-0138'
-  },
-  {
-    id: 'capa-3',
-    title: 'Missing Documentation',
-    description: 'Required records not completed during production',
-    status: 'Completed' as any, // Cast to any to avoid type error
-    priority: 'Medium',
-    createdAt: '2023-07-15T11:20:00Z',
-    dueDate: '2023-08-15T00:00:00Z',
-    completionDate: '2023-08-10T09:45:00Z',
-    assignedTo: 'production.supervisor',
-    createdBy: 'documentation.specialist',
-    source: 'Audit',
-    rootCause: 'Lack of training on documentation requirements',
-    correctiveAction: 'Retrain production staff',
-    preventiveAction: 'Implement documentation verification step',
-    department: 'Production',
-    effectivenessRating: 'Effective',
-    effectivenessVerified: true,
-    verificationDate: '2023-08-17T00:00:00Z',
-    verifiedBy: 'quality.manager',
-    fsma204Compliant: true,
+    // Fix for relatedDocuments and relatedTraining
     relatedDocuments: [
-      {
-        id: 'rd-1',
-        documentId: 'doc-1',
-        documentName: 'Documentation Procedure',
-        documentType: 'SOP'
-      }
+      "doc-001",
+      "doc-002",
+      "doc-003"
     ],
     relatedTraining: [
-      {
-        id: 'rt-1',
-        trainingId: 'training-1',
-        trainingName: 'Documentation Requirements',
-        trainingType: 'online'
-      }
-    ],
-    sourceReference: 'Audit-2023-042'
-  }
-];
-
-// Mock Training Records
-export const mockTrainingRecords: TrainingRecord[] = [
-  {
-    id: 'tr-1',
-    session_id: 'ts-1',
-    employee_id: 'emp-101',
-    employee_name: 'John Doe',
-    status: 'Completed',
-    assigned_date: '2023-07-01T00:00:00Z',
-    due_date: '2023-07-15T00:00:00Z',
-    completion_date: '2023-07-12T14:30:00Z',
-    score: 95,
-    pass_threshold: 80
+      "tr-001",
+      "tr-002"
+    ]
   },
   {
-    id: 'tr-2',
-    session_id: 'ts-2',
-    employee_id: 'emp-102',
-    employee_name: 'Jane Smith',
-    status: 'In Progress',
-    assigned_date: '2023-08-01T00:00:00Z',
-    due_date: '2023-08-20T00:00:00Z'
-  },
-  {
-    id: 'tr-3',
-    session_id: 'ts-1',
-    employee_id: 'emp-103',
-    employee_name: 'David Wilson',
-    status: 'Not Started',
-    assigned_date: '2023-08-05T00:00:00Z',
-    due_date: '2023-08-25T00:00:00Z'
-  }
-];
-
-// Mock Training Sessions
-export const mockTrainingSessions: TrainingSession[] = [
-  {
-    id: 'ts-1',
-    title: 'HACCP Principles Training',
-    description: 'Comprehensive training on HACCP principles and implementation',
-    training_type: 'classroom',
-    training_category: 'haccp',
-    department: 'Quality',
-    start_date: '2023-07-10T09:00:00Z',
-    due_date: '2023-07-10T17:00:00Z',
-    assigned_to: ['emp-101', 'emp-103', 'emp-105'],
-    materials_id: ['doc-5', 'doc-6'],
-    is_recurring: true,
-    recurring_interval: 365,
-    required_roles: ['quality', 'production-supervisor'],
-    completion_status: 'Completed',
-    created_by: 'training.manager',
-    created_at: '2023-06-15T10:30:00Z',
-    updated_at: '2023-06-15T10:30:00Z'
-  },
-  {
-    id: 'ts-2',
-    title: 'Allergen Management',
-    description: 'Training on allergen control and cross-contamination prevention',
-    training_type: 'online',
-    training_category: 'allergen-management',
+    id: '2',
+    title: 'Production Line Contamination',
+    description: 'Metal fragments detected in product during inspection',
+    status: 'In_Progress',
+    priority: 'Critical',
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'Sarah Johnson',
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: 'Michael Chen',
+    source: 'Non_Conformance',
+    sourceId: 'NC-2023-15',
+    sourceReference: 'NC-2023-15',
+    rootCause: 'Worn equipment part causing metal shavings',
+    correctiveAction: 'Replace affected equipment parts',
+    preventiveAction: 'Enhance preventive maintenance schedule',
+    effectivenessCriteria: 'No metal detection alarms for 1 month',
     department: 'Production',
-    start_date: '2023-08-05T00:00:00Z',
-    due_date: '2023-08-20T00:00:00Z',
-    assigned_to: ['emp-102', 'emp-104', 'emp-106'],
-    materials_id: ['doc-7'],
-    is_recurring: true,
-    recurring_interval: 180,
-    required_roles: ['production'],
-    completion_status: 'In Progress',
-    created_by: 'training.manager',
-    created_at: '2023-07-25T14:15:00Z',
-    updated_at: '2023-07-25T14:15:00Z'
+    fsma204Compliant: true,
+    relatedDocuments: [],
+    relatedTraining: ['TR-527']
   }
 ];
 
-// Export additional mock data as needed
+// Mock data for related documents
+export const mockRelatedDocuments = [
+  {
+    id: 'doc-001',
+    documentId: '1',
+    documentName: 'HACCP Plan',
+    documentType: 'Plan'
+  },
+  {
+    id: 'doc-002',
+    documentId: '2',
+    documentName: 'Supplier Agreement',
+    documentType: 'Agreement'
+  },
+  {
+    id: 'doc-003',
+    documentId: '3',
+    documentName: 'Equipment Maintenance Log',
+    documentType: 'Log'
+  }
+];
+
+// Mock data for related training
+export const mockRelatedTraining = [
+  {
+    id: 'tr-001',
+    trainingId: '1',
+    trainingName: 'HACCP Principles',
+    trainingType: 'Classroom'
+  },
+  {
+    id: 'tr-002',
+    trainingId: '2',
+    trainingName: 'Food Safety Basics',
+    trainingType: 'Online'
+  }
+];

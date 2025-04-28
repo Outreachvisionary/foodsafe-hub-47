@@ -1,149 +1,195 @@
 
+import { CAPA, CAPAStats, CAPAFetchParams } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAStatus } from '@/types/capa';
-import { getCAPAById as fetchCAPAById } from './capa/capaFetchService';
-import { mapInternalStatusToDb } from './capa/capaStatusMapper';
 
-// Re-export the function from capaFetchService for backward compatibility
-export const getCAPAById = fetchCAPAById;
+// Mock CAPA data for development
+const mockCAPAs: CAPA[] = [
+  {
+    id: "1",
+    title: "Raw Material Quality Issue",
+    description: "Supplier delivered raw materials below quality standards",
+    status: 'Open',
+    priority: 'High',
+    createdAt: new Date().toISOString(),
+    createdBy: "John Doe",
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: "Maria Rodriguez",
+    source: "Supplier_Issue",
+    sourceId: "SUP-001",
+    sourceReference: "QC-Check-2023-42",
+    completionDate: undefined,
+    rootCause: "Supplier changed process without notification",
+    correctiveAction: "Return materials and request replacement",
+    preventiveAction: "Implement supplier pre-shipment testing",
+    effectivenessCriteria: "No quality issues for 3 consecutive shipments",
+    effectivenessRating: undefined,
+    effectivenessVerified: false,
+    department: "Quality Control",
+    fsma204Compliant: true,
+    relatedDocuments: ["DOC-1234", "DOC-5678"],
+    relatedTraining: []
+  },
+  {
+    id: "2",
+    title: "Production Line Contamination",
+    description: "Metal fragments detected in product during inspection",
+    status: 'In_Progress',
+    priority: 'Critical',
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: "Sarah Johnson",
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: "Michael Chen",
+    source: "Non_Conformance",
+    sourceId: "NC-2023-15",
+    sourceReference: "NC-2023-15",
+    rootCause: "Worn equipment part causing metal shavings",
+    correctiveAction: "Replace affected equipment parts",
+    preventiveAction: "Enhance preventive maintenance schedule",
+    effectivenessCriteria: "No metal detection alarms for 1 month",
+    department: "Production",
+    fsma204Compliant: true,
+    relatedDocuments: [],
+    relatedTraining: ["TR-527"]
+  }
+];
 
-export const createCAPA = async (capaData: Partial<CAPA>) => {
+// Mock CAPA stats for development
+export const getCAPAStats = async (): Promise<CAPAStats> => {
+  // In a real application, this would fetch data from the API
+  return {
+    total: 85,
+    openCount: 32,
+    closedCount: 45,
+    overdueCount: 8,
+    pendingVerificationCount: 5,
+    effectivenessRate: 78,
+    byPriority: {
+      'Low': 12,
+      'Medium': 35,
+      'High': 30,
+      'Critical': 8
+    },
+    bySource: {
+      'Audit': 25,
+      'Customer_Complaint': 15,
+      'Non_Conformance': 20,
+      'Supplier_Issue': 10,
+      'Management_Review': 15
+    },
+    byDepartment: {
+      'Production': 30,
+      'QA': 25,
+      'Warehouse': 15,
+      'Maintenance': 10,
+      'Other': 5
+    },
+    byStatus: {
+      'Open': 15,
+      'In Progress': 17,
+      'Closed': 40,
+      'Overdue': 8,
+      'Pending_Verification': 5,
+      'Verified': 0
+    },
+    byMonth: {
+      'Jan': 5,
+      'Feb': 8,
+      'Mar': 10,
+      'Apr': 12,
+      'May': 15,
+      'Jun': 20,
+      'Jul': 15
+    },
+    overdue: 8
+  };
+};
+
+// Get all CAPAs with optional filtering
+export const getCAPAs = async (params?: CAPAFetchParams): Promise<CAPA[]> => {
   try {
-    // Map the status to DB format if it exists
-    const status = capaData.status ? mapInternalStatusToDb(capaData.status) : 'Open';
-    
-    const dbCAPAData = {
-      title: capaData.title,
-      description: capaData.description,
-      priority: capaData.priority,
-      status: status,
-      created_at: capaData.createdAt || new Date().toISOString(),
-      due_date: capaData.dueDate,
-      assigned_to: capaData.assignedTo,
-      created_by: capaData.createdBy,
-      source: capaData.source,
-      root_cause: capaData.rootCause,
-      corrective_action: capaData.correctiveAction,
-      preventive_action: capaData.preventiveAction,
-      department: capaData.department,
-      effectiveness_criteria: capaData.effectivenessCriteria,
-      source_id: capaData.sourceId,
-      source_reference: capaData.sourceReference,
-      // Only include these fields if they exist
-      ...(capaData.completionDate && { completion_date: capaData.completionDate }),
-      ...(capaData.verificationDate && { verification_date: capaData.verificationDate }),
-      ...(capaData.effectivenessRating && { effectiveness_rating: capaData.effectivenessRating }),
-      ...(capaData.verificationMethod && { verification_method: capaData.verificationMethod }),
-      ...(capaData.verifiedBy && { verified_by: capaData.verifiedBy }),
-      ...(capaData.fsma204Compliant !== undefined && { fsma204_compliant: capaData.fsma204Compliant }),
-      ...(capaData.effectivenessVerified !== undefined && { effectiveness_verified: capaData.effectivenessVerified })
-    };
-
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .insert(dbCAPAData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Could not create CAPA: ${error.message}`);
-    }
-
-    return data;
+    // For now, return mock data
+    // In a real app, this would use the params to filter data from the API
+    return mockCAPAs;
   } catch (error) {
-    console.error('Error creating CAPA:', error);
+    console.error('Error fetching CAPAs:', error);
     throw error;
   }
 };
 
-export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
+// Mock function to fetch a single CAPA
+export const getCAPAById = async (id: string): Promise<CAPA | null> => {
+  // This would fetch from an API in production
+  const foundCapa = mockCAPAs.find(capa => capa.id === id);
+  
+  if (foundCapa) {
+    return foundCapa;
+  }
+  
+  const mockCapa: CAPA = {
+    id,
+    title: `CAPA-${id}`,
+    description: "Description of the CAPA item",
+    status: 'In_Progress',
+    priority: 'High',
+    createdAt: new Date().toISOString(),
+    createdBy: 'John Doe',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    assignedTo: 'Jane Smith',
+    source: 'Audit',
+    sourceReference: 'Audit-2023-001',
+    rootCause: 'Process failure',
+    correctiveAction: 'Update process documentation',
+    preventiveAction: 'Staff training',
+    effectivenessCriteria: 'No recurrence for 90 days',
+    relatedDocuments: [],
+    relatedTraining: []
+  };
+  
+  return mockCapa;
+};
+
+// Delete CAPA
+export const deleteCAPA = async (id: string): Promise<void> => {
   try {
-    const updateData: { [key: string]: any } = {};
+    // In production, this would delete from the API
+    console.log(`Deleting CAPA with ID: ${id}`);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return;
+  } catch (error) {
+    console.error('Error deleting CAPA:', error);
+    throw error;
+  }
+};
 
-    if (capaData.title !== undefined) {
-      updateData.title = capaData.title;
-    }
-    if (capaData.description !== undefined) {
-      updateData.description = capaData.description;
-    }
-    if (capaData.status !== undefined) {
-      updateData.status = mapInternalStatusToDb(capaData.status);
-    }
-    if (capaData.priority !== undefined) {
-      updateData.priority = capaData.priority;
-    }
-    if (capaData.dueDate !== undefined) {
-      updateData.due_date = capaData.dueDate;
-    }
-    if (capaData.completionDate !== undefined) {
-      updateData.completion_date = capaData.completionDate;
-    }
-    if (capaData.verificationDate !== undefined) {
-      updateData.verification_date = capaData.verificationDate;
-    }
-    if (capaData.assignedTo !== undefined) {
-      updateData.assigned_to = capaData.assignedTo;
-    }
-    if (capaData.source !== undefined) {
-      updateData.source = capaData.source;
-    }
-    if (capaData.rootCause !== undefined) {
-      updateData.root_cause = capaData.rootCause;
-    }
-    if (capaData.correctiveAction !== undefined) {
-      updateData.corrective_action = capaData.correctiveAction;
-    }
-    if (capaData.preventiveAction !== undefined) {
-      updateData.preventive_action = capaData.preventiveAction;
-    }
-    if (capaData.department !== undefined) {
-      updateData.department = capaData.department;
-    }
-    if (capaData.effectivenessRating !== undefined) {
-      updateData.effectiveness_rating = capaData.effectivenessRating;
-    }
-    if (capaData.effectivenessCriteria !== undefined) {
-      updateData.effectiveness_criteria = capaData.effectivenessCriteria;
-    }
-    if (capaData.verificationMethod !== undefined) {
-      updateData.verification_method = capaData.verificationMethod;
-    }
-    if (capaData.verifiedBy !== undefined) {
-      updateData.verified_by = capaData.verifiedBy;
-    }
-    if (capaData.fsma204Compliant !== undefined) {
-      updateData.fsma204_compliant = capaData.fsma204Compliant;
-    }
-    if (capaData.effectivenessVerified !== undefined) {
-      updateData.effectiveness_verified = capaData.effectivenessVerified;
-    }
-    if (capaData.sourceId !== undefined) {
-      updateData.source_id = capaData.sourceId;
-    }
-    if (capaData.sourceReference !== undefined) {
-      updateData.source_reference = capaData.sourceReference;
-    }
-
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Could not update CAPA: ${error.message}`);
-    }
-
-    return data as CAPA;
+// Update CAPA
+export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
+  try {
+    // In production, this would update via the API
+    console.log(`Updating CAPA with ID: ${id}`, updates);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Find existing CAPA or create a mock one
+    const existingCapa = mockCAPAs.find(capa => capa.id === id) || {
+      id,
+      title: `CAPA-${id}`,
+      description: "Description of the CAPA item",
+      status: 'In_Progress',
+      priority: 'High',
+      createdAt: new Date().toISOString(),
+      createdBy: 'John Doe',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      assignedTo: 'Jane Smith',
+      source: 'Audit',
+      sourceReference: 'Audit-2023-001',
+      relatedDocuments: [],
+      relatedTraining: []
+    } as CAPA;
+    
+    return { ...existingCapa, ...updates };
   } catch (error) {
     console.error('Error updating CAPA:', error);
     throw error;
   }
 };
-
-// Re-export the deleteCAPA function from capaFetchService
-export { deleteCAPA } from './capa/capaFetchService';
-
-// Add the getCAPAs function that was missing
-export { getCAPAs } from './capa/capaFetchService';

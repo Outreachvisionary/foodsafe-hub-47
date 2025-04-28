@@ -8,7 +8,7 @@ interface UserContextType {
   user: User | null;
   profile: UserProfile | null;
   isAuthenticated: boolean;
-  loading: boolean;
+  loading: boolean; // Add loading state property
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -17,7 +17,7 @@ const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
   isAuthenticated: false,
-  loading: true,
+  loading: true, // Default to loading
   signOut: async () => {},
   updateProfile: async () => {},
 });

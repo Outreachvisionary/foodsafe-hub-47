@@ -2,7 +2,11 @@
 export type CAPAStatus = 
   | 'Open'
   | 'In_Progress'
+  | 'Under_Review'
+  | 'Completed'
   | 'Closed'
+  | 'Rejected'
+  | 'On_Hold'
   | 'Overdue'
   | 'Pending_Verification'
   | 'Verified';
@@ -63,10 +67,12 @@ export interface CAPA {
 export interface CAPAActivity {
   id: string;
   capaId: string;
-  activityType: string;
-  description: string;
-  timestamp: string;
-  user: string;
+  action_type: string;
+  action_description: string;
+  performed_at: string;
+  performed_by: string;
+  old_status?: string;
+  new_status?: string;
   metadata?: Record<string, any>;
 }
 
@@ -81,6 +87,10 @@ export interface CAPAFilter {
   dueDateTo?: string;
   assignedTo?: string | string[];
   searchTerm?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
 }
 
 export interface CAPAFetchParams extends CAPAFilter {
@@ -88,6 +98,7 @@ export interface CAPAFetchParams extends CAPAFilter {
   limit?: number;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  searchQuery?: string;
 }
 
 export interface CAPAStats {

@@ -16,7 +16,7 @@ const DocumentStatistics = () => {
     isDocumentStatus(doc.status, 'Pending_Review')
   ).length;
   const activeCount = documents.filter(doc => 
-    isDocumentStatus(doc.status, 'Active')
+    isDocumentStatus(doc.status, 'Published')
   ).length;
 
   return (

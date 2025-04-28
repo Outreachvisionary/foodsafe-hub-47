@@ -22,4 +22,5 @@ export interface AppUser {
   profile?: UserProfile;
   full_name?: string;
   avatar_url?: string;
+  user_metadata?: Record<string, any>;
 }
