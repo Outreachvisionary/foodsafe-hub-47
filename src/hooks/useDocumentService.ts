@@ -1,432 +1,398 @@
 
-import { useState, useCallback } from 'react';
-import { Document, DocumentVersion, DocumentStatus, CheckoutStatus } from '@/types/document';
-import { convertToDocumentStatus, convertToCheckoutStatus } from '@/utils/typeAdapters';
+import { useState } from 'react';
+import { Document, DocumentStatus } from '@/types/document';
+import { fetchDocuments as fetchDocumentsService } from '@/services/documentService';
 
-// Mock data for document service functions
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    title: 'Quality Manual',
-    description: 'Main quality management system documentation',
-    status: 'Published',
-    category: 'Policy',
-    version: 2,
-    file_name: 'quality_manual_v2.pdf',
-    file_size: 1024 * 1024,
-    file_type: 'application/pdf',
-    created_at: new Date().toISOString(),
-    created_by: 'John Doe',
-    checkout_status: 'Available'
-  },
-  {
-    id: '2',
-    title: 'Sanitation SOP',
-    description: 'Standard operating procedure for sanitation',
-    status: 'Draft',
-    category: 'SOP',
-    version: 1,
-    file_name: 'sanitation_sop.docx',
-    file_size: 512 * 1024,
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    created_at: new Date().toISOString(),
-    created_by: 'Maria Garcia',
-    checkout_status: 'Available'
-  }
-];
-
-const adaptDatabaseToDocument = (dbDocument: any): Document => {
-  return {
-    ...dbDocument,
-    status: convertToDocumentStatus(dbDocument.status),
-    checkout_status: convertToCheckoutStatus(dbDocument.checkout_status || 'Available'),
-  } as Document;
-};
-
-const useDocumentService = () => {
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments);
-  const [loading, setLoading] = useState(false);
+export default function useDocumentService() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDocuments = useCallback(async (filter?: any) => {
+  // Fetch documents with optional filter
+  const fetchDocuments = async (filter?: any) => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const filteredDocs = [...mockDocuments];
-      
-      if (filter) {
-        // Apply filtering logic here
-        console.log('Filtering documents with:', filter);
-      }
-
-      setDocuments(filteredDocs);
-      return filteredDocs;
-    } catch (err: any) {
-      console.error('Error fetching documents:', err);
-      setError(err.message || 'Failed to fetch documents');
+      const docs = await fetchDocumentsService();
+      setDocuments(docs);
+      return docs;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
       return [];
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const fetchDocumentById = useCallback(async (id: string): Promise<Document | null> => {
+  // Fetch a single document by ID
+  const fetchDocumentById = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const document = mockDocuments.find(doc => doc.id === id);
-      
-      if (!document) {
-        return null;
-      }
-
-      return document;
-    } catch (err: any) {
-      console.error('Error fetching document by ID:', err);
-      setError(err.message || 'Failed to fetch document');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const createDocument = useCallback(async (newDocument: Partial<Document>): Promise<Document | null> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const documentData = {
-        id: `doc-${Date.now()}`,
-        status: newDocument.status || 'Draft',
-        checkout_status: newDocument.checkout_status || 'Available',
+      const doc = documents.find(d => d.id === id) || {
+        id,
+        title: 'Sample Document',
+        description: 'This is a sample document',
+        file_name: 'sample.pdf',
+        file_type: 'application/pdf',
+        file_size: 1024,
+        category: 'SOP',
+        status: 'Active' as DocumentStatus,
         version: 1,
+        created_by: 'admin',
         created_at: new Date().toISOString(),
-        ...newDocument,
-        category: newDocument.category || 'Other'
-      } as Document;
+        updated_at: new Date().toISOString(),
+        checkout_status: 'Available'
+      };
+      return doc;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Add to mock documents array
-      const createdDocument = adaptDatabaseToDocument(documentData);
-      setDocuments(prevDocuments => [createdDocument, ...prevDocuments]);
-      return createdDocument;
-    } catch (err: any) {
-      console.error('Error creating document:', err);
-      setError(err.message || 'Failed to create document');
+  // Create a new document
+  const createDocument = async (newDocument: Partial<Document>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // In a real implementation, this would call an API
+      const doc: Document = {
+        id: Date.now().toString(),
+        ...newDocument,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        title: newDocument.title || 'Untitled Document',
+        file_name: newDocument.file_name || 'untitled.pdf',
+        file_type: newDocument.file_type || 'application/pdf',
+        file_size: newDocument.file_size || 0,
+        category: newDocument.category || 'Other',
+        status: newDocument.status || 'Draft',
+        version: newDocument.version || 1,
+        created_by: newDocument.created_by || 'admin',
+        checkout_status: newDocument.checkout_status || 'Available'
+      } as Document;
+      
+      setDocuments([...documents, doc]);
+      return doc;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const updateDocument = useCallback(async (id: string, updates: Partial<Document>): Promise<Document | null> => {
+  // Update an existing document
+  const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
       setLoading(true);
       setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Find document index
-      const documentIndex = mockDocuments.findIndex(doc => doc.id === id);
       
-      if (documentIndex === -1) {
-        throw new Error('Document not found');
+      // Find the document to update
+      const docIndex = documents.findIndex(d => d.id === id);
+      
+      if (docIndex === -1) {
+        throw new Error(`Document with ID ${id} not found`);
       }
-
-      // Update document
-      const updatedDocument = {
-        ...mockDocuments[documentIndex],
+      
+      // Update the document
+      const updatedDoc = {
+        ...documents[docIndex],
         ...updates,
         updated_at: new Date().toISOString()
       };
-
-      // Update the mock array
-      mockDocuments[documentIndex] = updatedDocument;
-      setDocuments([...mockDocuments]);
       
-      return adaptDatabaseToDocument(updatedDocument);
-    } catch (err: any) {
-      console.error('Error updating document:', err);
-      setError(err.message || 'Failed to update document');
+      // Update the documents array
+      const newDocuments = [...documents];
+      newDocuments[docIndex] = updatedDoc;
+      setDocuments(newDocuments);
+      
+      return updatedDoc;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const checkoutDocument = useCallback(async (id: string, userId: string, userName: string): Promise<Document | null> => {
+  // Delete a document
+  const deleteDocument = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const documentIndex = mockDocuments.findIndex(doc => doc.id === id);
       
-      if (documentIndex === -1) {
-        throw new Error('Document not found');
-      }
+      // Filter out the document to delete
+      const newDocuments = documents.filter(d => d.id !== id);
+      setDocuments(newDocuments);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Check if document is already checked out
-      if (mockDocuments[documentIndex].checkout_status === 'Checked Out') {
-        throw new Error('Document is already checked out');
+  // Check out a document
+  const checkOutDocument = async (id: string, userId: string, userName: string, userRole: string) => {
+    try {
+      const docIndex = documents.findIndex(d => d.id === id);
+      
+      if (docIndex === -1) {
+        throw new Error(`Document with ID ${id} not found`);
       }
-
-      // Update document checkout status
-      const updatedDocument = {
-        ...mockDocuments[documentIndex],
+      
+      const updatedDoc = {
+        ...documents[docIndex],
         checkout_status: 'Checked Out',
         checkout_user_id: userId,
         checkout_user_name: userName,
         checkout_timestamp: new Date().toISOString()
       };
-
-      mockDocuments[documentIndex] = updatedDocument;
-      setDocuments([...mockDocuments]);
       
-      return adaptDatabaseToDocument(updatedDocument);
-    } catch (err: any) {
-      console.error('Error checking out document:', err);
-      setError(err.message || 'Failed to check out document');
-      return null;
-    } finally {
-      setLoading(false);
+      const newDocuments = [...documents];
+      newDocuments[docIndex] = updatedDoc;
+      setDocuments(newDocuments);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
-  }, []);
+  };
 
-  const checkinDocument = useCallback(async (
-    id: string, 
-    userId: string, 
-    versionData: {
-      file_name: string;
-      file_size: number;
-      check_in_comment: string;
-      version_type: string;
-    }
-  ): Promise<DocumentVersion | null> => {
+  // Check in a document
+  const checkInDocument = async (id: string, userId: string, comments?: string) => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const documentIndex = mockDocuments.findIndex(doc => doc.id === id);
+      const docIndex = documents.findIndex(d => d.id === id);
       
-      if (documentIndex === -1) {
-        throw new Error('Document not found');
+      if (docIndex === -1) {
+        throw new Error(`Document with ID ${id} not found`);
       }
-
-      const doc = mockDocuments[documentIndex];
       
-      // Create a new version
-      const newVersion: DocumentVersion = {
-        id: `ver-${Date.now()}`,
-        document_id: id,
-        version: doc.version + 1,
-        file_name: versionData.file_name,
-        file_size: versionData.file_size,
-        created_at: new Date().toISOString(),
-        created_by: userId,
-        check_in_comment: versionData.check_in_comment,
-        version_type: versionData.version_type
-      };
-
-      // Update the document
-      const updatedDocument = {
-        ...doc,
+      const updatedDoc = {
+        ...documents[docIndex],
         checkout_status: 'Available',
-        checkout_user_id: null,
-        checkout_user_name: null,
-        checkout_timestamp: null,
-        version: doc.version + 1,
-        current_version_id: newVersion.id,
-        file_name: versionData.file_name
+        checkout_user_id: undefined,
+        checkout_user_name: undefined,
+        checkout_timestamp: undefined,
+        updated_at: new Date().toISOString()
       };
-
-      mockDocuments[documentIndex] = updatedDocument;
-      setDocuments([...mockDocuments]);
       
-      return newVersion;
-    } catch (err: any) {
-      console.error('Error checking in document:', err);
-      setError(err.message || 'Failed to check in document');
-      return null;
-    } finally {
-      setLoading(false);
+      const newDocuments = [...documents];
+      newDocuments[docIndex] = updatedDoc;
+      setDocuments(newDocuments);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
-  }, []);
+  };
 
-  const getDocumentVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Helper functions for document storage paths and URLs
+  const getStoragePath = (documentId: string, fileName: string) => {
+    return `documents/${documentId}/${fileName}`;
+  };
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+  const getDownloadUrl = async (path: string) => {
+    // In a real implementation, this would get a URL from storage
+    return `https://example.com/storage/${path}`;
+  };
 
-      // Mock versions
-      const mockVersions: DocumentVersion[] = [
-        {
-          id: 'ver-1',
-          document_id: documentId,
-          version: 3,
-          file_name: 'document_v3.pdf',
-          file_size: 1024 * 1024,
-          created_at: new Date().toISOString(),
-          created_by: 'John Doe',
-          check_in_comment: 'Updated formatting and fixed typos',
-          version_type: 'minor'
-        },
-        {
-          id: 'ver-2',
-          document_id: documentId,
-          version: 2,
-          file_name: 'document_v2.pdf',
-          file_size: 980 * 1024,
-          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_by: 'Jane Smith',
-          check_in_comment: 'Updated content in section 3',
-          version_type: 'major'
-        },
-        {
-          id: 'ver-3',
-          document_id: documentId,
-          version: 1,
-          file_name: 'document_v1.pdf',
-          file_size: 950 * 1024,
-          created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-          created_by: 'John Doe',
-          check_in_comment: 'Initial version',
-          version_type: 'major'
-        }
-      ];
+  // Mock document permissions functions
+  const fetchAccess = async (documentId: string) => {
+    return [
+      {
+        id: '1',
+        document_id: documentId,
+        permission_level: 'view',
+        user_id: 'user1',
+        user_role: 'Quality Specialist',
+        granted_by: 'admin',
+        granted_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        permission_level: 'edit',
+        user_id: 'user2',
+        user_role: 'Quality Manager',
+        granted_by: 'admin',
+        granted_at: new Date().toISOString()
+      }
+    ];
+  };
 
-      return mockVersions;
-    } catch (err: any) {
-      console.error('Error fetching document versions:', err);
-      setError(err.message || 'Failed to fetch document versions');
-      return [];
-    } finally {
-      setLoading(false);
+  const grantAccess = async (
+    documentId: string, 
+    userId: string, 
+    permissionLevel: string, 
+    grantedBy: string
+  ) => {
+    return {
+      id: Date.now().toString(),
+      document_id: documentId,
+      user_id: userId,
+      permission_level: permissionLevel,
+      granted_by: grantedBy,
+      granted_at: new Date().toISOString()
+    };
+  };
+
+  const revokeAccess = async (accessId: string) => {
+    // In a real implementation, this would call an API
+    return;
+  };
+
+  // Mock document version functions
+  const getDocumentVersions = async (documentId: string) => {
+    return [
+      {
+        id: '1',
+        document_id: documentId,
+        version: 1,
+        file_name: 'document_v1.pdf',
+        file_size: 1024,
+        created_by: 'John Doe',
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        version_type: 'major',
+        change_summary: 'Initial version'
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        version: 2,
+        file_name: 'document_v2.pdf',
+        file_size: 1048,
+        created_by: 'Jane Smith',
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        version_type: 'minor',
+        change_summary: 'Updated section 3.2'
+      }
+    ];
+  };
+
+  // Mock document activities functions
+  const getDocumentActivities = async (documentId: string) => {
+    return [
+      {
+        id: '1',
+        document_id: documentId,
+        action: 'create',
+        user_id: 'user1',
+        user_name: 'John Doe',
+        user_role: 'Document Admin',
+        timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        action: 'update',
+        user_id: 'user2',
+        user_name: 'Jane Smith',
+        user_role: 'Quality Manager',
+        timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        comments: 'Updated to reflect new regulations'
+      }
+    ];
+  };
+
+  // Mock file operations
+  const uploadFile = async (file: File, path: string) => {
+    // In a real implementation, this would upload to storage
+    return path;
+  };
+
+  const deleteFile = async (filePath: string) => {
+    // In a real implementation, this would delete from storage
+    return;
+  };
+
+  // Mock document comments
+  const getDocumentComments = async (documentId: string) => {
+    return [
+      {
+        id: '1',
+        document_id: documentId,
+        user_id: 'user1',
+        user_name: 'John Doe',
+        content: 'Please review section 2.3',
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        user_id: 'user2',
+        user_name: 'Jane Smith',
+        content: 'Looks good, approved',
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  };
+
+  const createDocumentComment = async (comment: any) => {
+    return {
+      id: Date.now().toString(),
+      ...comment,
+      created_at: new Date().toISOString()
+    };
+  };
+
+  // Version management
+  const restoreVersion = async (documentId: string, versionId: string) => {
+    // In a real implementation, this would restore a previous version
+    return;
+  };
+
+  const downloadVersion = async (versionId: string) => {
+    // In a real implementation, this would download a specific version
+    return;
+  };
+
+  // Document approval functions
+  const approveDocument = async (documentId: string, comment: string) => {
+    const docIndex = documents.findIndex(d => d.id === documentId);
+    
+    if (docIndex === -1) {
+      throw new Error(`Document with ID ${documentId} not found`);
     }
-  }, []);
+    
+    const updatedDoc = {
+      ...documents[docIndex],
+      status: 'Approved',
+      updated_at: new Date().toISOString()
+    };
+    
+    const newDocuments = [...documents];
+    newDocuments[docIndex] = updatedDoc;
+    setDocuments(newDocuments);
+  };
 
-  const getDocumentComments = useCallback(async (documentId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Mock comments
-      const mockComments = [
-        {
-          id: 'comment-1',
-          document_id: documentId,
-          content: 'Please review section 3.2, I think we need to clarify the procedure.',
-          created_at: new Date().toISOString(),
-          user_id: 'user-1',
-          user_name: 'John Doe'
-        },
-        {
-          id: 'comment-2',
-          document_id: documentId,
-          content: 'I agree, also check if we need to reference the new regulatory requirements.',
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          user_id: 'user-2',
-          user_name: 'Jane Smith'
-        }
-      ];
-
-      return mockComments;
-    } catch (err: any) {
-      console.error('Error fetching document comments:', err);
-      setError(err.message || 'Failed to fetch document comments');
-      return [];
-    } finally {
-      setLoading(false);
+  const rejectDocument = async (documentId: string, reason: string) => {
+    const docIndex = documents.findIndex(d => d.id === documentId);
+    
+    if (docIndex === -1) {
+      throw new Error(`Document with ID ${documentId} not found`);
     }
-  }, []);
-
-  const createDocumentComment = useCallback(async (commentData: any) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const newComment = {
-        id: `comment-${Date.now()}`,
-        ...commentData,
-        created_at: new Date().toISOString()
-      };
-
-      return newComment;
-    } catch (err: any) {
-      console.error('Error creating document comment:', err);
-      setError(err.message || 'Failed to create comment');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const restoreVersion = useCallback(async (documentId: string, versionId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      console.log(`Restoring document ${documentId} to version ${versionId}`);
-      
-      // Return success
-      return true;
-    } catch (err: any) {
-      console.error('Error restoring document version:', err);
-      setError(err.message || 'Failed to restore version');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const downloadVersion = useCallback(async (versionId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      console.log(`Downloading version ${versionId}`);
-      
-      // Return success
-      return true;
-    } catch (err: any) {
-      console.error('Error downloading document version:', err);
-      setError(err.message || 'Failed to download version');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    
+    const updatedDoc = {
+      ...documents[docIndex],
+      status: 'Rejected',
+      rejection_reason: reason,
+      updated_at: new Date().toISOString()
+    };
+    
+    const newDocuments = [...documents];
+    newDocuments[docIndex] = updatedDoc;
+    setDocuments(newDocuments);
+  };
 
   return {
     documents,
@@ -436,14 +402,23 @@ const useDocumentService = () => {
     fetchDocumentById,
     createDocument,
     updateDocument,
-    checkoutDocument,
-    checkinDocument,
+    deleteDocument,
+    checkOutDocument,
+    checkInDocument,
     getDocumentVersions,
+    getDocumentActivities,
+    uploadFile,
+    deleteFile,
     getDocumentComments,
     createDocumentComment,
+    fetchAccess,
+    grantAccess,
+    revokeAccess,
     restoreVersion,
-    downloadVersion
+    downloadVersion,
+    approveDocument,
+    rejectDocument,
+    getStoragePath,
+    getDownloadUrl
   };
-};
-
-export default useDocumentService;
+}

@@ -1,57 +1,61 @@
 
-export type TrainingStatus = 
-  | 'Not Started' 
-  | 'In Progress' 
-  | 'Completed' 
-  | 'Overdue' 
-  | 'Failed'
-  | 'Cancelled';
+export type TrainingStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
+export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type TrainingType = 'Onboarding' | 'Compliance' | 'Technical' | 'Safety' | 'Leadership';
+export type TrainingCategory = 'Food Safety' | 'Quality' | 'Regulatory' | 'Operations' | 'Management' | 'Other';
 
-export type TrainingCategory = 
-  | 'haccp' 
-  | 'gmp' 
-  | 'food-safety' 
-  | 'regulatory' 
-  | 'quality-control' 
-  | 'equipment' 
-  | 'allergen-management' 
-  | 'sanitation' 
-  | 'workplace-safety' 
-  | 'other';
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  description?: string;
+  target_roles?: string[];
+  courses?: string[];
+  priority?: string;
+  status?: string;
+  is_required?: boolean;
+  duration_days?: number;
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+  updated_at?: string;
+  is_automated?: boolean;
+  target_departments?: string[];
+  automation_trigger?: string;
+  created_by?: string;
+  related_standards?: string[];
+}
 
-export type TrainingType = 
-  | 'classroom' 
-  | 'online' 
-  | 'on-job' 
-  | 'self-study';
-
-export type TrainingPriority =
-  | 'Low'
-  | 'Medium'
-  | 'High'
-  | 'Critical';
-
-// Add missing TrainingCompletionStatus for backward compatibility
-export type TrainingCompletionStatus = TrainingStatus;
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  duration_hours?: number;
+  prerequisite_courses?: string[];
+  created_at: string;
+  created_by: string;
+  updated_at?: string;
+  is_active?: boolean;
+}
 
 export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
   training_type: TrainingType;
-  training_category: TrainingCategory;
-  department?: string;
-  start_date?: string;
-  due_date: string;
   assigned_to: string[];
-  materials_id?: string[];
+  start_date?: string;
+  due_date?: string;
+  completion_status?: TrainingStatus;
   is_recurring?: boolean;
   recurring_interval?: number;
-  required_roles?: string[];
-  completion_status?: TrainingStatus;
+  department?: string;
   created_by: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  training_category?: TrainingCategory;
+  materials_id?: string[];
+  required_roles?: string[];
 }
 
 export interface TrainingRecord {
@@ -59,8 +63,8 @@ export interface TrainingRecord {
   session_id: string;
   employee_id: string;
   employee_name: string;
-  status: TrainingStatus;
-  assigned_date: string;
+  status?: TrainingStatus;
+  assigned_date?: string;
   due_date: string;
   completion_date?: string;
   score?: number;
@@ -68,56 +72,4 @@ export interface TrainingRecord {
   notes?: string;
   last_recurrence?: string;
   next_recurrence?: string;
-}
-
-export interface TrainingStatistics {
-  overallCompliance: number;
-  departmentCompliance: Array<{
-    department: string;
-    completed: number;
-    total: number;
-    compliance: number;
-  }>;
-  expiringCertifications: Array<{
-    name: string;
-    employee: string;
-    expires: string;
-  }>;
-  upcomingTrainings: Array<{
-    name: string;
-    date: string;
-    participants: number;
-  }>;
-}
-
-export interface TrainingPlan {
-  id: string;
-  name: string;
-  description?: string;
-  courses?: string[];
-  target_roles?: string[];
-  target_departments?: string[];
-  duration_days?: number;
-  is_required?: boolean;
-  is_automated?: boolean;
-  automation_trigger?: string;
-  start_date?: string;
-  end_date?: string;
-  priority?: TrainingPriority;
-  status?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  related_standards?: string[];
-}
-
-// Department statistics interface for dashboard component
-export interface DepartmentStat {
-  department: string;
-  totalAssigned: number;
-  completed: number;
-  overdue: number;
-  compliance: number;
-  name: string;
-  complianceRate: number;
 }

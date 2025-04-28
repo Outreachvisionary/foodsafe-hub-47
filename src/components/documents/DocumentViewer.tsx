@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { isDocumentStatus } from '@/utils/typeAdapters';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -153,9 +152,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
               <Badge variant="outline">{document.category}</Badge>
               <Badge 
                 variant={
-                  isDocumentStatus(document.status, 'Published') ? 'default' :
-                  isDocumentStatus(document.status, 'Draft') ? 'outline' :
-                  isDocumentStatus(document.status, 'Archived') ? 'secondary' :
+                  document.status === 'Published' ? 'default' :
+                  document.status === 'Draft' ? 'outline' :
+                  document.status === 'Archived' ? 'secondary' :
                   'outline'
                 }
               >
@@ -220,7 +219,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
                 
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Last Updated</h3>
-                  <p>{new Date(document.updated_at).toLocaleDateString()}</p>
+                  <p>{new Date(document.updated_at || document.created_at).toLocaleDateString()}</p>
                 </div>
                 
                 {document.expiry_date && (

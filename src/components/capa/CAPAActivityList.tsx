@@ -34,21 +34,21 @@ const CAPAActivityList: React.FC<CAPAActivityListProps> = ({
               <div key={activity.id} className="border-b border-gray-100 pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-medium">{activity.action_description}</p>
+                    <p className="font-medium">{activity.actionDescription || "Action performed"}</p>
                     <p className="text-sm text-gray-500">
-                      {activity.action_type.replace(/_/g, ' ')}
+                      {activity.actionType?.replace(/_/g, ' ') || "Activity"}
                     </p>
                   </div>
                   <div className="text-sm text-gray-500">
-                    {format(new Date(activity.performed_at), 'MMM d, yyyy h:mm a')}
+                    {format(new Date(activity.performedAt || new Date()), 'MMM d, yyyy h:mm a')}
                   </div>
                 </div>
-                <p className="text-sm mt-1">By: {activity.performed_by}</p>
-                {activity.old_status && activity.new_status && (
+                <p className="text-sm mt-1">By: {activity.performedBy || "Unknown user"}</p>
+                {activity.oldStatus && activity.newStatus && (
                   <p className="text-xs mt-1 text-gray-600">
                     Status changed from{' '}
-                    <span className="font-medium">{activity.old_status.replace(/_/g, ' ')}</span> to{' '}
-                    <span className="font-medium">{activity.new_status.replace(/_/g, ' ')}</span>
+                    <span className="font-medium">{activity.oldStatus.replace(/_/g, ' ')}</span> to{' '}
+                    <span className="font-medium">{activity.newStatus.replace(/_/g, ' ')}</span>
                   </p>
                 )}
                 {activity.metadata && activity.metadata.comments && (

@@ -1,309 +1,262 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  TrainingSession,
-  TrainingMaterial,
-  TrainingStatus,
-  TrainingCategory,
-  TrainingType,
-  TrainingPriority,
-} from '@/types/training';
+
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { TrainingPlan, TrainingCourse } from '@/types/training';
 
 interface TrainingContextType {
-  trainingSessions: TrainingSession[];
-  trainingMaterials: TrainingMaterial[];
+  trainingPlans: TrainingPlan[];
+  trainingCourses: TrainingCourse[];
   loading: boolean;
   error: string | null;
-  fetchTrainingSessions: () => Promise<void>;
-  fetchTrainingMaterials: () => Promise<void>;
-  createTrainingSession: (
-    sessionData: Partial<TrainingSession>
-  ) => Promise<TrainingSession | null>;
-  updateTrainingSession: (
-    id: string,
-    updates: Partial<TrainingSession>
-  ) => Promise<TrainingSession | null>;
-  deleteTrainingSession: (id: string) => Promise<void>;
-  createTrainingMaterial: (
-    materialData: Partial<TrainingMaterial>
-  ) => Promise<TrainingMaterial | null>;
-  updateTrainingMaterial: (
-    id: string,
-    updates: Partial<TrainingMaterial>
-  ) => Promise<TrainingMaterial | null>;
-  deleteTrainingMaterial: (id: string) => Promise<void>;
+  fetchPlans: () => Promise<void>;
+  fetchCourses: () => Promise<void>;
+  createTrainingPlan: (plan: Partial<TrainingPlan>) => Promise<void>;
+  updateTrainingPlan: (id: string, plan: Partial<TrainingPlan>) => Promise<void>;
+  deleteTrainingPlan: (id: string) => Promise<void>;
+  createTrainingCourse: (course: Partial<TrainingCourse>) => Promise<void>;
+  updateTrainingCourse: (id: string, course: Partial<TrainingCourse>) => Promise<void>;
+  deleteTrainingCourse: (id: string) => Promise<void>;
 }
 
-const TrainingContext = createContext<TrainingContextType>({
-  trainingSessions: [],
-  trainingMaterials: [],
-  loading: false,
-  error: null,
-  fetchTrainingSessions: async () => {},
-  fetchTrainingMaterials: async () => {},
-  createTrainingSession: async () => null,
-  updateTrainingSession: async () => null,
-  deleteTrainingSession: async () => {},
-  createTrainingMaterial: async () => null,
-  updateTrainingMaterial: async () => null,
-  deleteTrainingMaterial: async () => {},
-});
+const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
 
-export const useTraining = () => useContext(TrainingContext);
+export const useTrainingContext = () => {
+  const context = useContext(TrainingContext);
+  if (!context) {
+    throw new Error('useTrainingContext must be used within a TrainingProvider');
+  }
+  return context;
+};
 
-export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [trainingSessions, setTrainingSessions] = useState<
-    TrainingSession[]
-  >([]);
-  const [trainingMaterials, setTrainingMaterials] = useState<
-    TrainingMaterial[]
-  >([]);
+export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+  const [trainingCourses, setTrainingCourses] = useState<TrainingCourse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchTrainingSessions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .select('*');
-
-      if (error) {
-        throw error;
-      }
-
-      setTrainingSessions(data as TrainingSession[]);
-    } catch (error) {
-      console.error('Error fetching training sessions:', error);
-      setError('Failed to fetch training sessions');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchTrainingMaterials = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase
-        .from('training_materials')
-        .select('*');
-
-      if (error) {
-        throw error;
-      }
-
-      setTrainingMaterials(data as TrainingMaterial[]);
-    } catch (error) {
-      console.error('Error fetching training materials:', error);
-      setError('Failed to fetch training materials');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fix the error around line 192 by mapping the session data properly:
-  const createTrainingSession = async (sessionData: Partial<TrainingSession>) => {
+  
+  const fetchPlans = async () => {
     try {
       setLoading(true);
-      // Convert session data to match database schema
-      const transformedSession = {
-        title: sessionData.title,
-        description: sessionData.description,
-        training_type: sessionData.training_type,
-        training_category: sessionData.training_category,
-        department: sessionData.department,
-        start_date: sessionData.start_date,
-        due_date: sessionData.due_date,
-        completion_status: sessionData.completion_status || 'Not Started',
-        is_recurring: sessionData.is_recurring || false,
-        recurring_interval: sessionData.recurring_interval,
-        assigned_to: sessionData.assigned_to || [],
-        required_roles: sessionData.required_roles || [],
-        materials_id: sessionData.materials_id || [],
-        created_by: sessionData.created_by || 'system'
+      setError(null);
+      
+      // Mock data - in a real implementation, this would fetch from an API
+      const plans: TrainingPlan[] = [
+        {
+          id: '1',
+          name: 'Food Safety Onboarding',
+          description: 'Basic food safety training for new employees',
+          target_roles: ['Production Staff', 'Warehouse Staff'],
+          courses: [],
+          priority: 'High',
+          status: 'Active',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          name: 'Quality Management Training',
+          description: 'Advanced quality control procedures',
+          target_roles: ['Quality Team', 'Supervisors'],
+          courses: [],
+          priority: 'Medium',
+          status: 'Active',
+          created_at: new Date().toISOString()
+        }
+      ];
+      
+      setTrainingPlans(plans);
+    } catch (err) {
+      setError('Failed to fetch training plans');
+      console.error('Error fetching training plans:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Mock data - in a real implementation, this would fetch from an API
+      const courses: TrainingCourse[] = [
+        {
+          id: '1',
+          title: 'HACCP Principles',
+          description: 'Introduction to HACCP principles and implementation',
+          category: 'Food Safety',
+          duration_hours: 4,
+          created_at: new Date().toISOString(),
+          created_by: 'admin'
+        },
+        {
+          id: '2',
+          title: 'GMP Basics',
+          description: 'Good Manufacturing Practices fundamentals',
+          category: 'Compliance',
+          duration_hours: 2,
+          created_at: new Date().toISOString(),
+          created_by: 'admin'
+        }
+      ];
+      
+      setTrainingCourses(courses);
+    } catch (err) {
+      setError('Failed to fetch training courses');
+      console.error('Error fetching training courses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createTrainingPlan = async (plan: Partial<TrainingPlan>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const newPlan: TrainingPlan = {
+        id: `plan-${Date.now()}`,
+        name: plan.name || 'Untitled Plan',
+        description: plan.description || '',
+        target_roles: plan.target_roles || [],
+        courses: plan.courses || [],
+        priority: plan.priority || 'Medium',
+        status: plan.status || 'Active',
+        created_at: new Date().toISOString()
       };
-
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .insert([transformedSession]);
-
-      if (error) throw error;
-
-      if (data) {
-        setTrainingSessions(prev => [...prev, data[0] as TrainingSession]);
+      
+      setTrainingPlans([...trainingPlans, newPlan]);
+    } catch (err) {
+      setError('Failed to create training plan');
+      console.error('Error creating training plan:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateTrainingPlan = async (id: string, plan: Partial<TrainingPlan>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const planIndex = trainingPlans.findIndex(p => p.id === id);
+      
+      if (planIndex === -1) {
+        throw new Error(`Training plan with ID ${id} not found`);
       }
-
-      return data ? (data[0] as TrainingSession) : null;
-    } catch (error) {
-      console.error('Error creating training session:', error);
-      setError('Failed to create training session');
-      return null;
+      
+      const updatedPlan = {
+        ...trainingPlans[planIndex],
+        ...plan
+      };
+      
+      const newPlans = [...trainingPlans];
+      newPlans[planIndex] = updatedPlan;
+      setTrainingPlans(newPlans);
+    } catch (err) {
+      setError('Failed to update training plan');
+      console.error('Error updating training plan:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const updateTrainingSession = async (
-    id: string,
-    updates: Partial<TrainingSession>
-  ) => {
+  
+  const deleteTrainingPlan = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .update(updates)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-
-      setTrainingSessions(prev =>
-        prev.map(session => (session.id === id ? (data![0] as TrainingSession) : session))
-      );
-      return data ? (data[0] as TrainingSession) : null;
-    } catch (error) {
-      console.error('Error updating training session:', error);
-      setError('Failed to update training session');
-      return null;
+      
+      const newPlans = trainingPlans.filter(p => p.id !== id);
+      setTrainingPlans(newPlans);
+    } catch (err) {
+      setError('Failed to delete training plan');
+      console.error('Error deleting training plan:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const deleteTrainingSession = async (id: string) => {
+  
+  const createTrainingCourse = async (course: Partial<TrainingCourse>) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { error } = await supabase
-        .from('training_sessions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTrainingSessions(prev => prev.filter(session => session.id !== id));
-    } catch (error) {
-      console.error('Error deleting training session:', error);
-      setError('Failed to delete training session');
+      
+      const newCourse: TrainingCourse = {
+        id: `course-${Date.now()}`,
+        title: course.title || 'Untitled Course',
+        description: course.description || '',
+        category: course.category || '',
+        duration_hours: course.duration_hours || 1,
+        created_at: new Date().toISOString(),
+        created_by: course.created_by || 'admin'
+      };
+      
+      setTrainingCourses([...trainingCourses, newCourse]);
+    } catch (err) {
+      setError('Failed to create training course');
+      console.error('Error creating training course:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const createTrainingMaterial = async (
-    materialData: Partial<TrainingMaterial>
-  ) => {
+  
+  const updateTrainingCourse = async (id: string, course: Partial<TrainingCourse>) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { data, error } = await supabase
-        .from('training_materials')
-        .insert([materialData])
-        .select();
-
-      if (error) throw error;
-
-      setTrainingMaterials(prev => [...prev, data![0] as TrainingMaterial]);
-      return data ? (data[0] as TrainingMaterial) : null;
-    } catch (error) {
-      console.error('Error creating training material:', error);
-      setError('Failed to create training material');
-      return null;
+      
+      const courseIndex = trainingCourses.findIndex(c => c.id === id);
+      
+      if (courseIndex === -1) {
+        throw new Error(`Training course with ID ${id} not found`);
+      }
+      
+      const updatedCourse = {
+        ...trainingCourses[courseIndex],
+        ...course
+      };
+      
+      const newCourses = [...trainingCourses];
+      newCourses[courseIndex] = updatedCourse;
+      setTrainingCourses(newCourses);
+    } catch (err) {
+      setError('Failed to update training course');
+      console.error('Error updating training course:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const updateTrainingMaterial = async (
-    id: string,
-    updates: Partial<TrainingMaterial>
-  ) => {
+  
+  const deleteTrainingCourse = async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { data, error } = await supabase
-        .from('training_materials')
-        .update(updates)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-
-      setTrainingMaterials(prev =>
-        prev.map(material =>
-          material.id === id ? (data![0] as TrainingMaterial) : material
-        )
-      );
-      return data ? (data[0] as TrainingMaterial) : null;
-    } catch (error) {
-      console.error('Error updating training material:', error);
-      setError('Failed to update training material');
-      return null;
+      
+      const newCourses = trainingCourses.filter(c => c.id !== id);
+      setTrainingCourses(newCourses);
+    } catch (err) {
+      setError('Failed to delete training course');
+      console.error('Error deleting training course:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const deleteTrainingMaterial = async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { error } = await supabase
-        .from('training_materials')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTrainingMaterials(prev =>
-        prev.filter(material => material.id !== id)
-      );
-    } catch (error) {
-      console.error('Error deleting training material:', error);
-      setError('Failed to delete training material');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrainingSessions();
-    fetchTrainingMaterials();
-  }, [fetchTrainingSessions, fetchTrainingMaterials]);
-
-  const value: TrainingContextType = {
-    trainingSessions,
-    trainingMaterials,
-    loading,
-    error,
-    fetchTrainingSessions,
-    fetchTrainingMaterials,
-    createTrainingSession,
-    updateTrainingSession,
-    deleteTrainingSession,
-    createTrainingMaterial,
-    updateTrainingMaterial,
-    deleteTrainingMaterial,
-  };
-
+  
   return (
-    <TrainingContext.Provider value={value}>
+    <TrainingContext.Provider
+      value={{
+        trainingPlans,
+        trainingCourses,
+        loading,
+        error,
+        fetchPlans,
+        fetchCourses,
+        createTrainingPlan,
+        updateTrainingPlan,
+        deleteTrainingPlan,
+        createTrainingCourse,
+        updateTrainingCourse,
+        deleteTrainingCourse
+      }}
+    >
       {children}
     </TrainingContext.Provider>
   );

@@ -38,3 +38,25 @@ export const getMockDocumentWorkflowSteps = () => {
     }
   ];
 };
+
+// Mock training statistics
+export const getMockTrainingStatistics = () => {
+  return {
+    totalTrainingSessions: 156,
+    completedTrainingSessions: 132,
+    pendingTrainingSessions: 24,
+    completionRate: 85,
+    expiringCertifications: [
+      { name: 'HACCP Certification', employee: 'John Doe', expiryDate: '2023-09-15' },
+      { name: 'Food Safety', employee: 'Jane Smith', expiryDate: '2023-09-20' },
+      { name: 'GMP Training', employee: 'Robert Johnson', expiryDate: '2023-09-25' }
+    ],
+    departmentCompliance: [
+      { department: 'Production', compliance: 92 },
+      { department: 'Quality', compliance: 97 },
+      { department: 'Warehouse', compliance: 85 },
+      { department: 'Maintenance', compliance: 78 },
+      { department: 'R&D', compliance: 90 }
+    ]
+  };
+};

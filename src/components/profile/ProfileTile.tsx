@@ -27,20 +27,24 @@ const ProfileTile: React.FC<ProfileTileProps> = ({ collapsed = false }) => {
     }
   };
   
+  // Get display name from user email or profile
+  const displayName = user?.profile?.full_name || user?.email?.split('@')[0] || t('common.user');
+  const avatarUrl = user?.profile?.avatar_url || '';
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className={`w-full justify-between px-2 hover:bg-accent/10 transition-all group ${collapsed ? 'justify-center' : ''}`}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-8 w-8 mr-2 ring-2 ring-accent/20 group-hover:ring-accent/60 transition-all shadow-glow">
-              <AvatarImage src={user?.profile?.avatar_url || ''} />
+              <AvatarImage src={avatarUrl} />
               <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-white">
-                {(user?.profile?.full_name || user?.email || 'U')[0]}
+                {displayName[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="text-sm font-medium truncate">
-                {user?.profile?.full_name || user?.email || t('common.user')}
+                {displayName}
               </div>
             )}
           </div>

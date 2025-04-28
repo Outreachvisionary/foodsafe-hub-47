@@ -3,8 +3,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
 import { PieChart, FileCheck, BarChart2 } from 'lucide-react';
-import { DocumentStatus } from '@/types/document';
-import { isDocumentStatus } from '@/utils/typeAdapters';
 
 const DocumentStatistics = () => {
   const { documents } = useDocument();
@@ -13,10 +11,10 @@ const DocumentStatistics = () => {
   const totalDocuments = documents.length;
   const expiredDocuments = documents.filter(doc => doc.expiry_date && new Date(doc.expiry_date) < new Date()).length;
   const pendingReviewCount = documents.filter(doc => 
-    isDocumentStatus(doc.status, 'Pending_Review')
+    doc.status === 'Pending_Review'
   ).length;
   const activeCount = documents.filter(doc => 
-    isDocumentStatus(doc.status, 'Published')
+    doc.status === 'Published'
   ).length;
 
   return (

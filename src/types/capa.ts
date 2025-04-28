@@ -27,7 +27,8 @@ export type CAPASource =
   | 'Food_Safety_Event'
   | 'Management_Review'
   | 'Regulatory'
-  | 'Other';
+  | 'Other'
+  | 'Internal_QC';
 
 export type CAPAEffectivenessRating = 
   | 'Effective'
@@ -67,12 +68,12 @@ export interface CAPA {
 export interface CAPAActivity {
   id: string;
   capaId: string;
-  action_type: string;
-  action_description: string;
-  performed_at: string;
-  performed_by: string;
-  old_status?: string;
-  new_status?: string;
+  actionType: string;
+  actionDescription: string;
+  performedAt: string;
+  performedBy: string;
+  oldStatus?: string;
+  newStatus?: string;
   metadata?: Record<string, any>;
 }
 
