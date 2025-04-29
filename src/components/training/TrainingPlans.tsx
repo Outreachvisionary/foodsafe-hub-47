@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -8,13 +9,13 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, UserPlus, Calendar, MoreVertical, Trash } from "lucide-react";
+import { FileText, UserPlus, Calendar, MoreVertical, Trash, Plus } from "lucide-react";
 import { useTrainingContext } from "@/contexts/TrainingContext";
 import { TrainingPlan, TrainingPriority } from "@/types/training";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, ClipboardEdit, Plus, Trash } from 'lucide-react';
+import { CalendarIcon, ClipboardEdit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';

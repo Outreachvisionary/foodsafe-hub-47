@@ -36,6 +36,24 @@ export enum CAPAStatus {
   Verified = "Verified"
 }
 
+export enum CAPAPriority {
+  Critical = "Critical",
+  High = "High", 
+  Medium = "Medium",
+  Low = "Low"
+}
+
+export enum CAPASource {
+  Audit = "Audit",
+  CustomerComplaint = "Customer_Complaint",
+  InternalReport = "Internal_Report",
+  RegulatoryInspection = "Regulatory_Inspection",
+  SupplierIssue = "Supplier_Issue",
+  ProductionIssue = "Production_Issue",
+  QualityCheck = "Quality_Check",
+  Other = "Other"
+}
+
 export enum CAPAEffectivenessRating {
   NotEffective = "Not_Effective",
   PartiallyEffective = "Partially_Effective",
@@ -58,7 +76,8 @@ export enum TrainingType {
   Skills = "Skills",
   Leadership = "Leadership",
   Safety = "Safety",
-  Technical = "Technical"
+  Technical = "Technical",
+  FoodSafety = "Food_Safety"
 }
 
 export enum TrainingCategory {
@@ -66,7 +85,7 @@ export enum TrainingCategory {
   Optional = "Optional",
   Certification = "Certification",
   Regulatory = "Regulatory",
-  FoodSafety = "Food Safety",
+  FoodSafety = "Food_Safety",
   Compliance = "Compliance"
 }
 

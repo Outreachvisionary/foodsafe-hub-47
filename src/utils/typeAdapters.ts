@@ -27,34 +27,34 @@ export const adaptDocumentToModel = (doc: any): Document => {
   };
 };
 
-// Add function to convert string to CAPAStatus
+// Convert to CAPA status from string
 export const convertToCAPAStatus = (statusString: string): CAPAStatus => {
   const normalizedStatus = statusString.replace(/ /g, '_');
   
-  switch(normalizedStatus) {
-    case 'Open': return CAPAStatus.Open;
-    case 'In_Progress': return CAPAStatus.InProgress;
-    case 'Under_Review': return CAPAStatus.UnderReview;
-    case 'Completed': return CAPAStatus.Completed;
-    case 'Closed': return CAPAStatus.Closed;
-    case 'Rejected': return CAPAStatus.Rejected;
-    case 'On_Hold': return CAPAStatus.OnHold;
-    case 'Overdue': return CAPAStatus.Overdue;
-    case 'Pending_Verification': return CAPAStatus.PendingVerification;
-    case 'Verified': return CAPAStatus.Verified;
+  switch(normalizedStatus.toLowerCase()) {
+    case 'open': return CAPAStatus.Open;
+    case 'in_progress': return CAPAStatus.InProgress;
+    case 'under_review': return CAPAStatus.UnderReview;
+    case 'completed': return CAPAStatus.Completed;
+    case 'closed': return CAPAStatus.Closed;
+    case 'rejected': return CAPAStatus.Rejected;
+    case 'on_hold': return CAPAStatus.OnHold;
+    case 'overdue': return CAPAStatus.Overdue;
+    case 'pending_verification': return CAPAStatus.PendingVerification;
+    case 'verified': return CAPAStatus.Verified;
     default: return CAPAStatus.Open;
   }
 };
 
-// Add function to convert string to CAPAEffectivenessRating
+// Function to convert string to effectiveness rating
 export const convertToEffectivenessRating = (rating: string): CAPAEffectivenessRating => {
   const normalizedRating = rating.replace(/ /g, '_');
   
-  switch(normalizedRating) {
-    case 'Not_Effective': return CAPAEffectivenessRating.NotEffective;
-    case 'Partially_Effective': return CAPAEffectivenessRating.PartiallyEffective;
-    case 'Effective': return CAPAEffectivenessRating.Effective;
-    case 'Highly_Effective': return CAPAEffectivenessRating.HighlyEffective;
+  switch(normalizedRating.toLowerCase()) {
+    case 'not_effective': return CAPAEffectivenessRating.NotEffective;
+    case 'partially_effective': return CAPAEffectivenessRating.PartiallyEffective;
+    case 'effective': return CAPAEffectivenessRating.Effective;
+    case 'highly_effective': return CAPAEffectivenessRating.HighlyEffective;
     default: return CAPAEffectivenessRating.NotEffective;
   }
 };
@@ -62,18 +62,18 @@ export const convertToEffectivenessRating = (rating: string): CAPAEffectivenessR
 export const mapDocumentStatusFromString = (status: string): DocumentStatus => {
   const normalizedStatus = status.replace(/ /g, '_');
   
-  switch(normalizedStatus) {
-    case 'Draft': return DocumentStatus.Draft;
-    case 'In_Review': return DocumentStatus.InReview;
-    case 'Pending_Review': return DocumentStatus.PendingReview;
-    case 'Pending_Approval': return DocumentStatus.PendingApproval;
-    case 'Approved': return DocumentStatus.Approved;
-    case 'Published': return DocumentStatus.Published;
-    case 'Archived': return DocumentStatus.Archived;
-    case 'Rejected': return DocumentStatus.Rejected;
-    case 'Obsolete': return DocumentStatus.Obsolete;
-    case 'Active': return DocumentStatus.Active;
-    case 'Expired': return DocumentStatus.Expired;
+  switch(normalizedStatus.toLowerCase()) {
+    case 'draft': return DocumentStatus.Draft;
+    case 'in_review': return DocumentStatus.InReview;
+    case 'pending_review': return DocumentStatus.PendingReview;
+    case 'pending_approval': return DocumentStatus.PendingApproval;
+    case 'approved': return DocumentStatus.Approved;
+    case 'published': return DocumentStatus.Published;
+    case 'archived': return DocumentStatus.Archived;
+    case 'rejected': return DocumentStatus.Rejected;
+    case 'obsolete': return DocumentStatus.Obsolete;
+    case 'active': return DocumentStatus.Active;
+    case 'expired': return DocumentStatus.Expired;
     default: return DocumentStatus.Draft;
   }
 };
