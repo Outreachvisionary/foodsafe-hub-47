@@ -76,6 +76,8 @@ export interface TrainingPlan {
   status: string;
   startDate?: string;
   endDate?: string;
+  durationDays?: number;
+  isRequired?: boolean;
 }
 
 export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';

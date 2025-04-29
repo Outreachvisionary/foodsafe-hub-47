@@ -1,11 +1,7 @@
 
 import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
 
-export type CAPAPriority =
-  | 'Low'
-  | 'Medium'
-  | 'High'
-  | 'Critical';
+export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export type CAPASource = 
   | 'Audit'
@@ -100,43 +96,4 @@ export interface CAPAStats {
   byStatus: Record<string, number>;
   byMonth: Record<string, number>;
   overdue: number;
-}
-
-// Export training-related types
-export interface TrainingRecord {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  sessionId: string;
-  status: string;
-  assignedDate: string;
-  dueDate: string;
-  completionDate?: string;
-  score?: number;
-  notes?: string;
-}
-
-export interface TrainingPlan {
-  id: string;
-  name: string;
-  description?: string;
-  targetRoles: string[];
-  targetDepartments: string[];
-  courses: string[];
-  priority: TrainingPriority;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-}
-
-export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
-
-export interface TrainingCourse {
-  id: string;
-  title: string;
-  description?: string;
-  category: string;
-  status: string;
-  duration: number;
-  format: string;
 }

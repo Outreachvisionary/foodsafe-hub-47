@@ -15,9 +15,18 @@ import { CAPAStatus } from '@/types/enums';
 interface CreateCAPADialogProps {
   onSuccess?: (capa: CAPA) => void;
   trigger?: React.ReactNode;
+  open?: boolean; 
+  onOpenChange?: (open: boolean) => void;
+  onCAPACreated?: (capa: CAPA) => void;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger }) => {
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
+  onSuccess, 
+  trigger, 
+  open: controlledOpen, 
+  onOpenChange: setControlledOpen,
+  onCAPACreated
+}) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -33,6 +42,16 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger 
   const [department, setDepartment] = useState('');
   const [rootCause, setRootCause] = useState('');
   const [fsma204Compliant, setFsma204Compliant] = useState(false);
+  
+  const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    if (isControlled) {
+      setControlledOpen(newOpen);
+    } else {
+      setOpen(newOpen);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +98,11 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger 
         onSuccess(newCAPA);
       }
       
-      setOpen(false);
+      if (onCAPACreated) {
+        onCAPACreated(newCAPA);
+      }
+      
+      handleOpenChange(false);
       resetForm();
       
     } catch (error) {
@@ -108,7 +131,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger 
   };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isControlled ? controlledOpen : open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || <Button>Create New CAPA</Button>}
       </DialogTrigger>
@@ -241,7 +264,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger 
               <Button
                 type="button"
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={loading}
               >
                 Cancel

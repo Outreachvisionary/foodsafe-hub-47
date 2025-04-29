@@ -43,24 +43,7 @@ export enum CAPAEffectivenessRating {
   HighlyEffective = "Highly_Effective"
 }
 
-// Type guards for comparing enum values with strings
-export const isCheckoutStatus = (value: string, status: CheckoutStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isDocumentStatus = (value: string, status: DocumentStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isCAPAStatus = (value: string, status: CAPAStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isEffectivenessRating = (value: string, rating: CAPAEffectivenessRating): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === rating.toLowerCase();
-};
-
-// Add training-related enums
+// Training-related enums
 export enum TrainingStatus {
   NotStarted = "Not_Started",
   InProgress = "In_Progress",
@@ -82,5 +65,24 @@ export enum TrainingCategory {
   Required = "Required",
   Optional = "Optional",
   Certification = "Certification",
-  Regulatory = "Regulatory"
+  Regulatory = "Regulatory",
+  FoodSafety = "Food Safety",
+  Compliance = "Compliance"
 }
+
+// Type guards for comparing enum values with strings
+export const isCheckoutStatus = (value: string, status: CheckoutStatus): boolean => {
+  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
+};
+
+export const isDocumentStatus = (value: string, status: DocumentStatus): boolean => {
+  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
+};
+
+export const isCAPAStatus = (value: string, status: CAPAStatus): boolean => {
+  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
+};
+
+export const isEffectivenessRating = (value: string, rating: CAPAEffectivenessRating): boolean => {
+  return value?.replace(/ /g, '_').toLowerCase() === rating.toLowerCase();
+};
