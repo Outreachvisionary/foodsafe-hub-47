@@ -1,22 +1,9 @@
-
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { v4 as uuidv4 } from 'uuid';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, File, Upload, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { useDocument } from '@/contexts/DocumentContext';
-import { DocumentCategory, DocumentStatus, Document } from '@/types/document';
-import useDocumentService from '@/hooks/useDocumentService';
+import { Document } from '@/types/document';
+import { DocumentStatus } from '@/types/enums';
+import { toast } from '@/hooks/use-toast';
 
 interface DocumentUploaderProps {
   onDocumentCreated?: (document: Document) => void;

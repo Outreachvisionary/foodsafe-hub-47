@@ -1,8 +1,17 @@
+
 import { useState } from 'react';
 import { Document } from '@/types/document';
 import { DocumentStatus, CheckoutStatus, DocumentVersionType } from '@/types/enums';
-import { adaptDocumentToModel } from '@/utils/typeAdapters';
 import { fetchDocuments as fetchDocumentsService } from '@/services/documentService';
+
+// Create an internal function since the external one is missing
+const adaptDocumentToModel = (doc: any): Document => {
+  return {
+    ...doc,
+    status: doc.status as DocumentStatus,
+    checkout_status: doc.checkout_status as CheckoutStatus
+  };
+};
 
 export const checkoutDocument = async (documentId: string, userId: string): Promise<Document> => {
   // Mock implementation

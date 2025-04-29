@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -12,10 +11,28 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, UserPlus, Calendar, MoreVertical, Trash } from "lucide-react";
 import { useTrainingContext } from "@/contexts/TrainingContext";
 import { TrainingPlan, TrainingPriority } from "@/types/training";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CalendarIcon, ClipboardEdit, Plus, Trash } from 'lucide-react';
+import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const TrainingPlans = () => {
   const { trainingPlans, fetchPlans, createTrainingPlan, deleteTrainingPlan } = useTrainingContext();
   const [isLoading, setIsLoading] = useState(true);
+  const [newPlan, setNewPlan] = useState<Partial<TrainingPlan>>({
+    name: '',
+    description: '',
+    targetRoles: [], // Updated from target_roles
+    targetDepartments: [],
+    courses: [],
+    priority: 'Medium',
+    status: 'Active',
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -37,7 +54,7 @@ const TrainingPlans = () => {
       await createTrainingPlan({
         name: "New Onboarding Plan",
         description: "Standard onboarding for new employees",
-        target_roles: ["Production Staff", "Quality Team"],
+        targetRoles: ["Production Staff", "Quality Team"],
         courses: [],
         priority: "Medium" as TrainingPriority,
         status: "Active"
@@ -91,13 +108,13 @@ const TrainingPlans = () => {
                   <div className="flex items-center text-sm">
                     <UserPlus className="h-4 w-4 mr-2 text-gray-500" />
                     <span>
-                      {plan.target_roles?.length || 0} target roles
+                      {plan.targetRoles?.length || 0} target roles
                     </span>
                   </div>
                   <div className="flex items-center text-sm">
                     <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                     <span>
-                      {plan.duration_days || "N/A"} days duration
+                      {plan.durationDays || "N/A"} days duration
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
@@ -107,7 +124,7 @@ const TrainingPlans = () => {
                     <Badge variant="outline">
                       {plan.status || "Active"}
                     </Badge>
-                    {plan.is_required && (
+                    {plan.isRequired && (
                       <Badge variant="outline" className="bg-purple-100 text-purple-800">
                         Required
                       </Badge>

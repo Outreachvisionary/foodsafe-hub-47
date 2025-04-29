@@ -1,118 +1,48 @@
-
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Document, DocumentStatus } from '@/types/document';
-import {
-  FileText,
-  FileArchive,
-  FileCog,
-  FileX,
-  FileCheck,
-  FileQuestion,
-  Calendar,
-} from 'lucide-react';
+import { useMemo } from 'react';
+import { Document } from '@/types/document';
+import { DocumentStatus } from '@/types/enums';
+import { Grid, GridItem } from '@/components/ui/grid';
 import { isDocumentStatus } from '@/utils/typeAdapters';
+import DocumentCard from './DocumentCard';
 
 interface DocumentGridProps {
   documents: Document[];
-  onDocumentClick: (document: Document) => void;
+  filter?: 'active' | 'archived' | 'draft' | 'rejected' | 'pending_review' | 'expired' | 'all';
+  onDocumentClick?: (document: Document) => void;
 }
 
-const DocumentGrid: React.FC<DocumentGridProps> = ({
-  documents,
-  onDocumentClick,
-}) => {
-  const getDocumentIcon = (document: Document) => {
-    if (isDocumentStatus(document.status, 'Active')) {
-      return <FileCheck className="w-10 h-10 text-green-500" />;
-    } else if (isDocumentStatus(document.status, 'Archived')) {
-      return <FileArchive className="w-10 h-10 text-gray-500" />;
-    } else if (isDocumentStatus(document.status, 'Draft')) {
-      return <FileCog className="w-10 h-10 text-blue-500" />;
-    } else if (isDocumentStatus(document.status, 'Rejected')) {
-      return <FileX className="w-10 h-10 text-red-500" />;
-    } else if (isDocumentStatus(document.status, 'Pending_Review')) {
-      return <FileQuestion className="w-10 h-10 text-amber-500" />;
-    } else {
-      return <FileText className="w-10 h-10 text-gray-500" />;
+const DocumentGrid: React.FC<DocumentGridProps> = ({ documents, filter = 'all', onDocumentClick }) => {
+  const filteredDocuments = useMemo(() => {
+    if (filter === 'all') {
+      return documents;
     }
-  };
 
-  const getStatusColor = (status: string) => {
-    if (isDocumentStatus(status, 'Active')) {
-      return 'bg-green-100 text-green-800';
-    } else if (isDocumentStatus(status, 'Archived')) {
-      return 'bg-gray-100 text-gray-800';
-    } else if (isDocumentStatus(status, 'Draft')) {
-      return 'bg-blue-100 text-blue-800';
-    } else if (isDocumentStatus(status, 'Rejected')) {
-      return 'bg-red-100 text-red-800';
-    } else if (isDocumentStatus(status, 'Pending_Review')) {
-      return 'bg-amber-100 text-amber-800';
-    } else if (isDocumentStatus(status, 'Expired')) {
-      return 'bg-red-100 text-red-800';
-    } else {
-      return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  // Helper function to format document status for display
-  const formatStatus = (status: string): string => {
-    return status.replace(/_/g, ' ');
-  };
-
-  if (documents.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <FileText className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="text-xl font-medium text-gray-400">No documents found</h3>
-        <p className="text-gray-400">Try adjusting your search or filters</p>
-      </div>
-    );
-  }
+    return documents.filter(doc => {
+      if (filter === 'active') {
+        return isDocumentStatus(doc.status, DocumentStatus.Active);
+      } else if (filter === 'archived') {
+        return isDocumentStatus(doc.status, DocumentStatus.Archived);
+      } else if (filter === 'draft') {
+        return isDocumentStatus(doc.status, DocumentStatus.Draft);
+      } else if (filter === 'rejected') {
+        return isDocumentStatus(doc.status, DocumentStatus.Rejected);
+      } else if (filter === 'pending_review') {
+        return isDocumentStatus(doc.status, DocumentStatus.PendingReview);
+      } else if (filter === 'expired') {
+        return isDocumentStatus(doc.status, DocumentStatus.Expired);
+      }
+      return true;
+    });
+  }, [documents, filter]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {documents.map((document) => (
-        <Card
-          key={document.id}
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => onDocumentClick(document)}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-4">
-              <div className="mt-1">{getDocumentIcon(document)}</div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium truncate pr-2">{document.title}</h3>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <Badge className={getStatusColor(document.status)}>
-                    {formatStatus(document.status)}
-                  </Badge>
-                  <Badge variant="outline">{document.category}</Badge>
-                </div>
-
-                {document.description && (
-                  <p className="text-sm text-gray-500 mb-2 line-clamp-2">
-                    {document.description}
-                  </p>
-                )}
-
-                <div className="flex items-center text-xs text-gray-500">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {document.updated_at
-                    ? new Date(document.updated_at).toLocaleDateString()
-                    : new Date(document.created_at || '').toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <Grid numColsSm={2} numColsMd={3} numColsLg={4} className="gap-4">
+      {filteredDocuments.map((document) => (
+        <GridItem key={document.id}>
+          <DocumentCard document={document} onClick={() => onDocumentClick?.(document)} />
+        </GridItem>
       ))}
-    </div>
+    </Grid>
   );
 };
 

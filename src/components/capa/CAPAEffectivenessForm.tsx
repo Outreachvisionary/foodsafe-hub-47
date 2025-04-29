@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CAPAEffectivenessRating } from '@/types/capa';
+import { CAPAEffectivenessRating } from '@/types/enums';
 import { useToast } from '@/hooks/use-toast';
 
 interface CAPAEffectivenessFormProps {
@@ -26,7 +26,7 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId, o
   const [rootCauseEliminated, setRootCauseEliminated] = useState(false);
   const [preventiveMeasuresImplemented, setPreventiveMeasuresImplemented] = useState(false);
   const [documentationComplete, setDocumentationComplete] = useState(false);
-  const [rating, setRating] = useState<CAPAEffectivenessRating>('Not_Effective');
+  const [rating, setRating] = useState<CAPAEffectivenessRating>(CAPAEffectivenessRating.NotEffective);
   const [notes, setNotes] = useState('');
 
   const calculateScore = () => {
@@ -114,10 +114,10 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId, o
               <SelectValue placeholder="Select rating" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Not_Effective">Not Effective</SelectItem>
-              <SelectItem value="Partially_Effective">Partially Effective</SelectItem>
-              <SelectItem value="Effective">Effective</SelectItem>
-              <SelectItem value="Highly_Effective">Highly Effective</SelectItem>
+              <SelectItem value={CAPAEffectivenessRating.NotEffective}>Not Effective</SelectItem>
+              <SelectItem value={CAPAEffectivenessRating.PartiallyEffective}>Partially Effective</SelectItem>
+              <SelectItem value={CAPAEffectivenessRating.Effective}>Effective</SelectItem>
+              <SelectItem value={CAPAEffectivenessRating.HighlyEffective}>Highly Effective</SelectItem>
             </SelectContent>
           </Select>
         </div>

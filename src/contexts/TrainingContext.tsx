@@ -1,6 +1,6 @@
-
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { TrainingPlan, TrainingCourse } from '@/types/training';
+import React, { createContext, useContext, useState } from 'react';
+import { TrainingContextType, TrainingSession, DepartmentStat } from '@/types/training';
+import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 
 interface TrainingContextType {
   trainingPlans: TrainingPlan[];
@@ -44,7 +44,7 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
           id: '1',
           name: 'Food Safety Onboarding',
           description: 'Basic food safety training for new employees',
-          target_roles: ['Production Staff', 'Warehouse Staff'],
+          targetRoles: ['Production Staff', 'Warehouse Staff'],
           courses: [],
           priority: 'High',
           status: 'Active',
@@ -54,7 +54,7 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
           id: '2',
           name: 'Quality Management Training',
           description: 'Advanced quality control procedures',
-          target_roles: ['Quality Team', 'Supervisors'],
+          targetRoles: ['Quality Team', 'Supervisors'],
           courses: [],
           priority: 'Medium',
           status: 'Active',
@@ -116,7 +116,7 @@ export const TrainingProvider: React.FC<{ children: ReactNode }> = ({ children }
         id: `plan-${Date.now()}`,
         name: plan.name || 'Untitled Plan',
         description: plan.description || '',
-        target_roles: plan.target_roles || [],
+        targetRoles: plan.targetRoles || [],
         courses: plan.courses || [],
         priority: plan.priority || 'Medium',
         status: plan.status || 'Active',

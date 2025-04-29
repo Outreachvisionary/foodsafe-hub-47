@@ -7,12 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { CAPA, CAPAFilter, CAPAStatus, CAPAPriority, CAPASource, CAPAFetchParams } from '@/types/capa';
+import { CAPA, CAPAFilter, CAPAFetchParams } from '@/types/capa';
 import { ListActions } from '@/components/ui/list-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { deleteCAPA, getCAPAs } from '@/services/capaService';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 interface CAPAListProps {
   filters: {
@@ -145,7 +146,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                 <div className="flex-grow">
                   <div className="flex items-start gap-1">
                     <h3 className="font-medium">{capa.title}</h3>
-                    {capa.dueDate && new Date(capa.dueDate) < new Date() && 
+                    {capa.due_date && new Date(capa.due_date) < new Date() && 
                      !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
                       <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
                     )}
@@ -159,7 +160,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                     <Badge variant="outline" className="text-xs">
                       {capa.department || 'No Department'}
                     </Badge>
-                    {capa.fsma204Compliant && (
+                    {capa.fsma204_compliant && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
                         FSMA 204 Compliant
                       </Badge>
@@ -177,10 +178,10 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
                     />
                   </div>
                   
-                  {capa.dueDate && (
+                  {capa.due_date && (
                     <div className="flex items-center text-xs text-gray-500">
                       <Clock className="h-3 w-3 mr-1" />
-                      Due: {format(new Date(capa.dueDate), 'MMM d, yyyy')}
+                      Due: {format(new Date(capa.due_date), 'MMM d, yyyy')}
                     </div>
                   )}
                 </div>

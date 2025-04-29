@@ -1,7 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Check, CalendarPlus } from 'lucide-react';
+import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 import { useToast } from "@/components/ui/use-toast";
 import { BookOpen, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +13,6 @@ import { FoodSafetyCategory, useAuditTraining } from '@/hooks/useAuditTraining';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { createTrainingRecord, createTrainingSession } from '@/services/supabaseService';
-import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/training';
 import TrainingAssignmentForm from './training/TrainingAssignmentForm';
 
 interface NCTrainingIntegrationProps {

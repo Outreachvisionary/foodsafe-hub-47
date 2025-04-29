@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPA } from '@/types/capa';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +15,7 @@ import { updateCAPA } from '@/services/capaService';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
 import { format } from 'date-fns';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
+import { CAPAStatus } from '@/types/enums';
 
 const RelatedDocumentsList = ({ documentIds }: { documentIds: string[] }) => {
   return (
@@ -134,7 +135,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">{capa.title}</h3>
-            <CAPAStatusBadge status={capa.status} />
+            <CAPAStatusBadge status={capa.status as CAPAStatus} />
           </div>
 
           <p className="text-sm text-gray-500">{capa.description}</p>
@@ -152,24 +153,24 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Assigned To</div>
-              <div className="text-sm">{capa.assignedTo}</div>
+              <div className="text-sm">{capa.assigned_to}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Created By</div>
-              <div className="text-sm">{capa.createdBy}</div>
+              <div className="text-sm">{capa.created_by}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Due Date</div>
               <div className="text-sm">
                 <Clock className="h-3 w-3 mr-1 inline-block" />
-                {format(new Date(capa.dueDate), 'MMM d, yyyy')}
+                {format(new Date(capa.due_date), 'MMM d, yyyy')}
               </div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Created At</div>
               <div className="text-sm">
                 <Calendar className="h-3 w-3 mr-1 inline-block" />
-                {format(new Date(capa.createdAt), 'MMM d, yyyy')}
+                {format(new Date(capa.created_at), 'MMM d, yyyy')}
               </div>
             </div>
           </div>
@@ -179,19 +180,19 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="text-xs font-medium text-gray-500">Root Cause</div>
-              <div className="text-sm">{capa.rootCause || 'Not specified'}</div>
+              <div className="text-sm">{capa.root_cause || 'Not specified'}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Corrective Action</div>
-              <div className="text-sm">{capa.correctiveAction || 'Not specified'}</div>
+              <div className="text-sm">{capa.corrective_action || 'Not specified'}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Preventive Action</div>
-              <div className="text-sm">{capa.preventiveAction || 'Not specified'}</div>
+              <div className="text-sm">{capa.preventive_action || 'Not specified'}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Verification Method</div>
-              <div className="text-sm">{capa.verificationMethod || 'Not specified'}</div>
+              <div className="text-sm">{capa.verification_method || 'Not specified'}</div>
             </div>
           </div>
 
@@ -199,7 +200,7 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
 
           <div>
             <div className="text-xs font-medium text-gray-500">Effectiveness Criteria</div>
-            <div className="text-sm">{capa.effectivenessCriteria || 'Not specified'}</div>
+            <div className="text-sm">{capa.effectiveness_criteria || 'Not specified'}</div>
           </div>
 
           <Separator />
@@ -207,12 +208,12 @@ const CAPADetails: React.FC<CAPADetailsProps> = ({ capa, onClose, onUpdate }) =>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="text-xs font-medium text-gray-500">Verified By</div>
-              <div className="text-sm">{capa.verifiedBy || 'Not specified'}</div>
+              <div className="text-sm">{capa.verified_by || 'Not specified'}</div>
             </div>
             <div>
               <div className="text-xs font-medium text-gray-500">Completion Date</div>
               <div className="text-sm">
-                {capa.completionDate ? format(new Date(capa.completionDate), 'MMM d, yyyy') : 'Not completed'}
+                {capa.completion_date ? format(new Date(capa.completion_date), 'MMM d, yyyy') : 'Not completed'}
               </div>
             </div>
           </div>

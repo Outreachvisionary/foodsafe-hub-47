@@ -1,4 +1,5 @@
 
+// Update the import at the top
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -13,7 +14,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, LinkIcon, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { CAPAPriority, CAPASource, CAPAStatus } from '@/types/capa';
+import { CAPAPriority, CAPASource } from '@/types/capa';
+import { CAPAStatus } from '@/types/enums';
 import { toast } from 'sonner';
 
 // Define form schema using Zod
