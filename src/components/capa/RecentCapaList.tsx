@@ -43,7 +43,7 @@ const RecentCapaList: React.FC<RecentCapaListProps> = ({ capas, showViewAll = fa
                 <h4 className="font-medium text-sm truncate">{capa.title}</h4>
                 <div className="flex items-center space-x-4 mt-1">
                   <span className="text-xs text-gray-500">
-                    {format(new Date(capa.createdAt), 'MMM d, yyyy')}
+                    {format(new Date(capa.created_at), 'MMM d, yyyy')}
                   </span>
                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-sm capitalize">
                     {capa.source}

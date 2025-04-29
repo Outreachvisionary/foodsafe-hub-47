@@ -20,33 +20,32 @@ export type CAPASource =
   | 'Other'
   | 'Internal_QC';
 
-// Update CAPA interface to use consistent naming with snake_case
-// to match what's being used in the codebase
+// Define CAPA interface with snake_case properties to match what's being used in existing components
 export interface CAPA {
   id: string;
   title: string;
   description: string;
   status: CAPAStatus;
   priority: string;
-  created_at: string; // Switched to snake_case to match API
-  created_by: string; // Switched to snake_case to match API
-  due_date: string; // Switched to snake_case to match API
-  assigned_to: string; // Switched to snake_case to match API
+  created_at: string;
+  created_by: string;
+  due_date: string;
+  assigned_to: string;
   source: string;
-  source_id?: string; // Switched to snake_case to match API
-  source_reference: string; // Switched to snake_case to match API
-  completion_date?: string; // Switched to snake_case to match API
-  root_cause?: string; // Switched to snake_case to match API
-  corrective_action?: string; // Switched to snake_case to match API
-  preventive_action?: string; // Switched to snake_case to match API
-  effectiveness_criteria?: string; // Switched to snake_case to match API
-  effectiveness_rating?: CAPAEffectivenessRating; // Switched to snake_case to match API
-  effectiveness_verified?: boolean; // Switched to snake_case to match API
-  verification_date?: string; // Switched to snake_case to match API
-  verification_method?: string; // Switched to snake_case to match API
-  verified_by?: string; // Switched to snake_case to match API
+  source_id?: string;
+  source_reference: string;
+  completion_date?: string;
+  root_cause?: string;
+  corrective_action?: string;
+  preventive_action?: string;
+  effectiveness_criteria?: string;
+  effectiveness_rating?: CAPAEffectivenessRating;
+  effectiveness_verified?: boolean;
+  verification_date?: string;
+  verification_method?: string;
+  verified_by?: string;
   department?: string;
-  fsma204_compliant?: boolean; // Switched to snake_case to match API
+  fsma204_compliant?: boolean;
   relatedDocuments: string[];
   relatedTraining: string[];
 }

@@ -1,177 +1,128 @@
+
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { CAPA } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { fetchCAPAById } from '@/services/capa/capaFetchService';
-import { convertToCAPAStatus } from '@/utils/typeAdapters';
-
-// Re-use the same component from the CAPA module
-import { CAPAStatusBadge } from '@/components/capa/CAPAStatusBadge';
 
 interface LinkedCAPAsListProps {
-  caption?: string;
   capaIds: string[];
-  showViewAll?: boolean;
-  sourceType?: string;
-  sourceId?: string;
-  emptyMessage?: string;
-  onCreateCAPAClick?: () => void;
 }
 
-const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
-  caption = 'Related CAPAs',
-  capaIds,
-  showViewAll = true,
-  sourceType,
-  sourceId,
-  emptyMessage = 'No CAPAs found',
-  onCreateCAPAClick
-}) => {
-  const navigate = useNavigate();
-  const [capas, setCapas] = useState<CAPA[]>([]);
+const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capaIds }) => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const [capas, setCapas] = useState<CAPA[]>([]);
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    const fetchCapas = async () => {
-      if (!capaIds || capaIds.length === 0) {
-        setCapas([]);
+    const loadCAPAs = async () => {
+      if (!capaIds.length) {
         setLoading(false);
         return;
       }
-
+      
       try {
         setLoading(true);
-        setError(null);
-
-        const capaPromises = capaIds.map(async (id) => {
-          const capaData = await fetchCAPAById(id);
-          
-          // Transform to match the CAPA interface
-          return {
-            id: capaData.id,
-            title: capaData.title,
-            description: capaData.description,
-            status: convertToCAPAStatus(capaData.status),
-            priority: capaData.priority,
-            createdAt: capaData.createdAt,
-            createdBy: capaData.createdBy,
-            dueDate: capaData.dueDate,
-            assignedTo: capaData.assignedTo,
-            source: capaData.source,
-            completionDate: capaData.completionDate,
-            rootCause: capaData.rootCause,
-            correctiveAction: capaData.correctiveAction,
-            preventiveAction: capaData.preventiveAction,
-            effectivenessCriteria: capaData.effectivenessCriteria,
-            effectivenessRating: capaData.effectivenessRating,
-            effectivenessVerified: capaData.effectivenessVerified,
-            sourceId: capaData.sourceId,
-            sourceReference: capaData.sourceReference || '',
-            verificationDate: capaData.verificationDate,
-            verificationMethod: capaData.verificationMethod,
-            verifiedBy: capaData.verifiedBy,
-            department: capaData.department,
-            fsma204Compliant: capaData.fsma204Compliant,
-            relatedDocuments: [],
-            relatedTraining: []
-          } as CAPA;
-        });
-
-        const fetchedCapas = await Promise.all(capaPromises);
-        setCapas(fetchedCapas);
+        const capaPromises = capaIds.map(id => fetchCAPAById(id));
+        const resolvedCapas = await Promise.all(capaPromises);
+        setCapas(resolvedCapas);
       } catch (error) {
-        console.error('Error fetching linked CAPAs:', error);
-        setError('Failed to load linked CAPA items');
+        console.error('Error loading linked CAPAs:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchCapas();
+    
+    loadCAPAs();
   }, [capaIds]);
 
-  const viewCapa = (id: string) => {
+  const handleViewCAPA = (id: string) => {
     navigate(`/capa/${id}`);
   };
-
-  const createCapa = () => {
-    navigate(`/capa/new?sourceType=NonConformance&sourceId=${sourceId}`);
-  };
-
+  
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{caption}</CardTitle>
+          <CardTitle>Related CAPAs</CardTitle>
         </CardHeader>
-        <CardContent className="text-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-          Loading CAPAs...
+        <CardContent className="flex justify-center p-6">
+          <div className="flex items-center">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500 mr-2" />
+            <span>Loading CAPAs...</span>
+          </div>
         </CardContent>
       </Card>
     );
   }
-
-  if (error) {
+  
+  if (!capaIds.length) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{caption}</CardTitle>
+          <CardTitle>Related CAPAs</CardTitle>
         </CardHeader>
-        <CardContent className="text-center py-6 text-red-500">
-          {error}
+        <CardContent>
+          <p className="text-gray-500 text-sm">No related CAPAs found.</p>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{caption}</CardTitle>
+        <CardTitle>Related CAPAs</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent>
         {capas.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <p className="mb-4">{emptyMessage}</p>
-            {sourceId && (
-              <Button onClick={createCapa} size="sm">Create CAPA</Button>
-            )}
-          </div>
+          <p className="text-gray-500 text-sm">No related CAPAs found.</p>
         ) : (
-          <>
-            <ul className="divide-y divide-border">
-              {capas.map((capa) => (
-                <li 
-                  key={capa.id}
-                  className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => viewCapa(capa.id)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">{capa.title}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mt-1 space-x-4">
-                        <CAPAStatusBadge status={capa.status} />
-                        <span>Priority: {capa.priority}</span>
-                        <span>Due: {new Date(capa.dueDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          <ul className="space-y-4">
+            {capas.map((capa) => (
+              <li key={capa.id} className="border rounded-md p-4">
+                <h4 className="font-medium">{capa.title}</h4>
+                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{capa.description}</p>
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div>
+                    <span className="font-medium block">Status:</span>
+                    <span>{capa.status.replace('_', ' ')}</span>
                   </div>
-                </li>
-              ))}
-            </ul>
-            {sourceId && (
-              <div className="p-4 border-t text-center">
-                <Button onClick={createCapa} size="sm">Create Another CAPA</Button>
-              </div>
-            )}
-          </>
+                  <div>
+                    <span className="font-medium block">Priority:</span>
+                    <span>{capa.priority}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium block">Created:</span>
+                    <span>{new Date(capa.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium block">Created By:</span>
+                    <span>{capa.created_by}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium block">Due Date:</span>
+                    <span>{new Date(capa.due_date).toLocaleDateString()}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium block">Assigned To:</span>
+                    <span>{capa.assigned_to}</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleViewCAPA(capa.id)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                >
+                  View CAPA
+                </Button>
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>

@@ -16,7 +16,7 @@ export interface TrainingSession {
 // Make department optional to prevent type error, since it's used inconsistently
 export interface DepartmentStat {
   name: string;
-  department?: string;
+  department: string;
   completed: number;
   overdue: number;
   totalAssigned: number;

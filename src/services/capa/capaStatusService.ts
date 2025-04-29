@@ -1,15 +1,9 @@
 
 import { CAPAStatus } from '@/types/enums';
 
-/**
- * Compares a CAPA status value with a target status string
- * @param status The current status (can be enum or string)
- * @param targetStatus The target status to compare with
- * @returns boolean indicating if statuses match
- */
+// Create a service to check CAPA status
 export const isStatusEqual = (status: CAPAStatus | string, targetStatus: string): boolean => {
   if (!status) return false;
-  
   const normalizedStatus = typeof status === 'string' ? 
     status.replace(/ /g, '_').toLowerCase() : 
     status.toLowerCase();
@@ -20,5 +14,5 @@ export const isStatusEqual = (status: CAPAStatus | string, targetStatus: string)
 };
 
 export default {
-  isStatusEqual
+  isStatusEqual,
 };

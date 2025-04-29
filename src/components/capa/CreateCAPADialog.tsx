@@ -1,194 +1,149 @@
 
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-  DialogTrigger
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import { CAPASource, CAPAPriority } from '@/types/capa';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 import { createCAPA } from '@/services/capaService';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CAPA } from '@/types/capa';
+import { CAPAStatus } from '@/types/enums';
 
 interface CreateCAPADialogProps {
-  children?: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onCAPACreated?: (data: any) => void;
+  onSuccess?: (capa: CAPA) => void;
+  trigger?: React.ReactNode;
 }
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ 
-  children,
-  open: controlledOpen, 
-  onOpenChange: setControlledOpen,
-  onCAPACreated 
-}) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ onSuccess, trigger }) => {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState<CAPASource>('Audit');
-  const [priority, setPriority] = useState<CAPAPriority>('Medium');
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [priority, setPriority] = useState('Medium');
+  const [source, setSource] = useState('Audit');
+  const [sourceReference, setSourceReference] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [department, setDepartment] = useState('');
   const [rootCause, setRootCause] = useState('');
-  const [correctiveAction, setCorrectiveAction] = useState('');
-  const [preventiveAction, setPreventiveAction] = useState('');
-  
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (setControlledOpen) {
-      setControlledOpen(newOpen);
-    }
-  };
-  
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setSource('Audit');
-    setPriority('Medium');
-    setDueDate(undefined);
-    setRootCause('');
-    setCorrectiveAction('');
-    setPreventiveAction('');
-  };
+  const [fsma204Compliant, setFsma204Compliant] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !source || !priority) {
+    if (!title || !description || !priority || !source || !assignedTo) {
       toast({
-        title: "Missing required fields",
+        title: "Missing Fields",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
     
-    setLoading(true);
-    
     try {
-      const capaData = await createCAPA({
+      setLoading(true);
+      
+      const now = new Date().toISOString();
+      const capaData: Partial<CAPA> = {
         title,
         description,
-        source,
+        status: CAPAStatus.Open,
         priority,
-        rootCause,
-        correctiveAction,
-        preventiveAction,
-        dueDate: dueDate ? dueDate.toISOString() : undefined,
-        createdBy: 'system', // This should be the current user ID in a real app
-        assignedTo: 'unassigned',
-      });
+        created_at: now,
+        created_by: "Current User", // This would come from auth context in a real app
+        due_date: dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        assigned_to: assignedTo,
+        source,
+        source_reference: sourceReference,
+        department,
+        root_cause: rootCause,
+        fsma204_compliant: fsma204Compliant,
+        relatedDocuments: [],
+        relatedTraining: []
+      };
+      
+      const newCAPA = await createCAPA(capaData);
       
       toast({
-        title: "CAPA created",
-        description: "The CAPA has been created successfully",
-        variant: "default"
+        title: "CAPA Created",
+        description: "The CAPA has been successfully created",
       });
       
-      // Reset form
+      if (onSuccess) {
+        onSuccess(newCAPA);
+      }
+      
+      setOpen(false);
       resetForm();
       
-      // Close dialog and notify parent
-      handleOpenChange(false);
-      if (onCAPACreated) {
-        onCAPACreated(capaData);
-      }
     } catch (error) {
       console.error('Error creating CAPA:', error);
       toast({
-        title: "Failed to create CAPA",
-        description: "An error occurred while creating the CAPA. Please try again.",
-        variant: "destructive"
+        title: "Error",
+        description: "Failed to create CAPA. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
   
-  const isControlled = controlledOpen !== undefined;
-  const dialogOpen = isControlled ? controlledOpen : open;
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setPriority('Medium');
+    setSource('Audit');
+    setSourceReference('');
+    setAssignedTo('');
+    setDueDate('');
+    setDepartment('');
+    setRootCause('');
+    setFsma204Compliant(false);
+  };
   
   return (
-    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || <Button>Create New CAPA</Button>}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New CAPA</DialogTitle>
-          <DialogDescription>
-            Create a new Corrective and Preventive Action (CAPA) to address an issue.
-          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+          <div className="grid w-full gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                placeholder="Brief title of the CAPA"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                required
+                placeholder="Enter CAPA title"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Detailed description of the issue"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                required
-                className="min-h-[80px]"
+                placeholder="Describe the issue"
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="source">Source <span className="text-red-500">*</span></Label>
-                <Select 
-                  value={source} 
-                  onValueChange={(value) => setSource(value as CAPASource)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Audit">Audit</SelectItem>
-                    <SelectItem value="Customer_Complaint">Customer Complaint</SelectItem>
-                    <SelectItem value="Internal_QC">Internal QC</SelectItem>
-                    <SelectItem value="Supplier_Issue">Supplier Issue</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
-                <Select 
-                  value={priority} 
-                  onValueChange={(value) => setPriority(value as CAPAPriority)}
-                >
-                  <SelectTrigger>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger id="priority">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -199,82 +154,103 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="source">Source</Label>
+                <Select value={source} onValueChange={setSource}>
+                  <SelectTrigger id="source">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Audit">Audit</SelectItem>
+                    <SelectItem value="Customer_Complaint">Customer Complaint</SelectItem>
+                    <SelectItem value="Non_Conformance">Non-Conformance</SelectItem>
+                    <SelectItem value="Supplier_Issue">Supplier Issue</SelectItem>
+                    <SelectItem value="Internal_QC">Internal QC</SelectItem>
+                    <SelectItem value="Regulatory">Regulatory</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : "Select due date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                    disabled={(date) => date < new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
+            <div className="grid gap-2">
+              <Label htmlFor="sourceReference">Source Reference</Label>
+              <Input
+                id="sourceReference"
+                value={sourceReference}
+                onChange={(e) => setSourceReference(e.target.value)}
+                placeholder="Audit #, NC #, etc."
+              />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="assignedTo">Assigned To</Label>
+                <Input
+                  id="assignedTo"
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                  placeholder="User name"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="department">Department</Label>
+                <Input
+                  id="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Department"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 pt-6">
+                <Checkbox
+                  id="fsma"
+                  checked={fsma204Compliant}
+                  onCheckedChange={(checked) => setFsma204Compliant(!!checked)}
+                />
+                <Label htmlFor="fsma">FSMA 204 Compliant</Label>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
               <Label htmlFor="rootCause">Root Cause</Label>
               <Textarea
                 id="rootCause"
-                placeholder="Identified root cause of the issue"
                 value={rootCause}
                 onChange={(e) => setRootCause(e.target.value)}
-                className="min-h-[80px]"
+                placeholder="Initial assessment of root cause"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="correctiveAction">Corrective Action</Label>
-              <Textarea
-                id="correctiveAction"
-                placeholder="Action to correct the immediate issue"
-                value={correctiveAction}
-                onChange={(e) => setCorrectiveAction(e.target.value)}
-                className="min-h-[80px]"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="preventiveAction">Preventive Action</Label>
-              <Textarea
-                id="preventiveAction"
-                placeholder="Action to prevent recurrence"
-                value={preventiveAction}
-                onChange={(e) => setPreventiveAction(e.target.value)}
-                className="min-h-[80px]"
-              />
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline" 
+                onClick={() => setOpen(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Creating...' : 'Create CAPA'}
+              </Button>
             </div>
           </div>
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => handleOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create CAPA"}
-            </Button>
-          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

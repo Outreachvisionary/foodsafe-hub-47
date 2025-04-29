@@ -12,7 +12,6 @@ export interface FormSectionProps {
   icon?: React.ReactNode;
 }
 
-// Export as both a named export and default export for compatibility
 export const FormSection: React.FC<FormSectionProps> = ({ 
   title, 
   children, 
@@ -55,4 +54,5 @@ export const FormSection: React.FC<FormSectionProps> = ({
   );
 };
 
+// Export as default for compatibility
 export default FormSection;
