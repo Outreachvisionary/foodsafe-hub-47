@@ -74,3 +74,26 @@ export const adaptCAPAToModel = (capa: any): CAPA => {
     effectivenessRating: convertToEffectivenessRating(capa.effectiveness_rating)
   };
 };
+
+// Type guards for status comparisons
+export const isCheckoutStatus = (value: string, status: CheckoutStatus): boolean => {
+  if (!value) return false;
+  return value.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
+};
+
+export const isDocumentStatus = (value: string, status: DocumentStatus): boolean => {
+  if (!value) return false;
+  return value.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
+};
+
+// Create a service to check CAPA status
+export const isStatusEqual = (status: CAPAStatus | string, targetStatus: string): boolean => {
+  if (!status) return false;
+  const normalizedStatus = typeof status === 'string' ? 
+    status.replace(/ /g, '_').toLowerCase() : 
+    status.toLowerCase();
+  
+  const normalizedTargetStatus = targetStatus.replace(/ /g, '_').toLowerCase();
+  
+  return normalizedStatus === normalizedTargetStatus;
+};

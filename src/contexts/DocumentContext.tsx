@@ -1,6 +1,8 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
 import useDocumentService from '@/hooks/useDocumentService';
+import { adaptDocumentToModel } from '@/utils/typeAdapters';
 
 interface DocumentContextType {
   documents: Document[];
@@ -32,13 +34,13 @@ interface DocumentContextType {
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 export function DocumentProvider({ children }: { children: ReactNode }) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const documentService = useDocumentService();
   const {
-    documents,
-    loading,
-    error,
-    fetchDocuments,
-    fetchDocumentById,
+    fetchDocuments: serviceFetchDocuments,
     createDocument,
     updateDocument,
     deleteDocument,
@@ -60,14 +62,27 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   } = documentService;
 
   // Fix the return type mismatch for refreshDocuments
-  const refreshDocuments = async (filter?: any): Promise<void> => {
+  const refreshDocuments = async (): Promise<void> => {
     try {
       setLoading(true);
-      const docs = await fetchDocuments(filter);
+      const docs = await serviceFetchDocuments();
       setDocuments(docs);
-      return;
     } catch (error) {
       console.error('Error refreshing documents:', error);
+      setError('Failed to fetch documents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Implement fetchDocuments to handle the void return type
+  const fetchDocuments = async (filter?: any): Promise<void> => {
+    try {
+      setLoading(true);
+      const docs = await serviceFetchDocuments(filter);
+      setDocuments(docs);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
       setError('Failed to fetch documents');
     } finally {
       setLoading(false);

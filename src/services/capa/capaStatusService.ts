@@ -1,19 +1,24 @@
 
 import { CAPAStatus } from '@/types/enums';
 
-// Function to compare CAPA statuses regardless of format (spaces vs underscores, case)
-export const isStatusEqual = (status1: string | CAPAStatus, status2: string | CAPAStatus): boolean => {
-  if (!status1 || !status2) return false;
+/**
+ * Compares a CAPA status value with a target status string
+ * @param status The current status (can be enum or string)
+ * @param targetStatus The target status to compare with
+ * @returns boolean indicating if statuses match
+ */
+export const isStatusEqual = (status: CAPAStatus | string, targetStatus: string): boolean => {
+  if (!status) return false;
   
-  // Convert enum instances to strings
-  const s1 = typeof status1 === 'string' ? status1 : status1.toString();
-  const s2 = typeof status2 === 'string' ? status2 : status2.toString();
+  const normalizedStatus = typeof status === 'string' ? 
+    status.replace(/ /g, '_').toLowerCase() : 
+    status.toLowerCase();
   
-  // Normalize by replacing underscores with spaces and converting to lowercase
-  const normalizedStatus1 = s1.replace(/_/g, ' ').toLowerCase();
-  const normalizedStatus2 = s2.replace(/_/g, ' ').toLowerCase();
+  const normalizedTargetStatus = targetStatus.replace(/ /g, '_').toLowerCase();
   
-  return normalizedStatus1 === normalizedStatus2;
+  return normalizedStatus === normalizedTargetStatus;
 };
 
-export default { isStatusEqual };
+export default {
+  isStatusEqual
+};

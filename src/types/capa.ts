@@ -100,3 +100,56 @@ export interface CAPAStats {
   byMonth: Record<string, number>;
   overdue: number;
 }
+
+// Add training related types needed by NC components
+export enum TrainingStatus {
+  NotStarted = "Not_Started",
+  InProgress = "In_Progress",
+  Completed = "Completed",
+  Expired = "Expired",
+  Overdue = "Overdue"
+}
+
+export enum TrainingType {
+  OnBoarding = "On_Boarding",
+  Compliance = "Compliance",
+  Skills = "Skills",
+  Leadership = "Leadership",
+  Safety = "Safety",
+  Technical = "Technical"
+}
+
+export enum TrainingCategory {
+  Required = "Required",
+  Optional = "Optional",
+  Certification = "Certification",
+  Regulatory = "Regulatory"
+}
+
+export interface TrainingRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  sessionId: string;
+  status: TrainingStatus;
+  assignedDate: string;
+  dueDate: string;
+  completionDate?: string;
+  score?: number;
+  notes?: string;
+}
+
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  description?: string;
+  targetRoles: string[];
+  targetDepartments: string[];
+  courses: string[];
+  priority: TrainingPriority;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';

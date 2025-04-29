@@ -4,18 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPA } from '@/types/capa';
+import { CAPAStatus } from '@/types/enums';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
-interface CAPAStatusBadgeProps {
-  status: string;
-  showIcon?: boolean;
-}
-
-export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, showIcon = false }) => {
-  return <Badge variant="outline">{status}</Badge>;
-};
+// Re-use the same component from the CAPA module
+import { CAPAStatusBadge } from '@/components/capa/CAPAStatusBadge';
 
 interface LinkedCAPAsListProps {
   caption?: string;
@@ -63,25 +58,25 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
             description: capaData.description,
             status: convertToCAPAStatus(capaData.status),
             priority: capaData.priority,
-            createdAt: capaData.created_at,
-            createdBy: capaData.created_by,
-            dueDate: capaData.due_date,
-            assignedTo: capaData.assigned_to,
+            createdAt: capaData.createdAt,
+            createdBy: capaData.createdBy,
+            dueDate: capaData.dueDate,
+            assignedTo: capaData.assignedTo,
             source: capaData.source,
-            completionDate: capaData.completion_date,
-            rootCause: capaData.root_cause,
-            correctiveAction: capaData.corrective_action,
-            preventiveAction: capaData.preventive_action,
-            effectivenessCriteria: capaData.effectiveness_criteria,
-            effectivenessRating: capaData.effectiveness_rating,
-            effectivenessVerified: capaData.effectiveness_verified,
-            sourceId: capaData.source_id,
-            sourceReference: capaData.source_reference || '',
-            verificationDate: capaData.verification_date,
-            verificationMethod: capaData.verification_method,
-            verifiedBy: capaData.verified_by,
+            completionDate: capaData.completionDate,
+            rootCause: capaData.rootCause,
+            correctiveAction: capaData.correctiveAction,
+            preventiveAction: capaData.preventiveAction,
+            effectivenessCriteria: capaData.effectivenessCriteria,
+            effectivenessRating: capaData.effectivenessRating,
+            effectivenessVerified: capaData.effectivenessVerified,
+            sourceId: capaData.sourceId,
+            sourceReference: capaData.sourceReference || '',
+            verificationDate: capaData.verificationDate,
+            verificationMethod: capaData.verificationMethod,
+            verifiedBy: capaData.verifiedBy,
             department: capaData.department,
-            fsma204Compliant: capaData.fsma204_compliant,
+            fsma204Compliant: capaData.fsma204Compliant,
             relatedDocuments: [],
             relatedTraining: []
           } as CAPA;

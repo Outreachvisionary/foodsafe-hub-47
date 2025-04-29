@@ -13,6 +13,7 @@ export interface TrainingSession {
 
 export interface DepartmentStat {
   name: string;
+  department?: string;
   completed: number;
   overdue: number;
   totalAssigned: number;

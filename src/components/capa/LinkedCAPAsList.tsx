@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPA } from '@/types/capa';
+import { CAPAStatus } from '@/types/enums';
 import { fetchCAPAById } from '@/services/capa/capaFetchService';
 import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
