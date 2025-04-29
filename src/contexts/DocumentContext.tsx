@@ -11,6 +11,7 @@ interface DocumentContextType {
   refreshDocuments?: () => Promise<void>;
   approveDocument?: (documentId: string, comment?: string) => Promise<void>;
   rejectDocument?: (documentId: string, reason: string) => Promise<void>;
+  fetchDocuments?: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -19,6 +20,17 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchDocuments = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      // Mock implementation - would fetch from API in real app
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to fetch documents");
+      setLoading(false);
+    }
+  };
 
   const refreshDocuments = async (): Promise<void> => {
     setLoading(true);
@@ -48,7 +60,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     error,
     refreshDocuments,
     approveDocument,
-    rejectDocument
+    rejectDocument,
+    fetchDocuments
   };
 
   return (

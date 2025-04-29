@@ -9,16 +9,22 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, UserPlus, Calendar, MoreVertical, Trash, Plus } from "lucide-react";
+import { 
+  FileText, 
+  UserPlus, 
+  Clock, 
+  MoreVertical, 
+  Trash, 
+  Plus,
+  Calendar as CalendarIcon 
+} from "lucide-react";
 import { useTrainingContext } from "@/contexts/TrainingContext";
 import { TrainingPlan, TrainingPriority } from "@/types/training";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, ClipboardEdit } from 'lucide-react';
-import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 

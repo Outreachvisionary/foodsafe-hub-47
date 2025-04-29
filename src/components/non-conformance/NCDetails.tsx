@@ -50,7 +50,12 @@ const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance, onUpd
   </div>;
 };
 
-const NCDetails = ({ nonConformance }: { nonConformance: NonConformance }) => {
+interface NCDetailsProps {
+  id: string;
+  onClose?: () => void;
+}
+
+export const NCDetails: React.FC<{ nonConformance: NonConformance }> = ({ nonConformance }) => {
   const [activeTab, setActiveTab] = useState("details");
   
   const handleUpdate = (updated: NonConformance) => {

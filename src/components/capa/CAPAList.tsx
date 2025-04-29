@@ -1,4 +1,3 @@
-
 // Only fixing the isStatusEqual import
 
 import React, { useState, useEffect } from 'react';
@@ -81,7 +80,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
         }
         
         if (filters.source !== 'all') {
-          capaFilter.source = filters.source as CAPASource;
+          // Fix for type issue: Converting string to array for compatibility
+          capaFilter.source = [filters.source as CAPASource];
         }
         
         if (filters.dueDate === 'overdue') {

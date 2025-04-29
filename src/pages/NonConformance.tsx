@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Plus, FilterX, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NonConformance } from '@/types/non-conformance';
-import { NCDetails } from '@/components/non-conformance/NCDetails';
+import NCDetails from '@/components/non-conformance/NCDetails';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import DashboardHeader from '@/components/DashboardHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
