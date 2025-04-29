@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Document, DocumentStatus, CheckoutStatus, DocumentVersion } from '@/types/document';
-import { DocumentStatus as DocumentStatusEnum, CheckoutStatus as CheckoutStatusEnum } from '@/types/enums';
+import { Document } from '@/types/document';
+import { DocumentStatus, CheckoutStatus, DocumentVersionType } from '@/types/enums';
 import { adaptDocumentToModel } from '@/utils/typeAdapters';
 import { fetchDocuments as fetchDocumentsService } from '@/services/documentService';
 
@@ -10,7 +10,7 @@ export const checkoutDocument = async (documentId: string, userId: string): Prom
   
   // In a real implementation, you would call an API here
   const response = {
-    checkout_status: CheckoutStatusEnum.CheckedOut,
+    checkout_status: CheckoutStatus.CheckedOut,
     checkout_user_id: userId,
     checkout_user_name: 'Current User',
     checkout_timestamp: new Date().toISOString(),
@@ -22,7 +22,7 @@ export const checkoutDocument = async (documentId: string, userId: string): Prom
     file_type: 'docx',
     file_size: 1024,
     category: 'SOP' as const,
-    status: DocumentStatusEnum.Draft,
+    status: DocumentStatus.Draft,
     version: 1,
     created_by: 'admin',
     created_at: new Date().toISOString(),
@@ -38,7 +38,7 @@ export const checkinDocument = async (documentId: string, comment?: string): Pro
   
   // In a real implementation, you would call an API here
   const response = {
-    checkout_status: CheckoutStatusEnum.Available,
+    checkout_status: CheckoutStatus.Available,
     checkout_user_id: null,
     checkout_user_name: null,
     checkout_timestamp: null,
@@ -50,7 +50,7 @@ export const checkinDocument = async (documentId: string, comment?: string): Pro
     file_type: 'docx',
     file_size: 1024,
     category: 'SOP' as const,
-    status: DocumentStatusEnum.Draft,
+    status: DocumentStatus.Draft,
     version: 1,
     created_by: 'admin',
     created_at: new Date().toISOString(),

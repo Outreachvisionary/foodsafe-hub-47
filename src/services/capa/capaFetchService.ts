@@ -1,91 +1,84 @@
 
 import { CAPA } from '@/types/capa';
-import { adaptCAPAToModel } from '@/utils/typeAdapters';
-import { CAPAStatus } from '@/types/enums';
+import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
+import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
-// Fetch a CAPA by ID
-export const fetchCAPAById = async (id: string): Promise<CAPA> => {
-  // In a real implementation, this would call an API
-  const mockData = {
-    id: id,
-    title: 'Sample CAPA',
-    description: 'This is a sample CAPA',
-    status: 'Open',
+// Mock data for testing
+const mockCapas: CAPA[] = [
+  {
+    id: 'capa-001',
+    title: 'Foreign Material in Product',
+    description: 'Metal fragments found in the finished product batch #12345',
+    status: CAPAStatus.Open,
     priority: 'High',
     created_at: new Date().toISOString(),
-    created_by: 'admin',
+    created_by: 'John Doe',
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    assigned_to: 'user123',
+    assigned_to: 'Jane Smith',
+    source: 'Non_Conformance',
+    source_reference: 'NC-2023-005',
+    department: 'Production',
+    fsma204_compliant: true,
+    relatedDocuments: ['doc-123', 'doc-456'],
+    relatedTraining: ['training-789']
+  },
+  {
+    id: 'capa-002',
+    title: 'Temperature Control Failure',
+    description: 'Cold storage temperature exceeded critical limits for 4 hours',
+    status: CAPAStatus.InProgress,
+    priority: 'Critical',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_by: 'Sarah Johnson',
+    due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    assigned_to: 'Mike Wilson',
     source: 'Audit',
-    source_reference: 'AUDIT-123',
-    root_cause: 'Process failure',
-    corrective_action: 'Update procedure',
-    preventive_action: 'Staff training',
-    effectiveness_criteria: 'No recurrences for 90 days',
-    department: 'Quality',
-    source_id: 'SRC-456'
-  };
-  
-  // Convert to CAPA model
-  return {
-    id: mockData.id,
-    title: mockData.title,
-    description: mockData.description,
-    status: CAPAStatus.Open,
-    priority: mockData.priority,
-    createdAt: mockData.created_at,
-    createdBy: mockData.created_by,
-    dueDate: mockData.due_date,
-    assignedTo: mockData.assigned_to,
-    source: mockData.source,
-    sourceReference: mockData.source_reference,
-    rootCause: mockData.root_cause,
-    correctiveAction: mockData.corrective_action,
-    preventiveAction: mockData.preventive_action,
-    effectivenessCriteria: mockData.effectiveness_criteria,
-    department: mockData.department,
-    sourceId: mockData.source_id,
-    relatedDocuments: [],
+    source_reference: 'AUDIT-2023-12',
+    completion_date: undefined,
+    root_cause: 'Equipment failure - compressor malfunction',
+    corrective_action: 'Replaced compressor and installed backup system',
+    preventive_action: 'Implemented hourly temperature checks and alarm system',
+    effectiveness_criteria: '30 days of continuous operation within limits',
+    department: 'Cold Storage',
+    fsma204_compliant: true,
+    relatedDocuments: ['doc-789'],
     relatedTraining: []
-  };
+  }
+];
+
+export const fetchCAPAs = async (): Promise<CAPA[]> => {
+  // In a real implementation, this would call an API
+  return mockCapas;
 };
 
-// Fetch CAPAs with filters
-export const fetchCAPAs = async (): Promise<CAPA[]> => {
-  // Mock implementation
-  const mockCAPAs = [
-    {
-      id: '1',
-      title: 'CAPA 1',
-      description: 'Description 1',
-      status: 'Open',
-      priority: 'High',
-      created_at: new Date().toISOString(),
-      created_by: 'admin',
-      due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      assigned_to: 'user123',
-      source: 'Audit',
-      source_reference: 'AUDIT-123'
-    },
-    {
-      id: '2',
-      title: 'CAPA 2',
-      description: 'Description 2',
-      status: 'In_Progress',
-      priority: 'Medium',
-      created_at: new Date().toISOString(),
-      created_by: 'admin',
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      assigned_to: 'user456',
-      source: 'Customer_Complaint',
-      source_reference: 'COMP-789'
-    }
-  ];
+export const fetchCAPAById = async (id: string): Promise<CAPA> => {
+  // In a real implementation, this would call an API
+  const capa = mockCapas.find(c => c.id === id);
   
-  return mockCAPAs.map(capa => adaptCAPAToModel(capa));
+  if (!capa) {
+    throw new Error(`CAPA with ID ${id} not found`);
+  }
+  
+  return capa;
+};
+
+export const fetchCAPAsBySource = async (source: string, sourceId?: string): Promise<CAPA[]> => {
+  // In a real implementation, this would call an API
+  const filtered = mockCapas.filter(capa => {
+    if (capa.source === source) {
+      if (sourceId) {
+        return capa.source_id === sourceId;
+      }
+      return true;
+    }
+    return false;
+  });
+  
+  return filtered;
 };
 
 export default {
+  fetchCAPAs,
   fetchCAPAById,
-  fetchCAPAs
+  fetchCAPAsBySource
 };

@@ -71,7 +71,7 @@ export const adaptCAPAToModel = (capa: any): CAPA => {
   return {
     ...capa,
     status: convertToCAPAStatus(capa.status || 'Open'),
-    effectivenessRating: convertToEffectivenessRating(capa.effectiveness_rating)
+    effectiveness_rating: convertToEffectivenessRating(capa.effectiveness_rating)
   };
 };
 

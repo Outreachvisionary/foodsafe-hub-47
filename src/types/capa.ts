@@ -20,31 +20,33 @@ export type CAPASource =
   | 'Other'
   | 'Internal_QC';
 
+// Update CAPA interface to use consistent naming with snake_case
+// to match what's being used in the codebase
 export interface CAPA {
   id: string;
   title: string;
   description: string;
   status: CAPAStatus;
   priority: string;
-  createdAt: string;
-  createdBy: string;
-  dueDate: string;
-  assignedTo: string;
+  created_at: string; // Switched to snake_case to match API
+  created_by: string; // Switched to snake_case to match API
+  due_date: string; // Switched to snake_case to match API
+  assigned_to: string; // Switched to snake_case to match API
   source: string;
-  sourceId?: string;
-  sourceReference: string;
-  completionDate?: string;
-  rootCause?: string;
-  correctiveAction?: string;
-  preventiveAction?: string;
-  effectivenessCriteria?: string;
-  effectivenessRating?: CAPAEffectivenessRating;
-  effectivenessVerified?: boolean;
-  verificationDate?: string;
-  verificationMethod?: string;
-  verifiedBy?: string;
+  source_id?: string; // Switched to snake_case to match API
+  source_reference: string; // Switched to snake_case to match API
+  completion_date?: string; // Switched to snake_case to match API
+  root_cause?: string; // Switched to snake_case to match API
+  corrective_action?: string; // Switched to snake_case to match API
+  preventive_action?: string; // Switched to snake_case to match API
+  effectiveness_criteria?: string; // Switched to snake_case to match API
+  effectiveness_rating?: CAPAEffectivenessRating; // Switched to snake_case to match API
+  effectiveness_verified?: boolean; // Switched to snake_case to match API
+  verification_date?: string; // Switched to snake_case to match API
+  verification_method?: string; // Switched to snake_case to match API
+  verified_by?: string; // Switched to snake_case to match API
   department?: string;
-  fsma204Compliant?: boolean;
+  fsma204_compliant?: boolean; // Switched to snake_case to match API
   relatedDocuments: string[];
   relatedTraining: string[];
 }
@@ -101,37 +103,13 @@ export interface CAPAStats {
   overdue: number;
 }
 
-// Add training related types needed by NC components
-export enum TrainingStatus {
-  NotStarted = "Not_Started",
-  InProgress = "In_Progress",
-  Completed = "Completed",
-  Expired = "Expired",
-  Overdue = "Overdue"
-}
-
-export enum TrainingType {
-  OnBoarding = "On_Boarding",
-  Compliance = "Compliance",
-  Skills = "Skills",
-  Leadership = "Leadership",
-  Safety = "Safety",
-  Technical = "Technical"
-}
-
-export enum TrainingCategory {
-  Required = "Required",
-  Optional = "Optional",
-  Certification = "Certification",
-  Regulatory = "Regulatory"
-}
-
+// Export training-related types
 export interface TrainingRecord {
   id: string;
   employeeId: string;
   employeeName: string;
   sessionId: string;
-  status: TrainingStatus;
+  status: string;
   assignedDate: string;
   dueDate: string;
   completionDate?: string;
@@ -153,3 +131,13 @@ export interface TrainingPlan {
 }
 
 export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  status: string;
+  duration: number;
+  format: string;
+}

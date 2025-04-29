@@ -2,6 +2,7 @@
 import { CAPA } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
 import { fetchCAPAById } from './capaFetchService';
+import { adaptCAPAToModel } from '@/utils/typeAdapters';
 
 export const updateCAPAStatus = async (
   capaId: string, 

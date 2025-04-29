@@ -9,13 +9,16 @@ export interface FormSectionProps {
   children: React.ReactNode;
   className?: string;
   collapsible?: boolean;
+  icon?: React.ReactNode;
 }
 
-const FormSection: React.FC<FormSectionProps> = ({ 
+// Export as both a named export and default export for compatibility
+export const FormSection: React.FC<FormSectionProps> = ({ 
   title, 
   children, 
   className,
-  collapsible = false 
+  collapsible = false,
+  icon
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -32,7 +35,10 @@ const FormSection: React.FC<FormSectionProps> = ({
         onClick={toggleCollapse}
       >
         <CardTitle className="text-xl flex justify-between items-center">
-          {title}
+          <div className="flex items-center gap-2">
+            {icon && <span className="text-muted-foreground">{icon}</span>}
+            {title}
+          </div>
           {collapsible && (
             isCollapsed ? 
               <ChevronDown className="h-5 w-5 text-muted-foreground" /> : 

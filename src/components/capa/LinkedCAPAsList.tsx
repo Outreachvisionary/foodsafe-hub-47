@@ -55,40 +55,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         setLoading(true);
         setError(null);
 
-        const capaPromises = capaIds.map(async (id) => {
-          const capaData = await fetchCAPAById(id);
-          
-          // Transform to match the CAPA interface
-          return {
-            id: capaData.id,
-            title: capaData.title,
-            description: capaData.description,
-            status: convertToCAPAStatus(capaData.status),
-            priority: capaData.priority,
-            createdAt: capaData.created_at,
-            createdBy: capaData.created_by,
-            dueDate: capaData.due_date,
-            assignedTo: capaData.assigned_to,
-            source: capaData.source,
-            completionDate: capaData.completion_date,
-            rootCause: capaData.root_cause,
-            correctiveAction: capaData.corrective_action,
-            preventiveAction: capaData.preventive_action,
-            effectivenessCriteria: capaData.effectiveness_criteria,
-            effectivenessRating: capaData.effectiveness_rating,
-            effectivenessVerified: capaData.effectiveness_verified,
-            sourceId: capaData.source_id,
-            sourceReference: capaData.source_reference || '',
-            verificationDate: capaData.verification_date,
-            verificationMethod: capaData.verification_method,
-            verifiedBy: capaData.verified_by,
-            department: capaData.department,
-            fsma204Compliant: capaData.fsma204_compliant,
-            relatedDocuments: [],
-            relatedTraining: []
-          } as CAPA;
-        });
-
+        const capaPromises = capaIds.map(id => fetchCAPAById(id));
         const fetchedCapas = await Promise.all(capaPromises);
         setCapas(fetchedCapas);
       } catch (error) {

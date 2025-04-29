@@ -59,3 +59,28 @@ export const isCAPAStatus = (value: string, status: CAPAStatus): boolean => {
 export const isEffectivenessRating = (value: string, rating: CAPAEffectivenessRating): boolean => {
   return value?.replace(/ /g, '_').toLowerCase() === rating.toLowerCase();
 };
+
+// Add training-related enums
+export enum TrainingStatus {
+  NotStarted = "Not_Started",
+  InProgress = "In_Progress",
+  Completed = "Completed",
+  Expired = "Expired",
+  Overdue = "Overdue"
+}
+
+export enum TrainingType {
+  OnBoarding = "On_Boarding",
+  Compliance = "Compliance",
+  Skills = "Skills",
+  Leadership = "Leadership",
+  Safety = "Safety",
+  Technical = "Technical"
+}
+
+export enum TrainingCategory {
+  Required = "Required",
+  Optional = "Optional",
+  Certification = "Certification",
+  Regulatory = "Regulatory"
+}
