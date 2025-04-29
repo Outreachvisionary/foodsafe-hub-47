@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Document } from '@/types/document';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DocumentStatus } from '@/types/enums';
 
 interface DocumentApproverProps {
   document: Document;
@@ -125,7 +125,8 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
 
   debugLog('Rendering with document', { id: document.id, status: document.status });
 
-  if (document.status !== 'Pending Approval') {
+  // Fix the status check to use enum instead of string literal
+  if (document.status !== DocumentStatus.PendingApproval) {
     return (
       <Card className="bg-white">
         <CardHeader>

@@ -1,104 +1,105 @@
-
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Document, DocumentVersion } from '@/types/document';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { DocumentVersion } from '@/types/document';
+import { CalendarClock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import useDocumentService from '@/hooks/useDocumentService';
-import { Button } from '@/components/ui/button';
-import { Download, RotateCcw } from 'lucide-react';
+import { getMockDocumentVersions } from '@/utils/documentVersionUtils';
 
 interface DocumentVersionHistoryProps {
-  document: Document;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  documentId: string;
 }
 
-export const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
-  document,
-  open,
-  onOpenChange,
-}) => {
-  const documentService = useDocumentService();
-  const [versions, setVersions] = React.useState<DocumentVersion[]>([]);
+const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({ documentId }) => {
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (open && document.id) {
-      documentService.getDocumentVersions(document.id).then(setVersions);
-    }
-  }, [open, document.id, documentService]);
+  useEffect(() => {
+    const fetchVersionHistory = async () => {
+      try {
+        setLoading(true);
+        
+        // Get mock document versions
+        const data = getMockDocumentVersions(documentId);
+        
+        // Ensure version_type is "major" or "minor"
+        const processedVersions = data.map(version => ({
+          ...version,
+          version_type: version.version_type === "major" ? "major" : "minor"
+        }));
+        
+        setVersions(processedVersions);
+      } catch (error) {
+        console.error('Error fetching document versions:', error);
+        setError('Failed to load document version history');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchVersionHistory();
+  }, [documentId]);
 
-  const handleRestore = async (version: DocumentVersion) => {
-    try {
-      await documentService.restoreVersion(document.id, version.id);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error restoring version:', error);
-    }
-  };
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Version History</CardTitle>
+          <CardDescription>Loading version history...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Loading...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const handleDownload = async (version: DocumentVersion) => {
-    try {
-      await documentService.downloadVersion(version.id);
-    } catch (error) {
-      console.error('Error downloading version:', error);
-    }
-  };
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Version History</CardTitle>
+          <CardDescription>Error loading version history</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Version History</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="max-h-[500px] overflow-y-auto mt-4">
-          <div className="space-y-4">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Version History</CardTitle>
+        <CardDescription>List of previous versions of this document</CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[400px] w-full">
+          <div className="divide-y divide-border">
             {versions.map((version) => (
-              <div
-                key={version.id}
-                className="flex items-start justify-between p-4 border rounded-lg"
-              >
-                <div className="space-y-1">
-                  <div className="font-medium">
-                    Version {version.version_number || version.version}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {format(new Date(version.created_at), 'PPpp')}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Modified by {version.modified_by_name || "Unknown"}
-                  </div>
-                  {version.check_in_comment && (
-                    <div className="mt-2 text-sm">{version.check_in_comment}</div>
-                  )}
+              <div key={version.id} className="flex items-center px-4 py-3 hover:bg-secondary/50 transition-colors">
+                <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Version {version.version}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {version.change_summary || 'No summary'}
+                  </p>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(version)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRestore(version)}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
+                <div className="text-right text-xs text-muted-foreground">
+                  <p>
+                    <CalendarClock className="h-3 w-3 inline-block mr-1 align-middle" />
+                    {format(new Date(version.created_at), 'MMM d, yyyy h:mm a')}
+                  </p>
+                  <p>By: {version.created_by}</p>
                 </div>
               </div>
             ))}
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 };
 

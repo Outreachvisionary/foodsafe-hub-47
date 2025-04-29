@@ -1,68 +1,54 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from 'lucide-react';
+import { Certification } from '@/types/training';
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { AlertCircle, Calendar } from 'lucide-react';
-import { getMockTrainingStatistics } from '@/services/mockDataService';
-import { TrainingStatistics } from '@/types/training';
+interface ExpiringCertificationsCardProps {
+  certifications: Certification[];
+}
 
-const ExpiringCertificationsCard = () => {
-  const [stats, setStats] = useState<TrainingStatistics | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    // Use synchronous mock data
-    const mockStats = getMockTrainingStatistics();
-    setStats(mockStats);
-    setLoading(false);
-  }, []);
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-  
-  if (loading || !stats) {
-    return <Card className="h-80 animate-pulse bg-muted"></Card>;
-  }
-  
-  const expiringCerts = stats.expiringCertifications;
+const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({ certifications }) => {
+  // Filter certifications expiring within the next 30 days
+  const expiringCertifications = certifications.filter(cert => {
+    const expiryDate = new Date(cert.expiryDate);
+    const now = new Date();
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30;
+  });
+
+  // Sort by expiry date
+  expiringCertifications.sort((a, b) => {
+    const dateA = new Date(a.expiryDate);
+    const dateB = new Date(b.expiryDate);
+    return dateA.getTime() - dateB.getTime();
+  });
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
-          Expiring Certifications
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Expiring Certifications</CardTitle>
+        <Calendar className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="p-0">
-        {expiringCerts.length === 0 ? (
-          <div className="p-6 text-center text-muted-foreground">
-            No certifications expiring soon
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {expiringCerts.map((cert, index) => (
-              <li key={index} className="px-4 py-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-sm font-medium">{cert.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {cert.employee}
-                    </p>
+      <CardContent>
+        {expiringCertifications.length > 0 ? (
+          <ul className="list-none p-0">
+            {expiringCertifications.map(cert => (
+              <li key={cert.id} className="py-2 border-b last:border-b-0">
+                <div className="flex justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">{cert.name}</p>
+                    <p className="text-xs text-muted-foreground">Employee: {cert.employee}</p>
                   </div>
-                  <div className="flex items-center text-xs text-amber-600">
-                    <Calendar className="h-3.5 w-3.5 mr-1" />
-                    {formatDate(cert.expires)}
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Expires: {new Date(cert.expiryDate).toLocaleDateString()}
+                  </p>
                 </div>
               </li>
             ))}
           </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No certifications expiring soon.</p>
         )}
       </CardContent>
     </Card>

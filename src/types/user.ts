@@ -29,6 +29,7 @@ export interface AppUser {
 export interface User {
   id: string;
   email: string;
+  role?: string; // Added role property
   profile: {
     full_name?: string;
     avatar_url?: string;
@@ -43,6 +44,7 @@ export const adaptAppUserToUser = (appUser: AppUser): User => {
   return {
     id: appUser.id,
     email: appUser.email,
+    role: appUser.role,
     full_name: appUser.full_name || appUser.profile?.full_name,
     avatar_url: appUser.avatar_url || appUser.profile?.avatar_url,
     profile: {

@@ -1,5 +1,5 @@
 
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { DocumentStatus, CheckoutStatus, DocumentVersionType } from '@/types/enums';
 
 // Document interface with consistent types
 export interface Document {
@@ -63,7 +63,7 @@ export interface DocumentVersion {
   is_binary_file?: boolean;
   editor_metadata?: Record<string, any>;
   diff_data?: Record<string, any>;
-  version_type: "major" | "minor";
+  version_type: DocumentVersionType;
   change_summary?: string;
   change_notes?: string;
   check_in_comment?: string;

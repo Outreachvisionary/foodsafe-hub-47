@@ -1,7 +1,64 @@
-
 import { useState } from 'react';
-import { Document, DocumentStatus } from '@/types/document';
+import { Document, DocumentStatus, CheckoutStatus, DocumentVersion } from '@/types/document';
+import { DocumentStatus as DocumentStatusEnum, CheckoutStatus as CheckoutStatusEnum } from '@/types/enums';
+import { adaptDocumentToModel } from '@/utils/typeAdapters';
 import { fetchDocuments as fetchDocumentsService } from '@/services/documentService';
+
+export const checkoutDocument = async (documentId: string, userId: string): Promise<Document> => {
+  // Mock implementation
+  console.log(`Checking out document ${documentId} for user ${userId}`);
+  
+  // In a real implementation, you would call an API here
+  const response = {
+    checkout_status: CheckoutStatusEnum.CheckedOut,
+    checkout_user_id: userId,
+    checkout_user_name: 'Current User',
+    checkout_timestamp: new Date().toISOString(),
+    id: documentId,
+    title: 'Sample Document',
+    description: 'This is a sample document',
+    file_name: 'sample.docx',
+    file_path: '/documents/sample.docx',
+    file_type: 'docx',
+    file_size: 1024,
+    category: 'SOP' as const,
+    status: DocumentStatusEnum.Draft,
+    version: 1,
+    created_by: 'admin',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  
+  return adaptDocumentToModel(response);
+};
+
+export const checkinDocument = async (documentId: string, comment?: string): Promise<Document> => {
+  // Mock implementation
+  console.log(`Checking in document ${documentId} with comment: ${comment}`);
+  
+  // In a real implementation, you would call an API here
+  const response = {
+    checkout_status: CheckoutStatusEnum.Available,
+    checkout_user_id: null,
+    checkout_user_name: null,
+    checkout_timestamp: null,
+    id: documentId,
+    title: 'Sample Document',
+    description: 'This is a sample document',
+    file_name: 'sample.docx',
+    file_path: '/documents/sample.docx',
+    file_type: 'docx',
+    file_size: 1024,
+    category: 'SOP' as const,
+    status: DocumentStatusEnum.Draft,
+    version: 1,
+    created_by: 'admin',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  
+  return adaptDocumentToModel(response);
+};
 
 export default function useDocumentService() {
   const [documents, setDocuments] = useState<Document[]>([]);
