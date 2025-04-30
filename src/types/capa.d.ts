@@ -1,37 +1,7 @@
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
-export type CAPAStatus = 
-  | 'Open'
-  | 'In_Progress' 
-  | 'Under_Review'
-  | 'Completed'
-  | 'Closed'
-  | 'Rejected'
-  | 'On_Hold'
-  | 'Overdue'
-  | 'Pending_Verification'
-  | 'Verified';
-
-export type CAPAPriority =
-  | 'Low'
-  | 'Medium'
-  | 'High'
-  | 'Critical';
-
-export type CAPASource =
-  | 'Audit'
-  | 'Customer_Complaint'
-  | 'Internal_Issue'
-  | 'Regulatory'
-  | 'Supplier_Issue'
-  | 'Non_Conformance'
-  | 'Management_Review'
-  | 'Other';
-
-export type CAPAEffectivenessRating =
-  | 'Not_Effective'
-  | 'Partially_Effective'
-  | 'Effective'
-  | 'Highly_Effective';
+// Re-export the types from enums for proper type compatibility
+export { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
 
 export interface CAPA {
   id: string;
@@ -39,30 +9,23 @@ export interface CAPA {
   description: string;
   status: CAPAStatus;
   priority: CAPAPriority;
-  createdAt: string;
-  createdBy: string;
-  dueDate: string;
-  assignedTo: string;
   source: CAPASource;
-  completionDate?: string;
-  rootCause?: string;
-  correctiveAction?: string;
-  preventiveAction?: string;
-  effectivenessCriteria?: string;
-  effectivenessRating?: CAPAEffectivenessRating;
-  effectivenessVerified?: boolean;
-  verificationDate?: string;
-  verificationMethod?: string;
-  verifiedBy?: string;
-  department?: string;
-  sourceId?: string;
-  source_reference: string;
-  fsma204Compliant?: boolean;
-  relatedDocuments?: string[];
-  relatedTraining?: string[];
-}
-
-export interface CAPAListProps {
-  capas: CAPA[];
-  onCAPAClick?: (capa: CAPA) => void;
+  source_id?: string;
+  assigned_to?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  due_date?: string;
+  completion_date?: string;
+  root_cause?: string;
+  corrective_action?: string;
+  preventive_action?: string;
+  verification_method?: string;
+  effectiveness_criteria?: string;
+  effectiveness_rating?: CAPAEffectivenessRating;
+  verified_by?: string;
+  verification_date?: string;
+  fsma204_compliant?: boolean;
+  department_id?: string;
+  facility_id?: string;
 }

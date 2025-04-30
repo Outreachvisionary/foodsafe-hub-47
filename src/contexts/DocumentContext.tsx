@@ -1,7 +1,9 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { Document } from '@/types/document';
+import { Document, DocumentAccess } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
+import { fetchDocumentAccess, grantDocumentAccess, revokeDocumentAccess } from '@/services/enhancedDocumentService';
+import { getDocumentComments, createDocumentComment } from '@/services/documentCommentService';
 
 interface DocumentContextType {
   documents: Document[];
@@ -12,6 +14,11 @@ interface DocumentContextType {
   approveDocument?: (documentId: string, comment?: string) => Promise<void>;
   rejectDocument?: (documentId: string, reason: string) => Promise<void>;
   fetchDocuments?: () => Promise<void>;
+  fetchAccess?: (documentId: string) => Promise<DocumentAccess[]>;
+  grantAccess?: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<DocumentAccess>;
+  revokeAccess?: (accessId: string) => Promise<void>;
+  getDocumentComments?: (documentId: string) => Promise<any[]>;
+  createDocumentComment?: (comment: any) => Promise<any>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -53,6 +60,58 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     console.log(`Rejecting document ${documentId} with reason: ${reason}`);
   };
 
+  // Add document access control functions
+  const fetchAccess = async (documentId: string): Promise<DocumentAccess[]> => {
+    try {
+      return await fetchDocumentAccess(documentId);
+    } catch (err) {
+      setError("Failed to fetch document access");
+      return [];
+    }
+  };
+
+  const grantAccess = async (
+    documentId: string, 
+    userId: string, 
+    permissionLevel: string, 
+    grantedBy: string
+  ): Promise<DocumentAccess> => {
+    try {
+      return await grantDocumentAccess(documentId, userId, permissionLevel, grantedBy);
+    } catch (err) {
+      setError("Failed to grant document access");
+      throw err;
+    }
+  };
+
+  const revokeAccess = async (accessId: string): Promise<void> => {
+    try {
+      await revokeDocumentAccess(accessId);
+    } catch (err) {
+      setError("Failed to revoke document access");
+      throw err;
+    }
+  };
+
+  // Add document comments functions
+  const handleGetDocumentComments = async (documentId: string) => {
+    try {
+      return await getDocumentComments(documentId);
+    } catch (err) {
+      setError("Failed to get document comments");
+      return [];
+    }
+  };
+
+  const handleCreateDocumentComment = async (comment: any) => {
+    try {
+      return await createDocumentComment(comment);
+    } catch (err) {
+      setError("Failed to create document comment");
+      throw err;
+    }
+  };
+
   const value: DocumentContextType = {
     documents,
     setDocuments,
@@ -61,7 +120,12 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshDocuments,
     approveDocument,
     rejectDocument,
-    fetchDocuments
+    fetchDocuments,
+    fetchAccess,
+    grantAccess,
+    revokeAccess,
+    getDocumentComments: handleGetDocumentComments,
+    createDocumentComment: handleCreateDocumentComment
   };
 
   return (

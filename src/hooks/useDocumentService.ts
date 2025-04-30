@@ -2,8 +2,6 @@
 import { useState } from 'react';
 import { Document } from '@/types/document';
 import { DocumentStatus, CheckoutStatus, DocumentVersionType } from '@/types/enums';
-import { adaptDocumentToModel } from '@/utils/typeAdapters';
-import { fetchDocuments as fetchDocumentsService } from '@/services/documentService';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useDocumentService = () => {
@@ -15,7 +13,7 @@ export const useDocumentService = () => {
     try {
       // In a real application, this would fetch from an API
       const documents = [];
-      return documents.map(doc => adaptDocumentToModel(doc));
+      return documents;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch documents';
       setError(errorMessage);
@@ -67,11 +65,73 @@ export const useDocumentService = () => {
     }
   };
 
+  // Add checkout/checkin functionality
+  const checkoutDocument = async (documentId: string, userId: string): Promise<Document | null> => {
+    setLoading(true);
+    try {
+      // In a real app, this would call an API
+      console.log(`Checking out document ${documentId} by user ${userId}`);
+      // Return a mock document with updated checkout status
+      return {
+        id: documentId,
+        title: 'Checked Out Document',
+        file_name: 'document.pdf',
+        file_size: 1024,
+        file_type: 'application/pdf',
+        category: 'Other',
+        status: DocumentStatus.Draft,
+        version: 1,
+        created_at: new Date().toISOString(),
+        created_by: 'Current User',
+        checkout_status: CheckoutStatus.CheckedOut,
+        checkout_by: userId,
+        checkout_date: new Date().toISOString()
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to checkout document';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkinDocument = async (documentId: string, userId: string, comment?: string): Promise<Document | null> => {
+    setLoading(true);
+    try {
+      // In a real app, this would call an API
+      console.log(`Checking in document ${documentId} by user ${userId} with comment: ${comment}`);
+      // Return a mock document with updated checkout status
+      return {
+        id: documentId,
+        title: 'Checked In Document',
+        file_name: 'document.pdf',
+        file_size: 1024,
+        file_type: 'application/pdf',
+        category: 'Other',
+        status: DocumentStatus.Draft,
+        version: 1,
+        created_at: new Date().toISOString(),
+        created_by: 'Current User',
+        checkout_status: CheckoutStatus.Available,
+        updated_at: new Date().toISOString()
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to checkin document';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
     fetchDocuments,
-    createDocument
+    createDocument,
+    checkoutDocument,
+    checkinDocument
   };
 };
 

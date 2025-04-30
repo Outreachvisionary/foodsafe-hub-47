@@ -1,9 +1,39 @@
-import React, { useState } from 'react';
+
+import React, { useState, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { useDropzone } from 'react-dropzone';
+import { format } from 'date-fns';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Document } from '@/types/document';
+import { Label } from '@/components/ui/label';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { X, Upload, File, CalendarIcon } from 'lucide-react';
+import { Document, DocumentCategory } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
-import { toast } from '@/hooks/use-toast';
+import { useDocument } from '@/contexts/DocumentContext';
+import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentUploaderProps {
   onDocumentCreated?: (document: Document) => void;
@@ -12,8 +42,8 @@ interface DocumentUploaderProps {
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<DocumentCategory>('Other');
-  const [status, setStatus] = useState<DocumentStatus>('Draft');
+  const [category, setCategory] = useState<string>('Other');
+  const [status, setStatus] = useState<DocumentStatus>(DocumentStatus.Draft);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -21,7 +51,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   
   const { toast } = useToast();
-  const { fetchDocuments, createDocument } = useDocument();
+  const { fetchDocuments } = useDocument();
   const documentService = useDocumentService();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -31,7 +61,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false });
 
-  const handleCategoryChange = (value: DocumentCategory) => {
+  const handleCategoryChange = (value: string) => {
     setCategory(value);
   };
 
@@ -47,7 +77,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
     setTitle('');
     setDescription('');
     setCategory('Other');
-    setStatus('Draft');
+    setStatus(DocumentStatus.Draft);
     setExpiryDate(undefined);
     setFile(null);
   };
@@ -56,9 +86,6 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
     try {
       setUploading(true);
       setErrorMessage(null);
-      
-      // Convert string status to DocumentStatus type
-      const documentStatus = values.status as DocumentStatus;
       
       const documentData: Partial<Document> = {
         id: values.id,
@@ -69,7 +96,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
         file_size: values.file_size,
         file_type: values.file_type,
         category: values.category,
-        status: documentStatus,
+        status: values.status,
         version: values.version,
         created_at: values.created_at,
         created_by: values.created_by,
@@ -81,7 +108,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
         pending_since: values.pending_since
       };
 
-      const newDocument = await createDocument(documentData);
+      const newDocument = await documentService.createDocument(documentData);
       
       if (newDocument) {
         toast({
@@ -90,10 +117,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
         });
         
         // Refresh the document list
-        await fetchDocuments();
+        if (fetchDocuments) {
+          await fetchDocuments();
+        }
         
         // Notify parent component
-        if (onDocumentCreated) {
+        if (onDocumentCreated && newDocument) {
           onDocumentCreated(newDocument);
         }
         
@@ -222,13 +251,13 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="Pending_Review">Pending Review</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Archived">Archived</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                  <SelectItem value="Expired">Expired</SelectItem>
+                  <SelectItem value={DocumentStatus.Draft}>Draft</SelectItem>
+                  <SelectItem value={DocumentStatus.PendingReview}>Pending Review</SelectItem>
+                  <SelectItem value={DocumentStatus.Approved}>Approved</SelectItem>
+                  <SelectItem value={DocumentStatus.Active}>Active</SelectItem>
+                  <SelectItem value={DocumentStatus.Archived}>Archived</SelectItem>
+                  <SelectItem value={DocumentStatus.Rejected}>Rejected</SelectItem>
+                  <SelectItem value={DocumentStatus.Expired}>Expired</SelectItem>
                 </SelectContent>
               </Select>
             </div>

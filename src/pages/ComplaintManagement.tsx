@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -30,8 +29,8 @@ import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/c
 import { ListActions } from '@/components/ui/list-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-// Import any missing functions
-import { mapComplaintToDb } from '@/types/complaint';
+// Import the utility function from the correct location
+import { mapComplaintToDb } from '@/utils/complaintUtils';
 
 const ComplaintManagement: React.FC = () => {
   const navigate = useNavigate();
