@@ -42,7 +42,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   const [newPermissionLevel, setNewPermissionLevel] = useState('view');
   
   const { toast } = useToast();
-  const documentService = useDocumentService();
+  const { fetchAccess, grantAccess, revokeAccess } = useDocumentService();
   
   useEffect(() => {
     fetchAccessList();
@@ -51,7 +51,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   const fetchAccessList = async () => {
     setIsLoading(true);
     try {
-      const accessData = await documentService.fetchAccess(documentId);
+      const accessData = await fetchAccess(documentId);
       setAccessList(accessData);
     } catch (error) {
       console.error('Error fetching access list:', error);
@@ -76,7 +76,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
     }
     
     try {
-      const newAccess = await documentService.grantAccess(
+      const newAccess = await grantAccess(
         documentId,
         newUserId,
         newPermissionLevel,
@@ -105,7 +105,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   
   const handleRevokeAccess = async (accessId: string) => {
     try {
-      await documentService.revokeAccess(accessId);
+      await revokeAccess(accessId);
       
       setAccessList(prev => prev.filter(access => access.id !== accessId));
       

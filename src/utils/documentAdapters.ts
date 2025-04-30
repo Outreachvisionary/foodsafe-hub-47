@@ -21,21 +21,11 @@ export const adaptDbDocumentToModel = (dbDoc: any): Document => {
     folder_id: dbDoc.folder_id,
     tags: dbDoc.tags || [],
     approvers: dbDoc.approvers || [],
-    linked_module: dbDoc.linked_module,
-    linked_item_id: dbDoc.linked_item_id,
-    rejection_reason: dbDoc.rejection_reason || '',
-    is_locked: dbDoc.is_locked || false,
-    last_action: dbDoc.last_action,
-    last_review_date: dbDoc.last_review_date,
-    next_review_date: dbDoc.next_review_date,
-    pending_since: dbDoc.pending_since,
-    current_version_id: dbDoc.current_version_id,
-    is_template: dbDoc.is_template || false,
     checkout_status: (dbDoc.checkout_status || 'Available') as CheckoutStatus,
-    checkout_timestamp: dbDoc.checkout_timestamp,
-    checkout_user_id: dbDoc.checkout_user_id,
-    checkout_user_name: dbDoc.checkout_user_name,
-    workflow_status: dbDoc.workflow_status
+    checkout_by: dbDoc.checkout_by,
+    checkout_date: dbDoc.checkout_timestamp,
+    pending_since: dbDoc.pending_since,
+    department: dbDoc.department
   };
 };
 
@@ -46,17 +36,64 @@ export const adaptDbVersionToModel = (dbVersion: any): DocumentVersion => {
     version: dbVersion.version,
     version_number: dbVersion.version_number,
     file_name: dbVersion.file_name,
+    file_path: dbVersion.file_path || '',
     file_size: dbVersion.file_size,
     created_by: dbVersion.created_by,
     created_at: dbVersion.created_at,
     is_binary_file: dbVersion.is_binary_file,
-    editor_metadata: dbVersion.editor_metadata,
-    diff_data: dbVersion.diff_data,
     version_type: dbVersion.version_type as "major" | "minor",
     change_summary: dbVersion.change_summary,
     change_notes: dbVersion.change_notes,
-    check_in_comment: dbVersion.check_in_comment,
-    modified_by: dbVersion.modified_by,
     modified_by_name: dbVersion.modified_by_name
   };
+};
+
+export const adaptModelToDbDocument = (document: Partial<Document>): Record<string, any> => {
+  // Map the Document model to match the database schema
+  return {
+    ...document,
+    // Map any specific fields that need conversion here
+  };
+};
+
+// Helper functions for document access control
+export const getPermissionLabel = (permissionLevel: string): string => {
+  const labels: Record<string, string> = {
+    'view': 'View Only',
+    'comment': 'Can Comment',
+    'edit': 'Can Edit',
+    'owner': 'Full Control'
+  };
+  
+  return labels[permissionLevel] || permissionLevel;
+};
+
+export const getPermissionDescription = (permissionLevel: string): string => {
+  const descriptions: Record<string, string> = {
+    'view': 'Can view the document but cannot make changes',
+    'comment': 'Can view and add comments to the document',
+    'edit': 'Can view, comment on, and make changes to the document',
+    'owner': 'Has full control over the document including managing access'
+  };
+  
+  return descriptions[permissionLevel] || '';
+};
+
+// Function for document validation
+export const validateDocument = (document: Partial<Document>): string[] => {
+  const errors: string[] = [];
+  
+  if (!document.title || document.title.trim() === '') {
+    errors.push('Document title is required');
+  }
+  
+  if (!document.file_name || document.file_name.trim() === '') {
+    errors.push('Document file name is required');
+  }
+  
+  if (!document.category || document.category.trim() === '') {
+    errors.push('Document category is required');
+  }
+  
+  return errors;
 };

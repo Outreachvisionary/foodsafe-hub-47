@@ -106,6 +106,7 @@ export const convertDatabaseCAPAToModel = (dbCapa: any): CAPA => {
     fsma204_compliant: dbCapa.fsma204_compliant,
     department_id: dbCapa.department_id,
     facility_id: dbCapa.facility_id,
-    department: dbCapa.department
+    department: dbCapa.department,
+    source_reference: dbCapa.source_reference
   };
 };

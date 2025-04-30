@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +32,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 // Define the form schema with zod
 const formSchema = z.object({
@@ -177,7 +177,7 @@ export default function DocumentCreate() {
             </TabsList>
             
             <TabsContent value="details">
-              <FormSection title="Document Information" icon={FileText}>
+              <FormSection title="Document Information" icon={<FileText className="w-5 h-5" />}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Document Title */}
                   <FormField
@@ -300,7 +300,7 @@ export default function DocumentCreate() {
                 </div>
               </FormSection>
               
-              <FormSection title="Document Details" icon={FileType}>
+              <FormSection title="Document Details" icon={<FileType className="w-5 h-5" />}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Document Number */}
                   <FormField
@@ -445,7 +445,7 @@ export default function DocumentCreate() {
                 </div>
               </FormSection>
               
-              <FormSection title="Access Control" icon={Lock}>
+              <FormSection title="Access Control" icon={<Lock className="w-5 h-5" />}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Access Level */}
                   <FormField
@@ -461,9 +461,9 @@ export default function DocumentCreate() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Public">Public</SelectItem>
-                            <SelectItem value="Restricted">Restricted</SelectItem>
-                            <SelectItem value="Confidential">Confidential</SelectItem>
+                            <SelectItem value="Public">Public (All Users)</SelectItem>
+                            <SelectItem value="Restricted">Restricted (Specific Users/Roles)</SelectItem>
+                            <SelectItem value="Confidential">Confidential (Management Only)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -486,104 +486,106 @@ export default function DocumentCreate() {
             </TabsContent>
             
             <TabsContent value="content">
-              <FormSection title="Document Content" icon={Info}>
-                <div className="space-y-4">
-                  {/* Rich Text Editor would go here */}
-                  <FormItem>
-                    <FormLabel>Document Content</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="This would be a rich text editor in real implementation" 
-                        className="min-h-[200px]"
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-              </FormSection>
-              
-              <FormSection title="Attachments" icon={Upload}>
-                <div className="space-y-4">
-                  {/* File Upload */}
-                  <FormItem>
-                    <FormLabel>Upload Files</FormLabel>
-                    <div className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-                      <Input
-                        type="file"
-                        className="hidden"
-                        id="file-upload"
-                        onChange={handleFileChange}
-                        multiple
-                        accept=".pdf,.docx,.xlsx,.txt,.jpeg,.jpg,.png"
-                      />
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <Upload className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-                        <p className="mb-1 font-medium">Click to upload files</p>
-                        <p className="text-xs text-muted-foreground">
-                          PDF, DOCX, XLSX, TXT, JPEG, PNG (Max 10MB per file)
-                        </p>
-                      </label>
+              <FormSection title="Document Content" icon={<FileText className="w-5 h-5" />}>
+                <div className="space-y-6">
+                  {/* Content */}
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Content</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter document content or notes" 
+                            className="min-h-[200px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* File Attachments */}
+                  <div>
+                    <label className="text-sm font-medium">File Attachments</label>
+                    <div className="mt-2">
+                      <div className="flex items-center justify-center w-full">
+                        <label
+                          htmlFor="file-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 text-gray-500 mb-2" />
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              PDF, Word, Excel, or images (max 10MB)
+                            </p>
+                          </div>
+                          <input
+                            id="file-upload"
+                            type="file"
+                            className="hidden"
+                            onChange={handleFileChange}
+                            multiple
+                          />
+                        </label>
+                      </div>
                     </div>
                     
                     {/* File List */}
                     {files.length > 0 && (
                       <div className="mt-4">
-                        <p className="text-sm font-medium mb-2">Uploaded Files</p>
+                        <h4 className="text-sm font-medium mb-2">Attached Files</h4>
                         <ul className="space-y-2">
                           {files.map((file, index) => (
-                            <li key={index} className="flex items-center justify-between bg-secondary/30 p-2 rounded">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                <span className="text-sm truncate max-w-[250px]">{file.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                            <li key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md">
+                              <div className="flex items-center">
+                                <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                                <span className="text-sm">{file.name}</span>
+                                <span className="text-xs text-gray-500 ml-2">
+                                  ({(file.size / 1024 / 1024).toFixed(2)} MB)
                                 </span>
                               </div>
                               <Button 
+                                type="button" 
                                 variant="ghost" 
-                                size="xs" 
+                                size="sm" 
                                 onClick={() => removeFile(index)}
-                                className="h-6 w-6 p-0"
                               >
-                                ✕
+                                Remove
                               </Button>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
-                  </FormItem>
+                  </div>
                 </div>
               </FormSection>
             </TabsContent>
           </Tabs>
           
-          <div className="flex justify-between pt-6 border-t">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={() => navigate('/documents')}
-            >
+          <div className="flex justify-end space-x-3 pt-6 border-t">
+            <Button type="button" variant="outline" onClick={() => navigate('/documents')}>
               Cancel
             </Button>
-            <div className="space-x-2">
-              <Button 
-                variant="secondary" 
-                type="button"
-                onClick={() => {
-                  form.setValue('status', 'Draft');
-                  form.handleSubmit(onSubmit)();
-                }}
-                disabled={isUploading}
-              >
-                Save as Draft
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isUploading}
-              >
-                {isUploading ? "Saving..." : "Create Document"}
-              </Button>
-            </div>
+            <Button type="submit" disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Create Document
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </Form>

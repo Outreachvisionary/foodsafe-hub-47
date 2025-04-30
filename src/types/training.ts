@@ -85,13 +85,13 @@ export interface TrainingRecord {
 
 export interface DepartmentStat {
   department: string;
-  name?: string;
+  name: string;
   total: number;
   completed: number;
   overdue: number;
   compliance: number;
-  totalAssigned?: number;
-  complianceRate?: number;
+  totalAssigned: number;
+  complianceRate: number;
 }
 
 export interface TrainingStats {

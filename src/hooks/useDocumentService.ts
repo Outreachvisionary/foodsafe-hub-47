@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Document
+  Document, 
+  DocumentStatus,
+  CheckoutStatus
 } from '@/types/document';
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import { 
   getDocumentComments, 
   createDocumentComment 
@@ -14,6 +15,7 @@ import {
   grantDocumentAccess,
   revokeDocumentAccess
 } from '@/services/enhancedDocumentService';
+import { adaptDbDocumentToModel } from '@/utils/documentAdapters';
 
 export function useDocumentService() {
   const [loading, setLoading] = useState(false);
@@ -37,11 +39,19 @@ export function useDocumentService() {
       
       if (updateError) throw updateError;
       
-      return {
-        ...data,
-        status: data.status as DocumentStatus,
-        checkout_status: data.checkout_status as CheckoutStatus
-      };
+      // Create document activity for checkout
+      await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          user_name: 'Current User', 
+          user_role: 'User',
+          action: 'checkout',
+          checkout_action: 'checked_out'
+        });
+      
+      return adaptDbDocumentToModel(data);
     } catch (err) {
       console.error('Error checking out document:', err);
       setError('Failed to check out document');
@@ -72,24 +82,19 @@ export function useDocumentService() {
       if (updateError) throw updateError;
       
       // Record check-in activity with comment if provided
-      if (comment) {
-        await supabase
-          .from('document_activities')
-          .insert({
-            document_id: documentId,
-            user_id: userId,
-            action: 'check_in',
-            comments: comment,
-            user_name: 'Current User', // Add required fields
-            user_role: 'User'
-          });
-      }
+      await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          user_name: 'Current User', 
+          user_role: 'User',
+          action: 'checkin',
+          comments: comment,
+          checkout_action: 'checked_in'
+        });
       
-      return {
-        ...data,
-        status: data.status as DocumentStatus,
-        checkout_status: data.checkout_status as CheckoutStatus
-      };
+      return adaptDbDocumentToModel(data);
     } catch (err) {
       console.error('Error checking in document:', err);
       setError('Failed to check in document');
@@ -111,11 +116,7 @@ export function useDocumentService() {
       
       if (fetchError) throw fetchError;
       
-      return (data || []).map(doc => ({
-        ...doc,
-        status: doc.status as DocumentStatus,
-        checkout_status: (doc.checkout_status || 'Available') as CheckoutStatus
-      }));
+      return (data || []).map(doc => adaptDbDocumentToModel(doc));
     } catch (err) {
       console.error('Error fetching documents:', err);
       setError('Failed to fetch documents');
@@ -130,19 +131,35 @@ export function useDocumentService() {
     try {
       setLoading(true);
       
+      // Convert Document type to database format
+      const dbDocument = {
+        ...documentData,
+        status: documentData.status || DocumentStatus.Draft,
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       const { data, error: createError } = await supabase
         .from('documents')
-        .insert(documentData)
+        .insert(dbDocument)
         .select()
         .single();
       
       if (createError) throw createError;
       
-      return {
-        ...data,
-        status: data.status as DocumentStatus,
-        checkout_status: (data.checkout_status || 'Available') as CheckoutStatus
-      };
+      // Create document activity for creation
+      await supabase
+        .from('document_activities')
+        .insert({
+          document_id: data.id,
+          user_id: documentData.created_by || 'system',
+          user_name: 'Current User',
+          user_role: 'Author',
+          action: 'create'
+        });
+      
+      return adaptDbDocumentToModel(data);
     } catch (err) {
       console.error('Error creating document:', err);
       setError('Failed to create document');
@@ -172,6 +189,65 @@ export function useDocumentService() {
   // Get storage path for a document
   const getStoragePath = (documentId: string, fileName: string): string => {
     return `${documentId}/${fileName}`;
+  };
+
+  // Update document status
+  const updateDocumentStatus = async (documentId: string, newStatus: DocumentStatus, comment?: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Record status change activity
+      await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          user_id: 'current_user',
+          user_name: 'Current User',
+          user_role: 'Editor',
+          action: `status_change_to_${newStatus}`,
+          comments: comment
+        });
+      
+      return adaptDbDocumentToModel(data);
+    } catch (err) {
+      console.error('Error updating document status:', err);
+      setError(`Failed to update document status to ${newStatus}`);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Approve document
+  const approveDocument = async (documentId: string, comment?: string) => {
+    return updateDocumentStatus(documentId, DocumentStatus.Approved, comment);
+  };
+  
+  // Reject document
+  const rejectDocument = async (documentId: string, reason?: string) => {
+    return updateDocumentStatus(documentId, DocumentStatus.Rejected, reason);
+  };
+
+  // Publish document
+  const publishDocument = async (documentId: string, comment?: string) => {
+    return updateDocumentStatus(documentId, DocumentStatus.Published, comment);
+  };
+
+  // Archive document
+  const archiveDocument = async (documentId: string, reason?: string) => {
+    return updateDocumentStatus(documentId, DocumentStatus.Archived, reason);
   };
 
   // Fetch document access permissions
@@ -225,7 +301,12 @@ export function useDocumentService() {
     getStoragePath,
     fetchAccess,
     grantAccess,
-    revokeAccess
+    revokeAccess,
+    approveDocument,
+    rejectDocument,
+    publishDocument,
+    archiveDocument,
+    updateDocumentStatus
   };
 }
 
