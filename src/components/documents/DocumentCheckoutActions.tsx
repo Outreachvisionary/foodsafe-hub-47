@@ -53,7 +53,7 @@ const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
   const handleCheckin = async () => {
     try {
       setLoading(true);
-      await documentService.checkinDocument(documentId, userId, 'Current User', comment); // Added user name parameter
+      await documentService.checkinDocument(documentId, userId, 'Current User', comment); // Added user name and comment
       toast({
         title: 'Document Checked In',
         description: 'Your changes have been saved and the document is now available for others.',

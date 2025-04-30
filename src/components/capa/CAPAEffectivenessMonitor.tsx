@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { format, differenceInDays } from 'date-fns';
 import { CAPAEffectivenessRating } from '@/types/enums';
-import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessMonitorProps {
   id: string;
@@ -13,66 +14,113 @@ interface CAPAEffectivenessMonitorProps {
 
 const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   id,
-  implementationDate,
+  implementationDate
 }) => {
-  // This is a placeholder component - in a real app, this would fetch actual data
-  // For now, we'll just show mock data
-  const mockProgress = 75;
+  const [daysElapsed, setDaysElapsed] = useState(0);
+  const [nextCheckDays, setNextCheckDays] = useState(0);
+  const [hasAssessment, setHasAssessment] = useState(false);
+  const [effectivenessRating, setEffectivenessRating] = useState<CAPAEffectivenessRating | null>(null);
   
-  const getStatusIcon = () => {
-    if (mockProgress >= 80) {
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
-    } else if (mockProgress >= 50) {
-      return <HelpCircle className="h-5 w-5 text-amber-500" />;
-    } else {
-      return <AlertCircle className="h-5 w-5 text-red-500" />;
+  useEffect(() => {
+    if (implementationDate) {
+      const implDate = new Date(implementationDate);
+      const today = new Date();
+      const daysSinceImpl = differenceInDays(today, implDate);
+      setDaysElapsed(daysSinceImpl);
+      
+      // Simulate assessment check schedule
+      if (daysSinceImpl >= 90) {
+        setHasAssessment(true);
+        setEffectivenessRating(CAPAEffectivenessRating.Effective);
+      } else {
+        setNextCheckDays(90 - daysSinceImpl);
+      }
+    }
+  }, [implementationDate]);
+
+  const getEffectivenessColor = () => {
+    if (!effectivenessRating) return 'text-gray-400';
+    
+    switch (effectivenessRating) {
+      case CAPAEffectivenessRating.HighlyEffective:
+        return 'text-green-600';
+      case CAPAEffectivenessRating.Effective:
+        return 'text-green-500';
+      case CAPAEffectivenessRating.PartiallyEffective:
+        return 'text-amber-500';
+      case CAPAEffectivenessRating.NotEffective:
+        return 'text-red-500';
+      default:
+        return 'text-gray-400';
     }
   };
-  
-  // Calculate days since implementation
-  const daysSinceImplementation = Math.floor(
-    (new Date().getTime() - new Date(implementationDate).getTime()) / (1000 * 3600 * 24)
-  );
-  
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center justify-between">
-          <span>Effectiveness Monitoring</span>
-          {getStatusIcon()}
-        </CardTitle>
+        <CardTitle className="text-base">Effectiveness Monitoring</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Implementation: {daysSinceImplementation} days ago</span>
-            <span className="font-medium">{mockProgress}%</span>
-          </div>
-          <Progress value={mockProgress} className="h-2" />
-        </div>
-        
+      <CardContent className="space-y-4">
         <div className="text-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-muted-foreground">Verification Status</p>
-              <p className="font-medium">Pending</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Due Date</p>
-              <p className="font-medium">
-                {new Date(new Date(implementationDate).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-              </p>
-            </div>
+          <div className="flex justify-between mb-1">
+            <span className="text-muted-foreground">Implementation Date:</span>
+            <span>{format(new Date(implementationDate), 'MMM d, yyyy')}</span>
           </div>
-        </div>
-        
-        <div className="text-sm">
-          <p className="text-muted-foreground mb-1">Effectiveness Criteria</p>
-          <ul className="list-disc pl-4 space-y-1">
-            <li>No recurrence for 90 days</li>
-            <li>Training completion rate &gt; 95%</li>
-            <li>Process audit score &gt; 90%</li>
-          </ul>
+          
+          <div className="flex justify-between mb-1">
+            <span className="text-muted-foreground">Days Since Implementation:</span>
+            <span>{daysElapsed}</span>
+          </div>
+          
+          {hasAssessment ? (
+            <>
+              <div className="flex justify-between items-center mt-4">
+                <span className="text-muted-foreground">Effectiveness Rating:</span>
+                <span className={`font-medium ${getEffectivenessColor()}`}>
+                  {effectivenessRating?.replace(/_/g, ' ')}
+                </span>
+              </div>
+              
+              <div className="mt-4 flex justify-center">
+                {effectivenessRating === CAPAEffectivenessRating.Effective || 
+                 effectivenessRating === CAPAEffectivenessRating.HighlyEffective ? (
+                  <div className="flex flex-col items-center">
+                    <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
+                    <p className="text-center text-green-700">
+                      CAPA effectiveness verified
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />
+                    <p className="text-center text-amber-700">
+                      CAPA requires additional action
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mt-4 mb-2">
+                <span className="text-muted-foreground">Next Effectiveness Check:</span>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm">{nextCheckDays} days remaining</span>
+                  <span className="text-sm">
+                    {format(new Date(new Date().getTime() + nextCheckDays * 24 * 60 * 60 * 1000), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min(100, (daysElapsed / 90) * 100)} 
+                  className="h-2 mt-1" 
+                />
+              </div>
+              
+              <Button size="sm" className="w-full mt-4">
+                Schedule Assessment
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

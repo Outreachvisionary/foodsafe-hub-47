@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Document, DocumentVersion, DocumentComment } from '@/types/document';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,6 +21,8 @@ interface DocumentContextType {
   addComment: (documentId: string, content: string) => Promise<void>;
   approveDocument: (documentId: string, comment: string) => Promise<void>;
   rejectDocument: (documentId: string, reason: string) => Promise<void>;
+  refreshDocuments: () => Promise<void>;
+  createDocument: (documentData: Partial<Document>) => Promise<Document | null>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -180,7 +181,53 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     }
   }, [toast]);
 
-  // Add approve and reject document functions
+  // Add refreshDocuments method (alias for fetchDocuments for consistency)
+  const refreshDocuments = useCallback(async () => {
+    return fetchDocuments();
+  }, [/* fetchDocuments */]); // Removed dependency to avoid circular reference
+
+  // Add createDocument method
+  const createDocument = useCallback(async (documentData: Partial<Document>): Promise<Document | null> => {
+    try {
+      setLoading((prev) => ({ ...prev, documents: true }));
+      setError(null);
+      
+      // Mock API call for now
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(documentData),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create document');
+      
+      const newDocument = await response.json();
+      
+      // Update documents state
+      setDocuments(prev => [newDocument, ...prev]);
+      
+      toast({
+        title: 'Document Created',
+        description: 'Document has been created successfully',
+      });
+      
+      return newDocument;
+    } catch (err) {
+      setError('Error creating document');
+      console.error('Error creating document:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to create document',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setLoading((prev) => ({ ...prev, documents: false }));
+    }
+  }, [toast]);
+
   const approveDocument = useCallback(async (documentId: string, comment: string) => {
     try {
       // Implementation for approving a document
@@ -233,6 +280,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     addComment,
     approveDocument,
     rejectDocument,
+    refreshDocuments,
+    createDocument,
   };
 
   return <DocumentContext.Provider value={value}>{children}</DocumentContext.Provider>;

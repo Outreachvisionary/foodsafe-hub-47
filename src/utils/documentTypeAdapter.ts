@@ -1,89 +1,42 @@
 
-import { DocumentStatus, Document, CheckoutStatus } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 
-export function mapDbToAppDocStatus(dbStatus: string): DocumentStatus {
-  // Map database status values to DocumentStatus enum values
-  const statusMap: Record<string, DocumentStatus> = {
-    'Draft': 'Draft',
-    'In Review': 'In_Review',
-    'Pending Review': 'Pending_Review',
-    'Pending Approval': 'Pending_Approval',
-    'Approved': 'Approved',
-    'Published': 'Published',
-    'Archived': 'Archived',
-    'Rejected': 'Rejected',
-    'Obsolete': 'Obsolete',
-    'Active': 'Active',
-    'Expired': 'Expired'
-  };
+/**
+ * Checks if a document status is equal to a target status
+ */
+export const isDocumentStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
+  if (!status) return false;
   
-  return statusMap[dbStatus] || 'Draft';
-}
-
-export function mapAppToDbDocStatus(appStatus: DocumentStatus): string {
-  // Map DocumentStatus enum values to database status values
-  const statusMap: Record<string, string> = {
-    'Draft': 'Draft',
-    'In_Review': 'In Review',
-    'Pending_Review': 'Pending Review',
-    'Pending_Approval': 'Pending Approval',
-    'Approved': 'Approved',
-    'Published': 'Published',
-    'Archived': 'Archived',
-    'Rejected': 'Rejected',
-    'Obsolete': 'Obsolete',
-    'Active': 'Active',
-    'Expired': 'Expired'
-  };
-  
-  return statusMap[appStatus] || 'Draft';
-}
-
-export function mapDbToAppCheckoutStatus(dbStatus: string): CheckoutStatus {
-  return dbStatus === 'Checked Out' ? 'Checked_Out' : 'Available';
-}
-
-export function mapAppToDbCheckoutStatus(appStatus: CheckoutStatus): string {
-  return appStatus === 'Checked_Out' ? 'Checked Out' : 'Available';
-}
-
-export function adaptDocumentToDatabase(document: Partial<Document>): Record<string, any> {
-  const dbDocument: Record<string, any> = { ...document };
-  
-  // Convert status values if they exist
-  if (document.status) {
-    dbDocument.status = mapAppToDbDocStatus(document.status);
+  // Handle enum-style status with underscores
+  if (typeof status === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
   }
   
-  // Convert checkout status if it exists
-  if (document.checkout_status) {
-    dbDocument.checkout_status = mapAppToDbCheckoutStatus(document.checkout_status);
+  return status === targetStatus;
+};
+
+/**
+ * Converts a string to DocumentStatus enum
+ */
+export const normalizeDocStatus = (status: string): DocumentStatus => {
+  const normalizedStatus = status.replace(/ /g, '_').toUpperCase();
+  return DocumentStatus[normalizedStatus as keyof typeof DocumentStatus] || DocumentStatus.Draft;
+};
+
+/**
+ * Checks if a checkout status is equal to a target status
+ */
+export const isCheckoutStatusEqual = (status: any, targetStatus: CheckoutStatus): boolean => {
+  if (!status) return false;
+  
+  // Handle enum-style status with underscores
+  if (typeof status === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
   }
   
-  return dbDocument;
-}
-
-export function adaptDatabaseToDocument(dbDocument: Record<string, any>): Document {
-  return {
-    ...dbDocument,
-    status: mapDbToAppDocStatus(dbDocument.status),
-    checkout_status: mapDbToAppCheckoutStatus(dbDocument.checkout_status)
-  } as Document;
-}
-
-export function mapToDocumentActionType(action: string): string {
-  return action.toLowerCase();
-}
-
-// New function for comparing document statuses
-export function isDocumentStatusEqual(status1: string | DocumentStatus, status2: string | DocumentStatus): boolean {
-  const normalized1 = normalizeDocStatus(status1);
-  const normalized2 = normalizeDocStatus(status2);
-  return normalized1 === normalized2;
-}
-
-// Helper to normalize document statuses
-export function normalizeDocStatus(status: string | DocumentStatus): string {
-  if (!status) return '';
-  return status.toString().toLowerCase().replace(/ /g, '_');
-}
+  return status === targetStatus;
+};

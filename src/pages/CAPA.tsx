@@ -10,26 +10,35 @@ import CAPADashboard from '@/components/capa/CAPADashboard';
 import CAPAList from '@/components/capa/CAPAList';
 import CAPAEffectiveness from '@/components/capa/CAPAEffectiveness';
 import CAPAReports from '@/components/capa/CAPAReports';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import { CAPAStats, CAPAPriority, CAPASource } from '@/types/capa';
 import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
 
-interface FilterableComponentProps {
-  filters: {
-    status: string;
-    priority: string;
-    source: string;
-    dueDate: string;
-  };
-  searchQuery: string;
+// Fix type for filter props
+interface CAPAFilterProps {
+  status: string;
+  priority: string;
+  source: string;
+  dueDate: string;
+}
+
+// Set proper props for AutomatedCAPAGenerator
+interface AutomatedCAPAGeneratorProps {
+  onCAPACreated: (capaData: any) => void;
+}
+
+// Update CAPAList props
+interface CAPAListProps {
+  filter?: CAPAFilterProps;
+  searchQuery?: string;
 }
 
 const CAPAPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<CAPAFilterProps>({
     status: 'all',
     priority: 'all',
     source: 'all',
@@ -211,14 +220,12 @@ const CAPAPage = () => {
           
           <TabsContent value="dashboard">
             {activeTab === 'dashboard' && (
-              <CAPADashboard 
-                stats={initialStats}
-              />
+              <CAPADashboard stats={initialStats} />
             )}
           </TabsContent>
           
           <TabsContent value="list">
-            <CAPAList filters={filters} searchQuery={searchQuery} />
+            <CAPAList filter={filters} searchQuery={searchQuery} />
           </TabsContent>
           
           <TabsContent value="effectiveness">

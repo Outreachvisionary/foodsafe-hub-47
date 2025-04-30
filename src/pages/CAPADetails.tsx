@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { getCAPA, updateCAPA } from '@/services/capaService';
+import { getCAPA, updateCAPA, getCAPAActivities } from '@/services/capaService';
 import { CAPA } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import CAPAActivityList from '@/components/capa/CAPAActivityList';
@@ -17,6 +17,7 @@ import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor
 import CAPAStatusForm from '@/components/capa/CAPAStatusForm';
 import CAPAAttachments from '@/components/capa/CAPAAttachments';
 import DocumentList from '@/components/documents/DocumentList';
+import { CAPAActivity } from '@/components/capa/CAPAActivityList';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,12 +25,15 @@ const CAPADetails: React.FC = () => {
   const { toast } = useToast();
   
   const [capa, setCAPA] = useState<CAPA | null>(null);
+  const [activities, setActivities] = useState<CAPAActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     if (id) {
       fetchCAPA(id);
+      fetchActivities(id);
     }
   }, [id]);
   
@@ -51,6 +55,18 @@ const CAPADetails: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchActivities = async (capaId: string) => {
+    try {
+      setActivitiesLoading(true);
+      const fetchedActivities = await getCAPAActivities(capaId);
+      setActivities(fetchedActivities);
+    } catch (err) {
+      console.error('Error fetching CAPA activities:', err);
+    } finally {
+      setActivitiesLoading(false);
     }
   };
   
@@ -181,7 +197,11 @@ const CAPADetails: React.FC = () => {
             </TabsList>
             
             <TabsContent value="activity" className="p-1">
-              <CAPAActivityList capaId={capa.id} />
+              <CAPAActivityList 
+                capaId={capa.id}
+                activities={activities}
+                loading={activitiesLoading}
+              />
             </TabsContent>
             
             <TabsContent value="documents" className="p-1">

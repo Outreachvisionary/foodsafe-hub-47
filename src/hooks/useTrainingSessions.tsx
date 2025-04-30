@@ -1,144 +1,141 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingSession, TrainingCompletionStatus, TrainingType, TrainingCategory } from '@/types/training';
+import { useToast } from '@/hooks/use-toast';
+import { TrainingStatus } from '@/types/enums';
+
+export interface TrainingSession {
+  id: string;
+  title: string;
+  description: string;
+  training_type: string;
+  training_category?: string;
+  assigned_to: string[];
+  department?: string;
+  start_date: string | null;
+  due_date: string | null;
+  completion_status: TrainingStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  materials_id?: string[];
+}
 
 export const useTrainingSessions = () => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
-      
+      setError(null);
+
       const { data, error } = await supabase
         .from('training_sessions')
         .select('*')
-        .order('due_date', { ascending: true });
-      
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      
-      // Convert data format from database to our interface
-      const formattedSessions: TrainingSession[] = (data || []).map(session => ({
-        id: session.id,
-        title: session.title,
-        description: session.description || '',
-        training_type: session.training_type as TrainingType,
-        training_category: session.training_category as TrainingCategory,
-        department: session.department || '',
-        status: session.status || 'active',
-        startDate: session.start_date,
-        due_date: session.due_date,
-        assigned_to: session.assigned_to || [],
-        participants: session.assigned_to || [],
-        materials_id: session.materials_id || [],
-        required_roles: session.required_roles || [],
-        is_recurring: session.is_recurring || false,
-        recurring_interval: String(session.recurring_interval || ''),
-        completion_status: session.completion_status,
-        completionStatus: mapDbCompletionStatus(session.completion_status),
-        created_by: session.created_by,
-        created_at: session.created_at,
-        updated_at: session.updated_at
+
+      // Map database records to TrainingSession objects
+      const mappedSessions: TrainingSession[] = data.map(session => ({
+        ...session,
+        completion_status: session.completion_status as TrainingStatus
       }));
-      
-      setSessions(formattedSessions);
+
+      setSessions(mappedSessions);
     } catch (err) {
       console.error('Error fetching training sessions:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch training sessions'));
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch training sessions',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
-  const createSession = useCallback(async (sessionData: Omit<TrainingSession, 'id' | 'created_at' | 'updated_at'>) => {
+  const createSession = useCallback(async (sessionData: Partial<TrainingSession>) => {
     try {
       setLoading(true);
       
-      // Convert our interface format to database format
-      const dbSessionData = {
-        title: sessionData.title,
-        description: sessionData.description,
-        training_type: sessionData.training_type,
-        training_category: sessionData.training_category,
-        department: sessionData.department,
-        start_date: sessionData.startDate,
-        due_date: sessionData.due_date,
-        assigned_to: sessionData.assigned_to || sessionData.participants,
-        materials_id: sessionData.materials_id,
-        required_roles: sessionData.required_roles,
-        is_recurring: sessionData.is_recurring,
-        recurring_interval: sessionData.recurring_interval ? parseInt(sessionData.recurring_interval) : null,
-        completion_status: sessionData.completion_status || mapToDbCompletionStatus(sessionData.completionStatus),
-        created_by: sessionData.created_by
-      };
-      
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(dbSessionData as any)
+        .insert([sessionData])
         .select()
         .single();
       
       if (error) throw error;
       
-      // Convert the returned data to our interface format
-      const newSession: TrainingSession = {
-        id: data.id,
-        title: data.title,
-        description: data.description || '',
-        status: data.status || 'active',
-        training_type: data.training_type as TrainingType,
-        training_category: data.training_category as TrainingCategory,
-        department: data.department || '',
-        startDate: data.start_date,
-        due_date: data.due_date,
-        assigned_to: data.assigned_to || [],
-        participants: data.assigned_to || [],
-        materials_id: data.materials_id || [],
-        required_roles: data.required_roles || [],
-        is_recurring: data.is_recurring || false,
-        recurring_interval: String(data.recurring_interval || ''),
-        completion_status: data.completion_status,
-        completionStatus: mapDbCompletionStatus(data.completion_status),
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
+      // Add the new session to the state
+      setSessions(prev => [data as TrainingSession, ...prev]);
       
-      setSessions(prev => [newSession, ...prev]);
-      return newSession;
+      toast({
+        title: 'Success',
+        description: 'Training session created successfully',
+      });
+      
+      return data;
     } catch (err) {
       console.error('Error creating training session:', err);
-      setError(err instanceof Error ? err : new Error('Failed to create training session'));
-      throw err;
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to create training session',
+        variant: 'destructive',
+      });
+      
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
-  // Helper functions to map between DB representation and interface representation
-  function mapDbCompletionStatus(dbStatus: string): TrainingCompletionStatus {
-    switch(dbStatus) {
-      case 'Not Started': return 'not-started';
-      case 'In Progress': return 'in-progress';
-      case 'Completed': return 'completed';
-      case 'Overdue': return 'overdue';
-      case 'Cancelled': return 'cancelled';
-      default: return 'not-started';
+  const updateSessionStatus = useCallback(async (sessionId: string, newStatus: TrainingStatus) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('training_sessions')
+        .update({ completion_status: newStatus })
+        .eq('id', sessionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Update the session in the state
+      setSessions(prev => 
+        prev.map(session => 
+          session.id === sessionId ? { ...session, completion_status: newStatus } : session
+        )
+      );
+      
+      toast({
+        title: 'Status Updated',
+        description: `Training session status updated to ${newStatus}`,
+      });
+      
+      return data;
+    } catch (err) {
+      console.error('Error updating training session status:', err);
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to update training session status',
+        variant: 'destructive',
+      });
+      
+      return null;
+    } finally {
+      setLoading(false);
     }
-  }
-
-  function mapToDbCompletionStatus(status: TrainingCompletionStatus): string {
-    switch(status) {
-      case 'not-started': return 'Not Started';
-      case 'in-progress': return 'In Progress';
-      case 'completed': return 'Completed';
-      case 'overdue': return 'Overdue';
-      case 'cancelled': return 'Cancelled';
-      default: return 'Not Started';
-    }
-  }
+  }, [toast]);
 
   useEffect(() => {
     fetchSessions();
@@ -149,6 +146,9 @@ export const useTrainingSessions = () => {
     loading,
     error,
     fetchSessions,
-    createSession
+    createSession,
+    updateSessionStatus
   };
 };
+
+export default useTrainingSessions;
