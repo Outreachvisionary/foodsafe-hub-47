@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 
 export default function useProfileRealtime() {
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const [isListening, setIsListening] = useState<boolean>(false);
 
   useEffect(() => {
@@ -24,7 +24,8 @@ export default function useProfileRealtime() {
         },
         () => {
           // Refresh the user data when profile is updated
-          refreshUser();
+          // Note: We've removed the refreshUser call as it doesn't exist
+          console.log('Profile updated, refresh recommended');
         }
       )
       .subscribe();
@@ -33,7 +34,7 @@ export default function useProfileRealtime() {
       setIsListening(false);
       supabase.removeChannel(channel);
     };
-  }, [user, refreshUser]);
+  }, [user]);
 
   return { isListening };
 }

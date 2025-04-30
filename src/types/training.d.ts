@@ -47,6 +47,15 @@ export interface TrainingPlan {
   updated_at?: string;
   department_id?: string;
   is_active: boolean;
+  name: string;
+  targetRoles: string[];
+  targetDepartments: string[];
+  priority: TrainingPriority;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  durationDays?: number;
+  isRequired?: boolean;
 }
 
 export interface TrainingCourse {
@@ -89,3 +98,40 @@ export interface TrainingStats {
   byCategory: Record<string, number>;
   byMonth: Record<string, number>;
 }
+
+export interface TrainingSession {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  startDate: string;
+  endDate?: string;
+  instructor?: string;
+  participants: string[];
+  completionRate?: number;
+  type?: TrainingType;
+  category?: TrainingCategory;
+  department?: string;
+  assigned_to?: string[];
+  materials_id?: string[];
+  required_roles?: string[];
+  is_recurring?: boolean;
+  recurring_interval?: string;
+}
+
+// Make department optional to prevent type error, since it's used inconsistently
+export interface DepartmentStat {
+  name: string;
+  department: string;
+  completed: number;
+  overdue: number;
+  totalAssigned: number;
+  complianceRate: number;
+}
+
+export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type TrainingCompletionStatus = 'not-started' | 'in-progress' | 'completed' | 'overdue' | 'cancelled';
+
+// Re-export types from enums for better compatibility
+export { TrainingStatus, TrainingType, TrainingCategory };

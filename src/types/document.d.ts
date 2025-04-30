@@ -41,22 +41,21 @@ export interface Document {
   pending_since?: string;
 }
 
+export type DocumentVersionType = 'major' | 'minor';
+
 export interface DocumentVersion {
   id: string;
   document_id: string;
   version: number;
   version_number?: number;
-  version_type: 'major' | 'minor';
+  version_type: DocumentVersionType;
   file_name: string;
   file_path: string;
   file_size: number;
   created_at: string;
   created_by: string;
-  notes?: string;
-  changes?: string;
-  approval_status?: string;
-  approved_by?: string;
-  approved_at?: string;
+  change_summary?: string;
+  change_notes?: string;
   is_binary_file?: boolean;
   original_file_name?: string;
   modified_by_name?: string;

@@ -1,175 +1,148 @@
 
 import { CAPA } from '@/types/capa';
-import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
+import { CAPAStatus } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
 import { convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
 
-// Mock function to fetch CAPAs
-export const getCAPAs = async (): Promise<CAPA[]> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Return mock data
-  return [
-    {
-      id: '1',
-      title: 'CAPA-001',
-      description: 'Product temperature deviation in cold storage',
-      status: CAPAStatus.InProgress,
-      priority: 'High',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      createdBy: 'John Doe',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: 'Jane Smith',
-      source: 'Audit',
-      sourceReference: 'Audit-2023-001',
-      rootCause: 'Refrigeration unit malfunction',
-      correctiveAction: 'Replace refrigeration unit and implement daily temperature checks',
-      preventiveAction: 'Scheduled maintenance program for all refrigeration units',
-      effectivenessCriteria: 'No temperature deviations for 90 days',
-      department: 'Production',
-      fsma204Compliant: true,
-      relatedDocuments: ['doc-123', 'doc-456'],
-      relatedTraining: ['train-123']
-    },
-    {
-      id: '2',
-      title: 'CAPA-002',
-      description: 'Allergen cross-contamination risk identified',
-      status: CAPAStatus.Open,
-      priority: 'Critical',
-      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      createdBy: 'Robert Johnson',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: 'Maria Garcia',
-      source: 'Internal_QC',
-      sourceReference: 'QC-2023-057',
-      rootCause: 'Insufficient cleaning between allergen-containing product runs',
-      correctiveAction: 'Implement enhanced cleaning validation protocol',
-      preventiveAction: 'Update allergen management program',
-      effectivenessCriteria: 'Zero allergen cross-contamination incidents',
-      department: 'Quality',
-      fsma204Compliant: true,
-      relatedDocuments: ['doc-789'],
-      relatedTraining: ['train-456']
-    }
-  ];
-};
+export async function getCAPAs(): Promise<CAPA[]> {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-// Mock function to get CAPA by ID
-export const getCAPAById = async (id: string): Promise<CAPA> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Return mock data for a single CAPA
-  const mockCapa = {
-    id: id,
-    title: `CAPA-${id.substring(0,3)}`,
-    description: 'Product temperature deviation in cold storage',
-    status: 'In_Progress',
-    priority: 'High',
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    created_by: 'John Doe',
-    due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    assigned_to: 'Jane Smith',
-    source: 'Audit',
-    source_reference: 'Audit-2023-001',
-    root_cause: 'Refrigeration unit malfunction',
-    corrective_action: 'Replace refrigeration unit and implement daily temperature checks',
-    preventive_action: 'Scheduled maintenance program for all refrigeration units',
-    effectiveness_criteria: 'No temperature deviations for 90 days',
-    department: 'Production',
-    fsma204_compliant: true,
-    effectiveness_rating: 'Effective',
-    effectiveness_verified: false,
-    verification_date: null,
-    verification_method: 'Visual inspection and data review',
-    verified_by: null,
-    completion_date: null,
+    if (error) throw error;
+
+    return (data || []).map(convertDatabaseCAPAToModel);
+  } catch (error) {
+    console.error('Error fetching CAPAs:', error);
+    return [];
+  }
+}
+
+export async function getCAPAById(id: string): Promise<CAPA | null> {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    return convertDatabaseCAPAToModel(data);
+  } catch (error) {
+    console.error(`Error fetching CAPA with ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function createCAPA(capaData: Partial<CAPA>): Promise<CAPA | null> {
+  try {
+    // Convert our CAPA object to the database schema
+    const dbCapa = {
+      title: capaData.title,
+      description: capaData.description,
+      status: capaData.status || CAPAStatus.Open,
+      priority: capaData.priority,
+      source: capaData.source,
+      source_id: capaData.source_id,
+      assigned_to: capaData.assigned_to,
+      created_by: capaData.created_by,
+      due_date: capaData.due_date,
+      root_cause: capaData.root_cause,
+      corrective_action: capaData.corrective_action,
+      preventive_action: capaData.preventive_action,
+      effectiveness_criteria: capaData.effectiveness_criteria,
+      department: capaData.department,
+      fsma204_compliant: capaData.fsma204_compliant || false
+    };
+
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .insert(dbCapa)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return convertDatabaseCAPAToModel(data);
+  } catch (error) {
+    console.error('Error creating CAPA:', error);
+    return null;
+  }
+}
+
+export async function updateCAPA(id: string, capaData: Partial<CAPA>): Promise<CAPA | null> {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .update({
+        title: capaData.title,
+        description: capaData.description,
+        status: capaData.status,
+        priority: capaData.priority,
+        source: capaData.source,
+        assigned_to: capaData.assigned_to,
+        due_date: capaData.due_date,
+        root_cause: capaData.root_cause,
+        corrective_action: capaData.corrective_action,
+        preventive_action: capaData.preventive_action,
+        effectiveness_criteria: capaData.effectiveness_criteria,
+        department: capaData.department,
+        fsma204_compliant: capaData.fsma204_compliant,
+        completion_date: capaData.completion_date,
+        verification_method: capaData.verification_method,
+        effectiveness_rating: capaData.effectiveness_rating,
+        verified_by: capaData.verified_by,
+        verification_date: capaData.verification_date,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return convertDatabaseCAPAToModel(data);
+  } catch (error) {
+    console.error(`Error updating CAPA with ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function deleteCAPA(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('capa_actions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error(`Error deleting CAPA with ID ${id}:`, error);
+    return false;
+  }
+}
+
+// Function to map a complaint to a CAPA for complaint management
+export function mapComplaintToDb(complaintData: any): Partial<CAPA> {
+  return {
+    title: `CAPA for Complaint: ${complaintData.title || 'Untitled Complaint'}`,
+    description: complaintData.description || '',
+    source: 'Customer_Complaint',
+    source_id: complaintData.id,
+    status: CAPAStatus.Open,
+    priority: complaintData.severity || 'Medium',
+    created_by: complaintData.created_by || 'System',
+    department: complaintData.department || '',
+    due_date: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 14); // Default to 14 days from now
+      return date.toISOString();
+    })()
   };
-  
-  return convertDatabaseCAPAToModel(mockCapa);
-};
-
-// Mock function to create a CAPA
-export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Generate a new CAPA with the provided data
-  const newCAPA: CAPA = {
-    id: `capa-${Date.now()}`,
-    title: capaData.title || '',
-    description: capaData.description || '',
-    status: capaData.status || CAPAStatus.Open,
-    priority: capaData.priority || 'Medium',
-    createdAt: new Date().toISOString(),
-    createdBy: capaData.createdBy || 'System',
-    dueDate: capaData.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    assignedTo: capaData.assignedTo || '',
-    source: capaData.source || 'Other',
-    sourceReference: capaData.sourceReference || '',
-    rootCause: capaData.rootCause || '',
-    correctiveAction: capaData.correctiveAction || '',
-    preventiveAction: capaData.preventiveAction || '',
-    effectivenessCriteria: capaData.effectivenessCriteria || '',
-    department: capaData.department || '',
-    fsma204Compliant: capaData.fsma204Compliant || false,
-    relatedDocuments: capaData.relatedDocuments || [],
-    relatedTraining: capaData.relatedTraining || [],
-    effectivenessRating: capaData.effectivenessRating || undefined,
-    effectivenessVerified: capaData.effectivenessVerified || false,
-    verificationMethod: capaData.verificationMethod,
-    verificationDate: capaData.verificationDate,
-    verifiedBy: capaData.verifiedBy,
-    completionDate: capaData.completionDate,
-    sourceId: capaData.sourceId
-  };
-  
-  return newCAPA;
-};
-
-// Mock function to delete a CAPA
-export const deleteCAPA = async (id: string): Promise<boolean> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return true;
-};
-
-// Mock function to update a CAPA
-export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // In a real implementation, this would fetch the CAPA first, then update it
-  const mockCAPA: CAPA = {
-    id,
-    title: updates.title || 'Updated CAPA',
-    description: updates.description || '',
-    status: updates.status || CAPAStatus.InProgress,
-    priority: updates.priority || 'Medium',
-    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'John Doe',
-    dueDate: updates.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    assignedTo: updates.assignedTo || 'Jane Smith',
-    source: updates.source || 'Audit',
-    sourceReference: updates.sourceReference || 'REF-123',
-    rootCause: updates.rootCause || '',
-    correctiveAction: updates.correctiveAction || '',
-    preventiveAction: updates.preventiveAction || '',
-    effectivenessCriteria: updates.effectivenessCriteria || '',
-    department: updates.department || 'Quality',
-    fsma204Compliant: updates.fsma204Compliant || false,
-    relatedDocuments: updates.relatedDocuments || [],
-    relatedTraining: updates.relatedTraining || [],
-    effectivenessRating: updates.effectivenessRating || undefined,
-    effectivenessVerified: updates.effectivenessVerified || false,
-    verificationMethod: updates.verificationMethod,
-    verificationDate: updates.verificationDate,
-    verifiedBy: updates.verifiedBy,
-    completionDate: updates.completionDate,
-    sourceId: updates.sourceId
-  };
-  
-  return mockCAPA;
-};
+}

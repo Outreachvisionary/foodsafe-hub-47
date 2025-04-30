@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 import { Document, DocumentAccess } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
 import { fetchDocumentAccess, grantDocumentAccess, revokeDocumentAccess } from '@/services/enhancedDocumentService';
-import { getDocumentComments, createDocumentComment } from '@/services/documentCommentService';
+import { getDocumentComments as getComments, createDocumentComment as createComment } from '@/services/documentCommentService';
 
 interface DocumentContextType {
   documents: Document[];
@@ -120,16 +120,16 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Document comments functions
   const getDocumentComments = async (documentId: string) => {
     try {
-      return await getDocumentComments(documentId);
+      return await getComments(documentId);
     } catch (err) {
       setError("Failed to get document comments");
       return [];
     }
   };
 
-  const handleCreateDocumentComment = async (comment: any) => {
+  const createDocumentComment = async (comment: any) => {
     try {
-      return await createDocumentComment(comment);
+      return await createComment(comment);
     } catch (err) {
       setError("Failed to create document comment");
       throw err;
@@ -161,7 +161,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     grantAccess,
     revokeAccess,
     getDocumentComments,
-    createDocumentComment: handleCreateDocumentComment,
+    createDocumentComment,
     createDocument,
     getDownloadUrl,
     getStoragePath

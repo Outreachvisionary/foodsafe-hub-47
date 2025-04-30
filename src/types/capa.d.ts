@@ -29,6 +29,7 @@ export interface CAPA {
   fsma204_compliant?: boolean;
   department_id?: string;
   facility_id?: string;
+  department?: string;
 }
 
 export interface CAPAActivity {

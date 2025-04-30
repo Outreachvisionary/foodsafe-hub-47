@@ -25,23 +25,23 @@ const useTrainingPlans = () => {
       // Map database response to TrainingPlan interface
       const mappedPlans: TrainingPlan[] = (data || []).map(plan => ({
         id: plan.id,
-        name: plan.name,
-        description: plan.description,
-        target_roles: Array.isArray(plan.target_roles) ? plan.target_roles : [],
+        name: plan.name || '',
+        title: plan.name || '',
+        description: plan.description || '',
+        targetRoles: Array.isArray(plan.target_roles) ? plan.target_roles : [],
+        targetDepartments: Array.isArray(plan.target_departments) ? plan.target_departments : [],
         courses: Array.isArray(plan.courses) ? plan.courses : [],
-        duration_days: plan.duration_days || 0,
-        is_required: Boolean(plan.is_required),
-        priority: (plan.priority || 'medium') as TrainingPriority,
-        status: plan.status,
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        is_automated: Boolean(plan.is_automated),
-        automation_trigger: plan.automation_trigger,
-        created_by: plan.created_by,
-        created_at: plan.created_at,
-        updated_at: plan.updated_at,
-        target_departments: Array.isArray(plan.target_departments) ? plan.target_departments : [],
-        related_standards: Array.isArray(plan.related_standards) ? plan.related_standards : []
+        durationDays: plan.duration_days || 0,
+        isRequired: Boolean(plan.is_required),
+        priority: (plan.priority || 'Medium') as TrainingPriority,
+        status: plan.status || 'Active',
+        startDate: plan.start_date,
+        endDate: plan.end_date,
+        created_by: plan.created_by || '',
+        created_at: plan.created_at || '',
+        updated_at: plan.updated_at || '',
+        required_for: [],
+        is_active: plan.status === 'Active'
       }));
       
       setPlans(mappedPlans);
@@ -61,21 +61,18 @@ const useTrainingPlans = () => {
     try {
       // Convert from our interface to the database schema
       const dbPlan = {
-        name: planData.name,
+        name: planData.name || planData.title,
         description: planData.description,
-        target_roles: planData.target_roles || [],
+        target_roles: planData.targetRoles || [],
         courses: planData.courses || [],
-        duration_days: planData.duration_days || 0,
-        is_required: planData.is_required || false,
-        priority: planData.priority || 'medium',
+        duration_days: planData.durationDays || 0,
+        is_required: planData.isRequired || false,
+        priority: planData.priority || 'Medium',
         status: planData.status || 'Active',
-        start_date: planData.start_date,
-        end_date: planData.end_date,
-        is_automated: planData.is_automated || false,
-        automation_trigger: planData.automation_trigger,
-        target_departments: planData.target_departments || [],
-        related_standards: planData.related_standards || [],
-        created_by: planData.created_by || 'Current User'
+        start_date: planData.startDate,
+        end_date: planData.endDate,
+        target_departments: planData.targetDepartments || [],
+        created_by: 'Current User' // Use authenticated user ID in a real app
       };
       
       const { data, error } = await supabase
@@ -89,23 +86,23 @@ const useTrainingPlans = () => {
       // Transform to our TrainingPlan type
       const newPlan: TrainingPlan = {
         id: data.id,
-        name: data.name,
-        description: data.description,
-        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        name: data.name || '',
+        title: data.name || '',
+        description: data.description || '',
+        targetRoles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        targetDepartments: Array.isArray(data.target_departments) ? data.target_departments : [],
         courses: Array.isArray(data.courses) ? data.courses : [],
-        duration_days: data.duration_days || 0,
-        is_required: Boolean(data.is_required),
-        priority: (data.priority || 'medium') as TrainingPriority,
-        status: data.status,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        is_automated: Boolean(data.is_automated),
-        automation_trigger: data.automation_trigger,
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
-        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
+        durationDays: data.duration_days || 0,
+        isRequired: Boolean(data.is_required),
+        priority: (data.priority || 'Medium') as TrainingPriority,
+        status: data.status || 'Active',
+        startDate: data.start_date,
+        endDate: data.end_date,
+        created_by: data.created_by || '',
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || '',
+        required_for: [],
+        is_active: data.status === 'Active'
       };
       
       setPlans(prev => [newPlan, ...prev]);
@@ -134,20 +131,17 @@ const useTrainingPlans = () => {
     try {
       // Convert from our interface to the database schema
       const dbPlan = {
-        name: planData.name,
+        name: planData.name || planData.title,
         description: planData.description,
-        target_roles: planData.target_roles || [],
+        target_roles: planData.targetRoles || [],
         courses: planData.courses || [],
-        duration_days: planData.duration_days || 0,
-        is_required: planData.is_required || false,
-        priority: planData.priority || 'medium',
+        duration_days: planData.durationDays || 0,
+        is_required: planData.isRequired || false,
+        priority: planData.priority || 'Medium',
         status: planData.status,
-        start_date: planData.start_date,
-        end_date: planData.end_date,
-        is_automated: planData.is_automated || false,
-        automation_trigger: planData.automation_trigger,
-        target_departments: planData.target_departments || [],
-        related_standards: planData.related_standards || [],
+        start_date: planData.startDate,
+        end_date: planData.endDate,
+        target_departments: planData.targetDepartments || [],
         updated_at: new Date().toISOString()
       };
       
@@ -163,23 +157,23 @@ const useTrainingPlans = () => {
       // Transform database response to our TrainingPlan interface
       const updatedPlan: TrainingPlan = {
         id: data.id,
-        name: data.name,
-        description: data.description,
-        target_roles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        name: data.name || '',
+        title: data.name || '',
+        description: data.description || '',
+        targetRoles: Array.isArray(data.target_roles) ? data.target_roles : [],
+        targetDepartments: Array.isArray(data.target_departments) ? data.target_departments : [],
         courses: Array.isArray(data.courses) ? data.courses : [],
-        duration_days: data.duration_days || 0,
-        is_required: Boolean(data.is_required),
-        priority: (data.priority || 'medium') as TrainingPriority,
-        status: data.status,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        is_automated: Boolean(data.is_automated),
-        automation_trigger: data.automation_trigger,
-        created_by: data.created_by,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        target_departments: Array.isArray(data.target_departments) ? data.target_departments : [],
-        related_standards: Array.isArray(data.related_standards) ? data.related_standards : []
+        durationDays: data.duration_days || 0,
+        isRequired: Boolean(data.is_required),
+        priority: (data.priority || 'Medium') as TrainingPriority,
+        status: data.status || 'Active',
+        startDate: data.start_date,
+        endDate: data.end_date,
+        created_by: data.created_by || '',
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || '',
+        required_for: [],
+        is_active: data.status === 'Active'
       };
       
       // Update plans in state

@@ -1,39 +1,33 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DocumentComment } from '@/types/database';
-import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Get all comments for a document
- */
-export const getDocumentComments = async (documentId: string): Promise<DocumentComment[]> => {
+// Get document comments
+export async function getDocumentComments(documentId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
       .from('document_comments')
       .select('*')
       .eq('document_id', documentId)
-      .order('created_at', { ascending: false });
-    
+      .order('created_at', { ascending: true });
+      
     if (error) throw error;
+    
     return data || [];
   } catch (error) {
-    console.error(`Error fetching comments for document ${documentId}:`, error);
-    throw error;
+    console.error('Error fetching document comments:', error);
+    return [];
   }
-};
+}
 
-/**
- * Create a new comment for a document
- */
-export const createDocumentComment = async (comment: Partial<DocumentComment>): Promise<DocumentComment> => {
+// Create a document comment
+export async function createDocumentComment(comment: any): Promise<any> {
   try {
     const newComment = {
-      id: uuidv4(),
-      document_id: comment.document_id,
-      user_id: comment.user_id,
-      user_name: comment.user_name,
+      document_id: comment.documentId,
+      user_id: comment.userId,
+      user_name: comment.userName,
       content: comment.content,
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     };
     
     const { data, error } = await supabase
@@ -41,61 +35,12 @@ export const createDocumentComment = async (comment: Partial<DocumentComment>): 
       .insert(newComment)
       .select()
       .single();
-    
+      
     if (error) throw error;
+    
     return data;
   } catch (error) {
     console.error('Error creating document comment:', error);
     throw error;
   }
-};
-
-/**
- * Update an existing document comment
- */
-export const updateDocumentComment = async (
-  commentId: string, 
-  updates: Partial<DocumentComment>
-): Promise<DocumentComment> => {
-  try {
-    const { data, error } = await supabase
-      .from('document_comments')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', commentId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error(`Error updating comment ${commentId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Delete a document comment
- */
-export const deleteDocumentComment = async (commentId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('document_comments')
-      .delete()
-      .eq('id', commentId);
-    
-    if (error) throw error;
-  } catch (error) {
-    console.error(`Error deleting comment ${commentId}:`, error);
-    throw error;
-  }
-};
-
-export default {
-  getDocumentComments,
-  createDocumentComment,
-  updateDocumentComment,
-  deleteDocumentComment
-};
+}
