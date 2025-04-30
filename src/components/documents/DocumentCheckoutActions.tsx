@@ -32,7 +32,7 @@ const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
   const handleCheckout = async () => {
     try {
       setLoading(true);
-      await documentService.checkoutDocument(documentId, userId);
+      await documentService.checkoutDocument(documentId, userId, 'User Name'); // Adding a placeholder user name
       toast({
         title: 'Document Checked Out',
         description: 'You now have exclusive editing access to this document.',
@@ -53,7 +53,7 @@ const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
   const handleCheckin = async () => {
     try {
       setLoading(true);
-      await documentService.checkinDocument(documentId, userId, comment);
+      await documentService.checkinDocument(documentId, userId, 'User Name', comment); // Adding a placeholder user name
       toast({
         title: 'Document Checked In',
         description: 'Your changes have been saved and the document is now available for others.',

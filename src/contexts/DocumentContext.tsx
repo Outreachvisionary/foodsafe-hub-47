@@ -1,183 +1,204 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import { Document, DocumentAccess } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
-import { fetchDocumentAccess, grantDocumentAccess, revokeDocumentAccess } from '@/services/enhancedDocumentService';
-import { getDocumentComments as getComments, createDocumentComment as createComment } from '@/services/documentCommentService';
+import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import { Document, DocumentVersion, DocumentComment } from '@/types/document';
+import { useToast } from '@/components/ui/use-toast';
 
 interface DocumentContextType {
   documents: Document[];
-  setDocuments: React.Dispatch<React.SetStateAction<Document[]>>;
-  loading?: boolean;
-  error?: string | null;
-  refreshDocuments?: () => Promise<void>;
-  approveDocument?: (documentId: string, comment?: string) => Promise<void>;
-  rejectDocument?: (documentId: string, reason: string) => Promise<void>;
-  fetchDocuments?: () => Promise<void>;
-  fetchAccess?: (documentId: string) => Promise<DocumentAccess[]>;
-  grantAccess?: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<DocumentAccess>;
-  revokeAccess?: (accessId: string) => Promise<void>;
-  getDocumentComments?: (documentId: string) => Promise<any[]>;
-  createDocumentComment?: (comment: any) => Promise<any>;
-  createDocument?: (documentData: Partial<Document>) => Promise<Document>;
-  getDownloadUrl?: (path: string) => Promise<string>;
-  getStoragePath?: (documentId: string, fileName: string) => string;
+  currentDocument: Document | null;
+  versions: DocumentVersion[];
+  comments: DocumentComment[];
+  loading: {
+    documents: boolean;
+    document: boolean;
+    versions: boolean;
+    comments: boolean;
+  };
+  error: string | null;
+  fetchDocuments: () => Promise<void>;
+  fetchDocument: (id: string) => Promise<void>;
+  fetchVersions: (documentId: string) => Promise<void>;
+  fetchComments: (documentId: string) => Promise<void>;
+  addComment: (documentId: string, content: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
-export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface DocumentProviderProps {
+  children: ReactNode;
+}
+
+export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [comments, setComments] = useState<DocumentComment[]>([]);
+  const [loading, setLoading] = useState({
+    documents: false,
+    document: false,
+    versions: false,
+    comments: false,
+  });
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const fetchDocuments = async (): Promise<void> => {
-    setLoading(true);
+  const fetchDocuments = useCallback(async () => {
     try {
-      // Mock implementation - would fetch from API in real app
-      setLoading(false);
+      setLoading((prev) => ({ ...prev, documents: true }));
+      setError(null);
+      
+      // Mock API call for now
+      const response = await fetch('/api/documents');
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      
+      const data = await response.json();
+      setDocuments(data);
     } catch (err) {
-      setError("Failed to fetch documents");
-      setLoading(false);
+      setError('Error loading documents');
+      console.error('Error fetching documents:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, documents: false }));
     }
-  };
+  }, [toast]);
 
-  const refreshDocuments = async (): Promise<void> => {
-    setLoading(true);
+  const fetchDocument = useCallback(async (id: string) => {
     try {
-      // Mock implementation - would fetch from API in real app
-      setLoading(false);
+      setLoading((prev) => ({ ...prev, document: true }));
+      setError(null);
+      
+      // Mock API call for now
+      const response = await fetch(`/api/documents/${id}`);
+      if (!response.ok) throw new Error('Failed to fetch document');
+      
+      const data = await response.json();
+      setCurrentDocument(data);
     } catch (err) {
-      setError("Failed to refresh documents");
-      setLoading(false);
+      setError('Error loading document');
+      console.error('Error fetching document:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load document',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, document: false }));
     }
-  };
+  }, [toast]);
 
-  const approveDocument = async (documentId: string, comment?: string): Promise<void> => {
-    // Mock implementation
-    console.log(`Approving document ${documentId} with comment: ${comment}`);
-  };
-
-  const rejectDocument = async (documentId: string, reason: string): Promise<void> => {
-    // Mock implementation
-    console.log(`Rejecting document ${documentId} with reason: ${reason}`);
-  };
-  
-  const createDocument = async (documentData: Partial<Document>): Promise<Document> => {
-    // Mock implementation
-    console.log(`Creating document with data:`, documentData);
-    return {
-      id: 'mock-id',
-      title: documentData.title || 'Untitled',
-      description: documentData.description || '',
-      file_name: documentData.file_name || 'document.pdf',
-      file_path: documentData.file_path || '',
-      file_size: documentData.file_size || 0,
-      file_type: documentData.file_type || 'application/pdf',
-      category: documentData.category || 'Other',
-      status: documentData.status || DocumentStatus.Draft,
-      version: documentData.version || 1,
-      created_at: new Date().toISOString(),
-      created_by: documentData.created_by || 'current-user',
-      updated_at: new Date().toISOString(),
-      tags: documentData.tags || []
-    };
-  };
-
-  // Document access control functions
-  const fetchAccess = async (documentId: string): Promise<DocumentAccess[]> => {
+  const fetchVersions = useCallback(async (documentId: string) => {
     try {
-      return await fetchDocumentAccess(documentId);
+      setLoading((prev) => ({ ...prev, versions: true }));
+      setError(null);
+      
+      // Mock API call for now
+      const response = await fetch(`/api/documents/${documentId}/versions`);
+      if (!response.ok) throw new Error('Failed to fetch versions');
+      
+      const data = await response.json();
+      setVersions(data);
     } catch (err) {
-      setError("Failed to fetch document access");
-      return [];
+      setError('Error loading document versions');
+      console.error('Error fetching versions:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load document versions',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, versions: false }));
     }
-  };
+  }, [toast]);
 
-  const grantAccess = async (
-    documentId: string, 
-    userId: string, 
-    permissionLevel: string, 
-    grantedBy: string
-  ): Promise<DocumentAccess> => {
+  const fetchComments = useCallback(async (documentId: string) => {
     try {
-      return await grantDocumentAccess(documentId, userId, permissionLevel, grantedBy);
+      setLoading((prev) => ({ ...prev, comments: true }));
+      setError(null);
+      
+      // Mock API call for now
+      const response = await fetch(`/api/documents/${documentId}/comments`);
+      if (!response.ok) throw new Error('Failed to fetch comments');
+      
+      const data = await response.json();
+      setComments(data);
     } catch (err) {
-      setError("Failed to grant document access");
-      throw err;
+      setError('Error loading comments');
+      console.error('Error fetching comments:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load comments',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, comments: false }));
     }
-  };
+  }, [toast]);
 
-  const revokeAccess = async (accessId: string): Promise<void> => {
+  const addComment = useCallback(async (documentId: string, content: string) => {
     try {
-      await revokeDocumentAccess(accessId);
+      setLoading((prev) => ({ ...prev, comments: true }));
+      setError(null);
+      
+      // Mock API call for now - in a real implementation, this would pass userId and userName
+      const response = await fetch(`/api/documents/${documentId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          userId: 'current-user-id',
+          userName: 'Current User'
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to add comment');
+      
+      const newComment = await response.json();
+      setComments((prev) => [...prev, newComment]);
+      
+      toast({
+        title: 'Comment Added',
+        description: 'Your comment has been added successfully',
+      });
     } catch (err) {
-      setError("Failed to revoke document access");
-      throw err;
+      setError('Error adding comment');
+      console.error('Error adding comment:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to add comment',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, comments: false }));
     }
-  };
+  }, [toast]);
 
-  // Document comments functions
-  const getDocumentComments = async (documentId: string) => {
-    try {
-      return await getComments(documentId);
-    } catch (err) {
-      setError("Failed to get document comments");
-      return [];
-    }
-  };
-
-  const createDocumentComment = async (comment: any) => {
-    try {
-      return await createComment(comment);
-    } catch (err) {
-      setError("Failed to create document comment");
-      throw err;
-    }
-  };
-  
-  // Storage functions
-  const getDownloadUrl = async (path: string): Promise<string> => {
-    // Mock implementation
-    console.log(`Getting download URL for path: ${path}`);
-    return `https://example.com/files/${path}`;
-  };
-  
-  const getStoragePath = (documentId: string, fileName: string): string => {
-    // Mock implementation
-    return `documents/${documentId}/${fileName}`;
-  };
-
-  const value: DocumentContextType = {
+  const value = {
     documents,
-    setDocuments,
+    currentDocument,
+    versions,
+    comments,
     loading,
     error,
-    refreshDocuments,
-    approveDocument,
-    rejectDocument,
     fetchDocuments,
-    fetchAccess,
-    grantAccess,
-    revokeAccess,
-    getDocumentComments,
-    createDocumentComment,
-    createDocument,
-    getDownloadUrl,
-    getStoragePath
+    fetchDocument,
+    fetchVersions,
+    fetchComments,
+    addComment,
   };
 
-  return (
-    <DocumentContext.Provider value={value}>
-      {children}
-    </DocumentContext.Provider>
-  );
+  return <DocumentContext.Provider value={value}>{children}</DocumentContext.Provider>;
 };
 
-export const useDocument = (): DocumentContextType => {
+export const useDocumentContext = (): DocumentContextType => {
   const context = useContext(DocumentContext);
-  if (!context) {
-    throw new Error("useDocument must be used within a DocumentProvider");
+  if (context === undefined) {
+    throw new Error('useDocumentContext must be used within a DocumentProvider');
   }
   return context;
 };

@@ -45,8 +45,8 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
     try {
       await documentService.createDocumentComment(
         documentId,
-        'currentUser',
-        'Current User',
+        'currentUser', // userId
+        'Current User', // userName
         newComment
       );
       

@@ -10,8 +10,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Document, DocumentActionType } from '@/types/document';
-import { DocumentActivity } from '@/types/document';
+import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { createDocumentActivity } from '@/services/documentService';
@@ -22,7 +21,7 @@ interface DocumentPreviewDialogProps {
   document: Document | null;
   isOpen: boolean;
   onClose: () => void;
-  onOpenChange?: (open: boolean) => void; // Added to match usage
+  onOpenChange?: (open: boolean) => void;
 }
 
 const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: DocumentPreviewDialogProps) => {
@@ -59,10 +58,10 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
     if (document && user) {
       createActivityLog({
         document_id: document.id,
-        action: "edit" as DocumentActionType, // Using "edit" as a valid DocumentActionType now
-        user_id: user.id, // Changed from userId to user_id
-        user_name: user.email || '', // Using email instead of full_name
-        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
+        action: "edit" as DocumentActionType,
+        user_id: user.id,
+        user_name: user.email || '',
+        user_role: userRole?.role_name || 'User',
         comments: `Started editing document ${document.title}`
       });
       
@@ -76,9 +75,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "download" as DocumentActionType,
-        user_id: user.id, // Changed from userId to user_id
-        user_name: user.email || '', // Using email instead of full_name
-        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
+        user_id: user.id,
+        user_name: user.email || '',
+        user_role: userRole?.role_name || 'User',
         comments: `Downloaded document ${document.title}`
       });
 
@@ -92,9 +91,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "delete" as DocumentActionType,
-        user_id: user.id, // Changed from userId to user_id
-        user_name: user.email || '', // Using email instead of full_name
-        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
+        user_id: user.id,
+        user_name: user.email || '',
+        user_role: userRole?.role_name || 'User',
         comments: `Deleted document ${document.title}`
       });
 
@@ -112,9 +111,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       createActivityLog({
         document_id: document.id,
         action: "archive" as DocumentActionType,
-        user_id: user.id, // Changed from userId to user_id
-        user_name: user.email || '', // Using email instead of full_name
-        user_role: userRole?.role_name || 'User', // Changed from userRole.userRole.role_name
+        user_id: user.id,
+        user_name: user.email || '',
+        user_role: userRole?.role_name || 'User',
         comments: `Archived document ${document.title}`
       });
 

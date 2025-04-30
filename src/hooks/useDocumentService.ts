@@ -6,11 +6,11 @@ import {
   DocumentVersion, 
   DocumentComment,
   DocumentFilter,
-  DocumentStatus,
-  CheckoutStatus,
-  DocumentCategory
+  DocumentCategory,
+  DocumentAccess,
+  DocumentActionType
 } from '@/types/document';
-import { adaptDbDocumentToModel } from '@/utils/documentAdapters';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -25,11 +25,15 @@ export const useDocumentService = () => {
       
       if (filter) {
         if (filter.category) {
-          query = query.in('category', Array.isArray(filter.category) ? filter.category : [filter.category]);
+          const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
+          query = query.in('category', categories);
         }
         
         if (filter.status) {
-          query = query.in('status', Array.isArray(filter.status) ? filter.status : [filter.status]);
+          const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
+          // Convert enum values to strings for the database
+          const statusStrings = statuses.map(status => status.toString().replace(/_/g, ' '));
+          query = query.in('status', statusStrings);
         }
         
         if (filter.createdBy) {
@@ -61,7 +65,7 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      return (data || []).map(adaptDbDocumentToModel);
+      return data || [];
     } catch (err) {
       console.error('Error fetching documents:', err);
       setError('Failed to load documents.');
@@ -85,7 +89,7 @@ export const useDocumentService = () => {
       if (error) throw error;
       if (!data) return null;
       
-      return adaptDbDocumentToModel(data);
+      return data as Document;
     } catch (err) {
       console.error(`Error fetching document with ID ${id}:`, err);
       setError('Failed to load document.');
@@ -122,10 +126,9 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.CheckedOut,
-          checkout_user_id: userId,
-          checkout_user_name: userName,
-          checkout_timestamp: new Date().toISOString()
+          checkout_status: CheckoutStatus.CheckedOut.toString().replace(/_/g, ' '),
+          checkout_by: userId,
+          checkout_date: new Date().toISOString()
         })
         .eq('id', documentId);
       
@@ -139,8 +142,9 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'User',
-          action: 'Document checked out',
+          action: 'checkout' as DocumentActionType,
           checkout_action: 'checkout',
+          timestamp: new Date().toISOString(),
           comments: `Document checked out by ${userName}`
         });
       
@@ -168,11 +172,10 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.Available,
-          checkout_user_id: null,
-          checkout_user_name: null,
-          checkout_timestamp: null,
-          status: DocumentStatus.Active
+          checkout_status: CheckoutStatus.Available.toString().replace(/_/g, ' '),
+          checkout_by: null,
+          checkout_date: null,
+          status: DocumentStatus.Active.toString().replace(/_/g, ' ')
         })
         .eq('id', documentId);
       
@@ -186,8 +189,9 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'User',
-          action: 'Document checked in',
+          action: 'checkin' as DocumentActionType,
           checkout_action: 'checkin',
+          timestamp: new Date().toISOString(),
           comments: comment || `Document checked in by ${userName}`
         });
       
@@ -214,7 +218,25 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      return data as DocumentVersion[] || [];
+      // Convert the data to the expected DocumentVersion type
+      const versions: DocumentVersion[] = (data || []).map(item => ({
+        id: item.id,
+        document_id: item.document_id,
+        version: item.version,
+        version_number: item.version_number || item.version,
+        file_name: item.file_name,
+        file_path: item.file_path || '',
+        file_size: item.file_size,
+        created_by: item.created_by,
+        created_at: item.created_at,
+        is_binary_file: item.is_binary_file || false,
+        version_type: item.version_type as "major" | "minor",
+        change_summary: item.change_summary,
+        change_notes: item.change_notes,
+        modified_by_name: item.modified_by_name
+      }));
+      
+      return versions;
     } catch (err) {
       console.error('Error fetching document versions:', err);
       setError('Failed to load document versions.');
@@ -230,16 +252,18 @@ export const useDocumentService = () => {
       setError(null);
       
       const newDocument = {
-        status: DocumentStatus.Draft,
+        status: DocumentStatus.Draft.toString().replace(/_/g, ' '),
         version: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         ...document,
+        // Convert enum types to strings for database
+        category: document.category || 'Other'
       };
       
-      // Validate category is one of the allowed values
-      if (newDocument.category && !isValidDocumentCategory(newDocument.category as string)) {
-        setError('Invalid document category');
+      // Ensure required fields are provided
+      if (!newDocument.title || !newDocument.file_name || !newDocument.file_size) {
+        setError('Missing required document fields');
         return null;
       }
       
@@ -251,7 +275,7 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      return adaptDbDocumentToModel(data);
+      return data as Document;
     } catch (err) {
       console.error('Error creating document:', err);
       setError('Failed to create document.');
@@ -300,7 +324,8 @@ export const useDocumentService = () => {
           document_id: documentId,
           user_id: userId,
           user_name: userName,
-          content
+          content,
+          created_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -315,7 +340,8 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'Commenter',
-          action: 'comment',
+          action: 'comment' as DocumentActionType,
+          timestamp: new Date().toISOString(),
           comments: content.substring(0, 100) + (content.length > 100 ? '...' : '') // Include a preview
         });
       
@@ -352,16 +378,107 @@ export const useDocumentService = () => {
     }
   }, []);
   
-  // Helper function to check if a category is valid
-  const isValidDocumentCategory = (category: string): boolean => {
-    const validCategories: string[] = [
-      'Policy', 'Form', 'Training Material', 'Other', 'SOP', 
-      'Certificate', 'Audit Report', 'HACCP Plan', 
-      'Supplier Documentation', 'Risk Assessment'
-    ];
-    
-    return validCategories.includes(category);
-  };
+  // Get download URL for a document
+  const getDownloadUrl = useCallback(async (documentId: string, fileName: string): Promise<string | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .storage
+        .from('documents')
+        .createSignedUrl(`${documentId}/${fileName}`, 3600); // 1 hour expiry
+      
+      if (error) throw error;
+      
+      return data.signedUrl;
+    } catch (err) {
+      console.error('Error getting download URL:', err);
+      setError('Failed to get download URL.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Document access control methods
+  const fetchAccess = useCallback(async (documentId: string): Promise<DocumentAccess[]> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('document_access')
+        .select('*')
+        .eq('document_id', documentId);
+      
+      if (error) throw error;
+      
+      return data as DocumentAccess[] || [];
+    } catch (err) {
+      console.error('Error fetching document access:', err);
+      setError('Failed to fetch access permissions.');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const grantAccess = useCallback(async (
+    documentId: string,
+    userId: string,
+    permissionLevel: string,
+    grantedBy: string
+  ): Promise<DocumentAccess | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('document_access')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          permission_level: permissionLevel,
+          granted_by: grantedBy,
+          granted_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return data as DocumentAccess;
+    } catch (err) {
+      console.error('Error granting access:', err);
+      setError('Failed to grant access.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const revokeAccess = useCallback(async (accessId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('document_access')
+        .delete()
+        .eq('id', accessId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (err) {
+      console.error('Error revoking access:', err);
+      setError('Failed to revoke access.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   
   return {
     loading,
@@ -374,7 +491,11 @@ export const useDocumentService = () => {
     createDocument,
     getDocumentComments,
     createDocumentComment,
-    deleteDocument
+    deleteDocument,
+    getDownloadUrl,
+    fetchAccess,
+    grantAccess,
+    revokeAccess
   };
 };
 

@@ -42,7 +42,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   const [newPermissionLevel, setNewPermissionLevel] = useState('view');
   
   const { toast } = useToast();
-  const { fetchAccess, grantAccess, revokeAccess } = useDocumentService();
+  const documentService = useDocumentService();
   
   useEffect(() => {
     fetchAccessList();
@@ -51,8 +51,17 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   const fetchAccessList = async () => {
     setIsLoading(true);
     try {
-      const accessData = await fetchAccess(documentId);
-      setAccessList(accessData);
+      if (documentService.fetchAccess) {
+        const accessData = await documentService.fetchAccess(documentId);
+        setAccessList(accessData);
+      } else {
+        console.error('fetchAccess method not available');
+        toast({
+          title: 'Error',
+          description: 'Document access control is not available',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error fetching access list:', error);
       toast({
@@ -76,21 +85,30 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
     }
     
     try {
-      const newAccess = await grantAccess(
-        documentId,
-        newUserId,
-        newPermissionLevel,
-        'admin' // current user ID
-      );
-      
-      if (newAccess) {
-        setAccessList((prev) => [...prev, newAccess]);
-        setIsAddDialogOpen(false);
-        resetForm();
+      if (documentService.grantAccess) {
+        const newAccess = await documentService.grantAccess(
+          documentId,
+          newUserId,
+          newPermissionLevel,
+          'admin' // current user ID
+        );
         
+        if (newAccess) {
+          setAccessList((prev) => [...prev, newAccess]);
+          setIsAddDialogOpen(false);
+          resetForm();
+          
+          toast({
+            title: 'Access Granted',
+            description: `Access has been granted to user ${newUserId}`,
+          });
+        }
+      } else {
+        console.error('grantAccess method not available');
         toast({
-          title: 'Access Granted',
-          description: `Access has been granted to user ${newUserId}`,
+          title: 'Error',
+          description: 'Cannot grant access, functionality not available',
+          variant: 'destructive',
         });
       }
     } catch (error) {
@@ -105,14 +123,23 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   
   const handleRevokeAccess = async (accessId: string) => {
     try {
-      await revokeAccess(accessId);
-      
-      setAccessList(prev => prev.filter(access => access.id !== accessId));
-      
-      toast({
-        title: 'Access Revoked',
-        description: 'Access has been revoked successfully',
-      });
+      if (documentService.revokeAccess) {
+        await documentService.revokeAccess(accessId);
+        
+        setAccessList(prev => prev.filter(access => access.id !== accessId));
+        
+        toast({
+          title: 'Access Revoked',
+          description: 'Access has been revoked successfully',
+        });
+      } else {
+        console.error('revokeAccess method not available');
+        toast({
+          title: 'Error',
+          description: 'Cannot revoke access, functionality not available',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error revoking access:', error);
       toast({
@@ -187,7 +214,6 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium">User</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Permission</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Granted By</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
@@ -198,7 +224,6 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
                 {accessList.map((access) => (
                   <tr key={access.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-3">{access.user_id}</td>
-                    <td className="px-4 py-3">{access.user_role || 'N/A'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${getPermissionColor(access.permission_level)}`}>
                         {access.permission_level}

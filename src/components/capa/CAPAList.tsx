@@ -1,17 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowUpDown, FileText, Calendar, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { CAPA, CAPAFilter, CAPAFetchParams } from '@/types/capa';
-import { ListActions } from '@/components/ui/list-actions';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { deleteCAPA, getCAPAs } from '@/services/capaService';
-import { isStatusEqual } from '@/services/capa/capaStatusService';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
+import { useToast } from '@/components/ui/use-toast';
+import { getCAPAs } from '@/services/capaService';
+import { Link } from 'react-router-dom';
 
 interface CAPAListProps {
   filters: {
@@ -26,179 +23,210 @@ interface CAPAListProps {
 const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCapaId, setSelectedCapaId] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [sortBy, setSortBy] = useState<string>('due_date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
   const { toast } = useToast();
-
-  const handleView = (id: string) => {
-    navigate(`/capa/${id}`);
-  };
-
-  const handleEdit = (id: string) => {
-    navigate(`/capa/${id}/edit`);
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteCAPA(id);
-      setCapas(capas.filter(capa => capa.id !== id));
-      toast({
-        title: 'CAPA Deleted',
-        description: 'The CAPA has been successfully deleted.',
-      });
-      setDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Error deleting CAPA:', error);
-      toast({
-        title: 'Error',
-        description: 'There was an error deleting the CAPA.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const confirmDelete = (id: string) => {
-    setSelectedCapaId(id);
-    setDeleteDialogOpen(true);
-  };
-
-  useEffect(() => {
-    const loadCAPAs = async () => {
-      try {
-        setLoading(true);
-        
-        const capaFilter: CAPAFilter = {};
-        
-        if (filters.status !== 'all') {
-          capaFilter.status = filters.status as CAPAStatus;
-        }
-        
-        if (filters.priority !== 'all') {
-          capaFilter.priority = filters.priority as CAPAPriority;
-        }
-        
-        if (filters.source !== 'all') {
-          // Properly handle the CAPASource type
-          capaFilter.source = filters.source as CAPASource;
-        }
-        
-        if (filters.dueDate === 'overdue') {
-          capaFilter.dateRange = {
-            start: '1970-01-01',
-            end: new Date().toISOString()
-          };
-        }
-        
-        if (searchQuery) {
-          capaFilter.searchTerm = searchQuery;
-        }
-        
-        const fetchParams: CAPAFetchParams = {
-          status: capaFilter.status,
-          priority: capaFilter.priority,
-          source: capaFilter.source,
-          searchQuery: capaFilter.searchTerm,
-          ...(capaFilter.dateRange && {
-            dueDateFrom: capaFilter.dateRange.start,
-            dueDateTo: capaFilter.dateRange.end
-          })
-        };
-        
-        const data = await getCAPAs();
-        setCapas(data);
-      } catch (error) {
-        console.error('Error loading CAPAs:', error);
-      } finally {
-        setLoading(false);
-      }
+  
+  // Define translated filter values for API calls
+  const getFilterParams = (): CAPAFetchParams => {
+    const params: CAPAFetchParams = {
+      page,
+      limit: 10,
+      sortBy,
+      sortDirection,
+      searchQuery: searchQuery || undefined
     };
     
-    loadCAPAs();
-  }, [filters, searchQuery]);
+    if (filters.status && filters.status !== 'all') {
+      params.status = filters.status.replace(/-/g, '_');
+    }
+    
+    if (filters.priority && filters.priority !== 'all') {
+      params.priority = filters.priority;
+    }
+    
+    if (filters.source && filters.source !== 'all') {
+      params.source = filters.source.replace(/-/g, '_');
+    }
+    
+    if (filters.dueDate && filters.dueDate !== 'all') {
+      const today = new Date();
+      
+      if (filters.dueDate === 'overdue') {
+        params.dueDateTo = today.toISOString().split('T')[0];
+      } else if (filters.dueDate === 'today') {
+        params.dueDateFrom = today.toISOString().split('T')[0];
+        params.dueDateTo = today.toISOString().split('T')[0];
+      } else if (filters.dueDate === 'this-week') {
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+        params.dueDateFrom = today.toISOString().split('T')[0];
+        params.dueDateTo = endOfWeek.toISOString().split('T')[0];
+      } else if (filters.dueDate === 'this-month') {
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        params.dueDateFrom = today.toISOString().split('T')[0];
+        params.dueDateTo = endOfMonth.toISOString().split('T')[0];
+      }
+    }
+    
+    return params;
+  };
   
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading CAPAs...</span>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchCAPAs();
+  }, [filters, searchQuery, sortBy, sortDirection, page]);
   
-  if (capas.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-gray-500">No CAPAs found with the current filters.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  const fetchCAPAs = async () => {
+    try {
+      setLoading(true);
+      const filterParams = getFilterParams();
+      const data = await getCAPAs(filterParams);
+      setCapas(data);
+    } catch (error) {
+      console.error("Error fetching CAPAs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load CAPA records",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDirection('asc');
+    }
+  };
+  
   return (
-    <>
-      <div className="space-y-4">
-        {capas.map((capa) => (
-          <Card key={capa.id} className="hover:bg-gray-50 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex-grow">
-                  <div className="flex items-start gap-1">
-                    <h3 className="font-medium">{capa.title}</h3>
-                    {capa.due_date && new Date(capa.due_date) < new Date() && 
-                     !isStatusEqual(capa.status, 'Closed') && !isStatusEqual(capa.status, 'Verified') && (
-                      <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1 truncate">{capa.description}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Badge variant="outline" className="text-xs capitalize">
-                      {capa.source.replace('_', ' ')}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {capa.department || 'No Department'}
-                    </Badge>
-                    {capa.fsma204_compliant && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                        FSMA 204 Compliant
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col sm:items-end gap-2">
-                  <div className="flex items-center gap-2">
-                    <ListActions
-                      onView={() => handleView(capa.id)}
-                      onEdit={() => handleEdit(capa.id)}
-                      onDelete={() => confirmDelete(capa.id)}
-                      disableEdit={isStatusEqual(capa.status, 'Closed') || isStatusEqual(capa.status, 'Verified')}
-                    />
-                  </div>
-                  
-                  {capa.due_date && (
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Due: {format(new Date(capa.due_date), 'MMM d, yyyy')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title="Delete CAPA"
-        description="Are you sure you want to delete this CAPA? This action cannot be undone."
-        onConfirm={() => selectedCapaId && handleDelete(selectedCapaId)}
-      />
-    </>
+    <Card>
+      <CardHeader>
+        <CardTitle>CAPA Records</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : capas.length === 0 ? (
+          <div className="text-center p-8 bg-gray-50 rounded-lg">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold">No CAPAs Found</h3>
+            <p className="text-gray-500 mt-1">
+              There are no CAPA records matching your current filters.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <Button variant="ghost" onClick={() => handleSort('title')} className="p-0 h-auto font-medium">
+                        Title
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <Button variant="ghost" onClick={() => handleSort('priority')} className="p-0 h-auto font-medium">
+                        Priority
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <Button variant="ghost" onClick={() => handleSort('source')} className="p-0 h-auto font-medium">
+                        Source
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <Button variant="ghost" onClick={() => handleSort('due_date')} className="p-0 h-auto font-medium">
+                        Due Date
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Assigned To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {capas.map((capa) => (
+                    <tr key={capa.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <Link to={`/capa/${capa.id}`} className="text-blue-600 hover:underline font-medium">
+                          {capa.title}
+                        </Link>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={
+                          capa.status === 'Open' ? 'bg-blue-100 text-blue-800' : 
+                          capa.status === 'In_Progress' ? 'bg-amber-100 text-amber-800' :
+                          capa.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          capa.status === 'Overdue' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {capa.status.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={
+                          capa.priority === 'Critical' ? 'bg-red-100 text-red-800' : 
+                          capa.priority === 'High' ? 'bg-amber-100 text-amber-800' :
+                          capa.priority === 'Medium' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {capa.priority}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        {capa.source.replace(/_/g, ' ')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                          {capa.due_date ? format(new Date(capa.due_date), 'MMM d, yyyy') : 'N/A'}
+                          {capa.due_date && new Date(capa.due_date) < new Date() && capa.status !== 'Completed' && (
+                            <AlertCircle className="h-4 w-4 ml-2 text-red-500" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {capa.assigned_to}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="flex justify-between items-center mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setPage(page - 1)} 
+                disabled={page === 1 || loading}
+              >
+                Previous
+              </Button>
+              <span>Page {page}</span>
+              <Button 
+                variant="outline" 
+                onClick={() => setPage(page + 1)} 
+                disabled={capas.length < 10 || loading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

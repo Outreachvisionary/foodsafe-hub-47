@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,7 +14,8 @@ import { useToast } from '@/components/ui/use-toast';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import { CAPAStats } from '@/types/capa';
+import { CAPAStats, CAPAPriority, CAPASource } from '@/types/capa';
+import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
 
 interface FilterableComponentProps {
   filters: {
@@ -39,17 +41,14 @@ const CAPAPage = () => {
   
   const initialStats: CAPAStats = {
     total: 0,
-    openCount: 0,
-    closedCount: 0,
-    overdueCount: 0,
-    pendingVerificationCount: 0,
-    effectivenessRate: 0,
-    byPriority: {},
-    bySource: {},
+    open: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0,
+    byPriority: createEmptyCAPAPriorityRecord(),
+    bySource: createEmptyCAPASourceRecord(),
     byDepartment: {},
-    byStatus: {},
-    byMonth: {},
-    overdue: 0
+    recentActivities: []
   };
   
   const { toast } = useToast();

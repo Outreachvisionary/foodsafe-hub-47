@@ -26,6 +26,7 @@ export interface Document {
   checkout_date?: string;
   pending_since?: string;
   department?: string;
+  next_review_date?: string;
 }
 
 export type DocumentCategory = 
@@ -71,6 +72,7 @@ export interface DocumentAccess {
   id: string;
   document_id: string;
   user_id: string;
+  user_role?: string;
   permission_level: string;
   granted_by: string;
   granted_at: string;
@@ -80,7 +82,7 @@ export interface DocumentActivity {
   id: string;
   document_id: string;
   version_id?: string;
-  action: string;
+  action: DocumentActionType;
   user_id: string;
   user_name: string;
   user_role: string;
@@ -88,6 +90,8 @@ export interface DocumentActivity {
   comments?: string;
   checkout_action?: string;
 }
+
+export type DocumentActionType = 'view' | 'download' | 'edit' | 'delete' | 'archive' | 'restore' | 'share' | 'approve' | 'reject' | 'publish' | 'unpublish' | 'comment' | 'checkout' | 'checkin';
 
 export interface DocumentFolder {
   id: string;

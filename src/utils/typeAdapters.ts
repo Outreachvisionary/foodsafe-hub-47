@@ -1,6 +1,6 @@
 
 import { CAPA } from '@/types/capa';
-import { CAPAStatus } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, DocumentStatus } from '@/types/enums';
 
 /**
  * Converts a database CAPA object to the CAPA model
@@ -98,4 +98,53 @@ export const convertToCAPAStatus = (status: string): CAPAStatus => {
     default:
       return CAPAStatus.Open;
   }
+};
+
+/**
+ * Checks if a value is a valid CAPAEffectivenessRating
+ */
+export const isEffectivenessRating = (value: any): boolean => {
+  return Object.values(CAPAEffectivenessRating).includes(value as CAPAEffectivenessRating);
+};
+
+/**
+ * Checks if a value is a valid DocumentStatus
+ */
+export const isDocumentStatus = (status: any, targetStatus: DocumentStatus): boolean => {
+  if (!status) return false;
+  
+  if (typeof status === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
+  }
+  
+  return false;
+};
+
+/**
+ * Creates a properly initialized CAPAPriority record
+ */
+export const createEmptyCAPAPriorityRecord = (): Record<CAPAPriority, number> => {
+  return {
+    [CAPAPriority.Low]: 0,
+    [CAPAPriority.Medium]: 0,
+    [CAPAPriority.High]: 0,
+    [CAPAPriority.Critical]: 0
+  };
+};
+
+/**
+ * Creates a properly initialized CAPASource record
+ */
+export const createEmptyCAPASourceRecord = (): Record<CAPASource, number> => {
+  return {
+    [CAPASource.Audit]: 0,
+    [CAPASource.CustomerComplaint]: 0,
+    [CAPASource.InternalReport]: 0,
+    [CAPASource.NonConformance]: 0,
+    [CAPASource.RegulatoryInspection]: 0,
+    [CAPASource.SupplierIssue]: 0,
+    [CAPASource.Other]: 0
+  };
 };
