@@ -1,26 +1,5 @@
 
-export type ComplaintCategory = 
-  | 'Product_Quality'
-  | 'Foreign_Material'
-  | 'Packaging'
-  | 'Labeling'
-  | 'Customer_Service'
-  | 'Other';
-
-export type ComplaintStatus = 
-  | 'New'
-  | 'Under_Investigation'
-  | 'Resolved'
-  | 'Closed'
-  | 'Reopened'
-  | 'Escalated'
-  | 'On_Hold';
-
-export type ComplaintPriority = 
-  | 'Low'
-  | 'Medium'
-  | 'High'
-  | 'Urgent';
+import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 
 export interface Complaint {
   id: string;
@@ -30,14 +9,15 @@ export interface Complaint {
   status: ComplaintStatus;
   priority: ComplaintPriority;
   reported_date: string;
-  resolution_date?: string;
   created_at: string;
   updated_at: string;
   created_by: string;
-  assigned_to?: string;
-  customer_name?: string;
+  customer_name: string;
   customer_contact?: string;
-  product_involved?: string;
+  resolved_date?: string;
+  resolution_notes?: string;
+  assigned_to?: string;
+  product_affected?: string;
   lot_number?: string;
   capa_id?: string;
 }
@@ -46,9 +26,20 @@ export interface ComplaintFilter {
   status?: ComplaintStatus | ComplaintStatus[];
   category?: ComplaintCategory | ComplaintCategory[];
   priority?: ComplaintPriority | ComplaintPriority[];
-  date_range?: {
+  dateRange?: {
     start: string;
     end: string;
   };
-  search?: string;
+  searchTerm?: string;
+}
+
+export interface ComplaintActivity {
+  id: string;
+  complaint_id: string;
+  action_type: string;
+  description: string;
+  performed_at: string;
+  performed_by: string;
+  old_status?: ComplaintStatus;
+  new_status?: ComplaintStatus;
 }

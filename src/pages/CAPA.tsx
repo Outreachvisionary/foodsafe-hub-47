@@ -1,282 +1,323 @@
 
-import React, { useState, useCallback } from 'react';
-import DashboardHeader from '@/components/DashboardHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FilterX, Search, SlidersHorizontal, Zap } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Plus, Filter, Search, RefreshCcw } from 'lucide-react';
+import { CAPA, CAPAStats, CAPAFilter } from '@/types/capa';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import CAPADashboard from '@/components/capa/CAPADashboard';
 import CAPAList from '@/components/capa/CAPAList';
-import CAPAEffectiveness from '@/components/capa/CAPAEffectiveness';
-import CAPAReports from '@/components/capa/CAPAReports';
-import { useToast } from '@/hooks/use-toast';
+import CAPAFilters from '@/components/capa/CAPAFilters';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
-import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import { CAPAStats, CAPAFilter } from '@/types/capa';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
+import { getCAPAs } from '@/services/capaService';
 
-// Update interfaces to match the expected component props
-interface CAPAFilterProps {
-  status: string;
-  priority: string;
-  source: string;
-  dueDate: string;
-}
-
-const CAPAPage = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [filters, setFilters] = useState<CAPAFilterProps>({
-    status: 'all',
-    priority: 'all',
-    source: 'all',
-    dueDate: 'all'
-  });
+const CAPA: React.FC = () => {
+  const navigate = useNavigate();
+  const [capas, setCAPAs] = useState<CAPA[]>([]);
+  const [filteredCAPAs, setFilteredCAPAs] = useState<CAPA[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAutomation, setShowAutomation] = useState(false);
-  const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
-  
-  const initialStats: CAPAStats = {
+  const [activeTab, setActiveTab] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [capaStats, setCAPAStats] = useState<CAPAStats>({
     total: 0,
     open: 0,
     inProgress: 0,
     completed: 0,
     overdue: 0,
-    byPriority: createEmptyCAPAPriorityRecord(),
-    bySource: createEmptyCAPASourceRecord(),
+    byPriority: {} as Record<CAPAPriority, number>,
+    bySource: {} as Record<CAPASource, number>,
     byDepartment: {},
     recentActivities: []
-  };
+  });
   
-  const { toast } = useToast();
+  const [filters, setFilters] = useState<CAPAFilter>({
+    status: undefined,
+    priority: undefined,
+    source: undefined,
+    department: undefined,
+    searchTerm: '',
+    dateRange: undefined
+  });
 
-  const handleCAPACreated = useCallback((capaData: any) => {
-    toast({
-      title: "CAPA Created",
-      description: `New CAPA "${capaData.title}" has been created`
-    });
-    setShowAutomation(false);
-  }, [toast]);
+  // Fetch CAPAs on component mount
+  useEffect(() => {
+    fetchCAPAs();
+  }, []);
 
-  const resetFilters = useCallback(() => {
-    setFilters({
-      status: 'all',
-      priority: 'all',
-      source: 'all',
-      dueDate: 'all'
-    });
-    setSearchQuery('');
+  // Apply filters whenever filters or capas change
+  useEffect(() => {
+    applyFilters();
+  }, [filters, searchQuery, capas, activeTab]);
+
+  // Fetch CAPAs from the API
+  const fetchCAPAs = async () => {
+    setLoading(true);
+    setError(null);
     
-    toast({
-      title: "Filters Reset",
-      description: "All filters have been cleared"
-    });
-  }, [toast]);
+    try {
+      const fetchedCAPAs = await getCAPAs();
+      
+      setCAPAs(fetchedCAPAs);
+      
+      // Calculate stats
+      calculateStats(fetchedCAPAs);
+    } catch (err) {
+      console.error('Error fetching CAPAs:', err);
+      setError('Failed to load CAPAs. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const toggleAutomation = useCallback(() => {
-    setShowAutomation(!showAutomation);
-    
-    if (!showAutomation) {
-      toast({
-        title: "Auto-Detection",
-        description: "Displaying auto-detected issues requiring CAPA"
+  // Calculate statistics from CAPA data
+  const calculateStats = (capaData: CAPA[]) => {
+    const stats: CAPAStats = {
+      total: capaData.length,
+      open: 0,
+      inProgress: 0,
+      completed: 0,
+      overdue: 0,
+      byPriority: {} as Record<CAPAPriority, number>,
+      bySource: {} as Record<CAPASource, number>,
+      byDepartment: {},
+      recentActivities: []
+    };
+
+    // Initialize priority counts
+    Object.values(CAPAPriority).forEach(priority => {
+      stats.byPriority[priority] = 0;
+    });
+
+    // Initialize source counts
+    Object.values(CAPASource).forEach(source => {
+      stats.bySource[source] = 0;
+    });
+
+    capaData.forEach(capa => {
+      // Count by status
+      switch (capa.status) {
+        case CAPAStatus.Open:
+          stats.open++;
+          break;
+        case CAPAStatus.InProgress:
+          stats.inProgress++;
+          break;
+        case CAPAStatus.Completed:
+        case CAPAStatus.Verified:
+        case CAPAStatus.Closed:
+          stats.completed++;
+          break;
+        case CAPAStatus.Overdue:
+          stats.overdue++;
+          break;
+      }
+
+      // Count by priority
+      if (stats.byPriority[capa.priority] !== undefined) {
+        stats.byPriority[capa.priority]++;
+      }
+
+      // Count by source
+      if (stats.bySource[capa.source] !== undefined) {
+        stats.bySource[capa.source]++;
+      }
+
+      // Count by department
+      const dept = capa.department || 'Unassigned';
+      if (!stats.byDepartment[dept]) {
+        stats.byDepartment[dept] = 0;
+      }
+      stats.byDepartment[dept]++;
+    });
+
+    setCAPAStats(stats);
+  };
+
+  // Apply filters to capas
+  const applyFilters = () => {
+    let filtered = [...capas];
+
+    // Apply tab filter
+    if (activeTab !== 'all') {
+      switch (activeTab) {
+        case 'open':
+          filtered = filtered.filter(capa => capa.status === CAPAStatus.Open);
+          break;
+        case 'inProgress':
+          filtered = filtered.filter(capa => capa.status === CAPAStatus.InProgress);
+          break;
+        case 'completed':
+          filtered = filtered.filter(capa => 
+            capa.status === CAPAStatus.Completed || 
+            capa.status === CAPAStatus.Verified || 
+            capa.status === CAPAStatus.Closed
+          );
+          break;
+        case 'overdue':
+          filtered = filtered.filter(capa => capa.status === CAPAStatus.Overdue);
+          break;
+      }
+    }
+
+    // Apply filters
+    if (filters.status) {
+      filtered = filtered.filter(capa => {
+        if (Array.isArray(filters.status)) {
+          return filters.status.includes(capa.status);
+        }
+        return capa.status === filters.status;
       });
     }
-  }, [showAutomation, toast]);
-  
-  // Convert filter props to the format expected by CAPAList
-  const mapFiltersToProps = (): { 
-    status?: CAPAStatus | CAPAStatus[];
-    priority?: CAPAPriority | CAPAPriority[];
-    source?: CAPASource | CAPASource[];
-    department?: string;
-  } => {
-    const result: CAPAFilter = {};
-    
-    if (filters.status && filters.status !== 'all') {
-      try {
-        const statusEnum = CAPAStatus[filters.status.toUpperCase().replace(/-/g, '_') as keyof typeof CAPAStatus];
-        if (statusEnum) {
-          result.status = statusEnum;
+
+    if (filters.priority) {
+      filtered = filtered.filter(capa => {
+        if (Array.isArray(filters.priority)) {
+          return filters.priority.includes(capa.priority);
         }
-      } catch (e) {
-        console.error('Invalid status value:', filters.status);
-      }
+        return capa.priority === filters.priority;
+      });
     }
-    
-    if (filters.priority && filters.priority !== 'all') {
-      try {
-        const priorityEnum = CAPAPriority[filters.priority.toUpperCase() as keyof typeof CAPAPriority];
-        if (priorityEnum) {
-          result.priority = priorityEnum;
+
+    if (filters.source) {
+      filtered = filtered.filter(capa => {
+        if (Array.isArray(filters.source)) {
+          return filters.source.includes(capa.source);
         }
-      } catch (e) {
-        console.error('Invalid priority value:', filters.priority);
-      }
+        return capa.source === filters.source;
+      });
     }
-    
-    if (filters.source && filters.source !== 'all') {
-      try {
-        // Convert kebab-case to UPPER_SNAKE_CASE for enum lookup
-        const sourceKey = filters.source.toUpperCase().replace(/-/g, '_');
-        const sourceEnum = CAPASource[sourceKey as keyof typeof CAPASource];
-        if (sourceEnum) {
-          result.source = sourceEnum;
+
+    if (filters.department) {
+      filtered = filtered.filter(capa => {
+        if (Array.isArray(filters.department)) {
+          return filters.department.includes(capa.department || 'Unassigned');
         }
-      } catch (e) {
-        console.error('Invalid source value:', filters.source);
-      }
+        return capa.department === filters.department;
+      });
     }
-    
-    return result;
+
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(capa =>
+        capa.title.toLowerCase().includes(query) ||
+        capa.description.toLowerCase().includes(query) ||
+        capa.id.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredCAPAs(filtered);
+  };
+
+  const handleCreateCAPA = (capaData: any) => {
+    console.log('CAPA created:', capaData);
+    fetchCAPAs(); // Refresh the list after creation
+  };
+
+  const handleCAPAClick = (capa: CAPA) => {
+    navigate(`/capa/${capa.id}`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader 
-        title="CAPA Management" 
-        subtitle="Manage corrective and preventive actions across all compliance modules"
-      />
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">CAPA Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage corrective and preventive actions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => fetchCAPAs()}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create CAPA
+          </Button>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <Breadcrumbs />
-        
-        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-          <div className="flex-1 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <div className="relative flex-1">
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex justify-between items-center">
+          <TabsList>
+            <TabsTrigger value="all">All CAPAs</TabsTrigger>
+            <TabsTrigger value="open">Open</TabsTrigger>
+            <TabsTrigger value="inProgress">In Progress</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            <TabsTrigger value="automated">Automated CAPA</TabsTrigger>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2">
+            <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 placeholder="Search CAPAs..."
-                className="pl-8"
+                className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
-            <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-                <SelectItem value="verified">Verified</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filters.priority} onValueChange={(value) => setFilters({...filters, priority: value})}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filters.source} onValueChange={(value) => setFilters({...filters, source: value})}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="audit">Audit</SelectItem>
-                <SelectItem value="customer-complaint">Customer Complaint</SelectItem>
-                <SelectItem value="internal-qc">Internal QC</SelectItem>
-                <SelectItem value="supplier-issue">Supplier Issue</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => toast({
-                title: "Advanced Filters",
-                description: "Advanced filtering options"
-              })}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={resetFilters}
-            >
-              <FilterX className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button 
-              variant={showAutomation ? "default" : "outline"} 
-              onClick={toggleAutomation}
-              className="flex items-center"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Auto-Detected Issues
-            </Button>
-            
-            <Button onClick={() => setCreateCAPADialogOpen(true)}>
-              Create CAPA
-            </Button>
           </div>
         </div>
-        
-        {showAutomation && (
-          <div className="mb-6">
-            <AutomatedCAPAGenerator onCAPACreated={handleCAPACreated} />
+
+        <TabsContent value="automated">
+          <AutomatedCAPAGenerator onCAPACreated={handleCreateCAPA} />
+        </TabsContent>
+
+        <TabsContent value="dashboard">
+          <CAPADashboard stats={capaStats} />
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid md:grid-cols-4 gap-4">
+            <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
+            <div className="md:col-span-3">
+              <CAPAList
+                capas={filteredCAPAs}
+                loading={loading}
+                error={error}
+                onCAPAClick={handleCAPAClick}
+              />
+            </div>
           </div>
-        )}
-        
-        <Tabs 
-          defaultValue="dashboard" 
-          value={activeTab} 
-          onValueChange={setActiveTab} 
-          className="w-full animate-fade-in"
-        >
-          <TabsList className="mb-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="list">CAPA List</TabsTrigger>
-            <TabsTrigger value="effectiveness">Effectiveness</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dashboard">
-            {activeTab === 'dashboard' && (
-              <CAPADashboard />
-            )}
+        </TabsContent>
+
+        {['open', 'inProgress', 'completed', 'overdue'].map((tab) => (
+          <TabsContent key={tab} value={tab} className="space-y-4">
+            <div className="grid md:grid-cols-4 gap-4">
+              <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
+              <div className="md:col-span-3">
+                <CAPAList
+                  capas={filteredCAPAs}
+                  loading={loading}
+                  error={error}
+                  onCAPAClick={handleCAPAClick}
+                />
+              </div>
+            </div>
           </TabsContent>
-          
-          <TabsContent value="list">
-            <CAPAList filter={mapFiltersToProps()} searchQuery={searchQuery} />
-          </TabsContent>
-          
-          <TabsContent value="effectiveness">
-            <CAPAEffectiveness />
-          </TabsContent>
-          
-          <TabsContent value="reports">
-            <CAPAReports />
-          </TabsContent>
-        </Tabs>
-      </main>
-      
-      <CreateCAPADialog 
-        open={createCAPADialogOpen} 
-        onOpenChange={setCreateCAPADialogOpen} 
-        onCAPACreated={handleCAPACreated} 
+        ))}
+      </Tabs>
+
+      <CreateCAPADialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSubmit={handleCreateCAPA}
       />
     </div>
   );
 };
 
-export default CAPAPage;
+export default CAPA;

@@ -40,3 +40,24 @@ export const isCheckoutStatusEqual = (status: any, targetStatus: CheckoutStatus)
   
   return status === targetStatus;
 };
+
+// Additional utility functions to help with document type handling
+export const documentStatusToString = (status: DocumentStatus): string => {
+  return status.toString().replace(/_/g, ' ');
+};
+
+export const stringToDocumentStatus = (statusString: string): DocumentStatus => {
+  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
+  return DocumentStatus[statusKey as keyof typeof DocumentStatus] || DocumentStatus.Draft;
+};
+
+export const checkoutStatusToString = (status: CheckoutStatus): string => {
+  return status.toString().replace(/_/g, ' ');
+};
+
+export const stringToCheckoutStatus = (statusString: string): CheckoutStatus => {
+  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
+  return CheckoutStatus[statusKey as keyof typeof CheckoutStatus] || CheckoutStatus.Available;
+};
+
+export const isStatusEqual = isDocumentStatusEqual;

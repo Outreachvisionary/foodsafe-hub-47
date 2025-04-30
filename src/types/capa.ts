@@ -1,6 +1,8 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
+export { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
+
 export interface CAPA {
   id: string;
   title: string;

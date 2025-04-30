@@ -1,180 +1,141 @@
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Unlink } from 'lucide-react';
 import { CAPA } from '@/types/capa';
-import { CAPAStatus } from '@/types/enums';
-import { stringToCAPAStatus } from '@/utils/typeAdapters';
-
-interface CAPAStatusBadgeProps {
-  status: string;
-  showIcon?: boolean;
-}
-
-export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, showIcon = false }) => {
-  return <Badge variant="outline">{status}</Badge>;
-};
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
+import { formatEnumValue, convertToCAPAStatus } from '@/utils/typeAdapters';
+import CAPAStatusBadge from './CAPAStatusBadge';
 
 interface LinkedCAPAsListProps {
-  caption?: string;
-  capaIds: string[];
-  showViewAll?: boolean;
-  sourceType?: string;
-  sourceId?: string;
-  emptyMessage?: string;
-  onCreateCAPAClick?: () => void;
+  capas?: CAPA[];
+  allowAdd?: boolean;
+  allowRemove?: boolean;
+  onAddClick?: () => void;
+  onRemoveClick?: (capaId: string) => void;
+  onCAPAClick?: (capa: CAPA) => void;
 }
 
 const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
-  caption = 'Related CAPAs',
-  capaIds,
-  showViewAll = true,
-  sourceType,
-  sourceId,
-  emptyMessage = 'No CAPAs found',
-  onCreateCAPAClick
+  capas = [],
+  allowAdd = false,
+  allowRemove = false,
+  onAddClick,
+  onRemoveClick,
+  onCAPAClick,
 }) => {
-  const navigate = useNavigate();
-  const [capas, setCapas] = useState<CAPA[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCapas = async () => {
-      if (!capaIds || capaIds.length === 0) {
-        setCapas([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Mock fetching CAPAs
-        const mockCAPAs: CAPA[] = capaIds.map(id => ({
-          id,
-          title: `CAPA for ${id}`,
-          description: `Description for CAPA ${id}`,
-          status: CAPAStatus.Open,
-          priority: 'Medium',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          due_date: new Date().toISOString(),
-          assigned_to: 'John Doe',
-          created_by: 'System',
-          source: 'Audit',
-          fsma204_compliant: false
-        }));
-        
-        setCapas(mockCAPAs);
-      } catch (error) {
-        console.error('Error fetching linked CAPAs:', error);
-        setError('Failed to load linked CAPA items');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCapas();
-  }, [capaIds]);
-
-  const viewCapa = (id: string) => {
-    navigate(`/capa/${id}`);
-  };
-  
-  const viewAllCapas = () => {
-    if (sourceType) {
-      navigate(`/capa?source=${sourceType}${sourceId ? `&sourceId=${sourceId}` : ''}`);
-    } else {
-      navigate(`/capa`);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-6 text-gray-500">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-          Loading CAPAs...
-        </CardContent>
-      </Card>
-    );
+  // If there are no CAPAs and we're not allowing addition, don't render anything
+  if (capas.length === 0 && !allowAdd) {
+    return null;
   }
 
-  if (error) {
+  // Show a message if there are no linked CAPAs
+  if (capas.length === 0) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-lg">Linked CAPAs</CardTitle>
         </CardHeader>
-        <CardContent className="text-center py-6 text-red-500">
-          {error}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!capas || capas.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{caption}</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-6 text-gray-500">
-          {emptyMessage}
-          {onCreateCAPAClick && (
-            <div className="mt-4">
-              <Button size="sm" onClick={onCreateCAPAClick}>
-                Create CAPA
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <p className="mb-4 text-muted-foreground">No CAPAs are linked to this item</p>
+            {allowAdd && (
+              <Button onClick={onAddClick} className="flex items-center">
+                <Plus className="mr-1 h-4 w-4" />
+                Link CAPA
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     );
   }
+
+  // Sample CAPAs for demo purposes
+  const mockCAPAs: CAPA[] = [
+    {
+      id: "capa-1",
+      title: "Corrective Action for Product X Contamination",
+      description: "Implement measures to prevent contamination of Product X",
+      status: CAPAStatus.Open,
+      priority: CAPAPriority.Medium,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      assigned_to: "Jane Smith",
+      created_by: "John Doe",
+      source: CAPASource.Audit,
+      fsma204_compliant: false,
+    },
+    {
+      id: "capa-2",
+      title: "Preventive Action for Equipment Maintenance",
+      description: "Implement regular maintenance schedule for packaging equipment",
+      status: CAPAStatus.InProgress,
+      priority: CAPAPriority.High,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      assigned_to: "Mike Johnson",
+      created_by: "John Doe",
+      source: CAPASource.SupplierIssue,
+      fsma204_compliant: true,
+    }
+  ];
+
+  // Use the provided CAPAs if available, otherwise use the mock data
+  const displayCAPAs = capas.length > 0 ? capas : mockCAPAs;
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">{caption}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg">Linked CAPAs</CardTitle>
+        {allowAdd && (
+          <Button onClick={onAddClick} size="sm" variant="outline" className="flex items-center">
+            <Plus className="mr-1 h-4 w-4" />
+            Link CAPA
+          </Button>
+        )}
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {capas.map((capa) => (
-            <div key={capa.id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => viewCapa(capa.id)}>
+      <CardContent>
+        <ul className="divide-y">
+          {displayCAPAs.map((capa) => (
+            <li key={capa.id} className="py-3">
               <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium text-sm">{capa.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{capa.description}</p>
-                  <div className="flex gap-2 mt-2">
-                    <CAPAStatusBadge status={capa.status.toString().replace(/_/g, ' ')} showIcon={false} />
-                    {capa.source && (
-                      <Badge variant="outline" className="text-xs">
-                        {capa.source}
-                      </Badge>
-                    )}
+                <div
+                  className={onCAPAClick ? "cursor-pointer flex-grow" : "flex-grow"}
+                  onClick={() => onCAPAClick && onCAPAClick(capa)}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <h4 className="text-sm font-medium">{capa.title}</h4>
+                    <CAPAStatusBadge status={capa.status} className="ml-2" />
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
+                    {capa.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>Priority: {formatEnumValue(capa.priority.toString())}</span>
+                    <span>•</span>
+                    <span>Source: {formatEnumValue(capa.source.toString())}</span>
+                    <span>•</span>
+                    <span>Due: {new Date(capa.due_date).toLocaleDateString()}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+                {allowRemove && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 text-destructive"
+                    onClick={() => onRemoveClick && onRemoveClick(capa.id)}
+                  >
+                    <Unlink className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
-        {showViewAll && capas.length > 0 && (
-          <div className="p-3 border-t text-center">
-            <Button variant="ghost" size="sm" onClick={viewAllCapas}>
-              View All
-            </Button>
-          </div>
-        )}
+        </ul>
       </CardContent>
     </Card>
   );

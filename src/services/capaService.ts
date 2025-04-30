@@ -1,88 +1,182 @@
 
-import { CAPA, CAPAStats, CAPAFilter, CAPAActivity } from '@/types/capa';
-import { supabase } from '@/integrations/supabase/client';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
+import { supabase } from "@/integrations/supabase/client";
+import { CAPA, CAPAActivity } from "@/types/capa";
+import { CAPAStatus, CAPAPriority, CAPASource } from "@/types/enums";
+import { convertToCAPAStatus, convertToCAPAPriority, convertToCAPASource } from "@/utils/typeAdapters";
 
-/**
- * Fetch CAPAs with optional filtering
- */
-export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
+// Get all CAPAs with optional filtering
+export const getCAPAs = async (filters?: any): Promise<CAPA[]> => {
   try {
-    let query = supabase.from('capa_actions').select('*');
-    
-    if (filter) {
-      if (filter.status) {
-        const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-        const statusStrings = statuses.map(status => status.toString().replace(/_/g, ' '));
-        query = query.in('status', statusStrings);
-      }
-      
-      if (filter.priority) {
-        const priorities = Array.isArray(filter.priority) ? filter.priority : [filter.priority];
-        const priorityStrings = priorities.map(priority => priority.toString());
-        query = query.in('priority', priorityStrings);
-      }
-      
-      if (filter.source) {
-        const sources = Array.isArray(filter.source) ? filter.source : [filter.source];
-        const sourceStrings = sources.map(source => source.toString().replace(/_/g, ' '));
-        query = query.in('source', sourceStrings);
-      }
-      
-      if (filter.department) {
-        const departments = Array.isArray(filter.department) ? filter.department : [filter.department];
-        query = query.in('department', departments);
-      }
-      
-      if (filter.dateRange) {
-        if (filter.dateRange.start) {
-          query = query.gte('created_at', filter.dateRange.start);
-        }
-        if (filter.dateRange.end) {
-          query = query.lte('created_at', filter.dateRange.end);
+    let query = supabase.from('capas').select('*');
+
+    if (filters) {
+      // Apply filters if they exist
+      if (filters.status) {
+        if (Array.isArray(filters.status)) {
+          const statuses = filters.status.map((s: CAPAStatus) => s.toString().replace(/_/g, ' '));
+          query = query.in('status', statuses);
+        } else {
+          query = query.eq('status', filters.status.toString().replace(/_/g, ' '));
         }
       }
-      
-      if (filter.searchTerm) {
-        query = query.or(`title.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
+
+      if (filters.priority) {
+        if (Array.isArray(filters.priority)) {
+          const priorities = filters.priority.map((p: CAPAPriority) => p.toString());
+          query = query.in('priority', priorities);
+        } else {
+          query = query.eq('priority', filters.priority.toString());
+        }
+      }
+
+      if (filters.source) {
+        if (Array.isArray(filters.source)) {
+          const sources = filters.source.map((s: CAPASource) => s.toString().replace(/_/g, ' '));
+          query = query.in('source', sources);
+        } else {
+          query = query.eq('source', filters.source.toString().replace(/_/g, ' '));
+        }
+      }
+
+      if (filters.department) {
+        if (Array.isArray(filters.department)) {
+          query = query.in('department', filters.department);
+        } else {
+          query = query.eq('department', filters.department);
+        }
+      }
+
+      if (filters.searchTerm) {
+        query = query.or(`title.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`);
+      }
+
+      if (filters.dateRange) {
+        if (filters.dateRange.start) {
+          query = query.gte('created_at', filters.dateRange.start);
+        }
+        if (filters.dateRange.end) {
+          query = query.lte('created_at', filters.dateRange.end);
+        }
       }
     }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return data as CAPA[] || [];
+
+    // Order by most recent
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Error fetching CAPAs: ${error.message}`);
+    }
+
+    // Convert database records to CAPA type with proper enums
+    return (data || []).map(item => ({
+      ...item,
+      status: convertToCAPAStatus(item.status),
+      priority: convertToCAPAPriority(item.priority),
+      source: convertToCAPASource(item.source)
+    })) as CAPA[];
   } catch (error) {
-    console.error('Error fetching CAPAs:', error);
+    console.error('Error in getCAPAs:', error);
     return [];
   }
 };
 
-/**
- * Get a specific CAPA by ID
- */
+// Get a single CAPA by id
 export const getCAPA = async (id: string): Promise<CAPA | null> => {
   try {
     const { data, error } = await supabase
-      .from('capa_actions')
+      .from('capas')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error) throw error;
-    
-    return data as CAPA;
+
+    if (error) {
+      throw new Error(`Error fetching CAPA: ${error.message}`);
+    }
+
+    if (!data) return null;
+
+    return {
+      ...data,
+      status: convertToCAPAStatus(data.status),
+      priority: convertToCAPAPriority(data.priority),
+      source: convertToCAPASource(data.source)
+    } as CAPA;
   } catch (error) {
-    console.error(`Error fetching CAPA ${id}:`, error);
+    console.error(`Error in getCAPA(${id}):`, error);
     return null;
   }
 };
 
-/**
- * Get CAPA activities
- */
+// Create a new CAPA
+export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA | null> => {
+  try {
+    // Format enum values for database storage
+    const dbCapa = {
+      ...capaData,
+      status: capaData.status?.toString().replace(/_/g, ' '),
+      priority: capaData.priority?.toString(),
+      source: capaData.source?.toString().replace(/_/g, ' ')
+    };
+
+    const { data, error } = await supabase
+      .from('capas')
+      .insert([dbCapa])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error creating CAPA: ${error.message}`);
+    }
+
+    return {
+      ...data,
+      status: convertToCAPAStatus(data.status),
+      priority: convertToCAPAPriority(data.priority),
+      source: convertToCAPASource(data.source)
+    } as CAPA;
+  } catch (error) {
+    console.error('Error in createCAPA:', error);
+    return null;
+  }
+};
+
+// Update an existing CAPA
+export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA | null> => {
+  try {
+    // Format enum values for database storage
+    const dbUpdates = {
+      ...updates,
+      status: updates.status?.toString().replace(/_/g, ' '),
+      priority: updates.priority?.toString(),
+      source: updates.source?.toString().replace(/_/g, ' ')
+    };
+
+    const { data, error } = await supabase
+      .from('capas')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error updating CAPA: ${error.message}`);
+    }
+
+    return {
+      ...data,
+      status: convertToCAPAStatus(data.status),
+      priority: convertToCAPAPriority(data.priority),
+      source: convertToCAPASource(data.source)
+    } as CAPA;
+  } catch (error) {
+    console.error(`Error in updateCAPA(${id}):`, error);
+    return null;
+  }
+};
+
+// Get CAPA activities for a specific CAPA
 export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
   try {
     const { data, error } = await supabase
@@ -90,157 +184,52 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       .select('*')
       .eq('capa_id', capaId)
       .order('performed_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return data as CAPAActivity[] || [];
+
+    if (error) {
+      throw new Error(`Error fetching CAPA activities: ${error.message}`);
+    }
+
+    return (data || []).map(item => ({
+      ...item,
+      old_status: item.old_status ? convertToCAPAStatus(item.old_status) : undefined,
+      new_status: item.new_status ? convertToCAPAStatus(item.new_status) : undefined
+    })) as CAPAActivity[];
   } catch (error) {
-    console.error(`Error fetching activities for CAPA ${capaId}:`, error);
+    console.error(`Error in getCAPAActivities(${capaId}):`, error);
     return [];
   }
 };
 
-/**
- * Create a new CAPA
- */
-export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .insert([capaData])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    return data as CAPA;
-  } catch (error) {
-    console.error('Error creating CAPA:', error);
-    return null;
-  }
-};
-
-/**
- * Update an existing CAPA
- */
-export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    return data as CAPA;
-  } catch (error) {
-    console.error(`Error updating CAPA ${id}:`, error);
-    return null;
-  }
-};
-
-/**
- * Get recent CAPAs for dashboard
- */
+// Get recent CAPAs for dashboard
 export const getRecentCAPAs = async (limit: number = 5): Promise<CAPA[]> => {
   try {
     const { data, error } = await supabase
-      .from('capa_actions')
+      .from('capas')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
-    
-    if (error) throw error;
-    
-    return data as CAPA[] || [];
+
+    if (error) {
+      throw new Error(`Error fetching recent CAPAs: ${error.message}`);
+    }
+
+    return (data || []).map(item => ({
+      ...item,
+      status: convertToCAPAStatus(item.status),
+      priority: convertToCAPAPriority(item.priority),
+      source: convertToCAPASource(item.source)
+    })) as CAPA[];
   } catch (error) {
-    console.error('Error fetching recent CAPAs:', error);
+    console.error('Error in getRecentCAPAs:', error);
     return [];
   }
 };
 
-/**
- * Get CAPA statistics
- */
-export const getCAPAStats = async (): Promise<CAPAStats> => {
-  try {
-    const { data, error } = await supabase
-      .from('capa_actions')
-      .select('*');
-    
-    if (error) throw error;
-    
-    const stats: CAPAStats = {
-      total: data.length,
-      open: data.filter(capa => capa.status === 'Open').length,
-      inProgress: data.filter(capa => capa.status === 'In Progress').length,
-      completed: data.filter(capa => capa.status === 'Completed').length,
-      overdue: data.filter(capa => {
-        if (!capa.due_date) return false;
-        return new Date(capa.due_date) < new Date() && ['Open', 'In Progress'].includes(capa.status);
-      }).length,
-      byPriority: createEmptyCAPAPriorityRecord(),
-      bySource: createEmptyCAPASourceRecord(),
-      byDepartment: {},
-      recentActivities: []
-    };
-    
-    // Process priority stats
-    data.forEach(capa => {
-      // Handle priorities
-      const priority = capa.priority as string;
-      if (priority) {
-        const enumKey = priority.replace(/ /g, '') as CAPAPriority;
-        if (stats.byPriority[enumKey] !== undefined) {
-          stats.byPriority[enumKey]++;
-        }
-      }
-      
-      // Handle sources
-      const source = capa.source as string;
-      if (source) {
-        const enumKey = source.replace(/ /g, '_') as CAPASource;
-        if (stats.bySource[enumKey] !== undefined) {
-          stats.bySource[enumKey]++;
-        }
-      }
-      
-      // Handle departments
-      const department = capa.department as string;
-      if (department) {
-        if (!stats.byDepartment[department]) {
-          stats.byDepartment[department] = 0;
-        }
-        stats.byDepartment[department]++;
-      }
-    });
-    
-    // Get recent activities
-    const { data: activities, error: actError } = await supabase
-      .from('capa_activities')
-      .select('*')
-      .order('performed_at', { ascending: false })
-      .limit(10);
-    
-    if (!actError && activities) {
-      stats.recentActivities = activities;
-    }
-    
-    return stats;
-  } catch (error) {
-    console.error('Error fetching CAPA stats:', error);
-    return {
-      total: 0,
-      open: 0,
-      inProgress: 0,
-      completed: 0,
-      overdue: 0,
-      byPriority: createEmptyCAPAPriorityRecord(),
-      bySource: createEmptyCAPASourceRecord(),
-      byDepartment: {},
-      recentActivities: []
-    };
-  }
+export default {
+  getCAPAs,
+  getCAPA,
+  createCAPA,
+  updateCAPA,
+  getCAPAActivities,
+  getRecentCAPAs
 };
