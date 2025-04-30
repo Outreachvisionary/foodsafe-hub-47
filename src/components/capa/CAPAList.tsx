@@ -235,7 +235,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
                   <TableCell className="font-medium">{capa.id.slice(0, 8)}</TableCell>
                   <TableCell>
                     <div className="flex items-start gap-2">
-                      {getStatusIcon(capa.status)}
+                      {getStatusIcon(capa.status as CAPAStatus)}
                       <div>
                         <div className="font-medium">{capa.title}</div>
                         {capa.description && (
@@ -246,8 +246,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
-                  <TableCell>{getStatusBadge(capa.status)}</TableCell>
+                  <TableCell>{getPriorityBadge(capa.priority as CAPAPriority)}</TableCell>
+                  <TableCell>{getStatusBadge(capa.status as CAPAStatus)}</TableCell>
                   <TableCell>{capa.source}</TableCell>
                   <TableCell>
                     {capa.due_date ? new Date(capa.due_date).toLocaleDateString() : '-'}

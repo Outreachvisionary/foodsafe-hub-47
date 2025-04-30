@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { CAPAStatus } from '@/types/enums';
-import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CAPAStatusFormProps {
   capaId: string;
@@ -13,46 +13,59 @@ interface CAPAStatusFormProps {
   onUpdateStatus: (newStatus: CAPAStatus) => Promise<void>;
 }
 
-const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({ 
-  capaId, 
-  currentStatus, 
-  onUpdateStatus 
+const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({
+  capaId,
+  currentStatus,
+  onUpdateStatus
 }) => {
   const [status, setStatus] = useState<CAPAStatus>(currentStatus);
-  const [notes, setNotes] = useState('');
+  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  
+  const { toast } = useToast();
+  
+  const handleStatusChange = async () => {
+    if (status === currentStatus) {
+      toast({
+        title: 'No Change',
+        description: 'Select a different status to update.',
+      });
+      return;
+    }
     
-    if (status === currentStatus) return;
-    
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       await onUpdateStatus(status);
-      setNotes('');
+      
+      toast({
+        title: 'Status Updated',
+        description: `CAPA status updated to ${status.toString().replace(/_/g, ' ')}`,
+      });
+      
+      // Clear comment after update
+      setComment('');
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error updating CAPA status:', error);
+      
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update CAPA status. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Update Status</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="status" className="text-sm font-medium">
-              Status
-            </label>
-            <Select 
-              value={status} 
-              onValueChange={(value) => setStatus(value as CAPAStatus)}
-            >
+            <Select value={status} onValueChange={(value) => setStatus(value as CAPAStatus)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -61,41 +74,30 @@ const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({
                 <SelectItem value={CAPAStatus.InProgress}>In Progress</SelectItem>
                 <SelectItem value={CAPAStatus.Completed}>Completed</SelectItem>
                 <SelectItem value={CAPAStatus.Closed}>Closed</SelectItem>
-                <SelectItem value={CAPAStatus.OnHold}>On Hold</SelectItem>
                 <SelectItem value={CAPAStatus.PendingVerification}>Pending Verification</SelectItem>
                 <SelectItem value={CAPAStatus.Verified}>Verified</SelectItem>
+                <SelectItem value={CAPAStatus.OnHold}>On Hold</SelectItem>
+                <SelectItem value={CAPAStatus.Rejected}>Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="notes" className="text-sm font-medium">
-              Status Update Notes
-            </label>
             <Textarea
-              id="notes"
-              placeholder="Add notes about this status change..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[80px]"
+              placeholder="Add a comment about this status change..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
             />
           </div>
           
           <Button 
-            type="submit" 
-            disabled={status === currentStatus || isSubmitting}
+            onClick={handleStatusChange} 
             className="w-full"
+            disabled={isSubmitting || status === currentStatus}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              'Update Status'
-            )}
+            {isSubmitting ? 'Updating...' : 'Update Status'}
           </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

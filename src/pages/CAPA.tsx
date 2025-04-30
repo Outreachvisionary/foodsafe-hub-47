@@ -87,12 +87,20 @@ const CAPAPage = () => {
   }, [showAutomation, toast]);
   
   // Convert filter props to the format expected by CAPAList
-  const mapFiltersToProps = (): CAPAFilter => {
+  const mapFiltersToProps = (): { 
+    status?: CAPAStatus | CAPAStatus[];
+    priority?: CAPAPriority | CAPAPriority[];
+    source?: CAPASource | CAPASource[];
+    department?: string;
+  } => {
     const result: CAPAFilter = {};
     
     if (filters.status && filters.status !== 'all') {
       try {
-        result.status = filters.status.toUpperCase() as CAPAStatus;
+        const statusEnum = CAPAStatus[filters.status.toUpperCase().replace(/-/g, '_') as keyof typeof CAPAStatus];
+        if (statusEnum) {
+          result.status = statusEnum;
+        }
       } catch (e) {
         console.error('Invalid status value:', filters.status);
       }
@@ -100,7 +108,10 @@ const CAPAPage = () => {
     
     if (filters.priority && filters.priority !== 'all') {
       try {
-        result.priority = filters.priority.toUpperCase() as CAPAPriority;
+        const priorityEnum = CAPAPriority[filters.priority.toUpperCase() as keyof typeof CAPAPriority];
+        if (priorityEnum) {
+          result.priority = priorityEnum;
+        }
       } catch (e) {
         console.error('Invalid priority value:', filters.priority);
       }
@@ -108,7 +119,12 @@ const CAPAPage = () => {
     
     if (filters.source && filters.source !== 'all') {
       try {
-        result.source = filters.source.toUpperCase() as CAPASource;
+        // Convert kebab-case to UPPER_SNAKE_CASE for enum lookup
+        const sourceKey = filters.source.toUpperCase().replace(/-/g, '_');
+        const sourceEnum = CAPASource[sourceKey as keyof typeof CAPASource];
+        if (sourceEnum) {
+          result.source = sourceEnum;
+        }
       } catch (e) {
         console.error('Invalid source value:', filters.source);
       }
@@ -236,7 +252,7 @@ const CAPAPage = () => {
           
           <TabsContent value="dashboard">
             {activeTab === 'dashboard' && (
-              <CAPADashboard stats={initialStats} />
+              <CAPADashboard />
             )}
           </TabsContent>
           

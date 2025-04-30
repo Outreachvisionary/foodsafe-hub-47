@@ -15,6 +15,7 @@ export interface Facility {
   created_at?: string;
   updated_at?: string;
   status: string;
+  facility_type?: string;
 }
 
 export interface FacilityFilter {

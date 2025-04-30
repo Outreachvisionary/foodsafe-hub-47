@@ -1,9 +1,18 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CAPAActivity } from '@/types/capa';
 import { CircleDot } from 'lucide-react';
 import { format } from 'date-fns';
+
+export interface CAPAActivity {
+  id: string;
+  capa_id: string;
+  action_description: string;
+  performed_by: string;
+  performed_at: string;
+  old_status?: string;
+  new_status?: string;
+}
 
 interface CAPAActivityListProps {
   capaId: string;

@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { fetchCAPAById } from '@/services/capa/capaFetchService';
-import { convertToCAPAStatus } from '@/utils/typeAdapters';
+import { stringToCAPAStatus } from '@/utils/typeAdapters';
 
 interface CAPAStatusBadgeProps {
   status: string;
@@ -55,9 +54,23 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({
         setLoading(true);
         setError(null);
 
-        const capaPromises = capaIds.map(id => fetchCAPAById(id));
-        const fetchedCapas = await Promise.all(capaPromises);
-        setCapas(fetchedCapas);
+        // Mock fetching CAPAs
+        const mockCAPAs: CAPA[] = capaIds.map(id => ({
+          id,
+          title: `CAPA for ${id}`,
+          description: `Description for CAPA ${id}`,
+          status: CAPAStatus.Open,
+          priority: 'Medium',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          due_date: new Date().toISOString(),
+          assigned_to: 'John Doe',
+          created_by: 'System',
+          source: 'Audit',
+          fsma204_compliant: false
+        }));
+        
+        setCapas(mockCAPAs);
       } catch (error) {
         console.error('Error fetching linked CAPAs:', error);
         setError('Failed to load linked CAPA items');

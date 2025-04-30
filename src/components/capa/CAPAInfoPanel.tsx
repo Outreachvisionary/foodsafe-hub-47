@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Calendar, User, Tag, Layers, AlertTriangle } from 'lucide-react';
 import { CAPA } from '@/types/capa';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 interface CAPAInfoPanelProps {
@@ -10,61 +10,79 @@ interface CAPAInfoPanelProps {
 }
 
 const CAPAInfoPanel: React.FC<CAPAInfoPanelProps> = ({ capa }) => {
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'Not set';
-    return format(new Date(dateString), 'MMM d, yyyy');
-  };
-
+  const isPastDue = capa.due_date && new Date(capa.due_date) < new Date();
+  
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">CAPA Information</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <div className="flex flex-col space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">ID:</span>
-            <span className="font-medium">{capa.id?.substring(0, 8)}</span>
+      <CardContent className="space-y-3">
+        {isPastDue && !capa.completion_date && (
+          <div className="bg-red-50 border border-red-100 text-red-800 rounded-md p-3 flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+            <div>
+              <p className="font-medium">Past Due</p>
+              <p className="text-sm">This CAPA is past its due date.</p>
+            </div>
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Priority:</span>
-            <Badge variant="outline">{capa.priority}</Badge>
+        )}
+        
+        <div className="flex items-center text-sm">
+          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">Created:</span>
+            {format(new Date(capa.created_at), 'MMMM d, yyyy')}
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Source:</span>
-            <span className="font-medium">{capa.source}</span>
+        </div>
+        
+        <div className="flex items-center text-sm">
+          <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">Due:</span>
+            {capa.due_date ? format(new Date(capa.due_date), 'MMMM d, yyyy') : 'Not set'}
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Created:</span>
-            <span>{formatDate(capa.created_at)}</span>
+        </div>
+        
+        {capa.completion_date && (
+          <div className="flex items-center text-sm">
+            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+            <div>
+              <span className="text-muted-foreground mr-1">Completed:</span>
+              {format(new Date(capa.completion_date), 'MMMM d, yyyy')}
+            </div>
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Due Date:</span>
-            <span>{formatDate(capa.due_date)}</span>
+        )}
+        
+        <div className="flex items-center text-sm">
+          <User className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">Created by:</span>
+            {capa.created_by}
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Assigned To:</span>
-            <span>{capa.assigned_to || 'Unassigned'}</span>
+        </div>
+        
+        <div className="flex items-center text-sm">
+          <User className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">Assigned to:</span>
+            {capa.assigned_to || 'Unassigned'}
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Completion:</span>
-            <span>{formatDate(capa.completion_date)}</span>
+        </div>
+        
+        <div className="flex items-center text-sm">
+          <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">Department:</span>
+            {capa.department || 'Not specified'}
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Department:</span>
-            <span>{capa.department || 'Not specified'}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">FSMA 204:</span>
-            <span>{capa.fsma204_compliant ? 'Compliant' : 'Not compliant'}</span>
+        </div>
+        
+        <div className="flex items-center text-sm">
+          <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+          <div>
+            <span className="text-muted-foreground mr-1">FSMA 204:</span>
+            {capa.fsma204_compliant ? 'Compliant' : 'Not applicable'}
           </div>
         </div>
       </CardContent>

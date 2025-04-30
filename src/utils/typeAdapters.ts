@@ -30,9 +30,46 @@ export const createEmptyCAPASourceRecord = (): Record<CAPASource, number> => {
 };
 
 /**
+ * Converts a string value to a CAPAStatus enum value
+ */
+export const stringToCAPAStatus = (status: string): CAPAStatus => {
+  // Normalize and match with enum
+  const normalizedStatus = status.replace(/ /g, '_').toUpperCase();
+  const enumValue = CAPAStatus[normalizedStatus as keyof typeof CAPAStatus];
+  return enumValue || CAPAStatus.Open;
+};
+
+/**
+ * Converts a string value to a CAPAPriority enum value
+ */
+export const stringToCAPAPriority = (priority: string): CAPAPriority => {
+  // Normalize and match with enum
+  const normalizedPriority = priority.replace(/ /g, '_').toUpperCase();
+  const enumValue = CAPAPriority[normalizedPriority as keyof typeof CAPAPriority];
+  return enumValue || CAPAPriority.Medium;
+};
+
+/**
+ * Converts a string value to a CAPASource enum value
+ */
+export const stringToCAPASource = (source: string): CAPASource => {
+  // Normalize and match with enum
+  const normalizedSource = source.replace(/ /g, '_').toUpperCase();
+  const enumValue = CAPASource[normalizedSource as keyof typeof CAPASource];
+  return enumValue || CAPASource.Other;
+};
+
+/**
+ * Converts CAPAStatus enum to a user-friendly display string
+ */
+export const capaStatusToDisplayString = (status: CAPAStatus): string => {
+  return status.toString().replace(/_/g, ' ');
+};
+
+/**
  * Checks if a document status equals a specific status
  */
-export const isDocumentStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
+export const isStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
   if (!status) return false;
   
   if (typeof status === 'string') {
@@ -72,4 +109,19 @@ export const stringToDocumentStatus = (status: string): DocumentStatus => {
  */
 export const documentStatusToString = (status: DocumentStatus): string => {
   return status.toString().replace(/_/g, ' ');
+};
+
+/**
+ * Converts a CAPAStatus string to a CAPAStatus enum value
+ */
+export const convertToCAPAStatus = (statusString: string): CAPAStatus => {
+  const normalized = statusString.replace(/ /g, '_').toUpperCase();
+  return CAPAStatus[normalized as keyof typeof CAPAStatus] || CAPAStatus.Open;
+};
+
+/**
+ * Safe type checking for string vs enum status comparison
+ */
+export const isStringStatusEqual = (stringStatus: string, enumStatus: string): boolean => {
+  return stringStatus.replace(/ /g, '_').toUpperCase() === enumStatus.replace(/ /g, '_').toUpperCase();
 };

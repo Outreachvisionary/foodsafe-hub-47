@@ -1,4 +1,3 @@
-
 // Only fixing the isStatusEqual import
 
 import React, { useState, useEffect } from 'react';
@@ -10,9 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Clock, AlertCircle, CheckCircle, XCircle, Calendar } from 'lucide-react';
-import { updateCAPAStatus } from '@/services/capa/capaUpdateService';
 import { updateCAPA } from '@/services/capaService';
-import { isStatusEqual } from '@/services/capa/capaStatusService';
+import { isStringStatusEqual } from '@/utils/typeAdapters';
 import { format } from 'date-fns';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
 import { CAPAStatus } from '@/types/enums';

@@ -1,36 +1,31 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
-// Re-export the enums for use elsewhere
-export { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
-
 export interface CAPA {
   id: string;
   title: string;
   description: string;
   status: CAPAStatus;
   priority: CAPAPriority;
-  source: CAPASource;
-  source_id?: string;
-  assigned_to: string;
-  created_by: string;
   created_at: string;
   updated_at: string;
   due_date: string;
   completion_date?: string;
+  verified_date?: string;
+  source: CAPASource;
+  source_id?: string;
   root_cause?: string;
   corrective_action?: string;
   preventive_action?: string;
-  verification_method?: string;
-  effectiveness_criteria?: string;
-  effectiveness_rating?: CAPAEffectivenessRating;
-  verified_by?: string;
-  verification_date?: string;
-  fsma204_compliant?: boolean;
-  department_id?: string;
-  facility_id?: string;
+  assigned_to: string;
+  created_by: string;
   department?: string;
-  source_reference?: string;
+  fsma204_compliant: boolean;
+  verification_method?: string;
+  verified_by?: string;
+  effectiveness_criteria?: string;
+  effectiveness_verified?: boolean;
+  effectiveness_rating?: CAPAEffectivenessRating;
 }
 
 export interface CAPAActivity {
@@ -38,11 +33,31 @@ export interface CAPAActivity {
   capa_id: string;
   action_type: string;
   action_description: string;
-  performed_by: string;
   performed_at: string;
+  performed_by: string;
   old_status?: CAPAStatus;
   new_status?: CAPAStatus;
-  metadata?: Record<string, any>;
+  metadata?: any;
+}
+
+export interface CAPAAttachment {
+  id: string;
+  capa_id: string;
+  filename: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+  uploaded_by: string;
+}
+
+export interface CAPARelatedDocument {
+  id: string;
+  capa_id: string;
+  document_id: string;
+  added_at: string;
+  added_by: string;
+  document_type?: string;
 }
 
 export interface CAPAStats {
@@ -53,7 +68,7 @@ export interface CAPAStats {
   overdue: number;
   byPriority: Record<CAPAPriority, number>;
   bySource: Record<CAPASource, number>;
-  byDepartment?: Record<string, number>;
+  byDepartment: Record<string, number>;
   recentActivities: CAPAActivity[];
 }
 
@@ -62,36 +77,9 @@ export interface CAPAFilter {
   priority?: CAPAPriority | CAPAPriority[];
   source?: CAPASource | CAPASource[];
   department?: string | string[];
-  createdDateFrom?: string;
-  createdDateTo?: string;
-  dueDateFrom?: string;
-  dueDateTo?: string;
-  assignedTo?: string | string[];
-  searchTerm?: string;
   dateRange?: {
     start: string;
     end: string;
   };
-}
-
-export interface CAPAFetchParams extends CAPAFilter {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
-  searchQuery?: string;
-}
-
-export interface CAPAEffectivenessAssessment {
-  id: string;
-  capa_id: string;
-  assessment_date: string;
-  root_cause_eliminated: boolean;
-  preventive_measures_implemented: boolean;
-  documentation_complete: boolean;
-  score: number;
-  rating: CAPAEffectivenessRating;
-  recurrence_check: string;
-  notes?: string;
-  created_by: string;
+  searchTerm?: string;
 }

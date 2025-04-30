@@ -1,5 +1,5 @@
 
-import { CAPA, CAPAStats, CAPAFilter } from '@/types/capa';
+import { CAPA, CAPAStats, CAPAFilter, CAPAActivity } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
@@ -56,6 +56,107 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     return data as CAPA[] || [];
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
+    return [];
+  }
+};
+
+/**
+ * Get a specific CAPA by ID
+ */
+export const getCAPA = async (id: string): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return data as CAPA;
+  } catch (error) {
+    console.error(`Error fetching CAPA ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Get CAPA activities
+ */
+export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .eq('capa_id', capaId)
+      .order('performed_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data as CAPAActivity[] || [];
+  } catch (error) {
+    console.error(`Error fetching activities for CAPA ${capaId}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Create a new CAPA
+ */
+export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .insert([capaData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return data as CAPA;
+  } catch (error) {
+    console.error('Error creating CAPA:', error);
+    return null;
+  }
+};
+
+/**
+ * Update an existing CAPA
+ */
+export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return data as CAPA;
+  } catch (error) {
+    console.error(`Error updating CAPA ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Get recent CAPAs for dashboard
+ */
+export const getRecentCAPAs = async (limit: number = 5): Promise<CAPA[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return data as CAPA[] || [];
+  } catch (error) {
+    console.error('Error fetching recent CAPAs:', error);
     return [];
   }
 };
