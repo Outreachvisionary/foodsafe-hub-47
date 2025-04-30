@@ -8,9 +8,9 @@ import {
   DocumentFilter,
   DocumentCategory,
   DocumentAccess,
-  DocumentActionType
 } from '@/types/document';
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { normalizeDocStatus, isDocumentStatusEqual } from '@/utils/documentTypeAdapter';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -65,7 +65,14 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      return data || [];
+      // Convert database records to Document types
+      const documents: Document[] = (data || []).map(item => ({
+        ...item,
+        status: item.status as DocumentStatus,
+        checkout_status: (item.checkout_status || 'Available') as CheckoutStatus
+      }));
+      
+      return documents;
     } catch (err) {
       console.error('Error fetching documents:', err);
       setError('Failed to load documents.');
@@ -89,7 +96,14 @@ export const useDocumentService = () => {
       if (error) throw error;
       if (!data) return null;
       
-      return data as Document;
+      // Convert to Document type
+      const document: Document = {
+        ...data,
+        status: data.status as DocumentStatus,
+        checkout_status: (data.checkout_status || 'Available') as CheckoutStatus
+      };
+      
+      return document;
     } catch (err) {
       console.error(`Error fetching document with ID ${id}:`, err);
       setError('Failed to load document.');
@@ -117,7 +131,7 @@ export const useDocumentService = () => {
       
       if (docError) throw docError;
       
-      if (doc.checkout_status === CheckoutStatus.CheckedOut) {
+      if (isDocumentStatusEqual(doc.checkout_status, CheckoutStatus.CheckedOut)) {
         setError('Document is already checked out by another user.');
         return false;
       }
@@ -142,7 +156,7 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'User',
-          action: 'checkout' as DocumentActionType,
+          action: 'checkout',
           checkout_action: 'checkout',
           timestamp: new Date().toISOString(),
           comments: `Document checked out by ${userName}`
@@ -189,7 +203,7 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'User',
-          action: 'checkin' as DocumentActionType,
+          action: 'checkin',
           checkout_action: 'checkin',
           timestamp: new Date().toISOString(),
           comments: comment || `Document checked in by ${userName}`
@@ -225,7 +239,7 @@ export const useDocumentService = () => {
         version: item.version,
         version_number: item.version_number || item.version,
         file_name: item.file_name,
-        file_path: item.file_path || '',
+        file_path: item.file_path || '', // Set a default if missing
         file_size: item.file_size,
         created_by: item.created_by,
         created_at: item.created_at,
@@ -257,8 +271,6 @@ export const useDocumentService = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         ...document,
-        // Convert enum types to strings for database
-        category: document.category || 'Other'
       };
       
       // Ensure required fields are provided
@@ -340,7 +352,7 @@ export const useDocumentService = () => {
           user_id: userId,
           user_name: userName,
           user_role: 'Commenter',
-          action: 'comment' as DocumentActionType,
+          action: 'comment',
           timestamp: new Date().toISOString(),
           comments: content.substring(0, 100) + (content.length > 100 ? '...' : '') // Include a preview
         });

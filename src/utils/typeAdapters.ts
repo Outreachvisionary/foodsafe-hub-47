@@ -103,8 +103,16 @@ export const convertToCAPAStatus = (status: string): CAPAStatus => {
 /**
  * Checks if a value is a valid CAPAEffectivenessRating
  */
-export const isEffectivenessRating = (value: any): boolean => {
-  return Object.values(CAPAEffectivenessRating).includes(value as CAPAEffectivenessRating);
+export const isEffectivenessRating = (value: any, targetRating: CAPAEffectivenessRating): boolean => {
+  if (!value) return false;
+  
+  if (typeof value === 'string') {
+    const normalizedValue = value.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetRating.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedValue === normalizedTarget;
+  }
+  
+  return value === targetRating;
 };
 
 /**

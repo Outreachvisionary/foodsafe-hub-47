@@ -20,6 +20,8 @@ interface DocumentContextType {
   fetchVersions: (documentId: string) => Promise<void>;
   fetchComments: (documentId: string) => Promise<void>;
   addComment: (documentId: string, content: string) => Promise<void>;
+  approveDocument: (documentId: string, comment: string) => Promise<void>;
+  rejectDocument: (documentId: string, reason: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -178,6 +180,45 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     }
   }, [toast]);
 
+  // Add approve and reject document functions
+  const approveDocument = useCallback(async (documentId: string, comment: string) => {
+    try {
+      // Implementation for approving a document
+      console.log(`Approving document ${documentId} with comment: ${comment}`);
+      toast({
+        title: "Document Approved",
+        description: "The document has been approved successfully"
+      });
+    } catch (err) {
+      console.error('Error approving document:', err);
+      setError('Failed to approve document');
+      toast({
+        title: "Error",
+        description: "Failed to approve the document",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  const rejectDocument = useCallback(async (documentId: string, reason: string) => {
+    try {
+      // Implementation for rejecting a document
+      console.log(`Rejecting document ${documentId} with reason: ${reason}`);
+      toast({
+        title: "Document Rejected",
+        description: "The document has been rejected"
+      });
+    } catch (err) {
+      console.error('Error rejecting document:', err);
+      setError('Failed to reject document');
+      toast({
+        title: "Error",
+        description: "Failed to reject the document",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
   const value = {
     documents,
     currentDocument,
@@ -190,15 +231,21 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     fetchVersions,
     fetchComments,
     addComment,
+    approveDocument,
+    rejectDocument,
   };
 
   return <DocumentContext.Provider value={value}>{children}</DocumentContext.Provider>;
 };
 
-export const useDocumentContext = (): DocumentContextType => {
+// Export the hook for using the document context
+export const useDocument = (): DocumentContextType => {
   const context = useContext(DocumentContext);
   if (context === undefined) {
-    throw new Error('useDocumentContext must be used within a DocumentProvider');
+    throw new Error('useDocument must be used within a DocumentProvider');
   }
   return context;
 };
+
+// Export for backward compatibility
+export const useDocumentContext = useDocument;

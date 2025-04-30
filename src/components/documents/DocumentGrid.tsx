@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Document } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
 import { Grid, GridItem } from '@/components/ui/grid';
-import { isDocumentStatus } from '@/utils/typeAdapters';
+import { isDocumentStatusEqual } from '@/utils/documentTypeAdapter';
 import DocumentCard from './DocumentCard';
 
 interface DocumentGridProps {
@@ -20,17 +20,17 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({ documents, filter = 'all', 
 
     return documents.filter(doc => {
       if (filter === 'active') {
-        return isDocumentStatus(doc.status, DocumentStatus.Active);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.Active);
       } else if (filter === 'archived') {
-        return isDocumentStatus(doc.status, DocumentStatus.Archived);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.Archived);
       } else if (filter === 'draft') {
-        return isDocumentStatus(doc.status, DocumentStatus.Draft);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.Draft);
       } else if (filter === 'rejected') {
-        return isDocumentStatus(doc.status, DocumentStatus.Rejected);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.Rejected);
       } else if (filter === 'pending_review') {
-        return isDocumentStatus(doc.status, DocumentStatus.PendingReview);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.PendingReview);
       } else if (filter === 'expired') {
-        return isDocumentStatus(doc.status, DocumentStatus.Expired);
+        return isDocumentStatusEqual(doc.status, DocumentStatus.Expired);
       }
       return true;
     });
