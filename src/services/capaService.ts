@@ -1,8 +1,8 @@
 
-import { CAPA, CAPAStatus } from '@/types/capa';
+import { CAPA } from '@/types/capa';
+import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
 import { convertDatabaseCAPAToModel } from '@/utils/typeAdapters';
-import { CAPAEffectivenessRating } from '@/types/enums';
 
 // Mock function to fetch CAPAs
 export const getCAPAs = async (): Promise<CAPA[]> => {

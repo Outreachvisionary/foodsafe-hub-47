@@ -19,6 +19,9 @@ interface DocumentContextType {
   revokeAccess?: (accessId: string) => Promise<void>;
   getDocumentComments?: (documentId: string) => Promise<any[]>;
   createDocumentComment?: (comment: any) => Promise<any>;
+  createDocument?: (documentData: Partial<Document>) => Promise<Document>;
+  getDownloadUrl?: (path: string) => Promise<string>;
+  getStoragePath?: (documentId: string, fileName: string) => string;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -59,8 +62,29 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Mock implementation
     console.log(`Rejecting document ${documentId} with reason: ${reason}`);
   };
+  
+  const createDocument = async (documentData: Partial<Document>): Promise<Document> => {
+    // Mock implementation
+    console.log(`Creating document with data:`, documentData);
+    return {
+      id: 'mock-id',
+      title: documentData.title || 'Untitled',
+      description: documentData.description || '',
+      file_name: documentData.file_name || 'document.pdf',
+      file_path: documentData.file_path || '',
+      file_size: documentData.file_size || 0,
+      file_type: documentData.file_type || 'application/pdf',
+      category: documentData.category || 'Other',
+      status: documentData.status || DocumentStatus.Draft,
+      version: documentData.version || 1,
+      created_at: new Date().toISOString(),
+      created_by: documentData.created_by || 'current-user',
+      updated_at: new Date().toISOString(),
+      tags: documentData.tags || []
+    };
+  };
 
-  // Add document access control functions
+  // Document access control functions
   const fetchAccess = async (documentId: string): Promise<DocumentAccess[]> => {
     try {
       return await fetchDocumentAccess(documentId);
@@ -93,8 +117,8 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Add document comments functions
-  const handleGetDocumentComments = async (documentId: string) => {
+  // Document comments functions
+  const getDocumentComments = async (documentId: string) => {
     try {
       return await getDocumentComments(documentId);
     } catch (err) {
@@ -111,6 +135,18 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw err;
     }
   };
+  
+  // Storage functions
+  const getDownloadUrl = async (path: string): Promise<string> => {
+    // Mock implementation
+    console.log(`Getting download URL for path: ${path}`);
+    return `https://example.com/files/${path}`;
+  };
+  
+  const getStoragePath = (documentId: string, fileName: string): string => {
+    // Mock implementation
+    return `documents/${documentId}/${fileName}`;
+  };
 
   const value: DocumentContextType = {
     documents,
@@ -124,8 +160,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchAccess,
     grantAccess,
     revokeAccess,
-    getDocumentComments: handleGetDocumentComments,
-    createDocumentComment: handleCreateDocumentComment
+    getDocumentComments,
+    createDocumentComment: handleCreateDocumentComment,
+    createDocument,
+    getDownloadUrl,
+    getStoragePath
   };
 
   return (

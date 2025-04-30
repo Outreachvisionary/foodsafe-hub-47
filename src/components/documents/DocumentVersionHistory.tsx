@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { DocumentVersion } from '@/types/document';
+import { DocumentVersion, DocumentVersionType } from '@/types/document';
 import { CalendarClock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { getMockDocumentVersions } from '@/utils/documentVersionUtils';
@@ -23,10 +23,10 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({ documen
         // Get mock document versions
         const data = getMockDocumentVersions(documentId);
         
-        // Ensure version_type is "major" or "minor"
+        // Ensure version_type is properly cast to DocumentVersionType
         const processedVersions = data.map(version => ({
           ...version,
-          version_type: version.version_type === "major" ? "major" : "minor"
+          version_type: (version.version_type === "major" ? "major" : "minor") as DocumentVersionType
         }));
         
         setVersions(processedVersions);

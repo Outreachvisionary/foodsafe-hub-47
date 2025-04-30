@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Document } from '@/types/document';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/contexts/UserContext';
-import { checkoutDocument, checkinDocument } from '@/hooks/useDocumentService';
+import useDocumentService from '@/hooks/useDocumentService';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckoutStatus } from '@/types/enums';
 import { isCheckoutStatus } from '@/utils/typeAdapters';
@@ -43,7 +43,7 @@ const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
 
     try {
       setLoading(true);
-      const updatedDoc = await checkoutDocument(document.id, user.id);
+      const updatedDoc = await documentService.checkoutDocument(document.id, user.id);
       if (onDocumentUpdate && updatedDoc) {
         onDocumentUpdate(updatedDoc);
       }
@@ -69,7 +69,7 @@ const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
 
     try {
       setLoading(true);
-      const updatedDoc = await checkinDocument(document.id, checkinComment);
+      const updatedDoc = await documentService.checkinDocument(document.id, checkinComment);
       if (onDocumentUpdate && updatedDoc) {
         onDocumentUpdate(updatedDoc);
       }

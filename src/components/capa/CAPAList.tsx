@@ -80,8 +80,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
         }
         
         if (filters.source !== 'all') {
-          // Fix for type issue: Converting string to array for compatibility
-          capaFilter.source = [filters.source as CAPASource];
+          // Convert the string to a single-item array to match the type
+          capaFilter.source = filters.source as CAPASource;
         }
         
         if (filters.dueDate === 'overdue') {

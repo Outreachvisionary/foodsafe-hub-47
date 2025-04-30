@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { Document } from '@/types/document';
-import { DocumentStatus, CheckoutStatus, DocumentVersionType } from '@/types/enums';
+import { Document, DocumentAccess } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useDocumentService = () => {
@@ -64,6 +64,51 @@ export const useDocumentService = () => {
       setLoading(false);
     }
   };
+  
+  // Add document comment functions
+  const getDocumentComments = async (documentId: string): Promise<any[]> => {
+    setLoading(true);
+    try {
+      // Mock implementation - in a real app this would call an API
+      return [
+        {
+          id: '1',
+          document_id: documentId,
+          user_id: 'user1',
+          user_name: 'John Doe',
+          content: 'This is a sample comment',
+          created_at: new Date().toISOString()
+        }
+      ];
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get document comments';
+      setError(errorMessage);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createDocumentComment = async (comment: any): Promise<any> => {
+    setLoading(true);
+    try {
+      // Mock implementation - in a real app this would call an API
+      return {
+        id: uuidv4(),
+        document_id: comment.document_id,
+        user_id: comment.user_id || 'current-user',
+        user_name: comment.user_name || 'Current User',
+        content: comment.content,
+        created_at: new Date().toISOString()
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create document comment';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Add checkout/checkin functionality
   const checkoutDocument = async (documentId: string, userId: string): Promise<Document | null> => {
@@ -76,6 +121,7 @@ export const useDocumentService = () => {
         id: documentId,
         title: 'Checked Out Document',
         file_name: 'document.pdf',
+        file_path: '',
         file_size: 1024,
         file_type: 'application/pdf',
         category: 'Other',
@@ -83,6 +129,7 @@ export const useDocumentService = () => {
         version: 1,
         created_at: new Date().toISOString(),
         created_by: 'Current User',
+        updated_at: new Date().toISOString(),
         checkout_status: CheckoutStatus.CheckedOut,
         checkout_by: userId,
         checkout_date: new Date().toISOString()
@@ -96,16 +143,17 @@ export const useDocumentService = () => {
     }
   };
 
-  const checkinDocument = async (documentId: string, userId: string, comment?: string): Promise<Document | null> => {
+  const checkinDocument = async (documentId: string, comment?: string, userId?: string): Promise<Document | null> => {
     setLoading(true);
     try {
       // In a real app, this would call an API
-      console.log(`Checking in document ${documentId} by user ${userId} with comment: ${comment}`);
+      console.log(`Checking in document ${documentId} with comment: ${comment}`);
       // Return a mock document with updated checkout status
       return {
         id: documentId,
         title: 'Checked In Document',
         file_name: 'document.pdf',
+        file_path: '',
         file_size: 1024,
         file_type: 'application/pdf',
         category: 'Other',
@@ -113,8 +161,8 @@ export const useDocumentService = () => {
         version: 1,
         created_at: new Date().toISOString(),
         created_by: 'Current User',
-        checkout_status: CheckoutStatus.Available,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        checkout_status: CheckoutStatus.Available
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to checkin document';
@@ -124,6 +172,18 @@ export const useDocumentService = () => {
       setLoading(false);
     }
   };
+  
+  // Storage functions
+  const getDownloadUrl = async (path: string): Promise<string> => {
+    // Mock implementation
+    console.log(`Getting download URL for path: ${path}`);
+    return `https://example.com/files/${path}`;
+  };
+  
+  const getStoragePath = (documentId: string, fileName: string): string => {
+    // Mock implementation
+    return `documents/${documentId}/${fileName}`;
+  };
 
   return {
     loading,
@@ -131,7 +191,11 @@ export const useDocumentService = () => {
     fetchDocuments,
     createDocument,
     checkoutDocument,
-    checkinDocument
+    checkinDocument,
+    getDocumentComments,
+    createDocumentComment,
+    getDownloadUrl,
+    getStoragePath
   };
 };
 
