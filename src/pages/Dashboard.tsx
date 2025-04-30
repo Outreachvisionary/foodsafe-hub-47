@@ -1,146 +1,175 @@
 
-import React from 'react';
-import DashboardContent from '@/components/dashboard/DashboardOverview';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import useProfileRealtime from '@/hooks/useProfileRealtime';
-import { LayoutDashboard, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import DashboardHeader from '@/components/DashboardHeader';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { ArrowRight, FileText, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 
-const Dashboard = () => {
-  const { user } = useUser();
-  const { isListening } = useProfileRealtime();
+const Dashboard: React.FC = () => {
+  const { user, loading } = useUser();
+  const navigate = useNavigate();
   
-  React.useEffect(() => {
-    console.log('Dashboard mounted, user:', user?.email);
-    console.log('Profile listener active:', isListening);
-  }, [user, isListening]);
-  
-  // Get display name from user profile, safely
-  const displayName = user?.displayName || user?.email?.split('@')[0] || '';
-  
+  useEffect(() => {
+    if (user) {
+      console.info('Dashboard mounted, user:', user.email);
+    }
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Get user name from email or profile
+  const userName = user?.user_metadata?.full_name || user?.email || 'User';
+
   return (
-    <div className="container mx-auto space-y-8">
-      {/* Header */}
-      <motion.header 
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div>
-          <h1 className="text-3xl font-display font-bold flex items-center gap-3">
-            <LayoutDashboard className="h-8 w-8 text-accent" />
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Dashboard
-            </span>
-          </h1>
-          <p className="text-foreground-secondary mt-1">
-            Welcome back{displayName ? `, ${displayName}` : ''}. Here's your compliance overview.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button size="sm" variant="outline">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-            <span>View Alerts</span>
-          </Button>
-          <Button size="sm">
-            <CheckCircle className="h-4 w-4" />
-            <span>Run Compliance Check</span>
-          </Button>
-        </div>
-      </motion.header>
+    <div>
+      <DashboardHeader title={`Welcome, ${userName}`} subtitle="Your compliance management dashboard" />
       
-      {/* Welcome Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="overflow-hidden border-accent-subtle">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mt-20 -mr-20" />
+      <div className="container py-6">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          </TabsList>
           
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-2xl font-display font-bold">
-              Welcome to Compliance Core
-            </CardTitle>
-            <CardDescription className="text-base">
-              Your comprehensive solution for food safety management and compliance
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="relative z-10">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-1">
-                <p className="text-foreground/90 mb-4">
-                  The dashboard provides an overview of your compliance status across all modules. 
-                  Use the sidebar to navigate to specific features.
-                </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="default" size="sm">
-                    <span>View Tutorial</span>
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <span>Documentation</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-primary" />
+                    Documents
+                  </CardTitle>
+                  <CardDescription>Document management overview</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Total Documents</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Pending Review</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Expiring Soon</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => navigate('/documents')}>
+                      View Documents <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="flex gap-4 items-start">
-                <StatusCard 
-                  title="Overall Compliance"
-                  value="87%" 
-                  status="success"
-                  description="Last updated today"
-                />
-                
-                <StatusCard 
-                  title="Open Issues"
-                  value="12" 
-                  status="warning"
-                  description="3 require attention"
-                />
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
+                    CAPAs
+                  </CardTitle>
+                  <CardDescription>Corrective and preventive actions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Open CAPAs</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Overdue</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Completed This Month</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => navigate('/capa')}>
+                      Manage CAPAs <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="h-5 w-5 mr-2 text-amber-500" />
+                    Upcoming Tasks
+                  </CardTitle>
+                  <CardDescription>Tasks requiring your attention</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Document Reviews</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Training Sessions</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Audits</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => navigate('/tasks')}>
+                      View Tasks <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-      
-      {/* Dashboard Content */}
-      <DashboardContent />
-    </div>
-  );
-};
-
-interface StatusCardProps {
-  title: string;
-  value: string;
-  status: 'success' | 'warning' | 'danger';
-  description: string;
-}
-
-const StatusCard: React.FC<StatusCardProps> = ({ title, value, status, description }) => {
-  const bgColor = {
-    success: 'bg-success-muted',
-    warning: 'bg-warning-muted',
-    danger: 'bg-destructive/10'
-  };
-  
-  const textColor = {
-    success: 'text-success',
-    warning: 'text-warning-foreground',
-    danger: 'text-destructive'
-  };
-  
-  return (
-    <div className={`p-4 rounded-lg ${bgColor[status]} border border-${status === 'success' ? 'success' : status === 'warning' ? 'warning' : 'destructive'}/20`}>
-      <h3 className="text-sm font-medium text-foreground-secondary">{title}</h3>
-      <p className={`text-2xl font-bold ${textColor[status]}`}>{value}</p>
-      <p className="text-xs text-foreground-muted">{description}</p>
+            
+            <Alert className="mt-6">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>System Status</AlertTitle>
+              <AlertDescription>All systems are operational.</AlertDescription>
+            </Alert>
+          </TabsContent>
+          
+          <TabsContent value="documents">
+            <Card>
+              <CardHeader>
+                <CardTitle>Document Management</CardTitle>
+                <CardDescription>
+                  Manage your documents, SOPs, and other compliance files
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="mb-4">Access all documents in the document repository.</p>
+                  <Button onClick={() => navigate('/documents')}>Go to Documents</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="tasks">
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Management</CardTitle>
+                <CardDescription>
+                  View and manage your assigned tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="mb-4">You have no pending tasks at this time.</p>
+                  <Button onClick={() => navigate('/tasks')}>View All Tasks</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

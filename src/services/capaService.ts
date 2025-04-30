@@ -1,196 +1,145 @@
 
-import { CAPA, CAPAStats } from '@/types/capa';
+import { CAPA, CAPAStats, CAPAFilter } from '@/types/capa';
+import { supabase } from '@/integrations/supabase/client';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { CAPAActivity } from '@/components/capa/CAPAActivityList';
 import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
 
-// Mock data and service functions
-export const getCAPAs = async (): Promise<CAPA[]> => {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'Temperature monitoring system failure',
-          description: 'Cold storage temperature monitoring system failed during weekend',
-          status: CAPAStatus.Open,
-          priority: CAPAPriority.High,
-          source: CAPASource.InternalReport,
-          source_id: 'IR-2023-0042',
-          assigned_to: 'John Doe',
-          created_by: 'Jane Smith',
-          created_at: '2023-09-15T10:30:00Z',
-          updated_at: '2023-09-15T10:30:00Z',
-          due_date: '2023-10-15T10:30:00Z',
-          root_cause: 'Power surge damaged sensor calibration',
-          corrective_action: 'Replace damaged sensors and install surge protectors',
-          preventive_action: 'Implement backup power system for monitoring equipment',
-          department: 'Quality Assurance',
-          fsma204_compliant: true
-        },
-        {
-          id: '2',
-          title: 'Foreign material found in finished product',
-          description: 'Metal fragment detected in finished product during final inspection',
-          status: CAPAStatus.InProgress,
-          priority: CAPAPriority.Critical,
-          source: CAPASource.NonConformance,
-          source_id: 'NC-2023-0089',
-          assigned_to: 'Robert Johnson',
-          created_by: 'Maria Garcia',
-          created_at: '2023-09-10T14:20:00Z',
-          updated_at: '2023-09-12T09:45:00Z',
-          due_date: '2023-09-25T14:20:00Z',
-          root_cause: 'Metal detector sensitivity set too low',
-          corrective_action: 'Adjust metal detector settings and revalidate',
-          preventive_action: 'Implement daily verification of metal detector sensitivity',
-          department: 'Production',
-          fsma204_compliant: true
+/**
+ * Fetch CAPAs with optional filtering
+ */
+export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
+  try {
+    let query = supabase.from('capa_actions').select('*');
+    
+    if (filter) {
+      if (filter.status) {
+        const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
+        const statusStrings = statuses.map(status => status.toString().replace(/_/g, ' '));
+        query = query.in('status', statusStrings);
+      }
+      
+      if (filter.priority) {
+        const priorities = Array.isArray(filter.priority) ? filter.priority : [filter.priority];
+        const priorityStrings = priorities.map(priority => priority.toString());
+        query = query.in('priority', priorityStrings);
+      }
+      
+      if (filter.source) {
+        const sources = Array.isArray(filter.source) ? filter.source : [filter.source];
+        const sourceStrings = sources.map(source => source.toString().replace(/_/g, ' '));
+        query = query.in('source', sourceStrings);
+      }
+      
+      if (filter.department) {
+        const departments = Array.isArray(filter.department) ? filter.department : [filter.department];
+        query = query.in('department', departments);
+      }
+      
+      if (filter.dateRange) {
+        if (filter.dateRange.start) {
+          query = query.gte('created_at', filter.dateRange.start);
         }
-      ]);
-    }, 500);
-  });
-};
-
-export const getRecentCAPAs = async (): Promise<CAPA[]> => {
-  const allCAPAs = await getCAPAs();
-  return allCAPAs.slice(0, 5);
-};
-
-export const getCAPA = async (id: string): Promise<CAPA> => {
-  const allCAPAs = await getCAPAs();
-  const capa = allCAPAs.find(c => c.id === id);
-  
-  if (!capa) {
-    throw new Error(`CAPA with ID ${id} not found`);
+        if (filter.dateRange.end) {
+          query = query.lte('created_at', filter.dateRange.end);
+        }
+      }
+      
+      if (filter.searchTerm) {
+        query = query.or(`title.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
+      }
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data as CAPA[] || [];
+  } catch (error) {
+    console.error('Error fetching CAPAs:', error);
+    return [];
   }
-  
-  return capa;
 };
 
-export const updateCAPA = async (id: string, updates: Partial<CAPA>): Promise<CAPA> => {
-  // Mock implementation
-  const capa = await getCAPA(id);
-  
-  // Merge updates
-  const updatedCAPA: CAPA = {
-    ...capa,
-    ...updates,
-    updated_at: new Date().toISOString()
-  };
-  
-  return updatedCAPA;
-};
-
-export const createCAPA = async (capaData: Partial<CAPA>): Promise<CAPA> => {
-  // Mock implementation
-  const newCAPA: CAPA = {
-    id: Date.now().toString(),
-    title: capaData.title || '',
-    description: capaData.description || '',
-    status: capaData.status || CAPAStatus.Open,
-    priority: capaData.priority || CAPAPriority.Medium,
-    source: capaData.source || CAPASource.InternalReport,
-    source_id: capaData.source_id || '',
-    assigned_to: capaData.assigned_to || '',
-    created_by: 'Current User',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    due_date: capaData.due_date,
-    root_cause: capaData.root_cause || '',
-    corrective_action: capaData.corrective_action || '',
-    preventive_action: capaData.preventive_action || '',
-    department: capaData.department || '',
-    fsma204_compliant: capaData.fsma204_compliant || false
-  };
-  
-  return newCAPA;
-};
-
-export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          capa_id: capaId,
-          performed_at: '2023-09-15T10:30:00Z',
-          old_status: null,
-          new_status: CAPAStatus.Open,
-          action_type: 'creation',
-          action_description: 'CAPA created',
-          performed_by: 'Jane Smith'
-        },
-        {
-          id: '2',
-          capa_id: capaId,
-          performed_at: '2023-09-16T14:20:00Z',
-          old_status: CAPAStatus.Open,
-          new_status: CAPAStatus.InProgress,
-          action_type: 'status_change',
-          action_description: 'Status updated',
-          performed_by: 'John Doe'
-        },
-        {
-          id: '3',
-          capa_id: capaId,
-          performed_at: '2023-09-17T09:15:00Z',
-          old_status: null,
-          new_status: null,
-          action_type: 'comment',
-          action_description: 'Added root cause analysis',
-          performed_by: 'John Doe'
-        }
-      ]);
-    }, 500);
-  });
-};
-
+/**
+ * Get CAPA statistics
+ */
 export const getCAPAStats = async (): Promise<CAPAStats> => {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        total: 35,
-        open: 12,
-        inProgress: 8,
-        completed: 10,
-        overdue: 5,
-        byPriority: {
-          [CAPAPriority.Low]: 8,
-          [CAPAPriority.Medium]: 14,
-          [CAPAPriority.High]: 10,
-          [CAPAPriority.Critical]: 3
-        },
-        bySource: {
-          [CAPASource.Audit]: 7,
-          [CAPASource.CustomerComplaint]: 5,
-          [CAPASource.InternalReport]: 8,
-          [CAPASource.NonConformance]: 10,
-          [CAPASource.RegulatoryInspection]: 2,
-          [CAPASource.SupplierIssue]: 3,
-          [CAPASource.Other]: 0
-        },
-        byDepartment: {
-          'Quality Assurance': 12,
-          'Production': 9,
-          'Warehouse': 5,
-          'R&D': 3,
-          'Maintenance': 6
-        },
-        recentActivities: [
-          {
-            id: '1',
-            capaId: '1',
-            action: 'Status changed',
-            timestamp: '2023-09-18T14:30:00Z',
-            user: 'John Doe',
-            details: 'Status updated from Open to In Progress'
-          }
-        ]
-      });
-    }, 500);
-  });
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*');
+    
+    if (error) throw error;
+    
+    const stats: CAPAStats = {
+      total: data.length,
+      open: data.filter(capa => capa.status === 'Open').length,
+      inProgress: data.filter(capa => capa.status === 'In Progress').length,
+      completed: data.filter(capa => capa.status === 'Completed').length,
+      overdue: data.filter(capa => {
+        if (!capa.due_date) return false;
+        return new Date(capa.due_date) < new Date() && ['Open', 'In Progress'].includes(capa.status);
+      }).length,
+      byPriority: createEmptyCAPAPriorityRecord(),
+      bySource: createEmptyCAPASourceRecord(),
+      byDepartment: {},
+      recentActivities: []
+    };
+    
+    // Process priority stats
+    data.forEach(capa => {
+      // Handle priorities
+      const priority = capa.priority as string;
+      if (priority) {
+        const enumKey = priority.replace(/ /g, '') as CAPAPriority;
+        if (stats.byPriority[enumKey] !== undefined) {
+          stats.byPriority[enumKey]++;
+        }
+      }
+      
+      // Handle sources
+      const source = capa.source as string;
+      if (source) {
+        const enumKey = source.replace(/ /g, '_') as CAPASource;
+        if (stats.bySource[enumKey] !== undefined) {
+          stats.bySource[enumKey]++;
+        }
+      }
+      
+      // Handle departments
+      const department = capa.department as string;
+      if (department) {
+        if (!stats.byDepartment[department]) {
+          stats.byDepartment[department] = 0;
+        }
+        stats.byDepartment[department]++;
+      }
+    });
+    
+    // Get recent activities
+    const { data: activities, error: actError } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .order('performed_at', { ascending: false })
+      .limit(10);
+    
+    if (!actError && activities) {
+      stats.recentActivities = activities;
+    }
+    
+    return stats;
+  } catch (error) {
+    console.error('Error fetching CAPA stats:', error);
+    return {
+      total: 0,
+      open: 0,
+      inProgress: 0,
+      completed: 0,
+      overdue: 0,
+      byPriority: createEmptyCAPAPriorityRecord(),
+      bySource: createEmptyCAPASourceRecord(),
+      byDepartment: {},
+      recentActivities: []
+    };
+  }
 };

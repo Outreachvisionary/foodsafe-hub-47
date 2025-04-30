@@ -19,12 +19,13 @@ interface CAPAListProps {
     department?: string;
   };
   limit?: number;
+  searchQuery?: string;
 }
 
-const CAPAList: React.FC<CAPAListProps> = ({ filter, limit }) => {
+const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externalSearchQuery }) => {
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearchQuery || '');
   const [statusFilter, setStatusFilter] = useState<CAPAStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<CAPAPriority | ''>('');
   const [sourceFilter, setSourceFilter] = useState<CAPASource | ''>('');
@@ -32,15 +33,18 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
+    if (externalSearchQuery !== undefined) {
+      setSearchQuery(externalSearchQuery);
+    }
     fetchCAPAs();
-  }, [filter, statusFilter, priorityFilter, sourceFilter]);
+  }, [filter, statusFilter, priorityFilter, sourceFilter, externalSearchQuery]);
   
   const fetchCAPAs = async () => {
     try {
       setLoading(true);
       
       // Combine component filters with prop filters
-      const combinedFilter = {
+      const combinedFilter: any = {
         ...filter,
       };
       

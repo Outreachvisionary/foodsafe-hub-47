@@ -1,19 +1,20 @@
 
 export type ComplaintCategory = 
-  | 'Product Quality'
-  | 'Foreign Material'
+  | 'Product_Quality'
+  | 'Foreign_Material'
   | 'Packaging'
   | 'Labeling'
-  | 'Customer Service'
+  | 'Customer_Service'
   | 'Other';
 
 export type ComplaintStatus = 
   | 'New'
-  | 'Under Investigation'
+  | 'Under_Investigation'
   | 'Resolved'
   | 'Closed'
+  | 'Reopened'
   | 'Escalated'
-  | 'On Hold';
+  | 'On_Hold';
 
 export type ComplaintPriority = 
   | 'Low'

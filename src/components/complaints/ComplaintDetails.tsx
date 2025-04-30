@@ -9,6 +9,7 @@ import { Complaint, ComplaintStatus } from '@/types/complaint';
 import { fetchComplaintById, updateComplaintStatus } from '@/services/complaintService';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { isComplaintStatusEqual } from '@/utils/complaintUtils';
 
 interface ComplaintDetailsProps {}
 

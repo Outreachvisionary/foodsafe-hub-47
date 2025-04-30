@@ -14,26 +14,16 @@ import { useToast } from '@/hooks/use-toast';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import { CAPAStats, CAPAPriority, CAPASource } from '@/types/capa';
+import { CAPAStats, CAPAFilter } from '@/types/capa';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import { createEmptyCAPAPriorityRecord, createEmptyCAPASourceRecord } from '@/utils/typeAdapters';
 
-// Fix type for filter props
+// Update interfaces to match the expected component props
 interface CAPAFilterProps {
   status: string;
   priority: string;
   source: string;
   dueDate: string;
-}
-
-// Set proper props for AutomatedCAPAGenerator
-interface AutomatedCAPAGeneratorProps {
-  onCAPACreated: (capaData: any) => void;
-}
-
-// Update CAPAList props
-interface CAPAListProps {
-  filter?: CAPAFilterProps;
-  searchQuery?: string;
 }
 
 const CAPAPage = () => {
@@ -95,6 +85,37 @@ const CAPAPage = () => {
       });
     }
   }, [showAutomation, toast]);
+  
+  // Convert filter props to the format expected by CAPAList
+  const mapFiltersToProps = (): CAPAFilter => {
+    const result: CAPAFilter = {};
+    
+    if (filters.status && filters.status !== 'all') {
+      try {
+        result.status = filters.status.toUpperCase() as CAPAStatus;
+      } catch (e) {
+        console.error('Invalid status value:', filters.status);
+      }
+    }
+    
+    if (filters.priority && filters.priority !== 'all') {
+      try {
+        result.priority = filters.priority.toUpperCase() as CAPAPriority;
+      } catch (e) {
+        console.error('Invalid priority value:', filters.priority);
+      }
+    }
+    
+    if (filters.source && filters.source !== 'all') {
+      try {
+        result.source = filters.source.toUpperCase() as CAPASource;
+      } catch (e) {
+        console.error('Invalid source value:', filters.source);
+      }
+    }
+    
+    return result;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -191,11 +212,6 @@ const CAPAPage = () => {
             <Button onClick={() => setCreateCAPADialogOpen(true)}>
               Create CAPA
             </Button>
-            <CreateCAPADialog 
-              open={createCAPADialogOpen} 
-              onOpenChange={setCreateCAPADialogOpen} 
-              onCAPACreated={handleCAPACreated} 
-            />
           </div>
         </div>
         
@@ -225,7 +241,7 @@ const CAPAPage = () => {
           </TabsContent>
           
           <TabsContent value="list">
-            <CAPAList filter={filters} searchQuery={searchQuery} />
+            <CAPAList filter={mapFiltersToProps()} searchQuery={searchQuery} />
           </TabsContent>
           
           <TabsContent value="effectiveness">
@@ -237,6 +253,12 @@ const CAPAPage = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <CreateCAPADialog 
+        open={createCAPADialogOpen} 
+        onOpenChange={setCreateCAPADialogOpen} 
+        onCAPACreated={handleCAPACreated} 
+      />
     </div>
   );
 };

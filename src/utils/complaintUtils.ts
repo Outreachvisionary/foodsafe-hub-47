@@ -1,26 +1,27 @@
 
-import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
+import { Complaint, ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/complaint';
 
 /**
- * Maps a complaint object to database format
- * Handles any necessary transformations for database compatibility
+ * Maps a complaint object to the database-friendly format
  */
-export const mapComplaintToDb = (complaint: Partial<Complaint>): any => {
+export const mapComplaintToDb = (complaint: Partial<Complaint>) => {
   return {
-    title: complaint.title,
-    description: complaint.description,
-    category: complaint.category,
-    status: complaint.status,
-    priority: complaint.priority,
-    reported_date: complaint.reported_date,
-    resolution_date: complaint.resolution_date,
-    created_by: complaint.created_by,
-    customer_name: complaint.customer_name,
-    customer_contact: complaint.customer_contact,
-    product_involved: complaint.product_involved,
-    lot_number: complaint.lot_number,
-    capa_required: complaint.capa_required,
-    assigned_to: complaint.assigned_to,
-    capa_id: complaint.capa_id
+    ...complaint
   };
+};
+
+/**
+ * Checks if a complaint status is equal to a target status
+ */
+export const isComplaintStatusEqual = (status: any, targetStatus: ComplaintStatus): boolean => {
+  if (!status) return false;
+  
+  // Handle string comparison, normalizing underscores vs. spaces
+  if (typeof status === 'string' && typeof targetStatus === 'string') {
+    const normalizedStatus = status.replace(/ /g, '_').toLowerCase();
+    const normalizedTarget = targetStatus.replace(/ /g, '_').toLowerCase();
+    return normalizedStatus === normalizedTarget;
+  }
+  
+  return status === targetStatus;
 };

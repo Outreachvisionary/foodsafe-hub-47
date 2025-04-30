@@ -64,9 +64,22 @@ export const useTrainingSessions = () => {
     try {
       setLoading(true);
       
+      // Ensure required fields are present
+      const requiredData = {
+        title: sessionData.title || 'Untitled Session',
+        training_type: sessionData.training_type || 'Other',
+        assigned_to: sessionData.assigned_to || [],
+        created_by: sessionData.created_by || 'system'
+      };
+      
+      const newSession = {
+        ...sessionData,
+        ...requiredData
+      };
+      
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert([sessionData])
+        .insert([newSession])
         .select()
         .single();
       
