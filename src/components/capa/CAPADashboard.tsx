@@ -41,29 +41,26 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
   // Provide default empty stats if not provided or not loaded yet
   const safeStats: CAPAStats = stats || {
     total: 0,
-    openCount: 0,
-    closedCount: 0,
-    overdueCount: 0,
-    pendingVerificationCount: 0,
-    effectivenessRate: 0,
+    open: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0,
     byPriority: {},
     bySource: {},
     byDepartment: {},
-    byStatus: {},
-    byMonth: {},
-    overdue: 0
+    recentActivities: []
   };
 
   // Status distribution data
   const statusData = {
-    labels: ['Open', 'In Progress', 'Overdue', 'Pending Verification'],
+    labels: ['Open', 'In Progress', 'Overdue', 'Completed'],
     datasets: [
       {
         data: [
-          safeStats.openCount,
-          safeStats.byStatus['In Progress'] || 0,
-          safeStats.overdueCount,
-          safeStats.pendingVerificationCount,
+          safeStats.open,
+          safeStats.inProgress,
+          safeStats.overdue,
+          safeStats.completed,
         ],
         backgroundColor: [
           'rgba(59, 130, 246, 0.7)', // blue
@@ -132,6 +129,11 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
     );
   }
 
+  // Calculate effectiveness rate
+  const effectivenessRate = safeStats.completed > 0 
+    ? Math.round((safeStats.completed / (safeStats.total || 1)) * 100)
+    : 0;
+
   return (
     <div className="space-y-6">
       {/* CAPA Overview Cards */}
@@ -153,7 +155,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Open CAPAs</p>
-                <h3 className="text-2xl font-bold text-blue-600">{safeStats.openCount}</h3>
+                <h3 className="text-2xl font-bold text-blue-600">{safeStats.open}</h3>
               </div>
               <Clock className="h-8 w-8 text-blue-400" />
             </div>
@@ -165,7 +167,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Overdue</p>
-                <h3 className="text-2xl font-bold text-red-600">{safeStats.overdueCount}</h3>
+                <h3 className="text-2xl font-bold text-red-600">{safeStats.overdue}</h3>
               </div>
               <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
@@ -176,8 +178,8 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Closed</p>
-                <h3 className="text-2xl font-bold text-green-600">{safeStats.closedCount}</h3>
+                <p className="text-sm font-medium text-gray-500">Completed</p>
+                <h3 className="text-2xl font-bold text-green-600">{safeStats.completed}</h3>
               </div>
               <CheckCircle className="h-8 w-8 text-green-400" />
             </div>
@@ -193,9 +195,9 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
         <CardContent>
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <Progress value={safeStats.effectivenessRate} />
+              <Progress value={effectivenessRate} />
             </div>
-            <div className="text-2xl font-bold text-green-600">{safeStats.effectivenessRate}%</div>
+            <div className="text-2xl font-bold text-green-600">{effectivenessRate}%</div>
           </div>
           
           <div className="mt-4 text-sm text-gray-500">
@@ -236,7 +238,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
       </div>
       
       {/* Alerts Section */}
-      {safeStats.overdueCount > 0 && (
+      {safeStats.overdue > 0 && (
         <Card className="border-red-200 bg-red-50">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-red-800">
@@ -246,7 +248,7 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats: propStats }) => {
           </CardHeader>
           <CardContent>
             <p className="text-red-700">
-              There {safeStats.overdueCount === 1 ? 'is' : 'are'} {safeStats.overdueCount} overdue CAPA{safeStats.overdueCount === 1 ? '' : 's'} requiring immediate attention.
+              There {safeStats.overdue === 1 ? 'is' : 'are'} {safeStats.overdue} overdue CAPA{safeStats.overdue === 1 ? '' : 's'} requiring immediate attention.
             </p>
           </CardContent>
         </Card>

@@ -57,6 +57,31 @@ export interface CAPAStats {
   recentActivities: CAPAActivity[];
 }
 
+export interface CAPAFilter {
+  status?: CAPAStatus | CAPAStatus[];
+  priority?: CAPAPriority | CAPAPriority[];
+  source?: CAPASource | CAPASource[];
+  department?: string | string[];
+  createdDateFrom?: string;
+  createdDateTo?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  assignedTo?: string | string[];
+  searchTerm?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface CAPAFetchParams extends CAPAFilter {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  searchQuery?: string;
+}
+
 export interface CAPAEffectivenessAssessment {
   id: string;
   capa_id: string;

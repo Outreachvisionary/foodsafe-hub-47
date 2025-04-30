@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { createCAPA } from '@/services/capaService';
 import { CAPA } from '@/types/capa';
-import { CAPAStatus } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 interface CreateCAPADialogProps {
   onSuccess?: (capa: CAPA) => void;
@@ -34,8 +34,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('Medium');
-  const [source, setSource] = useState('Audit');
+  const [priority, setPriority] = useState<CAPAPriority>(CAPAPriority.Medium);
+  const [source, setSource] = useState<CAPASource>(CAPASource.Audit);
   const [sourceReference, setSourceReference] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -82,9 +82,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
         source_reference: sourceReference,
         department,
         root_cause: rootCause,
-        fsma204_compliant: fsma204Compliant,
-        relatedDocuments: [],
-        relatedTraining: []
+        fsma204_compliant: fsma204Compliant
       };
       
       const newCAPA = await createCAPA(capaData);
@@ -120,8 +118,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setPriority('Medium');
-    setSource('Audit');
+    setPriority(CAPAPriority.Medium);
+    setSource(CAPASource.Audit);
     setSourceReference('');
     setAssignedTo('');
     setDueDate('');
@@ -165,33 +163,39 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
+                <Select 
+                  value={priority} 
+                  onValueChange={(value) => setPriority(value as CAPAPriority)}
+                >
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value={CAPAPriority.Low}>Low</SelectItem>
+                    <SelectItem value={CAPAPriority.Medium}>Medium</SelectItem>
+                    <SelectItem value={CAPAPriority.High}>High</SelectItem>
+                    <SelectItem value={CAPAPriority.Critical}>Critical</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="grid gap-2">
                 <Label htmlFor="source">Source</Label>
-                <Select value={source} onValueChange={setSource}>
+                <Select 
+                  value={source} 
+                  onValueChange={(value) => setSource(value as CAPASource)}
+                >
                   <SelectTrigger id="source">
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Audit">Audit</SelectItem>
-                    <SelectItem value="Customer_Complaint">Customer Complaint</SelectItem>
-                    <SelectItem value="Non_Conformance">Non-Conformance</SelectItem>
-                    <SelectItem value="Supplier_Issue">Supplier Issue</SelectItem>
-                    <SelectItem value="Internal_QC">Internal QC</SelectItem>
-                    <SelectItem value="Regulatory">Regulatory</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value={CAPASource.Audit}>Audit</SelectItem>
+                    <SelectItem value={CAPASource.CustomerComplaint}>Customer Complaint</SelectItem>
+                    <SelectItem value={CAPASource.NonConformance}>Non-Conformance</SelectItem>
+                    <SelectItem value={CAPASource.SupplierIssue}>Supplier Issue</SelectItem>
+                    <SelectItem value={CAPASource.RegulatoryInspection}>Regulatory Inspection</SelectItem>
+                    <SelectItem value={CAPASource.InternalReport}>Internal Report</SelectItem>
+                    <SelectItem value={CAPASource.Other}>Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

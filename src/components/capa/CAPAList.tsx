@@ -1,4 +1,3 @@
-// Only fixing the CAPASource handling
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -6,13 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { CAPA, CAPAFilter, CAPAFetchParams, CAPASource } from '@/types/capa';
+import { CAPA, CAPAFilter, CAPAFetchParams } from '@/types/capa';
 import { ListActions } from '@/components/ui/list-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { deleteCAPA, getCAPAs } from '@/services/capaService';
 import { isStatusEqual } from '@/services/capa/capaStatusService';
-import { CAPAStatus, CAPAPriority } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 interface CAPAListProps {
   filters: {
@@ -101,7 +100,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filters, searchQuery }) => {
           source: capaFilter.source,
           searchQuery: capaFilter.searchTerm,
           ...(capaFilter.dateRange && {
-            dueDate: capaFilter.dateRange.end
+            dueDateFrom: capaFilter.dateRange.start,
+            dueDateTo: capaFilter.dateRange.end
           })
         };
         

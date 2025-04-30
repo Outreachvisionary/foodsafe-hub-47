@@ -1,313 +1,381 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Document, 
+  DocumentVersion, 
+  DocumentComment,
+  DocumentFilter,
   DocumentStatus,
-  CheckoutStatus
+  CheckoutStatus,
+  DocumentCategory
 } from '@/types/document';
-import { 
-  getDocumentComments, 
-  createDocumentComment 
-} from '@/services/documentCommentService';
-import {
-  fetchDocumentAccess,
-  grantDocumentAccess,
-  revokeDocumentAccess
-} from '@/services/enhancedDocumentService';
 import { adaptDbDocumentToModel } from '@/utils/documentAdapters';
 
-export function useDocumentService() {
+export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Check out a document
-  const checkoutDocument = async (documentId: string, userId: string): Promise<Document | null> => {
+  const [error, setError] = useState<string | null>(null);
+  
+  const getDocuments = useCallback(async (filter?: DocumentFilter): Promise<Document[]> => {
     try {
       setLoading(true);
+      setError(null);
       
-      const { data, error: updateError } = await supabase
-        .from('documents')
-        .update({ 
-          checkout_status: CheckoutStatus.CheckedOut,
-          checkout_user_id: userId,
-          checkout_timestamp: new Date().toISOString()
-        })
-        .eq('id', documentId)
-        .select()
-        .single();
+      let query = supabase.from('documents').select('*');
       
-      if (updateError) throw updateError;
+      if (filter) {
+        if (filter.category) {
+          query = query.in('category', Array.isArray(filter.category) ? filter.category : [filter.category]);
+        }
+        
+        if (filter.status) {
+          query = query.in('status', Array.isArray(filter.status) ? filter.status : [filter.status]);
+        }
+        
+        if (filter.createdBy) {
+          query = query.eq('created_by', filter.createdBy);
+        }
+        
+        if (filter.createdAfter) {
+          query = query.gte('created_at', filter.createdAfter);
+        }
+        
+        if (filter.createdBefore) {
+          query = query.lte('created_at', filter.createdBefore);
+        }
+        
+        if (filter.expiringBefore) {
+          query = query.lte('expiry_date', filter.expiringBefore);
+        }
+        
+        if (filter.folder_id) {
+          query = query.eq('folder_id', filter.folder_id);
+        }
+        
+        if (filter.searchTerm) {
+          query = query.or(`title.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
+        }
+      }
       
-      // Create document activity for checkout
-      await supabase
-        .from('document_activities')
-        .insert({
-          document_id: documentId,
-          user_id: userId,
-          user_name: 'Current User', 
-          user_role: 'User',
-          action: 'checkout',
-          checkout_action: 'checked_out'
-        });
+      const { data, error } = await query.order('updated_at', { ascending: false });
       
-      return adaptDbDocumentToModel(data);
-    } catch (err) {
-      console.error('Error checking out document:', err);
-      setError('Failed to check out document');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Check in a document
-  const checkinDocument = async (documentId: string, userId: string, comment?: string): Promise<Document | null> => {
-    try {
-      setLoading(true);
+      if (error) throw error;
       
-      const { data, error: updateError } = await supabase
-        .from('documents')
-        .update({ 
-          checkout_status: CheckoutStatus.Available,
-          checkout_user_id: null,
-          checkout_timestamp: null,
-          status: DocumentStatus.Active // Update status as needed
-        })
-        .eq('id', documentId)
-        .eq('checkout_user_id', userId) // Ensure only the user who checked out can check in
-        .select()
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      // Record check-in activity with comment if provided
-      await supabase
-        .from('document_activities')
-        .insert({
-          document_id: documentId,
-          user_id: userId,
-          user_name: 'Current User', 
-          user_role: 'User',
-          action: 'checkin',
-          comments: comment,
-          checkout_action: 'checked_in'
-        });
-      
-      return adaptDbDocumentToModel(data);
-    } catch (err) {
-      console.error('Error checking in document:', err);
-      setError('Failed to check in document');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch documents
-  const fetchDocuments = async (): Promise<Document[]> => {
-    try {
-      setLoading(true);
-      
-      const { data, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (fetchError) throw fetchError;
-      
-      return (data || []).map(doc => adaptDbDocumentToModel(doc));
+      return (data || []).map(adaptDbDocumentToModel);
     } catch (err) {
       console.error('Error fetching documents:', err);
-      setError('Failed to fetch documents');
+      setError('Failed to load documents.');
       return [];
     } finally {
       setLoading(false);
     }
-  };
-
-  // Create a new document
-  const createDocument = async (documentData: Partial<Document>): Promise<Document> => {
+  }, []);
+  
+  const getDocumentById = useCallback(async (id: string): Promise<Document | null> => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Convert Document type to database format
-      const dbDocument = {
-        ...documentData,
-        status: documentData.status || DocumentStatus.Draft,
-        version: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data, error: createError } = await supabase
+      const { data, error } = await supabase
         .from('documents')
-        .insert(dbDocument)
-        .select()
+        .select('*')
+        .eq('id', id)
         .single();
       
-      if (createError) throw createError;
+      if (error) throw error;
+      if (!data) return null;
       
-      // Create document activity for creation
+      return adaptDbDocumentToModel(data);
+    } catch (err) {
+      console.error(`Error fetching document with ID ${id}:`, err);
+      setError('Failed to load document.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const checkoutDocument = useCallback(async (
+    documentId: string, 
+    userId: string, 
+    userName: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // First, verify the document is available
+      const { data: doc, error: docError } = await supabase
+        .from('documents')
+        .select('checkout_status')
+        .eq('id', documentId)
+        .single();
+      
+      if (docError) throw docError;
+      
+      if (doc.checkout_status === CheckoutStatus.CheckedOut) {
+        setError('Document is already checked out by another user.');
+        return false;
+      }
+      
+      // Update the document's checkout status
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          checkout_status: CheckoutStatus.CheckedOut,
+          checkout_user_id: userId,
+          checkout_user_name: userName,
+          checkout_timestamp: new Date().toISOString()
+        })
+        .eq('id', documentId);
+      
+      if (updateError) throw updateError;
+      
+      // Record the activity
       await supabase
         .from('document_activities')
         .insert({
-          document_id: data.id,
-          user_id: documentData.created_by || 'system',
-          user_name: 'Current User',
-          user_role: 'Author',
-          action: 'create'
+          document_id: documentId,
+          user_id: userId,
+          user_name: userName,
+          user_role: 'User',
+          action: 'Document checked out',
+          checkout_action: 'checkout',
+          comments: `Document checked out by ${userName}`
         });
+      
+      return true;
+    } catch (err) {
+      console.error('Error checking out document:', err);
+      setError('Failed to checkout document.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const checkinDocument = useCallback(async (
+    documentId: string,
+    userId: string,
+    userName: string,
+    comment?: string
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update the document's checkout status
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          checkout_status: CheckoutStatus.Available,
+          checkout_user_id: null,
+          checkout_user_name: null,
+          checkout_timestamp: null,
+          status: DocumentStatus.Active
+        })
+        .eq('id', documentId);
+      
+      if (updateError) throw updateError;
+      
+      // Record the activity
+      await supabase
+        .from('document_activities')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          user_name: userName,
+          user_role: 'User',
+          action: 'Document checked in',
+          checkout_action: 'checkin',
+          comments: comment || `Document checked in by ${userName}`
+        });
+      
+      return true;
+    } catch (err) {
+      console.error('Error checking in document:', err);
+      setError('Failed to checkin document.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const getDocumentVersions = useCallback(async (documentId: string): Promise<DocumentVersion[]> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('document_versions')
+        .select('*')
+        .eq('document_id', documentId)
+        .order('version', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data as DocumentVersion[] || [];
+    } catch (err) {
+      console.error('Error fetching document versions:', err);
+      setError('Failed to load document versions.');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const createDocument = useCallback(async (document: Partial<Document>): Promise<Document | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const newDocument = {
+        status: DocumentStatus.Draft,
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...document,
+      };
+      
+      // Validate category is one of the allowed values
+      if (newDocument.category && !isValidDocumentCategory(newDocument.category as string)) {
+        setError('Invalid document category');
+        return null;
+      }
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .insert([newDocument])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       return adaptDbDocumentToModel(data);
     } catch (err) {
       console.error('Error creating document:', err);
-      setError('Failed to create document');
-      throw err;
+      setError('Failed to create document.');
+      return null;
     } finally {
       setLoading(false);
     }
-  };
-
-  // Get a download URL for a document
-  const getDownloadUrl = async (documentId: string, fileName: string): Promise<string | null> => {
+  }, []);
+  
+  const getDocumentComments = useCallback(async (documentId: string): Promise<DocumentComment[]> => {
     try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(`${documentId}/${fileName}`, 60); // 60 seconds expiry
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('document_comments')
+        .select('*')
+        .eq('document_id', documentId)
+        .order('created_at', { ascending: true });
       
       if (error) throw error;
       
-      return data.signedUrl;
+      return data as DocumentComment[] || [];
     } catch (err) {
-      console.error('Error getting document download URL:', err);
-      setError('Failed to get document download URL');
-      return null;
+      console.error('Error fetching document comments:', err);
+      setError('Failed to load document comments.');
+      return [];
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Get storage path for a document
-  const getStoragePath = (documentId: string, fileName: string): string => {
-    return `${documentId}/${fileName}`;
-  };
-
-  // Update document status
-  const updateDocumentStatus = async (documentId: string, newStatus: DocumentStatus, comment?: string) => {
+  }, []);
+  
+  const createDocumentComment = useCallback(async (
+    documentId: string,
+    userId: string,
+    userName: string,
+    content: string
+  ): Promise<DocumentComment | null> => {
     try {
       setLoading(true);
+      setError(null);
       
       const { data, error } = await supabase
-        .from('documents')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
+        .from('document_comments')
+        .insert({
+          document_id: documentId,
+          user_id: userId,
+          user_name: userName,
+          content
         })
-        .eq('id', documentId)
         .select()
         .single();
       
       if (error) throw error;
       
-      // Record status change activity
+      // Record comment activity
       await supabase
         .from('document_activities')
         .insert({
           document_id: documentId,
-          user_id: 'current_user',
-          user_name: 'Current User',
-          user_role: 'Editor',
-          action: `status_change_to_${newStatus}`,
-          comments: comment
+          user_id: userId,
+          user_name: userName,
+          user_role: 'Commenter',
+          action: 'comment',
+          comments: content.substring(0, 100) + (content.length > 100 ? '...' : '') // Include a preview
         });
       
-      return adaptDbDocumentToModel(data);
+      return data as DocumentComment;
     } catch (err) {
-      console.error('Error updating document status:', err);
-      setError(`Failed to update document status to ${newStatus}`);
+      console.error('Error creating document comment:', err);
+      setError('Failed to create comment.');
       return null;
     } finally {
       setLoading(false);
     }
-  };
-
-  // Approve document
-  const approveDocument = async (documentId: string, comment?: string) => {
-    return updateDocumentStatus(documentId, DocumentStatus.Approved, comment);
+  }, []);
+  
+  const deleteDocument = useCallback(async (documentId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Delete the document
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (err) {
+      console.error('Error deleting document:', err);
+      setError('Failed to delete document.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Helper function to check if a category is valid
+  const isValidDocumentCategory = (category: string): boolean => {
+    const validCategories: string[] = [
+      'Policy', 'Form', 'Training Material', 'Other', 'SOP', 
+      'Certificate', 'Audit Report', 'HACCP Plan', 
+      'Supplier Documentation', 'Risk Assessment'
+    ];
+    
+    return validCategories.includes(category);
   };
   
-  // Reject document
-  const rejectDocument = async (documentId: string, reason?: string) => {
-    return updateDocumentStatus(documentId, DocumentStatus.Rejected, reason);
-  };
-
-  // Publish document
-  const publishDocument = async (documentId: string, comment?: string) => {
-    return updateDocumentStatus(documentId, DocumentStatus.Published, comment);
-  };
-
-  // Archive document
-  const archiveDocument = async (documentId: string, reason?: string) => {
-    return updateDocumentStatus(documentId, DocumentStatus.Archived, reason);
-  };
-
-  // Fetch document access permissions
-  const fetchAccess = async (documentId: string) => {
-    try {
-      return await fetchDocumentAccess(documentId);
-    } catch (err) {
-      console.error('Error fetching document access:', err);
-      setError('Failed to fetch document access permissions');
-      return [];
-    }
-  };
-
-  // Grant access to a document
-  const grantAccess = async (
-    documentId: string,
-    userId: string,
-    permissionLevel: string,
-    grantedBy: string
-  ) => {
-    try {
-      return await grantDocumentAccess(documentId, userId, permissionLevel, grantedBy);
-    } catch (err) {
-      console.error('Error granting document access:', err);
-      setError('Failed to grant document access');
-      throw err;
-    }
-  };
-
-  // Revoke access to a document
-  const revokeAccess = async (accessId: string): Promise<void> => {
-    try {
-      await revokeDocumentAccess(accessId);
-    } catch (err) {
-      console.error('Error revoking document access:', err);
-      setError('Failed to revoke document access');
-      throw err;
-    }
-  };
-
   return {
     loading,
     error,
-    fetchDocuments,
-    createDocument,
+    getDocuments,
+    getDocumentById,
     checkoutDocument,
     checkinDocument,
+    getDocumentVersions,
+    createDocument,
     getDocumentComments,
     createDocumentComment,
-    getDownloadUrl,
-    getStoragePath,
-    fetchAccess,
-    grantAccess,
-    revokeAccess,
-    approveDocument,
-    rejectDocument,
-    publishDocument,
-    archiveDocument,
-    updateDocumentStatus
+    deleteDocument
   };
-}
+};
 
 export default useDocumentService;

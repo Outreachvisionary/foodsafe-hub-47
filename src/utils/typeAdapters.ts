@@ -1,90 +1,15 @@
 
-import { CheckoutStatus, DocumentStatus, CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
-import { Document } from '@/types/document';
 import { CAPA } from '@/types/capa';
+import { CAPAStatus } from '@/types/enums';
 
-export const isCheckoutStatus = (value: string, status: CheckoutStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isDocumentStatus = (value: string, status: DocumentStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isCAPAStatus = (value: string, status: CAPAStatus): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
-};
-
-export const isEffectivenessRating = (value: string, rating: CAPAEffectivenessRating): boolean => {
-  return value?.replace(/ /g, '_').toLowerCase() === rating.toLowerCase();
-};
-
-// Add function for adapting document model
-export const adaptDocumentToModel = (doc: any): Document => {
-  return {
-    ...doc,
-    status: doc.status as DocumentStatus,
-    checkout_status: doc.checkout_status as CheckoutStatus
-  };
-};
-
-// Convert to CAPA status from string
-export const convertToCAPAStatus = (statusString: string): CAPAStatus => {
-  const normalizedStatus = statusString.replace(/ /g, '_');
-  
-  switch(normalizedStatus.toLowerCase()) {
-    case 'open': return CAPAStatus.Open;
-    case 'in_progress': return CAPAStatus.InProgress;
-    case 'under_review': return CAPAStatus.UnderReview;
-    case 'completed': return CAPAStatus.Completed;
-    case 'closed': return CAPAStatus.Closed;
-    case 'rejected': return CAPAStatus.Rejected;
-    case 'on_hold': return CAPAStatus.OnHold;
-    case 'overdue': return CAPAStatus.Overdue;
-    case 'pending_verification': return CAPAStatus.PendingVerification;
-    case 'verified': return CAPAStatus.Verified;
-    default: return CAPAStatus.Open;
-  }
-};
-
-// Function to convert string to effectiveness rating
-export const convertToEffectivenessRating = (rating: string): CAPAEffectivenessRating => {
-  const normalizedRating = rating.replace(/ /g, '_');
-  
-  switch(normalizedRating.toLowerCase()) {
-    case 'not_effective': return CAPAEffectivenessRating.NotEffective;
-    case 'partially_effective': return CAPAEffectivenessRating.PartiallyEffective;
-    case 'effective': return CAPAEffectivenessRating.Effective;
-    case 'highly_effective': return CAPAEffectivenessRating.HighlyEffective;
-    default: return CAPAEffectivenessRating.NotEffective;
-  }
-};
-
-export const mapDocumentStatusFromString = (status: string): DocumentStatus => {
-  const normalizedStatus = status.replace(/ /g, '_');
-  
-  switch(normalizedStatus.toLowerCase()) {
-    case 'draft': return DocumentStatus.Draft;
-    case 'in_review': return DocumentStatus.InReview;
-    case 'pending_review': return DocumentStatus.PendingReview;
-    case 'pending_approval': return DocumentStatus.PendingApproval;
-    case 'approved': return DocumentStatus.Approved;
-    case 'published': return DocumentStatus.Published;
-    case 'archived': return DocumentStatus.Archived;
-    case 'rejected': return DocumentStatus.Rejected;
-    case 'obsolete': return DocumentStatus.Obsolete;
-    case 'active': return DocumentStatus.Active;
-    case 'expired': return DocumentStatus.Expired;
-    default: return DocumentStatus.Draft;
-  }
-};
-
-// Add the missing convertDatabaseCAPAToModel function
+/**
+ * Converts a database CAPA object to the CAPA model
+ */
 export const convertDatabaseCAPAToModel = (dbCapa: any): CAPA => {
   return {
     id: dbCapa.id,
     title: dbCapa.title,
-    description: dbCapa.description,
+    description: dbCapa.description || '',
     status: dbCapa.status as CAPAStatus,
     priority: dbCapa.priority,
     source: dbCapa.source,
@@ -100,13 +25,77 @@ export const convertDatabaseCAPAToModel = (dbCapa: any): CAPA => {
     preventive_action: dbCapa.preventive_action,
     verification_method: dbCapa.verification_method,
     effectiveness_criteria: dbCapa.effectiveness_criteria,
-    effectiveness_rating: dbCapa.effectiveness_rating as CAPAEffectivenessRating,
+    effectiveness_rating: dbCapa.effectiveness_rating,
     verified_by: dbCapa.verified_by,
     verification_date: dbCapa.verification_date,
-    fsma204_compliant: dbCapa.fsma204_compliant,
+    fsma204_compliant: dbCapa.fsma204_compliant || false,
     department_id: dbCapa.department_id,
     facility_id: dbCapa.facility_id,
     department: dbCapa.department,
     source_reference: dbCapa.source_reference
   };
+};
+
+/**
+ * Checks if a status value is equal to a given status string
+ */
+export const isStatusEqual = (status: any, targetStatus: string): boolean => {
+  if (!status) return false;
+  
+  // Handle enum-style status with underscores
+  if (typeof status === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
+  }
+  
+  return false;
+};
+
+/**
+ * Converts a string to camelCase
+ */
+export const toCamelCase = (str: string): string => {
+  return str.replace(/_([a-z])/g, (match, group) => group.toUpperCase());
+};
+
+/**
+ * Converts a string to snake_case
+ */
+export const toSnakeCase = (str: string): string => {
+  return str.replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`);
+};
+
+/**
+ * Converts a string status to CAPAStatus enum
+ */
+export const convertToCAPAStatus = (status: string): CAPAStatus => {
+  switch (status.toLowerCase()) {
+    case 'open':
+      return CAPAStatus.Open;
+    case 'in progress':
+    case 'in_progress':
+      return CAPAStatus.InProgress;
+    case 'completed':
+      return CAPAStatus.Completed;
+    case 'closed':
+      return CAPAStatus.Closed;
+    case 'rejected':
+      return CAPAStatus.Rejected;
+    case 'on hold':
+    case 'on_hold':
+      return CAPAStatus.OnHold;
+    case 'overdue':
+      return CAPAStatus.Overdue;
+    case 'pending verification':
+    case 'pending_verification':
+      return CAPAStatus.PendingVerification;
+    case 'verified':
+      return CAPAStatus.Verified;
+    case 'under review':
+    case 'under_review':
+      return CAPAStatus.UnderReview;
+    default:
+      return CAPAStatus.Open;
+  }
 };

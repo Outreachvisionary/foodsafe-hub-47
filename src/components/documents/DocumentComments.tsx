@@ -43,12 +43,12 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({ documentId }) => {
     if (!newComment.trim()) return;
     
     try {
-      await documentService.createDocumentComment({
-        document_id: documentId,
-        content: newComment,
-        user_id: 'currentUser',
-        user_name: 'Current User'
-      });
+      await documentService.createDocumentComment(
+        documentId,
+        'currentUser',
+        'Current User',
+        newComment
+      );
       
       setNewComment('');
       fetchComments();
