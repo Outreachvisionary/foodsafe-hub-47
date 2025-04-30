@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Download, Eye, Code, FileCode } from 'lucide-react';
-import useDocumentService from '@/hooks/useDocumentService';
+import { useDocumentService } from '@/hooks/useDocumentService';
+import { Document } from '@/types/document';
 
 interface DocumentViewerProps {
   document: Document;
@@ -35,13 +36,13 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
         if (document.file_type === 'application/pdf') {
           // Handle PDF preview
           const url = await documentService.getDownloadUrl(
-            documentService.getStoragePath(document.id, document.file_name)
+            document.id, document.file_name
           );
           setPreviewUrl(url);
         } else if (document.file_type?.startsWith('image/')) {
           // Handle image preview
           const url = await documentService.getDownloadUrl(
-            documentService.getStoragePath(document.id, document.file_name)
+            document.id, document.file_name
           );
           setPreviewUrl(url);
         } else {
@@ -62,7 +63,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
   const handleDownload = async () => {
     try {
       const url = await documentService.getDownloadUrl(
-        documentService.getStoragePath(document.id, document.file_name)
+        document.id, document.file_name
       );
       
       const link = window.document.createElement('a');

@@ -47,7 +47,7 @@ export interface TrainingPlan {
 export interface TrainingSession {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   status: string;
   startDate: string;
   due_date?: string; // Added for compatibility
@@ -85,10 +85,13 @@ export interface TrainingRecord {
 
 export interface DepartmentStat {
   department: string;
+  name?: string;
   total: number;
   completed: number;
   overdue: number;
-  compliance: number; // Add this property
+  compliance: number;
+  totalAssigned?: number;
+  complianceRate?: number;
 }
 
 export interface TrainingStats {
@@ -101,4 +104,43 @@ export interface TrainingStats {
   byType: Record<string, number>;
   byStatus: Record<string, number>;
   recentActivity: any[];
+}
+
+// Add Certification interface for ExpiringCertificationsCard
+export interface Certification {
+  id: string;
+  name: string;
+  employee: string;
+  employeeId: string;
+  expiryDate: string;
+  issueDate: string;
+  issuedBy?: string;
+  status: 'active' | 'expired' | 'revoked';
+  attachmentUrl?: string;
+}
+
+// Definition of RecurrencePattern
+export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+
+// Re-export Training for compatibility
+export interface Training {
+  id: string;
+  title: string;
+  description?: string;
+  status: TrainingStatus;
+  type: TrainingType;
+  category?: TrainingCategory;
+  start_date: string;
+  due_date?: string;
+  completion_date?: string;
+  completion_score?: number;
+  assigned_to: string[];
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  completion_certificate?: string;
+  is_recurring: boolean;
+  recurrence_pattern?: string;
+  required_roles?: string[];
+  department_id?: string;
 }

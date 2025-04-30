@@ -1,10 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent 
+} from '@/components/ui/card';
 import { DocumentVersion } from '@/types/document';
 import { getMockDocumentVersions } from '@/utils/documentVersionUtils';
 import { format } from 'date-fns';
-import { Download, Calendar, FileText, History, Info } from 'lucide-react';
+import { Download, Calendar, FileText, History, Info, CalendarClock } from 'lucide-react';
 
 interface DocumentVersionHistoryProps {
   documentId: string;

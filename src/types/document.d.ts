@@ -4,6 +4,8 @@ import { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffective
 // Re-export the types from enums for proper type compatibility
 export { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
 
+export type DocumentVersionType = 'major' | 'minor';
+
 export interface Document {
   id: string;
   title: string;
@@ -31,8 +33,6 @@ export interface Document {
   review_date?: string;
   pending_since?: string;
 }
-
-export type DocumentVersionType = 'major' | 'minor';
 
 export interface DocumentVersion {
   id: string;

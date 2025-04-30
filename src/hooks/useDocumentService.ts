@@ -2,11 +2,9 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Document, 
-  DocumentStatus, 
-  CheckoutStatus,
-  DocumentAccess
+  Document
 } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import { 
   getDocumentComments, 
   createDocumentComment 
@@ -81,7 +79,9 @@ export function useDocumentService() {
             document_id: documentId,
             user_id: userId,
             action: 'check_in',
-            comments: comment
+            comments: comment,
+            user_name: 'Current User', // Add required fields
+            user_role: 'User'
           });
       }
       
@@ -175,7 +175,7 @@ export function useDocumentService() {
   };
 
   // Fetch document access permissions
-  const fetchAccess = async (documentId: string): Promise<DocumentAccess[]> => {
+  const fetchAccess = async (documentId: string) => {
     try {
       return await fetchDocumentAccess(documentId);
     } catch (err) {
@@ -191,7 +191,7 @@ export function useDocumentService() {
     userId: string,
     permissionLevel: string,
     grantedBy: string
-  ): Promise<DocumentAccess> => {
+  ) => {
     try {
       return await grantDocumentAccess(documentId, userId, permissionLevel, grantedBy);
     } catch (err) {
@@ -228,3 +228,5 @@ export function useDocumentService() {
     revokeAccess
   };
 }
+
+export default useDocumentService;
