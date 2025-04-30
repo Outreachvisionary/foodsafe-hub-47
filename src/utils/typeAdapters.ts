@@ -1,6 +1,7 @@
 
 import { CheckoutStatus, DocumentStatus, CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
 import { Document } from '@/types/document';
+import { CAPA } from '@/types/capa';
 
 export const isCheckoutStatus = (value: string, status: CheckoutStatus): boolean => {
   return value?.replace(/ /g, '_').toLowerCase() === status.toLowerCase();
@@ -76,4 +77,35 @@ export const mapDocumentStatusFromString = (status: string): DocumentStatus => {
     case 'expired': return DocumentStatus.Expired;
     default: return DocumentStatus.Draft;
   }
+};
+
+// Add the missing convertDatabaseCAPAToModel function
+export const convertDatabaseCAPAToModel = (dbCapa: any): CAPA => {
+  return {
+    id: dbCapa.id,
+    title: dbCapa.title,
+    description: dbCapa.description,
+    status: dbCapa.status as CAPAStatus,
+    priority: dbCapa.priority,
+    source: dbCapa.source,
+    source_id: dbCapa.source_id,
+    assigned_to: dbCapa.assigned_to,
+    created_by: dbCapa.created_by,
+    created_at: dbCapa.created_at,
+    updated_at: dbCapa.updated_at,
+    due_date: dbCapa.due_date,
+    completion_date: dbCapa.completion_date,
+    root_cause: dbCapa.root_cause,
+    corrective_action: dbCapa.corrective_action,
+    preventive_action: dbCapa.preventive_action,
+    verification_method: dbCapa.verification_method,
+    effectiveness_criteria: dbCapa.effectiveness_criteria,
+    effectiveness_rating: dbCapa.effectiveness_rating as CAPAEffectivenessRating,
+    verified_by: dbCapa.verified_by,
+    verification_date: dbCapa.verification_date,
+    fsma204_compliant: dbCapa.fsma204_compliant,
+    department_id: dbCapa.department_id,
+    facility_id: dbCapa.facility_id,
+    department: dbCapa.department
+  };
 };

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingSession, TrainingType, TrainingCategory, TrainingCompletionStatus } from '@/types/training';
+import { TrainingSession, TrainingCompletionStatus, TrainingType, TrainingCategory } from '@/types/training';
 
 export const useTrainingSessions = () => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -27,14 +27,17 @@ export const useTrainingSessions = () => {
         training_type: session.training_type as TrainingType,
         training_category: session.training_category as TrainingCategory,
         department: session.department || '',
-        start_date: session.start_date,
+        status: session.status || 'active',
+        startDate: session.start_date,
         due_date: session.due_date,
         assigned_to: session.assigned_to || [],
+        participants: session.assigned_to || [],
         materials_id: session.materials_id || [],
         required_roles: session.required_roles || [],
         is_recurring: session.is_recurring || false,
         recurring_interval: String(session.recurring_interval || ''),
-        completion_status: mapDbCompletionStatus(session.completion_status),
+        completion_status: session.completion_status,
+        completionStatus: mapDbCompletionStatus(session.completion_status),
         created_by: session.created_by,
         created_at: session.created_at,
         updated_at: session.updated_at
@@ -60,14 +63,14 @@ export const useTrainingSessions = () => {
         training_type: sessionData.training_type,
         training_category: sessionData.training_category,
         department: sessionData.department,
-        start_date: sessionData.start_date,
+        start_date: sessionData.startDate,
         due_date: sessionData.due_date,
-        assigned_to: sessionData.assigned_to,
+        assigned_to: sessionData.assigned_to || sessionData.participants,
         materials_id: sessionData.materials_id,
         required_roles: sessionData.required_roles,
         is_recurring: sessionData.is_recurring,
         recurring_interval: sessionData.recurring_interval ? parseInt(sessionData.recurring_interval) : null,
-        completion_status: mapToDbCompletionStatus(sessionData.completion_status),
+        completion_status: sessionData.completion_status || mapToDbCompletionStatus(sessionData.completionStatus),
         created_by: sessionData.created_by
       };
       
@@ -84,17 +87,20 @@ export const useTrainingSessions = () => {
         id: data.id,
         title: data.title,
         description: data.description || '',
+        status: data.status || 'active',
         training_type: data.training_type as TrainingType,
         training_category: data.training_category as TrainingCategory,
         department: data.department || '',
-        start_date: data.start_date,
+        startDate: data.start_date,
         due_date: data.due_date,
         assigned_to: data.assigned_to || [],
+        participants: data.assigned_to || [],
         materials_id: data.materials_id || [],
         required_roles: data.required_roles || [],
         is_recurring: data.is_recurring || false,
         recurring_interval: String(data.recurring_interval || ''),
-        completion_status: mapDbCompletionStatus(data.completion_status),
+        completion_status: data.completion_status,
+        completionStatus: mapDbCompletionStatus(data.completion_status),
         created_by: data.created_by,
         created_at: data.created_at,
         updated_at: data.updated_at

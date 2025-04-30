@@ -1,17 +1,8 @@
 
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
-export type DocumentCategory = 
-  | 'SOP' 
-  | 'Policy' 
-  | 'Form' 
-  | 'Certificate' 
-  | 'Audit Report' 
-  | 'HACCP Plan' 
-  | 'Training Material' 
-  | 'Supplier Documentation' 
-  | 'Risk Assessment'
-  | 'Other';
+// Re-export the types from enums for proper type compatibility
+export { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
 
 export interface Document {
   id: string;
@@ -118,4 +109,15 @@ export interface DocumentStats {
   expiringCount?: number;
   pendingReviewCount?: number;
   pendingApprovalCount?: number;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at: string;
+  folder_id?: string;
 }

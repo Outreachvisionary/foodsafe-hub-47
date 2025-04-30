@@ -24,7 +24,6 @@ export default function useProfileRealtime() {
         },
         () => {
           // Refresh the user data when profile is updated
-          // Note: We've removed the refreshUser call as it doesn't exist
           console.log('Profile updated, refresh recommended');
         }
       )

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { DocumentVersion, DocumentVersionType } from '@/types/document';
-import { CalendarClock, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DocumentVersion } from '@/types/document';
 import { getMockDocumentVersions } from '@/utils/documentVersionUtils';
+import { format } from 'date-fns';
+import { Download, Calendar, FileText, History, Info } from 'lucide-react';
 
 interface DocumentVersionHistoryProps {
   documentId: string;
@@ -24,13 +23,7 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({ documen
         // Get mock document versions
         const data = getMockDocumentVersions(documentId);
         
-        // Ensure version_type is properly cast to DocumentVersionType
-        const processedVersions = data.map(version => ({
-          ...version,
-          version_type: (version.version_type === "major" ? "major" : "minor") as DocumentVersionType
-        }));
-        
-        setVersions(processedVersions);
+        setVersions(data);
       } catch (error) {
         console.error('Error fetching document versions:', error);
         setError('Failed to load document version history');

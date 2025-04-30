@@ -1,97 +1,230 @@
-import { Document, DocumentAccess } from '@/types/document';
+
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useDocument } from '@/contexts/DocumentContext';
+import { 
+  Document, 
+  DocumentStatus, 
+  CheckoutStatus,
+  DocumentAccess
+} from '@/types/document';
+import { 
+  getDocumentComments, 
+  createDocumentComment 
+} from '@/services/documentCommentService';
+import {
+  fetchDocumentAccess,
+  grantDocumentAccess,
+  revokeDocumentAccess
+} from '@/services/enhancedDocumentService';
 
-interface DocumentService {
-  loading: boolean;
-  error: string | null;
-  fetchDocuments: () => Promise<Document[]>;
-  createDocument: (documentData: Partial<Document>) => Promise<Document>;
-  checkoutDocument: (documentId: string, userId: string) => Promise<Document>;
-  checkinDocument: (documentId: string, userId: string, comment?: string) => Promise<Document>;
-  getDocumentComments: (documentId: string) => Promise<any[]>;
-  createDocumentComment: (comment: any) => Promise<any>;
-  fetchAccess: (documentId: string) => Promise<DocumentAccess[]>;
-  grantAccess: (documentId: string, userId: string, permissionLevel: string, grantedBy: string) => Promise<DocumentAccess>;
-  revokeAccess: (accessId: string) => Promise<void>;
-  getDownloadUrl: (path: string) => Promise<string>;
-  getStoragePath: (documentId: string, fileName: string) => string;
-}
+export function useDocumentService() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-export function useDocumentService(): DocumentService {
-  const documentContext = useDocument();
-  
-  const checkoutDocument = async (documentId: string, userId: string): Promise<Document> => {
+  // Check out a document
+  const checkoutDocument = async (documentId: string, userId: string): Promise<Document | null> => {
     try {
-      // Mock implementation
-      console.log(`Checking out document ${documentId} for user ${userId}`);
+      setLoading(true);
       
-      // In a real app, this would update the document's checkout status in the database
+      const { data, error: updateError } = await supabase
+        .from('documents')
+        .update({ 
+          checkout_status: CheckoutStatus.CheckedOut,
+          checkout_user_id: userId,
+          checkout_timestamp: new Date().toISOString()
+        })
+        .eq('id', documentId)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
+      
       return {
-        id: documentId,
-        checkout_status: 'CheckedOut',
-        checkout_by: userId,
-        checkout_date: new Date().toISOString(),
-        // Other document properties would be included here
-        title: 'Document Title',
-        file_name: 'document.pdf',
-        file_size: 1024,
-        file_type: 'application/pdf',
-        category: 'SOP',
-        status: 'Active',
-        version: 1,
-        created_at: new Date().toISOString(),
-        created_by: 'User',
-        file_path: '/path/to/file',
-        updated_at: new Date().toISOString()
+        ...data,
+        status: data.status as DocumentStatus,
+        checkout_status: data.checkout_status as CheckoutStatus
       };
-    } catch (error) {
-      console.error('Error checking out document:', error);
-      throw new Error('Failed to check out document');
+    } catch (err) {
+      console.error('Error checking out document:', err);
+      setError('Failed to check out document');
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const checkinDocument = async (documentId: string, userId: string, comment?: string): Promise<Document> => {
+
+  // Check in a document
+  const checkinDocument = async (documentId: string, userId: string, comment?: string): Promise<Document | null> => {
     try {
-      // Mock implementation
-      console.log(`Checking in document ${documentId} for user ${userId} with comment: ${comment}`);
+      setLoading(true);
       
-      // In a real app, this would update the document's checkout status in the database
+      const { data, error: updateError } = await supabase
+        .from('documents')
+        .update({ 
+          checkout_status: CheckoutStatus.Available,
+          checkout_user_id: null,
+          checkout_timestamp: null,
+          status: DocumentStatus.Active // Update status as needed
+        })
+        .eq('id', documentId)
+        .eq('checkout_user_id', userId) // Ensure only the user who checked out can check in
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
+      
+      // Record check-in activity with comment if provided
+      if (comment) {
+        await supabase
+          .from('document_activities')
+          .insert({
+            document_id: documentId,
+            user_id: userId,
+            action: 'check_in',
+            comments: comment
+          });
+      }
+      
       return {
-        id: documentId,
-        checkout_status: 'Available',
-        // Other document properties would be included here
-        title: 'Document Title',
-        file_name: 'document.pdf',
-        file_size: 1024,
-        file_type: 'application/pdf',
-        category: 'SOP',
-        status: 'Active',
-        version: 1,
-        created_at: new Date().toISOString(),
-        created_by: 'User',
-        file_path: '/path/to/file',
-        updated_at: new Date().toISOString()
+        ...data,
+        status: data.status as DocumentStatus,
+        checkout_status: data.checkout_status as CheckoutStatus
       };
-    } catch (error) {
-      console.error('Error checking in document:', error);
-      throw new Error('Failed to check in document');
+    } catch (err) {
+      console.error('Error checking in document:', err);
+      setError('Failed to check in document');
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  // Fetch documents
+  const fetchDocuments = async (): Promise<Document[]> => {
+    try {
+      setLoading(true);
+      
+      const { data, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) throw fetchError;
+      
+      return (data || []).map(doc => ({
+        ...doc,
+        status: doc.status as DocumentStatus,
+        checkout_status: (doc.checkout_status || 'Available') as CheckoutStatus
+      }));
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+      setError('Failed to fetch documents');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create a new document
+  const createDocument = async (documentData: Partial<Document>): Promise<Document> => {
+    try {
+      setLoading(true);
+      
+      const { data, error: createError } = await supabase
+        .from('documents')
+        .insert(documentData)
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      return {
+        ...data,
+        status: data.status as DocumentStatus,
+        checkout_status: (data.checkout_status || 'Available') as CheckoutStatus
+      };
+    } catch (err) {
+      console.error('Error creating document:', err);
+      setError('Failed to create document');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get a download URL for a document
+  const getDownloadUrl = async (documentId: string, fileName: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(`${documentId}/${fileName}`, 60); // 60 seconds expiry
+      
+      if (error) throw error;
+      
+      return data.signedUrl;
+    } catch (err) {
+      console.error('Error getting document download URL:', err);
+      setError('Failed to get document download URL');
+      return null;
+    }
+  };
+
+  // Get storage path for a document
+  const getStoragePath = (documentId: string, fileName: string): string => {
+    return `${documentId}/${fileName}`;
+  };
+
+  // Fetch document access permissions
+  const fetchAccess = async (documentId: string): Promise<DocumentAccess[]> => {
+    try {
+      return await fetchDocumentAccess(documentId);
+    } catch (err) {
+      console.error('Error fetching document access:', err);
+      setError('Failed to fetch document access permissions');
+      return [];
+    }
+  };
+
+  // Grant access to a document
+  const grantAccess = async (
+    documentId: string,
+    userId: string,
+    permissionLevel: string,
+    grantedBy: string
+  ): Promise<DocumentAccess> => {
+    try {
+      return await grantDocumentAccess(documentId, userId, permissionLevel, grantedBy);
+    } catch (err) {
+      console.error('Error granting document access:', err);
+      setError('Failed to grant document access');
+      throw err;
+    }
+  };
+
+  // Revoke access to a document
+  const revokeAccess = async (accessId: string): Promise<void> => {
+    try {
+      await revokeDocumentAccess(accessId);
+    } catch (err) {
+      console.error('Error revoking document access:', err);
+      setError('Failed to revoke document access');
+      throw err;
+    }
+  };
+
   return {
-    loading: documentContext.loading || false,
-    error: documentContext.error || null,
-    fetchDocuments: documentContext.fetchDocuments || (async () => []),
-    createDocument: documentContext.createDocument || (async () => ({} as Document)),
+    loading,
+    error,
+    fetchDocuments,
+    createDocument,
     checkoutDocument,
     checkinDocument,
-    getDocumentComments: documentContext.getDocumentComments || (async () => []),
-    createDocumentComment: documentContext.createDocumentComment || (async () => ({})),
-    fetchAccess: documentContext.fetchAccess || (async () => []),
-    grantAccess: documentContext.grantAccess || (async () => ({} as DocumentAccess)),
-    revokeAccess: documentContext.revokeAccess || (async () => {}),
-    getDownloadUrl: documentContext.getDownloadUrl || (async () => ''),
-    getStoragePath: documentContext.getStoragePath || (() => '')
+    getDocumentComments,
+    createDocumentComment,
+    getDownloadUrl,
+    getStoragePath,
+    fetchAccess,
+    grantAccess,
+    revokeAccess
   };
 }

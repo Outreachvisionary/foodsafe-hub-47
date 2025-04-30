@@ -1,8 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Document } from '@/types/document';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -144,24 +148,26 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
 
   return (
     <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{document.title}</CardTitle>
+        <CardDescription>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline">{document.category}</Badge>
+            <Badge 
+              variant={
+                document.status === 'Published' ? 'default' :
+                document.status === 'Draft' ? 'outline' :
+                document.status === 'Archived' ? 'secondary' :
+                'outline'
+              }
+            >
+              {document.status.replace(/_/g, ' ')}
+            </Badge>
+          </div>
+        </CardDescription>
+      </CardHeader>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-bold">{document.title}</h2>
-            <div className="flex items-center mt-1 space-x-2">
-              <Badge variant="outline">{document.category}</Badge>
-              <Badge 
-                variant={
-                  document.status === 'Published' ? 'default' :
-                  document.status === 'Draft' ? 'outline' :
-                  document.status === 'Archived' ? 'secondary' :
-                  'outline'
-                }
-              >
-                {document.status.replace(/_/g, ' ')}
-              </Badge>
-            </div>
-          </div>
           <Button variant="outline" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Download

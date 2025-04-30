@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash, UserPlus, Users } from 'lucide-react';
-import useDocumentService from '@/hooks/useDocumentService';
+import { useDocumentService } from '@/hooks/useDocumentService';
 import { DocumentAccess } from '@/types/document';
 
 interface DocumentAccessControlProps {
