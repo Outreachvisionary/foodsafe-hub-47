@@ -38,7 +38,8 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
         [CAPASource.Other]: 0
       },
       byMonth: {},
-      byDepartment: {}
+      byDepartment: {},
+      recentActivities: [] // Added missing property
     };
     
     if (!data || data.length === 0) {

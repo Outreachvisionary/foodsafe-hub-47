@@ -27,7 +27,9 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       [CAPASource.CustomerComplaint]: 15,
       [CAPASource.NonConformance]: 20,
       [CAPASource.SupplierIssue]: 10,
-      [CAPASource.InternalReport]: 15
+      [CAPASource.InternalReport]: 15,
+      [CAPASource.RegulatoryInspection]: 0, // Added missing property
+      [CAPASource.Other]: 0 // Added missing property
     },
     byDepartment: {
       'Production': 30,
@@ -52,7 +54,8 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       'May': 15,
       'Jun': 20,
       'Jul': 15
-    }
+    },
+    recentActivities: [] // Added missing property
   };
 };
 
@@ -66,6 +69,7 @@ export const getCAPAById = async (id: string): Promise<CAPA | null> => {
     status: CAPAStatus.InProgress,
     priority: CAPAPriority.High,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(), // Added required field
     created_by: 'John Doe',
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     assigned_to: 'Jane Smith',

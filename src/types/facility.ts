@@ -14,7 +14,7 @@ export interface Facility {
   location_data?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
-  status: string; // Making this required to match usage
+  status: string; // Required field
   facility_type?: string;
 }
 
@@ -22,8 +22,8 @@ export interface FacilityFormProps {
   onSubmit?: (data: Partial<Facility>) => void;
   initialData?: Partial<Facility>;
   isLoading?: boolean;
-  defaultValues?: Partial<Facility>; // Added missing property
-  onSubmitSuccess?: (facility: Facility) => void; // Added missing property
-  isNewFacility?: boolean; // Added missing property
-  onCancel?: () => void; // Added missing property
+  defaultValues?: Partial<Facility>; // Added to match usage in CreateFacilityDialog
+  onSubmitSuccess?: (facility: Facility) => void;
+  isNewFacility?: boolean;
+  onCancel?: () => void;
 }

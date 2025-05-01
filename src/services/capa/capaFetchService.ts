@@ -12,6 +12,7 @@ const mockCapas: CAPA[] = [
     status: CAPAStatus.Open,
     priority: CAPAPriority.High,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(), // Added required field
     created_by: 'John Doe',
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     assigned_to: 'Jane Smith',
@@ -29,6 +30,7 @@ const mockCapas: CAPA[] = [
     status: CAPAStatus.InProgress,
     priority: CAPAPriority.Critical,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Added required field
     created_by: 'Sarah Johnson',
     due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     assigned_to: 'Mike Wilson',

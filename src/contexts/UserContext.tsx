@@ -11,6 +11,8 @@ interface UserContextType {
   loading: boolean; // Add loading state property
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>; // Add missing method
+  updateUser: (userData: Partial<User>) => Promise<void>; // Add missing method
 }
 
 const UserContext = createContext<UserContextType>({
@@ -20,6 +22,8 @@ const UserContext = createContext<UserContextType>({
   loading: true, // Default to loading
   signOut: async () => {},
   updateProfile: async () => {},
+  signIn: async () => {}, // Add missing method
+  updateUser: async () => {} // Add missing method
 });
 
 export const useUser = () => useContext(UserContext);
@@ -74,6 +78,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      setUser(data.user);
+      setIsAuthenticated(true);
+      if (data.user) {
+        await fetchProfile(data.user.id);
+      }
+    } catch (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -106,6 +130,36 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = async (userData: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      // This is a simplified version as Supabase user updates require specific parameters
+      console.log('Updating user data:', userData);
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else if (data) {
+        setProfile(data as UserProfile);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -113,6 +167,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signOut,
     updateProfile,
+    signIn,
+    updateUser
   };
 
   return (

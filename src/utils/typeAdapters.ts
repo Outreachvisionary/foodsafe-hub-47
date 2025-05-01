@@ -111,3 +111,13 @@ export const convertToCAPAStatus = (status: string): CAPAStatus => {
     default: return CAPAStatus.Open;
   }
 };
+
+// Adding missing function that's being imported in capaUpdateService.ts
+export const adaptCAPAToModel = (capa: any): CAPA => {
+  return {
+    ...capa,
+    status: convertToCAPAStatus(capa.status),
+    priority: stringToCAPAPriority(capa.priority),
+    source: stringToCAPASource(capa.source)
+  };
+};

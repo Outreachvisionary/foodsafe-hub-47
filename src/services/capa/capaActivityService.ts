@@ -17,8 +17,8 @@ export const recordCAPAActivity = async (activityData: {
   const activity: CAPAActivity = {
     id: `activity-${Date.now()}`,
     capa_id: activityData.capa_id,
-    actionType: activityData.action_type,
-    actionDescription: activityData.action_description,
+    action_type: activityData.action_type,
+    action_description: activityData.action_description,
     performed_at: new Date().toISOString(),
     performed_by: activityData.performed_by,
     old_status: activityData.old_status ? convertToCAPAStatus(activityData.old_status) : undefined,

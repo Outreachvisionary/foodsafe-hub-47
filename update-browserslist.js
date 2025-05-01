@@ -11,3 +11,4 @@ try {
   console.error('Failed to update browserslist database:', error.message);
   process.exit(1);
 }
+
