@@ -1,170 +1,156 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock } from 'lucide-react';
-import { CAPAActivity } from '@/types/capa';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Timeline, 
+  TimelineItem, 
+  TimelineConnector, 
+  TimelineHeader, 
+  TimelineIcon, 
+  TimelineBody 
+} from '@/components/ui/timeline';
+import { Loader2, AlertCircle, CheckCircle, XCircle, PenTool, Eye } from 'lucide-react';
+import { CAPAStatus } from '@/types/enums';
 import { formatEnumValue } from '@/utils/typeAdapters';
 
+export interface CAPAActivity {
+  id: string;
+  capa_id: string;
+  action_type: string;
+  action_description: string;
+  performed_at: string;
+  performed_by: string;
+  old_status?: CAPAStatus;
+  new_status?: CAPAStatus;
+  metadata?: Record<string, any>;
+}
+
 interface CAPAActivityListProps {
+  capaId: string;
   activities: CAPAActivity[];
   loading?: boolean;
 }
 
-const CAPAActivityList: React.FC<CAPAActivityListProps> = ({ activities = [], loading = false }) => {
-  // Get activity type badge
-  const getActivityTypeBadge = (type: string) => {
-    switch (type) {
-      case 'status_update':
-        return <Badge className="bg-blue-100 text-blue-800">Status Update</Badge>;
-      case 'comment':
-        return <Badge className="bg-gray-100 text-gray-800">Comment</Badge>;
-      case 'assignment':
-        return <Badge className="bg-purple-100 text-purple-800">Assignment</Badge>;
-      case 'document_upload':
-        return <Badge className="bg-green-100 text-green-800">Document Upload</Badge>;
-      case 'verification':
-        return <Badge className="bg-amber-100 text-amber-800">Verification</Badge>;
-      case 'creation':
-        return <Badge className="bg-indigo-100 text-indigo-800">Creation</Badge>;
-      default:
-        return <Badge>{type.replace('_', ' ')}</Badge>;
-    }
+const getActivityIcon = (actionType: string) => {
+  switch (actionType) {
+    case 'status_change':
+      return <PenTool className="h-4 w-4" />;
+    case 'verification':
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case 'rejection':
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    case 'comment':
+      return <PenTool className="h-4 w-4 text-blue-500" />;
+    case 'review':
+      return <Eye className="h-4 w-4 text-amber-500" />;
+    default:
+      return <PenTool className="h-4 w-4" />;
+  }
+};
+
+const getStatusColor = (status: string | CAPAStatus) => {
+  if (!status) return 'bg-gray-200 text-gray-700';
+  
+  switch (status.toString()) {
+    case CAPAStatus.Open:
+      return 'bg-blue-100 text-blue-800';
+    case CAPAStatus.InProgress:
+      return 'bg-amber-100 text-amber-800';
+    case CAPAStatus.Completed:
+      return 'bg-green-100 text-green-800';
+    case CAPAStatus.Closed:
+      return 'bg-gray-100 text-gray-800';
+    case CAPAStatus.Rejected:
+      return 'bg-red-100 text-red-800';
+    case CAPAStatus.OnHold:
+      return 'bg-purple-100 text-purple-800';
+    case CAPAStatus.Overdue:
+      return 'bg-red-100 text-red-800';
+    case CAPAStatus.PendingVerification:
+      return 'bg-amber-100 text-amber-800';
+    case CAPAStatus.Verified:
+      return 'bg-green-100 text-green-800';
+    case CAPAStatus.UnderReview:
+      return 'bg-blue-100 text-blue-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const CAPAActivityList: React.FC<CAPAActivityListProps> = ({ capaId, activities, loading = false }) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
   
-  // Format relative time
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'just now';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 604800) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-  
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  // Example activity data for preview if none provided
-  const mockActivities: CAPAActivity[] = [
-    {
-      id: '1',
-      capa_id: 'capa-123',
-      action_type: 'status_update',
-      action_description: 'Changed status from Open to In Progress',
-      performed_at: new Date().toISOString(),
-      performed_by: 'John Doe',
-      old_status: 'Open',
-      new_status: 'In_Progress'
-    },
-    {
-      id: '2',
-      capa_id: 'capa-123',
-      action_type: 'comment',
-      action_description: 'Added a comment: "Initial investigation completed, root cause identified as improper sanitization procedure"',
-      performed_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'Jane Smith'
-    },
-    {
-      id: '3',
-      capa_id: 'capa-123',
-      action_type: 'creation',
-      action_description: 'CAPA created',
-      performed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'System'
-    }
-  ];
-
-  // Use provided activities or mock data if none
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
-
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Activity History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-6">
-            <p className="text-muted-foreground">Loading activities...</p>
+        <CardContent className="flex items-center justify-center py-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!activities || activities.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-6">
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-2 text-muted-foreground">No activity recorded for this CAPA</p>
           </div>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Activity History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {displayActivities.length === 0 ? (
-          <div className="flex justify-center py-6">
-            <p className="text-muted-foreground">No activity recorded yet</p>
-          </div>
-        ) : (
-          <div className="relative space-y-5">
-            {/* Timeline line */}
-            <div className="absolute left-6 top-0 bottom-0 border-l border-dashed border-gray-200 ml-[7px]"></div>
-            
-            {/* Activities */}
-            {displayActivities.map((activity, index) => (
-              <div key={activity.id} className="flex gap-4">
-                <div className="relative flex-shrink-0 mt-1">
-                  <Avatar className="h-6 w-6 bg-white border">
-                    <AvatarFallback className="text-xs">
-                      {getInitials(activity.performed_by)}
-                    </AvatarFallback>
-                  </Avatar>
+      <CardContent className="py-4">
+        <Timeline>
+          {activities.map((activity, index) => (
+            <TimelineItem key={activity.id}>
+              {index < activities.length - 1 && <TimelineConnector />}
+              <TimelineHeader>
+                <TimelineIcon>
+                  {getActivityIcon(activity.action_type)}
+                </TimelineIcon>
+                <div className="flex flex-col">
+                  <p className="text-sm font-medium">{activity.action_description}</p>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(activity.performed_at)} by {activity.performed_by}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        {activity.performed_by}
-                      </span>
-                      {getActivityTypeBadge(activity.action_type)}
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatRelativeTime(activity.performed_at)}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm">{activity.action_description}</p>
-                  
+              </TimelineHeader>
+              <TimelineBody>
+                <div className="text-sm space-y-2">
                   {activity.old_status && activity.new_status && (
-                    <div className="mt-1.5 flex items-center text-xs">
-                      <Badge variant="outline" className="bg-gray-50">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`px-2 py-1 rounded ${getStatusColor(activity.old_status)}`}>
                         {formatEnumValue(activity.old_status.toString())}
-                      </Badge>
-                      <span className="mx-2">&rarr;</span>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className={`px-2 py-1 rounded ${getStatusColor(activity.new_status)}`}>
                         {formatEnumValue(activity.new_status.toString())}
-                      </Badge>
+                      </span>
+                    </div>
+                  )}
+                  {activity.metadata && (
+                    <div className="text-xs text-muted-foreground">
+                      {Object.entries(activity.metadata).map(([key, value]) => (
+                        <div key={key}>
+                          <span className="font-medium">{key}: </span>
+                          {typeof value === 'string' ? value : JSON.stringify(value)}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </TimelineBody>
+            </TimelineItem>
+          ))}
+        </Timeline>
       </CardContent>
     </Card>
   );

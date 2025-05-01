@@ -3,23 +3,17 @@ export interface Facility {
   id: string;
   name: string;
   description?: string;
-  organization_id?: string;
   address?: string;
-  country?: string;
-  state?: string;
   city?: string;
+  state?: string;
   zipcode?: string;
+  country?: string;
   contact_email?: string;
   contact_phone?: string;
-  location_data?: any;
+  organization_id?: string;
+  location_data?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
-  status: string;
-  facility_type?: string;
-}
-
-export interface FacilityFilter {
-  status?: string;
-  country?: string;
-  search?: string;
+  status: string; // Made required to match the expected type
+  facility_type?: string; // Add facility_type but make it optional
 }

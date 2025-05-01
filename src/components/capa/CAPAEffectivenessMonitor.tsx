@@ -1,127 +1,103 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, AlertCircle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { format, differenceInDays } from 'date-fns';
-import { CAPAEffectivenessRating } from '@/types/enums';
+import { ClipboardCheck, AlertCircle } from 'lucide-react';
 
 interface CAPAEffectivenessMonitorProps {
   id: string;
   implementationDate: string;
+  daysToMonitor?: number;
 }
 
 const CAPAEffectivenessMonitor: React.FC<CAPAEffectivenessMonitorProps> = ({
   id,
-  implementationDate
+  implementationDate,
+  daysToMonitor = 30
 }) => {
-  const [daysElapsed, setDaysElapsed] = useState(0);
-  const [nextCheckDays, setNextCheckDays] = useState(0);
-  const [hasAssessment, setHasAssessment] = useState(false);
-  const [effectivenessRating, setEffectivenessRating] = useState<CAPAEffectivenessRating | null>(null);
+  // Calculate days since implementation
+  const daysSinceImplementation = Math.floor(
+    (new Date().getTime() - new Date(implementationDate).getTime()) / 
+    (1000 * 60 * 60 * 24)
+  );
   
-  useEffect(() => {
-    if (implementationDate) {
-      const implDate = new Date(implementationDate);
-      const today = new Date();
-      const daysSinceImpl = differenceInDays(today, implDate);
-      setDaysElapsed(daysSinceImpl);
-      
-      // Simulate assessment check schedule
-      if (daysSinceImpl >= 90) {
-        setHasAssessment(true);
-        setEffectivenessRating(CAPAEffectivenessRating.Effective);
-      } else {
-        setNextCheckDays(90 - daysSinceImpl);
-      }
-    }
-  }, [implementationDate]);
-
-  const getEffectivenessColor = () => {
-    if (!effectivenessRating) return 'text-gray-400';
-    
-    switch (effectivenessRating) {
-      case CAPAEffectivenessRating.HighlyEffective:
-        return 'text-green-600';
-      case CAPAEffectivenessRating.Effective:
-        return 'text-green-500';
-      case CAPAEffectivenessRating.PartiallyEffective:
-        return 'text-amber-500';
-      case CAPAEffectivenessRating.NotEffective:
-        return 'text-red-500';
-      default:
-        return 'text-gray-400';
-    }
+  // Calculate days remaining in monitoring period
+  const daysRemaining = Math.max(0, daysToMonitor - daysSinceImplementation);
+  
+  // Calculate progress percentage
+  const progress = Math.min(100, (daysSinceImplementation / daysToMonitor) * 100);
+  
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
-
+  
+  // Calculate end date of monitoring period
+  const getMonitoringEndDate = () => {
+    const endDate = new Date(implementationDate);
+    endDate.setDate(endDate.getDate() + daysToMonitor);
+    return formatDate(endDate.toISOString());
+  };
+  
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Effectiveness Monitoring</CardTitle>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5 text-blue-600" />
+          Effectiveness Monitoring
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-sm">
-          <div className="flex justify-between mb-1">
-            <span className="text-muted-foreground">Implementation Date:</span>
-            <span>{format(new Date(implementationDate), 'MMM d, yyyy')}</span>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Implementation Date:</span>
+            <span className="font-medium">{formatDate(implementationDate)}</span>
           </div>
-          
-          <div className="flex justify-between mb-1">
-            <span className="text-muted-foreground">Days Since Implementation:</span>
-            <span>{daysElapsed}</span>
+          <div className="flex justify-between text-sm">
+            <span>Monitoring Period:</span>
+            <span className="font-medium">{daysToMonitor} days</span>
           </div>
-          
-          {hasAssessment ? (
-            <>
-              <div className="flex justify-between items-center mt-4">
-                <span className="text-muted-foreground">Effectiveness Rating:</span>
-                <span className={`font-medium ${getEffectivenessColor()}`}>
-                  {effectivenessRating?.replace(/_/g, ' ')}
-                </span>
-              </div>
-              
-              <div className="mt-4 flex justify-center">
-                {effectivenessRating === CAPAEffectivenessRating.Effective || 
-                 effectivenessRating === CAPAEffectivenessRating.HighlyEffective ? (
-                  <div className="flex flex-col items-center">
-                    <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
-                    <p className="text-center text-green-700">
-                      CAPA effectiveness verified
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />
-                    <p className="text-center text-amber-700">
-                      CAPA requires additional action
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mt-4 mb-2">
-                <span className="text-muted-foreground">Next Effectiveness Check:</span>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm">{nextCheckDays} days remaining</span>
-                  <span className="text-sm">
-                    {format(new Date(new Date().getTime() + nextCheckDays * 24 * 60 * 60 * 1000), 'MMM d, yyyy')}
-                  </span>
-                </div>
-                <Progress 
-                  value={Math.min(100, (daysElapsed / 90) * 100)} 
-                  className="h-2 mt-1" 
-                />
-              </div>
-              
-              <Button size="sm" className="w-full mt-4">
-                Schedule Assessment
-              </Button>
-            </>
-          )}
+          <div className="flex justify-between text-sm">
+            <span>End Date:</span>
+            <span className="font-medium">{getMonitoringEndDate()}</span>
+          </div>
         </div>
+        
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Progress:</span>
+            <span className="font-medium">{Math.floor(progress)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Day 0</span>
+            <span>Day {daysToMonitor}</span>
+          </div>
+        </div>
+        
+        {daysRemaining > 0 ? (
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-700">
+                <p className="font-medium">Monitoring in progress</p>
+                <p>
+                  {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining in the monitoring period.
+                  Effectiveness will be assessed at the end of this period.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Button className="w-full">
+            Complete Effectiveness Assessment
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

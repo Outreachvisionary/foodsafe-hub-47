@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,107 +15,67 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from '@/components/ui/select';
-import { createFacility, updateFacility } from '@/services/facilityService';
-import { useToast } from '@/components/ui/use-toast';
 import { Facility } from '@/types/facility';
-import { Loader2 } from 'lucide-react';
 
-const facilityFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Facility name must be at least 2 characters.",
-  }),
+interface FacilityFormProps {
+  initialData?: Partial<Facility>;
+  onSubmit: (data: any) => void;
+  isSubmitting?: boolean;
+}
+
+// Define form schema with Zod
+const formSchema = z.object({
+  name: z.string().min(1, { message: 'Facility name is required' }),
   description: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipcode: z.string().optional(),
   country: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'pending']),
-  organization_id: z.string(),
-  contact_email: z.string().email().optional().or(z.literal('')),
+  contact_email: z.string().email({ message: 'Invalid email address' }).optional().or(z.literal('')),
   contact_phone: z.string().optional(),
+  status: z.enum(['active', 'inactive']),
   facility_type: z.string().optional(),
 });
 
-export type FacilityFormValues = z.infer<typeof facilityFormSchema>;
-
-interface FacilityFormProps {
-  defaultValues?: Partial<Facility>;
-  onSubmitSuccess: (facility: Facility) => void;
-  isNewFacility?: boolean;
-  onCancel?: () => void;
-}
-
 const FacilityForm: React.FC<FacilityFormProps> = ({
-  defaultValues,
-  onSubmitSuccess,
-  isNewFacility = false,
-  onCancel
+  initialData = {},
+  onSubmit,
+  isSubmitting = false,
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
-  const form = useForm<FacilityFormValues>({
-    resolver: zodResolver(facilityFormSchema),
+  // Initialize form with react-hook-form and zod validation
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      name: defaultValues?.name || '',
-      description: defaultValues?.description || '',
-      address: defaultValues?.address || '',
-      city: defaultValues?.city || '',
-      state: defaultValues?.state || '',
-      zipcode: defaultValues?.zipcode || '',
-      country: defaultValues?.country || '',
-      status: (defaultValues?.status as 'active' | 'inactive' | 'pending') || 'active',
-      organization_id: defaultValues?.organization_id || '',
-      contact_email: defaultValues?.contact_email || '',
-      contact_phone: defaultValues?.contact_phone || '',
-      facility_type: defaultValues?.facility_type || '',
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      address: initialData?.address || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      zipcode: initialData?.zipcode || '',
+      country: initialData?.country || '',
+      contact_email: initialData?.contact_email || '',
+      contact_phone: initialData?.contact_phone || '',
+      status: initialData?.status || 'active',
+      facility_type: initialData?.facility_type || '',
     },
   });
 
-  const onSubmit = async (values: FacilityFormValues) => {
-    setIsSubmitting(true);
-    try {
-      let facility;
-
-      if (isNewFacility) {
-        facility = await createFacility(values as Facility);
-        toast({
-          title: "Success",
-          description: "Facility created successfully",
-        });
-      } else {
-        facility = await updateFacility(defaultValues?.id!, values);
-        toast({
-          title: "Success",
-          description: "Facility updated successfully",
-        });
-      }
-
-      onSubmitSuccess(facility);
-    } catch (error) {
-      console.error('Error saving facility:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save facility",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSubmit(values);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="name"
@@ -128,7 +89,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="facility_type"
@@ -136,60 +97,82 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               <FormItem>
                 <FormLabel>Facility Type</FormLabel>
                 <FormControl>
-                  <Input placeholder="E.g., Production, Warehouse" {...field} />
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select facility type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="packaging">Packaging</SelectItem>
+                      <SelectItem value="distribution">Distribution</SelectItem>
+                      <SelectItem value="warehouse">Warehouse</SelectItem>
+                      <SelectItem value="office">Office</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="status"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormControl>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Brief description of the facility"
-                    className="resize-none"
-                    {...field}
-                    value={field.value || ''}
-                  />
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <FormField
+            control={form.control}
+            name="contact_email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contact Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter contact email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="contact_phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contact Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter contact phone" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="address"
@@ -197,7 +180,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Street address" {...field} value={field.value || ''} />
+                  <Input placeholder="Enter address" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -211,13 +194,13 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               <FormItem>
                 <FormLabel>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="City" {...field} value={field.value || ''} />
+                  <Input placeholder="Enter city" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="state"
@@ -225,27 +208,27 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               <FormItem>
                 <FormLabel>State/Province</FormLabel>
                 <FormControl>
-                  <Input placeholder="State or province" {...field} value={field.value || ''} />
+                  <Input placeholder="Enter state or province" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="zipcode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Postal/Zip Code</FormLabel>
+                <FormLabel>Zip/Postal Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Postal or zip code" {...field} value={field.value || ''} />
+                  <Input placeholder="Enter zip or postal code" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="country"
@@ -253,76 +236,38 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               <FormItem>
                 <FormLabel>Country</FormLabel>
                 <FormControl>
-                  <Input placeholder="Country" {...field} value={field.value || ''} />
+                  <Input placeholder="Enter country" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contact_email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Email</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="email" 
-                    placeholder="Contact email address" 
-                    {...field} 
-                    value={field.value || ''} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="contact_phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Phone</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Contact phone number" 
-                    {...field} 
-                    value={field.value || ''} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
+        
         <FormField
           control={form.control}
-          name="organization_id"
+          name="description"
           render={({ field }) => (
-            <input type="hidden" {...field} />
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter facility description" 
+                  className="min-h-[120px]" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                Provide a brief description of this facility.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
         />
-
-        <div className="flex justify-end gap-2">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
+        
+        <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isNewFacility ? 'Creating...' : 'Updating...'}
-              </>
-            ) : (
-              isNewFacility ? 'Create Facility' : 'Update Facility'
-            )}
+            {isSubmitting ? 'Saving...' : initialData?.id ? 'Update Facility' : 'Create Facility'}
           </Button>
         </div>
       </form>

@@ -43,7 +43,6 @@ export function DatePicker({ date, onSelect, disabled, className, placeholder = 
           onSelect={onSelect}
           disabled={disabled}
           initialFocus
-          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>

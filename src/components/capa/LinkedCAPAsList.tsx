@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Unlink } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { formatEnumValue, convertToCAPAStatus } from '@/utils/typeAdapters';
+import { formatEnumValue } from '@/utils/typeAdapters';
 import CAPAStatusBadge from './CAPAStatusBadge';
 
 interface LinkedCAPAsListProps {

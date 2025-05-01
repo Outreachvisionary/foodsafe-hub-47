@@ -1,164 +1,178 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { EditIcon, MapPinIcon, PhoneIcon, MailIcon, Building2Icon, Globe, User } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Facility } from '@/types/facility';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Building, 
+  MapPin, 
+  Mail, 
+  Phone, 
+  CalendarClock, 
+  ClipboardCheck,
+  User,
+  FileText,
+  RefreshCw 
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface FacilityDetailsProps {
   facility: Facility;
-  onEdit?: () => void;
 }
 
-const FacilityDetails: React.FC<FacilityDetailsProps> = ({ facility, onEdit }) => {
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'inactive':
-        return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
-      case 'maintenance':
-        return <Badge className="bg-amber-100 text-amber-800">Maintenance</Badge>;
-      case 'pending':
-        return <Badge className="bg-blue-100 text-blue-800">Pending</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
+const FacilityOverview: React.FC<FacilityDetailsProps> = ({ facility }) => {
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-xl font-bold">{facility.name}</CardTitle>
-          <div className="flex items-center gap-2 mt-1">
-            {getStatusBadge(facility.status)}
-            {facility.facility_type && (
-              <Badge variant="outline" className="text-gray-600">
-                {facility.facility_type}
+    <Card>
+      <CardHeader>
+        <CardTitle>Facility Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-start gap-3">
+            <Building className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Facility Name</div>
+              <div>{facility.name}</div>
+            </div>
+          </div>
+
+          {/* Only show facility_type if it exists */}
+          {facility.facility_type && (
+            <div className="flex items-start gap-3">
+              <ClipboardCheck className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <div className="font-medium">Facility Type</div>
+                <div>{facility.facility_type}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Address</div>
+              <div>
+                {facility.address || 'N/A'}
+                {facility.city && `, ${facility.city}`}
+                {facility.state && `, ${facility.state}`}
+                {facility.zipcode && ` ${facility.zipcode}`}
+                {facility.country && `, ${facility.country}`}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Mail className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Contact Email</div>
+              <div>{facility.contact_email || 'N/A'}</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Phone className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Contact Phone</div>
+              <div>{facility.contact_phone || 'N/A'}</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <CalendarClock className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Created At</div>
+              <div>{facility.created_at ? format(new Date(facility.created_at), 'PPP') : 'N/A'}</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <CalendarClock className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Last Updated</div>
+              <div>{facility.updated_at ? format(new Date(facility.updated_at), 'PPP') : 'N/A'}</div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <RefreshCw className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <div className="font-medium">Status</div>
+              <Badge 
+                variant={facility.status === 'active' ? 'default' : 'secondary'}
+                className="mt-1"
+              >
+                {facility.status || 'Unknown'}
               </Badge>
-            )}
+            </div>
           </div>
         </div>
-        {onEdit && (
-          <Button onClick={onEdit} variant="outline" size="sm">
-            <EditIcon className="h-4 w-4 mr-1" /> Edit
-          </Button>
+
+        {facility.description && (
+          <div className="mt-4">
+            <div className="font-medium mb-1">Description</div>
+            <div className="text-gray-600">{facility.description}</div>
+          </div>
         )}
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="details" className="w-full">
-          <TabsList>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="contact">Contact Info</TabsTrigger>
-            <TabsTrigger value="location">Location</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="pt-4 space-y-4">
-            {facility.description && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                <p className="mt-1">{facility.description}</p>
-                <Separator className="my-4" />
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Facility Type</h3>
-                <p className="mt-1 flex items-center gap-2">
-                  <Building2Icon className="h-4 w-4 text-gray-400" />
-                  {facility.facility_type || 'Not specified'}
-                </p>
-              </div>
-              
-              {facility.created_at && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Added On</h3>
-                  <p className="mt-1">
-                    {new Date(facility.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-              
-              {/* Additional details can be added here */}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="contact" className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {facility.contact_email && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                  <p className="mt-1 flex items-center gap-2">
-                    <MailIcon className="h-4 w-4 text-gray-400" />
-                    <a href={`mailto:${facility.contact_email}`} className="text-blue-600 hover:underline">
-                      {facility.contact_email}
-                    </a>
-                  </p>
-                </div>
-              )}
-              
-              {facility.contact_phone && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-                  <p className="mt-1 flex items-center gap-2">
-                    <PhoneIcon className="h-4 w-4 text-gray-400" />
-                    <a href={`tel:${facility.contact_phone}`} className="text-blue-600 hover:underline">
-                      {facility.contact_phone}
-                    </a>
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {!facility.contact_email && !facility.contact_phone && (
-              <p className="text-muted-foreground">No contact information available</p>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="location" className="pt-4">
-            <div className="space-y-3">
-              {facility.address && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Address</h3>
-                  <p className="mt-1 flex items-start gap-2">
-                    <MapPinIcon className="h-4 w-4 text-gray-400 mt-0.5" />
-                    <span>
-                      {facility.address}<br />
-                      {facility.city && facility.state && (
-                        <>
-                          {facility.city}, {facility.state} {facility.zipcode || ''}
-                        </>
-                      )}
-                    </span>
-                  </p>
-                </div>
-              )}
-              
-              {facility.country && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Country</h3>
-                  <p className="mt-1 flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-gray-400" />
-                    {facility.country}
-                  </p>
-                </div>
-              )}
-              
-              {!facility.address && !facility.city && !facility.country && (
-                <p className="text-muted-foreground">No location information available</p>
-              )}
-              
-              {/* Optional: Add a map component here if coordinates are available */}
-            </div>
-          </TabsContent>
-        </Tabs>
       </CardContent>
     </Card>
+  );
+};
+
+// Add tabs for the facility details and related info
+const FacilityDetails: React.FC<FacilityDetailsProps> = ({ facility }) => {
+  return (
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList>
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="compliance">Compliance</TabsTrigger>
+        <TabsTrigger value="departments">Departments</TabsTrigger>
+        <TabsTrigger value="staff">Staff</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="overview" className="mt-4">
+        <FacilityOverview facility={facility} />
+      </TabsContent>
+      
+      <TabsContent value="compliance" className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Compliance Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Compliance information for this facility will appear here.
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="departments" className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Departments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Departments information for this facility will appear here.
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="staff" className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Staff</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Staff information for this facility will appear here.
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 };
 

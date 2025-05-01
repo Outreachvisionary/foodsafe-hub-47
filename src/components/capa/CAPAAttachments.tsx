@@ -1,164 +1,273 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
-import { File, Upload, Trash2, Download, FileIcon, FileText } from 'lucide-react';
-import { CAPAAttachment } from '@/types/capa';
+import { 
+  FileText, 
+  Trash2, 
+  Upload, 
+  Download, 
+  File, 
+  FileImage, 
+  FileCode,
+  FilePdf,
+  FileSpreadsheet,
+  Loader2
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface CAPAAttachment {
+  id: string;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+  uploaded_by: string;
+}
 
 interface CAPAAttachmentsProps {
   capaId: string;
-  attachments: CAPAAttachment[];
-  onUpload?: (file: File) => Promise<void>;
-  onDelete?: (attachmentId: string) => Promise<void>;
 }
 
-const CAPAAttachments: React.FC<CAPAAttachmentsProps> = ({ 
-  capaId, 
-  attachments = [], 
-  onUpload, 
-  onDelete 
-}) => {
+const CAPAAttachments: React.FC<CAPAAttachmentsProps> = ({ capaId }) => {
+  const [attachments, setAttachments] = useState<CAPAAttachment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  
-  // Handle file upload
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || !files.length || !onUpload) return;
+
+  // Mock data for demonstration
+  useEffect(() => {
+    const fetchAttachments = async () => {
+      try {
+        setLoading(true);
+        
+        // This would be an API call in a real implementation
+        // const response = await getAttachments(capaId);
+        
+        // Mock data for demonstration
+        const mockAttachments = [
+          {
+            id: 'att-1',
+            capa_id: capaId,
+            filename: 'RootCauseAnalysis.pdf',
+            file_type: 'application/pdf',
+            file_size: 1254000,
+            uploaded_at: new Date().toISOString(),
+            uploaded_by: 'John Smith'
+          },
+          {
+            id: 'att-2',
+            capa_id: capaId,
+            filename: 'CorrectiveActionPlan.docx',
+            file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            file_size: 982400,
+            uploaded_at: new Date().toISOString(),
+            uploaded_by: 'Jane Doe'
+          }
+        ];
+        
+        // Simulate API delay
+        setTimeout(() => {
+          setAttachments(mockAttachments);
+          setLoading(false);
+        }, 500);
+        
+      } catch (error) {
+        console.error('Error fetching attachments:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load attachments',
+          variant: 'destructive'
+        });
+        setLoading(false);
+      }
+    };
     
-    const file = files[0];
-    setIsUploading(true);
+    fetchAttachments();
+  }, [capaId]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !files.length) return;
     
     try {
-      await onUpload(file);
+      setUploading(true);
+      
+      // This would be an API call in a real implementation
+      // const response = await uploadAttachment(capaId, files[0]);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create a mock attachment for demonstration
+      const newAttachment = {
+        id: `att-${Date.now()}`,
+        capa_id: capaId,
+        filename: files[0].name,
+        file_type: files[0].type,
+        file_size: files[0].size,
+        uploaded_at: new Date().toISOString(),
+        uploaded_by: 'Current User'
+      };
+      
+      setAttachments(prev => [...prev, newAttachment]);
       
       toast({
-        title: "File uploaded",
-        description: `${file.name} has been uploaded successfully`,
+        title: 'File uploaded',
+        description: 'Your file has been uploaded successfully'
       });
       
-      // Reset the input
-      event.target.value = '';
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error('Error uploading file:', error);
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "There was a problem uploading your file",
+        title: 'Upload failed',
+        description: 'Failed to upload the file. Please try again.',
+        variant: 'destructive'
       });
     } finally {
-      setIsUploading(false);
+      setUploading(false);
+      // Reset file input
+      e.target.value = '';
     }
   };
-  
-  // Handle attachment deletion
-  const handleDelete = async (attachmentId: string, fileName: string) => {
-    if (!onDelete) return;
-    
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
     try {
-      await onDelete(attachmentId);
+      // This would be an API call in a real implementation
+      // await deleteAttachment(attachmentId);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Remove from state
+      setAttachments(prev => prev.filter(att => att.id !== attachmentId));
       
       toast({
-        title: "File deleted",
-        description: `${fileName} has been deleted`,
+        title: 'File deleted',
+        description: 'The file has been deleted successfully'
       });
+      
     } catch (error) {
-      console.error("Error deleting file:", error);
+      console.error('Error deleting attachment:', error);
       toast({
-        variant: "destructive",
-        title: "Deletion failed",
-        description: "There was a problem deleting the file",
+        title: 'Delete failed',
+        description: 'Failed to delete the file',
+        variant: 'destructive'
       });
     }
   };
-  
-  // Get appropriate icon for file type
+
+  const handleDownload = (attachment: CAPAAttachment) => {
+    // In a real implementation, this would generate a download URL and trigger the download
+    toast({
+      title: 'Downloading',
+      description: `Downloading ${attachment.filename}...`
+    });
+  };
+
   const getFileIcon = (fileType: string) => {
-    if (fileType.includes('pdf')) {
-      return <FileText className="h-6 w-6" />;
-    } else if (fileType.includes('image')) {
-      return <FileIcon className="h-6 w-6" />;
+    if (fileType.includes('image')) {
+      return <FileImage className="h-5 w-5 text-blue-500" />;
+    } else if (fileType.includes('pdf')) {
+      return <FilePdf className="h-5 w-5 text-red-500" />;
+    } else if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('csv')) {
+      return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
+    } else if (fileType.includes('word') || fileType.includes('document')) {
+      return <FileText className="h-5 w-5 text-blue-800" />;
+    } else if (fileType.includes('html') || fileType.includes('json') || fileType.includes('xml')) {
+      return <FileCode className="h-5 w-5 text-purple-500" />;
     } else {
-      return <File className="h-6 w-6" />;
+      return <File className="h-5 w-5 text-gray-500" />;
     }
   };
-  
-  // Format file size to human-readable
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' bytes';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Attachments</CardTitle>
-        <div>
-          <Button variant="outline" size="sm" disabled={isUploading} asChild>
-            <label htmlFor="file-upload" className="cursor-pointer flex items-center">
-              <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? 'Uploading...' : 'Upload'}
-              <Input 
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-                disabled={isUploading}
-              />
-            </label>
-          </Button>
-        </div>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Attachments</CardTitle>
       </CardHeader>
       <CardContent>
-        {attachments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <File className="h-12 w-12 text-gray-300 mb-2" />
-            <p className="text-muted-foreground">No attachments yet</p>
-            <p className="text-sm text-muted-foreground">
-              Upload files to provide additional context for this CAPA
-            </p>
+        <div className="space-y-6">
+          <div className="flex items-center">
+            <Input 
+              type="file" 
+              className="w-full"
+              onChange={handleFileUpload}
+              disabled={uploading}
+            />
+            <Button 
+              variant="outline"
+              size="icon"
+              className="ml-2" 
+              disabled={uploading}
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+            </Button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                className="flex items-center justify-between p-3 border rounded-md hover:bg-accent/5"
-              >
-                <div className="flex items-center space-x-3">
-                  {getFileIcon(attachment.file_type)}
-                  <div>
-                    <p className="font-medium">{attachment.filename}</p>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <span>{formatFileSize(attachment.file_size)}</span>
-                      <span className="mx-2">•</span>
-                      <span>{new Date(attachment.uploaded_at).toLocaleDateString()}</span>
+          
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : attachments.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              No attachments have been uploaded yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {attachments.map(attachment => (
+                <div 
+                  key={attachment.id}
+                  className="flex items-center justify-between p-2 rounded-md border"
+                >
+                  <div className="flex items-center gap-2">
+                    {getFileIcon(attachment.file_type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {attachment.filename}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatFileSize(attachment.file_size)} • Uploaded {new Date(attachment.uploaded_at).toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="icon" asChild>
-                    <a href="#" download>
-                      <Download className="h-4 w-4" />
-                    </a>
-                  </Button>
-                  {onDelete && (
+                  
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(attachment.id, attachment.filename)}
+                      className="h-8 w-8"
+                      onClick={() => handleDownload(attachment)}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Download className="h-4 w-4" />
+                      <span className="sr-only">Download</span>
                     </Button>
-                  )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteAttachment(attachment.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
