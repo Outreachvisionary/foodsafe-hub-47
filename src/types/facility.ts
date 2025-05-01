@@ -17,3 +17,9 @@ export interface Facility {
   status: string;
   facility_type?: string;
 }
+
+export interface FacilityFormProps {
+  onSubmit: (data: Partial<Facility>) => void;
+  initialData?: Partial<Facility>;
+  isLoading?: boolean;
+}

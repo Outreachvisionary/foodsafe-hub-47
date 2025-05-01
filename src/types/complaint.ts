@@ -1,6 +1,9 @@
 
 import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 
+// Re-export the enums for easy access
+export { ComplaintStatus, ComplaintCategory, ComplaintPriority };
+
 export interface Complaint {
   id: string;
   title: string;

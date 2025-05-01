@@ -91,11 +91,10 @@ export enum TrainingCategory {
 // Complaint related enums
 export enum ComplaintStatus {
   New = 'New',
-  UnderInvestigation = 'Under_Investigation',
+  Under_Investigation = 'Under_Investigation',
   Resolved = 'Resolved',
   Closed = 'Closed',
-  Escalated = 'Escalated',
-  OnHold = 'On_Hold'
+  Reopened = 'Reopened'
 }
 
 export enum ComplaintCategory {

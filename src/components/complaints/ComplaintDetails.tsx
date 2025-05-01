@@ -147,10 +147,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
               <p className="text-gray-500">{complaint.priority}</p>
             </div>
           </div>
-          {complaint.resolution_date && (
+          {complaint.resolved_date && (
             <div>
               <p className="text-sm font-medium">Resolution Date</p>
-              <p className="text-gray-500">{new Date(complaint.resolution_date).toLocaleDateString()}</p>
+              <p className="text-gray-500">{new Date(complaint.resolved_date).toLocaleDateString()}</p>
             </div>
           )}
         </CardContent>
@@ -164,10 +164,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
           <div className="grid gap-2">
             <Button
               variant="outline"
-              onClick={() => handleStatusUpdate('New')}
-              disabled={updatingStatus || complaint.status === 'New'}
+              onClick={() => handleStatusUpdate(ComplaintStatus.New)}
+              disabled={updatingStatus || complaint.status === ComplaintStatus.New}
             >
-              {complaint.status === 'New' ? (
+              {complaint.status === ComplaintStatus.New ? (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   New
@@ -178,10 +178,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleStatusUpdate('Under_Investigation')}
-              disabled={updatingStatus || complaint.status === 'Under_Investigation'}
+              onClick={() => handleStatusUpdate(ComplaintStatus.Under_Investigation)}
+              disabled={updatingStatus || complaint.status === ComplaintStatus.Under_Investigation}
             >
-              {complaint.status === 'Under_Investigation' ? (
+              {complaint.status === ComplaintStatus.Under_Investigation ? (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Under Investigation
@@ -192,10 +192,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleStatusUpdate('Resolved')}
-              disabled={updatingStatus || complaint.status === 'Resolved'}
+              onClick={() => handleStatusUpdate(ComplaintStatus.Resolved)}
+              disabled={updatingStatus || complaint.status === ComplaintStatus.Resolved}
             >
-              {complaint.status === 'Resolved' ? (
+              {complaint.status === ComplaintStatus.Resolved ? (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Resolved
@@ -206,30 +206,16 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleStatusUpdate('Closed')}
-              disabled={updatingStatus || complaint.status === 'Closed'}
+              onClick={() => handleStatusUpdate(ComplaintStatus.Closed)}
+              disabled={updatingStatus || complaint.status === ComplaintStatus.Closed}
             >
-              {complaint.status === 'Closed' ? (
+              {complaint.status === ComplaintStatus.Closed ? (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Closed
                 </>
               ) : (
                 'Mark as Closed'
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleStatusUpdate('Reopened')}
-              disabled={updatingStatus || complaint.status === 'Reopened'}
-            >
-              {complaint.status === 'Reopened' ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Reopened
-                </>
-              ) : (
-                'Mark as Reopened'
               )}
             </Button>
           </div>

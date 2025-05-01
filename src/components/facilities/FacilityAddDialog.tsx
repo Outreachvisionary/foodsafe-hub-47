@@ -28,12 +28,19 @@ const FacilityAddDialog: React.FC<FacilityAddDialogProps> = ({
     try {
       let result;
       
+      // Make sure name field is included
+      if (!data.name) {
+        throw new Error("Facility name is required");
+      }
+      
       if (isNewFacility) {
         // Create new facility
         const { data: newFacility, error } = await supabase
           .from('facilities')
           .insert({
             ...data,
+            name: data.name, // Ensure name is explicitly included
+            status: data.status || 'active',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -53,6 +60,7 @@ const FacilityAddDialog: React.FC<FacilityAddDialogProps> = ({
           .from('facilities')
           .update({
             ...data,
+            name: data.name, // Ensure name is explicitly included
             updated_at: new Date().toISOString(),
           })
           .eq('id', initialData.id)
