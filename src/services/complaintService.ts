@@ -1,95 +1,58 @@
 
-import { Complaint, ComplaintFilter, ComplaintStatus } from '@/types/complaint';
-import { getMockComplaints } from '@/services/mockDataService';
+import { Complaint } from '@/types/complaint';
+import { supabase } from '@/lib/supabase';
+import { convertToComplaintStatus } from '@/utils/typeAdapters';
 
-// Get all complaints with optional filtering
-export const getComplaints = async (filters?: ComplaintFilter): Promise<Complaint[]> => {
-  // Simulate API call with mock data
-  const mockComplaints = getMockComplaints();
-  
-  if (!filters) {
-    return mockComplaints;
+// Fetch a complaint by its ID
+export const fetchComplaintById = async (id: string): Promise<Complaint> => {
+  try {
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    
+    return data as unknown as Complaint;
+  } catch (error) {
+    console.error('Error fetching complaint:', error);
+    throw new Error('Failed to fetch complaint details');
   }
-  
-  // Apply filters if provided
-  return mockComplaints.filter(complaint => {
-    let matches = true;
-    
-    if (filters.status) {
-      if (Array.isArray(filters.status)) {
-        matches = matches && filters.status.some(s => s === complaint.status);
-      } else {
-        matches = matches && (filters.status === complaint.status);
-      }
-    }
-    
-    if (filters.category) {
-      if (Array.isArray(filters.category)) {
-        matches = matches && filters.category.some(c => c === complaint.category);
-      } else {
-        matches = matches && (filters.category === complaint.category);
-      }
-    }
-    
-    if (filters.searchTerm) {
-      const term = filters.searchTerm.toLowerCase();
-      const titleMatch = complaint.title.toLowerCase().includes(term);
-      const descMatch = complaint.description.toLowerCase().includes(term);
-      const customerMatch = complaint.customer_name?.toLowerCase().includes(term) || false;
-      
-      matches = matches && (titleMatch || descMatch || customerMatch);
-    }
-    
-    if (filters.dateRange) {
-      const reportDate = new Date(complaint.reported_date).getTime();
-      
-      if (filters.dateRange.start) {
-        const startDate = new Date(filters.dateRange.start).getTime();
-        matches = matches && reportDate >= startDate;
-      }
-      
-      if (filters.dateRange.end) {
-        const endDate = new Date(filters.dateRange.end).getTime();
-        matches = matches && reportDate <= endDate;
-      }
-    }
-    
-    return matches;
-  });
 };
 
-// Get a single complaint by ID
-export const getComplaintById = async (id: string): Promise<Complaint | null> => {
-  // Simulate API call with mock data
-  const mockComplaints = getMockComplaints();
-  const complaint = mockComplaints.find(c => c.id === id);
-  
-  return complaint || null;
+// Get a complaint by ID
+export const getComplaintById = async (id: string): Promise<Complaint> => {
+  // This function is the same as fetchComplaintById for compatibility
+  return fetchComplaintById(id);
 };
 
-// Alias for getComplaintById for consistency
-export const fetchComplaintById = getComplaintById;
+// Update a complaint's status
+export const updateComplaintStatus = async (
+  id: string, 
+  status: string, 
+  userId: string
+): Promise<Complaint> => {
+  try {
+    const { data, error } = await supabase
+      .from('complaints')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
 
-// Update complaint status
-export const updateComplaintStatus = async (id: string, newStatus: ComplaintStatus, userId: string): Promise<Complaint> => {
-  const complaint = await getComplaintById(id);
-  if (!complaint) {
-    throw new Error(`Complaint with ID ${id} not found`);
+    if (error) throw error;
+    
+    // Also create an activity log for this status change
+    await supabase.from('complaint_activities').insert({
+      complaint_id: id,
+      action: `Status changed to ${status}`,
+      performed_by: userId,
+    });
+    
+    return data as unknown as Complaint;
+  } catch (error) {
+    console.error('Error updating complaint status:', error);
+    throw new Error('Failed to update complaint status');
   }
-  
-  // Update the status
-  const updatedComplaint = {
-    ...complaint,
-    status: newStatus,
-    updated_at: new Date().toISOString(),
-    // If resolving, set resolved_date
-    resolved_date: newStatus === ComplaintStatus.Resolved ? new Date().toISOString() : complaint.resolved_date
-  };
-  
-  // In a real app, this would save to a database
-  console.log(`Complaint ${id} status updated to ${newStatus} by ${userId}`);
-  
-  return updatedComplaint;
 };
-
-// Add more complaint service functions as needed

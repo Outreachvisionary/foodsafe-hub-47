@@ -1,4 +1,5 @@
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
+
+import { CAPAStatus, CAPAPriority, CAPASource, DocumentStatus, CAPAEffectivenessRating } from '@/types/enums';
 import { CAPA } from '@/types/capa';
 
 // Convert string to CAPAStatus enum
@@ -73,6 +74,39 @@ export const stringToCAPASource = (source: string): CAPASource => {
   }
 };
 
+// Format enum values to readable strings
+export const formatEnumValue = (value: string): string => {
+  if (!value) return '';
+  return value.replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+// Check if a document status is equal to a target status
+export const isDocumentStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
+  if (!status) return false;
+  
+  // Handle enum-style status with underscores
+  if (typeof status === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
+  }
+  
+  return status === targetStatus;
+};
+
+// Check if a string status matches an enum value
+export const isStringStatusEqual = (stringStatus: string, enumStatus: any): boolean => {
+  if (!stringStatus || !enumStatus) return false;
+  
+  const normalizedString = stringStatus.replace(/\s+/g, '_').toUpperCase();
+  const normalizedEnum = enumStatus.toString().toUpperCase();
+  
+  return normalizedString === normalizedEnum;
+};
+
 // Function to adapt CAPA data coming from various sources to the CAPA model
 export const adaptCAPAToModel = (data: any): CAPA => {
   return {
@@ -93,14 +127,16 @@ export const adaptCAPAToModel = (data: any): CAPA => {
     preventive_action: data.preventive_action || null,
     effectiveness_criteria: data.effectiveness_criteria || null,
     relatedDocuments: data.relatedDocuments || [],
-    relatedTraining: data.relatedTraining || []
+    relatedTraining: data.relatedTraining || [],
+    effectiveness_rating: data.effectiveness_rating || null
   };
 };
 
-// Add more adapter functions for other types as needed
-
-// Import missing function from complaintUtils.ts to avoid import errors
-export { convertToComplaintStatus } from '@/utils/complaintUtils';
+// Convert complaint status between string and enum
+export const convertToComplaintStatus = (status: string): string => {
+  const normalizedStatus = status.replace(/\s+/g, '_').toUpperCase();
+  return normalizedStatus;
+};
 
 // Adapter for document database
 export const adaptDocumentToDatabase = (document: any): any => {
@@ -109,3 +145,6 @@ export const adaptDocumentToDatabase = (document: any): any => {
     // Add any transformations needed for database storage
   };
 };
+
+// Reexporting isDocumentStatusEqual as isStatusEqual for backward compatibility
+export const isStatusEqual = isDocumentStatusEqual;

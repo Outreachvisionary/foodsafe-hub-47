@@ -7,16 +7,17 @@ import { AlertCircle, Calendar, Clock, Info, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import LinkedCAPAsList from '@/components/capa/LinkedCAPAsList';
 import { CAPA } from '@/types/capa'; 
+import { NCDetailsProps } from '@/types/non-conformance';
 
-interface NCDetailsProps {
+interface DetailedNCProps {
   id: string;
-  title: string;
+  title?: string;
   description?: string;
-  status: string;
-  itemName: string;
-  itemCategory: string;
-  reportedDate: string;
-  createdBy: string;
+  status?: string;
+  itemName?: string;
+  itemCategory?: string;
+  reportedDate?: string;
+  createdBy?: string;
   assignedTo?: string;
   reviewDate?: string;
   resolutionDate?: string;
@@ -30,13 +31,13 @@ interface NCDetailsProps {
   onAddCAPA?: () => void;
 }
 
-const NCDetails: React.FC<NCDetailsProps> = ({
+const NCDetails: React.FC<DetailedNCProps> = ({
   id,
-  title,
+  title = 'Untitled Non-Conformance',
   description,
-  status,
-  itemName,
-  itemCategory,
+  status = 'Unknown',
+  itemName = 'Unknown Item',
+  itemCategory = 'Uncategorized',
   reportedDate,
   createdBy,
   assignedTo,

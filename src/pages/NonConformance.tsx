@@ -18,6 +18,7 @@ const NonConformancePage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedNCId, setSelectedNCId] = useState<string | null>(null);
   const [showNCDetails, setShowNCDetails] = useState(false);
+  const [selectedNC, setSelectedNC] = useState<NonConformance | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -79,6 +80,8 @@ const NonConformancePage = () => {
   }, []);
 
   const handleViewDetails = (id: string) => {
+    const nc = nonConformances.find(nc => nc.id === id) || null;
+    setSelectedNC(nc);
     setSelectedNCId(id);
     setShowNCDetails(true);
   };
@@ -164,11 +167,27 @@ const NonConformancePage = () => {
           ))}
         </div>
         
-        {showNCDetails && selectedNCId && (
+        {showNCDetails && selectedNC && (
           <Dialog open={showNCDetails} onOpenChange={setShowNCDetails}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <NCDetails 
-                id={selectedNCId} 
+                id={selectedNC.id}
+                title={selectedNC.title}
+                status={selectedNC.status.toString()}
+                description={selectedNC.description}
+                itemName={selectedNC.item_name}
+                itemCategory={selectedNC.item_category.toString()}
+                reportedDate={selectedNC.reported_date}
+                createdBy={selectedNC.created_by}
+                assignedTo={selectedNC.assigned_to}
+                reviewDate={selectedNC.review_date}
+                resolutionDate={selectedNC.resolution_date}
+                quantity={selectedNC.quantity}
+                quantityOnHold={selectedNC.quantity_on_hold}
+                units={selectedNC.units}
+                reasonCategory={selectedNC.reason_category?.toString()}
+                reasonDetails={selectedNC.reason_details}
+                resolution={selectedNC.resolution_details}
               />
             </DialogContent>
           </Dialog>
