@@ -2,6 +2,7 @@
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import { TrainingStatus } from '@/types/enums';
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
+import { CAPA } from '@/types/capa';
 
 // Document status conversion functions
 export const stringToDocumentStatus = (status: string): DocumentStatus => {
@@ -112,12 +113,13 @@ export const convertToCAPAStatus = (status: string): CAPAStatus => {
   }
 };
 
-// Adding missing function that's being imported in capaUpdateService.ts
+// Added to fix missing function reference in capaUpdateService.ts
 export const adaptCAPAToModel = (capa: any): CAPA => {
   return {
     ...capa,
     status: convertToCAPAStatus(capa.status),
     priority: stringToCAPAPriority(capa.priority),
-    source: stringToCAPASource(capa.source)
+    source: stringToCAPASource(capa.source),
+    updated_at: capa.updated_at || capa.created_at || new Date().toISOString()
   };
 };

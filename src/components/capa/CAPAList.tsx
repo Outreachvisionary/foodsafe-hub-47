@@ -7,92 +7,49 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Clock, PlusCircle, Search } from 'lucide-react';
-import { CAPA } from '@/types/capa';
+import { CAPA, CAPAListProps } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import { getCAPAs } from '@/services/capaService';
 
-interface CAPAListProps {
-  filter?: {
-    status?: CAPAStatus | CAPAStatus[];
-    priority?: CAPAPriority | CAPAPriority[];
-    source?: CAPASource | CAPASource[];
-    department?: string;
-  };
-  limit?: number;
-  searchQuery?: string;
-}
-
-const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externalSearchQuery }) => {
-  const [capas, setCapas] = useState<CAPA[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState(externalSearchQuery || '');
+const CAPAList: React.FC<CAPAListProps> = ({ 
+  items, 
+  loading, 
+  error, 
+  onCAPAClick 
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<CAPAStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<CAPAPriority | ''>('');
-  const [sourceFilter, setSourceFilter] = useState<CAPASource | ''>('');
-  
+  const [filteredItems, setFilteredItems] = useState<CAPA[]>(items || []);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
-    if (externalSearchQuery !== undefined) {
-      setSearchQuery(externalSearchQuery);
-    }
-    fetchCAPAs();
-  }, [filter, statusFilter, priorityFilter, sourceFilter, externalSearchQuery]);
-  
-  const fetchCAPAs = async () => {
-    try {
-      setLoading(true);
+    if (items) {
+      let filtered = [...items];
       
-      // Combine component filters with prop filters
-      const combinedFilter: any = {
-        ...filter,
-      };
-      
-      if (statusFilter) {
-        combinedFilter.status = statusFilter;
-      }
-      
-      if (priorityFilter) {
-        combinedFilter.priority = priorityFilter;
-      }
-      
-      if (sourceFilter) {
-        combinedFilter.source = sourceFilter;
-      }
-      
-      const fetchedCAPAs = await getCAPAs(combinedFilter);
-      
-      // Apply search filter in memory
-      let filteredCAPAs = [...fetchedCAPAs];
+      // Apply search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        filteredCAPAs = filteredCAPAs.filter(capa => 
+        filtered = filtered.filter(capa => 
           capa.title.toLowerCase().includes(query) || 
           (capa.description && capa.description.toLowerCase().includes(query))
         );
       }
       
-      // Apply limit if specified
-      if (limit && limit > 0) {
-        filteredCAPAs = filteredCAPAs.slice(0, limit);
+      // Apply status filter
+      if (statusFilter) {
+        filtered = filtered.filter(capa => capa.status === statusFilter);
       }
       
-      setCapas(filteredCAPAs);
-    } catch (error) {
-      console.error('Error fetching CAPAs:', error);
-    } finally {
-      setLoading(false);
+      // Apply priority filter
+      if (priorityFilter) {
+        filtered = filtered.filter(capa => capa.priority === priorityFilter);
+      }
+      
+      setFilteredItems(filtered);
     }
-  };
-  
-  const handleRowClick = (capa: CAPA) => {
-    navigate(`/capa/${capa.id}`);
-  };
-  
-  const handleSearch = () => {
-    fetchCAPAs();
-  };
-  
+  }, [items, searchQuery, statusFilter, priorityFilter]);
+
   const getStatusBadge = (status: CAPAStatus) => {
     switch (status) {
       case CAPAStatus.Open:
@@ -142,7 +99,15 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
         return null;
     }
   };
-  
+
+  const handleNewCapa = () => {
+    navigate('/capa/new');
+  };
+
+  if (error) {
+    return <div className="p-4 bg-red-50 text-red-800 rounded-md">{error}</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -155,14 +120,6 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
               className="w-full"
             />
           </div>
-          <Button 
-            onClick={handleSearch}
-            size="icon"
-            variant="ghost"
-            className="h-10 w-10"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
         </div>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={value => setStatusFilter(value as CAPAStatus)}>
@@ -193,7 +150,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
             </SelectContent>
           </Select>
           
-          <Button>
+          <Button onClick={handleNewCapa}>
             <PlusCircle className="h-4 w-4 mr-2" />
             New CAPA
           </Button>
@@ -219,23 +176,23 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
                   Loading CAPAs...
                 </TableCell>
               </TableRow>
-            ) : capas.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   No CAPAs found
                 </TableCell>
               </TableRow>
             ) : (
-              capas.map((capa) => (
+              filteredItems.map((capa) => (
                 <TableRow 
                   key={capa.id} 
                   className="cursor-pointer hover:bg-gray-50" 
-                  onClick={() => handleRowClick(capa)}
+                  onClick={() => onCAPAClick(capa)}
                 >
                   <TableCell className="font-medium">{capa.id.slice(0, 8)}</TableCell>
                   <TableCell>
                     <div className="flex items-start gap-2">
-                      {getStatusIcon(capa.status as CAPAStatus)}
+                      {getStatusIcon(capa.status)}
                       <div>
                         <div className="font-medium">{capa.title}</div>
                         {capa.description && (
@@ -246,8 +203,8 @@ const CAPAList: React.FC<CAPAListProps> = ({ filter, limit, searchQuery: externa
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{getPriorityBadge(capa.priority as CAPAPriority)}</TableCell>
-                  <TableCell>{getStatusBadge(capa.status as CAPAStatus)}</TableCell>
+                  <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
+                  <TableCell>{getStatusBadge(capa.status)}</TableCell>
                   <TableCell>{capa.source}</TableCell>
                   <TableCell>
                     {capa.due_date ? new Date(capa.due_date).toLocaleDateString() : '-'}

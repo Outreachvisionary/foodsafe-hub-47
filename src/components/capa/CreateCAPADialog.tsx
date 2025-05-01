@@ -1,150 +1,85 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { CreateCAPADialogProps } from '@/types/capa';
 import { CAPAPriority, CAPASource } from '@/types/enums';
-import { useToast } from '@/hooks/use-toast';
-import { DatePicker } from '@/components/ui/date-picker';
-import DepartmentSelector from '@/components/department/DepartmentSelector';
 
-export interface CreateCAPADialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCAPACreated: (data: any) => void;
-}
-
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
-  open,
-  onOpenChange,
-  onCAPACreated
-}) => {
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState<CAPASource>(CAPASource.InternalReport);
   const [priority, setPriority] = useState<CAPAPriority>(CAPAPriority.Medium);
-  const [department, setDepartment] = useState('');
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [fsma204Compliant, setFsma204Compliant] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { toast } = useToast();
-  
-  const handleSubmit = async () => {
-    if (!title || !description) {
-      toast({
-        title: 'Missing information',
-        description: 'Please fill in all required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const [source, setSource] = useState<CAPASource>(CAPASource.InternalReport);
+  const [dueDate, setDueDate] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setIsSubmitting(true);
+    const capaData = {
+      title,
+      description,
+      priority,
+      source,
+      due_date: dueDate,
+      assigned_to: assignedTo
+    };
     
-    try {
-      // In a real implementation, this would be an API call
-      const newCapa = {
-        id: `CAPA-${Date.now().toString().substring(6)}`,
-        title,
-        description,
-        source,
-        priority,
-        department,
-        due_date: dueDate?.toISOString(),
-        fsma204_compliant: fsma204Compliant,
-        status: 'Open',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'current-user',
-      };
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      toast({
-        title: 'CAPA Created',
-        description: `Successfully created CAPA: ${title}`,
-      });
-      
-      // Clear form
-      setTitle('');
-      setDescription('');
-      setSource(CAPASource.InternalReport);
-      setPriority(CAPAPriority.Medium);
-      setDepartment('');
-      setDueDate(undefined);
-      setFsma204Compliant(false);
-      
-      // Close dialog and notify parent
-      onOpenChange(false);
-      onCAPACreated(newCapa);
-    } catch (error) {
-      console.error('Error creating CAPA:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create CAPA. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSubmit(capaData);
+    resetForm();
   };
-  
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setPriority(CAPAPriority.Medium);
+    setSource(CAPASource.InternalReport);
+    setDueDate('');
+    setAssignedTo('');
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New CAPA</DialogTitle>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input 
-              id="title" 
-              placeholder="Enter CAPA title" 
-              value={title} 
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="title" className="block text-sm font-medium">Title</label>
+            <Input
+              id="title"
+              value={title}
               onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter CAPA title"
+              required
             />
           </div>
           
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Describe the issue and required actions" 
+          <div className="space-y-2">
+            <label htmlFor="description" className="block text-sm font-medium">Description</label>
+            <Textarea
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[100px]"
+              placeholder="Describe the issue that requires corrective/preventive action"
+              rows={4}
+              required
             />
           </div>
           
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="source">Source</Label>
-              <Select value={source} onValueChange={(value) => setSource(value as CAPASource)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={CAPASource.Audit}>Audit</SelectItem>
-                  <SelectItem value={CAPASource.CustomerComplaint}>Customer Complaint</SelectItem>
-                  <SelectItem value={CAPASource.InternalReport}>Internal Report</SelectItem>
-                  <SelectItem value={CAPASource.NonConformance}>Non-Conformance</SelectItem>
-                  <SelectItem value={CAPASource.RegulatoryInspection}>Regulatory Inspection</SelectItem>
-                  <SelectItem value={CAPASource.SupplierIssue}>Supplier Issue</SelectItem>
-                  <SelectItem value={CAPASource.Other}>Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="priority">Priority</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="priority" className="block text-sm font-medium">Priority</label>
               <Select value={priority} onValueChange={(value) => setPriority(value as CAPAPriority)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -157,47 +92,57 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="source" className="block text-sm font-medium">Source</label>
+              <Select value={source} onValueChange={(value) => setSource(value as CAPASource)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CAPASource.Audit}>Audit</SelectItem>
+                  <SelectItem value={CAPASource.CustomerComplaint}>Customer Complaint</SelectItem>
+                  <SelectItem value={CAPASource.NonConformance}>Non-Conformance</SelectItem>
+                  <SelectItem value={CAPASource.InternalReport}>Internal Report</SelectItem>
+                  <SelectItem value={CAPASource.SupplierIssue}>Supplier Issue</SelectItem>
+                  <SelectItem value={CAPASource.RegulatoryInspection}>Regulatory Inspection</SelectItem>
+                  <SelectItem value={CAPASource.Other}>Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="department">Department</Label>
-              <Input 
-                id="department" 
-                placeholder="Enter department name" 
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)} 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="dueDate" className="block text-sm font-medium">Due Date</label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                required
               />
             </div>
             
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <DatePicker
-                date={dueDate}
-                onSelect={setDueDate}
-                disabled={(date) => date < new Date()}
+            <div className="space-y-2">
+              <label htmlFor="assignedTo" className="block text-sm font-medium">Assigned To</label>
+              <Input
+                id="assignedTo"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                placeholder="Enter person responsible"
+                required
               />
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="fsma204" 
-              checked={fsma204Compliant}
-              onCheckedChange={(checked) => setFsma204Compliant(checked === true)}
-            />
-            <Label htmlFor="fsma204">FSMA 204 Compliant</Label>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit">Create CAPA</Button>
           </div>
-        </div>
-        
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create CAPA'}
-          </Button>
-        </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
