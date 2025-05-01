@@ -1,83 +1,75 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckCircle, FileCheck, User } from 'lucide-react';
 import { getMockDocumentWorkflowSteps } from '@/services/mockDataService';
-
-export interface DocumentWorkflowStep {
-  id: string;
-  name: string;
-  description: string;
-  approvers: string[];
-  status: "Approved" | "Rejected" | "Pending";
-}
+import { DocumentWorkflowStep } from '@/services/documentWorkflowService';
 
 interface ApprovalRequirementsProps {
-  workflowSteps?: DocumentWorkflowStep[];
+  documentId?: string;
 }
 
-const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ workflowSteps }) => {
-  // Get workflow steps from props or use mock data
-  const [steps, setSteps] = useState<DocumentWorkflowStep[]>([]);
+const ApprovalRequirements: React.FC<ApprovalRequirementsProps> = ({ documentId }) => {
+  // This would fetch real data in a production environment
+  const steps = getMockDocumentWorkflowSteps();
   
-  useEffect(() => {
-    if (workflowSteps) {
-      setSteps(workflowSteps);
-    } else {
-      // Use synchronous mock data with type casting
-      const mockSteps = getMockDocumentWorkflowSteps();
-      // Map the mock data to the correct type expected by the component
-      const typedSteps: DocumentWorkflowStep[] = mockSteps.map(step => ({
-        ...step,
-        status: step.status === 'Approved' ? 'Approved' : 
-               step.status === 'Rejected' ? 'Rejected' : 'Pending'
-      }));
-      setSteps(typedSteps);
+  const getStepIcon = (completed: boolean) => {
+    if (completed) {
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     }
-  }, [workflowSteps]);
+    return <Circle className="h-5 w-5 text-gray-300" />;
+  };
+  
+  const getStatusBadge = (step: DocumentWorkflowStep) => {
+    if (!step.status) return null;
+    
+    if (step.status === 'Rejected') {
+      return <Badge variant="destructive">Rejected</Badge>;
+    } else if (step.status === 'Approved') {
+      return <Badge variant="success">Approved</Badge>;
+    } else if (step.status === 'Pending') {
+      return <Badge variant="outline">Pending</Badge>;
+    }
+    return null;
+  };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-medium">Approval Requirements</CardTitle>
+        <CardTitle className="text-lg">Approval Requirements</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {steps.map((step, index) => (
-            <li key={step.id} className="px-4 py-3">
-              <div className="flex items-center justify-between">
+      <CardContent className="space-y-4">
+        {steps.map((step) => (
+          <div key={step.id} className="flex items-start">
+            <div className="mr-3 mt-0.5">
+              {getStepIcon(step.completed)}
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-sm font-medium text-foreground">{step.name}</h3>
-                  <p className="text-xs text-foreground-muted mt-1">{step.description}</p>
-                  <div className="flex items-center mt-2 space-x-2">
-                    {step.approvers.map((approver, approverIndex) => (
-                      <Avatar key={approverIndex} className="h-5 w-5">
-                        <AvatarImage src={`https://avatar.vercel.sh/${approver}.png`} />
+                  <h4 className="font-medium">{step.name}</h4>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
+                {getStatusBadge(step)}
+              </div>
+              
+              {step.approvers && step.approvers.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Approvers:</p>
+                  <div className="flex -space-x-2">
+                    {step.approvers.map((approver, index) => (
+                      <Avatar key={index} className="border-2 border-background h-6 w-6">
                         <AvatarFallback>{approver.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                     ))}
-                    {step.approvers.length === 0 && (
-                      <div className="flex items-center text-xs text-foreground-muted">
-                        <User className="h-3 w-3 mr-1" />
-                        No approvers assigned
-                      </div>
-                    )}
                   </div>
                 </div>
-                <div className="flex items-center text-xs text-green-500">
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Approved
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-        {steps.length === 0 && (
-          <div className="p-4 text-center text-foreground-muted">
-            No approval steps defined.
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </CardContent>
     </Card>
   );

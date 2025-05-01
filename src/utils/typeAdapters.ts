@@ -1,150 +1,85 @@
 
-import { CAPAStatus, CAPAPriority, CAPASource, DocumentStatus, CAPAEffectivenessRating } from '@/types/enums';
-import { CAPA } from '@/types/capa';
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, DocumentStatus } from '@/types/enums';
 
-// Convert string to CAPAStatus enum
+// Document status comparison
+export const isDocumentStatusEqual = (
+  status: string | DocumentStatus,
+  compareStatus: DocumentStatus
+): boolean => {
+  if (typeof status === 'string') {
+    return status === compareStatus.toString();
+  }
+  return status === compareStatus;
+};
+
+// CAPA status conversion
 export const convertToCAPAStatus = (status: string): CAPAStatus => {
-  const normalized = status.replace(/\s+/g, '_');
-  
-  switch (normalized.toUpperCase()) {
-    case 'OPEN':
-      return CAPAStatus.Open;
-    case 'IN_PROGRESS':
-      return CAPAStatus.InProgress;
-    case 'COMPLETED':
-      return CAPAStatus.Completed;
-    case 'CLOSED':
-      return CAPAStatus.Closed;
-    case 'REJECTED':
-      return CAPAStatus.Rejected;
-    case 'ON_HOLD':
-      return CAPAStatus.OnHold;
-    case 'OVERDUE':
-      return CAPAStatus.Overdue;
-    case 'PENDING_VERIFICATION':
-      return CAPAStatus.PendingVerification;
-    case 'VERIFIED':
-      return CAPAStatus.Verified;
-    case 'UNDER_REVIEW':
-      return CAPAStatus.UnderReview;
-    default:
-      return CAPAStatus.Open;
+  switch (status.toUpperCase()) {
+    case 'OPEN': return CAPAStatus.Open;
+    case 'IN_PROGRESS': return CAPAStatus.InProgress;
+    case 'PENDING_VERIFICATION': return CAPAStatus.PendingVerification;
+    case 'COMPLETED': return CAPAStatus.Completed;
+    case 'CLOSED': return CAPAStatus.Closed;
+    case 'VERIFIED': return CAPAStatus.Verified;
+    case 'OVERDUE': return CAPAStatus.Overdue;
+    default: return CAPAStatus.Open;
   }
 };
 
-// Convert string to CAPAPriority enum
-export const stringToCAPAPriority = (priority: string): CAPAPriority => {
-  const normalized = priority.trim().toLowerCase();
-  
-  switch (normalized) {
-    case 'low':
-      return CAPAPriority.Low;
-    case 'medium':
-      return CAPAPriority.Medium;
-    case 'high':
-      return CAPAPriority.High;
-    case 'critical':
-      return CAPAPriority.Critical;
-    default:
-      return CAPAPriority.Medium;
-  }
-};
-
-// Convert string to CAPASource enum
-export const stringToCAPASource = (source: string): CAPASource => {
-  const normalized = source.replace(/\s+/g, '_').toUpperCase();
-  
-  switch (normalized) {
-    case 'AUDIT':
-      return CAPASource.Audit;
-    case 'CUSTOMER_COMPLAINT':
-      return CAPASource.CustomerComplaint;
-    case 'INTERNAL_REPORT':
-      return CAPASource.InternalReport;
-    case 'NON_CONFORMANCE':
-      return CAPASource.NonConformance;
-    case 'REGULATORY_INSPECTION':
-      return CAPASource.RegulatoryInspection;
-    case 'SUPPLIER_ISSUE':
-      return CAPASource.SupplierIssue;
-    case 'OTHER':
-      return CAPASource.Other;
-    default:
-      return CAPASource.Other;
-  }
-};
-
-// Format enum values to readable strings
+// Format enum values for display
 export const formatEnumValue = (value: string): string => {
   if (!value) return '';
-  return value.replace(/_/g, ' ')
+  
+  // Replace underscores with spaces
+  const withSpaces = value.replace(/_/g, ' ');
+  
+  // Capitalize the first letter of each word
+  return withSpaces
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 };
 
-// Check if a document status is equal to a target status
-export const isDocumentStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
-  if (!status) return false;
-  
-  // Handle enum-style status with underscores
+// String status comparison helper
+export const isStringStatusEqual = (status: string | CAPAStatus, compareStatus: string): boolean => {
   if (typeof status === 'string') {
-    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
-    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
-    return normalizedStatus === normalizedTarget;
+    return status.toLowerCase() === compareStatus.toLowerCase();
   }
-  
-  return status === targetStatus;
+  return status.toString().toLowerCase() === compareStatus.toLowerCase();
 };
 
-// Check if a string status matches an enum value
-export const isStringStatusEqual = (stringStatus: string, enumStatus: any): boolean => {
-  if (!stringStatus || !enumStatus) return false;
-  
-  const normalizedString = stringStatus.replace(/\s+/g, '_').toUpperCase();
-  const normalizedEnum = enumStatus.toString().toUpperCase();
-  
-  return normalizedString === normalizedEnum;
+// Convert string to CAPA priority
+export const stringToCAPAPriority = (priority: string): CAPAPriority => {
+  switch (priority.toUpperCase()) {
+    case 'LOW': return CAPAPriority.Low;
+    case 'MEDIUM': return CAPAPriority.Medium;
+    case 'HIGH': return CAPAPriority.High;
+    case 'CRITICAL': return CAPAPriority.Critical;
+    default: return CAPAPriority.Medium;
+  }
 };
 
-// Function to adapt CAPA data coming from various sources to the CAPA model
-export const adaptCAPAToModel = (data: any): CAPA => {
-  return {
-    id: data.id,
-    title: data.title || '',
-    description: data.description || '',
-    status: typeof data.status === 'string' ? convertToCAPAStatus(data.status) : data.status,
-    priority: typeof data.priority === 'string' ? stringToCAPAPriority(data.priority) : data.priority,
-    source: typeof data.source === 'string' ? stringToCAPASource(data.source) : data.source,
-    created_at: data.created_at || new Date().toISOString(),
-    updated_at: data.updated_at || new Date().toISOString(),
-    created_by: data.created_by || '',
-    due_date: data.due_date || '',
-    assigned_to: data.assigned_to || '',
-    source_reference: data.source_reference || data.source_id || '',
-    root_cause: data.root_cause || null,
-    corrective_action: data.corrective_action || null,
-    preventive_action: data.preventive_action || null,
-    effectiveness_criteria: data.effectiveness_criteria || null,
-    relatedDocuments: data.relatedDocuments || [],
-    relatedTraining: data.relatedTraining || [],
-    effectiveness_rating: data.effectiveness_rating || null
-  };
+// Convert string to CAPA source
+export const stringToCAPASource = (source: string): CAPASource => {
+  switch (source.toUpperCase()) {
+    case 'AUDIT': return CAPASource.Audit;
+    case 'CUSTOMER_COMPLAINT': return CAPASource.CustomerComplaint;
+    case 'NON_CONFORMANCE': return CAPASource.NonConformance;
+    case 'SUPPLIER_ISSUE': return CAPASource.SupplierIssue;
+    case 'INTERNAL_REPORT': return CAPASource.InternalReport;
+    case 'REGULATORY_INSPECTION': return CAPASource.RegulatoryInspection;
+    default: return CAPASource.Other;
+  }
 };
 
-// Convert complaint status between string and enum
+// Complaint status conversion
 export const convertToComplaintStatus = (status: string): string => {
-  const normalizedStatus = status.replace(/\s+/g, '_').toUpperCase();
-  return normalizedStatus;
+  switch (status.toUpperCase()) {
+    case 'NEW': return 'New';
+    case 'UNDER_INVESTIGATION': return 'Under Investigation';
+    case 'PENDING_CAPA': return 'Pending CAPA';
+    case 'RESOLVED': return 'Resolved';
+    case 'CLOSED': return 'Closed';
+    default: return 'New';
+  }
 };
-
-// Adapter for document database
-export const adaptDocumentToDatabase = (document: any): any => {
-  return {
-    ...document,
-    // Add any transformations needed for database storage
-  };
-};
-
-// Reexporting isDocumentStatusEqual as isStatusEqual for backward compatibility
-export const isStatusEqual = isDocumentStatusEqual;
