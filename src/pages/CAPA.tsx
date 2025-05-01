@@ -232,7 +232,7 @@ const CAPA: React.FC = () => {
             <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
             <div className="md:col-span-3">
               <CAPAList
-                items={filteredCAPAs}
+                items={filteredCAPAs} // Changed from 'capas' to match props
                 loading={loading}
                 error={error}
                 onCAPAClick={handleCAPAClick}
@@ -247,7 +247,7 @@ const CAPA: React.FC = () => {
               <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
               <div className="md:col-span-3">
                 <CAPAList
-                  items={filteredCAPAs}
+                  items={filteredCAPAs} // Changed from 'capas' to match props
                   loading={loading}
                   error={error}
                   onCAPAClick={handleCAPAClick}
@@ -259,8 +259,8 @@ const CAPA: React.FC = () => {
       </Tabs>
 
       <CreateCAPADialog
-        open={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)}
+        open={showCreateDialog} // Changed from 'isOpen' to match props
+        onClose={() => setShowCreateDialog(false)} 
         onSubmit={handleCreateCAPA}
       />
     </div>

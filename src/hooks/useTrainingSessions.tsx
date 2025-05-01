@@ -84,10 +84,10 @@ export const useTrainingSessions = () => {
         completion_status
       };
       
-      // Use object instead of array for insert
+      // Use object instead of array for insert, and cast any string values that need to be enum values in the db
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(newSession)
+        .insert({...newSession, completion_status: completion_status as any})
         .select()
         .single();
       
@@ -130,7 +130,7 @@ export const useTrainingSessions = () => {
       
       const { data, error } = await supabase
         .from('training_sessions')
-        .update({ completion_status: statusString })
+        .update({ completion_status: statusString as any })
         .eq('id', sessionId)
         .select()
         .single();

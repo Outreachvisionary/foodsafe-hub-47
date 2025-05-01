@@ -67,14 +67,14 @@ export interface CAPAStats {
 }
 
 export interface CAPAListProps {
-  items: CAPA[];
+  items: CAPA[];  // Changed from 'capas' to 'items' to match implementation
   loading: boolean;
   error: string | null;
   onCAPAClick: (capa: CAPA) => void;
 }
 
 export interface CreateCAPADialogProps {
-  open: boolean;
+  open: boolean;  // Changed from 'isOpen' to 'open' to match implementation
   onClose: () => void;
   onSubmit: (capaData: any) => void;
 }

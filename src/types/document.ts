@@ -1,4 +1,3 @@
-
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 
 export { DocumentStatus, CheckoutStatus };
@@ -6,7 +5,7 @@ export { DocumentStatus, CheckoutStatus };
 export interface Document {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   file_name: string;
   file_path: string;
   file_type: string;
@@ -29,7 +28,6 @@ export interface Document {
   next_review_date?: string;
   checkout_user_id?: string;
   checkout_user_name?: string;
-  file_path?: string;
 }
 
 export type DocumentCategory = 

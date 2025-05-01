@@ -19,11 +19,11 @@ export interface Facility {
 }
 
 export interface FacilityFormProps {
-  onSubmit: (data: Partial<Facility>) => void;
+  onSubmit?: (data: Partial<Facility>) => void;
   initialData?: Partial<Facility>;
   isLoading?: boolean;
-  defaultValues?: Partial<Facility>; // Added defaultValues prop
-  onSubmitSuccess?: (facility: Facility) => void; // Added success callback
-  isNewFacility?: boolean; // Added flag for new facility
-  onCancel?: () => void; // Added cancel handler
+  defaultValues?: Partial<Facility>; // Added missing property
+  onSubmitSuccess?: (facility: Facility) => void; // Added missing property
+  isNewFacility?: boolean; // Added missing property
+  onCancel?: () => void; // Added missing property
 }
