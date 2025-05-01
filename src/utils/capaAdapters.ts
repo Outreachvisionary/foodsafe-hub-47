@@ -55,3 +55,7 @@ export const getCAPAStats = async () => {
     recentActivities: []
   };
 };
+
+export const convertToCAPAStatus = stringToCAPAStatus;
+export const convertToCAPAPriority = stringToCAPAPriority;
+export const convertToCAPASource = stringToCAPASource;

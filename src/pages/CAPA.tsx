@@ -6,19 +6,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Filter, Search, RefreshCcw } from 'lucide-react';
-import { CAPA, CAPAStats, CAPAFilter } from '@/types/capa';
+import { CAPA as CAPAType, CAPAStats, CAPAFilter } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import CAPADashboard from '@/components/capa/CAPADashboard';
 import CAPAList from '@/components/capa/CAPAList';
 import CAPAFilters from '@/components/capa/CAPAFilters';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
-import { getCAPAs } from '@/services/capaService';
+import { getCAPAs, getCAPAStats } from '@/services/capaService';
 
 const CAPA: React.FC = () => {
   const navigate = useNavigate();
-  const [capas, setCAPAs] = useState<CAPA[]>([]);
-  const [filteredCAPAs, setFilteredCAPAs] = useState<CAPA[]>([]);
+  const [capas, setCAPAs] = useState<CAPAType[]>([]);
+  const [filteredCAPAs, setFilteredCAPAs] = useState<CAPAType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +48,7 @@ const CAPA: React.FC = () => {
   // Fetch CAPAs on component mount
   useEffect(() => {
     fetchCAPAs();
+    fetchStats();
   }, []);
 
   // Apply filters whenever filters or capas change
@@ -64,9 +65,6 @@ const CAPA: React.FC = () => {
       const fetchedCAPAs = await getCAPAs();
       
       setCAPAs(fetchedCAPAs);
-      
-      // Calculate stats
-      calculateStats(fetchedCAPAs);
     } catch (err) {
       console.error('Error fetching CAPAs:', err);
       setError('Failed to load CAPAs. Please try again.');
@@ -75,68 +73,14 @@ const CAPA: React.FC = () => {
     }
   };
 
-  // Calculate statistics from CAPA data
-  const calculateStats = (capaData: CAPA[]) => {
-    const stats: CAPAStats = {
-      total: capaData.length,
-      open: 0,
-      inProgress: 0,
-      completed: 0,
-      overdue: 0,
-      byPriority: {} as Record<CAPAPriority, number>,
-      bySource: {} as Record<CAPASource, number>,
-      byDepartment: {},
-      recentActivities: []
-    };
-
-    // Initialize priority counts
-    Object.values(CAPAPriority).forEach(priority => {
-      stats.byPriority[priority] = 0;
-    });
-
-    // Initialize source counts
-    Object.values(CAPASource).forEach(source => {
-      stats.bySource[source] = 0;
-    });
-
-    capaData.forEach(capa => {
-      // Count by status
-      switch (capa.status) {
-        case CAPAStatus.Open:
-          stats.open++;
-          break;
-        case CAPAStatus.InProgress:
-          stats.inProgress++;
-          break;
-        case CAPAStatus.Completed:
-        case CAPAStatus.Verified:
-        case CAPAStatus.Closed:
-          stats.completed++;
-          break;
-        case CAPAStatus.Overdue:
-          stats.overdue++;
-          break;
-      }
-
-      // Count by priority
-      if (stats.byPriority[capa.priority] !== undefined) {
-        stats.byPriority[capa.priority]++;
-      }
-
-      // Count by source
-      if (stats.bySource[capa.source] !== undefined) {
-        stats.bySource[capa.source]++;
-      }
-
-      // Count by department
-      const dept = capa.department || 'Unassigned';
-      if (!stats.byDepartment[dept]) {
-        stats.byDepartment[dept] = 0;
-      }
-      stats.byDepartment[dept]++;
-    });
-
-    setCAPAStats(stats);
+  // Fetch CAPA stats
+  const fetchStats = async () => {
+    try {
+      const stats = await getCAPAStats();
+      setCAPAStats(stats);
+    } catch (err) {
+      console.error('Error fetching CAPA stats:', err);
+    }
   };
 
   // Apply filters to capas
@@ -195,10 +139,13 @@ const CAPA: React.FC = () => {
 
     if (filters.department) {
       filtered = filtered.filter(capa => {
+        const capaDept = capa.department || 'Unassigned';
+        
         if (Array.isArray(filters.department)) {
-          return filters.department.includes(capa.department || 'Unassigned');
+          return filters.department.includes(capaDept);
         }
-        return capa.department === filters.department;
+        
+        return capaDept === filters.department;
       });
     }
 
@@ -220,7 +167,7 @@ const CAPA: React.FC = () => {
     fetchCAPAs(); // Refresh the list after creation
   };
 
-  const handleCAPAClick = (capa: CAPA) => {
+  const handleCAPAClick = (capa: CAPAType) => {
     navigate(`/capa/${capa.id}`);
   };
 

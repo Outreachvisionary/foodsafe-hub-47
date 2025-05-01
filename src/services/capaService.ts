@@ -135,6 +135,36 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
   }
 };
 
+// Get recent CAPAs
+export const getRecentCAPAs = async (limit: number = 5): Promise<CAPA[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+      
+    if (error) {
+      console.error('Error fetching recent CAPAs:', error);
+      throw error;
+    }
+    
+    // Convert database records to CAPA type
+    const capas = data.map(item => ({
+      ...item,
+      id: item.id,
+      status: item.status as CAPAStatus,
+      priority: item.priority as CAPAPriority,
+      source: item.source as CAPASource,
+    }));
+    
+    return capas as CAPA[];
+  } catch (error) {
+    console.error('Error in getRecentCAPAs:', error);
+    return [];
+  }
+};
+
 // Get statistics for CAPAs
 export const getCAPAStats = async (): Promise<CAPAStats> => {
   try {

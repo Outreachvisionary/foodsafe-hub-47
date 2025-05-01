@@ -1,327 +1,491 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CheckedState } from '@radix-ui/react-checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
-import { CAPAFilter } from '@/types/capa';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
-import { formatEnumValue } from '@/utils/typeAdapters';
+import { CAPAFilter, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 interface CAPAFiltersProps {
   filters: CAPAFilter;
-  setFilters: (filters: CAPAFilter) => void;
+  setFilters: React.Dispatch<React.SetStateAction<CAPAFilter>>;
   searchQuery?: string;
-  onSearchChange?: (value: string) => void;
 }
 
-const CAPAFilters: React.FC<CAPAFiltersProps> = ({
-  filters,
-  setFilters,
-  searchQuery,
-  onSearchChange,
-}) => {
-  const handleStatusChange = (status: CAPAStatus) => {
-    let newStatus: CAPAStatus[] = [];
-    
-    if (filters.status) {
-      if (Array.isArray(filters.status)) {
-        if (filters.status.includes(status)) {
-          newStatus = filters.status.filter(s => s !== status);
-        } else {
-          newStatus = [...filters.status, status];
-        }
-      } else {
-        if (filters.status === status) {
-          newStatus = [];
-        } else {
-          newStatus = [filters.status, status];
-        }
+const CAPAFilters: React.FC<CAPAFiltersProps> = ({ filters, setFilters, searchQuery }) => {
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    filters.dateRange?.start ? new Date(filters.dateRange.start) : undefined
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    filters.dateRange?.end ? new Date(filters.dateRange.end) : undefined
+  );
+
+  // Sample departments data
+  const departments = [
+    'Quality Assurance',
+    'Production',
+    'Maintenance',
+    'Management',
+    'Food Safety',
+    'Supply Chain',
+  ];
+
+  // Handle status filter change
+  const handleStatusChange = (status: CAPAStatus, checked: CheckedState) => {
+    if (checked) {
+      // Add status to filters
+      const currentStatuses = filters.status
+        ? Array.isArray(filters.status)
+          ? [...filters.status]
+          : [filters.status]
+        : [];
+      if (!currentStatuses.includes(status)) {
+        setFilters((prev) => ({
+          ...prev,
+          status: [...currentStatuses, status],
+        }));
       }
     } else {
-      newStatus = [status];
+      // Remove status from filters
+      const currentStatuses = filters.status
+        ? Array.isArray(filters.status)
+          ? [...filters.status]
+          : [filters.status]
+        : [];
+      setFilters((prev) => ({
+        ...prev,
+        status: currentStatuses.filter((s) => s !== status),
+      }));
     }
-    
-    setFilters({ ...filters, status: newStatus.length ? newStatus : undefined });
-  };
-  
-  const handlePriorityChange = (priority: CAPAPriority) => {
-    let newPriority: CAPAPriority[] = [];
-    
-    if (filters.priority) {
-      if (Array.isArray(filters.priority)) {
-        if (filters.priority.includes(priority)) {
-          newPriority = filters.priority.filter(p => p !== priority);
-        } else {
-          newPriority = [...filters.priority, priority];
-        }
-      } else {
-        if (filters.priority === priority) {
-          newPriority = [];
-        } else {
-          newPriority = [filters.priority, priority];
-        }
-      }
-    } else {
-      newPriority = [priority];
-    }
-    
-    setFilters({ ...filters, priority: newPriority.length ? newPriority : undefined });
-  };
-  
-  const handleSourceChange = (source: CAPASource) => {
-    let newSource: CAPASource[] = [];
-    
-    if (filters.source) {
-      if (Array.isArray(filters.source)) {
-        if (filters.source.includes(source)) {
-          newSource = filters.source.filter(s => s !== source);
-        } else {
-          newSource = [...filters.source, source];
-        }
-      } else {
-        if (filters.source === source) {
-          newSource = [];
-        } else {
-          newSource = [filters.source, source];
-        }
-      }
-    } else {
-      newSource = [source];
-    }
-    
-    setFilters({ ...filters, source: newSource.length ? newSource : undefined });
   };
 
-  const handleDepartmentChange = (department: string) => {
-    if (!department) return;
-    
-    let newDepartment: string[] = [];
-    
-    if (filters.department) {
-      if (Array.isArray(filters.department)) {
-        if (!filters.department.includes(department)) {
-          newDepartment = [...filters.department, department];
-        }
-      } else {
-        if (filters.department !== department) {
-          newDepartment = [filters.department, department];
-        }
+  // Handle priority filter change
+  const handlePriorityChange = (priority: CAPAPriority, checked: CheckedState) => {
+    if (checked) {
+      // Add priority to filters
+      const currentPriorities = filters.priority
+        ? Array.isArray(filters.priority)
+          ? [...filters.priority]
+          : [filters.priority]
+        : [];
+      if (!currentPriorities.includes(priority)) {
+        setFilters((prev) => ({
+          ...prev,
+          priority: [...currentPriorities, priority],
+        }));
       }
     } else {
-      newDepartment = [department];
+      // Remove priority from filters
+      const currentPriorities = filters.priority
+        ? Array.isArray(filters.priority)
+          ? [...filters.priority]
+          : [filters.priority]
+        : [];
+      setFilters((prev) => ({
+        ...prev,
+        priority: currentPriorities.filter((p) => p !== priority),
+      }));
     }
-    
-    setFilters({ ...filters, department: newDepartment.length ? newDepartment : undefined });
   };
-  
-  const removeDepartmentFilter = (department: string) => {
-    if (!filters.department) return;
+
+  // Handle source filter change
+  const handleSourceChange = (source: CAPASource, checked: CheckedState) => {
+    if (checked) {
+      // Add source to filters
+      const currentSources = filters.source
+        ? Array.isArray(filters.source)
+          ? [...filters.source]
+          : [filters.source]
+        : [];
+      if (!currentSources.includes(source)) {
+        setFilters((prev) => ({
+          ...prev,
+          source: [...currentSources, source],
+        }));
+      }
+    } else {
+      // Remove source from filters
+      const currentSources = filters.source
+        ? Array.isArray(filters.source)
+          ? [...filters.source]
+          : [filters.source]
+        : [];
+      setFilters((prev) => ({
+        ...prev,
+        source: currentSources.filter((s) => s !== source),
+      }));
+    }
+  };
+
+  // Handle department filter change
+  const handleDepartmentChange = (department: string, checked: CheckedState) => {
+    if (checked) {
+      // Add department to filters
+      const currentDepartments = filters.department
+        ? Array.isArray(filters.department)
+          ? [...filters.department]
+          : [filters.department]
+        : [];
+      if (!currentDepartments.includes(department)) {
+        setFilters((prev) => ({
+          ...prev,
+          department: [...currentDepartments, department],
+        }));
+      }
+    } else {
+      // Remove department from filters
+      const currentDepartments = filters.department
+        ? Array.isArray(filters.department)
+          ? [...filters.department]
+          : [filters.department]
+        : [];
+      setFilters((prev) => ({
+        ...prev,
+        department: currentDepartments.filter((d) => d !== department),
+      }));
+    }
+  };
+
+  // Update date range filter when dates change
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDate(date);
+    if (date) {
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: {
+          start: date.toISOString(),
+          end: prev.dateRange?.end || endDate?.toISOString() || new Date().toISOString(),
+        },
+      }));
+    } else if (!endDate) {
+      // If both start and end dates are cleared, remove the date range filter
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: undefined,
+      }));
+    }
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    setEndDate(date);
+    if (date) {
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: {
+          start: prev.dateRange?.start || startDate?.toISOString() || new Date().toISOString(),
+          end: date.toISOString(),
+        },
+      }));
+    } else if (!startDate) {
+      // If both start and end dates are cleared, remove the date range filter
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: undefined,
+      }));
+    }
+  };
+
+  // Handle preset date ranges
+  const applyDatePreset = (preset: 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth') => {
+    const now = new Date();
+    let start: Date;
+    let end: Date = now;
+
+    switch (preset) {
+      case 'last7days':
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'last30days':
+        start = new Date(now);
+        start.setDate(now.getDate() - 30);
+        break;
+      case 'thisMonth':
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        break;
+      case 'lastMonth':
+        const lastMonth = new Date(now);
+        lastMonth.setMonth(now.getMonth() - 1);
+        start = startOfMonth(lastMonth);
+        end = endOfMonth(lastMonth);
+        break;
+      default:
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+    }
+
+    setStartDate(start);
+    setEndDate(end);
+    setFilters((prev) => ({
+      ...prev,
+      dateRange: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+    }));
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      status: undefined,
+      priority: undefined,
+      source: undefined,
+      department: undefined,
+      dateRange: undefined,
+      searchTerm: searchQuery,
+    });
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  // Check if a status is selected
+  const isStatusSelected = (status: CAPAStatus): boolean => {
+    if (!filters.status) return false;
+    return Array.isArray(filters.status)
+      ? filters.status.includes(status)
+      : filters.status === status;
+  };
+
+  // Check if a priority is selected
+  const isPrioritySelected = (priority: CAPAPriority): boolean => {
+    if (!filters.priority) return false;
+    return Array.isArray(filters.priority)
+      ? filters.priority.includes(priority)
+      : filters.priority === priority;
+  };
+
+  // Check if a source is selected
+  const isSourceSelected = (source: CAPASource): boolean => {
+    if (!filters.source) return false;
+    return Array.isArray(filters.source)
+      ? filters.source.includes(source)
+      : filters.source === source;
+  };
+
+  // Check if a department is selected
+  const isDepartmentSelected = (department: string): boolean => {
+    if (!filters.department) return false;
     
     if (Array.isArray(filters.department)) {
-      const newDepartment = filters.department.filter(d => d !== department);
-      setFilters({ ...filters, department: newDepartment.length ? newDepartment : undefined });
-    } else {
-      setFilters({ ...filters, department: undefined });
+      return filters.department.includes(department);
     }
+    
+    return filters.department === department;
   };
-  
-  const handleClearFilters = () => {
-    setFilters({});
-  };
-  
-  const isStatusSelected = (status: CAPAStatus) => {
-    if (!filters.status) return false;
-    if (Array.isArray(filters.status)) {
-      return filters.status.includes(status);
-    }
-    return filters.status === status;
-  };
-  
-  const isPrioritySelected = (priority: CAPAPriority) => {
-    if (!filters.priority) return false;
-    if (Array.isArray(filters.priority)) {
-      return filters.priority.includes(priority);
-    }
-    return filters.priority === priority;
-  };
-  
-  const isSourceSelected = (source: CAPASource) => {
-    if (!filters.source) return false;
-    if (Array.isArray(filters.source)) {
-      return filters.source.includes(source);
-    }
-    return filters.source === source;
-  };
-  
-  // Format enum value for display
-  const displayEnumValue = (value: string) => {
-    return value.replace(/_/g, ' ');
-  };
-  
+
   return (
-    <Card className="h-fit">
-      <CardHeader>
-        <CardTitle className="text-lg">Filters</CardTitle>
+    <Card className="sticky top-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-medium flex justify-between items-center">
+          Filters
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
+            Reset
+          </Button>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-0">
         <div>
-          <Label htmlFor="search">Search</Label>
-          <Input
-            id="search"
-            placeholder="Search CAPAs..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className="mt-1"
-          />
+          <Label className="text-sm font-medium mb-2 block">Status</Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isStatusSelected(CAPAStatus.Open)}
+                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Open, checked)}
+              />
+              <Label className="text-sm">Open</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isStatusSelected(CAPAStatus.InProgress)}
+                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.InProgress, checked)}
+              />
+              <Label className="text-sm">In Progress</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isStatusSelected(CAPAStatus.Completed)}
+                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Completed, checked)}
+              />
+              <Label className="text-sm">Completed</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isStatusSelected(CAPAStatus.Closed)}
+                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Closed, checked)}
+              />
+              <Label className="text-sm">Closed</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isStatusSelected(CAPAStatus.Overdue)}
+                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Overdue, checked)}
+              />
+              <Label className="text-sm">Overdue</Label>
+            </div>
+          </div>
         </div>
-        
-        <Accordion type="multiple" defaultValue={["status", "priority"]}>
-          <AccordionItem value="status">
-            <AccordionTrigger>Status</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {Object.values(CAPAStatus).map((status) => (
-                  <Badge
-                    key={status}
-                    variant={isStatusSelected(status) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => handleStatusChange(status)}
-                  >
-                    {displayEnumValue(status)}
-                  </Badge>
-                ))}
+
+        <Separator />
+
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Priority</Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isPrioritySelected(CAPAPriority.Low)}
+                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Low, checked)}
+              />
+              <Label className="text-sm">Low</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isPrioritySelected(CAPAPriority.Medium)}
+                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Medium, checked)}
+              />
+              <Label className="text-sm">Medium</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isPrioritySelected(CAPAPriority.High)}
+                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.High, checked)}
+              />
+              <Label className="text-sm">High</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isPrioritySelected(CAPAPriority.Critical)}
+                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Critical, checked)}
+              />
+              <Label className="text-sm">Critical</Label>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Source</Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isSourceSelected(CAPASource.Audit)}
+                onCheckedChange={(checked) => handleSourceChange(CAPASource.Audit, checked)}
+              />
+              <Label className="text-sm">Audit</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isSourceSelected(CAPASource.CustomerComplaint)}
+                onCheckedChange={(checked) => handleSourceChange(CAPASource.CustomerComplaint, checked)}
+              />
+              <Label className="text-sm">Customer Complaint</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isSourceSelected(CAPASource.InternalReport)}
+                onCheckedChange={(checked) => handleSourceChange(CAPASource.InternalReport, checked)}
+              />
+              <Label className="text-sm">Internal Report</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isSourceSelected(CAPASource.NonConformance)}
+                onCheckedChange={(checked) => handleSourceChange(CAPASource.NonConformance, checked)}
+              />
+              <Label className="text-sm">Non-Conformance</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={isSourceSelected(CAPASource.SupplierIssue)}
+                onCheckedChange={(checked) => handleSourceChange(CAPASource.SupplierIssue, checked)}
+              />
+              <Label className="text-sm">Supplier Issue</Label>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Department</Label>
+          <div className="space-y-2">
+            {departments.map((department) => (
+              <div key={department} className="flex items-center space-x-2">
+                <Checkbox
+                  checked={isDepartmentSelected(department)}
+                  onCheckedChange={(checked) => handleDepartmentChange(department, checked)}
+                />
+                <Label className="text-sm">{department}</Label>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="priority">
-            <AccordionTrigger>Priority</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {Object.values(CAPAPriority).map((priority) => (
-                  <Badge
-                    key={priority}
-                    variant={isPrioritySelected(priority) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => handlePriorityChange(priority)}
-                  >
-                    {priority}
-                  </Badge>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="source">
-            <AccordionTrigger>Source</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {Object.values(CAPASource).map((source) => (
-                  <Badge
-                    key={source}
-                    variant={isSourceSelected(source) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => handleSourceChange(source)}
-                  >
-                    {displayEnumValue(source)}
-                  </Badge>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="department">
-            <AccordionTrigger>Department</AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4">
-                <div className="flex items-end gap-2">
-                  <div className="flex-grow">
-                    <Input 
-                      placeholder="Add department..." 
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleDepartmentChange((e.target as HTMLInputElement).value);
-                          (e.target as HTMLInputElement).value = '';
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                
-                {filters.department && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {Array.isArray(filters.department) 
-                      ? filters.department.map((dept) => (
-                          <Badge key={dept} variant="secondary" className="flex items-center gap-1">
-                            {dept}
-                            <X className="h-3 w-3 cursor-pointer" onClick={() => removeDepartmentFilter(dept)} />
-                          </Badge>
-                        ))
-                      : (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          {filters.department}
-                          <X className="h-3 w-3 cursor-pointer" onClick={() => removeDepartmentFilter(filters.department)} />
-                        </Badge>
-                      )
-                    }
-                  </div>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="dateRange">
-            <AccordionTrigger>Date Range</AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-3">
-                <div>
-                  <Label>Start Date</Label>
-                  <DatePicker
-                    date={filters.dateRange?.start ? new Date(filters.dateRange.start) : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        setFilters({
-                          ...filters,
-                          dateRange: {
-                            start: date.toISOString(),
-                            end: filters.dateRange?.end || new Date().toISOString(),
-                          },
-                        });
-                      }
-                    }}
-                  />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <DatePicker
-                    date={filters.dateRange?.end ? new Date(filters.dateRange.end) : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        setFilters({
-                          ...filters,
-                          dateRange: {
-                            start: filters.dateRange?.start || new Date(0).toISOString(),
-                            end: date.toISOString(),
-                          },
-                        });
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Date Range</Label>
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs mb-1 block">From</Label>
+              <DatePicker
+                date={startDate}
+                onSelect={handleStartDateChange}
+                placeholder="Start date"
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1 block">To</Label>
+              <DatePicker
+                date={endDate}
+                onSelect={handleEndDateChange}
+                placeholder="End date"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => applyDatePreset('last7days')}
+                className="text-xs"
+              >
+                Last 7 days
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => applyDatePreset('last30days')}
+                className="text-xs"
+              >
+                Last 30 days
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => applyDatePreset('thisMonth')}
+                className="text-xs"
+              >
+                This month
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

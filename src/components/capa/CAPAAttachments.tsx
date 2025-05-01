@@ -1,273 +1,231 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  FileText, 
-  Trash2, 
-  Upload, 
-  Download, 
-  File, 
-  FileImage, 
-  FileCode,
-  FilePdf,
-  FileSpreadsheet,
-  Loader2
-} from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { AlertCircle, File, FileText, Image, Download, Trash2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface CAPAAttachment {
-  id: string;
-  filename: string;
-  file_type: string;
-  file_size: number;
-  uploaded_at: string;
-  uploaded_by: string;
-}
 
 interface CAPAAttachmentsProps {
   capaId: string;
 }
 
+interface Attachment {
+  id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+  uploaded_by: string;
+  file_path: string;
+}
+
 const CAPAAttachments: React.FC<CAPAAttachmentsProps> = ({ capaId }) => {
-  const [attachments, setAttachments] = useState<CAPAAttachment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
-
-  // Mock data for demonstration
-  useEffect(() => {
-    const fetchAttachments = async () => {
-      try {
-        setLoading(true);
-        
-        // This would be an API call in a real implementation
-        // const response = await getAttachments(capaId);
-        
-        // Mock data for demonstration
-        const mockAttachments = [
-          {
-            id: 'att-1',
-            capa_id: capaId,
-            filename: 'RootCauseAnalysis.pdf',
-            file_type: 'application/pdf',
-            file_size: 1254000,
-            uploaded_at: new Date().toISOString(),
-            uploaded_by: 'John Smith'
-          },
-          {
-            id: 'att-2',
-            capa_id: capaId,
-            filename: 'CorrectiveActionPlan.docx',
-            file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            file_size: 982400,
-            uploaded_at: new Date().toISOString(),
-            uploaded_by: 'Jane Doe'
-          }
-        ];
-        
-        // Simulate API delay
-        setTimeout(() => {
-          setAttachments(mockAttachments);
-          setLoading(false);
-        }, 500);
-        
-      } catch (error) {
-        console.error('Error fetching attachments:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load attachments',
-          variant: 'destructive'
-        });
-        setLoading(false);
-      }
-    };
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Format bytes to human-readable format
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
     
-    fetchAttachments();
-  }, [capaId]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !files.length) return;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(2))} ${sizes[i]}`;
+  };
+  
+  // Get appropriate icon based on file type
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('image')) {
+      return <Image className="h-5 w-5" />;
+    } else if (fileType.includes('pdf')) {
+      return <FileText className="h-5 w-5" />;
+    } else {
+      return <File className="h-5 w-5" />;
+    }
+  };
+  
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+  
+  // Upload attachment
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        title: 'No file selected',
+        description: 'Please select a file to upload',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setUploadLoading(true);
     
     try {
-      setUploading(true);
+      // TODO: Implement file upload logic with Supabase storage
+      // For now, just simulate an upload
       
-      // This would be an API call in a real implementation
-      // const response = await uploadAttachment(capaId, files[0]);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create a mock attachment for demonstration
-      const newAttachment = {
-        id: `att-${Date.now()}`,
-        capa_id: capaId,
-        filename: files[0].name,
-        file_type: files[0].type,
-        file_size: files[0].size,
-        uploaded_at: new Date().toISOString(),
-        uploaded_by: 'Current User'
-      };
-      
-      setAttachments(prev => [...prev, newAttachment]);
-      
-      toast({
-        title: 'File uploaded',
-        description: 'Your file has been uploaded successfully'
-      });
-      
+      setTimeout(() => {
+        const newAttachment: Attachment = {
+          id: `att-${Date.now()}`,
+          file_name: selectedFile.name,
+          file_type: selectedFile.type,
+          file_size: selectedFile.size,
+          uploaded_at: new Date().toISOString(),
+          uploaded_by: 'Current User',
+          file_path: `/attachments/${capaId}/${selectedFile.name}`,
+        };
+        
+        setAttachments([...attachments, newAttachment]);
+        setSelectedFile(null);
+        
+        // Reset file input
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+        
+        toast({
+          title: 'File uploaded',
+          description: 'Your file has been uploaded successfully',
+        });
+        
+        setUploadLoading(false);
+      }, 1500);
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload the file. Please try again.',
-        variant: 'destructive'
+        description: 'There was an error uploading your file',
+        variant: 'destructive',
       });
-    } finally {
-      setUploading(false);
-      // Reset file input
-      e.target.value = '';
+      setUploadLoading(false);
     }
   };
-
-  const handleDeleteAttachment = async (attachmentId: string) => {
-    try {
-      // This would be an API call in a real implementation
-      // await deleteAttachment(attachmentId);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Remove from state
-      setAttachments(prev => prev.filter(att => att.id !== attachmentId));
-      
-      toast({
-        title: 'File deleted',
-        description: 'The file has been deleted successfully'
-      });
-      
-    } catch (error) {
-      console.error('Error deleting attachment:', error);
-      toast({
-        title: 'Delete failed',
-        description: 'Failed to delete the file',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const handleDownload = (attachment: CAPAAttachment) => {
-    // In a real implementation, this would generate a download URL and trigger the download
+  
+  // Download attachment
+  const handleDownload = (attachment: Attachment) => {
+    // TODO: Implement file download logic with Supabase storage
+    // For now, just show a toast
+    
     toast({
-      title: 'Downloading',
-      description: `Downloading ${attachment.filename}...`
+      title: 'Download started',
+      description: `Downloading ${attachment.file_name}`,
     });
   };
-
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes('image')) {
-      return <FileImage className="h-5 w-5 text-blue-500" />;
-    } else if (fileType.includes('pdf')) {
-      return <FilePdf className="h-5 w-5 text-red-500" />;
-    } else if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('csv')) {
-      return <FileSpreadsheet className="h-5 w-5 text-green-500" />;
-    } else if (fileType.includes('word') || fileType.includes('document')) {
-      return <FileText className="h-5 w-5 text-blue-800" />;
-    } else if (fileType.includes('html') || fileType.includes('json') || fileType.includes('xml')) {
-      return <FileCode className="h-5 w-5 text-purple-500" />;
-    } else {
-      return <File className="h-5 w-5 text-gray-500" />;
-    }
+  
+  // Delete attachment
+  const handleDelete = (id: string) => {
+    // TODO: Implement file deletion logic with Supabase
+    // For now, just remove from state
+    
+    setAttachments(attachments.filter(att => att.id !== id));
+    
+    toast({
+      title: 'File deleted',
+      description: 'The file has been removed',
+    });
   };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
+  
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Attachments</CardTitle>
+      <CardHeader>
+        <CardTitle>CAPA Attachments</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="flex items-center">
-            <Input 
-              type="file" 
-              className="w-full"
-              onChange={handleFileUpload}
-              disabled={uploading}
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="file-upload">Upload document</Label>
+          <div className="flex items-start gap-2">
+            <Input
+              id="file-upload"
+              type="file"
+              className="max-w-sm"
+              onChange={handleFileChange}
             />
-            <Button 
-              variant="outline"
-              size="icon"
-              className="ml-2" 
-              disabled={uploading}
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || uploadLoading}
             >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {uploadLoading ? (
+                <>
+                  <span className="animate-spin mr-2">●</span>
+                  Uploading...
+                </>
               ) : (
-                <Upload className="h-4 w-4" />
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </>
               )}
             </Button>
           </div>
-          
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : attachments.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              No attachments have been uploaded yet.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {attachments.map(attachment => (
-                <div 
-                  key={attachment.id}
-                  className="flex items-center justify-between p-2 rounded-md border"
-                >
-                  <div className="flex items-center gap-2">
-                    {getFileIcon(attachment.file_type)}
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {attachment.filename}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(attachment.file_size)} • Uploaded {new Date(attachment.uploaded_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleDownload(attachment)}
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="sr-only">Download</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteAttachment(attachment.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {selectedFile && (
+            <p className="text-xs text-muted-foreground">
+              Selected: {selectedFile.name} ({formatBytes(selectedFile.size)})
+            </p>
           )}
         </div>
+        
+        {attachments.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>File</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Uploaded</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {attachments.map((attachment) => (
+                <TableRow key={attachment.id}>
+                  <TableCell className="flex items-center space-x-2">
+                    {getFileIcon(attachment.file_type)}
+                    <span className="text-sm">{attachment.file_name}</span>
+                  </TableCell>
+                  <TableCell>{attachment.file_type.split('/')[1]?.toUpperCase() || 'UNKNOWN'}</TableCell>
+                  <TableCell>{formatBytes(attachment.file_size)}</TableCell>
+                  <TableCell>
+                    {new Date(attachment.uploaded_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownload(attachment)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(attachment.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/30 rounded-md border border-dashed">
+            <AlertCircle className="h-10 w-10 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">No attachments found for this CAPA</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Upload supporting documents, images, or reports
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

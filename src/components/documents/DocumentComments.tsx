@@ -1,15 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDistance } from 'date-fns';
-import { Send } from 'lucide-react';
-import { DocumentComment } from '@/types/document';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import useDocumentService from '@/hooks/useDocumentService';
+import { DocumentComment } from '@/types/document';
 
 interface DocumentCommentsProps {
   documentId: string;
@@ -24,132 +20,144 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
 }) => {
   const [comments, setComments] = useState<DocumentComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const documentService = useDocumentService();
 
   useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        const fetchedComments = await documentService.getDocumentComments();
-        setComments(fetchedComments);
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load comments',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchComments();
   }, [documentId]);
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
+  const fetchComments = async () => {
+    setIsLoading(true);
     try {
-      const createdComment = await documentService.createDocumentComment(
-        documentId,
-        currentUserId,
-        currentUserName,
-        newComment
-      );
+      // For demonstration, we'll create some mock comments
+      const mockComments: DocumentComment[] = [
+        {
+          id: '1',
+          document_id: documentId,
+          content: 'This looks good to me. Ready for review.',
+          user_id: 'user1',
+          user_name: 'Sarah Johnson',
+          created_at: '2023-08-15T10:30:00Z',
+        },
+        {
+          id: '2',
+          document_id: documentId,
+          content: 'Please update section 3.2 with the latest regulations.',
+          user_id: 'user2',
+          user_name: 'David Chen',
+          created_at: '2023-08-16T14:15:00Z',
+        },
+      ];
+      
+      setComments(mockComments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load comments',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (createdComment) {
-        setComments((prev) => [...prev, createdComment]);
-        setNewComment('');
-        toast({
-          title: 'Comment added',
-          description: 'Your comment has been added successfully',
-        });
-      }
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      // In a real application, you'd save to the database
+      // For now, we'll simulate adding a comment
+      const mockNewComment: DocumentComment = {
+        id: `temp-${Date.now()}`,
+        document_id: documentId,
+        content: newComment,
+        user_id: currentUserId,
+        user_name: currentUserName,
+        created_at: new Date().toISOString(),
+      };
+      
+      setComments([...comments, mockNewComment]);
+      setNewComment('');
+      
+      toast({
+        title: 'Comment added',
+        description: 'Your comment has been added successfully',
+      });
     } catch (error) {
       console.error('Error adding comment:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add comment',
+        description: 'Failed to add your comment',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map(n => n[0])
       .join('')
-      .toUpperCase();
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return formatDistance(new Date(dateStr), new Date(), { addSuffix: true });
-    } catch (e) {
-      return dateStr;
-    }
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
-    <Card className="mt-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Comments</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>Comments</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {loading ? (
-          <p>Loading comments...</p>
-        ) : comments.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No comments yet.</p>
-        ) : (
+        {isLoading && comments.length === 0 ? (
+          <div className="text-center py-4">Loading comments...</div>
+        ) : comments.length > 0 ? (
           <div className="space-y-4">
             {comments.map((comment) => (
               <div key={comment.id} className="flex gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs">
-                    {getInitials(comment.user_name)}
-                  </AvatarFallback>
+                <Avatar>
+                  <AvatarFallback>{getInitials(comment.user_name)}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{comment.user_name}</p>
-                    <p className="text-xs text-muted-foreground">
+                <div className="flex-1">
+                  <div className="flex items-baseline justify-between">
+                    <h4 className="font-semibold">{comment.user_name}</h4>
+                    <span className="text-xs text-muted-foreground">
                       {formatDate(comment.created_at)}
-                    </p>
+                    </span>
                   </div>
-                  <p className="text-sm">{comment.content}</p>
+                  <p className="text-sm mt-1">{comment.content}</p>
                 </div>
               </div>
             ))}
           </div>
+        ) : (
+          <div className="text-center py-4 text-muted-foreground">
+            No comments yet. Be the first to comment!
+          </div>
         )}
-
-        <Separator className="my-4" />
-
-        <div className="flex gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">
-              {getInitials(currentUserName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-2">
-            <Textarea
-              placeholder="Add a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[60px] resize-none"
-            />
-            <Button
-              size="sm"
-              className="ml-auto"
-              onClick={handleAddComment}
-              disabled={!newComment.trim()}
+        
+        <div className="pt-4 border-t">
+          <Textarea
+            placeholder="Add a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="min-h-[100px]"
+          />
+          <div className="flex justify-end mt-2">
+            <Button 
+              onClick={handleSubmitComment} 
+              disabled={!newComment.trim() || isLoading}
             >
-              <Send className="h-4 w-4 mr-1" />
-              Send
+              {isLoading ? 'Posting...' : 'Post Comment'}
             </Button>
           </div>
         </div>

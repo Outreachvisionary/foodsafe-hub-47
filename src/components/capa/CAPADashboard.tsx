@@ -1,244 +1,452 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell, PieChart, Pie } from 'recharts';
-import { CAPAStats } from '@/types/capa';
-import { getCAPAStats, getRecentCAPAs } from '@/services/capaService';
+import { ResponsiveBar } from '@nivo/bar';
+import { ResponsivePie } from '@nivo/pie';
+import { ResponsiveLine } from '@nivo/line';
+import { CAPAStats, CAPA } from '@/types/capa';
+import { getRecentCAPAs } from '@/services/capaService';
 
-const CAPADashboard: React.FC = () => {
-  const [stats, setStats] = useState<CAPAStats | null>(null);
-  const [loading, setLoading] = useState(true);
+interface CAPADashboardProps {
+  stats: CAPAStats;
+}
+
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
+  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'quarter'>('month');
+  const [recentCapas, setRecentCapas] = useState<CAPA[]>([]);
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
-    const fetchCAPAStats = async () => {
+    const loadRecentCapas = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const fetchedStats = await getCAPAStats();
-        setStats(fetchedStats);
+        const data = await getRecentCAPAs(5);
+        setRecentCapas(data);
       } catch (error) {
-        console.error('Error fetching CAPA stats:', error);
+        console.error('Error fetching recent CAPAs:', error);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchCAPAStats();
+    loadRecentCapas();
   }, []);
   
-  // Process data for charts
-  const processSourceData = () => {
-    if (!stats) return [];
-    
-    return Object.entries(stats.bySource).map(([source, count]) => ({
-      name: source.replace(/_/g, ' '),
-      value: count
-    }));
+  // Prepare data for the bar chart - CAPA by status
+  const statusData = [
+    { status: 'Open', count: stats.open },
+    { status: 'In Progress', count: stats.inProgress },
+    { status: 'Completed', count: stats.completed },
+    { status: 'Overdue', count: stats.overdue },
+  ];
+  
+  // Prepare data for pie chart - CAPA by priority
+  const priorityData = Object.entries(stats.byPriority).map(([priority, count]) => ({
+    id: priority,
+    label: priority,
+    value: count,
+  }));
+  
+  // Prepare data for pie chart - CAPA by source
+  const sourceData = Object.entries(stats.bySource).map(([source, count]) => ({
+    id: source.replace(/_/g, ' '),
+    label: source.replace(/_/g, ' '),
+    value: count,
+  }));
+  
+  // Prepare data for line chart - CAPAs over time (dummy data for now)
+  const getTimeData = () => {
+    if (timeframe === 'week') {
+      return [
+        { x: 'Mon', y: 5 },
+        { x: 'Tue', y: 8 },
+        { x: 'Wed', y: 3 },
+        { x: 'Thu', y: 7 },
+        { x: 'Fri', y: 9 },
+        { x: 'Sat', y: 2 },
+        { x: 'Sun', y: 0 },
+      ];
+    } else if (timeframe === 'month') {
+      return [
+        { x: 'Week 1', y: 12 },
+        { x: 'Week 2', y: 8 },
+        { x: 'Week 3', y: 15 },
+        { x: 'Week 4', y: 7 },
+      ];
+    } else {
+      return [
+        { x: 'Jan', y: 20 },
+        { x: 'Feb', y: 30 },
+        { x: 'Mar', y: 15 },
+      ];
+    }
   };
   
-  const processPriorityData = () => {
-    if (!stats) return [];
-    
-    return Object.entries(stats.byPriority).map(([priority, count]) => ({
-      name: priority,
-      value: count
-    }));
+  const timelineData = [
+    {
+      id: 'CAPAs',
+      data: getTimeData(),
+    },
+  ];
+  
+  // Function to format status for display
+  const formatStatus = (status: string): string => {
+    return status.replace(/_/g, ' ');
   };
   
-  const processDepartmentData = () => {
-    if (!stats) return [];
-    
-    return Object.entries(stats.byDepartment).map(([dept, count]) => ({
-      name: dept,
-      value: count
-    }));
-  };
-  
-  const sourceColors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#d946ef'];
-  const priorityColors = {
-    'Low': '#10b981',
-    'Medium': '#f59e0b',
-    'High': '#ef4444',
-    'Critical': '#7f1d1d'
-  };
-  
-  // Calculate percentages
-  const calculateCompletionRate = () => {
-    if (!stats) return 0;
-    const { total, completed } = stats;
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
-  
-  const calculateOverdueRate = () => {
-    if (!stats) return 0;
-    const { total, overdue } = stats;
-    return total > 0 ? Math.round((overdue / total) * 100) : 0;
-  };
-  
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-10 w-20" />
-                <Skeleton className="h-4 w-full mt-4" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-40" />
-            </CardHeader>
-            <CardContent className="h-80">
-              <Skeleton className="h-full w-full" />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-40" />
-            </CardHeader>
-            <CardContent className="h-80">
-              <Skeleton className="h-full w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!stats) {
-    return <div>Failed to load CAPA statistics.</div>;
-  }
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total CAPAs</CardTitle>
+            <CardTitle className="text-base">Total CAPAs</CardTitle>
+            <CardDescription>All time</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <Progress 
-              value={100} 
-              className="h-2 mt-2" 
-              indicatorClassName="bg-blue-500" 
-            />
+            <p className="text-3xl font-bold">{stats.total}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Open</CardTitle>
+            <CardTitle className="text-base">Open CAPAs</CardTitle>
+            <CardDescription>Awaiting action</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.open}</div>
-            <Progress 
-              value={(stats.open / Math.max(stats.total, 1)) * 100} 
-              className="h-2 mt-2" 
-              indicatorClassName="bg-amber-500" 
-            />
+            <p className="text-3xl font-bold text-blue-500">{stats.open}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
+            <CardTitle className="text-base">Overdue</CardTitle>
+            <CardDescription>Past due date</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
-            <Progress 
-              value={(stats.completed / Math.max(stats.total, 1)) * 100} 
-              className="h-2 mt-2" 
-              indicatorClassName="bg-green-500" 
-            />
+            <p className="text-3xl font-bold text-red-500">{stats.overdue}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
+            <CardTitle className="text-base">Completed</CardTitle>
+            <CardDescription>Successfully closed</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.overdue}</div>
-            <Progress 
-              value={(stats.overdue / Math.max(stats.total, 1)) * 100} 
-              className="h-2 mt-2" 
-              indicatorClassName="bg-red-500" 
+            <p className="text-3xl font-bold text-green-500">{stats.completed}</p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>CAPA Status Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveBar
+              data={statusData}
+              keys={['count']}
+              indexBy="status"
+              margin={{ top: 10, right: 10, bottom: 50, left: 60 }}
+              padding={0.3}
+              colors={{ scheme: 'nivo' }}
+              axisBottom={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+              }}
+              axisLeft={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+              }}
+              labelSkipWidth={12}
+              labelSkipHeight={12}
+              role="application"
+              ariaLabel="CAPA status distribution"
+            />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>CAPA Priority Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-72">
+            <ResponsivePie
+              data={priorityData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              innerRadius={0.5}
+              padAngle={0.7}
+              cornerRadius={3}
+              activeOuterRadiusOffset={8}
+              borderWidth={1}
+              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+              arcLinkLabelsSkipAngle={10}
+              arcLinkLabelsTextColor="#333333"
+              arcLinkLabelsThickness={2}
+              arcLinkLabelsColor={{ from: 'color' }}
+              arcLabelsSkipAngle={10}
+              arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
+              legends={[
+                {
+                  anchor: 'bottom',
+                  direction: 'row',
+                  justify: false,
+                  translateX: 0,
+                  translateY: 56,
+                  itemsSpacing: 0,
+                  itemWidth: 100,
+                  itemHeight: 18,
+                  itemTextColor: '#999',
+                  itemDirection: 'left-to-right',
+                  itemOpacity: 1,
+                  symbolSize: 18,
+                  symbolShape: 'circle',
+                },
+              ]}
             />
           </CardContent>
         </Card>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="col-span-1">
+        <Card>
           <CardHeader>
-            <CardTitle>CAPA by Source</CardTitle>
+            <CardTitle>CAPA Source Distribution</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={processSourceData()}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#3b82f6">
-                    {processSourceData().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={sourceColors[index % sourceColors.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <CardContent className="h-72">
+            <ResponsivePie
+              data={sourceData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              innerRadius={0.5}
+              padAngle={0.7}
+              cornerRadius={3}
+              activeOuterRadiusOffset={8}
+              borderWidth={1}
+              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+              arcLinkLabelsSkipAngle={10}
+              arcLinkLabelsTextColor="#333333"
+              arcLinkLabelsThickness={2}
+              arcLinkLabelsColor={{ from: 'color' }}
+              arcLabelsSkipAngle={10}
+              arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
+              legends={[
+                {
+                  anchor: 'bottom',
+                  direction: 'row',
+                  justify: false,
+                  translateX: 0,
+                  translateY: 56,
+                  itemsSpacing: 0,
+                  itemWidth: 100,
+                  itemHeight: 18,
+                  itemTextColor: '#999',
+                  itemDirection: 'left-to-right',
+                  itemOpacity: 1,
+                  symbolSize: 18,
+                  symbolShape: 'circle',
+                },
+              ]}
+            />
           </CardContent>
         </Card>
         
-        <Card className="col-span-1">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>CAPA Timeline</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={timeframe === 'week' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('week')}
+              >
+                Week
+              </Button>
+              <Button
+                variant={timeframe === 'month' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('month')}
+              >
+                Month
+              </Button>
+              <Button
+                variant={timeframe === 'quarter' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeframe('quarter')}
+              >
+                Quarter
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveLine
+              data={timelineData}
+              margin={{ top: 10, right: 20, bottom: 50, left: 60 }}
+              xScale={{ type: 'point' }}
+              yScale={{ type: 'linear', min: 'auto', max: 'auto', stacked: false, reverse: false }}
+              curve="natural"
+              axisTop={null}
+              axisRight={null}
+              axisBottom={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                legend: timeframe === 'week' ? 'Day' : timeframe === 'month' ? 'Week' : 'Month',
+                legendOffset: 36,
+                legendPosition: 'middle',
+              }}
+              axisLeft={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                legend: 'count',
+                legendOffset: -40,
+                legendPosition: 'middle',
+              }}
+              pointSize={10}
+              pointColor={{ theme: 'background' }}
+              pointBorderWidth={2}
+              pointBorderColor={{ from: 'serieColor' }}
+              pointLabelYOffset={-12}
+              useMesh={true}
+            />
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
           <CardHeader>
-            <CardTitle>CAPA by Priority</CardTitle>
+            <CardTitle>Department Performance</CardTitle>
+            <CardDescription>CAPA completion rate by department</CardDescription>
+          </CardHeader>
+          <CardContent className="h-96">
+            {/* Mock data for department performance */}
+            <ResponsiveBar
+              data={[
+                { department: 'QA', completed: 85, overdue: 15 },
+                { department: 'Production', completed: 70, overdue: 30 },
+                { department: 'Maintenance', completed: 90, overdue: 10 },
+                { department: 'Food Safety', completed: 95, overdue: 5 },
+                { department: 'Logistics', completed: 60, overdue: 40 },
+                { department: 'R&D', completed: 80, overdue: 20 },
+              ]}
+              keys={['completed', 'overdue']}
+              indexBy="department"
+              margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+              padding={0.3}
+              layout="vertical"
+              valueScale={{ type: 'linear' }}
+              indexScale={{ type: 'band', round: true }}
+              colors={['#4caf50', '#f44336']}
+              borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+              axisTop={null}
+              axisRight={null}
+              axisBottom={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                legend: 'Department',
+                legendPosition: 'middle',
+                legendOffset: 32,
+              }}
+              axisLeft={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                legend: 'Percentage',
+                legendPosition: 'middle',
+                legendOffset: -40,
+              }}
+              labelSkipWidth={12}
+              labelSkipHeight={12}
+              legends={[
+                {
+                  dataFrom: 'keys',
+                  anchor: 'bottom-right',
+                  direction: 'column',
+                  justify: false,
+                  translateX: 120,
+                  translateY: 0,
+                  itemsSpacing: 2,
+                  itemWidth: 100,
+                  itemHeight: 20,
+                  itemDirection: 'left-to-right',
+                  itemOpacity: 0.85,
+                  symbolSize: 20,
+                  effects: [
+                    {
+                      on: 'hover',
+                      style: {
+                        itemOpacity: 1,
+                      },
+                    },
+                  ],
+                },
+              ]}
+            />
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent CAPA Activities</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={processPriorityData()}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    nameKey="name"
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {processPriorityData().map((entry) => (
-                      <Cell 
-                        key={`cell-${entry.name}`} 
-                        fill={priorityColors[entry.name as keyof typeof priorityColors] || '#3b82f6'} 
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <Tabs defaultValue="all">
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="created">Created</TabsTrigger>
+                <TabsTrigger value="updated">Updated</TabsTrigger>
+                <TabsTrigger value="closed">Closed</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="space-y-4">
+                {loading ? (
+                  <p className="text-center py-4">Loading recent activities...</p>
+                ) : recentCapas.length > 0 ? (
+                  recentCapas.map((capa) => (
+                    <div key={capa.id} className="flex items-start space-x-4 p-3 rounded-md border">
+                      <div className="flex-1">
+                        <p className="font-medium">{capa.title}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {capa.description?.length > 100
+                            ? capa.description.substring(0, 100) + '...'
+                            : capa.description}
+                        </p>
+                        <div className="flex items-center text-xs text-muted-foreground mt-2 space-x-2">
+                          <span>Status: {formatStatus(capa.status)}</span>
+                          <span>•</span>
+                          <span>Created: {new Date(capa.created_at).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span>Assigned to: {capa.assigned_to}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center py-4">No recent activities found</p>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="created" className="space-y-4">
+                <p className="text-center py-4">No recent creations</p>
+              </TabsContent>
+              
+              <TabsContent value="updated" className="space-y-4">
+                <p className="text-center py-4">No recent updates</p>
+              </TabsContent>
+              
+              <TabsContent value="closed" className="space-y-4">
+                <p className="text-center py-4">No recent closures</p>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
