@@ -1,139 +1,64 @@
 
-export type NCStatus = 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Approved' | 'Rejected' | 'Resolved' | 'Closed' | 'Under Investigation';
+import { CAPAStatus } from './enums';
 
-export type NCItemCategory = 
-  | 'Raw Material' 
-  | 'Ingredient' 
-  | 'Packaging' 
-  | 'In-Process Product' 
-  | 'Finished Product' 
-  | 'Equipment' 
-  | 'Facility' 
-  | 'Other'
-  | 'Packaged Goods'
-  | 'Packaging Material'
-  | 'Personnel'
-  | 'Processing Equipment'
-  | 'Product Storage Tanks'
-  | 'Finished Products'
-  | 'Raw Products'
-  | 'Packaging Materials';
+export enum NCStatus {
+  Draft = 'Draft',
+  Open = 'Open',
+  InProgress = 'In_Progress',
+  Resolved = 'Resolved',
+  Closed = 'Closed',
+  OnHold = 'On_Hold',
+  Reopened = 'Reopened'
+}
 
-export type NCReasonCategory = 
-  | 'Quality Issue' 
-  | 'Food Safety' 
-  | 'Damaged' 
-  | 'Expired' 
-  | 'Process Deviation' 
-  | 'Documentation Issue' 
-  | 'Customer Complaint' 
-  | 'Foreign Material' 
-  | 'Other'
-  | 'Contamination'
-  | 'Quality Issues'
-  | 'Regulatory Non-Compliance'
-  | 'Equipment Malfunction'
-  | 'Documentation Error'
-  | 'Temperature Abuse'
-  | 'Packaging Defect'
-  | 'Labeling Error';
+export enum NCRiskLevel {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical'
+}
 
-export type NCRiskLevel = 'low' | 'moderate' | 'high' | 'severe' | 'Critical' | 'Major';
+export enum NCCategory {
+  Equipment = 'Equipment',
+  Process = 'Process',
+  Material = 'Material',
+  Method = 'Method',
+  Environment = 'Environment',
+  Personnel = 'Personnel',
+  Other = 'Other'
+}
 
 export interface NonConformance {
   id: string;
   title: string;
-  description?: string;
-  item_name: string;
-  item_id?: string;
-  item_category: NCItemCategory;
-  reason_category: NCReasonCategory;
-  reason_details?: string;
+  description: string;
   status: NCStatus;
-  reported_date: string;
-  review_date?: string;
-  resolution_date?: string;
   created_at: string;
   updated_at: string;
   created_by: string;
-  assigned_to?: string;
-  reviewer?: string;
-  resolution_details?: string;
-  quantity?: number;
-  quantity_on_hold?: number;
-  units?: string;
-  location?: string;
-  department?: string;
-  capa_id?: string;
-  tags?: string[];
-  priority?: string;
-  risk_level?: NCRiskLevel;
+  assigned_to: string;
+  department: string;
+  location: string;
+  root_cause?: string;
+  item_name: string;
+  item_category: string;
+  risk_level: NCRiskLevel;
   severity?: string;
-  source?: string;
-  category?: string;
-}
-
-export interface NCActivity {
-  id: string;
-  non_conformance_id: string;
-  performed_at: string;
-  action: string;
-  comments?: string;
-  performed_by: string;
-  previous_status?: NCStatus;
-  new_status?: NCStatus;
-}
-
-export interface NCNotification {
-  id: string;
-  non_conformance_id: string;
-  message: string;
-  notification_type: string;
-  created_at: string;
-  is_read: boolean;
-  target_users?: string[];
-}
-
-export interface NCAttachment {
-  id: string;
-  non_conformance_id: string;
-  file_name: string;
-  file_path: string;
-  file_type: string;
-  file_size: number;
-  description?: string;
-  uploaded_at: string;
-  uploaded_by: string;
-}
-
-export interface NCFilter {
-  status?: NCStatus[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-  categories?: NCItemCategory[];
-  reasons?: NCReasonCategory[];
-  assignedTo?: string[];
-  searchTerm?: string;
-  riskLevels?: NCRiskLevel[];
+  immediate_action?: string;
+  corrective_action?: string;
+  preventive_action?: string;
+  capa_id?: string;
+  attachments?: string[];
+  due_date?: string;
+  closed_date?: string;
 }
 
 export interface NCDetailsProps {
   id: string;
-  onClose?: () => void;
-}
-
-export interface NCStats {
-  total: number;
-  byStatus: Record<string, number>;
-  byCategory: Record<string, number>;
-  byReasonCategory: Record<string, number>;
-  byRiskLevel: Record<string, number>;
-  byReason?: Record<string, number>;
-  overdue: number;
-  pendingReview: number;
-  recentlyResolved: number;
-  totalQuantityOnHold?: number;
-  recentItems?: NonConformance[];
+  title: string;
+  status: NCStatus;
+  itemName: string;
+  itemCategory: string;
+  description: string;
+  onStatusChange?: (status: NCStatus) => void;
 }

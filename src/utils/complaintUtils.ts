@@ -1,39 +1,74 @@
 
-import { ComplaintStatus } from '@/types/enums';
+import { ComplaintStatus } from '@/types/complaint';
 
 /**
- * Compares a string or ComplaintStatus value with a target ComplaintStatus value
- * Handles both string and enum comparisons safely
+ * Check if two status values are equivalent
  */
-export const isComplaintStatusEqual = (
-  status: string | ComplaintStatus | undefined,
-  targetStatus: ComplaintStatus
-): boolean => {
-  if (!status) return false;
+export const isComplaintStatusEqual = (status1: string | ComplaintStatus, status2: string | ComplaintStatus): boolean => {
+  if (!status1 || !status2) return false;
   
-  if (typeof status === 'string') {
-    // Convert string to normalized form for comparison
-    const normalizedStatus = status.replace(/ /g, '_').toUpperCase();
-    const normalizedTarget = targetStatus.toString().replace(/ /g, '_').toUpperCase();
-    return normalizedStatus === normalizedTarget;
+  // Normalize status strings
+  const normalize = (status: string | ComplaintStatus) => {
+    return status.toString().toLowerCase().replace(/_/g, ' ');
+  };
+  
+  return normalize(status1) === normalize(status2);
+};
+
+/**
+ * Get display name for complaint status
+ */
+export const getComplaintStatusDisplayName = (status: string | ComplaintStatus): string => {
+  if (!status) return 'Unknown';
+  return status.toString().replace(/_/g, ' ');
+};
+
+/**
+ * Get color scheme for complaint status badges
+ */
+export const getComplaintStatusColor = (status: string | ComplaintStatus): { bg: string, text: string, border?: string } => {
+  const statusStr = status.toString().toLowerCase();
+  
+  if (statusStr.includes('new')) {
+    return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
+  } else if (statusStr.includes('investigation')) {
+    return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
+  } else if (statusStr.includes('resolved')) {
+    return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
+  } else if (statusStr.includes('closed')) {
+    return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
+  } else if (statusStr.includes('reopened')) {
+    return { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200' };
   }
   
-  return status === targetStatus;
+  return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
 };
 
 /**
- * Converts a string value to a ComplaintStatus enum
+ * Convert string to ComplaintStatus enum value
  */
-export const stringToComplaintStatus = (status: string): ComplaintStatus => {
-  // Normalize string and match with enum
-  const normalizedStatus = status.replace(/ /g, '_').toUpperCase();
-  const enumValue = ComplaintStatus[normalizedStatus as keyof typeof ComplaintStatus];
-  return enumValue || ComplaintStatus.New;
+export const convertToComplaintStatus = (status: string): ComplaintStatus => {
+  const normalized = status.replace(/\s+/g, '_');
+  
+  switch (normalized.toLowerCase()) {
+    case 'new':
+      return ComplaintStatus.New;
+    case 'under_investigation':
+      return ComplaintStatus.Under_Investigation;
+    case 'resolved':
+      return ComplaintStatus.Resolved;
+    case 'closed':
+      return ComplaintStatus.Closed;
+    case 'reopened':
+      return ComplaintStatus.Reopened;
+    default:
+      return ComplaintStatus.New;
+  }
 };
 
-/**
- * Formats a ComplaintStatus enum value to a display string
- */
-export const formatComplaintStatus = (status: ComplaintStatus): string => {
-  return status.toString().replace(/_/g, ' ');
+export default {
+  isComplaintStatusEqual,
+  getComplaintStatusDisplayName,
+  getComplaintStatusColor,
+  convertToComplaintStatus
 };

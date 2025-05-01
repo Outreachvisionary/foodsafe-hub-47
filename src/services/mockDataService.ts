@@ -84,3 +84,71 @@ export const getMockComplaints = () => [
     lot_number: "LOT-2023-78945"
   }
 ];
+
+// Add the missing mock data functions
+export const getMockComplianceTrendData = () => {
+  return [
+    { month: "Jan", compliance: 85 },
+    { month: "Feb", compliance: 82 },
+    { month: "Mar", compliance: 87 },
+    { month: "Apr", compliance: 84 },
+    { month: "May", compliance: 89 },
+    { month: "Jun", compliance: 91 },
+    { month: "Jul", compliance: 94 },
+    { month: "Aug", compliance: 92 },
+    { month: "Sep", compliance: 95 },
+    { month: "Oct", compliance: 96 },
+    { month: "Nov", compliance: 97 },
+    { month: "Dec", compliance: 98 }
+  ];
+};
+
+export const getMockDocumentWorkflowSteps = () => {
+  return [
+    {
+      id: "step1",
+      name: "Initial Review",
+      description: "Review by department manager",
+      approvers: ["John Doe"],
+      status: "Approved"
+    },
+    {
+      id: "step2",
+      name: "QA Approval",
+      description: "Quality Assurance approval",
+      approvers: ["Jane Smith"],
+      status: "Approved"
+    },
+    {
+      id: "step3",
+      name: "Final Approval",
+      description: "Approval by Quality Director",
+      approvers: ["Robert Johnson"],
+      status: "Pending"
+    }
+  ];
+};
+
+export const getMockTrainingStatistics = () => {
+  return {
+    totalTrainings: 145,
+    completedTrainings: 112,
+    overdueTrainings: 18,
+    upcomingTrainings: 15,
+    departmentCompliance: [
+      { department: "Production", compliance: 87 },
+      { department: "Quality", compliance: 94 },
+      { department: "Warehouse", compliance: 78 },
+      { department: "Maintenance", compliance: 81 },
+      { department: "R&D", compliance: 91 }
+    ],
+    courseCompletionRate: 77,
+    trainingsByCategory: {
+      "Food Safety": 45,
+      "GMP": 32,
+      "HACCP": 28,
+      "Equipment": 25,
+      "Other": 15
+    }
+  };
+};

@@ -8,14 +8,14 @@ export interface User {
   department?: string;
   organization_id?: string;
   facility_ids?: string[];
-  preferences?: Record<string, any>;
+  preferences?: Record<string, any>; // Add preferences property
   status?: 'active' | 'inactive' | 'pending';
 }
 
 export interface UserProfile {
   id: string;
   full_name?: string;
-  email?: string;
+  email?: string; // Add email property
   role?: string;
   department?: string;
   organization_id?: string;
@@ -29,7 +29,7 @@ export interface UserContextType {
   profile: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>; // Add signIn method
   signOut: () => Promise<void>;
-  updateUser: (data: Partial<UserProfile>) => Promise<void>;
+  updateUser: (data: Partial<UserProfile>) => Promise<void>; // Add updateUser method
 }

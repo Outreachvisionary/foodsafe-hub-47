@@ -1,6 +1,5 @@
 
-import { Complaint, ComplaintFilter } from '@/types/complaint';
-import { convertToComplaintStatus } from '@/utils/typeAdapters';
+import { Complaint, ComplaintFilter, ComplaintStatus } from '@/types/complaint';
 import { getMockComplaints } from '@/services/mockDataService';
 
 // Get all complaints with optional filtering
@@ -66,6 +65,31 @@ export const getComplaintById = async (id: string): Promise<Complaint | null> =>
   const complaint = mockComplaints.find(c => c.id === id);
   
   return complaint || null;
+};
+
+// Alias for getComplaintById for consistency
+export const fetchComplaintById = getComplaintById;
+
+// Update complaint status
+export const updateComplaintStatus = async (id: string, newStatus: ComplaintStatus, userId: string): Promise<Complaint> => {
+  const complaint = await getComplaintById(id);
+  if (!complaint) {
+    throw new Error(`Complaint with ID ${id} not found`);
+  }
+  
+  // Update the status
+  const updatedComplaint = {
+    ...complaint,
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+    // If resolving, set resolved_date
+    resolved_date: newStatus === ComplaintStatus.Resolved ? new Date().toISOString() : complaint.resolved_date
+  };
+  
+  // In a real app, this would save to a database
+  console.log(`Complaint ${id} status updated to ${newStatus} by ${userId}`);
+  
+  return updatedComplaint;
 };
 
 // Add more complaint service functions as needed

@@ -76,34 +76,34 @@ export const getStatusColorInfo = (status: CAPAStatus | string): { bg: string; t
   const statusStr = status.toString().toLowerCase();
   
   switch (statusStr) {
-    case 'open':
+    case CAPAStatus.Open.toLowerCase():
       return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
       
-    case 'in_progress':
+    case CAPAStatus.InProgress.toLowerCase():
       return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
       
-    case 'completed':
+    case CAPAStatus.Completed.toLowerCase():
       return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
       
-    case 'closed':
+    case CAPAStatus.Closed.toLowerCase():
       return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
       
-    case 'rejected':
+    case CAPAStatus.Rejected.toLowerCase():
       return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
       
-    case 'on_hold':
+    case CAPAStatus.OnHold.toLowerCase():
       return { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' };
       
-    case 'overdue':
+    case CAPAStatus.Overdue.toLowerCase():
       return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
       
-    case 'pending_verification':
+    case CAPAStatus.PendingVerification.toLowerCase():
       return { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200' };
       
-    case 'verified':
+    case CAPAStatus.Verified.toLowerCase():
       return { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' };
       
-    case 'under_review':
+    case CAPAStatus.UnderReview.toLowerCase():
       return { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200' };
       
     default:
