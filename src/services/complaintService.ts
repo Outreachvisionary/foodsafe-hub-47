@@ -1,176 +1,71 @@
-import { supabase } from '@/integrations/supabase/client';
-import { Complaint, ComplaintStatus } from '@/types/complaint';
+
+import { Complaint, ComplaintFilter } from '@/types/complaint';
 import { convertToComplaintStatus } from '@/utils/typeAdapters';
 import { getMockComplaints } from '@/services/mockDataService';
 
-// Type guard to check for errors
-const isSupabaseError = (error: any): boolean => {
-  return error && typeof error === 'object' && 'message' in error;
-};
-
-// Fetch all complaints
-export const fetchComplaints = async (): Promise<Complaint[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('complaints')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      // Return mock data if no real data exists
-      return getMockComplaints();
-    }
-
-    return data.map((complaint: any) => ({
-      ...complaint,
-      status: convertToComplaintStatus(complaint.status),
-      priority: complaint.priority || 'Medium'
-    }));
-  } catch (error) {
-    console.error('Error fetching complaints:', error);
-    // Return mock data as fallback
-    return getMockComplaints();
+// Get all complaints with optional filtering
+export const getComplaints = async (filters?: ComplaintFilter): Promise<Complaint[]> => {
+  // Simulate API call with mock data
+  const mockComplaints = getMockComplaints();
+  
+  if (!filters) {
+    return mockComplaints;
   }
-};
-
-// Fetch a single complaint by ID
-export const fetchComplaintById = async (id: string): Promise<Complaint> => {
-  try {
-    const { data, error } = await supabase
-      .from('complaints')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
+  
+  // Apply filters if provided
+  return mockComplaints.filter(complaint => {
+    let matches = true;
     
-    return {
-      ...data,
-      status: convertToComplaintStatus(data.status),
-      priority: data.priority || 'Medium',
-      // Ensure these properties exist
-      created_at: data.created_at,
-      updated_at: data.updated_at || data.created_at
-    };
-  } catch (error) {
-    console.error('Error fetching complaint:', error);
-    
-    // Get mock complaints and find the one with matching ID
-    const mockComplaints = getMockComplaints();
-    const mockComplaint = mockComplaints.find(c => c.id === id);
-    
-    if (mockComplaint) {
-      return mockComplaint;
+    if (filters.status) {
+      if (Array.isArray(filters.status)) {
+        matches = matches && filters.status.some(s => s === complaint.status);
+      } else {
+        matches = matches && (filters.status === complaint.status);
+      }
     }
     
-    // Create a fallback complaint if none found
-    throw new Error('Complaint not found');
-  }
-};
-
-// Update complaint status
-export const updateComplaintStatus = async (
-  id: string, 
-  status: ComplaintStatus, 
-  userId: string
-): Promise<Complaint> => {
-  try {
-    // Get the current complaint first to return in case of error
-    const currentComplaint = await fetchComplaintById(id);
-    
-    // Prepare updates
-    const updates: any = {
-      status: status.replace(/_/g, ' '),
-      updated_at: new Date().toISOString(),
-    };
-    
-    // Add resolution date if status is Resolved or Closed
-    if (status === 'Resolved' || status === 'Closed') {
-      updates.resolution_date = new Date().toISOString();
-    }
-
-    const { data, error } = await supabase
-      .from('complaints')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Also record this activity in a complaints_activities table if it exists
-    try {
-      await supabase.from('complaint_activities').insert({
-        complaint_id: id,
-        user_id: userId,
-        action: 'status_change',
-        previous_status: currentComplaint.status,
-        new_status: status,
-        timestamp: new Date().toISOString()
-      });
-    } catch (activityError) {
-      // Just log activity errors, don't fail the main operation
-      console.warn('Could not record complaint activity:', activityError);
+    if (filters.category) {
+      if (Array.isArray(filters.category)) {
+        matches = matches && filters.category.some(c => c === complaint.category);
+      } else {
+        matches = matches && (filters.category === complaint.category);
+      }
     }
     
-    return {
-      ...data,
-      status: convertToComplaintStatus(data.status),
-      priority: data.priority || 'Medium',
-      created_at: data.created_at,
-      updated_at: data.updated_at || data.created_at
-    };
-  } catch (error) {
-    console.error('Error updating complaint status:', error);
+    if (filters.searchTerm) {
+      const term = filters.searchTerm.toLowerCase();
+      const titleMatch = complaint.title.toLowerCase().includes(term);
+      const descMatch = complaint.description.toLowerCase().includes(term);
+      const customerMatch = complaint.customer_name?.toLowerCase().includes(term) || false;
+      
+      matches = matches && (titleMatch || descMatch || customerMatch);
+    }
     
-    // Get the current complaint again to return the unchanged data
-    const currentComplaint = await fetchComplaintById(id);
-    return currentComplaint;
-  }
+    if (filters.dateRange) {
+      const reportDate = new Date(complaint.reported_date).getTime();
+      
+      if (filters.dateRange.start) {
+        const startDate = new Date(filters.dateRange.start).getTime();
+        matches = matches && reportDate >= startDate;
+      }
+      
+      if (filters.dateRange.end) {
+        const endDate = new Date(filters.dateRange.end).getTime();
+        matches = matches && reportDate <= endDate;
+      }
+    }
+    
+    return matches;
+  });
 };
 
-export const createComplaint = async (complaint: Partial<Complaint>): Promise<Complaint> => {
-  try {
-    const newComplaint = {
-      ...complaint,
-      status: complaint.status?.replace(/_/g, ' ') || 'New',
-      reported_date: complaint.reported_date || new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('complaints')
-      .insert([newComplaint])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      ...data,
-      status: convertToComplaintStatus(data.status),
-      priority: data.priority || 'Medium',
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-  } catch (error) {
-    console.error('Error creating complaint:', error);
-    
-    // Create a mock result in case of failure
-    const mockComplaints = getMockComplaints();
-    const mockId = `mock-${Date.now()}`;
-    
-    return {
-      ...complaint,
-      id: mockId,
-      status: complaint.status || 'New',
-      reported_date: complaint.reported_date || new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      priority: complaint.priority || 'Medium'
-    } as Complaint;
-  }
+// Get a single complaint by ID
+export const getComplaintById = async (id: string): Promise<Complaint | null> => {
+  // Simulate API call with mock data
+  const mockComplaints = getMockComplaints();
+  const complaint = mockComplaints.find(c => c.id === id);
+  
+  return complaint || null;
 };
+
+// Add more complaint service functions as needed

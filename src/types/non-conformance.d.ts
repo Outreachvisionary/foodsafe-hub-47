@@ -128,3 +128,8 @@ export interface NCAttachment {
   uploaded_at: string;
   uploaded_by: string;
 }
+
+export interface NCDetailsProps {
+  id: string;
+  onClose?: () => void;
+}

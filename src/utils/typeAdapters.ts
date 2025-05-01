@@ -3,6 +3,7 @@ import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import { TrainingStatus } from '@/types/enums';
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 import { CAPA } from '@/types/capa';
+import { ComplaintStatus } from '@/types/enums';
 
 // Document status conversion functions
 export const stringToDocumentStatus = (status: string): DocumentStatus => {
@@ -122,4 +123,18 @@ export const adaptCAPAToModel = (capa: any): CAPA => {
     source: stringToCAPASource(capa.source),
     updated_at: capa.updated_at || capa.created_at || new Date().toISOString()
   };
+};
+
+// Convert string to ComplaintStatus
+export const convertToComplaintStatus = (status: string): ComplaintStatus => {
+  const normalizedStatus = status?.toLowerCase().replace(/ /g, '_');
+  
+  switch(normalizedStatus) {
+    case 'new': return ComplaintStatus.New;
+    case 'under_investigation': return ComplaintStatus.Under_Investigation;
+    case 'resolved': return ComplaintStatus.Resolved;
+    case 'closed': return ComplaintStatus.Closed;
+    case 'reopened': return ComplaintStatus.Reopened;
+    default: return ComplaintStatus.New;
+  }
 };

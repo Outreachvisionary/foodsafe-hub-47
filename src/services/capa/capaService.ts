@@ -1,6 +1,8 @@
 
-import { CAPAStats, CAPA } from '@/types/capa';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
+import { CAPA, CAPAStats } from '@/types/capa';
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
+import { convertToCAPAStatus, stringToCAPAPriority, stringToCAPASource } from '@/utils/typeAdapters';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock CAPA stats for development
 export const getCAPAStats = async (): Promise<CAPAStats> => {

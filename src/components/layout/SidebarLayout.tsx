@@ -1,17 +1,21 @@
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
-import AppSidebar from './AppSidebar';
+import Sidebar from './Sidebar';
+import TopNav from './TopNav';
 
-const SidebarLayout = () => {
+interface SidebarLayoutProps {
+  children?: ReactNode;
+}
+
+const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen flex w-full">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <main className="flex-1 overflow-y-auto bg-background/95 p-6">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar />
+      <div className="flex flex-col flex-1 overflow-y-auto">
+        <TopNav />
+        <main className="flex-1 p-4 bg-gray-50">
+          {children || <Outlet />}
         </main>
       </div>
     </div>
