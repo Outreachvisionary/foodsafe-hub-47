@@ -14,7 +14,7 @@ export interface Facility {
   location_data?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
-  status: string;
+  status: string; // Making this required to match usage
   facility_type?: string;
 }
 

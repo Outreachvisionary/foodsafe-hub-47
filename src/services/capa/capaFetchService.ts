@@ -1,6 +1,6 @@
 
 import { CAPA } from '@/types/capa';
-import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
 // Mock data for testing
@@ -10,12 +10,12 @@ const mockCapas: CAPA[] = [
     title: 'Foreign Material in Product',
     description: 'Metal fragments found in the finished product batch #12345',
     status: CAPAStatus.Open,
-    priority: 'High',
+    priority: CAPAPriority.High,
     created_at: new Date().toISOString(),
     created_by: 'John Doe',
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     assigned_to: 'Jane Smith',
-    source: 'Non_Conformance',
+    source: CAPASource.NonConformance,
     source_reference: 'NC-2023-005',
     department: 'Production',
     fsma204_compliant: true,
@@ -27,12 +27,12 @@ const mockCapas: CAPA[] = [
     title: 'Temperature Control Failure',
     description: 'Cold storage temperature exceeded critical limits for 4 hours',
     status: CAPAStatus.InProgress,
-    priority: 'Critical',
+    priority: CAPAPriority.Critical,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     created_by: 'Sarah Johnson',
     due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     assigned_to: 'Mike Wilson',
-    source: 'Audit',
+    source: CAPASource.Audit,
     source_reference: 'AUDIT-2023-12',
     completion_date: undefined,
     root_cause: 'Equipment failure - compressor malfunction',

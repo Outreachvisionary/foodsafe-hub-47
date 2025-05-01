@@ -28,6 +28,10 @@ export interface CAPA {
   verified_by?: string;
   source_id?: string;
   fsma204_compliant?: boolean;
+  // Adding additional properties found in the code
+  source_reference?: string;
+  relatedDocuments?: string[];
+  relatedTraining?: string[];
 }
 
 export interface CAPAFilter {
@@ -44,7 +48,7 @@ export interface CAPAFilter {
 
 export interface CAPAActivity {
   id: string;
-  capa_id: string;
+  capa_id: string; // Changed from capaId to capa_id for consistency
   performed_at: string;
   old_status?: CAPAStatus;
   new_status?: CAPAStatus;
@@ -64,6 +68,14 @@ export interface CAPAStats {
   bySource: Record<CAPASource, number>;
   byDepartment: Record<string, number>;
   recentActivities: CAPAActivity[];
+  // Adding missing properties used in the codebase
+  openCount?: number;
+  closedCount?: number;
+  overdueCount?: number;
+  pendingVerificationCount?: number;
+  effectivenessRate?: number;
+  byStatus?: Record<string, number>;
+  byMonth?: Record<string, number>;
 }
 
 export interface CAPAListProps {

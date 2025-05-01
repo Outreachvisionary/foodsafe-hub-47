@@ -1,5 +1,6 @@
 
 import { CAPAStats } from "@/types/capa";
+import { CAPAPriority, CAPASource } from "@/types/enums";
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchCAPAStats = async (): Promise<CAPAStats> => {
@@ -8,20 +9,36 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     
     if (error) throw error;
     
-    // Initialize stats object
+    // Initialize stats object with default values
     const stats: CAPAStats = {
       total: 0,
+      open: 0,
+      inProgress: 0,
+      completed: 0,
+      overdue: 0,
       openCount: 0,
       closedCount: 0,
       overdueCount: 0,
       pendingVerificationCount: 0,
       effectivenessRate: 0,
       byStatus: {},
-      byPriority: {},
-      bySource: {},
+      byPriority: {
+        [CAPAPriority.Low]: 0,
+        [CAPAPriority.Medium]: 0,
+        [CAPAPriority.High]: 0,
+        [CAPAPriority.Critical]: 0
+      },
+      bySource: {
+        [CAPASource.Audit]: 0,
+        [CAPASource.CustomerComplaint]: 0,
+        [CAPASource.InternalReport]: 0,
+        [CAPASource.NonConformance]: 0,
+        [CAPASource.RegulatoryInspection]: 0,
+        [CAPASource.SupplierIssue]: 0,
+        [CAPASource.Other]: 0
+      },
       byMonth: {},
-      byDepartment: {},
-      overdue: 0
+      byDepartment: {}
     };
     
     if (!data || data.length === 0) {
@@ -36,25 +53,31 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       // Count by status
       if (capa.status === 'Open') {
         stats.openCount++;
+        stats.open++;
       } else if (capa.status === 'Closed') {
         stats.closedCount++;
       } else if (capa.status === 'Overdue') {
         stats.overdueCount++;
+        stats.overdue++;
       } else if (capa.status === 'Pending Verification' || capa.status === 'Verified') {
         stats.pendingVerificationCount++;
       }
       
       // Count by priority
-      if (!stats.byPriority[capa.priority]) {
-        stats.byPriority[capa.priority] = 0;
+      if (capa.priority && stats.byPriority) {
+        const priority = capa.priority as CAPAPriority;
+        if (priority in stats.byPriority) {
+          stats.byPriority[priority]++;
+        }
       }
-      stats.byPriority[capa.priority]++;
       
       // Count by source
-      if (!stats.bySource[capa.source]) {
-        stats.bySource[capa.source] = 0;
+      if (capa.source && stats.bySource) {
+        const source = capa.source as CAPASource;
+        if (source in stats.bySource) {
+          stats.bySource[source]++;
+        }
       }
-      stats.bySource[capa.source]++;
       
       // Count by department
       if (capa.department) {
@@ -73,9 +96,6 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     stats.effectivenessRate = stats.closedCount > 0 
       ? (effectiveCount / stats.closedCount) * 100 
       : 0;
-
-    // Set overdue count to be consistent with other usage
-    stats.overdue = stats.overdueCount;
     
     return stats;
     

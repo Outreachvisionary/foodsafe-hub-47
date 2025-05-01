@@ -1,28 +1,33 @@
 
 import { CAPAStats, CAPA } from '@/types/capa';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 // Mock CAPA stats for development
 export const getCAPAStats = async (): Promise<CAPAStats> => {
   // In a real application, this would fetch data from the API
   return {
     total: 85,
+    open: 32,
+    completed: 45,
+    overdue: 8,
+    inProgress: 0,
     openCount: 32,
     closedCount: 45,
     overdueCount: 8,
     pendingVerificationCount: 5,
     effectivenessRate: 78,
     byPriority: {
-      'Low': 12,
-      'Medium': 35,
-      'High': 30,
-      'Critical': 8
+      [CAPAPriority.Low]: 12,
+      [CAPAPriority.Medium]: 35,
+      [CAPAPriority.High]: 30,
+      [CAPAPriority.Critical]: 8
     },
     bySource: {
-      'Audit': 25,
-      'Customer_Complaint': 15,
-      'Non_Conformance': 20,
-      'Supplier_Issue': 10,
-      'Management_Review': 15
+      [CAPASource.Audit]: 25,
+      [CAPASource.CustomerComplaint]: 15,
+      [CAPASource.NonConformance]: 20,
+      [CAPASource.SupplierIssue]: 10,
+      [CAPASource.InternalReport]: 15
     },
     byDepartment: {
       'Production': 30,
@@ -47,8 +52,7 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       'May': 15,
       'Jun': 20,
       'Jul': 15
-    },
-    overdue: 8
+    }
   };
 };
 
@@ -59,18 +63,18 @@ export const getCAPAById = async (id: string): Promise<CAPA | null> => {
     id,
     title: `CAPA-${id}`,
     description: "Description of the CAPA item",
-    status: 'In_Progress',
-    priority: 'High',
-    createdAt: new Date().toISOString(),
-    createdBy: 'John Doe',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    assignedTo: 'Jane Smith',
-    source: 'Audit',
-    sourceReference: 'Audit-2023-001',
-    rootCause: 'Process failure',
-    correctiveAction: 'Update process documentation',
-    preventiveAction: 'Staff training',
-    effectivenessCriteria: 'No recurrence for 90 days',
+    status: CAPAStatus.InProgress,
+    priority: CAPAPriority.High,
+    created_at: new Date().toISOString(),
+    created_by: 'John Doe',
+    due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    assigned_to: 'Jane Smith',
+    source: CAPASource.Audit,
+    source_reference: 'Audit-2023-001',
+    root_cause: 'Process failure',
+    corrective_action: 'Update process documentation',
+    preventive_action: 'Staff training',
+    effectiveness_criteria: 'No recurrence for 90 days',
     relatedDocuments: [],
     relatedTraining: []
   };

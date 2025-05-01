@@ -1,6 +1,7 @@
 
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
+import { convertToCAPAStatus } from '@/utils/typeAdapters';
 
 // Mock function to record CAPA activity
 export const recordCAPAActivity = async (activityData: {
@@ -15,13 +16,13 @@ export const recordCAPAActivity = async (activityData: {
   // In a real implementation, this would insert a record into the database
   const activity: CAPAActivity = {
     id: `activity-${Date.now()}`,
-    capaId: activityData.capa_id,
+    capa_id: activityData.capa_id,
     actionType: activityData.action_type,
     actionDescription: activityData.action_description,
-    performedAt: new Date().toISOString(),
-    performedBy: activityData.performed_by,
-    oldStatus: activityData.old_status ? convertToCAPAStatus(activityData.old_status) : undefined,
-    newStatus: activityData.new_status ? convertToCAPAStatus(activityData.new_status) : undefined,
+    performed_at: new Date().toISOString(),
+    performed_by: activityData.performed_by,
+    old_status: activityData.old_status ? convertToCAPAStatus(activityData.old_status) : undefined,
+    new_status: activityData.new_status ? convertToCAPAStatus(activityData.new_status) : undefined,
     metadata: activityData.metadata
   };
   
@@ -38,63 +39,46 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
   return [
     {
       id: '1',
-      capaId: capaId,
-      actionType: 'created',
-      actionDescription: 'CAPA was created',
-      performedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      performedBy: 'John Doe',
-      oldStatus: undefined,
-      newStatus: CAPAStatus.Open
+      capa_id: capaId,
+      action_type: 'created',
+      action_description: 'CAPA was created',
+      performed_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      performed_by: 'John Doe',
+      old_status: undefined,
+      new_status: CAPAStatus.Open
     },
     {
       id: '2',
-      capaId: capaId,
-      actionType: 'status_change',
-      actionDescription: 'Status updated from Open to In Progress',
-      performedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      performedBy: 'Jane Smith',
-      oldStatus: CAPAStatus.Open,
-      newStatus: CAPAStatus.InProgress
+      capa_id: capaId,
+      action_type: 'status_change',
+      action_description: 'Status updated from Open to In Progress',
+      performed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      performed_by: 'Jane Smith',
+      old_status: CAPAStatus.Open,
+      new_status: CAPAStatus.InProgress
     },
     {
       id: '3',
-      capaId: capaId,
-      actionType: 'comment',
-      actionDescription: 'Added root cause analysis',
-      performedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      performedBy: 'Jane Smith',
+      capa_id: capaId,
+      action_type: 'comment',
+      action_description: 'Added root cause analysis',
+      performed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      performed_by: 'Jane Smith',
       metadata: {
         comments: 'Completed root cause analysis and identified key issues.'
       }
     },
     {
       id: '4',
-      capaId: capaId,
-      actionType: 'document_linked',
-      actionDescription: 'Associated document with CAPA',
-      performedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      performedBy: 'John Doe',
+      capa_id: capaId,
+      action_type: 'document_linked',
+      action_description: 'Associated document with CAPA',
+      performed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      performed_by: 'John Doe',
       metadata: {
         documentId: 'doc-123',
         documentName: 'Procedure Update'
       }
     }
   ];
-};
-
-// Helper function to convert string status to CAPAStatus enum
-const convertToCAPAStatus = (status: string): CAPAStatus => {
-  switch(status?.toLowerCase().replace(/ /g, '_')) {
-    case 'open': return CAPAStatus.Open;
-    case 'in_progress': return CAPAStatus.InProgress;
-    case 'under_review': return CAPAStatus.UnderReview;
-    case 'completed': return CAPAStatus.Completed;
-    case 'closed': return CAPAStatus.Closed;
-    case 'rejected': return CAPAStatus.Rejected;
-    case 'on_hold': return CAPAStatus.OnHold;
-    case 'overdue': return CAPAStatus.Overdue;
-    case 'pending_verification': return CAPAStatus.PendingVerification;
-    case 'verified': return CAPAStatus.Verified;
-    default: return CAPAStatus.Open;
-  }
 };
