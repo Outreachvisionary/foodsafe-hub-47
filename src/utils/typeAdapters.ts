@@ -1,108 +1,164 @@
 
-import { DocumentStatus, CheckoutStatus, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
+import { DocumentStatus, CheckoutStatus, ComplaintStatus, ComplaintCategory, ComplaintPriority, TrainingStatus } from '@/types/enums';
 
-// Document status utilities
-export const isStatusEqual = (status: any, targetStatus: DocumentStatus): boolean => {
-  if (!status) return false;
-  
-  if (typeof status === 'string') {
-    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
-    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
-    return normalizedStatus === normalizedTarget;
+/**
+ * Convert DocumentStatus enum value to string
+ */
+export const documentStatusToString = (status: DocumentStatus): string => {
+  return status.toString();
+};
+
+/**
+ * Convert string to DocumentStatus enum
+ */
+export const stringToDocumentStatus = (status: string): DocumentStatus => {
+  // Try direct match first
+  if (Object.values(DocumentStatus).includes(status as DocumentStatus)) {
+    return status as DocumentStatus;
   }
   
-  return status === targetStatus;
+  // Handle cases where string might have spaces instead of underscores
+  const formattedStatus = status.replace(/ /g, '_');
+  if (Object.values(DocumentStatus).includes(formattedStatus as DocumentStatus)) {
+    return formattedStatus as DocumentStatus;
+  }
+  
+  // Default fallback
+  console.warn(`Unknown document status: ${status}, defaulting to Draft`);
+  return DocumentStatus.Draft;
 };
 
-// Alias for backward compatibility
-export const isStringStatusEqual = isStatusEqual;
-
-export const documentStatusToString = (status: DocumentStatus): string => {
-  return status.toString().replace(/_/g, ' ');
-};
-
-export const stringToDocumentStatus = (statusString: string): DocumentStatus => {
-  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
-  return DocumentStatus[statusKey as keyof typeof DocumentStatus] || DocumentStatus.Draft;
-};
-
-// CAPA status utilities
-export const convertToCAPAStatus = (statusString: string): CAPAStatus => {
-  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
-  // Try to get the enum value or default to Open
-  return Object.values(CAPAStatus).find(
-    s => s === statusKey || s === statusString
-  ) || CAPAStatus.Open;
-};
-
-export const convertToCAPAPriority = (priorityString: string): CAPAPriority => {
-  const priorityKey = priorityString.toUpperCase();
-  return Object.values(CAPAPriority).find(
-    p => p === priorityKey || p === priorityString
-  ) || CAPAPriority.Medium;
-};
-
-export const convertToCAPASource = (sourceString: string): CAPASource => {
-  const sourceKey = sourceString.replace(/ /g, '_').toUpperCase();
-  return Object.values(CAPASource).find(
-    s => s === sourceKey || s === sourceString
-  ) || CAPASource.Other;
-};
-
-export const formatEnumValue = (value: string): string => {
-  return value.replace(/_/g, ' ');
-};
-
-// Checkout status utilities
+/**
+ * Convert CheckoutStatus enum value to string
+ */
 export const checkoutStatusToString = (status: CheckoutStatus): string => {
-  return status.toString().replace(/_/g, ' ');
+  return status.toString();
 };
 
-export const stringToCheckoutStatus = (statusString: string): CheckoutStatus => {
-  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
-  return CheckoutStatus[statusKey as keyof typeof CheckoutStatus] || CheckoutStatus.Available;
-};
-
-// Complaint status utilities
-export const formatComplaintStatus = (status: ComplaintStatus): string => {
-  return status.toString().replace(/_/g, ' ');
-};
-
-export const stringToComplaintStatus = (statusString: string): ComplaintStatus => {
-  const statusKey = statusString.replace(/ /g, '_').toUpperCase();
-  return ComplaintStatus[statusKey as keyof typeof ComplaintStatus] || ComplaintStatus.New;
-};
-
-export const stringToComplaintCategory = (categoryString: string): ComplaintCategory => {
-  const categoryKey = categoryString.replace(/ /g, '_').toUpperCase();
-  return ComplaintCategory[categoryKey as keyof typeof ComplaintCategory] || ComplaintCategory.Other;
-};
-
-// Utility for converting enum values to display format
-export const enumToDisplayText = (enumValue: string): string => {
-  return enumValue.replace(/_/g, ' ');
-};
-
-// Utility for standardizing object keys to match Supabase snake_case format
-export const toSnakeCase = (obj: Record<string, any>): Record<string, any> => {
-  const result: Record<string, any> = {};
+/**
+ * Convert string to CheckoutStatus enum
+ */
+export const stringToCheckoutStatus = (status: string): CheckoutStatus => {
+  // Try direct match first
+  if (Object.values(CheckoutStatus).includes(status as CheckoutStatus)) {
+    return status as CheckoutStatus;
+  }
   
-  Object.keys(obj).forEach(key => {
-    const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-    result[snakeKey] = obj[key];
-  });
+  // Handle cases where string might have spaces instead of underscores
+  const formattedStatus = status.replace(/ /g, '_');
+  if (Object.values(CheckoutStatus).includes(formattedStatus as CheckoutStatus)) {
+    return formattedStatus as CheckoutStatus;
+  }
   
-  return result;
+  // Default fallback
+  console.warn(`Unknown checkout status: ${status}, defaulting to Available`);
+  return CheckoutStatus.Available;
 };
 
-// Utility for standardizing object keys to match TypeScript camelCase format
-export const toCamelCase = (obj: Record<string, any>): Record<string, any> => {
-  const result: Record<string, any> = {};
+/**
+ * Convert TrainingStatus enum value to string
+ */
+export const trainingStatusToString = (status: TrainingStatus): string => {
+  return status.toString();
+};
+
+/**
+ * Convert string to TrainingStatus enum
+ */
+export const stringToTrainingStatus = (status: string): TrainingStatus => {
+  // Try direct match first
+  if (Object.values(TrainingStatus).includes(status as TrainingStatus)) {
+    return status as TrainingStatus;
+  }
   
-  Object.keys(obj).forEach(key => {
-    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    result[camelKey] = obj[key];
-  });
+  // Handle cases where string might have spaces instead of underscores
+  const formattedStatus = status.replace(/ /g, '_');
+  if (Object.values(TrainingStatus).includes(formattedStatus as TrainingStatus)) {
+    return formattedStatus as TrainingStatus;
+  }
   
-  return result;
+  // Default fallback
+  console.warn(`Unknown training status: ${status}, defaulting to NotStarted`);
+  return TrainingStatus.NotStarted;
+};
+
+/**
+ * Convert ComplaintStatus enum value to string
+ */
+export const complaintStatusToString = (status: ComplaintStatus): string => {
+  return status.toString();
+};
+
+/**
+ * Convert string to ComplaintStatus enum
+ */
+export const stringToComplaintStatus = (status: string): ComplaintStatus => {
+  // Try direct match first
+  if (Object.values(ComplaintStatus).includes(status as ComplaintStatus)) {
+    return status as ComplaintStatus;
+  }
+  
+  // Handle cases where string might have spaces instead of underscores
+  const formattedStatus = status.replace(/ /g, '_');
+  if (Object.values(ComplaintStatus).includes(formattedStatus as ComplaintStatus)) {
+    return formattedStatus as ComplaintStatus;
+  }
+  
+  // Default fallback
+  console.warn(`Unknown complaint status: ${status}, defaulting to New`);
+  return ComplaintStatus.New;
+};
+
+/**
+ * Convert ComplaintCategory enum value to string
+ */
+export const complaintCategoryToString = (category: ComplaintCategory): string => {
+  return category.toString();
+};
+
+/**
+ * Convert string to ComplaintCategory enum
+ */
+export const stringToComplaintCategory = (category: string): ComplaintCategory => {
+  // Try direct match first
+  if (Object.values(ComplaintCategory).includes(category as ComplaintCategory)) {
+    return category as ComplaintCategory;
+  }
+  
+  // Handle cases where string might have spaces instead of underscores
+  const formattedCategory = category.replace(/ /g, '_');
+  if (Object.values(ComplaintCategory).includes(formattedCategory as ComplaintCategory)) {
+    return formattedCategory as ComplaintCategory;
+  }
+  
+  // Default fallback
+  console.warn(`Unknown complaint category: ${category}, defaulting to ProductQuality`);
+  return ComplaintCategory.ProductQuality;
+};
+
+/**
+ * Convert ComplaintPriority enum value to string
+ */
+export const complaintPriorityToString = (priority: ComplaintPriority): string => {
+  return priority.toString();
+};
+
+/**
+ * Convert string to ComplaintPriority enum
+ */
+export const stringToComplaintPriority = (priority: string): ComplaintPriority => {
+  // Try direct match first
+  if (Object.values(ComplaintPriority).includes(priority as ComplaintPriority)) {
+    return priority as ComplaintPriority;
+  }
+  
+  // Handle cases where string might have spaces instead of underscores
+  const formattedPriority = priority.replace(/ /g, '_');
+  if (Object.values(ComplaintPriority).includes(formattedPriority as ComplaintPriority)) {
+    return formattedPriority as ComplaintPriority;
+  }
+  
+  // Default fallback
+  console.warn(`Unknown complaint priority: ${priority}, defaulting to Medium`);
+  return ComplaintPriority.Medium;
 };

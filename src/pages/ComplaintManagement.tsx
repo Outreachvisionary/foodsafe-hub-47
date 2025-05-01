@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
+import { stringToComplaintCategory, stringToComplaintStatus, stringToComplaintPriority } from '@/utils/typeAdapters';
 
 // Adjust the component imports as needed
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>("Product_Quality");
+  const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>(ComplaintCategory.ProductQuality);
   
   useEffect(() => {
     // Fetch complaints data
@@ -14,9 +16,9 @@ const ComplaintManagement: React.FC = () => {
         id: '1',
         title: 'Foreign object found in product',
         description: 'Customer found metal fragment in canned goods',
-        category: 'Foreign_Material',
-        status: 'Under_Investigation',
-        priority: 'High',
+        category: ComplaintCategory.ForeignMaterial,
+        status: ComplaintStatus.Under_Investigation,
+        priority: ComplaintPriority.High,
         reported_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -43,17 +45,17 @@ const ComplaintManagement: React.FC = () => {
   // Status badge renderer
   const getStatusBadge = (status: ComplaintStatus) => {
     // Return appropriate badge component based on status
-    if (status === 'New') {
+    if (status === ComplaintStatus.New) {
       return <span>New</span>;
     } 
-    else if (status === 'Under_Investigation') {
+    else if (status === ComplaintStatus.Under_Investigation) {
       return <span>Under Investigation</span>;
     }
-    else if (status === 'Resolved') {
+    else if (status === ComplaintStatus.Resolved) {
       return <span>Resolved</span>;
     }
     // Add cases for other statuses
-    return <span>{status.replace(/_/g, ' ')}</span>;
+    return <span>{status.toString().replace(/_/g, ' ')}</span>;
   };
   
   return (

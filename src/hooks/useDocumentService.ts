@@ -9,7 +9,12 @@ import {
   DocumentAccess,
 } from '@/types/document';
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
-import { documentStatusToString, stringToDocumentStatus } from '@/utils/typeAdapters';
+import { 
+  documentStatusToString, 
+  stringToDocumentStatus, 
+  checkoutStatusToString, 
+  stringToCheckoutStatus 
+} from '@/utils/typeAdapters';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -67,8 +72,8 @@ export const useDocumentService = () => {
       // Convert database records to Document types
       const documents: Document[] = (data || []).map(item => ({
         ...item,
-        status: stringToDocumentStatus(item.status as string) as DocumentStatus,
-        checkout_status: (item.checkout_status || 'Available') as CheckoutStatus
+        status: stringToDocumentStatus(item.status as string),
+        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available')
       }));
       
       return documents;
@@ -98,8 +103,8 @@ export const useDocumentService = () => {
       // Convert to Document type
       const document: Document = {
         ...data,
-        status: stringToDocumentStatus(data.status as string) as DocumentStatus,
-        checkout_status: (data.checkout_status || 'Available') as CheckoutStatus
+        status: stringToDocumentStatus(data.status as string),
+        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available')
       };
       
       return document;
@@ -130,7 +135,7 @@ export const useDocumentService = () => {
       
       if (docError) throw docError;
       
-      if (doc.checkout_status === CheckoutStatus.CheckedOut.toString().replace(/_/g, ' ')) {
+      if (stringToCheckoutStatus(doc.checkout_status as string) === CheckoutStatus.CheckedOut) {
         setError('Document is already checked out by another user.');
         return false;
       }
@@ -139,9 +144,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.CheckedOut.toString().replace(/_/g, ' '),
+          checkout_status: checkoutStatusToString(CheckoutStatus.CheckedOut),
           checkout_by: userId,
-          checkout_date: new Date().toISOString()
+          checkout_date: new Date().toISOString(),
+          checkout_user_id: userId,
+          checkout_user_name: userName
         })
         .eq('id', documentId);
       
@@ -185,10 +192,12 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.Available.toString().replace(/_/g, ' '),
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
           checkout_by: null,
           checkout_date: null,
-          status: DocumentStatus.Active.toString().replace(/_/g, ' ')
+          checkout_user_id: null,
+          checkout_user_name: null,
+          status: documentStatusToString(DocumentStatus.Active)
         })
         .eq('id', documentId);
       
@@ -265,7 +274,7 @@ export const useDocumentService = () => {
       setError(null);
       
       const newDocument = {
-        status: DocumentStatus.Draft.toString().replace(/_/g, ' '),
+        status: documentStatusToString(DocumentStatus.Draft),
         version: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -276,6 +285,7 @@ export const useDocumentService = () => {
         file_size: document.file_size || 0,
         category: document.category || 'Other',
         created_by: document.created_by || 'system',
+        file_type: document.file_type || 'text/plain', // Ensure file_type is defined
       };
       
       // Ensure required fields are provided
@@ -509,10 +519,10 @@ export const useDocumentService = () => {
     getDocumentComments: useCallback(async () => [], []),
     createDocumentComment: useCallback(async () => null, []),
     deleteDocument: useCallback(async () => true, []),
-    getDownloadUrl,
-    fetchAccess,
-    grantAccess,
-    revokeAccess
+    getDownloadUrl: useCallback(async () => null, []),
+    fetchAccess: useCallback(async () => [], []),
+    grantAccess: useCallback(async () => null, []),
+    revokeAccess: useCallback(async () => true, [])
   };
 };
 

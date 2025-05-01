@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TrainingStatus } from '@/types/enums';
+import { trainingStatusToString, stringToTrainingStatus } from '@/utils/typeAdapters';
 
 export interface TrainingSession {
   id: string;
@@ -42,7 +43,7 @@ export const useTrainingSessions = () => {
       // Map database records to TrainingSession objects
       const mappedSessions: TrainingSession[] = data.map(session => ({
         ...session,
-        completion_status: session.completion_status as TrainingStatus
+        completion_status: stringToTrainingStatus(session.completion_status as string)
       }));
 
       setSessions(mappedSessions);
@@ -72,9 +73,15 @@ export const useTrainingSessions = () => {
         created_by: sessionData.created_by || 'system'
       };
       
+      // Convert enum to string for database storage
+      const completion_status = sessionData.completion_status ? 
+        trainingStatusToString(sessionData.completion_status) : 
+        trainingStatusToString(TrainingStatus.NotStarted);
+      
       const newSession = {
         ...sessionData,
-        ...requiredData
+        ...requiredData,
+        completion_status
       };
       
       const { data, error } = await supabase
@@ -86,7 +93,12 @@ export const useTrainingSessions = () => {
       if (error) throw error;
       
       // Add the new session to the state
-      setSessions(prev => [data as TrainingSession, ...prev]);
+      const convertedSession = {
+        ...data,
+        completion_status: stringToTrainingStatus(data.completion_status as string)
+      } as TrainingSession;
+      
+      setSessions(prev => [convertedSession, ...prev]);
       
       toast({
         title: 'Success',
@@ -115,7 +127,7 @@ export const useTrainingSessions = () => {
       
       const { data, error } = await supabase
         .from('training_sessions')
-        .update({ completion_status: newStatus })
+        .update({ completion_status: trainingStatusToString(newStatus) })
         .eq('id', sessionId)
         .select()
         .single();
@@ -131,7 +143,7 @@ export const useTrainingSessions = () => {
       
       toast({
         title: 'Status Updated',
-        description: `Training session status updated to ${newStatus}`,
+        description: `Training session status updated to ${trainingStatusToString(newStatus)}`,
       });
       
       return data;

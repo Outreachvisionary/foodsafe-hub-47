@@ -3,11 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ResponsiveBar } from '@nivo/bar';
-import { ResponsivePie } from '@nivo/pie';
-import { ResponsiveLine } from '@nivo/line';
+import { BarChart, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { CAPAStats, CAPA } from '@/types/capa';
 import { getRecentCAPAs } from '@/services/capaService';
+
+// Create an interface for CapaOverviewChart to avoid future prop type issues
+interface CapaOverviewChartProps {
+  data: {
+    open: number;
+    inProgress: number;
+    closed: number;
+    verified: number;
+    overdue: number;
+    pendingVerification: number;
+  };
+}
 
 interface CAPADashboardProps {
   stats: CAPAStats;
@@ -44,52 +54,48 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
   
   // Prepare data for pie chart - CAPA by priority
   const priorityData = Object.entries(stats.byPriority).map(([priority, count]) => ({
-    id: priority,
-    label: priority,
+    name: priority,
     value: count,
   }));
   
   // Prepare data for pie chart - CAPA by source
   const sourceData = Object.entries(stats.bySource).map(([source, count]) => ({
-    id: source.replace(/_/g, ' '),
-    label: source.replace(/_/g, ' '),
+    name: source.replace(/_/g, ' '),
     value: count,
   }));
+
+  // COLORS array for the charts
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A374DB'];
   
   // Prepare data for line chart - CAPAs over time (dummy data for now)
   const getTimeData = () => {
     if (timeframe === 'week') {
       return [
-        { x: 'Mon', y: 5 },
-        { x: 'Tue', y: 8 },
-        { x: 'Wed', y: 3 },
-        { x: 'Thu', y: 7 },
-        { x: 'Fri', y: 9 },
-        { x: 'Sat', y: 2 },
-        { x: 'Sun', y: 0 },
+        { name: 'Mon', value: 5 },
+        { name: 'Tue', value: 8 },
+        { name: 'Wed', value: 3 },
+        { name: 'Thu', value: 7 },
+        { name: 'Fri', value: 9 },
+        { name: 'Sat', value: 2 },
+        { name: 'Sun', value: 0 },
       ];
     } else if (timeframe === 'month') {
       return [
-        { x: 'Week 1', y: 12 },
-        { x: 'Week 2', y: 8 },
-        { x: 'Week 3', y: 15 },
-        { x: 'Week 4', y: 7 },
+        { name: 'Week 1', value: 12 },
+        { name: 'Week 2', value: 8 },
+        { name: 'Week 3', value: 15 },
+        { name: 'Week 4', value: 7 },
       ];
     } else {
       return [
-        { x: 'Jan', y: 20 },
-        { x: 'Feb', y: 30 },
-        { x: 'Mar', y: 15 },
+        { name: 'Jan', value: 20 },
+        { name: 'Feb', value: 30 },
+        { name: 'Mar', value: 15 },
       ];
     }
   };
   
-  const timelineData = [
-    {
-      id: 'CAPAs',
-      data: getTimeData(),
-    },
-  ];
+  const timelineData = getTimeData();
   
   // Function to format status for display
   const formatStatus = (status: string): string => {
@@ -146,28 +152,16 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
             <CardTitle>CAPA Status Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsiveBar
-              data={statusData}
-              keys={['count']}
-              indexBy="status"
-              margin={{ top: 10, right: 10, bottom: 50, left: 60 }}
-              padding={0.3}
-              colors={{ scheme: 'nivo' }}
-              axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-              }}
-              axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-              }}
-              labelSkipWidth={12}
-              labelSkipHeight={12}
-              role="application"
-              ariaLabel="CAPA status distribution"
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statusData} margin={{ top: 10, right: 10, bottom: 50, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="status" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#8884d8" name="Count" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
         
@@ -176,39 +170,27 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
             <CardTitle>CAPA Priority Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsivePie
-              data={priorityData}
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              innerRadius={0.5}
-              padAngle={0.7}
-              cornerRadius={3}
-              activeOuterRadiusOffset={8}
-              borderWidth={1}
-              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-              arcLinkLabelsSkipAngle={10}
-              arcLinkLabelsTextColor="#333333"
-              arcLinkLabelsThickness={2}
-              arcLinkLabelsColor={{ from: 'color' }}
-              arcLabelsSkipAngle={10}
-              arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-              legends={[
-                {
-                  anchor: 'bottom',
-                  direction: 'row',
-                  justify: false,
-                  translateX: 0,
-                  translateY: 56,
-                  itemsSpacing: 0,
-                  itemWidth: 100,
-                  itemHeight: 18,
-                  itemTextColor: '#999',
-                  itemDirection: 'left-to-right',
-                  itemOpacity: 1,
-                  symbolSize: 18,
-                  symbolShape: 'circle',
-                },
-              ]}
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={priorityData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {priorityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -219,39 +201,27 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
             <CardTitle>CAPA Source Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsivePie
-              data={sourceData}
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              innerRadius={0.5}
-              padAngle={0.7}
-              cornerRadius={3}
-              activeOuterRadiusOffset={8}
-              borderWidth={1}
-              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-              arcLinkLabelsSkipAngle={10}
-              arcLinkLabelsTextColor="#333333"
-              arcLinkLabelsThickness={2}
-              arcLinkLabelsColor={{ from: 'color' }}
-              arcLabelsSkipAngle={10}
-              arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-              legends={[
-                {
-                  anchor: 'bottom',
-                  direction: 'row',
-                  justify: false,
-                  translateX: 0,
-                  translateY: 56,
-                  itemsSpacing: 0,
-                  itemWidth: 100,
-                  itemHeight: 18,
-                  itemTextColor: '#999',
-                  itemDirection: 'left-to-right',
-                  itemOpacity: 1,
-                  symbolSize: 18,
-                  symbolShape: 'circle',
-                },
-              ]}
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={sourceData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {sourceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
         
@@ -283,41 +253,21 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
             </div>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsiveLine
-              data={timelineData}
-              margin={{ top: 10, right: 20, bottom: 50, left: 60 }}
-              xScale={{ type: 'point' }}
-              yScale={{ type: 'linear', min: 'auto', max: 'auto', stacked: false, reverse: false }}
-              curve="natural"
-              axisTop={null}
-              axisRight={null}
-              axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: timeframe === 'week' ? 'Day' : timeframe === 'month' ? 'Week' : 'Month',
-                legendOffset: 36,
-                legendPosition: 'middle',
-              }}
-              axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: 'count',
-                legendOffset: -40,
-                legendPosition: 'middle',
-              }}
-              pointSize={10}
-              pointColor={{ theme: 'background' }}
-              pointBorderWidth={2}
-              pointBorderColor={{ from: 'serieColor' }}
-              pointLabelYOffset={-12}
-              useMesh={true}
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timelineData} margin={{ top: 10, right: 20, bottom: 50, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="value" stroke="#8884d8" name="CAPAs" />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
       
+      {/* Department Performance chart */}
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
@@ -325,74 +275,33 @@ const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
             <CardDescription>CAPA completion rate by department</CardDescription>
           </CardHeader>
           <CardContent className="h-96">
-            {/* Mock data for department performance */}
-            <ResponsiveBar
-              data={[
-                { department: 'QA', completed: 85, overdue: 15 },
-                { department: 'Production', completed: 70, overdue: 30 },
-                { department: 'Maintenance', completed: 90, overdue: 10 },
-                { department: 'Food Safety', completed: 95, overdue: 5 },
-                { department: 'Logistics', completed: 60, overdue: 40 },
-                { department: 'R&D', completed: 80, overdue: 20 },
-              ]}
-              keys={['completed', 'overdue']}
-              indexBy="department"
-              margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
-              padding={0.3}
-              layout="vertical"
-              valueScale={{ type: 'linear' }}
-              indexScale={{ type: 'band', round: true }}
-              colors={['#4caf50', '#f44336']}
-              borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-              axisTop={null}
-              axisRight={null}
-              axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: 'Department',
-                legendPosition: 'middle',
-                legendOffset: 32,
-              }}
-              axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: 'Percentage',
-                legendPosition: 'middle',
-                legendOffset: -40,
-              }}
-              labelSkipWidth={12}
-              labelSkipHeight={12}
-              legends={[
-                {
-                  dataFrom: 'keys',
-                  anchor: 'bottom-right',
-                  direction: 'column',
-                  justify: false,
-                  translateX: 120,
-                  translateY: 0,
-                  itemsSpacing: 2,
-                  itemWidth: 100,
-                  itemHeight: 20,
-                  itemDirection: 'left-to-right',
-                  itemOpacity: 0.85,
-                  symbolSize: 20,
-                  effects: [
-                    {
-                      on: 'hover',
-                      style: {
-                        itemOpacity: 1,
-                      },
-                    },
-                  ],
-                },
-              ]}
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={[
+                  { department: 'QA', completed: 85, overdue: 15 },
+                  { department: 'Production', completed: 70, overdue: 30 },
+                  { department: 'Maintenance', completed: 90, overdue: 10 },
+                  { department: 'Food Safety', completed: 95, overdue: 5 },
+                  { department: 'Logistics', completed: 60, overdue: 40 },
+                  { department: 'R&D', completed: 80, overdue: 20 },
+                ]}
+                margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+                layout="vertical"
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="department" />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="completed" stackId="a" fill="#4caf50" name="Completed" />
+                <Bar dataKey="overdue" stackId="a" fill="#f44336" name="Overdue" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
       
+      {/* Recent CAPA Activities */}
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
