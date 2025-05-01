@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TrainingStatus } from '@/types/enums';
@@ -84,9 +84,10 @@ export const useTrainingSessions = () => {
         completion_status
       };
       
+      // Use object instead of array for insert
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert([newSession])
+        .insert(newSession)
         .select()
         .single();
       
@@ -125,9 +126,11 @@ export const useTrainingSessions = () => {
     try {
       setLoading(true);
       
+      const statusString = trainingStatusToString(newStatus);
+      
       const { data, error } = await supabase
         .from('training_sessions')
-        .update({ completion_status: trainingStatusToString(newStatus) })
+        .update({ completion_status: statusString })
         .eq('id', sessionId)
         .select()
         .single();
@@ -161,10 +164,6 @@ export const useTrainingSessions = () => {
       setLoading(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
 
   return {
     sessions,

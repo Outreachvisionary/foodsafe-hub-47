@@ -1,364 +1,210 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { BarChart, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { CAPAStats, CAPA } from '@/types/capa';
-import { getRecentCAPAs } from '@/services/capaService';
-
-// Create an interface for CapaOverviewChart to avoid future prop type issues
-interface CapaOverviewChartProps {
-  data: {
-    open: number;
-    inProgress: number;
-    closed: number;
-    verified: number;
-    overdue: number;
-    pendingVerification: number;
-  };
-}
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { CAPAStats } from '@/types/capa';
 
 interface CAPADashboardProps {
   stats: CAPAStats;
 }
 
-const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
-  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'quarter'>('month');
-  const [recentCapas, setRecentCapas] = useState<CAPA[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    const loadRecentCapas = async () => {
-      setLoading(true);
-      try {
-        const data = await getRecentCAPAs(5);
-        setRecentCapas(data);
-      } catch (error) {
-        console.error('Error fetching recent CAPAs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadRecentCapas();
-  }, []);
-  
-  // Prepare data for the bar chart - CAPA by status
-  const statusData = [
-    { status: 'Open', count: stats.open },
-    { status: 'In Progress', count: stats.inProgress },
-    { status: 'Completed', count: stats.completed },
-    { status: 'Overdue', count: stats.overdue },
-  ];
-  
-  // Prepare data for pie chart - CAPA by priority
-  const priorityData = Object.entries(stats.byPriority).map(([priority, count]) => ({
-    name: priority,
-    value: count,
-  }));
-  
-  // Prepare data for pie chart - CAPA by source
-  const sourceData = Object.entries(stats.bySource).map(([source, count]) => ({
-    name: source.replace(/_/g, ' '),
-    value: count,
-  }));
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1', '#a4de6c', '#d0ed57'];
 
-  // COLORS array for the charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A374DB'];
+const CAPADashboard: React.FC<CAPADashboardProps> = ({ stats }) => {
+  // Convert objects to arrays for charts
+  const priorityData = Object.entries(stats.byPriority).map(([name, value]) => ({ name, value }));
+  const sourceData = Object.entries(stats.bySource).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
+  const departmentData = Object.entries(stats.byDepartment).map(([name, value]) => ({ name, value }));
   
-  // Prepare data for line chart - CAPAs over time (dummy data for now)
-  const getTimeData = () => {
-    if (timeframe === 'week') {
-      return [
-        { name: 'Mon', value: 5 },
-        { name: 'Tue', value: 8 },
-        { name: 'Wed', value: 3 },
-        { name: 'Thu', value: 7 },
-        { name: 'Fri', value: 9 },
-        { name: 'Sat', value: 2 },
-        { name: 'Sun', value: 0 },
-      ];
-    } else if (timeframe === 'month') {
-      return [
-        { name: 'Week 1', value: 12 },
-        { name: 'Week 2', value: 8 },
-        { name: 'Week 3', value: 15 },
-        { name: 'Week 4', value: 7 },
-      ];
-    } else {
-      return [
-        { name: 'Jan', value: 20 },
-        { name: 'Feb', value: 30 },
-        { name: 'Mar', value: 15 },
-      ];
-    }
-  };
-  
-  const timelineData = getTimeData();
-  
-  // Function to format status for display
-  const formatStatus = (status: string): string => {
-    return status.replace(/_/g, ' ');
-  };
+  // Current Performance KPIs
+  const completionRate = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+  const overdueRate = stats.total > 0 ? (stats.overdue / stats.total) * 100 : 0;
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary KPIs */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Total CAPAs</CardTitle>
-            <CardDescription>All time</CardDescription>
+            <CardDescription>Total CAPAs</CardDescription>
+            <CardTitle className="text-3xl">{stats.total}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.total}</p>
-          </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Open CAPAs</CardTitle>
-            <CardDescription>Awaiting action</CardDescription>
+            <CardDescription>Open CAPAs</CardDescription>
+            <CardTitle className="text-3xl">{stats.open}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-blue-500">{stats.open}</p>
-          </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Overdue</CardTitle>
-            <CardDescription>Past due date</CardDescription>
+            <CardDescription>In Progress</CardDescription>
+            <CardTitle className="text-3xl">{stats.inProgress}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-red-500">{stats.overdue}</p>
-          </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Completed</CardTitle>
-            <CardDescription>Successfully closed</CardDescription>
+            <CardDescription>Completed</CardDescription>
+            <CardTitle className="text-3xl">{stats.completed}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-green-500">{stats.completed}</p>
-          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Overdue</CardDescription>
+            <CardTitle className="text-3xl text-destructive">{stats.overdue}</CardTitle>
+          </CardHeader>
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      {/* Charts */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        {/* CAPA by Priority */}
+        <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>CAPA Status Distribution</CardTitle>
+            <CardTitle>CAPAs by Priority</CardTitle>
+            <CardDescription>Distribution of CAPAs by priority level</CardDescription>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={statusData} margin={{ top: 10, right: 10, bottom: 50, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="status" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#8884d8" name="Count" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>CAPA Priority Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={priorityData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {priorityData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>CAPA Source Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={sourceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {sourceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>CAPA Timeline</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={timeframe === 'week' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeframe('week')}
-              >
-                Week
-              </Button>
-              <Button
-                variant={timeframe === 'month' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeframe('month')}
-              >
-                Month
-              </Button>
-              <Button
-                variant={timeframe === 'quarter' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeframe('quarter')}
-              >
-                Quarter
-              </Button>
+          <CardContent>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={priorityData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timelineData} margin={{ top: 10, right: 20, bottom: 50, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" name="CAPAs" />
-              </LineChart>
-            </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
-      
-      {/* Department Performance chart */}
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
+        
+        {/* CAPA by Source */}
+        <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Department Performance</CardTitle>
-            <CardDescription>CAPA completion rate by department</CardDescription>
-          </CardHeader>
-          <CardContent className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={[
-                  { department: 'QA', completed: 85, overdue: 15 },
-                  { department: 'Production', completed: 70, overdue: 30 },
-                  { department: 'Maintenance', completed: 90, overdue: 10 },
-                  { department: 'Food Safety', completed: 95, overdue: 5 },
-                  { department: 'Logistics', completed: 60, overdue: 40 },
-                  { department: 'R&D', completed: 80, overdue: 20 },
-                ]}
-                margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
-                layout="vertical"
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="department" />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="completed" stackId="a" fill="#4caf50" name="Completed" />
-                <Bar dataKey="overdue" stackId="a" fill="#f44336" name="Overdue" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Recent CAPA Activities */}
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent CAPA Activities</CardTitle>
+            <CardTitle>CAPAs by Source</CardTitle>
+            <CardDescription>Distribution of CAPAs by source</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="created">Created</TabsTrigger>
-                <TabsTrigger value="updated">Updated</TabsTrigger>
-                <TabsTrigger value="closed">Closed</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="space-y-4">
-                {loading ? (
-                  <p className="text-center py-4">Loading recent activities...</p>
-                ) : recentCapas.length > 0 ? (
-                  recentCapas.map((capa) => (
-                    <div key={capa.id} className="flex items-start space-x-4 p-3 rounded-md border">
-                      <div className="flex-1">
-                        <p className="font-medium">{capa.title}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {capa.description?.length > 100
-                            ? capa.description.substring(0, 100) + '...'
-                            : capa.description}
-                        </p>
-                        <div className="flex items-center text-xs text-muted-foreground mt-2 space-x-2">
-                          <span>Status: {formatStatus(capa.status)}</span>
-                          <span>•</span>
-                          <span>Created: {new Date(capa.created_at).toLocaleDateString()}</span>
-                          <span>•</span>
-                          <span>Assigned to: {capa.assigned_to}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center py-4">No recent activities found</p>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="created" className="space-y-4">
-                <p className="text-center py-4">No recent creations</p>
-              </TabsContent>
-              
-              <TabsContent value="updated" className="space-y-4">
-                <p className="text-center py-4">No recent updates</p>
-              </TabsContent>
-              
-              <TabsContent value="closed" className="space-y-4">
-                <p className="text-center py-4">No recent closures</p>
-              </TabsContent>
-            </Tabs>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={sourceData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {sourceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* CAPA by Department */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>CAPAs by Department</CardTitle>
+            <CardDescription>Distribution of CAPAs by department</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={departmentData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Performance Metrics */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Performance Metrics</CardTitle>
+            <CardDescription>Key metrics for CAPA process</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={[
+                    { name: 'Completion Rate', value: Math.round(completionRate) },
+                    { name: 'Overdue Rate', value: Math.round(overdueRate) },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Recent Activities */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent CAPA Activities</CardTitle>
+          <CardDescription>Latest updates to CAPA items</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.recentActivities && stats.recentActivities.length > 0 ? (
+            <ul className="space-y-4">
+              {stats.recentActivities.map(activity => (
+                <li key={activity.id} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{activity.action_type}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(activity.performed_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <p>{activity.action_description}</p>
+                  <p className="text-sm text-muted-foreground">By: {activity.performed_by}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">No recent activities</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

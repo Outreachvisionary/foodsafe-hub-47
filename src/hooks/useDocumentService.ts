@@ -37,6 +37,7 @@ export const useDocumentService = () => {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
           // Convert enum values to strings for the database
           const statusStrings = statuses.map(status => documentStatusToString(status));
+          // Use string values in the query, not enum objects
           query = query.in('status', statusStrings);
         }
         
@@ -141,10 +142,12 @@ export const useDocumentService = () => {
       }
       
       // Update the document's checkout status
+      const checkoutStatusStr = checkoutStatusToString(CheckoutStatus.CheckedOut);
+      
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.CheckedOut),
+          checkout_status: checkoutStatusStr,
           checkout_by: userId,
           checkout_date: new Date().toISOString(),
           checkout_user_id: userId,
@@ -189,15 +192,18 @@ export const useDocumentService = () => {
       setError(null);
       
       // Update the document's checkout status
+      const availableStatusStr = checkoutStatusToString(CheckoutStatus.Available);
+      const activeStatusStr = documentStatusToString(DocumentStatus.Active);
+      
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
+          checkout_status: availableStatusStr,
           checkout_by: null,
           checkout_date: null,
           checkout_user_id: null,
           checkout_user_name: null,
-          status: documentStatusToString(DocumentStatus.Active)
+          status: activeStatusStr
         })
         .eq('id', documentId);
       
@@ -273,8 +279,10 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
+      const statusStr = documentStatusToString(DocumentStatus.Draft);
+      
       const newDocument = {
-        status: documentStatusToString(DocumentStatus.Draft),
+        status: statusStr,
         version: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -294,9 +302,10 @@ export const useDocumentService = () => {
         return null;
       }
       
+      // Insert as a single object, not an array
       const { data, error } = await supabase
         .from('documents')
-        .insert([newDocument])
+        .insert(newDocument)
         .select()
         .single();
       
@@ -516,7 +525,7 @@ export const useDocumentService = () => {
     checkinDocument,
     getDocumentVersions,
     createDocument,
-    getDocumentComments: useCallback(async () => [], []),
+    getDocumentComments: useCallback(async (documentId: string) => [], []),
     createDocumentComment: useCallback(async () => null, []),
     deleteDocument: useCallback(async () => true, []),
     getDownloadUrl: useCallback(async () => null, []),

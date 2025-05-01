@@ -1,17 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
-import { stringToComplaintCategory, stringToComplaintStatus, stringToComplaintPriority } from '@/utils/typeAdapters';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
 // Adjust the component imports as needed
 const ComplaintManagement: React.FC = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [filteredComplaints, setFilteredComplaints] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>(ComplaintCategory.ProductQuality);
   
   useEffect(() => {
     // Fetch complaints data
-    const mockComplaints: Complaint[] = [
+    const mockComplaints = [
       {
         id: '1',
         title: 'Foreign object found in product',

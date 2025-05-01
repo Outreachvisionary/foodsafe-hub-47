@@ -1,5 +1,29 @@
 
-import { DocumentStatus, CheckoutStatus, ComplaintStatus, ComplaintCategory, ComplaintPriority, TrainingStatus } from '@/types/enums';
+import { DocumentStatus, CheckoutStatus, ComplaintStatus, ComplaintCategory, ComplaintPriority, TrainingStatus, CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
+
+/**
+ * Format enum values for display by replacing underscores with spaces
+ */
+export const formatEnumValue = (value: string): string => {
+  return value.replace(/_/g, ' ');
+};
+
+/**
+ * Check if two status values are equivalent, handling different formats
+ */
+export const isStringStatusEqual = (status: string | undefined, targetStatus: string | undefined): boolean => {
+  if (!status || !targetStatus) return false;
+  
+  // Normalize both status strings to lowercase without underscores
+  const normalizeStatus = (s: string): string => {
+    return s.replace(/_/g, ' ').toLowerCase();
+  };
+  
+  const normalizedStatus = normalizeStatus(status);
+  const normalizedTarget = normalizeStatus(targetStatus);
+  
+  return normalizedStatus === normalizedTarget;
+};
 
 /**
  * Convert DocumentStatus enum value to string
@@ -161,4 +185,47 @@ export const stringToComplaintPriority = (priority: string): ComplaintPriority =
   // Default fallback
   console.warn(`Unknown complaint priority: ${priority}, defaulting to Medium`);
   return ComplaintPriority.Medium;
+};
+
+/**
+ * Convert CAPAStatus enum value to string
+ */
+export const capaStatusToString = (status: CAPAStatus): string => {
+  return status.toString();
+};
+
+/**
+ * Convert string to CAPAStatus enum
+ */
+export const stringToCAPAStatus = (status: string): CAPAStatus => {
+  // Try direct match first
+  if (Object.values(CAPAStatus).includes(status as CAPAStatus)) {
+    return status as CAPAStatus;
+  }
+  
+  // Handle cases where string might have spaces instead of underscores
+  const formattedStatus = status.replace(/ /g, '_');
+  if (Object.values(CAPAStatus).includes(formattedStatus as CAPAStatus)) {
+    return formattedStatus as CAPAStatus;
+  }
+  
+  // Default fallback
+  console.warn(`Unknown CAPA status: ${status}, defaulting to Open`);
+  return CAPAStatus.Open;
+};
+
+/**
+ * Checks if a document status is equal to a target status
+ */
+export const isStatusEqual = (status: any, targetStatus: any): boolean => {
+  if (!status || !targetStatus) return false;
+  
+  // Handle enum-style status with underscores
+  if (typeof status === 'string' && typeof targetStatus === 'string') {
+    const normalizedStatus = status.replace(/_/g, ' ').toLowerCase();
+    const normalizedTarget = targetStatus.toString().replace(/_/g, ' ').toLowerCase();
+    return normalizedStatus === normalizedTarget;
+  }
+  
+  return status === targetStatus;
 };

@@ -1,6 +1,8 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
+export { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
+
 export interface CAPA {
   id: string;
   title: string;
@@ -24,6 +26,8 @@ export interface CAPA {
   department?: string;
   verification_method?: string;
   verified_by?: string;
+  source_id?: string;
+  fsma204_compliant?: boolean;
 }
 
 export interface CAPAFilter {
