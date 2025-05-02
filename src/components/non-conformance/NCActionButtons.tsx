@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
+import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface NCActionButtonsProps {
   nonConformance: NonConformance;
@@ -18,7 +19,10 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
     });
   };
 
-  const currentStatus = typeof nonConformance.status === 'string' ? nonConformance.status : nonConformance.status.toString();
+  // Use the isStatusEqual helper to safely compare status values
+  const isCurrentStatus = (compareStatus: string): boolean => {
+    return isStatusEqual(nonConformance.status, compareStatus);
+  };
 
   return (
     <Card>
@@ -27,7 +31,7 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
-          {currentStatus === 'On Hold' && (
+          {isCurrentStatus('On Hold') && (
             <>
               <Button 
                 variant="outline" 
@@ -44,7 +48,7 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
             </>
           )}
           
-          {currentStatus === 'Under Investigation' && (
+          {isCurrentStatus('Under Investigation') && (
             <>
               <Button 
                 variant="outline"
@@ -61,7 +65,7 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
             </>
           )}
           
-          {(currentStatus === 'Resolved' || currentStatus === 'Rejected') && (
+          {(isCurrentStatus('Resolved') || isCurrentStatus('Rejected')) && (
             <Button 
               variant="outline"
               onClick={() => handleUpdateStatus('Closed')}

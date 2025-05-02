@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { NonConformance, NCItemCategory, NCReasonCategory, NCStatus } from '@/types/non-conformance';
+import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
 import { 
   createNonConformance, 
   updateNonConformance, 
@@ -52,7 +53,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
       item_category: 'Other',
       reason_category: 'Other',
       reason_details: '',
-      status: 'On Hold',
+      status: NCStatus.OnHold,
       created_by: 'current-user', // This should be the actual user ID in a real app
       reported_date: new Date().toISOString(),
       quantity: 0,
@@ -108,7 +109,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
         result = await updateNonConformance(id, {
           ...data,
           updated_at: new Date().toISOString()
-        }, data.created_by); // Added the missing third argument - created_by as the userId
+        }, data.created_by); 
         
         toast({
           title: 'Updated successfully',
@@ -158,6 +159,14 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
     );
   }
 
+  // Define status options as an array of valid NCStatus values
+  const statusOptions = [
+    NCStatus.OnHold,
+    NCStatus.UnderReview,
+    NCStatus.Released,
+    NCStatus.Disposed
+  ];
+
   return (
     <Card className={isDialog ? '' : 'max-w-3xl mx-auto'}>
       <CardHeader>
@@ -205,7 +214,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                     <FormLabel>Status</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      defaultValue={field.value as string}
                       disabled={!id} // Only allow status change when editing
                     >
                       <FormControl>
@@ -214,9 +223,9 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(['On Hold', 'Under Review', 'Released', 'Disposed'] as NCStatus[]).map((status) => (
+                        {statusOptions.map((status) => (
                           <SelectItem key={status} value={status}>
-                            {status}
+                            {status.replace('_', ' ')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -301,7 +310,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                         min="0"
                         step="0.01"
                         placeholder="Enter total quantity"
-                        {...field}
+                        value={field.value?.toString() || '0'}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
@@ -325,7 +334,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                         min="0"
                         step="0.01"
                         placeholder="Enter quantity on hold"
-                        {...field}
+                        value={field.value?.toString() || '0'}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
@@ -368,7 +377,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      defaultValue={field.value?.toString()}
                       className="grid grid-cols-2 gap-4 md:grid-cols-3"
                     >
                       {([
@@ -401,7 +410,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Reason for Non-Conformance</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select reason" />
@@ -506,7 +515,10 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={field.onChange}
+                      defaultValue={field.value as string}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
@@ -529,23 +541,21 @@ const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => 
               />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-end space-x-2">
+            {onClose && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+            )}
             <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onClose ? onClose() : navigate('/non-conformance')}
+              type="submit"
+              disabled={loading}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {id ? 'Updating...' : 'Creating...'}
-                </>
-              ) : (
-                id ? 'Update' : 'Create'
-              )}
+              {loading ? 'Saving...' : id ? 'Update' : 'Create'}
             </Button>
           </CardFooter>
         </form>

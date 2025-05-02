@@ -12,6 +12,17 @@ export const isDocumentStatusEqual = (
   return status === compareStatus;
 };
 
+// Generic status equality check for any status type
+export const isStatusEqual = (
+  status: string | any,
+  compareStatus: string
+): boolean => {
+  if (typeof status === 'string') {
+    return status.toLowerCase() === compareStatus.toLowerCase();
+  }
+  return status.toString().toLowerCase() === compareStatus.toLowerCase();
+};
+
 // CAPA status conversion
 export const convertToCAPAStatus = (status: string): CAPAStatus => {
   switch (status.toUpperCase()) {
@@ -81,5 +92,24 @@ export const convertToComplaintStatus = (status: string): string => {
     case 'RESOLVED': return 'Resolved';
     case 'CLOSED': return 'Closed';
     default: return 'New';
+  }
+};
+
+// Convert NCStatus enum to string for display
+export const ncStatusToString = (status: any): string => {
+  if (typeof status === 'string') return status;
+  return status.toString();
+};
+
+// Convert string to NCStatus for comparison
+export const stringToNCStatus = (status: string): string => {
+  switch (status.toUpperCase()) {
+    case 'ON_HOLD': return 'OnHold';
+    case 'ON HOLD': return 'OnHold';
+    case 'UNDER_REVIEW': return 'UnderReview';
+    case 'UNDER REVIEW': return 'UnderReview';
+    case 'RELEASED': return 'Released';
+    case 'DISPOSED': return 'Disposed';
+    default: return status;
   }
 };
