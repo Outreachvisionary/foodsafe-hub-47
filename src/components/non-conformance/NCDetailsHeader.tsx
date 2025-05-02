@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NonConformance, NCStatus } from '@/types/non-conformance';
+import { NonConformance } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
 import NCQuickActions from './NCQuickActions';
 import { updateNCStatus } from '@/services/nonConformanceService';
@@ -20,7 +20,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
     console.log('Edit requested for NC:', data.id);
   };
   
-  const handleStatusChange = async (newStatus: NCStatus) => {
+  const handleStatusChange = async (newStatus: string) => {
     try {
       console.log(`Changing status from ${data.status} to ${newStatus}`);
       const updatedNC = await updateNCStatus(data.id, newStatus, currentUserId);
@@ -60,7 +60,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
         <div className="flex items-center space-x-2">
           <NCStatusBadge status={data.status} />
           <span className="text-sm text-gray-500">
-            Reported: {new Date(data.reported_date).toLocaleDateString()}
+            Reported: {new Date(data.reported_date || '').toLocaleDateString()}
           </span>
         </div>
         <div className="text-sm text-gray-500">

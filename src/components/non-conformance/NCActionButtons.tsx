@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
-import { isStatusEqual } from '@/utils/typeAdapters';
+import { isStatusEqual, stringToNCStatus } from '@/utils/typeAdapters';
 
 interface NCActionButtonsProps {
   nonConformance: NonConformance;
@@ -15,7 +15,7 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
     // In a real implementation, this would call an API to update the status
     onUpdate({
       ...nonConformance,
-      status: newStatus as any
+      status: newStatus
     });
   };
 

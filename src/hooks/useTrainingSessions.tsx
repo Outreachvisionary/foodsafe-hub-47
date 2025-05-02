@@ -1,9 +1,6 @@
-
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { TrainingStatus } from '@/types/enums';
-import { trainingStatusToString, stringToTrainingStatus } from '@/utils/typeAdapters';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
+import { trainingStatusToString, stringToTrainingStatus } from '@/utils/trainingAdapters';
 
 export interface TrainingSession {
   id: string;
@@ -26,7 +23,6 @@ export const useTrainingSessions = () => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -59,7 +55,7 @@ export const useTrainingSessions = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const createSession = useCallback(async (sessionData: Partial<TrainingSession>) => {
     try {
@@ -120,7 +116,7 @@ export const useTrainingSessions = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const updateSessionStatus = useCallback(async (sessionId: string, newStatus: TrainingStatus) => {
     try {
@@ -163,7 +159,7 @@ export const useTrainingSessions = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   return {
     sessions,

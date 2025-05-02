@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -40,15 +39,16 @@ import {
 import { toast } from 'sonner';
 import { deleteNonConformance } from '@/services/nonConformanceService';
 import { NCStatus } from '@/types/non-conformance';
+import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface NCQuickActionsProps {
   id: string;
-  status: string;
+  status: string | NCStatus;
   onEdit?: () => void;
   onDelete?: () => void;
   onView?: () => void;
   onCreateCAPA?: () => void;
-  onStatusChange?: (newStatus: NCStatus) => Promise<void>;
+  onStatusChange?: (newStatus: string) => Promise<void>;
 }
 
 const NCQuickActions: React.FC<NCQuickActionsProps> = ({
@@ -108,7 +108,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
     }
   };
   
-  const handleChangeStatus = async (newStatus: NCStatus) => {
+  const handleChangeStatus = async (newStatus: string) => {
     if (!onStatusChange) {
       console.error('No status change handler provided');
       toast.error("Status change functionality is not available");
@@ -153,27 +153,32 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
   };
   
   // Define status transitions allowed
-  const getAvailableStatusChanges = (): NCStatus[] => {
-    switch (status as NCStatus) {
-      case 'On Hold':
-        return ['Under Review', 'Released', 'Disposed'];
-      case 'Under Review':
-        return ['On Hold', 'Released', 'Disposed', 'Approved', 'Rejected'];
-      case 'Released':
-        return ['On Hold', 'Closed'];
-      case 'Disposed':
-        return ['Closed'];
-      case 'Approved':
-        return ['Resolved', 'Closed'];
-      case 'Rejected':
-        return ['On Hold'];
-      case 'Resolved':
-        return ['Closed'];
-      case 'Closed':
-        return [];
-      default:
-        return [];
+  const getAvailableStatusChanges = (): string[] => {
+    if (isStatusEqual(status, 'On Hold')) {
+      return ['Under Review', 'Released', 'Disposed'];
     }
+    if (isStatusEqual(status, 'Under Review')) {
+      return ['On Hold', 'Released', 'Disposed', 'Approved', 'Rejected'];
+    }
+    if (isStatusEqual(status, 'Released')) {
+      return ['On Hold', 'Closed'];
+    }
+    if (isStatusEqual(status, 'Disposed')) {
+      return ['Closed'];
+    }
+    if (isStatusEqual(status, 'Approved')) {
+      return ['Resolved', 'Closed'];
+    }
+    if (isStatusEqual(status, 'Rejected')) {
+      return ['On Hold'];
+    }
+    if (isStatusEqual(status, 'Resolved')) {
+      return ['Closed'];
+    }
+    if (isStatusEqual(status, 'Closed')) {
+      return [];
+    }
+    return [];
   };
   
   // Log for debugging
@@ -200,7 +205,7 @@ const NCQuickActions: React.FC<NCQuickActionsProps> = ({
         </Tooltip>
       </TooltipProvider>
       
-      {status !== 'Closed' && (
+      {!isStatusEqual(status, 'Closed') && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

@@ -14,7 +14,7 @@ import {
   stringToDocumentStatus, 
   checkoutStatusToString, 
   stringToCheckoutStatus 
-} from '@/utils/typeAdapters';
+} from '@/utils/documentAdapters';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);

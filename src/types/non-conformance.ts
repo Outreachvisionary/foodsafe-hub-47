@@ -6,10 +6,11 @@ export enum NCStatus {
   Resolved = 'Resolved',
   Closed = 'Closed',
   OnHold = 'On_Hold',
-  Reopened = 'Reopened',
+  UnderReview = 'Under_Review',
   Released = 'Released',
   Disposed = 'Disposed',
-  UnderReview = 'Under_Review'
+  Approved = 'Approved', 
+  Rejected = 'Rejected'
 }
 
 export enum NCRiskLevel {
@@ -41,6 +42,7 @@ export type NCItemCategory =
   | 'Equipment'
   | 'Facility'
   | 'Personnel'
+  | 'Packaging'
   | 'Other';
 
 export type NCReasonCategory = 

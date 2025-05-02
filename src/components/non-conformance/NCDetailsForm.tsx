@@ -13,12 +13,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { updateNonConformance } from '@/services/nonConformanceService';
-import { 
-  NonConformance, 
-  NCItemCategory, 
-  NCReasonCategory,
-  NCStatus 
-} from '@/types/non-conformance';
+import { NonConformance } from '@/types/non-conformance';
 
 interface NCDetailsFormProps {
   data: NonConformance;
@@ -63,18 +58,19 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
     }
   };
   
-  // Use the valid values from the NCItemCategory type
-  const itemCategories: NCItemCategory[] = [
+  // Use string literals for item categories
+  const itemCategories = [
     'Equipment',
     'Facility',
     'Finished Product',
     'Raw Material',
+    'Packaging Materials',
     'Packaging',
     'Other'
   ];
   
-  // Use the valid values from the NCReasonCategory type
-  const reasonCategories: NCReasonCategory[] = [
+  // Use string literals for reason categories
+  const reasonCategories = [
     'Quality Issue',
     'Food Safety',
     'Damaged',
@@ -85,7 +81,7 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
   ];
   
   const priorities = ['Critical', 'High', 'Medium', 'Low'];
-  const riskLevels = ['high', 'moderate', 'low'];
+  const riskLevels = ['High', 'Moderate', 'Low'];
   
   return (
     <form onSubmit={handleSubmit}>
@@ -121,7 +117,7 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
               <div className="space-y-2">
                 <Label htmlFor="item_category">Item Category</Label>
                 <Select 
-                  value={formData.item_category} 
+                  value={formData.item_category as string} 
                   onValueChange={(value) => handleSelectChange('item_category', value)}
                 >
                   <SelectTrigger>
@@ -140,7 +136,7 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
               <div className="space-y-2">
                 <Label htmlFor="reason_category">Reason Category</Label>
                 <Select 
-                  value={formData.reason_category} 
+                  value={formData.reason_category as string} 
                   onValueChange={(value) => handleSelectChange('reason_category', value)}
                 >
                   <SelectTrigger>
@@ -178,7 +174,7 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
               <div className="space-y-2">
                 <Label htmlFor="risk_level">Risk Level</Label>
                 <Select 
-                  value={formData.risk_level || ''} 
+                  value={formData.risk_level as string || ''} 
                   onValueChange={(value) => handleSelectChange('risk_level', value)}
                 >
                   <SelectTrigger>

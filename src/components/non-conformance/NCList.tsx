@@ -102,12 +102,24 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     );
   }
   
-  const statuses: NCStatus[] = ['On Hold', 'Under Review', 'Released', 'Disposed', 'Approved', 'Rejected', 'Resolved', 'Closed'];
+  // Use string literals for status options to avoid type mismatches
+  const statuses: string[] = [
+    'On Hold', 
+    'Under Review', 
+    'Released', 
+    'Disposed', 
+    'Approved', 
+    'Rejected', 
+    'Resolved', 
+    'Closed'
+  ];
+  
   const itemCategories: NCItemCategory[] = [
     'Equipment',
     'Facility',
     'Finished Product',
     'Raw Material',
+    'Packaging Materials',
     'Packaging',
     'Other'
   ];

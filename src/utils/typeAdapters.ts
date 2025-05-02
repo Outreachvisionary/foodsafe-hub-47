@@ -1,15 +1,19 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, DocumentStatus } from '@/types/enums';
+import { NCStatus } from '@/types/non-conformance';
 
 // Document status comparison
 export const isDocumentStatusEqual = (
   status: string | DocumentStatus,
-  compareStatus: DocumentStatus
+  compareStatus: DocumentStatus | string
 ): boolean => {
-  if (typeof status === 'string') {
-    return status === compareStatus.toString();
+  if (typeof status === 'string' && typeof compareStatus === 'string') {
+    return status.toLowerCase() === compareStatus.toLowerCase();
   }
-  return status === compareStatus;
+  if (typeof status === 'string') {
+    return status.toLowerCase() === compareStatus.toString().toLowerCase();
+  }
+  return status.toString().toLowerCase() === compareStatus.toString().toLowerCase();
 };
 
 // Generic status equality check for any status type
@@ -96,20 +100,54 @@ export const convertToComplaintStatus = (status: string): string => {
 };
 
 // Convert NCStatus enum to string for display
-export const ncStatusToString = (status: any): string => {
+export const ncStatusToString = (status: NCStatus | string): string => {
   if (typeof status === 'string') return status;
   return status.toString();
 };
 
 // Convert string to NCStatus for comparison
-export const stringToNCStatus = (status: string): string => {
-  switch (status.toUpperCase()) {
-    case 'ON_HOLD': return 'OnHold';
-    case 'ON HOLD': return 'OnHold';
-    case 'UNDER_REVIEW': return 'UnderReview';
-    case 'UNDER REVIEW': return 'UnderReview';
-    case 'RELEASED': return 'Released';
-    case 'DISPOSED': return 'Disposed';
-    default: return status;
+export const stringToNCStatus = (status: string): NCStatus => {
+  switch (status) {
+    case 'On Hold': return NCStatus.OnHold;
+    case 'Under Review': return NCStatus.UnderReview;
+    case 'Released': return NCStatus.Released;
+    case 'Disposed': return NCStatus.Disposed;
+    case 'Approved': return NCStatus.Approved;
+    case 'Rejected': return NCStatus.Rejected;
+    case 'Resolved': return NCStatus.Resolved;
+    case 'Closed': return NCStatus.Closed;
+    case 'Draft': return NCStatus.Draft;
+    case 'Open': return NCStatus.Open;
+    case 'In Progress': return NCStatus.InProgress;
+    default: return NCStatus.Open;
   }
+};
+
+// Add the missing adapter functions for documents
+export const documentStatusToString = (status: DocumentStatus | string): string => {
+  if (typeof status === 'string') return status;
+  return status.toString();
+};
+
+export const stringToDocumentStatus = (status: string): DocumentStatus => {
+  // This would need to be implemented based on your DocumentStatus enum
+  // Replace with actual implementation
+  return status as unknown as DocumentStatus;
+};
+
+export const checkoutStatusToString = (status: string): string => {
+  return status;
+};
+
+export const stringToCheckoutStatus = (status: string): string => {
+  return status;
+};
+
+// Add the missing adapter functions for training
+export const trainingStatusToString = (status: string): string => {
+  return status;
+};
+
+export const stringToTrainingStatus = (status: string): string => {
+  return status;
 };
