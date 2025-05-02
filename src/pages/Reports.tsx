@@ -18,6 +18,9 @@ import { ReportProvider } from '@/contexts/ReportContext';
 const ReportsContent = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [favoriteReports, setFavoriteReports] = useState([]);
+  const [timeRange, setTimeRange] = useState('30days');
+  const [chartType, setChartType] = useState('bar');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -31,6 +34,24 @@ const ReportsContent = () => {
     const tabParam = urlParams.get('activeTab');
     if (tabParam && ['dashboard', 'prebuilt', 'builder', 'scheduled', 'integration'].includes(tabParam)) {
       setActiveTab(tabParam);
+    }
+  }, [user]);
+  
+  useEffect(() => {
+    if (user && user.preferences?.reports) {
+      const userReportPrefs = user.preferences.reports;
+      
+      if (userReportPrefs.favoriteReports) {
+        setFavoriteReports(userReportPrefs.favoriteReports);
+      }
+      
+      if (userReportPrefs.defaultTimeRange) {
+        setTimeRange(userReportPrefs.defaultTimeRange);
+      }
+      
+      if (userReportPrefs.defaultChartType) {
+        setChartType(userReportPrefs.defaultChartType);
+      }
     }
   }, [user]);
   

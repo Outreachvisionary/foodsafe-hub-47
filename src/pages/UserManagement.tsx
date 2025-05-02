@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { UserProfile } from '@/types/user';
@@ -26,11 +27,10 @@ import { Plus, Copy, Check, User, UserCheck, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { DepartmentSelector } from '@/components/department/DepartmentSelector';
 import { Organization } from '@/types/organization';
-import { fetchOrganizations } from '@/services/organizationService';
+import { getFacilities } from '@/services/facilityService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Facility } from '@/types/facility';
-import { fetchFacilities } from '@/services/facilityService';
-import { RoleSelector } from '@/components/auth/RoleSelector';
+import RoleSelector from '@/components/auth/RoleSelector';
 import { StatusSelect } from '@/components/ui/StatusSelect';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -91,15 +91,27 @@ const UserManagement: React.FC<UserManagementProps> = ({ /* props */ }) => {
 
     // Mock organizations
     const mockOrganizations: Organization[] = [
-      { id: 'org1', name: 'Acme Corp' },
-      { id: 'org2', name: 'Beta Inc' },
+      { id: 'org1', name: 'Acme Corp', status: 'active' },
+      { id: 'org2', name: 'Beta Inc', status: 'active' },
     ];
     setOrganizations(mockOrganizations);
 
     // Mock facilities
     const mockFacilities: Facility[] = [
-      { id: 'fac1', name: 'Main Facility', organization_id: 'org1' },
-      { id: 'fac2', name: 'Branch Office', organization_id: 'org2' },
+      { 
+        id: 'fac1', 
+        name: 'Main Facility', 
+        organization_id: 'org1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      { 
+        id: 'fac2', 
+        name: 'Branch Office', 
+        organization_id: 'org2',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
     ];
     setFacilities(mockFacilities);
   }, []);
@@ -347,7 +359,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ /* props */ }) => {
                     }}
                     placeholder="Select department..."
                     className="w-full"
-                    disabled={!isEditing}
                   />
                 </div>
               </div>

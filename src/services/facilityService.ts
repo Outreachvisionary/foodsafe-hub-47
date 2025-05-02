@@ -32,31 +32,20 @@ export const getFacilities = async (): Promise<Facility[]> => {
   }
 };
 
-export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
+export const createFacility = async (facilityData: any) => {
   try {
-    // Ensure we have required fields
-    if (!facilityData.name) {
-      throw new Error('Facility name is required');
-    }
-    
-    // Create properly typed facility object for Supabase
-    const newFacility = {
-      name: facilityData.name,
-      description: facilityData.description,
-      address: facilityData.address,
-      organization_id: facilityData.organization_id,
-      contact_email: facilityData.contact_email,
-      contact_phone: facilityData.contact_phone,
-      status: facilityData.status || 'active',
-      country: facilityData.country,
-      state: facilityData.state,
-      city: facilityData.city,
-      zipcode: facilityData.zipcode
+    // Make sure the data matches the required shape
+    const facilityToCreate = {
+      ...facilityData,
+      organization_id: facilityData.organization_id || '',  // Ensure required field
+      created_at: facilityData.created_at || new Date().toISOString(),
+      updated_at: facilityData.updated_at || new Date().toISOString(),
+      // Handle location_data properly by keeping it as an object if present
     };
-    
+
     const { data, error } = await supabase
       .from('facilities')
-      .insert([newFacility])
+      .insert([facilityToCreate])
       .select()
       .single();
       

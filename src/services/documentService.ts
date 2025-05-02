@@ -3,6 +3,7 @@
 import { Document, DocumentCategory, DocumentStatus } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentActivity, DocumentActionType } from '@/types/document';
+import { DocumentStatus } from '@/types/enums';
 
 let mockDocuments: Document[] = [
   {
@@ -98,6 +99,18 @@ export const deleteDocument = async (id: string): Promise<void> => {
   mockDocuments.splice(index, 1);
 };
 
+export const fetchActiveDocuments = async () => {
+  try {
+    return {
+      status: DocumentStatus.Active,  // Use enum instead of string
+      documents: mockDocuments.filter(doc => doc.status === 'Active'),
+    };
+  } catch (error) {
+    console.error("Error fetching active documents:", error);
+    throw error;
+  }
+};
+
 export const createDocumentActivity = async (activityData: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> => {
   try {
     const dataToInsert = {
@@ -152,5 +165,6 @@ export default {
   createDocument,
   updateDocument,
   deleteDocument,
+  fetchActiveDocuments,
   createDocumentActivity
 };

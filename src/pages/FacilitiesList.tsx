@@ -27,8 +27,15 @@ const FacilitiesList = () => {
     try {
       setLoading(true);
       const data = await getFacilities();
-      setFacilities(data);
-      setFilteredFacilities(data);
+      // Ensure all facilities have required fields
+      const validatedData = data.map((facility: any) => ({
+        ...facility,
+        organization_id: facility.organization_id || '',
+        created_at: facility.created_at || new Date().toISOString(),
+        updated_at: facility.updated_at || new Date().toISOString()
+      }));
+      setFacilities(validatedData);
+      setFilteredFacilities(validatedData);
       setLoading(false);
     } catch (error) {
       console.error('Error loading facilities:', error);

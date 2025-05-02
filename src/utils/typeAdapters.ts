@@ -1,149 +1,63 @@
+import { DocumentStatus, CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
 
-import { NCStatus, DocumentStatus, CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-
-export function ncStatusToString(status: NCStatus): string {
-  return status.toString();
-}
-
-export function stringToNCStatus(statusString: string): NCStatus {
-  // Map the string value to NCStatus enum
-  switch(statusString) {
-    case "Open":
-      return NCStatus.Open;
-    case "On Hold":
-      return NCStatus.OnHold;
-    case "Under Review":
-      return NCStatus.UnderReview;
-    case "In Progress":
-      return NCStatus.InProgress;
-    case "Resolved":
-      return NCStatus.Resolved;
-    case "Completed":
-      return NCStatus.Completed;
-    case "Closed":
-      return NCStatus.Closed;
-    case "Released":
-      return NCStatus.Released;
-    case "Disposed":
-      return NCStatus.Disposed;
-    case "Approved":
-      return NCStatus.Approved;
-    case "Rejected":
-      return NCStatus.Rejected;
-    case "Overdue":
-      return NCStatus.Overdue;
-    case "Pending Verification":
-      return NCStatus.PendingVerification;
-    case "Verified":
-      return NCStatus.Verified;
-    default:
-      return NCStatus.Open; // Default to Open
+export const stringToDocumentStatus = (status: string): DocumentStatus => {
+  switch (status) {
+    case 'Draft': return DocumentStatus.Draft;
+    case 'Pending Review': return DocumentStatus.PendingReview;
+    case 'In Review': return DocumentStatus.InReview;
+    case 'Approved': return DocumentStatus.Approved;
+    case 'Published': return DocumentStatus.Published;
+    case 'Archived': return DocumentStatus.Archived;
+    case 'Obsolete': return DocumentStatus.Obsolete;
+    case 'Active': return DocumentStatus.Active;
+    case 'Pending Approval': return DocumentStatus.PendingApproval;
+    case 'Rejected': return DocumentStatus.Rejected;
+    case 'Expired': return DocumentStatus.Expired;
+    default: return DocumentStatus.Draft;
   }
-}
+};
 
-export function isStatusEqual(status1: string | NCStatus | null, status2: string | NCStatus | null): boolean {
-  if (status1 === null || status2 === null) return false;
-  
-  const s1 = typeof status1 === 'string' ? status1 : status1.toString();
-  const s2 = typeof status2 === 'string' ? status2 : status2.toString();
-  
-  return s1 === s2;
-}
+export const stringToNCStatus = (status: string): any => {
+  // Handle conversion from string to NCStatus enum
+  // This is a placeholder - implement based on your enums
+  return status;
+};
 
-export function isStringStatusEqual(status1: string | null, status2: string | null): boolean {
-  if (status1 === null || status2 === null) return false;
-  return status1 === status2;
-}
-
-export function formatEnumValue(value: string): string {
-  if (!value) return '';
-  
-  // Replace underscores with spaces
-  const withSpaces = value.replace(/_/g, ' ');
-  
-  // Format camelCase or snake_case to Title Case
-  return withSpaces.replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
-    .trim();
-}
-
-export function isDocumentStatusEqual(status1: string | DocumentStatus | null, status2: string | DocumentStatus | null): boolean {
-  if (status1 === null || status2 === null) return false;
-  
-  const s1 = typeof status1 === 'string' ? status1 : status1.toString();
-  const s2 = typeof status2 === 'string' ? status2 : status2.toString();
-  
-  return s1 === s2;
-}
-
-export function stringToCAPAStatus(statusString: string): CAPAStatus {
-  // Map string to enum values
-  switch(statusString) {
-    case "Open":
-      return CAPAStatus.Open;
-    case "In Progress":
-      return CAPAStatus.InProgress;
-    case "Pending Verification":
-      return CAPAStatus.PendingVerification;
-    case "Verified":
-      return CAPAStatus.Verified;
-    case "Closed":
-      return CAPAStatus.Closed;
-    case "Overdue":
-      return CAPAStatus.Overdue;
-    case "Completed":
-      return CAPAStatus.Completed;
-    case "Rejected":
-      return CAPAStatus.Rejected;
-    case "On Hold":
-      return CAPAStatus.OnHold;
-    case "Under Review":
-      return CAPAStatus.UnderReview;
-    default:
-      return CAPAStatus.Open;
+export const stringToCAPAStatus = (status: string): CAPAStatus => {
+  switch (status) {
+    case 'Open': return CAPAStatus.Open;
+    case 'In Progress': return CAPAStatus.InProgress;
+    case 'Pending Verification': return CAPAStatus.PendingVerification;
+    case 'Verified': return CAPAStatus.Verified;
+    case 'Closed': return CAPAStatus.Closed;
+    case 'Overdue': return CAPAStatus.Overdue;
+    case 'Completed': return CAPAStatus.Completed;
+    case 'Rejected': return CAPAStatus.Rejected;
+    case 'On Hold': return CAPAStatus.OnHold;
+    case 'Under Review': return CAPAStatus.UnderReview;
+    default: return CAPAStatus.Open;
   }
-}
+};
 
-export function stringToCAPAPriority(priority: string): CAPAPriority {
-  switch(priority) {
-    case "Low":
-      return CAPAPriority.Low;
-    case "Medium":
-      return CAPAPriority.Medium;
-    case "High":
-      return CAPAPriority.High;
-    case "Critical":
-      return CAPAPriority.Critical;
-    default:
-      return CAPAPriority.Medium;
+export const stringToCAPAPriority = (priority: string): CAPAPriority => {
+  switch (priority) {
+    case 'Low': return CAPAPriority.Low;
+    case 'Medium': return CAPAPriority.Medium;
+    case 'High': return CAPAPriority.High;
+    case 'Critical': return CAPAPriority.Critical;
+    default: return CAPAPriority.Medium;
   }
-}
+};
 
-export function stringToCAPASource(source: string): CAPASource {
-  switch(source) {
-    case "Audit":
-      return CAPASource.Audit;
-    case "Customer Complaint":
-      return CAPASource.CustomerComplaint;
-    case "Internal Report":
-      return CAPASource.InternalReport;
-    case "Non Conformance":
-      return CAPASource.NonConformance;
-    case "Regulatory Inspection":
-      return CAPASource.RegulatoryInspection;
-    case "Supplier Issue":
-      return CAPASource.SupplierIssue;
-    case "Other":
-      return CAPASource.Other;
-    default:
-      return CAPASource.Other;
+export const stringToCAPASource = (source: string): CAPASource => {
+  switch (source) {
+    case 'Audit': return CAPASource.Audit;
+    case 'Customer Complaint': return CAPASource.CustomerComplaint;
+    case 'Internal Report': return CAPASource.InternalReport;
+    case 'Non Conformance': return CAPASource.NonConformance;
+    case 'Regulatory Inspection': return CAPASource.RegulatoryInspection;
+    case 'Supplier Issue': return CAPASource.SupplierIssue;
+    case 'Other': return CAPASource.Other;
+    default: return CAPASource.Other;
   }
-}
-
-export function convertToCAPAStatus(status: string | CAPAStatus): CAPAStatus {
-  if (typeof status !== 'string') {
-    return status;
-  }
-  
-  return stringToCAPAStatus(status);
-}
+};

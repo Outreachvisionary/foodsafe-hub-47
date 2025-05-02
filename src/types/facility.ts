@@ -1,7 +1,7 @@
 
 export interface Facility {
   id: string;
-  organization_id: string;
+  organization_id: string; // Making this required
   name: string;
   description?: string;
   address?: string;

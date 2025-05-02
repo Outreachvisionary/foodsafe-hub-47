@@ -141,10 +141,9 @@ const FacilityManagement = () => {
         state: data.state || locationData.state,
         city: data.city || locationData.city,
         zipcode: data.zipcode || locationData.zipcode,
-        location_data: {
-          countryCode: locationData.countryCode,
-          stateCode: locationData.stateCode
-        }
+        organization_id: data.organization_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       console.log('Final facility data being sent to API:', facilityData);
@@ -153,7 +152,7 @@ const FacilityManagement = () => {
       if (isNewFacility) {
         // Create new facility
         console.log('Creating new facility with data:', facilityData);
-        const newFacilityData: Omit<Facility, 'id'> = {
+        const newFacilityData = {
           name: facilityData.name as string,
           organization_id: facilityData.organization_id as string,
           status: facilityData.status as 'active' | 'inactive' | 'pending',
@@ -165,7 +164,8 @@ const FacilityManagement = () => {
           zipcode: facilityData.zipcode,
           contact_email: facilityData.contact_email,
           contact_phone: facilityData.contact_phone,
-          location_data: facilityData.location_data
+          created_at: facilityData.created_at,
+          updated_at: facilityData.updated_at
         };
         savedFacility = await createFacility(newFacilityData);
         console.log('Facility created successfully:', savedFacility);
@@ -180,7 +180,7 @@ const FacilityManagement = () => {
         if (facilityData.status) {
           facilityData.status = facilityData.status as 'active' | 'inactive' | 'pending';
         }
-        savedFacility = await updateFacility(id!, facilityData);
+        savedFacility = await updateFacility(id!, facilityData as Facility);
         console.log('Facility updated successfully:', savedFacility);
         toast({
           title: 'Facility Updated',
