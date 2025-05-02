@@ -31,18 +31,18 @@ const ProfileTile: React.FC<ProfileTileProps> = ({
   }
 
   // Get initials for avatar
-  const initials = user.profile?.full_name 
-    ? user.profile.full_name.split(' ').map(n => n[0]).join('')
+  const initials = user.full_name || user.profile?.full_name
+    ? (user.full_name || user.profile?.full_name).split(' ').map(n => n[0]).join('')
     : user.email?.charAt(0).toUpperCase() || 'U';
 
   // Support both profile.full_name and full_name for backward compatibility
-  const displayName = user.profile?.full_name || user.full_name || user.email || 'Unknown User';
+  const displayName = user.full_name || user.profile?.full_name || user.email || 'Unknown User';
   
   return (
     <Card className="w-full">
       <CardContent className="flex items-center p-4">
         <Avatar className="h-10 w-10 mr-4">
-          <AvatarImage src={user.profile?.avatar_url || user.avatar_url || ''} />
+          <AvatarImage src={user.avatar_url || user.profile?.avatar_url || ''} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <div className="space-y-1">
@@ -50,8 +50,8 @@ const ProfileTile: React.FC<ProfileTileProps> = ({
           {showRole && user.role && (
             <p className="text-xs text-gray-500">{user.role}</p>
           )}
-          {showDepartment && user.profile?.department && (
-            <p className="text-xs text-gray-500">{user.profile.department}</p>
+          {showDepartment && (user.department || user.profile?.department) && (
+            <p className="text-xs text-gray-500">{user.department || user.profile?.department}</p>
           )}
         </div>
       </CardContent>

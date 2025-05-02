@@ -63,7 +63,12 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           startDate: '2025-05-15',
           participants: ['user1', 'user2'],
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          training_type: 'classroom',
+          completion_status: 'not_started',
+          assigned_to: ['user1', 'user2'],
+          created_by: 'admin',
+          is_recurring: false
         },
         {
           id: '2',
@@ -73,7 +78,12 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           startDate: '2025-05-10',
           participants: ['user3', 'user4'],
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          training_type: 'online',
+          completion_status: 'in_progress',
+          assigned_to: ['user3', 'user4'],
+          created_by: 'admin',
+          is_recurring: false
         }
       ];
       setSessions(mockSessions);
@@ -95,20 +105,27 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           name: 'New Employee Onboarding',
           title: 'New Employee Onboarding',
           description: 'Training plan for new employees',
+          target_roles: ['Employee'],
           targetRoles: ['Employee'],
+          target_departments: ['All'],
           targetDepartments: ['All'],
           courses: ['course1', 'course2'],
+          duration_days: 30,
           durationDays: 30,
+          is_required: true,
           isRequired: true,
           priority: 'High',
           status: 'active',
+          start_date: '2025-05-01',
           startDate: '2025-05-01',
+          end_date: '2025-06-01',
           endDate: '2025-06-01',
           created_by: 'admin',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           required_for: ['all'],
-          is_active: true
+          is_active: true,
+          is_automated: false
         }
       ];
       setTrainingPlans(mockPlans);
@@ -131,6 +148,8 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           description: 'Essential food safety knowledge',
           category: 'Food Safety',
           duration_hours: 2,
+          duration_minutes: 120,
+          passing_score: 70,
           is_active: true,
           created_by: 'admin',
           created_at: new Date().toISOString(),
@@ -186,22 +205,29 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
     const newPlan: TrainingPlan = {
       id: Date.now().toString(),
       name: plan.name || '',
-      title: plan.name || '',
+      title: plan.title || plan.name || '',
       description: plan.description || '',
-      targetRoles: plan.targetRoles || [],
-      targetDepartments: plan.targetDepartments || [],
+      target_roles: plan.target_roles || [],
+      targetRoles: plan.targetRoles || plan.target_roles || [],
+      target_departments: plan.target_departments || [],
+      targetDepartments: plan.targetDepartments || plan.target_departments || [],
       courses: plan.courses || [],
-      durationDays: plan.durationDays || 30,
-      isRequired: plan.isRequired || false,
+      duration_days: plan.duration_days || 30,
+      durationDays: plan.durationDays || plan.duration_days || 30,
+      is_required: plan.is_required || false,
+      isRequired: plan.isRequired || plan.is_required || false,
       priority: plan.priority || 'Medium',
       status: plan.status || 'draft',
-      startDate: plan.startDate || new Date().toISOString(),
-      endDate: plan.endDate || new Date().toISOString(),
+      start_date: plan.start_date || new Date().toISOString(),
+      startDate: plan.startDate || plan.start_date || new Date().toISOString(),
+      end_date: plan.end_date || new Date().toISOString(),
+      endDate: plan.endDate || plan.end_date || new Date().toISOString(),
       created_by: 'current_user',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       required_for: plan.required_for || [],
-      is_active: plan.is_active || true
+      is_active: plan.is_active || true,
+      is_automated: plan.is_automated || false
     };
     
     setTrainingPlans(prev => [...prev, newPlan]);
@@ -211,7 +237,24 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const updateTrainingPlan = async (id: string, plan: Partial<TrainingPlan>): Promise<TrainingPlan> => {
     // Mock implementation
     const updatedPlans = trainingPlans.map(p => 
-      p.id === id ? { ...p, ...plan, updated_at: new Date().toISOString() } : p
+      p.id === id ? { 
+        ...p, 
+        ...plan, 
+        // Ensure both property versions are updated
+        target_roles: plan.target_roles || plan.targetRoles || p.target_roles,
+        targetRoles: plan.targetRoles || plan.target_roles || p.targetRoles,
+        target_departments: plan.target_departments || plan.targetDepartments || p.target_departments,
+        targetDepartments: plan.targetDepartments || plan.target_departments || p.targetDepartments,
+        duration_days: plan.duration_days || plan.durationDays || p.duration_days,
+        durationDays: plan.durationDays || plan.duration_days || p.durationDays,
+        is_required: plan.is_required || plan.isRequired || p.is_required,
+        isRequired: plan.isRequired || plan.is_required || p.isRequired,
+        start_date: plan.start_date || plan.startDate || p.start_date,
+        startDate: plan.startDate || plan.start_date || p.startDate,
+        end_date: plan.end_date || plan.endDate || p.end_date,
+        endDate: plan.endDate || plan.end_date || p.endDate,
+        updated_at: new Date().toISOString()
+      } : p
     );
     setTrainingPlans(updatedPlans);
     return updatedPlans.find(p => p.id === id) as TrainingPlan;
@@ -233,7 +276,12 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
       startDate: session.startDate || new Date().toISOString(),
       participants: session.participants || [],
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      training_type: session.training_type || 'classroom',
+      completion_status: session.completion_status || 'not_started',
+      assigned_to: session.assigned_to || [],
+      created_by: session.created_by || 'admin',
+      is_recurring: session.is_recurring || false
     };
     
     setSessions(prev => [...prev, newSession]);

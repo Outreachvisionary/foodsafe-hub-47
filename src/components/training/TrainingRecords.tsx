@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +16,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { TrainingRecord } from '@/types/training'; 
+import { TrainingStatus } from '@/types/enums';
+
+interface TrainingRecordItem {
+  id: string;
+  employee: string;
+  course: string;
+  status: string;
+  dueDate: string;
+  completionDate: string | null;
+}
 
 const TrainingRecords = () => {
-  const [records, setRecords] = useState([
+  const [records, setRecords] = useState<TrainingRecordItem[]>([
     {
       id: '1',
       employee: 'John Doe',

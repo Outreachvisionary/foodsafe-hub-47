@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { UserProfile, AppUser } from '@/types/user';
+import { UserProfile } from '@/types/user';
 
 interface UserContextType {
   user: User | null;

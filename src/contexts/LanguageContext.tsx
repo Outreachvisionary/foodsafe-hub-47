@@ -52,8 +52,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       const fetchUserLanguage = async () => {
         try {
           setLoadingTranslations(true);
-          if (profile.preferred_language) {
-            const userLang = profile.preferred_language;
+          if (profile.preferences?.preferred_language) {
+            const userLang = profile.preferences.preferred_language;
             await i18n.changeLanguage(userLang);
             setLanguage(userLang);
           } else {
@@ -85,10 +85,22 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       
       // Save language preference to user profile if logged in
       if (user && profile) {
-        await supabase
-          .from('profiles')
-          .update({ preferred_language: lang })
-          .eq('id', user.id);
+        if (!profile.preferences) {
+          await supabase
+            .from('profiles')
+            .update({ preferences: { preferred_language: lang } })
+            .eq('id', user.id);
+        } else {
+          const updatedPreferences = {
+            ...profile.preferences,
+            preferred_language: lang
+          };
+          
+          await supabase
+            .from('profiles')
+            .update({ preferences: updatedPreferences })
+            .eq('id', user.id);
+        }
       }
     } catch (error) {
       console.error('Error changing language:', error);

@@ -8,6 +8,7 @@ export interface TrainingSession {
   status?: string;
   startDate?: string;
   start_date?: string;
+  endDate?: string;
   participants?: string[];
   created_at: string;
   updated_at: string;
@@ -94,4 +95,17 @@ export interface Certification {
   expiryDate: string;
   daysUntilExpiry: number;
   status: string;
+}
+
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date?: string;
+  completed_date?: string;
+  score?: number;
+  notes?: string;
 }
