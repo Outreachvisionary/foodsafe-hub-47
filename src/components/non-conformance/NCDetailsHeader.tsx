@@ -1,94 +1,70 @@
-
 import React from 'react';
-import { NonConformance, NCStatus } from '@/types/non-conformance';
+import { MoreHorizontal, Edit, FileText, Clock, User, Flag, Link as LinkIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from '@/components/ui/button';
+import { NCStatus } from '@/types/enums';
 import NCStatusBadge from './NCStatusBadge';
-import NCQuickActions from './NCQuickActions';
-import { updateNCStatus } from '@/services/nonConformanceService';
-import { toast } from 'sonner';
-import { stringToNCStatus } from '@/utils/typeAdapters';
+import { NonConformance } from '@/types/non-conformance';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 interface NCDetailsHeaderProps {
-  data: NonConformance;
-  onDataUpdated: (updatedData: Partial<NonConformance>) => void;
+  nonConformance: NonConformance;
 }
 
-const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }) => {
-  // Get current user ID - in a real app this would come from auth context
-  const currentUserId = data.created_by || 'system';
-  
-  const handleEdit = () => {
-    // This is handled by the parent component through the Details tab
-    console.log('Edit requested for NC:', data.id);
-  };
-  
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      console.log(`Changing status from ${data.status} to ${newStatus}`);
-      const updatedNC = await updateNCStatus(data.id, newStatus, currentUserId);
-      onDataUpdated(updatedNC);
-      return Promise.resolve();
-    } catch (error) {
-      console.error('Error changing NC status:', error);
-      toast.error('Failed to update status');
-      return Promise.reject(error);
-    }
-  };
-  
-  const handleCreateCapa = () => {
-    console.log('Creating CAPA for NC:', data.id);
-    // The parent component will show the CAPA creation dialog
-  };
-
-  const getPriorityBadgeClass = (priority: string | undefined) => {
-    if (!priority) return 'bg-gray-100 text-gray-800';
-    
-    const priorityLower = priority.toLowerCase();
-    
-    if (priorityLower === 'critical') {
-      return 'bg-red-100 text-red-800';
-    } else if (priorityLower === 'high') {
-      return 'bg-orange-100 text-orange-800';
-    } else if (priorityLower === 'medium') {
-      return 'bg-yellow-100 text-yellow-800';
-    } else if (priorityLower === 'low') {
-      return 'bg-blue-100 text-blue-800';
-    } else {
-      return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  // Convert string status to NCStatus enum
-  const statusEnum = stringToNCStatus(data.status);
-
+const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ nonConformance }) => {
   return (
-    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-      <div className="space-y-1">
-        <div className="flex items-center space-x-2">
-          <NCStatusBadge status={statusEnum} />
-          <span className="text-sm text-gray-500">
-            Reported: {new Date(data.reported_date || '').toLocaleDateString()}
-          </span>
-        </div>
-        <div className="text-sm text-gray-500">
-          {data.item_category && <span>Category: {data.item_category}</span>}
-          {data.reason_category && <span className="ml-2">| Reason: {data.reason_category}</span>}
-        </div>
-        {data.priority && (
-          <div className="text-sm">
-            <span className={`font-medium ${getPriorityBadgeClass(data.priority)}`}>
-              {data.priority} Priority
-            </span>
-          </div>
-        )}
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0">
+      <div className="flex items-center space-x-2">
+        <h2 className="text-2xl font-bold">{nonConformance.title}</h2>
+        <NCStatusBadge status={nonConformance.status as NCStatus} />
       </div>
-      
-      <NCQuickActions 
-        id={data.id}
-        status={data.status}
-        onEdit={handleEdit}
-        onStatusChange={handleStatusChange}
-        onCreateCAPA={handleCreateCapa}
-      />
+      <div className="flex items-center space-x-2">
+        <Button variant="outline" size="sm">
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open dropdown menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem>
+              <FileText className="mr-2 h-4 w-4" />
+              Generate Report
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Clock className="mr-2 h-4 w-4" />
+              Schedule Review
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+              Assign Task
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Flag className="mr-2 h-4 w-4" />
+              Escalate Issue
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <LinkIcon className="mr-2 h-4 w-4" />
+              Link to Existing NC
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

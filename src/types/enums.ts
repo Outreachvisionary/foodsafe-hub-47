@@ -24,7 +24,10 @@ export enum DocumentStatus {
   Published = "Published",
   Archived = "Archived",
   Obsolete = "Obsolete",
-  Active = "Active"
+  Active = "Active",
+  PendingApproval = "Pending Approval",
+  Rejected = "Rejected",
+  Expired = "Expired"
 }
 
 export enum CheckoutStatus {
@@ -61,4 +64,38 @@ export enum TrainingCategory {
   RegulatoryCompliance = "Regulatory_Compliance",
   EquipmentOperation = "Equipment_Operation",
   Other = "Other"
+}
+
+// Add the missing CAPA enums
+export enum CAPAStatus {
+  Open = "Open",
+  InProgress = "In Progress",
+  PendingVerification = "Pending Verification",
+  Verified = "Verified",
+  Closed = "Closed",
+  Overdue = "Overdue",
+}
+
+export enum CAPAPriority {
+  Low = "Low",
+  Medium = "Medium",
+  High = "High",
+  Critical = "Critical"
+}
+
+export enum CAPASource {
+  Audit = "Audit",
+  CustomerComplaint = "Customer Complaint",
+  InternalReport = "Internal Report",
+  NonConformance = "Non Conformance",
+  RegulatoryInspection = "Regulatory Inspection",
+  SupplierIssue = "Supplier Issue",
+  Other = "Other"
+}
+
+export enum CAPAEffectivenessRating {
+  NotEffective = "Not Effective",
+  PartiallyEffective = "Partially Effective",
+  Effective = "Effective",
+  HighlyEffective = "Highly Effective"
 }

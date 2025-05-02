@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -100,6 +99,9 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
               organization_id: organizationId, 
               status: 'active' 
             }}
+            onSubmitSuccess={handleSuccess}
+            onCancel={() => setOpen(false)}
+            isNewFacility={true}
           />
         </ScrollArea>
       </DialogContent>
