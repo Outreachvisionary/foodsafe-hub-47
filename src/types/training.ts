@@ -19,6 +19,7 @@ export interface TrainingPlan {
   updated_at: string;
   created_by: string;
   is_active: boolean;
+  required_for?: string[];
 }
 
 export interface TrainingCourse {
@@ -128,7 +129,8 @@ export interface Certification {
   id: string;
   employeeId: string;
   employee_name: string;
-  certificationName: string;
+  certificationName: string; // For backward compatibility
+  name: string; // Add the name property
   issueDate: string;
   expiryDate: string;
   status: 'active' | 'expired' | 'revoked';
@@ -141,4 +143,16 @@ export enum TrainingPriority {
   Medium = "Medium",
   High = "High",
   Critical = "Critical"
+}
+
+// Add missing DepartmentStat interface
+export interface DepartmentStat {
+  department: string;
+  name: string;
+  completed: number;
+  overdue: number;
+  total?: number;
+  compliance: number;
+  totalAssigned: number;
+  complianceRate: number;
 }

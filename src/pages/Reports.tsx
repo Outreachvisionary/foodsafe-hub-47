@@ -1,4 +1,3 @@
-
 // Update only the relevant parts of the Reports page
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';

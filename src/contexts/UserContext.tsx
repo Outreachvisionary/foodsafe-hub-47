@@ -2,28 +2,28 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { UserProfile } from '@/types/user';
+import { UserProfile } from '@/types/user'; // Ensure correct import
 
 interface UserContextType {
   user: User | null;
   profile: UserProfile | null;
   isAuthenticated: boolean;
-  loading: boolean; // Add loading state property
+  loading: boolean;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>; // Add missing method
-  updateUser: (userData: Partial<User>) => Promise<void>; // Add missing method
+  signIn: (email: string, password: string) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
   isAuthenticated: false,
-  loading: true, // Default to loading
+  loading: true,
   signOut: async () => {},
   updateProfile: async () => {},
-  signIn: async () => {}, // Add missing method
-  updateUser: async () => {} // Add missing method
+  signIn: async () => {},
+  updateUser: async () => {}
 });
 
 export const useUser = () => useContext(UserContext);

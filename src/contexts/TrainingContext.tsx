@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { TrainingSession, TrainingPlan, TrainingCourse, DepartmentStat } from '@/types/training';
-import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
+import { TrainingSession, TrainingPlan, TrainingCourse, DepartmentStat, TrainingStatus } from '@/types/training';
+import { TrainingType, TrainingCategory } from '@/types/enums';
 
 // Define the context type
 export interface TrainingContextType {
@@ -65,7 +65,7 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           training_type: 'classroom',
-          completion_status: 'not_started',
+          completion_status: TrainingStatus.NotStarted,
           assigned_to: ['user1', 'user2'],
           created_by: 'admin',
           is_recurring: false
@@ -80,7 +80,7 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           training_type: 'online',
-          completion_status: 'in_progress',
+          completion_status: TrainingStatus.InProgress,
           assigned_to: ['user3', 'user4'],
           created_by: 'admin',
           is_recurring: false
@@ -103,27 +103,19 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
         {
           id: '1',
           name: 'New Employee Onboarding',
-          title: 'New Employee Onboarding',
           description: 'Training plan for new employees',
           target_roles: ['Employee'],
-          targetRoles: ['Employee'],
           target_departments: ['All'],
-          targetDepartments: ['All'],
           courses: ['course1', 'course2'],
           duration_days: 30,
-          durationDays: 30,
           is_required: true,
-          isRequired: true,
           priority: 'High',
           status: 'active',
           start_date: '2025-05-01',
-          startDate: '2025-05-01',
           end_date: '2025-06-01',
-          endDate: '2025-06-01',
           created_by: 'admin',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          required_for: ['all'],
           is_active: true,
           is_automated: false
         }
@@ -205,23 +197,16 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
     const newPlan: TrainingPlan = {
       id: Date.now().toString(),
       name: plan.name || '',
-      title: plan.title || plan.name || '',
       description: plan.description || '',
       target_roles: plan.target_roles || [],
-      targetRoles: plan.targetRoles || plan.target_roles || [],
       target_departments: plan.target_departments || [],
-      targetDepartments: plan.targetDepartments || plan.target_departments || [],
       courses: plan.courses || [],
       duration_days: plan.duration_days || 30,
-      durationDays: plan.durationDays || plan.duration_days || 30,
       is_required: plan.is_required || false,
-      isRequired: plan.isRequired || plan.is_required || false,
       priority: plan.priority || 'Medium',
       status: plan.status || 'draft',
       start_date: plan.start_date || new Date().toISOString(),
-      startDate: plan.startDate || plan.start_date || new Date().toISOString(),
       end_date: plan.end_date || new Date().toISOString(),
-      endDate: plan.endDate || plan.end_date || new Date().toISOString(),
       created_by: 'current_user',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -240,19 +225,15 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
       p.id === id ? { 
         ...p, 
         ...plan, 
-        // Ensure both property versions are updated
-        target_roles: plan.target_roles || plan.targetRoles || p.target_roles,
-        targetRoles: plan.targetRoles || plan.target_roles || p.targetRoles,
-        target_departments: plan.target_departments || plan.targetDepartments || p.target_departments,
-        targetDepartments: plan.targetDepartments || plan.target_departments || p.targetDepartments,
-        duration_days: plan.duration_days || plan.durationDays || p.duration_days,
-        durationDays: plan.durationDays || plan.duration_days || p.durationDays,
-        is_required: plan.is_required || plan.isRequired || p.is_required,
-        isRequired: plan.isRequired || plan.is_required || p.isRequired,
-        start_date: plan.start_date || plan.startDate || p.start_date,
-        startDate: plan.startDate || plan.start_date || p.startDate,
-        end_date: plan.end_date || plan.endDate || p.end_date,
-        endDate: plan.endDate || plan.end_date || p.endDate,
+        // Ensure properties are updated
+        target_roles: plan.target_roles || p.target_roles,
+        target_departments: plan.target_departments || p.target_departments,
+        duration_days: plan.duration_days || p.duration_days,
+        is_required: plan.is_required !== undefined ? plan.is_required : p.is_required,
+        priority: plan.priority || p.priority,
+        status: plan.status || p.status,
+        start_date: plan.start_date || p.start_date,
+        end_date: plan.end_date || p.end_date,
         updated_at: new Date().toISOString()
       } : p
     );
@@ -278,7 +259,7 @@ export const TrainingProvider: React.FC<{children: React.ReactNode}> = ({ childr
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       training_type: session.training_type || 'classroom',
-      completion_status: session.completion_status || 'not_started',
+      completion_status: session.completion_status || TrainingStatus.NotStarted,
       assigned_to: session.assigned_to || [],
       created_by: session.created_by || 'admin',
       is_recurring: session.is_recurring || false

@@ -38,8 +38,8 @@ const ExpiringCertificationsCard: React.FC<ExpiringCertificationsCardProps> = ({
               <li key={cert.id} className="py-2 border-b last:border-b-0">
                 <div className="flex justify-between">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-medium">{cert.name}</p>
-                    <p className="text-xs text-muted-foreground">Employee: {cert.employeeName}</p>
+                    <p className="text-sm font-medium">{cert.name || cert.certificationName}</p>
+                    <p className="text-xs text-muted-foreground">Employee: {cert.employee_name}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Expires: {new Date(cert.expiryDate).toLocaleDateString()}
