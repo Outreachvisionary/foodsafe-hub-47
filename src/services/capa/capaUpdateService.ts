@@ -1,3 +1,4 @@
+
 import { CAPA } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
 import { adaptCAPAToModel, CAPAInput } from '@/utils/capaAdapters';
@@ -6,7 +7,7 @@ import { stringToCAPASource } from '@/utils/typeAdapters';
 export const updateCAPA = async (
   id: string,
   capaData: Partial<CAPA>
-): Promise<CAPA> => {
+): Promise<CAPA | null> => {
   try {
     // Convert string to CAPASource enum if needed
     if (capaData.source && typeof capaData.source === 'string') {

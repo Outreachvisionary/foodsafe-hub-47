@@ -1,59 +1,26 @@
-import { supabase } from '@/integrations/supabase/client';
 
-interface Facility {
-  id: string;
-  name: string;
-  description?: string;
-  address?: string;
-  organization_id?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  status?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  zipcode?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Facility } from '@/types/facility';
 
 export const getFacilities = async (): Promise<Facility[]> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
-      .select('*')
-      .order('name', { ascending: true });
-      
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching facilities:', error);
-    throw error;
-  }
-};
+      .select('*');
 
-export const createFacility = async (facilityData: any) => {
-  try {
-    // Make sure the data matches the required shape
-    const facilityToCreate = {
-      ...facilityData,
-      organization_id: facilityData.organization_id || '',  // Ensure required field
-      created_at: facilityData.created_at || new Date().toISOString(),
-      updated_at: facilityData.updated_at || new Date().toISOString(),
-      // Handle location_data properly by keeping it as an object if present
-    };
+    if (error) {
+      console.error('Error fetching facilities:', error);
+      return [];
+    }
 
-    const { data, error } = await supabase
-      .from('facilities')
-      .insert([facilityToCreate])
-      .select()
-      .single();
-      
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating facility:', error);
-    throw error;
+    // Ensure all facilities have the required organization_id
+    return data.map(facility => ({
+      ...facility,
+      organization_id: facility.organization_id || ''
+    })) as Facility[];
+  } catch (err) {
+    console.error('Error in getFacilities:', err);
+    return [];
   }
 };
 
@@ -64,80 +31,152 @@ export const getFacilityById = async (id: string): Promise<Facility | null> => {
       .select('*')
       .eq('id', id)
       .single();
-      
+
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // No rows returned
-      }
-      throw error;
+      console.error('Error fetching facility:', error);
+      return null;
     }
-    
-    return data;
-  } catch (error) {
-    console.error('Error fetching facility by ID:', error);
-    throw error;
+
+    // Ensure facility has the required organization_id
+    return {
+      ...data,
+      organization_id: data.organization_id || ''
+    } as Facility;
+  } catch (err) {
+    console.error('Error in getFacilityById:', err);
+    return null;
   }
 };
 
-export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
+export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
   try {
+    // Ensure required fields
+    if (!facilityData.organization_id) {
+      throw new Error('Organization ID is required when creating a facility');
+    }
+
+    // Prepare data with timestamps if not provided
+    const dataToSend = {
+      ...facilityData,
+      created_at: facilityData.created_at || new Date().toISOString(),
+      updated_at: facilityData.updated_at || new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('facilities')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .insert([dataToSend])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating facility:', error);
+      throw error;
+    }
+
+    return data as Facility;
+  } catch (err) {
+    console.error('Error in createFacility:', err);
+    throw err;
+  }
+};
+
+export const updateFacility = async (id: string, facilityData: Facility): Promise<Facility> => {
+  try {
+    // Ensure required fields
+    if (!facilityData.organization_id) {
+      throw new Error('Organization ID is required when updating a facility');
+    }
+
+    // Update the timestamp
+    const dataToUpdate = {
+      ...facilityData,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('facilities')
+      .update(dataToUpdate)
       .eq('id', id)
       .select()
       .single();
-      
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error updating facility:', error);
-    throw error;
+
+    if (error) {
+      console.error('Error updating facility:', error);
+      throw error;
+    }
+
+    return data as Facility;
+  } catch (err) {
+    console.error('Error in updateFacility:', err);
+    throw err;
   }
 };
 
-export const deleteFacility = async (id: string): Promise<void> => {
+export const deleteFacility = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('facilities')
       .delete()
       .eq('id', id);
-      
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error deleting facility:', error);
-    throw error;
+
+    if (error) {
+      console.error('Error deleting facility:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error in deleteFacility:', err);
+    throw err;
   }
 };
 
-export const adaptFacility = (facility: any): Facility => {
-  return {
-    id: facility.id,
-    name: facility.name,
-    description: facility.description || '',
-    address: facility.address || '',
-    contact_email: facility.contact_email || '',
-    contact_phone: facility.contact_phone || '',
-    organization_id: facility.organization_id || '',
-    location_data: facility.location_data || {},
-    created_at: facility.created_at,
-    updated_at: facility.updated_at,
-    country: facility.country || '',
-    state: facility.state || '',
-    city: facility.city || '',
-    zipcode: facility.zipcode || '',
-    status: facility.status || 'active', // Ensure status has a default value
-  };
+export const getFacilitiesByOrganization = async (organizationId: string): Promise<Facility[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('organization_id', organizationId);
+
+    if (error) {
+      console.error('Error fetching facilities by organization:', error);
+      return [];
+    }
+
+    return data as Facility[];
+  } catch (err) {
+    console.error('Error in getFacilitiesByOrganization:', err);
+    return [];
+  }
+};
+
+export const updateFacilityStatus = async (id: string, status: string): Promise<Facility | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating facility status:', error);
+      return null;
+    }
+
+    return data as Facility;
+  } catch (err) {
+    console.error('Error in updateFacilityStatus:', err);
+    return null;
+  }
 };
 
 export default {
   getFacilities,
-  createFacility,
   getFacilityById,
+  createFacility,
   updateFacility,
   deleteFacility,
-  adaptFacility
+  getFacilitiesByOrganization,
+  updateFacilityStatus
 };

@@ -1,170 +1,99 @@
+
+// Update only the relevant parts of the Reports page
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import DashboardHeader from '@/components/DashboardHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Breadcrumbs from '@/components/layout/Breadcrumbs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Download, FileText, BarChart, PieChart, TrendingUp, BarChart2, Filter, Share2 } from 'lucide-react';
-import ReportDashboard from '@/components/reports/ReportDashboard';
 import ReportBuilder from '@/components/reports/ReportBuilder';
 import PrebuiltReports from '@/components/reports/PrebuiltReports';
 import ScheduledReports from '@/components/reports/ScheduledReports';
 import ModuleIntegration from '@/components/reports/ModuleIntegration';
-import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
-import { ReportProvider } from '@/contexts/ReportContext';
-
-const ReportsContent = () => {
-  const [dateRange, setDateRange] = useState('30days');
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [favoriteReports, setFavoriteReports] = useState([]);
-  const [timeRange, setTimeRange] = useState('30days');
-  const [chartType, setChartType] = useState('bar');
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { user } = useUser();
-  
-  useEffect(() => {
-    if (user?.preferences?.dashboardLayout) {
-      console.log(`Loading user's preferred dashboard layout: ${user.preferences.dashboardLayout}`);
-    }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('activeTab');
-    if (tabParam && ['dashboard', 'prebuilt', 'builder', 'scheduled', 'integration'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [user]);
-  
-  useEffect(() => {
-    if (user && user.preferences?.reports) {
-      const userReportPrefs = user.preferences.reports;
-      
-      if (userReportPrefs.favoriteReports) {
-        setFavoriteReports(userReportPrefs.favoriteReports);
-      }
-      
-      if (userReportPrefs.defaultTimeRange) {
-        setTimeRange(userReportPrefs.defaultTimeRange);
-      }
-      
-      if (userReportPrefs.defaultChartType) {
-        setChartType(userReportPrefs.defaultChartType);
-      }
-    }
-  }, [user]);
-  
-  const handleExportReport = () => {
-    toast({
-      title: "Report Exported",
-      description: "Your report has been exported successfully."
-    });
-  };
-
-  const navigateToModuleReports = (module: string) => {
-    const moduleRoutes: Record<string, string> = {
-      'documents': '/documents?activeTab=reports',
-      'capa': '/capa?activeTab=reports',
-      'audits': '/internal-audits?activeTab=reports',
-      'training': '/training?activeTab=reports',
-      'complaints': '/complaint-management?activeTab=reports',
-      'haccp': '/haccp?activeTab=reports'
-    };
-    
-    if (moduleRoutes[module]) {
-      navigate(moduleRoutes[module]);
-    }
-  };
-  
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader 
-        title="Reports & Analytics" 
-        subtitle="Comprehensive reporting and analytics for compliance monitoring and management" 
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumbs />
-        
-        <div className="flex justify-between items-center my-6">
-          <h2 className="text-xl font-semibold">Compliance Reports</h2>
-          <div className="flex items-center gap-3">
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-[180px]">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Select date range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">Last 7 Days</SelectItem>
-                <SelectItem value="30days">Last 30 Days</SelectItem>
-                <SelectItem value="90days">Last 90 Days</SelectItem>
-                <SelectItem value="year">Last Year</SelectItem>
-                <SelectItem value="custom">Custom Range</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline" onClick={handleExportReport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Dashboard
-            </Button>
-          </div>
-        </div>
-        
-        <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-8">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart className="h-4 w-4" />
-              <span>Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="prebuilt" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span>Prebuilt Reports</span>
-            </TabsTrigger>
-            <TabsTrigger value="builder" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <span>Report Builder</span>
-            </TabsTrigger>
-            <TabsTrigger value="scheduled" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>Scheduled Reports</span>
-            </TabsTrigger>
-            <TabsTrigger value="integration" className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              <span>Module Integration</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dashboard">
-            <ReportDashboard dateRange={dateRange} />
-          </TabsContent>
-          
-          <TabsContent value="prebuilt">
-            <PrebuiltReports dateRange={dateRange} onNavigateToModule={navigateToModuleReports} />
-          </TabsContent>
-          
-          <TabsContent value="builder">
-            <ReportBuilder />
-          </TabsContent>
-          
-          <TabsContent value="scheduled">
-            <ScheduledReports />
-          </TabsContent>
-          
-          <TabsContent value="integration">
-            <ModuleIntegration onNavigateToModule={navigateToModuleReports} />
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
-  );
-};
+import { User } from '@/types/user';
 
 const Reports = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>('prebuilt');
+  const [reportLayout, setReportLayout] = useState<string>('grid');
+
+  useEffect(() => {
+    // Load user preferences if available
+    if (user && user.preferences) {
+      setReportLayout(user.preferences.reportLayout || 'grid');
+    }
+  }, [user]);
+
+  const handleLayoutChange = async (layout: string) => {
+    setReportLayout(layout);
+    // Save user preference (this would be implemented in a real app)
+    console.log(`Saving layout preference: ${layout}`);
+    
+    // In a real implementation, you would update the user's preferences
+    // Example:
+    // if (user) {
+    //   await updateUserPreferences(user.id, {
+    //     ...user.preferences,
+    //     reportLayout: layout
+    //   });
+    // }
+  };
+
   return (
-    <ReportProvider>
-      <ReportsContent />
-    </ReportProvider>
+    <>
+      <DashboardHeader 
+        title="Reports" 
+        subtitle="Generate and analyze reports across all modules"
+      />
+
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center mb-6">
+              <Tabs defaultValue="prebuilt" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                  <TabsTrigger value="prebuilt">Prebuilt Reports</TabsTrigger>
+                  <TabsTrigger value="builder">Report Builder</TabsTrigger>
+                  <TabsTrigger value="scheduled">Scheduled Reports</TabsTrigger>
+                  <TabsTrigger value="integrations">Module Integration</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Layout:</span>
+                <Select value={reportLayout} onValueChange={handleLayoutChange}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Layout" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grid">Grid</SelectItem>
+                    <SelectItem value="list">List</SelectItem>
+                    <SelectItem value="detailed">Detailed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <TabsContent value="prebuilt" className="mt-0">
+              <PrebuiltReports layout={reportLayout} />
+            </TabsContent>
+
+            <TabsContent value="builder" className="mt-0">
+              <ReportBuilder />
+            </TabsContent>
+
+            <TabsContent value="scheduled" className="mt-0">
+              <ScheduledReports />
+            </TabsContent>
+
+            <TabsContent value="integrations" className="mt-0">
+              <ModuleIntegration />
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 

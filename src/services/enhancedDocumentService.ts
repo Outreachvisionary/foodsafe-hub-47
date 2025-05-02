@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const getDocumentCounts = async () => {
@@ -28,7 +29,7 @@ export const fetchDocuments = async () => {
 
     if (error) throw error;
 
-    return data;
+    return data || [];
   } catch (error) {
     console.error('Error fetching documents:', error);
     return [];
@@ -43,7 +44,7 @@ export const createDocument = async (documentData: any) => {
 
     if (error) throw error;
 
-    return data[0];
+    return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error creating document:', error);
     throw error;
@@ -59,7 +60,7 @@ export const updateDocument = async (id: string, documentData: any) => {
 
     if (error) throw error;
 
-    return data[0];
+    return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error updating document:', error);
     throw error;

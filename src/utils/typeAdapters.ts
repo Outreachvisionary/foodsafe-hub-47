@@ -1,4 +1,5 @@
-import { DocumentStatus, CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
+
+import { DocumentStatus, CAPAStatus, CAPASource, CAPAPriority, NCStatus } from '@/types/enums';
 
 export const stringToDocumentStatus = (status: string): DocumentStatus => {
   switch (status) {
@@ -61,3 +62,34 @@ export const stringToCAPASource = (source: string): CAPASource => {
     default: return CAPASource.Other;
   }
 };
+
+// Add missing utility functions
+export const isDocumentStatusEqual = (status: any, compareWith: DocumentStatus): boolean => {
+  if (typeof status === 'string') {
+    return stringToDocumentStatus(status) === compareWith;
+  }
+  return status === compareWith;
+};
+
+export const isStatusEqual = (status: any, compareWith: string): boolean => {
+  if (typeof status === 'string') {
+    return status === compareWith;
+  }
+  const statusString = String(status);
+  return statusString === compareWith;
+};
+
+export const isStringStatusEqual = (status: any, compareWith: string): boolean => {
+  return String(status).toLowerCase() === String(compareWith).toLowerCase();
+};
+
+export const formatEnumValue = (value: string): string => {
+  // Format enum values for display (e.g., "In_Progress" to "In Progress")
+  return value.replace(/_/g, ' ');
+};
+
+export const convertToCAPAStatus = (status: string): CAPAStatus => {
+  return stringToCAPAStatus(status);
+};
+
+// Add any other missing utility functions

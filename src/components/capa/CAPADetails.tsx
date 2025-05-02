@@ -1,5 +1,5 @@
-// Only fixing the isStatusEqual import
 
+// Only fixing the isStringStatusEqual import
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CAPA } from '@/types/capa';
