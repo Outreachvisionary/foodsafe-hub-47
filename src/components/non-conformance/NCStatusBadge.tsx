@@ -1,15 +1,15 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { NCStatus } from '@/types/enums';
+import { NCStatus } from '@/types/non-conformance';
 import { ncStatusToString } from '@/utils/typeAdapters';
 
-interface CAPAStatusBadgeProps {
+interface NCStatusBadgeProps {
   status: NCStatus | string;
   className?: string;
 }
 
-export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, className = '' }) => {
+const NCStatusBadge: React.FC<NCStatusBadgeProps> = ({ status, className = '' }) => {
   // Function to determine badge color based on status
   const getBadgeStyles = () => {
     const statusStr = typeof status === 'string' ? status : status.toString();
@@ -19,6 +19,7 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, classN
       case NCStatus.Open:
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'In_Progress':
+      case 'In Progress':
       case NCStatus.InProgress:
         return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'Completed':
@@ -31,6 +32,7 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, classN
       case NCStatus.Overdue:
         return 'bg-red-100 text-red-800 border-red-200';
       case 'Pending_Verification':
+      case 'Pending Verification':
       case NCStatus.PendingVerification:
         return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'Verified':
@@ -40,9 +42,11 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, classN
       case NCStatus.Rejected:
         return 'bg-red-100 text-red-800 border-red-200';
       case 'On_Hold':
+      case 'On Hold':
       case NCStatus.OnHold:
         return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'Under_Review':
+      case 'Under Review':
       case NCStatus.UnderReview:
         return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
@@ -52,7 +56,10 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, classN
 
   // Format display text by replacing underscores with spaces
   const formatStatusText = (statusValue: NCStatus | string): string => {
-    return ncStatusToString(statusValue as NCStatus);
+    if (typeof statusValue === 'string') {
+      return statusValue.replace(/_/g, ' ');
+    }
+    return ncStatusToString(statusValue);
   };
 
   return (
@@ -65,4 +72,4 @@ export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, classN
   );
 };
 
-export default CAPAStatusBadge;
+export default NCStatusBadge;

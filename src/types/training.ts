@@ -1,25 +1,40 @@
 
-import { TrainingStatus } from '@/types/enums';
+import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 
-export type TrainingType = 
-  | 'Onboarding'
-  | 'Compliance'
-  | 'Technical'
-  | 'Safety'
-  | 'Quality'
-  | 'Management'
-  | 'Other';
+export interface Training {
+  id: string;
+  title: string;
+  description?: string;
+  status: TrainingStatus;
+  type: TrainingType;
+  category?: TrainingCategory;
+  start_date: string;
+  due_date?: string;
+  completion_date?: string;
+  completion_score?: number;
+  assigned_to: string[];
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  completion_certificate?: string;
+  is_recurring: boolean;
+  recurrence_pattern?: string;
+  required_roles?: string[];
+  department_id?: string;
+}
 
-export type TrainingCategory = 
-  | 'Food_Safety'
-  | 'HACCP'
-  | 'SQF'
-  | 'GMP'
-  | 'Sanitation'
-  | 'Allergen'
-  | 'Regulatory_Compliance'
-  | 'Equipment_Operation'
-  | 'Other';
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date?: string;
+  completed_date?: string;
+  score?: number;
+  notes?: string;
+}
 
 export interface TrainingPlan {
   id: string;
@@ -41,6 +56,8 @@ export interface TrainingPlan {
   is_automated: boolean;
   automation_trigger?: string;
   related_standards?: string[];
+  required_for?: string[];
+  is_active?: boolean;
 }
 
 export interface TrainingSession {
@@ -61,22 +78,26 @@ export interface TrainingSession {
   recurring_interval?: number;
   materials_id?: string[];
   required_roles?: string[];
+  participants?: string[];
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-export interface TrainingRecord {
+export interface TrainingCourse {
   id: string;
-  session_id: string;
-  employee_id: string;
-  employee_name: string;
-  status: TrainingStatus;
-  assigned_date: string;
-  due_date: string;
-  completion_date?: string;
-  score?: number;
-  pass_threshold?: number;
-  notes?: string;
-  last_recurrence?: string;
-  next_recurrence?: string;
+  title: string;
+  description: string;
+  content_url?: string;
+  duration_minutes: number;
+  passing_score: number;
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  category: string;
+  tags?: string[];
+  is_active: boolean;
+  duration_hours?: number;
 }
 
 export interface Course {
@@ -136,3 +157,27 @@ export interface AutoAssignRule {
   training_session_id?: string;
   is_active: boolean;
 }
+
+export interface DepartmentStat {
+  name: string;
+  department: string;
+  total: number;
+  completed: number;
+  overdue: number;
+  compliance: number;
+  totalAssigned: number;
+  complianceRate: number;
+}
+
+export interface Certification {
+  id: string;
+  name: string;
+  employee: string;
+  employeeId: string;
+  issueDate: string;
+  expiryDate: string;
+  issuingAuthority: string;
+  status: 'active' | 'expired' | 'revoked';
+}
+
+export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';

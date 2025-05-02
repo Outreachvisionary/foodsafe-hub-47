@@ -57,11 +57,14 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
     }
   };
 
+  // Convert string status to NCStatus enum
+  const statusEnum = stringToNCStatus(data.status);
+
   return (
     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
       <div className="space-y-1">
         <div className="flex items-center space-x-2">
-          <NCStatusBadge status={stringToNCStatus(data.status)} />
+          <NCStatusBadge status={statusEnum} />
           <span className="text-sm text-gray-500">
             Reported: {new Date(data.reported_date || '').toLocaleDateString()}
           </span>

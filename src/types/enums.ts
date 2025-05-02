@@ -1,117 +1,64 @@
 
-// Document related enums
+export enum NCStatus {
+  Open = "Open",
+  OnHold = "On Hold",
+  UnderReview = "Under Review",
+  InProgress = "In Progress",
+  Resolved = "Resolved",
+  Completed = "Completed",
+  Closed = "Closed",
+  Released = "Released",
+  Disposed = "Disposed",
+  Approved = "Approved",
+  Rejected = "Rejected",
+  Overdue = "Overdue",
+  PendingVerification = "Pending Verification",
+  Verified = "Verified"
+}
+
 export enum DocumentStatus {
-  Draft = 'Draft',
-  InReview = 'In_Review',
-  PendingReview = 'Pending_Review',
-  PendingApproval = 'Pending_Approval',
-  Approved = 'Approved',
-  Published = 'Published',
-  Archived = 'Archived',
-  Rejected = 'Rejected',
-  Obsolete = 'Obsolete',
-  Active = 'Active',
-  Expired = 'Expired'
+  Draft = "Draft",
+  PendingReview = "Pending Review",
+  InReview = "In Review",
+  Approved = "Approved",
+  Published = "Published",
+  Archived = "Archived",
+  Obsolete = "Obsolete",
+  Active = "Active"
 }
 
 export enum CheckoutStatus {
-  Available = 'Available',
-  CheckedOut = 'Checked_Out'
+  Available = "Available",
+  CheckedOut = "Checked Out",
+  Locked = "Locked"
 }
 
-// CAPA related enums
-export enum CAPAStatus {
-  Open = 'Open',
-  InProgress = 'In_Progress',
-  Completed = 'Completed',
-  Closed = 'Closed',
-  Rejected = 'Rejected',
-  OnHold = 'On_Hold',
-  Overdue = 'Overdue',
-  PendingVerification = 'Pending_Verification',
-  Verified = 'Verified',
-  UnderReview = 'Under_Review'
-}
-
-export enum CAPAPriority {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Critical = 'Critical'
-}
-
-export enum CAPASource {
-  Audit = 'Audit',
-  CustomerComplaint = 'Customer_Complaint',
-  InternalReport = 'Internal_Report',
-  NonConformance = 'Non_Conformance',
-  RegulatoryInspection = 'Regulatory_Inspection',
-  SupplierIssue = 'Supplier_Issue',
-  Other = 'Other'
-}
-
-export enum CAPAEffectivenessRating {
-  NotEffective = 'Not_Effective',
-  PartiallyEffective = 'Partially_Effective',
-  Effective = 'Effective',
-  HighlyEffective = 'Highly_Effective'
-}
-
-// Training related enums
 export enum TrainingStatus {
-  NotStarted = 'Not_Started',
-  InProgress = 'In_Progress',
-  Completed = 'Completed',
-  Overdue = 'Overdue',
-  Cancelled = 'Cancelled'
+  NotStarted = "Not Started",
+  InProgress = "In Progress",
+  Completed = "Completed",
+  Overdue = "Overdue",
+  Cancelled = "Cancelled"
 }
 
 export enum TrainingType {
-  Onboarding = 'Onboarding',
-  Compliance = 'Compliance',
-  Technical = 'Technical',
-  Safety = 'Safety',
-  Quality = 'Quality',
-  Management = 'Management',
-  Other = 'Other'
+  Onboarding = "Onboarding",
+  Compliance = "Compliance",
+  Technical = "Technical",
+  Safety = "Safety",
+  Quality = "Quality",
+  Management = "Management",
+  Other = "Other"
 }
 
 export enum TrainingCategory {
-  FoodSafety = 'Food_Safety',
-  HACCP = 'HACCP',
-  SQF = 'SQF',
-  GMP = 'GMP',
-  Sanitation = 'Sanitation',
-  Allergen = 'Allergen',
-  RegulatoryCompliance = 'Regulatory_Compliance',
-  EquipmentOperation = 'Equipment_Operation',
-  Other = 'Other'
-}
-
-// Complaint related enums
-export enum ComplaintStatus {
-  New = 'New',
-  Under_Investigation = 'Under_Investigation',
-  Resolved = 'Resolved',
-  Closed = 'Closed',
-  Reopened = 'Reopened'
-}
-
-export enum ComplaintCategory {
-  ProductQuality = 'Product_Quality',
-  ForeignMaterial = 'Foreign_Material',
-  Packaging = 'Packaging',
-  Labeling = 'Labeling',
-  Allergen = 'Allergen',
-  Taste = 'Taste',
-  Appearance = 'Appearance',
-  ServiceIssue = 'Service_Issue',
-  Other = 'Other'
-}
-
-export enum ComplaintPriority {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Critical = 'Critical'
+  FoodSafety = "Food_Safety",
+  HACCP = "HACCP",
+  SQF = "SQF",
+  GMP = "GMP",
+  Sanitation = "Sanitation",
+  Allergen = "Allergen",
+  RegulatoryCompliance = "Regulatory_Compliance",
+  EquipmentOperation = "Equipment_Operation",
+  Other = "Other"
 }

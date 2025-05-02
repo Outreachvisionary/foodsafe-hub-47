@@ -15,6 +15,7 @@ export interface Facility {
   city?: string;
   zipcode?: string;
   location_data?: Record<string, any>;
+  facility_type?: string;
 }
 
 export interface FacilityStats {
@@ -34,7 +35,9 @@ export interface FacilityStats {
 }
 
 export interface FacilityFormProps {
-  facilityId?: string;
+  onSubmit: (data: Partial<Facility>) => void;
+  initialData?: Partial<Facility>;
+  isLoading?: boolean;
   isNewFacility?: boolean;
   onCancel?: () => void;
   onSubmitSuccess?: (facility: Facility) => void;

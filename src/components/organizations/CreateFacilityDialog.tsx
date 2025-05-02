@@ -41,6 +41,30 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
     setOpen(false);
   };
 
+  const handleSubmit = (data: Partial<Facility>) => {
+    // This is a mock implementation - in a real app, you'd call an API to create the facility
+    console.log('Creating facility with data:', data);
+    const mockFacility: Facility = {
+      id: Date.now().toString(),
+      organization_id: organizationId,
+      name: data.name || 'New Facility',
+      description: data.description,
+      address: data.address,
+      contact_email: data.contact_email,
+      contact_phone: data.contact_phone,
+      status: data.status || 'active',
+      country: data.country,
+      state: data.state,
+      city: data.city,
+      zipcode: data.zipcode,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      facility_type: data.facility_type
+    };
+    
+    handleSuccess(mockFacility);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -70,10 +94,12 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
         {/* Scrollable Area for Form */}
         <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
           <FacilityForm 
-            isNewFacility={true}
-            onCancel={() => setOpen(false)}
-            onSubmitSuccess={handleSuccess}
-            defaultValues={{ organization_id: organizationId, status: 'active' }}
+            onSubmit={handleSubmit}
+            isLoading={false}
+            initialData={{ 
+              organization_id: organizationId, 
+              status: 'active' 
+            }}
           />
         </ScrollArea>
       </DialogContent>
