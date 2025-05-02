@@ -1,3 +1,4 @@
+
 import { NCStatus, DocumentStatus, CAPAStatus } from '@/types/enums';
 
 export function ncStatusToString(status: NCStatus): string {
@@ -54,7 +55,52 @@ export function convertToCAPAStatus(statusString: string): CAPAStatus {
       return CAPAStatus.Closed;
     case "Overdue":
       return CAPAStatus.Overdue;
+    case "Completed":
+      return CAPAStatus.Completed;
+    case "Rejected":
+      return CAPAStatus.Rejected;
+    case "On Hold":
+      return CAPAStatus.OnHold;
+    case "Under Review":
+      return CAPAStatus.UnderReview;
     default:
       return CAPAStatus.Open; // Default to Open
+  }
+}
+
+// Add stringToNCStatus function
+export function stringToNCStatus(statusString: string): NCStatus {
+  // Map the string value to NCStatus enum
+  switch(statusString) {
+    case "Open":
+      return NCStatus.Open;
+    case "On Hold":
+      return NCStatus.OnHold;
+    case "Under Review":
+      return NCStatus.UnderReview;
+    case "In Progress":
+      return NCStatus.InProgress;
+    case "Resolved":
+      return NCStatus.Resolved;
+    case "Completed":
+      return NCStatus.Completed;
+    case "Closed":
+      return NCStatus.Closed;
+    case "Released":
+      return NCStatus.Released;
+    case "Disposed":
+      return NCStatus.Disposed;
+    case "Approved":
+      return NCStatus.Approved;
+    case "Rejected":
+      return NCStatus.Rejected;
+    case "Overdue":
+      return NCStatus.Overdue;
+    case "Pending Verification":
+      return NCStatus.PendingVerification;
+    case "Verified":
+      return NCStatus.Verified;
+    default:
+      return NCStatus.Open; // Default to Open
   }
 }

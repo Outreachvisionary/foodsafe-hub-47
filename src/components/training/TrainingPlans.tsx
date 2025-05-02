@@ -19,7 +19,7 @@ import {
   Calendar as CalendarIcon 
 } from "lucide-react";
 import { useTrainingContext } from "@/contexts/TrainingContext";
-import { TrainingPlan, TrainingPriority } from "@/types/training";
+import { TrainingPlan } from "@/types/training";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,8 +34,8 @@ const TrainingPlans = () => {
   const [newPlan, setNewPlan] = useState<Partial<TrainingPlan>>({
     name: '',
     description: '',
-    targetRoles: [], // Updated from target_roles
-    targetDepartments: [],
+    target_roles: [], // Updated from targetRoles
+    target_departments: [],
     courses: [],
     priority: 'Medium',
     status: 'Active',
@@ -61,9 +61,9 @@ const TrainingPlans = () => {
       await createTrainingPlan({
         name: "New Onboarding Plan",
         description: "Standard onboarding for new employees",
-        targetRoles: ["Production Staff", "Quality Team"],
+        target_roles: ["Production Staff", "Quality Team"],
         courses: [],
-        priority: "Medium" as TrainingPriority,
+        priority: "Medium",
         status: "Active"
       });
     } catch (error) {
@@ -115,13 +115,13 @@ const TrainingPlans = () => {
                   <div className="flex items-center text-sm">
                     <UserPlus className="h-4 w-4 mr-2 text-gray-500" />
                     <span>
-                      {plan.targetRoles?.length || 0} target roles
+                      {plan.target_roles?.length || 0} target roles
                     </span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                    <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
                     <span>
-                      {plan.durationDays || "N/A"} days duration
+                      {plan.duration_days || "N/A"} days duration
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
@@ -131,7 +131,7 @@ const TrainingPlans = () => {
                     <Badge variant="outline">
                       {plan.status || "Active"}
                     </Badge>
-                    {plan.isRequired && (
+                    {plan.is_required && (
                       <Badge variant="outline" className="bg-purple-100 text-purple-800">
                         Required
                       </Badge>

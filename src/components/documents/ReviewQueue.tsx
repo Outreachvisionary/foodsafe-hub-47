@@ -13,11 +13,11 @@ export const ReviewQueue: React.FC = () => {
     if (documents?.length) {
       // Filter documents that need review
       const pendingReview = documents.filter(doc => 
-        doc.status === 'Pending_Review'
+        doc.status === 'Pending Review'
       );
 
       const pendingApproval = documents.filter(doc => 
-        doc.status === 'Pending_Approval'
+        doc.status === 'Pending Approval'
       );
       
       const needsReviewByDate = documents.filter(doc => 

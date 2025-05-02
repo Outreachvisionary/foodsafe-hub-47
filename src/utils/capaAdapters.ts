@@ -1,5 +1,29 @@
 
-import { CAPA, CAPAStatus, CAPAPriority } from '@/types/capa';
+import { CAPAStatus, CAPAPriority } from '@/types/enums';
+
+export interface CAPA {
+  id: string;
+  title: string;
+  description: string;
+  status: CAPAStatus;
+  priority: CAPAPriority;
+  source: string;
+  source_id?: string;
+  assigned_to?: string;
+  due_date?: string;
+  root_cause?: string;
+  corrective_action?: string;
+  preventive_action?: string;
+  verification_method?: string;
+  effectiveness_criteria?: string;
+  department?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  closed_date?: string;
+  verified_date?: string;
+  effectiveness_rating?: string;
+}
 
 export const adaptCAPAToModel = (capaData: any): CAPA => {
   return {
@@ -29,7 +53,7 @@ export const convertToCAPAStatus = (status: string | CAPAStatus): CAPAStatus => 
   return stringToCAPAStatus(status);
 };
 
-// Add this to handle CAPA input
+// Add the CAPAInput interface
 export interface CAPAInput {
   title: string;
   description: string;

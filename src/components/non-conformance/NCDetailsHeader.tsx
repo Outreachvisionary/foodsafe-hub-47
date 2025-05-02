@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MoreHorizontal, Edit, FileText, Clock, User, Flag, Link as LinkIcon } from 'lucide-react';
 import {
@@ -24,7 +25,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ nonConformance }) => 
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0">
       <div className="flex items-center space-x-2">
         <h2 className="text-2xl font-bold">{nonConformance.title}</h2>
-        <NCStatusBadge status={nonConformance.status as NCStatus} />
+        <NCStatusBadge status={nonConformance.status} />
       </div>
       <div className="flex items-center space-x-2">
         <Button variant="outline" size="sm">

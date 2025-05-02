@@ -1,109 +1,113 @@
-import React, { useState } from 'react';
+// Import statements and the rest of the code...
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import FacilityForm from '@/components/facilities/FacilityForm';
-import { Facility } from '@/types/facility';
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { FacilityForm } from './FacilityForm';
+import { Facility, CreateFacilityInput } from '@/types/organization';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { createFacility } from '@/services/facilityService';
 
 interface CreateFacilityDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   organizationId: string;
-  onFacilityCreated?: (facility: Facility) => void;
-  trigger?: React.ReactNode;
+  onSubmitSuccess?: (facility: Facility) => void;
 }
 
-const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
-  organizationId,
-  onFacilityCreated,
-  trigger
+// Update the component to match the FacilityFormProps interface
+const CreateFacilityDialog = ({ 
+  isOpen, 
+  onClose, 
+  organizationId, 
+  onSubmitSuccess 
 }) => {
-  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  
+  // Reference to the dialog to focus on the first input when opened
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  const handleSuccess = (facility: Facility) => {
-    console.log('Facility created successfully in dialog:', facility);
-    if (onFacilityCreated) {
-      onFacilityCreated(facility);
+  useEffect(() => {
+    if (isOpen && dialogRef.current) {
+      // Focus on the first input in the dialog
+      const firstInput = dialogRef.current.querySelector('input, textarea, select');
+      if (firstInput instanceof HTMLElement) {
+        firstInput.focus();
+      }
     }
-    toast({
-      title: 'Success',
-      description: `Facility "${facility.name}" has been created.`,
-    });
-    setOpen(false);
+  }, [isOpen]);
+
+  const handleSubmit = async (data: Partial<Facility>) => {
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "Organization ID is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Create the facility with the organization ID
+      const facilityData = {
+        ...data,
+        organization_id: organizationId,
+      };
+
+      // Call the API to create the facility
+      const response = await createFacility(facilityData as CreateFacilityInput);
+
+      toast({
+        title: "Success",
+        description: "Facility created successfully",
+      });
+
+      // Return the created facility to the parent component
+      if (onSubmitSuccess) {
+        onSubmitSuccess(response as Facility);
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Error creating facility:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create facility",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSubmit = (data: Partial<Facility>) => {
-    // This is a mock implementation - in a real app, you'd call an API to create the facility
-    console.log('Creating facility with data:', data);
-    const mockFacility: Facility = {
-      id: Date.now().toString(),
-      organization_id: organizationId,
-      name: data.name || 'New Facility',
-      description: data.description,
-      address: data.address,
-      contact_email: data.contact_email,
-      contact_phone: data.contact_phone,
-      status: data.status || 'active',
-      country: data.country,
-      state: data.state,
-      city: data.city,
-      zipcode: data.zipcode,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      facility_type: data.facility_type
-    };
-    
-    handleSuccess(mockFacility);
-  };
-
+  if (!isOpen) return null;
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Facility
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent
-        style={{
-          width: '90%',
-          maxWidth: '700px',
-          maxHeight: '90vh',
-          overflowY: 'auto', // Enables scrolling if content overflows
-        }}
-        className="flex flex-col"
-      >
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[625px]" ref={dialogRef}>
         <DialogHeader>
-          <DialogTitle>Add Facility</DialogTitle>
+          <DialogTitle>Create New Facility</DialogTitle>
           <DialogDescription>
-            Add a new facility to this organization.
+            Add a new facility to your organization. Fill out the form below with the facility details.
           </DialogDescription>
         </DialogHeader>
-
-        {/* Scrollable Area for Form */}
-        <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
-          <FacilityForm 
-            onSubmit={handleSubmit}
-            isLoading={false}
-            initialData={{ 
-              organization_id: organizationId, 
-              status: 'active' 
-            }}
-            onSubmitSuccess={handleSuccess}
-            onCancel={() => setOpen(false)}
-            isNewFacility={true}
-          />
-        </ScrollArea>
+        
+        <FacilityForm 
+          onSubmit={handleSubmit} 
+          isLoading={false} 
+          initialData={{
+            organization_id: organizationId,
+            status: 'Active'
+          }}
+          onCancel={onClose}
+          isNewFacility={true}
+        />
       </DialogContent>
     </Dialog>
   );

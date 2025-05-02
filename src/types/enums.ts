@@ -1,4 +1,5 @@
 
+
 export enum NCStatus {
   Open = "Open",
   OnHold = "On Hold",
@@ -66,7 +67,7 @@ export enum TrainingCategory {
   Other = "Other"
 }
 
-// Add the missing CAPA enums
+// CAPA enums
 export enum CAPAStatus {
   Open = "Open",
   InProgress = "In Progress",
@@ -74,6 +75,11 @@ export enum CAPAStatus {
   Verified = "Verified",
   Closed = "Closed",
   Overdue = "Overdue",
+  // Adding the missing status values that are being used in components
+  Completed = "Completed",
+  Rejected = "Rejected",
+  OnHold = "On Hold",
+  UnderReview = "Under Review"
 }
 
 export enum CAPAPriority {
@@ -99,3 +105,31 @@ export enum CAPAEffectivenessRating {
   Effective = "Effective",
   HighlyEffective = "Highly Effective"
 }
+
+// Adding the missing complaint enums
+export enum ComplaintCategory {
+  ProductQuality = "Product_Quality",
+  FoodSafety = "Food_Safety", 
+  Packaging = "Packaging",
+  ForeignMaterial = "Foreign_Matter", 
+  Allergen = "Allergen",
+  CustomerService = "Customer_Service",
+  Documentation = "Documentation",
+  Other = "Other"
+}
+
+export enum ComplaintStatus {
+  New = "New",
+  Under_Investigation = "Under_Investigation",
+  Resolved = "Resolved",
+  Closed = "Closed",
+  Reopened = "Reopened"
+}
+
+export enum ComplaintPriority {
+  Low = "Low",
+  Medium = "Medium",
+  High = "High",
+  Critical = "Critical"
+}
+

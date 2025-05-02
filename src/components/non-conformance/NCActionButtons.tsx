@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
-import { isStatusEqual, stringToNCStatus } from '@/utils/typeAdapters';
+import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface NCActionButtonsProps {
   nonConformance: NonConformance;

@@ -11,7 +11,7 @@ const DocumentStatistics = () => {
   const totalDocuments = documents.length;
   const expiredDocuments = documents.filter(doc => doc.expiry_date && new Date(doc.expiry_date) < new Date()).length;
   const pendingReviewCount = documents.filter(doc => 
-    doc.status === 'Pending_Review'
+    doc.status === 'Pending Review'
   ).length;
   const activeCount = documents.filter(doc => 
     doc.status === 'Published'

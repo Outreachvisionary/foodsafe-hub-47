@@ -11,7 +11,7 @@ const DocumentDashboard = () => {
   const stats = {
     total: documents.length,
     drafts: documents.filter(doc => doc.status === 'Draft').length,
-    pending: documents.filter(doc => doc.status === 'Pending_Approval').length,
+    pending: documents.filter(doc => doc.status === 'Pending Approval').length,
     published: documents.filter(doc => doc.status === 'Published').length,
     expired: documents.filter(doc => doc.status === 'Expired').length,
     expiringSoon: documents.filter(doc => {
