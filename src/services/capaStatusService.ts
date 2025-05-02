@@ -1,53 +1,68 @@
 
-import { CAPAStatus } from '@/types/capa';
-import { mapInternalStatusToDb, mapDbStatusToInternal } from '@/services/capa/capaStatusMapper';
+import { CAPAStatus } from '@/types/enums';
+import { stringToCAPAStatus } from '@/utils/capaAdapters';
 
-// This function is now deprecated, use the one from capaStatusMapper instead
-export function mapInternalToStatus(status: CAPAStatus): string {
-  return status;
-}
-
-// This function is now deprecated, use the one from capaStatusMapper instead
-export function mapStatusToInternal(status: string): CAPAStatus {
-  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+// Get all possible next statuses based on current status
+export const getNextValidStatuses = (currentStatus: CAPAStatus | string): CAPAStatus[] => {
+  // Convert string status to enum if needed
+  const status = typeof currentStatus === 'string' 
+    ? stringToCAPAStatus(currentStatus)
+    : currentStatus;
   
-  switch (normalizedStatus) {
-    case 'open':
-      return 'Open';
-    case 'in-progress':
-    case 'in-process':
-    case 'investigating':
-      return 'In_Progress';
-    case 'pending-verification':
-    case 'pending-review':
-      return 'Pending_Verification';
-    case 'closed':
-    case 'complete':
-    case 'completed':
-      return 'Closed';
-    case 'verified':
-    case 'validated':
-      return 'Verified';
-    case 'overdue':
-      return 'Overdue';
+  switch (status) {
+    case CAPAStatus.Open:
+      // From Open, can move to In_Progress or On_Hold
+      return [CAPAStatus.InProgress, CAPAStatus.OnHold];
+      
+    case CAPAStatus.InProgress:
+      // From In_Progress, can move to Completed, On_Hold, or Pending_Verification
+      return [CAPAStatus.Completed, CAPAStatus.OnHold, CAPAStatus.PendingVerification];
+      
+    case CAPAStatus.PendingVerification:
+      // From Pending_Verification, can move to Verified, Rejected, or In_Progress (if needing more work)
+      return [CAPAStatus.Verified, CAPAStatus.Rejected, CAPAStatus.InProgress];
+      
+    case CAPAStatus.Verified:
+      // From Verified, can only move to Closed
+      return [CAPAStatus.Closed];
+      
+    case CAPAStatus.Rejected:
+      // From Rejected, can move back to In_Progress for more work
+      return [CAPAStatus.InProgress];
+      
+    case CAPAStatus.OnHold:
+      // From On_Hold, can move to Open or In_Progress
+      return [CAPAStatus.Open, CAPAStatus.InProgress];
+    
     default:
-      return 'Open';
+      // Default, return all statuses
+      return Object.values(CAPAStatus);
   }
-}
-
-// Check if status is equal (case-insensitive)
-export const isStatusEqual = (status1: string, status2: string): boolean => {
-  if (!status1 || !status2) return false;
-  return status1.toLowerCase().replace(/[_\s-]/g, '') === status2.toLowerCase().replace(/[_\s-]/g, '');
 };
 
-// Export functions from capaStatusMapper
-export { mapInternalStatusToDb, mapDbStatusToInternal };
+// Check if a status can be moved to another
+export const canChangeStatus = (currentStatus: CAPAStatus | string, newStatus: CAPAStatus | string): boolean => {
+  const fromStatus = typeof currentStatus === 'string' ? stringToCAPAStatus(currentStatus) : currentStatus;
+  const toStatus = typeof newStatus === 'string' ? stringToCAPAStatus(newStatus) : newStatus;
+  
+  const validNextStatuses = getNextValidStatuses(fromStatus);
+  return validNextStatuses.includes(toStatus);
+};
 
-export default {
-  mapInternalStatusToDb,
-  mapDbStatusToInternal,
-  mapInternalToStatus,
-  mapStatusToInternal,
-  isStatusEqual
+// Get status transitions for workflow visualization
+export const getStatusTransitions = () => {
+  return [
+    { from: CAPAStatus.Open, to: CAPAStatus.InProgress },
+    { from: CAPAStatus.Open, to: CAPAStatus.OnHold },
+    { from: CAPAStatus.InProgress, to: CAPAStatus.Completed },
+    { from: CAPAStatus.InProgress, to: CAPAStatus.PendingVerification },
+    { from: CAPAStatus.InProgress, to: CAPAStatus.OnHold },
+    { from: CAPAStatus.PendingVerification, to: CAPAStatus.Verified },
+    { from: CAPAStatus.PendingVerification, to: CAPAStatus.Rejected },
+    { from: CAPAStatus.PendingVerification, to: CAPAStatus.InProgress },
+    { from: CAPAStatus.Verified, to: CAPAStatus.Closed },
+    { from: CAPAStatus.Rejected, to: CAPAStatus.InProgress },
+    { from: CAPAStatus.OnHold, to: CAPAStatus.Open },
+    { from: CAPAStatus.OnHold, to: CAPAStatus.InProgress }
+  ];
 };

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Plus, Link as LinkIcon } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { convertToCAPAStatus } from '@/utils/capaAdapters';
+import { stringToCAPAStatus } from '@/utils/capaAdapters';
 import { CAPAStatusBadge } from './CAPAStatusBadge';
 
 interface LinkedCAPAsListProps {
@@ -39,7 +39,7 @@ const LinkedCAPAsList: React.FC<LinkedCAPAsListProps> = ({ capas = [], onLinkCAP
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="font-medium">{capa.title}</div>
-                    <CAPAStatusBadge status={convertToCAPAStatus(capa.status)} />
+                    <CAPAStatusBadge status={stringToCAPAStatus(capa.status.toString())} />
                   </div>
                   
                   <p className="text-sm text-muted-foreground mt-1">

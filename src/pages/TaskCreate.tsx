@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CheckSquare, FileText, AlertCircle, Calendar, Link as LinkIcon, User } from 'lucide-react';
+import { CheckSquare, Calendar, Link as LinkIcon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormSection } from '@/components/ui/form-section';
 import { Input } from '@/components/ui/input';
@@ -142,7 +142,7 @@ export default function TaskCreate() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormSection title="Task Details" icon={CheckSquare}>
+          <FormSection title="Task Details" icon={<CheckSquare className="h-5 w-5" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Task Title */}
               <div className="col-span-1 md:col-span-2">
@@ -285,7 +285,7 @@ export default function TaskCreate() {
             </div>
           </FormSection>
           
-          <FormSection title="Assignment & Scheduling" icon={User}>
+          <FormSection title="Assignment & Scheduling" icon={<User className="h-5 w-5" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Assignee */}
               <FormField
@@ -360,7 +360,7 @@ export default function TaskCreate() {
             </div>
           </FormSection>
           
-          <FormSection title="Related Items" icon={LinkIcon}>
+          <FormSection title="Related Items" icon={<LinkIcon className="h-5 w-5" />}>
             <div>
               {/* Related To */}
               <FormField

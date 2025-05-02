@@ -1,51 +1,68 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { NCStatus } from '@/types/non-conformance';
-import { isStatusEqual } from '@/utils/typeAdapters';
+import { NCStatus } from '@/types/enums';
+import { ncStatusToString } from '@/utils/typeAdapters';
 
-interface NCStatusBadgeProps {
+interface CAPAStatusBadgeProps {
   status: NCStatus | string;
+  className?: string;
 }
 
-const NCStatusBadge: React.FC<NCStatusBadgeProps> = ({ status }) => {
-  const getStatusStyles = (statusValue: NCStatus | string) => {
-    // Use case-insensitive comparison
-    if (isStatusEqual(statusValue, 'On Hold')) {
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200';
+export const CAPAStatusBadge: React.FC<CAPAStatusBadgeProps> = ({ status, className = '' }) => {
+  // Function to determine badge color based on status
+  const getBadgeStyles = () => {
+    const statusStr = typeof status === 'string' ? status : status.toString();
+    
+    switch(statusStr) {
+      case 'Open':
+      case NCStatus.Open:
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'In_Progress':
+      case NCStatus.InProgress:
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'Completed':
+      case NCStatus.Completed:
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Closed':
+      case NCStatus.Closed:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'Overdue':
+      case NCStatus.Overdue:
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'Pending_Verification':
+      case NCStatus.PendingVerification:
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Verified':
+      case NCStatus.Verified:
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Rejected':
+      case NCStatus.Rejected:
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'On_Hold':
+      case NCStatus.OnHold:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'Under_Review':
+      case NCStatus.UnderReview:
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-    if (isStatusEqual(statusValue, 'Under Review')) {
-      return 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200';
-    }
-    if (isStatusEqual(statusValue, 'Released')) {
-      return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
-    }
-    if (isStatusEqual(statusValue, 'Disposed')) {
-      return 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200';
-    }
-    if (isStatusEqual(statusValue, 'Approved')) {
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200';
-    }
-    if (isStatusEqual(statusValue, 'Rejected')) {
-      return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200';
-    }
-    if (isStatusEqual(statusValue, 'Resolved')) {
-      return 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-200';
-    }
-    if (isStatusEqual(statusValue, 'Closed')) {
-      return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
-    }
-    return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
+  };
+
+  // Format display text by replacing underscores with spaces
+  const formatStatusText = (statusValue: NCStatus | string): string => {
+    return ncStatusToString(statusValue as NCStatus);
   };
 
   return (
     <Badge 
-      variant="outline" 
-      className={`${getStatusStyles(status)} font-medium`}
+      variant="outline"
+      className={`font-normal ${getBadgeStyles()} ${className}`}
     >
-      {typeof status === 'string' ? status : status.toString()}
+      {formatStatusText(status)}
     </Badge>
   );
 };
 
-export default NCStatusBadge;
+export default CAPAStatusBadge;

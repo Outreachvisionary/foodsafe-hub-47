@@ -1,7 +1,7 @@
 
-import { CAPA, CAPAInput } from '@/types/capa';
+import { CAPA } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
-import { adaptCAPAToModel } from '@/utils/capaAdapters';
+import { adaptCAPAToModel, CAPAInput } from '@/utils/capaAdapters';
 
 export const updateCAPA = async (
   id: string,

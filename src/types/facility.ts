@@ -1,40 +1,42 @@
 
 export interface Facility {
   id: string;
-  name: string;
   organization_id: string;
-  status: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  zipcode?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  primary_contact?: string;
+  name: string;
   description?: string;
-  type?: string;
-  facility_type?: string;
-  created_at?: string;
-  updated_at?: string;
-  capacity?: number;
+  address?: string;
   contact_email?: string;
   contact_phone?: string;
-  location_coordinates?: {
-    latitude: number;
-    longitude: number;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  zipcode?: string;
+  location_data?: Record<string, any>;
+}
+
+export interface FacilityStats {
+  totalFacilities: number;
+  activeFacilities: number;
+  countryCounts: Record<string, number>;
+  standardsCompliance: {
+    compliant: number;
+    pending: number;
+    nonCompliant: number;
   };
-  certifications?: string[];
+  auditStats: {
+    completed: number;
+    scheduled: number;
+    overdue: number;
+  };
 }
 
 export interface FacilityFormProps {
-  onSubmit: (data: Partial<Facility>) => void;
-  initialData?: Partial<Facility>;
-  isLoading?: boolean;
-  defaultValues?: Partial<Facility>;
-  onSubmitSuccess?: (facility: Facility) => void;
+  facilityId?: string;
   isNewFacility?: boolean;
   onCancel?: () => void;
+  onSubmitSuccess?: (facility: Facility) => void;
+  defaultValues?: Partial<Facility>;
 }

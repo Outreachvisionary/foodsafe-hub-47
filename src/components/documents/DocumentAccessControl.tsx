@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -51,7 +52,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
     setIsLoading(true);
     try {
       if (documentService.fetchAccess) {
-        const accessData = await documentService.fetchAccess();
+        const accessData = await documentService.fetchAccess(documentId);
         setAccessList(accessData);
       } else {
         console.error('fetchAccess method not available');
@@ -85,7 +86,12 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
     
     try {
       if (documentService.grantAccess) {
-        const newAccess = await documentService.grantAccess();
+        const newAccess = await documentService.grantAccess(
+          documentId,
+          newUserId,
+          newPermissionLevel,
+          newUserRole
+        );
         
         if (newAccess) {
           setAccessList((prev) => [...prev, newAccess]);
@@ -118,7 +124,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentI
   const handleRevokeAccess = async (accessId: string) => {
     try {
       if (documentService.revokeAccess) {
-        await documentService.revokeAccess();
+        await documentService.revokeAccess(accessId);
         
         setAccessList(prev => prev.filter(access => access.id !== accessId));
         

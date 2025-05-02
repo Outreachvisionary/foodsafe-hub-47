@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { NonConformance } from '@/types/non-conformance';
+import { NonConformance, NCStatus } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
 import NCQuickActions from './NCQuickActions';
 import { updateNCStatus } from '@/services/nonConformanceService';
 import { toast } from 'sonner';
+import { stringToNCStatus } from '@/utils/typeAdapters';
 
 interface NCDetailsHeaderProps {
   data: NonConformance;
@@ -60,7 +61,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
       <div className="space-y-1">
         <div className="flex items-center space-x-2">
-          <NCStatusBadge status={data.status} />
+          <NCStatusBadge status={stringToNCStatus(data.status)} />
           <span className="text-sm text-gray-500">
             Reported: {new Date(data.reported_date || '').toLocaleDateString()}
           </span>

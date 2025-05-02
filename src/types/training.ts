@@ -1,70 +1,66 @@
 
-import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
+import { TrainingStatus } from '@/types/enums';
 
-// Re-export the enums for use elsewhere
-export { TrainingStatus, TrainingType, TrainingCategory };
+export type TrainingType = 
+  | 'Onboarding'
+  | 'Compliance'
+  | 'Technical'
+  | 'Safety'
+  | 'Quality'
+  | 'Management'
+  | 'Other';
 
-// Define training completion status type
-export type TrainingCompletionStatus = 'not-started' | 'in-progress' | 'completed' | 'overdue' | 'cancelled';
-
-// Define training priority type
-export type TrainingPriority = 'Low' | 'Medium' | 'High' | 'Critical';
-
-export interface TrainingCourse {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  duration_hours: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  prerequisite_courses?: string[];
-}
+export type TrainingCategory = 
+  | 'Food_Safety'
+  | 'HACCP'
+  | 'SQF'
+  | 'GMP'
+  | 'Sanitation'
+  | 'Allergen'
+  | 'Regulatory_Compliance'
+  | 'Equipment_Operation'
+  | 'Other';
 
 export interface TrainingPlan {
   id: string;
   name: string;
-  title?: string; // Added for compatibility with existing code
-  description: string;
-  targetRoles: string[];
-  targetDepartments: string[];
-  courses: string[];
-  durationDays: number;
-  isRequired: boolean;
-  priority: TrainingPriority;
+  description?: string;
+  target_roles?: string[];
+  target_departments?: string[];
+  duration_days?: number;
+  is_required: boolean;
+  start_date?: string;
+  end_date?: string;
   status: string;
-  startDate: string;
-  endDate: string;
+  priority?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
-  required_for: string[];
-  is_active: boolean;
+  courses: string[];
+  coursesIncluded?: Course[];
+  is_automated: boolean;
+  automation_trigger?: string;
+  related_standards?: string[];
 }
 
 export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
-  status: string;
-  startDate: string;
-  due_date?: string; // Added for compatibility
-  department?: string; // Added for compatibility
-  training_type?: TrainingType; // Added for compatibility
-  training_category?: TrainingCategory; // Added for compatibility
-  assigned_to?: string[]; // Added for compatibility
-  participants: string[];
-  completionStatus?: TrainingCompletionStatus;
-  completion_status?: string; // Added for compatibility
-  materials_id?: string[]; // Added for compatibility
-  required_roles?: string[]; // Added for compatibility
-  is_recurring?: boolean; // Added for compatibility
-  recurring_interval?: string; // Added for compatibility
-  created_by?: string; // Added for compatibility
+  training_type: TrainingType;
+  training_category?: TrainingCategory;
+  start_date?: string;
+  due_date?: string;
+  completion_status: TrainingStatus;
+  assigned_to: string[];
+  department?: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
+  is_recurring: boolean;
+  recurring_interval?: number;
+  materials_id?: string[];
+  required_roles?: string[];
 }
 
 export interface TrainingRecord {
@@ -83,64 +79,60 @@ export interface TrainingRecord {
   next_recurrence?: string;
 }
 
-export interface DepartmentStat {
-  department: string;
-  name: string;
-  total: number;
-  completed: number;
-  overdue: number;
-  compliance: number;
-  totalAssigned: number;
-  complianceRate: number;
-}
-
-export interface TrainingStats {
-  total: number;
-  completed: number;
-  inProgress: number;
-  overdue: number;
-  complianceRate: number;
-  byDepartment: DepartmentStat[];
-  byType: Record<string, number>;
-  byStatus: Record<string, number>;
-  recentActivity: any[];
-}
-
-// Add Certification interface for ExpiringCertificationsCard
-export interface Certification {
-  id: string;
-  name: string;
-  employee: string;
-  employeeId: string;
-  expiryDate: string;
-  issueDate: string;
-  issuedBy?: string;
-  status: 'active' | 'expired' | 'revoked';
-  attachmentUrl?: string;
-}
-
-// Definition of RecurrencePattern
-export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
-
-// Re-export Training for compatibility
-export interface Training {
+export interface Course {
   id: string;
   title: string;
   description?: string;
-  status: TrainingStatus;
-  type: TrainingType;
-  category?: TrainingCategory;
-  start_date: string;
-  due_date?: string;
-  completion_date?: string;
-  completion_score?: number;
-  assigned_to: string[];
+  category?: string;
   created_by: string;
   created_at: string;
-  updated_at?: string;
-  completion_certificate?: string;
-  is_recurring: boolean;
-  recurrence_pattern?: string;
-  required_roles?: string[];
-  department_id?: string;
+  updated_at: string;
+  duration_hours?: number;
+  is_active: boolean;
+  prerequisite_courses?: string[];
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  email?: string;
+  department?: string;
+  role?: string;
+  hire_date?: string;
+  status: 'active' | 'inactive' | 'onboarding';
+}
+
+export interface DocumentControlIntegration {
+  document_id: string;
+  training_required: boolean;
+  training_session_id?: string;
+  update_triggers_training: boolean;
+  target_roles?: string[];
+  expiration_triggers_training?: boolean;
+}
+
+export interface TrainingAutomationConfig {
+  id: string;
+  enabled: boolean;
+  document_changes_trigger: boolean;
+  new_employee_trigger: boolean;
+  role_change_trigger: boolean;
+  rules: AutoAssignRule[];
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
+export interface AutoAssignRule {
+  id: string;
+  trigger_type: 'document_change' | 'new_employee' | 'role_change' | 'department_change' | 'standard_update';
+  condition: {
+    document_category?: string[];
+    role?: string[];
+    department?: string[];
+    standard?: string[];
+  };
+  training_plan_id?: string;
+  training_session_id?: string;
+  is_active: boolean;
 }

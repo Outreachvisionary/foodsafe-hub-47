@@ -70,10 +70,10 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
         {/* Scrollable Area for Form */}
         <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
           <FacilityForm 
-            defaultValues={{ organization_id: organizationId, status: 'active' } as any}
-            onSubmitSuccess={handleSuccess}
             isNewFacility={true}
             onCancel={() => setOpen(false)}
+            onSubmitSuccess={handleSuccess}
+            defaultValues={{ organization_id: organizationId, status: 'active' }}
           />
         </ScrollArea>
       </DialogContent>

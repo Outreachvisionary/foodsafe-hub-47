@@ -1,110 +1,96 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { NonConformance, NCStatus } from '@/types/non-conformance';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Clock, CheckCircle, Trash2, ArrowRight } from 'lucide-react';
-import { format } from 'date-fns';
-import { isStatusEqual } from '@/utils/typeAdapters';
+import { stringToNCStatus, ncStatusToString } from '@/utils/typeAdapters';
 
 interface NCRecentItemsProps {
   items: NonConformance[];
-  limit?: number;
-  onViewDetails?: (id: string) => void;
+  loading: boolean;
+  onItemClick: (itemId: string) => void;
 }
 
-const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5, onViewDetails }) => {
-  const navigate = useNavigate();
-  const displayItems = items.slice(0, limit);
-  
-  const getStatusBadge = (status: NCStatus | string) => {
-    if (isStatusEqual(status, 'On Hold')) {
-      return (
-        <Badge variant="outline" className="bg-orange-100 text-orange-800 flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          On Hold
-        </Badge>
-      );
-    }
-    if (isStatusEqual(status, 'Under Review')) {
-      return (
-        <Badge variant="outline" className="bg-blue-100 text-blue-800 flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          Under Review
-        </Badge>
-      );
-    }
-    if (isStatusEqual(status, 'Released')) {
-      return (
-        <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
-          <CheckCircle className="h-3 w-3" />
-          Released
-        </Badge>
-      );
-    }
-    if (isStatusEqual(status, 'Disposed')) {
-      return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-800 flex items-center gap-1">
-          <Trash2 className="h-3 w-3" />
-          Disposed
-        </Badge>
-      );
-    }
-
-    // Default badge
-    return (
-      <Badge variant="outline" className="bg-gray-100 text-gray-800">
-        {typeof status === 'string' ? status : status.toString()}
-      </Badge>
-    );
-  };
-  
-  const handleViewDetails = (id: string) => {
-    if (onViewDetails) {
-      onViewDetails(id);
+const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, loading, onItemClick }) => {
+  const getStatusBadgeColor = (status: string): string => {
+    const ncStatus = stringToNCStatus(status);
+    
+    if (ncStatus === NCStatus.OnHold) {
+      return 'bg-orange-100 text-orange-800';
+    } else if (ncStatus === NCStatus.Open) {
+      return 'bg-blue-100 text-blue-800';
+    } else if (ncStatus === NCStatus.UnderReview) {
+      return 'bg-purple-100 text-purple-800';
+    } else if (ncStatus === NCStatus.InProgress) {
+      return 'bg-yellow-100 text-yellow-800';
+    } else if (ncStatus === NCStatus.Resolved || ncStatus === NCStatus.Completed) {
+      return 'bg-green-100 text-green-800';
+    } else if (ncStatus === NCStatus.Closed) {
+      return 'bg-gray-100 text-gray-800';
     } else {
-      navigate(`/non-conformance/${id}`);
+      return 'bg-gray-100 text-gray-800';
     }
   };
-  
-  if (displayItems.length === 0) {
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading) {
     return (
-      <div className="text-center py-6">
-        <p className="text-muted-foreground">No non-conformance items found</p>
-      </div>
+      <Card className="h-full w-full">
+        <CardHeader>
+          <CardTitle>Recent Non-Conformances</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Loading recent items...</p>
+        </CardContent>
+      </Card>
     );
   }
-  
+
   return (
-    <div className="space-y-4">
-      {displayItems.map((item) => (
-        <div 
-          key={item.id} 
-          className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <div className="space-y-2 mb-3 sm:mb-0">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <h3 className="font-medium text-foreground">{item.title}</h3>
-              {getStatusBadge(item.status)}
-            </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-              <span>{item.item_name}</span>
-              <span>{item.item_category}</span>
-              <span>Reported: {format(new Date(item.reported_date || ''), 'MMM d, yyyy')}</span>
-            </div>
+    <Card className="h-full w-full">
+      <CardHeader>
+        <CardTitle>Recent Non-Conformances</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length > 0 ? (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <div 
+                key={item.id}
+                className="flex justify-between items-start p-3 border rounded-md cursor-pointer hover:bg-muted/50"
+                onClick={() => onItemClick(item.id)}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className={getStatusBadgeColor(item.status)}>
+                      {ncStatusToString(item.status as NCStatus)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(item.reported_date)}
+                    </span>
+                  </div>
+                  <p className="font-medium line-clamp-1">{item.title}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    {item.item_name}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="self-end sm:self-center"
-            onClick={() => handleViewDetails(item.id)}
-          >
-            View <ArrowRight className="ml-1 h-3 w-3" />
-          </Button>
-        </div>
-      ))}
-    </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">No recent non-conformances</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
