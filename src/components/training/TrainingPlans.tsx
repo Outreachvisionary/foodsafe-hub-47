@@ -34,7 +34,7 @@ const TrainingPlans = () => {
   const [newPlan, setNewPlan] = useState<Partial<TrainingPlan>>({
     name: '',
     description: '',
-    target_roles: [], // Updated from targetRoles
+    target_roles: [], // Using the correct property name
     target_departments: [],
     courses: [],
     priority: 'Medium',
@@ -72,7 +72,7 @@ const TrainingPlans = () => {
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
+    switch(priority?.toLowerCase()) {
       case 'critical': return 'bg-red-100 text-red-800';
       case 'high': return 'bg-orange-100 text-orange-800';
       case 'medium': return 'bg-blue-100 text-blue-800';

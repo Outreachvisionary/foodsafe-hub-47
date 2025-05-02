@@ -1,8 +1,44 @@
 
-import { NCStatus, DocumentStatus, CAPAStatus } from '@/types/enums';
+import { NCStatus, DocumentStatus, CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 export function ncStatusToString(status: NCStatus): string {
   return status.toString();
+}
+
+export function stringToNCStatus(statusString: string): NCStatus {
+  // Map the string value to NCStatus enum
+  switch(statusString) {
+    case "Open":
+      return NCStatus.Open;
+    case "On Hold":
+      return NCStatus.OnHold;
+    case "Under Review":
+      return NCStatus.UnderReview;
+    case "In Progress":
+      return NCStatus.InProgress;
+    case "Resolved":
+      return NCStatus.Resolved;
+    case "Completed":
+      return NCStatus.Completed;
+    case "Closed":
+      return NCStatus.Closed;
+    case "Released":
+      return NCStatus.Released;
+    case "Disposed":
+      return NCStatus.Disposed;
+    case "Approved":
+      return NCStatus.Approved;
+    case "Rejected":
+      return NCStatus.Rejected;
+    case "Overdue":
+      return NCStatus.Overdue;
+    case "Pending Verification":
+      return NCStatus.PendingVerification;
+    case "Verified":
+      return NCStatus.Verified;
+    default:
+      return NCStatus.Open; // Default to Open
+  }
 }
 
 export function isStatusEqual(status1: string | NCStatus | null, status2: string | NCStatus | null): boolean {
@@ -40,8 +76,8 @@ export function isDocumentStatusEqual(status1: string | DocumentStatus | null, s
   return s1 === s2;
 }
 
-export function convertToCAPAStatus(statusString: string): CAPAStatus {
-  // Map the string value to CAPAStatus enum
+export function stringToCAPAStatus(statusString: string): CAPAStatus {
+  // Map string to enum values
   switch(statusString) {
     case "Open":
       return CAPAStatus.Open;
@@ -64,43 +100,50 @@ export function convertToCAPAStatus(statusString: string): CAPAStatus {
     case "Under Review":
       return CAPAStatus.UnderReview;
     default:
-      return CAPAStatus.Open; // Default to Open
+      return CAPAStatus.Open;
   }
 }
 
-// Add stringToNCStatus function
-export function stringToNCStatus(statusString: string): NCStatus {
-  // Map the string value to NCStatus enum
-  switch(statusString) {
-    case "Open":
-      return NCStatus.Open;
-    case "On Hold":
-      return NCStatus.OnHold;
-    case "Under Review":
-      return NCStatus.UnderReview;
-    case "In Progress":
-      return NCStatus.InProgress;
-    case "Resolved":
-      return NCStatus.Resolved;
-    case "Completed":
-      return NCStatus.Completed;
-    case "Closed":
-      return NCStatus.Closed;
-    case "Released":
-      return NCStatus.Released;
-    case "Disposed":
-      return NCStatus.Disposed;
-    case "Approved":
-      return NCStatus.Approved;
-    case "Rejected":
-      return NCStatus.Rejected;
-    case "Overdue":
-      return NCStatus.Overdue;
-    case "Pending Verification":
-      return NCStatus.PendingVerification;
-    case "Verified":
-      return NCStatus.Verified;
+export function stringToCAPAPriority(priority: string): CAPAPriority {
+  switch(priority) {
+    case "Low":
+      return CAPAPriority.Low;
+    case "Medium":
+      return CAPAPriority.Medium;
+    case "High":
+      return CAPAPriority.High;
+    case "Critical":
+      return CAPAPriority.Critical;
     default:
-      return NCStatus.Open; // Default to Open
+      return CAPAPriority.Medium;
   }
+}
+
+export function stringToCAPASource(source: string): CAPASource {
+  switch(source) {
+    case "Audit":
+      return CAPASource.Audit;
+    case "Customer Complaint":
+      return CAPASource.CustomerComplaint;
+    case "Internal Report":
+      return CAPASource.InternalReport;
+    case "Non Conformance":
+      return CAPASource.NonConformance;
+    case "Regulatory Inspection":
+      return CAPASource.RegulatoryInspection;
+    case "Supplier Issue":
+      return CAPASource.SupplierIssue;
+    case "Other":
+      return CAPASource.Other;
+    default:
+      return CAPASource.Other;
+  }
+}
+
+export function convertToCAPAStatus(status: string | CAPAStatus): CAPAStatus {
+  if (typeof status !== 'string') {
+    return status;
+  }
+  
+  return stringToCAPAStatus(status);
 }

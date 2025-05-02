@@ -2,7 +2,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { NCStatus } from '@/types/enums';
-import { ncStatusToString } from '@/utils/typeAdapters';
 
 interface NCStatusBadgeProps {
   status: NCStatus | string;
@@ -59,7 +58,7 @@ const NCStatusBadge: React.FC<NCStatusBadgeProps> = ({ status, className = '' })
     if (typeof statusValue === 'string') {
       return statusValue.replace(/_/g, ' ');
     }
-    return String(statusValue);
+    return statusValue ? String(statusValue).replace(/_/g, ' ') : '';
   };
 
   return (

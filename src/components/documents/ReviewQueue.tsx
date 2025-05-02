@@ -4,6 +4,7 @@ import { useDocument } from '@/contexts/DocumentContext';
 import { Document } from '@/types/document';
 import DocumentList from './DocumentList';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { compareDocumentStatus } from '@/utils/documentUtils';
 
 export const ReviewQueue: React.FC = () => {
   const { documents, loading, error } = useDocument();
@@ -13,11 +14,11 @@ export const ReviewQueue: React.FC = () => {
     if (documents?.length) {
       // Filter documents that need review
       const pendingReview = documents.filter(doc => 
-        doc.status === 'Pending Review'
+        compareDocumentStatus(doc.status, "Pending Review")
       );
 
       const pendingApproval = documents.filter(doc => 
-        doc.status === 'Pending Approval'
+        compareDocumentStatus(doc.status, "Pending Approval")
       );
       
       const needsReviewByDate = documents.filter(doc => 

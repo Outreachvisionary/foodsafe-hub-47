@@ -1,3 +1,4 @@
+
 // Import statements and the rest of the code...
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -7,8 +8,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { FacilityForm } from './FacilityForm';
-import { Facility, CreateFacilityInput } from '@/types/organization';
+import { FacilityForm } from '@/components/organizations/FacilityForm';
+import { Facility } from '@/types/facility';
+import { CreateFacilityInput } from '@/types/organization';
 import { useToast } from '@/hooks/use-toast';
 import { createFacility } from '@/services/facilityService';
 
@@ -25,7 +27,7 @@ const CreateFacilityDialog = ({
   onClose, 
   organizationId, 
   onSubmitSuccess 
-}) => {
+}: CreateFacilityDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -100,7 +102,7 @@ const CreateFacilityDialog = ({
         
         <FacilityForm 
           onSubmit={handleSubmit} 
-          isLoading={false} 
+          isLoading={isLoading} 
           initialData={{
             organization_id: organizationId,
             status: 'Active'
