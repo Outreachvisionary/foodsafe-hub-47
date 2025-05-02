@@ -70,11 +70,11 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      // Convert database records to Document types
+      // Convert database records to Document types with proper type handling
       const documents: Document[] = (data || []).map(item => ({
         ...item,
         status: stringToDocumentStatus(item.status as string),
-        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available')
+        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available') as unknown as CheckoutStatus
       }));
       
       return documents;
@@ -101,11 +101,11 @@ export const useDocumentService = () => {
       if (error) throw error;
       if (!data) return null;
       
-      // Convert to Document type
+      // Convert to Document type with proper type handling
       const document: Document = {
         ...data,
         status: stringToDocumentStatus(data.status as string),
-        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available')
+        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available') as unknown as CheckoutStatus
       };
       
       return document;
@@ -520,18 +520,18 @@ export const useDocumentService = () => {
     loading,
     error,
     getDocuments,
-    getDocumentById: useCallback(async (id: string): Promise<Document | null> => null, []),
+    getDocumentById,
     checkoutDocument,
     checkinDocument,
     getDocumentVersions,
     createDocument,
-    getDocumentComments: useCallback(async (documentId: string): Promise<DocumentComment[]> => [], []),
-    createDocumentComment: useCallback(async (): Promise<DocumentComment | null> => null, []),
-    deleteDocument: useCallback(async (): Promise<boolean> => true, []),
-    getDownloadUrl: useCallback(async (): Promise<string | null> => null, []),
-    fetchAccess: useCallback(async (): Promise<DocumentAccess[]> => [], []),
-    grantAccess: useCallback(async (): Promise<DocumentAccess | null> => null, []),
-    revokeAccess: useCallback(async (): Promise<boolean> => true, [])
+    getDocumentComments,
+    createDocumentComment,
+    deleteDocument,
+    getDownloadUrl,
+    fetchAccess,
+    grantAccess,
+    revokeAccess
   };
 };
 

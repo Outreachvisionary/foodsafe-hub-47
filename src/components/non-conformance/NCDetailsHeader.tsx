@@ -38,7 +38,9 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ data, onDataUpdated }
     // The parent component will show the CAPA creation dialog
   };
 
-  const getPriorityBadgeClass = (priority: string) => {
+  const getPriorityBadgeClass = (priority: string | undefined) => {
+    if (!priority) return 'bg-gray-100 text-gray-800';
+    
     const priorityLower = priority.toLowerCase();
     
     if (priorityLower === 'critical') {

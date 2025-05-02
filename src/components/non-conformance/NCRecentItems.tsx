@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Clock, CheckCircle, Trash2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface NCRecentItemsProps {
   items: NonConformance[];
@@ -17,37 +18,46 @@ const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5, onViewD
   const navigate = useNavigate();
   const displayItems = items.slice(0, limit);
   
-  const getStatusBadge = (status: NCStatus) => {
-    switch (status) {
-      case 'On Hold':
-        return (
-          <Badge variant="outline" className="bg-orange-100 text-orange-800 flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            On Hold
-          </Badge>
-        );
-      case 'Under Review':
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Under Review
-          </Badge>
-        );
-      case 'Released':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Released
-          </Badge>
-        );
-      case 'Disposed':
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 flex items-center gap-1">
-            <Trash2 className="h-3 w-3" />
-            Disposed
-          </Badge>
-        );
+  const getStatusBadge = (status: NCStatus | string) => {
+    if (isStatusEqual(status, 'On Hold')) {
+      return (
+        <Badge variant="outline" className="bg-orange-100 text-orange-800 flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          On Hold
+        </Badge>
+      );
     }
+    if (isStatusEqual(status, 'Under Review')) {
+      return (
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Under Review
+        </Badge>
+      );
+    }
+    if (isStatusEqual(status, 'Released')) {
+      return (
+        <Badge variant="outline" className="bg-green-100 text-green-800 flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Released
+        </Badge>
+      );
+    }
+    if (isStatusEqual(status, 'Disposed')) {
+      return (
+        <Badge variant="outline" className="bg-gray-100 text-gray-800 flex items-center gap-1">
+          <Trash2 className="h-3 w-3" />
+          Disposed
+        </Badge>
+      );
+    }
+
+    // Default badge
+    return (
+      <Badge variant="outline" className="bg-gray-100 text-gray-800">
+        {typeof status === 'string' ? status : status.toString()}
+      </Badge>
+    );
   };
   
   const handleViewDetails = (id: string) => {
@@ -81,7 +91,7 @@ const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items, limit = 5, onViewD
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
               <span>{item.item_name}</span>
               <span>{item.item_category}</span>
-              <span>Reported: {format(new Date(item.reported_date), 'MMM d, yyyy')}</span>
+              <span>Reported: {format(new Date(item.reported_date || ''), 'MMM d, yyyy')}</span>
             </div>
           </div>
           <Button 

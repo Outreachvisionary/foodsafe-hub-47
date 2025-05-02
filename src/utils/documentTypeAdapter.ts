@@ -1,4 +1,3 @@
-
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 
 /**

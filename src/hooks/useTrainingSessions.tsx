@@ -1,6 +1,9 @@
+
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { trainingStatusToString, stringToTrainingStatus } from '@/utils/trainingAdapters';
+import { supabase } from '@/integrations/supabase/client';
+import { TrainingStatus } from '@/types/enums';
 
 export interface TrainingSession {
   id: string;
@@ -47,11 +50,7 @@ export const useTrainingSessions = () => {
       console.error('Error fetching training sessions:', err);
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
       
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch training sessions',
-        variant: 'destructive',
-      });
+      toast.error('Failed to fetch training sessions');
     } finally {
       setLoading(false);
     }
@@ -97,20 +96,13 @@ export const useTrainingSessions = () => {
       
       setSessions(prev => [convertedSession, ...prev]);
       
-      toast({
-        title: 'Success',
-        description: 'Training session created successfully',
-      });
+      toast.success('Training session created successfully');
       
       return data;
     } catch (err) {
       console.error('Error creating training session:', err);
       
-      toast({
-        title: 'Error',
-        description: 'Failed to create training session',
-        variant: 'destructive',
-      });
+      toast.error('Failed to create training session');
       
       return null;
     } finally {
@@ -140,20 +132,13 @@ export const useTrainingSessions = () => {
         )
       );
       
-      toast({
-        title: 'Status Updated',
-        description: `Training session status updated to ${trainingStatusToString(newStatus)}`,
-      });
+      toast.success(`Training session status updated to ${trainingStatusToString(newStatus)}`);
       
       return data;
     } catch (err) {
       console.error('Error updating training session status:', err);
       
-      toast({
-        title: 'Error',
-        description: 'Failed to update training session status',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update training session status');
       
       return null;
     } finally {

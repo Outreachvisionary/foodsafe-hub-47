@@ -8,8 +8,9 @@ export const documentStatusToString = (status: DocumentStatus | string): string 
 };
 
 export const stringToDocumentStatus = (status: string): DocumentStatus => {
-  // Implementation depends on your DocumentStatus enum
-  return status as unknown as DocumentStatus;
+  // Normalize the status string to match the DocumentStatus enum format
+  const normalizedStatus = status.replace(/ /g, '_').toUpperCase();
+  return normalizedStatus as unknown as DocumentStatus;
 };
 
 export const checkoutStatusToString = (status: string): string => {

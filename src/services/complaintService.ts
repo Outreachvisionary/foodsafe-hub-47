@@ -1,7 +1,6 @@
-
 import { Complaint } from '@/types/complaint';
-import { supabase } from '@/lib/supabase';
-import { convertToComplaintStatus } from '@/utils/typeAdapters';
+import { ComplaintStatus } from '@/types/enums';
+import { supabase } from '@/integrations/supabase/client';
 
 // Fetch a complaint by its ID
 export const fetchComplaintById = async (id: string): Promise<Complaint> => {
