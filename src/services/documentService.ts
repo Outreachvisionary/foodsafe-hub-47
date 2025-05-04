@@ -22,6 +22,7 @@ let mockDocuments: Document[] = [
     updated_at: '2023-07-01T00:00:00.000Z',
     folder_id: '/',
     expiry_date: '2024-07-01T00:00:00.000Z',
+    file_path: '/documents/haccp_plan.pdf',
   },
   {
     id: '2',
@@ -38,6 +39,7 @@ let mockDocuments: Document[] = [
     updated_at: '2023-06-15T00:00:00.000Z',
     folder_id: '/',
     expiry_date: '2024-06-15T00:00:00.000Z',
+    file_path: '/documents/sanitation_sop.docx',
   },
   {
     id: '3',
@@ -54,6 +56,7 @@ let mockDocuments: Document[] = [
     updated_at: '2023-07-15T00:00:00.000Z',
     folder_id: '/',
     expiry_date: '2024-07-15T00:00:00.000Z',
+    file_path: '/documents/q2_audit.pdf',
   }
 ];
 

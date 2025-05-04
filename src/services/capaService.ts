@@ -1,13 +1,19 @@
-
 import { CAPA, CAPAActivity } from '@/types/capa';
 import { CAPAStats } from '@/types/capa';
 import { getMockCAPAs } from '@/services/mockDataService';
 import { getCAPAStats, getCAPAById } from '@/services/capa/capaService';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 
 // Function to return mock CAPAs
 export const getCAPAs = async (): Promise<CAPA[]> => {
-  // Return mock data
-  return getMockCAPAs();
+  // Convert mock data to ensure proper typing
+  const mockData = getMockCAPAs();
+  return mockData.map(item => ({
+    ...item,
+    status: item.status as unknown as CAPAStatus,
+    priority: item.priority as unknown as CAPAPriority,
+    source: item.source as unknown as CAPASource,
+  }));
 };
 
 // Function to get CAPA activities

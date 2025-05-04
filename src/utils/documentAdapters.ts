@@ -4,7 +4,7 @@ import { DocumentStatus } from '@/types/enums';
 // Document status conversion functions
 export const documentStatusToString = (status: DocumentStatus | string): string => {
   if (typeof status === 'string') return status;
-  return status as string;
+  return String(status);
 };
 
 export const stringToDocumentStatus = (status: string): DocumentStatus => {

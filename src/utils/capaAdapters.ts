@@ -1,6 +1,5 @@
 
 import { CAPAStatus, CAPAPriority } from '@/types/enums';
-import { stringToCAPAStatus } from './typeAdapters';
 
 export interface CAPA {
   id: string;
