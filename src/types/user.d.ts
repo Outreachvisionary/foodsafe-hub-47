@@ -1,4 +1,11 @@
 
+import { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
+
+// Re-export the types from enums for proper type compatibility
+export { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
+
+export type DocumentVersionType = 'major' | 'minor';
+
 export interface User {
   id: string;
   email?: string;

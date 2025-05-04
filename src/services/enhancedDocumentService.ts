@@ -1,8 +1,19 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Cache for document counts to reduce API calls
+let documentCountsCache: Record<string, number> | null = null;
+let documentCountsCacheExpiry = 0;
+const CACHE_TTL = 60000; // 1 minute cache
+
 export const getDocumentCounts = async () => {
   try {
+    // Return cached data if available and not expired
+    const now = Date.now();
+    if (documentCountsCache && documentCountsCacheExpiry > now) {
+      return documentCountsCache;
+    }
+    
     const { data: documents, error } = await supabase
       .from('documents')
       .select('status');
@@ -14,6 +25,10 @@ export const getDocumentCounts = async () => {
       return acc;
     }, {});
     
+    // Update cache
+    documentCountsCache = counts;
+    documentCountsCacheExpiry = now + CACHE_TTL;
+    
     return counts;
   } catch (error) {
     console.error('Error getting document counts:', error);
@@ -21,15 +36,32 @@ export const getDocumentCounts = async () => {
   }
 };
 
+// Document cache
+const documentsCache: Record<string, any> = {
+  data: null,
+  expiry: 0
+};
+
 export const fetchDocuments = async () => {
   try {
+    // Return cached data if available and not expired
+    const now = Date.now();
+    if (documentsCache.data && documentsCache.expiry > now) {
+      return documentsCache.data;
+    }
+    
     const { data, error } = await supabase
       .from('documents')
-      .select('*');
+      .select('*')
+      .order('updated_at', { ascending: false });
 
     if (error) throw error;
 
-    return data || [];
+    // Update cache
+    documentsCache.data = data || [];
+    documentsCache.expiry = now + CACHE_TTL;
+    
+    return documentsCache.data;
   } catch (error) {
     console.error('Error fetching documents:', error);
     return [];
@@ -44,6 +76,10 @@ export const createDocument = async (documentData: any) => {
       .select();
 
     if (error) throw error;
+
+    // Invalidate cache
+    documentCountsCache = null;
+    documentsCache.data = null;
 
     // Properly handle the array type to avoid 'never' type errors
     if (data && Array.isArray(data) && data.length > 0) {
@@ -66,6 +102,10 @@ export const updateDocument = async (id: string, documentData: any) => {
 
     if (error) throw error;
 
+    // Invalidate cache
+    documentCountsCache = null;
+    documentsCache.data = null;
+
     // Properly handle the array type to avoid 'never' type errors
     if (data && Array.isArray(data) && data.length > 0) {
       return data[0];
@@ -85,6 +125,10 @@ export const deleteDocument = async (id: string) => {
       .eq('id', id);
 
     if (error) throw error;
+    
+    // Invalidate cache
+    documentCountsCache = null;
+    documentsCache.data = null;
   } catch (error) {
     console.error('Error deleting document:', error);
     throw error;

@@ -49,7 +49,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Set up subscription for auth changes
-      const { data: authListener } = supabase.auth.onAuthStateChange(
+      const { data: listener } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
           setUser(session?.user || null);
           setIsAuthenticated(!!session?.user);
@@ -63,15 +63,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       );
 
-      return authListener;
+      return () => {
+        listener.subscription.unsubscribe();
+      };
     };
     
-    const authSubscription = setupAuthListener();
+    setupAuthListener();
     
-    // Cleanup function
-    return () => {
-      authSubscription.then(subscription => subscription.unsubscribe());
-    };
+    // No need to return a cleanup function as setupAuthListener handles it
   }, []);
 
   const signIn = async (email: string, password: string) => {

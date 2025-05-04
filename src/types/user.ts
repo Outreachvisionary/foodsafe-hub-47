@@ -1,24 +1,20 @@
 
 export interface User {
   id: string;
-  email: string;
-  created_at: string;
-  profile?: UserProfile;
-  role?: string;
-  full_name?: string;
-  department?: string;
+  email?: string;
+  name?: string;
   avatar_url?: string;
+  role?: string;
+  department?: string;
+  organization_id?: string;
+  facility_ids?: string[];
   preferences?: {
     reportLayout?: string;
     dashboardView?: string;
     theme?: string;
     [key: string]: any;
   };
-  organization_id?: string;
-}
-
-export interface AppUser extends User {
-  // Add any app-specific user properties here
+  status?: 'active' | 'inactive' | 'pending';
 }
 
 export interface UserProfile {
@@ -30,6 +26,15 @@ export interface UserProfile {
   organization_id?: string;
   status?: string;
   avatar_url?: string;
-  preferred_language?: string;
   preferences?: Record<string, any>;
+}
+
+export interface UserContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateUser: (data: Partial<UserProfile>) => Promise<void>;
 }

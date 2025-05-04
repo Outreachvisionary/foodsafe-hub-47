@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useAuth';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -14,17 +14,19 @@ import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
-  const { user } = useAuth();
+  const { user, profile } = useUser();
   const [activeTab, setActiveTab] = useState<string>('prebuilt');
   const [reportLayout, setReportLayout] = useState<string>('grid');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load user preferences if available
-    if (user?.preferences?.reportLayout) {
+    // Try to get layout from profile first, then user
+    if (profile?.preferences?.reportLayout) {
+      setReportLayout(profile.preferences.reportLayout);
+    } else if (user?.preferences?.reportLayout) {
       setReportLayout(user.preferences.reportLayout);
     }
-  }, [user]);
+  }, [user, profile]);
 
   const handleLayoutChange = async (layout: string) => {
     setReportLayout(layout);

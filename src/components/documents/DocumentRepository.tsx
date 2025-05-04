@@ -1,6 +1,5 @@
 
-// Only updating the relevant part with the issue
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,23 +9,28 @@ import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
+import { useOptimizedDocuments } from '@/hooks/useOptimizedDocuments';
 
 export const DocumentRepository = () => {
   const [currentPath, setCurrentPath] = useState('/');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredDocs, setFilteredDocs] = useState<DocumentType[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
+  // Use optimized hook for better performance
   const { 
-    documents, 
+    documents,
     loading, 
     error,
-    fetchDocuments
-  } = useDocument();
+    refresh
+  } = useOptimizedDocuments({
+    initialFetch: true,
+    realtime: true,
+    cacheTime: 30000 // 30 seconds cache
+  });
 
   // Mock folders for now since the context doesn't have real folders
   const folders: any[] = [];  
@@ -34,14 +38,15 @@ export const DocumentRepository = () => {
   // Handle UI errors separately from the context error
   useEffect(() => {
     if (error) {
-      setRepositoryError(error);
+      setRepositoryError(error.message);
     } else {
       setRepositoryError(null);
     }
   }, [error]);
 
-  useEffect(() => {
-    if (!documents) return;
+  // Use memo for filtered documents to avoid recalculation on every render
+  const filteredDocs = useMemo(() => {
+    if (!documents) return [];
     
     let filtered = documents;
     
@@ -60,12 +65,13 @@ export const DocumentRepository = () => {
       );
     }
     
-    setFilteredDocs(filtered);
+    return filtered;
   }, [documents, currentPath, searchTerm]);
 
-  const currentFolders = folders?.filter(folder => 
-    folder.path === currentPath
-  ) || [];
+  const currentFolders = useMemo(() => 
+    folders?.filter(folder => folder.path === currentPath) || [], 
+    [folders, currentPath]
+  );
 
   const handlePathChange = (path: string) => {
     setCurrentPath(path);
@@ -73,7 +79,7 @@ export const DocumentRepository = () => {
 
   const handleRetry = () => {
     setRepositoryError(null);
-    fetchDocuments();
+    refresh();
   };
 
   const isRootPath = currentPath === '/';
@@ -86,7 +92,7 @@ export const DocumentRepository = () => {
     console.log(`Creating folder ${folderName} at ${currentPath}`);
     setShowCreateFolderDialog(false);
     // After creating folder, refresh the document list
-    fetchDocuments();
+    refresh();
   };
 
   const handleUploadDocument = (files: File[]) => {
@@ -94,21 +100,21 @@ export const DocumentRepository = () => {
     console.log(`Uploading ${files.length} files to ${currentPath}`);
     setShowUploadDialog(false);
     // After uploading, refresh the document list
-    fetchDocuments();
+    refresh();
   };
 
   const handleDeleteDocument = (documentId: string) => {
     // Implementation for deleting a document
     console.log(`Deleting document ${documentId}`);
     // After deleting, refresh the document list
-    fetchDocuments();
+    refresh();
   };
 
   const handleMoveDocument = (documentId: string, newPath: string) => {
     // Implementation for moving a document
     console.log(`Moving document ${documentId} to ${newPath}`);
     // After moving, refresh the document list
-    fetchDocuments();
+    refresh();
   };
 
   const handleDocumentClick = (document: DocumentType) => {
