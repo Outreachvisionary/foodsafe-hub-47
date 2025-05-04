@@ -40,12 +40,13 @@ export const createDocument = async (documentData: any) => {
   try {
     const { data, error } = await supabase
       .from('documents')
-      .insert([documentData]);
+      .insert([documentData])
+      .select();
 
     if (error) throw error;
 
-    // Changed this to check for data existence and then check length
-    return data && data.length > 0 ? data[0] : null;
+    // Type the data properly to avoid the "never" type
+    return data && Array.isArray(data) && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error creating document:', error);
     throw error;
@@ -57,12 +58,13 @@ export const updateDocument = async (id: string, documentData: any) => {
     const { data, error } = await supabase
       .from('documents')
       .update(documentData)
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) throw error;
 
-    // Changed this to check for data existence and then check length
-    return data && data.length > 0 ? data[0] : null;
+    // Type the data properly to avoid the "never" type
+    return data && Array.isArray(data) && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error updating document:', error);
     throw error;
