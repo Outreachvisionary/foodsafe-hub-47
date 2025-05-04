@@ -330,8 +330,15 @@ export const fetchNCStats = async (): Promise<NCStats> => {
       byStatus: {} as Record<string, number>,
       byCategory: {} as Record<string, number>,
       byReason: {} as Record<string, number>,
+      byReasonCategory: {} as Record<string, number>,
+      byRiskLevel: {} as Record<string, number>,
+      overdue: 0,
+      pendingReview: 0,
+      recentlyResolved: 0,
       recentItems: nonConformances.slice(0, 5)
     };
+    
+    const today = new Date();
     
     nonConformances.forEach(nc => {
       // Count by status
@@ -341,7 +348,35 @@ export const fetchNCStats = async (): Promise<NCStats> => {
       stats.byCategory[nc.item_category] = (stats.byCategory[nc.item_category] || 0) + 1;
       
       // Count by reason
-      stats.byReason[nc.reason_category] = (stats.byReason[nc.reason_category] || 0) + 1;
+      if (nc.reason_category) {
+        stats.byReason[nc.reason_category] = (stats.byReason[nc.reason_category] || 0) + 1;
+        stats.byReasonCategory[nc.reason_category] = (stats.byReasonCategory[nc.reason_category] || 0) + 1;
+      }
+      
+      // Count by risk level
+      if (nc.risk_level) {
+        stats.byRiskLevel[nc.risk_level] = (stats.byRiskLevel[nc.risk_level] || 0) + 1;
+      }
+      
+      // Calculate overdue items
+      if (nc.due_date && new Date(nc.due_date) < today && 
+          nc.status !== 'Resolved' && nc.status !== 'Closed') {
+        stats.overdue++;
+      }
+      
+      // Calculate pending review items
+      if (nc.status === 'Under_Review') {
+        stats.pendingReview++;
+      }
+      
+      // Calculate recently resolved items
+      if (nc.status === 'Resolved' && nc.resolution_date) {
+        const resolutionDate = new Date(nc.resolution_date);
+        const daysDiff = Math.floor((today.getTime() - resolutionDate.getTime()) / (1000 * 3600 * 24));
+        if (daysDiff <= 7) { // Resolved within the last week
+          stats.recentlyResolved++;
+        }
+      }
       
       // Sum quantity on hold
       if (nc.quantity_on_hold) {

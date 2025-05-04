@@ -44,6 +44,7 @@ export const createDocument = async (documentData: any) => {
 
     if (error) throw error;
 
+    // Changed this to check for data existence and then check length
     return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error creating document:', error);
@@ -60,6 +61,7 @@ export const updateDocument = async (id: string, documentData: any) => {
 
     if (error) throw error;
 
+    // Changed this to check for data existence and then check length
     return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error updating document:', error);
