@@ -37,45 +37,41 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const session = supabase.auth.getSession();
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
-      setIsAuthenticated(!!session?.user);
+    const setupAuthListener = async () => {
+      const { data } = await session;
       
-      if (session?.user) {
-        await fetchProfile(session.user.id);
+      if (data?.session?.user) {
+        setUser(data.session.user);
+        setIsAuthenticated(true);
+        await fetchProfile(data.session.user.id);
       } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    const fetchProfile = async (userId: string) => {
-      try {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else {
-          setProfile(profileData as UserProfile || null);
-        }
-      } catch (error) {
-        console.error('Unexpected error fetching profile:', error);
-      } finally {
         setLoading(false);
       }
-    };
+      
+      // Set up subscription for auth changes
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          setUser(session?.user || null);
+          setIsAuthenticated(!!session?.user);
+          
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          } else {
+            setProfile(null);
+            setLoading(false);
+          }
+        }
+      );
 
-    if ((session as any)?.data?.session?.user) {
-      setUser((session as any)?.data?.session?.user);
-      setIsAuthenticated(true);
-      fetchProfile((session as any)?.data?.session?.user.id);
-    } else {
-      setLoading(false);
-    }
+      return authListener;
+    };
+    
+    const authSubscription = setupAuthListener();
+    
+    // Cleanup function
+    return () => {
+      authSubscription.then(subscription => subscription.unsubscribe());
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -153,10 +149,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error fetching profile:', error);
       } else if (data) {
-        setProfile(data as UserProfile);
+        // Ensure data has the correct shape for UserProfile
+        const userProfile: UserProfile = {
+          id: data.id,
+          full_name: data.full_name,
+          email: data.email,
+          role: data.role,
+          department: data.department,
+          organization_id: data.organization_id,
+          status: data.status,
+          avatar_url: data.avatar_url,
+          preferences: data.preferences || {}
+        };
+        setProfile(userProfile);
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setLoading(false);
     }
   };
 

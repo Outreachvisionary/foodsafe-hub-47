@@ -45,8 +45,11 @@ export const createDocument = async (documentData: any) => {
 
     if (error) throw error;
 
-    // Type the data properly to avoid the "never" type
-    return data && Array.isArray(data) && data.length > 0 ? data[0] : null;
+    // Properly handle the array type to avoid 'never' type errors
+    if (data && Array.isArray(data) && data.length > 0) {
+      return data[0];
+    }
+    return null;
   } catch (error) {
     console.error('Error creating document:', error);
     throw error;
@@ -63,8 +66,11 @@ export const updateDocument = async (id: string, documentData: any) => {
 
     if (error) throw error;
 
-    // Type the data properly to avoid the "never" type
-    return data && Array.isArray(data) && data.length > 0 ? data[0] : null;
+    // Properly handle the array type to avoid 'never' type errors
+    if (data && Array.isArray(data) && data.length > 0) {
+      return data[0];
+    }
+    return null;
   } catch (error) {
     console.error('Error updating document:', error);
     throw error;
