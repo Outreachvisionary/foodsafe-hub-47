@@ -39,6 +39,9 @@ const ModuleContent = lazy(() => import('@/components/standards/ModuleContent'))
 const TestingVerification = lazy(() => import('@/pages/TestingVerification'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const CAPA = lazy(() => import('@/pages/CAPA'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
+const Performance = lazy(() => import('@/pages/Performance'));
 import ScheduleAuditPage from "./pages/ScheduleAuditPage";
 import NewSupplierPage from "./pages/NewSupplierPage";
 
@@ -68,13 +71,23 @@ function App() {
             {/* Tasks routes */}
             <Route path="tasks" element={<Tasks />} />
             
+            {/* Organization and facility routes */}
             <Route path="organizations" element={<OrganizationsList />} />
             <Route path="organization" element={<OrganizationManagement />} />
             <Route path="facilities" element={<FacilityManagement />} />
             <Route path="departments" element={<DepartmentManagement />} />
+            
+            {/* User management */}
             <Route path="users" element={<UserManagement />} />
+            
+            {/* Training */}
             <Route path="training" element={<TrainingModule />} />
+            
+            {/* Audits */}
             <Route path="audits" element={<AuditsModule />} />
+            <Route path="audits/schedule" element={<ScheduleAuditPage />} />
+            
+            {/* Traceability */}
             <Route path="traceability" element={<Traceability />} />
             
             {/* Non-conformance routes */}
@@ -86,8 +99,19 @@ function App() {
             <Route path="capa" element={<CAPA />} />
             <Route path="capa/:id" element={<CAPA />} />
             
+            {/* Suppliers */}
             <Route path="suppliers" element={<SupplierManagement />} />
+            <Route path="suppliers/new" element={<NewSupplierPage />} />
+            
+            {/* Complaints */}
             <Route path="complaints" element={<ComplaintManagement />} />
+            
+            {/* Reports */}
+            <Route path="reports" element={<Reports />} />
+            
+            {/* Analytics and Performance */}
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="performance" element={<Performance />} />
             
             {/* Standards routes */}
             <Route path="standards" element={<StandardsPage />} />
@@ -102,8 +126,7 @@ function App() {
             <Route path="haccp" element={<NotFound />} />
             <Route path="database-test" element={<DatabaseConnectionTest />} />
             <Route path="roles" element={<RoleManagement />} />
-            <Route path="/audits/schedule" element={<ScheduleAuditPage />} />
-            <Route path="/suppliers/new" element={<NewSupplierPage />} />
+            
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

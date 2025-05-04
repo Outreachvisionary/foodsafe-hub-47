@@ -31,12 +31,12 @@ const ProfileTile: React.FC<ProfileTileProps> = ({
   }
 
   // Get initials for avatar
-  const initials = user.full_name
-    ? user.full_name.split(' ').map(n => n[0]).join('')
+  const initials = user.full_name || user.name
+    ? (user.full_name || user.name)?.split(' ').map(n => n[0]).join('')
     : user.email?.charAt(0).toUpperCase() || 'U';
 
-  // Support both full_name directly or via profile for backward compatibility
-  const displayName = user.full_name || user.email || 'Unknown User';
+  // Support both full_name and name properties for user display
+  const displayName = user.full_name || user.name || user.email || 'Unknown User';
   
   return (
     <Card className="w-full">

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -14,7 +14,7 @@ import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
-  const { user, profile } = useUser();
+  const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('prebuilt');
   const [reportLayout, setReportLayout] = useState<string>('grid');
   const navigate = useNavigate();

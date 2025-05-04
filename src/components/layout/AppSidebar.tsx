@@ -22,7 +22,10 @@ import {
   Warehouse,
   Activity,
   LineChart,
-  Award
+  Award,
+  BarChart,
+  Clipboard,
+  PieChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -78,6 +81,7 @@ const AppSidebar = () => {
       items: [
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Organizations', path: '/organizations', icon: Building },
+        { name: 'Departments', path: '/departments', icon: Building },
         { name: 'Certifications', path: '/certifications', icon: Award },
         { name: 'Settings', path: '/settings', icon: Settings },
       ]

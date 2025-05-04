@@ -11,7 +11,9 @@ import {
   ChevronDown,
   Truck,
   ShieldAlert,
-  BookOpen
+  BookOpen,
+  BarChart2,
+  ClipboardCheck
 } from 'lucide-react';
 
 const navItems = [
@@ -24,6 +26,8 @@ const navItems = [
   { name: 'Suppliers', path: '/suppliers', icon: <Truck className="h-5 w-5" /> },
   { name: 'Facilities', path: '/facilities', icon: <Building className="h-5 w-5" /> },
   { name: 'Users', path: '/users', icon: <UserCheck className="h-5 w-5" /> },
+  { name: 'Reports', path: '/reports', icon: <BarChart2 className="h-5 w-5" /> },
+  { name: 'Tasks', path: '/tasks', icon: <ClipboardCheck className="h-5 w-5" /> },
 ];
 
 const Sidebar: React.FC = () => {
