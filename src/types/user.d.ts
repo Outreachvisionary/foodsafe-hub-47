@@ -8,7 +8,12 @@ export interface User {
   department?: string;
   organization_id?: string;
   facility_ids?: string[];
-  preferences?: Record<string, any>;
+  preferences?: {
+    reportLayout?: string;
+    dashboardView?: string;
+    theme?: string;
+    [key: string]: any;
+  };
   status?: 'active' | 'inactive' | 'pending';
 }
 
