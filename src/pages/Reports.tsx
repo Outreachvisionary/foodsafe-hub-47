@@ -21,8 +21,8 @@ const Reports = () => {
 
   useEffect(() => {
     // Load user preferences if available
-    if (user && user.preferences) {
-      setReportLayout(user.preferences.reportLayout || 'grid');
+    if (user?.preferences?.reportLayout) {
+      setReportLayout(user.preferences.reportLayout);
     }
   }, [user]);
 

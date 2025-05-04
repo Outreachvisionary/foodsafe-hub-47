@@ -4,7 +4,7 @@ import {
   TrainingType, 
   TrainingCategory 
 } from '@/types/enums';
-import { TrainingPriority, TrainingCompletionStatus, RecurrencePattern } from '@/types/training';
+import { TrainingPriority } from '@/types/training';
 
 // Map database string values to our type system
 export function mapToTrainingType(value: string): TrainingType {
@@ -53,8 +53,8 @@ export function mapToTrainingStatus(value: string): TrainingStatus {
   return mapping[value.toLowerCase()] || TrainingStatus.NotStarted;
 }
 
-export function mapToCompletionStatus(value: string): TrainingCompletionStatus {
-  const mapping: Record<string, TrainingCompletionStatus> = {
+export function mapToCompletionStatus(value: string): string {
+  const mapping: Record<string, string> = {
     'Not Started': 'not-started',
     'In Progress': 'in-progress',
     'Completed': 'completed',
@@ -77,8 +77,8 @@ export function mapToTrainingPriority(value: string): TrainingPriority {
   return mapping[value.toLowerCase()] || TrainingPriority.Medium;
 }
 
-export function mapToRecurrencePattern(value: string): RecurrencePattern {
-  const mapping: Record<string, RecurrencePattern> = {
+export function mapToRecurrencePattern(value: string): string {
+  const mapping: Record<string, string> = {
     'daily': 'daily',
     'weekly': 'weekly',
     'monthly': 'monthly',

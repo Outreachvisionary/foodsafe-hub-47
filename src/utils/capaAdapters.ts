@@ -1,5 +1,6 @@
 
 import { CAPAStatus, CAPAPriority } from '@/types/enums';
+import { stringToCAPAStatus } from './typeAdapters';
 
 export interface CAPA {
   id: string;
@@ -35,7 +36,7 @@ export const adaptCAPAToModel = (capaData: any): CAPA => {
 
 export const capaStatusToString = (status: CAPAStatus): string => {
   if (typeof status === 'string') return status;
-  return status.toString().replace(/_/g, ' ');
+  return status as unknown as string;
 };
 
 export const stringToCAPAStatus = (status: string): CAPAStatus => {

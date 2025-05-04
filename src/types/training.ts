@@ -1,4 +1,3 @@
-
 import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 
 export interface Training {
@@ -30,7 +29,7 @@ export interface TrainingRecord {
   employee_name: string;
   status: TrainingStatus;
   assigned_date: string;
-  due_date?: string;
+  due_date: string;
   completed_date?: string;
   score?: number;
   notes?: string;

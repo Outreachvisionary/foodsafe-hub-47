@@ -1,8 +1,8 @@
 
 import { CAPA } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
-import { adaptCAPAToModel, CAPAInput } from '@/utils/capaAdapters';
 import { stringToCAPASource } from '@/utils/typeAdapters';
+import { CAPAStatus } from '@/types/enums';
 
 export const updateCAPA = async (
   id: string,
@@ -26,7 +26,13 @@ export const updateCAPA = async (
       throw error;
     }
 
-    return adaptCAPAToModel(data);
+    // Make sure we return properly typed data
+    const result: CAPA = {
+      ...data,
+      status: data.status as CAPAStatus,
+    };
+
+    return result;
   } catch (error) {
     console.error('Failed to update CAPA:', error);
     return null;
@@ -73,7 +79,13 @@ export const completeCAPA = async (
       performed_at: now
     });
 
-    return adaptCAPAToModel(data);
+    // Make sure we return properly typed data
+    const result: CAPA = {
+      ...data,
+      status: data.status as CAPAStatus,
+    };
+
+    return result;
   } catch (error) {
     console.error('Failed to complete CAPA:', error);
     return null;

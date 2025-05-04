@@ -1,5 +1,5 @@
 
-import { DocumentStatus, CAPAStatus, CAPASource, CAPAPriority, NCStatus } from '@/types/enums';
+import { DocumentStatus, CAPAStatus, CAPASource, CAPAPriority, NCStatus, CAPAEffectivenessRating, CheckoutStatus } from '@/types/enums';
 
 export const stringToDocumentStatus = (status: string): DocumentStatus => {
   switch (status) {
@@ -63,7 +63,41 @@ export const stringToCAPASource = (source: string): CAPASource => {
   }
 };
 
-// Add missing utility functions
+// Add missing utility functions for tests
+export const isDocumentStatus = (status: any, compareWith: string): boolean => {
+  return String(status) === compareWith;
+};
+
+export const isCheckoutStatus = (status: any, compareWith: string): boolean => {
+  return String(status) === compareWith;
+};
+
+export const convertToDocumentStatus = (status: string): DocumentStatus => {
+  return stringToDocumentStatus(status);
+};
+
+export const convertToCheckoutStatus = (status?: string): CheckoutStatus => {
+  if (!status) return CheckoutStatus.Available;
+  switch (status) {
+    case 'Available': return CheckoutStatus.Available;
+    case 'Checked_Out': return CheckoutStatus.CheckedOut;
+    case 'Locked': return CheckoutStatus.Locked;
+    default: return CheckoutStatus.Available;
+  }
+};
+
+export const convertToEffectivenessRating = (rating?: string): CAPAEffectivenessRating => {
+  if (!rating) return CAPAEffectivenessRating.NotEffective;
+  switch (rating) {
+    case 'Effective': return CAPAEffectivenessRating.Effective;
+    case 'Highly_Effective': return CAPAEffectivenessRating.HighlyEffective;
+    case 'Partially_Effective': return CAPAEffectivenessRating.PartiallyEffective;
+    case 'Not_Effective': return CAPAEffectivenessRating.NotEffective;
+    default: return CAPAEffectivenessRating.NotEffective;
+  }
+};
+
+// Add any other missing utility functions
 export const isDocumentStatusEqual = (status: any, compareWith: DocumentStatus): boolean => {
   if (typeof status === 'string') {
     return stringToDocumentStatus(status) === compareWith;
@@ -91,5 +125,3 @@ export const formatEnumValue = (value: string): string => {
 export const convertToCAPAStatus = (status: string): CAPAStatus => {
   return stringToCAPAStatus(status);
 };
-
-// Add any other missing utility functions

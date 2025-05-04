@@ -1,6 +1,7 @@
+
 // Mock document service implementation
 
-import { Document, DocumentCategory, DocumentStatus } from '@/types/document';
+import { Document, DocumentCategory } from '@/types/document';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentActivity, DocumentActionType } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
@@ -14,7 +15,7 @@ let mockDocuments: Document[] = [
     file_size: 1024 * 1024,
     file_type: 'application/pdf',
     category: 'HACCP Plan',
-    status: 'Active',
+    status: DocumentStatus.Active,
     version: 1,
     created_by: 'admin',
     created_at: '2023-07-01T00:00:00.000Z',
@@ -30,7 +31,7 @@ let mockDocuments: Document[] = [
     file_size: 512 * 1024,
     file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     category: 'SOP',
-    status: 'Active',
+    status: DocumentStatus.Active,
     version: 2,
     created_by: 'admin',
     created_at: '2023-06-15T00:00:00.000Z',
@@ -46,7 +47,7 @@ let mockDocuments: Document[] = [
     file_size: 2 * 1024 * 1024,
     file_type: 'application/pdf',
     category: 'Audit Report',
-    status: 'Pending Review',
+    status: DocumentStatus.PendingReview,
     version: 1,
     created_by: 'auditor',
     created_at: '2023-07-15T00:00:00.000Z',
@@ -102,8 +103,8 @@ export const deleteDocument = async (id: string): Promise<void> => {
 export const fetchActiveDocuments = async () => {
   try {
     return {
-      status: DocumentStatus.Active,  // Use enum instead of string
-      documents: mockDocuments.filter(doc => doc.status === 'Active'),
+      status: DocumentStatus.Active,
+      documents: mockDocuments.filter(doc => doc.status === DocumentStatus.Active),
     };
   } catch (error) {
     console.error("Error fetching active documents:", error);

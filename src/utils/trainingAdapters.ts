@@ -4,7 +4,7 @@ import { TrainingStatus } from '@/types/enums';
 // Training status conversion functions
 export const trainingStatusToString = (status: TrainingStatus | string): string => {
   if (typeof status === 'string') return status;
-  return status.toString().replace(/_/g, ' ');
+  return status as string;
 };
 
 export const stringToTrainingStatus = (status: string): TrainingStatus => {

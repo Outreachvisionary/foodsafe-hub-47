@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord, TrainingSession, TrainingStatus } from '@/types/training';
+import { TrainingRecord, TrainingSession } from '@/types/training';
+import { TrainingStatus } from '@/types/enums';
 import { v4 as uuidv4 } from 'uuid';
 
 // Training services
@@ -153,8 +154,8 @@ export const updateTrainingStatus = async (
   };
   
   // Add completion date if completing the training
-  if (newStatus === 'Completed') {
-    updates.completion_date = new Date().toISOString();
+  if (newStatus === TrainingStatus.Completed) {
+    updates.completed_date = new Date().toISOString();
     if (score !== undefined) updates.score = score;
   }
 

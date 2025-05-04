@@ -1,6 +1,4 @@
 
-import { jest } from '@jest/globals';
-
 // Mock navigation
 export const mockNavigate = jest.fn();
 
