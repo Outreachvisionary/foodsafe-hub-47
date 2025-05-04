@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { TrainingSession, TrainingPlan, TrainingCourse, DepartmentStat, TrainingStatus } from '@/types/training';
-import { TrainingType, TrainingCategory } from '@/types/enums';
+import { TrainingSession, TrainingPlan, TrainingCourse, DepartmentStat } from '@/types/training';
+import { TrainingType, TrainingCategory, TrainingStatus } from '@/types/enums';
 
 // Define the context type
 export interface TrainingContextType {

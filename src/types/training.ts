@@ -1,6 +1,41 @@
 
 import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 
+export interface Training {
+  id: string;
+  title: string;
+  description?: string;
+  status: TrainingStatus;
+  type: TrainingType;
+  category?: TrainingCategory;
+  start_date: string;
+  due_date?: string;
+  completion_date?: string;
+  completion_score?: number;
+  assigned_to: string[];
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  completion_certificate?: string;
+  is_recurring: boolean;
+  recurrence_pattern?: string;
+  required_roles?: string[];
+  department_id?: string;
+}
+
+export interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date?: string;
+  completed_date?: string;
+  score?: number;
+  notes?: string;
+}
+
 export interface TrainingPlan {
   id: string;
   name: string;
@@ -14,12 +49,20 @@ export interface TrainingPlan {
   status: string;
   start_date: string;
   end_date: string;
-  is_automated: boolean;
+  created_by: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
   is_active: boolean;
+  is_automated: boolean;
   required_for?: string[];
+  // Adding missing properties that were causing errors
+  targetRoles?: string[];
+  targetDepartments?: string[];
+  durationDays?: number;
+  isRequired?: boolean;
+  startDate?: string;
+  endDate?: string;
+  coursesIncluded?: string[];
 }
 
 export interface TrainingCourse {
@@ -129,8 +172,8 @@ export interface Certification {
   id: string;
   employeeId: string;
   employee_name: string;
-  certificationName: string; // For backward compatibility
-  name: string; // Add the name property
+  certificationName: string;
+  name: string;
   issueDate: string;
   expiryDate: string;
   status: 'active' | 'expired' | 'revoked';
@@ -145,7 +188,6 @@ export enum TrainingPriority {
   Critical = "Critical"
 }
 
-// Add missing DepartmentStat interface
 export interface DepartmentStat {
   department: string;
   name: string;
@@ -156,3 +198,10 @@ export interface DepartmentStat {
   totalAssigned: number;
   complianceRate: number;
 }
+
+export type TrainingCompletionStatus = 'not-started' | 'in-progress' | 'completed' | 'overdue' | 'cancelled';
+
+export type RecurrencePattern = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+
+// Re-export enums from types/enums for better compatibility
+export { TrainingStatus, TrainingType, TrainingCategory };

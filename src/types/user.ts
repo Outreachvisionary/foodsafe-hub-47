@@ -1,6 +1,4 @@
 
-import { UserProfile } from "@/types/user";
-
 export interface User {
   id: string;
   email: string;
@@ -8,8 +6,8 @@ export interface User {
   profile?: UserProfile;
   role?: string;
   full_name?: string;
-  department?: string; // Add missing department property
-  avatar_url?: string; // Add missing avatar_url property
+  department?: string;
+  avatar_url?: string;
   preferences?: {
     reportLayout?: string;
     dashboardView?: string;
@@ -32,6 +30,6 @@ export interface UserProfile {
   organization_id?: string;
   status?: string;
   avatar_url?: string;
-  preferred_language?: string; // Add missing property
+  preferred_language?: string;
   preferences?: Record<string, any>;
 }

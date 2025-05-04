@@ -1,4 +1,4 @@
-// Update only the relevant parts of the Reports page
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -11,11 +11,13 @@ import PrebuiltReports from '@/components/reports/PrebuiltReports';
 import ScheduledReports from '@/components/reports/ScheduledReports';
 import ModuleIntegration from '@/components/reports/ModuleIntegration';
 import { User } from '@/types/user';
+import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('prebuilt');
   const [reportLayout, setReportLayout] = useState<string>('grid');
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Load user preferences if available
@@ -28,15 +30,10 @@ const Reports = () => {
     setReportLayout(layout);
     // Save user preference (this would be implemented in a real app)
     console.log(`Saving layout preference: ${layout}`);
-    
-    // In a real implementation, you would update the user's preferences
-    // Example:
-    // if (user) {
-    //   await updateUserPreferences(user.id, {
-    //     ...user.preferences,
-    //     reportLayout: layout
-    //   });
-    // }
+  };
+
+  const handleNavigateToModule = (modulePath: string) => {
+    navigate(`/${modulePath}`);
   };
 
   return (
@@ -87,7 +84,7 @@ const Reports = () => {
             </TabsContent>
 
             <TabsContent value="integrations" className="mt-0">
-              <ModuleIntegration />
+              <ModuleIntegration onNavigateToModule={handleNavigateToModule} />
             </TabsContent>
           </CardContent>
         </Card>

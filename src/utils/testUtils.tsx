@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { UserProvider } from '@/contexts/UserContext';
 
 /**
@@ -45,15 +45,15 @@ jest.mock('react-router-dom', () => ({
  */
 export const renderWithUser = (
   ui: React.ReactElement,
-  { user = null, ...renderOptions } = {}
+  { mockUser = null, ...renderOptions } = {}
 ) => {
+  const UserProviderWithProps = ({ children }: { children: React.ReactNode }) => (
+    <UserProvider>{children}</UserProvider>
+  );
+
   return {
     ...render(ui, {
-      wrapper: ({ children }) => (
-        <UserProvider initialUser={user}>
-          {children}
-        </UserProvider>
-      ),
+      wrapper: UserProviderWithProps,
       ...renderOptions,
     }),
   };
@@ -67,19 +67,21 @@ export const renderWithUser = (
  */
 export const renderWithRouterAndUser = (
   ui: React.ReactElement,
-  { route = '/', user = null, ...renderOptions } = {}
+  { route = '/', ...renderOptions } = {}
 ) => {
   window.history.pushState({}, 'Test page', route);
   
+  const CombinedProviders = ({ children }: { children: React.ReactNode }) => (
+    <UserProvider>
+      <MemoryRouter initialEntries={[route]}>
+        {children}
+      </MemoryRouter>
+    </UserProvider>
+  );
+
   return {
     ...render(ui, {
-      wrapper: ({ children }) => (
-        <UserProvider initialUser={user}>
-          <MemoryRouter initialEntries={[route]}>
-            {children}
-          </MemoryRouter>
-        </UserProvider>
-      ),
+      wrapper: CombinedProviders,
       ...renderOptions,
     }),
   };

@@ -1,65 +1,56 @@
 
 import { 
-  TrainingType, 
-  TrainingCategory, 
   TrainingStatus, 
-  TrainingCompletionStatus, 
-  TrainingPriority,
-  RecurrencePattern
-} from '@/types/training';
+  TrainingType, 
+  TrainingCategory 
+} from '@/types/enums';
+import { TrainingPriority, TrainingCompletionStatus, RecurrencePattern } from '@/types/training';
 
 // Map database string values to our type system
 export function mapToTrainingType(value: string): TrainingType {
   const mapping: Record<string, TrainingType> = {
-    'onboarding': 'onboarding',
-    'food-safety': 'food-safety',
-    'regulatory': 'regulatory',
-    'quality': 'quality',
-    'procedural': 'procedural',
-    'operational': 'operational',
-    'technical': 'technical',
-    'soft-skills': 'soft-skills'
+    'onboarding': TrainingType.Onboarding,
+    'compliance': TrainingType.Compliance,
+    'technical': TrainingType.Technical,
+    'safety': TrainingType.Safety,
+    'quality': TrainingType.Quality,
+    'management': TrainingType.Management,
+    'other': TrainingType.Other
   };
   
-  return mapping[value.toLowerCase()] || 'other' as TrainingType;
+  return mapping[value.toLowerCase()] || TrainingType.Other;
 }
 
 export function mapToTrainingCategory(value: string): TrainingCategory {
   const mapping: Record<string, TrainingCategory> = {
-    'haccp': 'haccp',
-    'gmp': 'gmp',
-    'fsma': 'fsma',
-    'allergen': 'allergen',
-    'sanitation': 'sanitation',
-    'quality': 'quality',
-    'safety': 'safety',
-    'compliance': 'compliance',
-    'leadership': 'leadership',
-    'technical': 'technical',
-    'other': 'other'
+    'food_safety': TrainingCategory.FoodSafety,
+    'haccp': TrainingCategory.HACCP,
+    'sqf': TrainingCategory.SQF,
+    'gmp': TrainingCategory.GMP,
+    'sanitation': TrainingCategory.Sanitation,
+    'allergen': TrainingCategory.Allergen,
+    'regulatory_compliance': TrainingCategory.RegulatoryCompliance,
+    'equipment_operation': TrainingCategory.EquipmentOperation,
+    'other': TrainingCategory.Other
   };
   
-  return mapping[value.toLowerCase()] || 'other';
+  return mapping[value.toLowerCase()] || TrainingCategory.Other;
 }
 
 export function mapToTrainingStatus(value: string): TrainingStatus {
   const mapping: Record<string, TrainingStatus> = {
-    'not started': 'Not Started',
-    'in progress': 'In Progress',
-    'completed': 'Completed',
-    'overdue': 'Overdue',
-    'cancelled': 'Cancelled',
-    'canceled': 'Cancelled', // Handle different spellings
+    'not started': TrainingStatus.NotStarted,
+    'in progress': TrainingStatus.InProgress,
+    'completed': TrainingStatus.Completed,
+    'overdue': TrainingStatus.Overdue,
+    'cancelled': TrainingStatus.Cancelled,
+    'canceled': TrainingStatus.Cancelled, // Handle different spellings
     // Map from database values to our TrainingStatus
-    'not-started': 'Not Started',
-    'in-progress': 'In Progress',
-    'completed': 'Completed',
-    'overdue': 'Overdue',
-    'cancelled': 'Cancelled',
-    'canceled': 'Cancelled'
+    'not-started': TrainingStatus.NotStarted,
+    'in-progress': TrainingStatus.InProgress
   };
   
-  return mapping[value.toLowerCase()] || 'Not Started';
+  return mapping[value.toLowerCase()] || TrainingStatus.NotStarted;
 }
 
 export function mapToCompletionStatus(value: string): TrainingCompletionStatus {
@@ -77,13 +68,13 @@ export function mapToCompletionStatus(value: string): TrainingCompletionStatus {
 
 export function mapToTrainingPriority(value: string): TrainingPriority {
   const mapping: Record<string, TrainingPriority> = {
-    'critical': 'critical',
-    'high': 'high',
-    'medium': 'medium',
-    'low': 'low'
+    'critical': TrainingPriority.Critical,
+    'high': TrainingPriority.High,
+    'medium': TrainingPriority.Medium,
+    'low': TrainingPriority.Low
   };
   
-  return mapping[value.toLowerCase()] || 'medium';
+  return mapping[value.toLowerCase()] || TrainingPriority.Medium;
 }
 
 export function mapToRecurrencePattern(value: string): RecurrencePattern {

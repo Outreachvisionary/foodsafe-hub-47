@@ -3,8 +3,11 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import NonConformance from '@/pages/NonConformance';
-import { mockNavigate, renderWithRouter } from './mocks/testMocks';
+import { mockNavigate } from './mocks/testMocks';
 import { supabase } from '@/integrations/supabase/client';
+
+// Add the missing matcher
+import '@testing-library/jest-dom';
 
 // Mock the fetchNonConformances function
 jest.mock('@/services/nonConformanceService', () => ({
@@ -29,6 +32,15 @@ jest.mock('@/services/nonConformanceService', () => ({
     },
   ]),
 }));
+
+// Implement a simple renderWithRouter function for this test
+const renderWithRouter = (ui: React.ReactElement) => {
+  return render(
+    <BrowserRouter>
+      {ui}
+    </BrowserRouter>
+  );
+};
 
 describe('NonConformance Page', () => {
   beforeEach(() => {
