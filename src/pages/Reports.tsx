@@ -21,8 +21,8 @@ const Reports = () => {
 
   useEffect(() => {
     // Try to get layout from user preferences if available
-    if (user && user.preferences && user.preferences.reportLayout) {
-      setReportLayout(user.preferences.reportLayout);
+    if (user && user.preferences) {
+      setReportLayout(user.preferences.reportLayout || 'grid');
     }
   }, [user]);
 
