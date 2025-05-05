@@ -1,21 +1,26 @@
 
+// Define types related to user accounts and profiles
+
+export interface UserPreferences {
+  reportLayout?: string;
+  theme?: string;
+  notifications?: {
+    email?: boolean;
+    push?: boolean;
+    desktop?: boolean;
+  };
+  defaultView?: string;
+  [key: string]: any; // Allow for additional preference properties
+}
+
 export interface User {
   id: string;
   email?: string;
-  name?: string;
-  full_name?: string;
-  avatar_url?: string;
-  role?: string;
-  department?: string;
-  organization_id?: string;
-  facility_ids?: string[];
-  preferences?: {
-    reportLayout?: string;
-    dashboardView?: string;
-    theme?: string;
-    [key: string]: any;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
   };
-  status?: 'active' | 'inactive' | 'pending';
+  preferences?: UserPreferences;
 }
 
 export interface UserProfile {
@@ -27,20 +32,5 @@ export interface UserProfile {
   organization_id?: string;
   status?: string;
   avatar_url?: string;
-  preferences?: {
-    reportLayout?: string;
-    dashboardView?: string;
-    theme?: string;
-    [key: string]: any;
-  };
-}
-
-export interface UserContextType {
-  user: User | null;
-  profile?: UserProfile | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateUser: (data: Partial<UserProfile>) => Promise<void>;
+  preferences?: UserPreferences;
 }
