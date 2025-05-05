@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, addDays, isBefore, isAfter } from 'date-fns';
+import { format, addDays, isBefore, isAfter, parseISO } from 'date-fns';
 import { Check, Clock, AlertTriangle } from 'lucide-react';
 
 interface TrainingSessionsTimelineProps {
@@ -22,10 +22,23 @@ const TrainingSessionsTimeline: React.FC<TrainingSessionsTimelineProps> = ({
       ? addDays(today, 30) 
       : addDays(today, 90);
   
+  // Helper function to safely parse dates
+  const safeParseDate = (dateString: string | null | undefined): Date | null => {
+    if (!dateString) return null;
+    try {
+      // Try to parse the ISO string to a Date
+      return parseISO(dateString);
+    } catch (e) {
+      console.error(`Invalid date: ${dateString}`, e);
+      return null;
+    }
+  };
+  
   // Filter sessions within the date range
   const filteredSessions = sessions.filter(session => {
-    const sessionDate = new Date(session.due_date);
-    return isAfter(sessionDate, today) && isBefore(sessionDate, endDate);
+    const sessionDate = safeParseDate(session.due_date);
+    // Only include sessions with valid dates that are within the range
+    return sessionDate && isAfter(sessionDate, today) && isBefore(sessionDate, endDate);
   });
 
   if (filteredSessions.length === 0) {
@@ -42,57 +55,65 @@ const TrainingSessionsTimeline: React.FC<TrainingSessionsTimelineProps> = ({
 
   return (
     <div className="space-y-4">
-      {filteredSessions.map((session) => (
-        <div key={session.id} className="flex items-start">
-          <div className="mr-4 flex flex-col items-center">
-            <div className="h-10 w-10 rounded-full flex items-center justify-center bg-primary/10">
-              {session.completion_status === 'completed' ? (
-                <Check className="h-5 w-5 text-green-600" />
-              ) : isAfter(new Date(), new Date(session.due_date)) ? (
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              ) : (
-                <Clock className="h-5 w-5 text-primary" />
-              )}
+      {filteredSessions.map((session) => {
+        const sessionDueDate = safeParseDate(session.due_date);
+        // Skip rendering if date is invalid
+        if (!sessionDueDate) return null;
+        
+        const isOverdue = isAfter(today, sessionDueDate);
+        const statusDisplay = session.completion_status === 'completed' 
+          ? 'Completed' 
+          : isOverdue 
+            ? 'Overdue'
+            : 'Upcoming';
+            
+        const statusClass = session.completion_status === 'completed' 
+          ? 'bg-green-100 text-green-800 border-green-200' 
+          : isOverdue
+            ? 'bg-red-100 text-red-800 border-red-200'
+            : 'bg-blue-100 text-blue-800 border-blue-200';
+            
+        const statusIcon = session.completion_status === 'completed' 
+          ? <Check className="h-5 w-5 text-green-600" />
+          : isOverdue 
+            ? <AlertTriangle className="h-5 w-5 text-red-600" />
+            : <Clock className="h-5 w-5 text-primary" />;
+            
+        return (
+          <div key={session.id} className="flex items-start">
+            <div className="mr-4 flex flex-col items-center">
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-primary/10">
+                {statusIcon}
+              </div>
+              <div className="h-full w-px bg-gray-200 my-2"></div>
             </div>
-            <div className="h-full w-px bg-gray-200 my-2"></div>
-          </div>
-          
-          <div className="w-full pb-4">
-            <div className="bg-white rounded-lg border p-3 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium">{session.title}</h4>
-                  <p className="text-xs text-gray-500">
-                    {format(new Date(session.due_date), 'MMMM d, yyyy')}
-                  </p>
+            
+            <div className="w-full pb-4">
+              <div className="bg-white rounded-lg border p-3 shadow-sm">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{session.title}</h4>
+                    <p className="text-xs text-gray-500">
+                      {format(sessionDueDate, 'MMMM d, yyyy')}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className={statusClass}
+                  >
+                    {statusDisplay}
+                  </Badge>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={
-                    session.completion_status === 'completed' 
-                      ? 'bg-green-100 text-green-800 border-green-200' 
-                      : isAfter(new Date(), new Date(session.due_date))
-                        ? 'bg-red-100 text-red-800 border-red-200'
-                        : 'bg-blue-100 text-blue-800 border-blue-200'
-                  }
-                >
-                  {session.completion_status === 'completed' 
-                    ? 'Completed' 
-                    : isAfter(new Date(), new Date(session.due_date))
-                      ? 'Overdue'
-                      : 'Upcoming'
-                  }
-                </Badge>
-              </div>
-              <div className="mt-2 flex items-center text-xs text-gray-500">
-                <span className="mr-2">{session.training_type}</span>
-                <span>•</span>
-                <span className="ml-2">{session.assigned_to?.length || 0} participants</span>
+                <div className="mt-2 flex items-center text-xs text-gray-500">
+                  <span className="mr-2">{session.training_type}</span>
+                  <span>•</span>
+                  <span className="ml-2">{session.assigned_to?.length || 0} participants</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
