@@ -27,12 +27,17 @@ export interface UserProfile {
   organization_id?: string;
   status?: string;
   avatar_url?: string;
-  preferences?: Record<string, any>;
+  preferences?: {
+    reportLayout?: string;
+    dashboardView?: string;
+    theme?: string;
+    [key: string]: any;
+  };
 }
 
 export interface UserContextType {
   user: User | null;
-  profile: UserProfile | null;
+  profile?: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;

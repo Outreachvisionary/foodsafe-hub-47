@@ -14,19 +14,17 @@ import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('prebuilt');
   const [reportLayout, setReportLayout] = useState<string>('grid');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Try to get layout from profile first, then user
-    if (profile?.preferences?.reportLayout) {
-      setReportLayout(profile.preferences.reportLayout);
-    } else if (user?.preferences?.reportLayout) {
+    // Try to get layout from user preferences if available
+    if (user?.preferences?.reportLayout) {
       setReportLayout(user.preferences.reportLayout);
     }
-  }, [user, profile]);
+  }, [user]);
 
   const handleLayoutChange = async (layout: string) => {
     setReportLayout(layout);
@@ -48,46 +46,46 @@ const Reports = () => {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex justify-between items-center mb-6">
-              <Tabs defaultValue="prebuilt" value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex justify-between items-center mb-6">
                 <TabsList>
                   <TabsTrigger value="prebuilt">Prebuilt Reports</TabsTrigger>
                   <TabsTrigger value="builder">Report Builder</TabsTrigger>
                   <TabsTrigger value="scheduled">Scheduled Reports</TabsTrigger>
                   <TabsTrigger value="integrations">Module Integration</TabsTrigger>
                 </TabsList>
-              </Tabs>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Layout:</span>
-                <Select value={reportLayout} onValueChange={handleLayoutChange}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="grid">Grid</SelectItem>
-                    <SelectItem value="list">List</SelectItem>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Layout:</span>
+                  <Select value={reportLayout} onValueChange={handleLayoutChange}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grid">Grid</SelectItem>
+                      <SelectItem value="list">List</SelectItem>
+                      <SelectItem value="detailed">Detailed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
 
-            <TabsContent value="prebuilt" className="mt-0">
-              <PrebuiltReports layout={reportLayout} />
-            </TabsContent>
+              <TabsContent value="prebuilt" className="mt-0">
+                <PrebuiltReports layout={reportLayout} />
+              </TabsContent>
 
-            <TabsContent value="builder" className="mt-0">
-              <ReportBuilder />
-            </TabsContent>
+              <TabsContent value="builder" className="mt-0">
+                <ReportBuilder />
+              </TabsContent>
 
-            <TabsContent value="scheduled" className="mt-0">
-              <ScheduledReports />
-            </TabsContent>
+              <TabsContent value="scheduled" className="mt-0">
+                <ScheduledReports />
+              </TabsContent>
 
-            <TabsContent value="integrations" className="mt-0">
-              <ModuleIntegration onNavigateToModule={handleNavigateToModule} />
-            </TabsContent>
+              <TabsContent value="integrations" className="mt-0">
+                <ModuleIntegration onNavigateToModule={handleNavigateToModule} />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
