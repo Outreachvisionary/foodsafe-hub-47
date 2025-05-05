@@ -12,6 +12,7 @@ import ScheduledReports from '@/components/reports/ScheduledReports';
 import ModuleIntegration from '@/components/reports/ModuleIntegration';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const Reports = () => {
   const { user } = useAuth();
@@ -28,8 +29,25 @@ const Reports = () => {
 
   const handleLayoutChange = async (layout: string) => {
     setReportLayout(layout);
-    // Save user preference (this would be implemented in a real app)
-    console.log(`Saving layout preference: ${layout}`);
+    
+    // Save user preference
+    try {
+      if (user) {
+        // This would save to user preferences in a real implementation
+        console.log(`Saving layout preference: ${layout}`);
+        toast({
+          title: "Layout preference saved",
+          description: `Your reports will now display in ${layout} layout by default.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving preference:', error);
+      toast({
+        title: "Couldn't save preference",
+        description: "There was an issue saving your layout preference.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleNavigateToModule = (modulePath: string) => {

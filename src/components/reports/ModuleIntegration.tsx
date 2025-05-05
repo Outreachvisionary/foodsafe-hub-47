@@ -3,354 +3,377 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { 
-  FileText, 
-  ClipboardCheck, 
-  AlertTriangle, 
-  Users, 
-  BarChart2, 
-  ArrowRight,
-  Calendar,
-  FileBarChart
+  BarChart2, FileText, CheckCircle2, AlertCircle, Table, Workflow, 
+  Link, Calendar, Settings, RefreshCw, BadgeCheck, Database
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Progress } from '@/components/ui/progress';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 interface ModuleIntegrationProps {
-  onNavigateToModule: (module: string) => void;
+  onNavigateToModule: (path: string) => void;
 }
 
+type IntegrationModule = {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  path: string;
+  availableReports: string[];
+  isConfigured: boolean;
+};
+
 const ModuleIntegration: React.FC<ModuleIntegrationProps> = ({ onNavigateToModule }) => {
-  const [activeModule, setActiveModule] = useState('documents');
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>('configured');
+  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
   
-  const handleGenerateReport = (reportType: string) => {
+  const modules: IntegrationModule[] = [
+    {
+      id: 'documents',
+      name: 'Documents',
+      description: 'Document control system integration',
+      icon: <FileText className="h-8 w-8 text-blue-500" />,
+      path: 'documents',
+      availableReports: [
+        'Document Status Summary',
+        'Expiring Documents',
+        'Revision History',
+        'Document Usage Analytics'
+      ],
+      isConfigured: true
+    },
+    {
+      id: 'training',
+      name: 'Training',
+      description: 'Training management system integration',
+      icon: <BadgeCheck className="h-8 w-8 text-green-500" />,
+      path: 'training',
+      availableReports: [
+        'Compliance Overview',
+        'Employee Training Matrix',
+        'Due/Overdue Training',
+        'Certification Status'
+      ],
+      isConfigured: true
+    },
+    {
+      id: 'capa',
+      name: 'CAPA',
+      description: 'Corrective and preventive actions integration',
+      icon: <CheckCircle2 className="h-8 w-8 text-yellow-500" />,
+      path: 'capa',
+      availableReports: [
+        'CAPA Status Overview',
+        'Root Cause Analysis Trends',
+        'Effectiveness Ratings',
+        'Time to Resolution'
+      ],
+      isConfigured: true
+    },
+    {
+      id: 'audits',
+      name: 'Audits',
+      description: 'Audit management system integration',
+      icon: <AlertCircle className="h-8 w-8 text-red-500" />,
+      path: 'audits',
+      availableReports: [
+        'Audit Schedule',
+        'Findings Breakdown',
+        'Compliance Trends',
+        'Audit KPIs'
+      ],
+      isConfigured: false
+    },
+    {
+      id: 'nc',
+      name: 'Non-Conformance',
+      description: 'Non-conformance tracking integration',
+      icon: <AlertCircle className="h-8 w-8 text-purple-500" />,
+      path: 'non-conformance',
+      availableReports: [
+        'Non-Conformance Summary',
+        'Status Distribution',
+        'Resolution Time Metrics',
+        'NC by Category'
+      ],
+      isConfigured: false
+    },
+    {
+      id: 'suppliers',
+      name: 'Suppliers',
+      description: 'Supplier management integration',
+      icon: <Link className="h-8 w-8 text-indigo-500" />,
+      path: 'supplier-management',
+      availableReports: [
+        'Supplier Risk Overview',
+        'Compliance Status',
+        'Performance Metrics',
+        'Audit Summary'
+      ],
+      isConfigured: false
+    },
+  ];
+  
+  // Filter modules based on configuration status
+  const configuredModules = modules.filter(module => module.isConfigured);
+  const unconfiguredModules = modules.filter(module => !module.isConfigured);
+  
+  // Function to toggle module configuration status
+  const toggleModuleConfiguration = (moduleId: string) => {
+    // In a real app, this would update settings in a backend
     toast({
-      title: "Generating Report",
-      description: `Your ${reportType} report is being generated and will be available shortly.`
+      title: "Integration status updated",
+      description: `Module integration has been ${modules.find(m => m.id === moduleId)?.isConfigured ? 'disabled' : 'enabled'}.`,
     });
   };
   
-  const modules = [
-    { id: 'documents', name: 'Documents', icon: <FileText className="h-4 w-4" /> },
-    { id: 'audits', name: 'Audits', icon: <ClipboardCheck className="h-4 w-4" /> },
-    { id: 'capa', name: 'CAPA', icon: <AlertTriangle className="h-4 w-4" /> },
-    { id: 'training', name: 'Training', icon: <Users className="h-4 w-4" /> },
-    { id: 'haccp', name: 'HACCP', icon: <FileBarChart className="h-4 w-4" /> }
-  ];
-  
-  // Document module integration data
-  const expiringDocuments = [
-    { id: 'DOC-001', title: 'Quality Manual', category: 'Manual', expiresIn: 15, status: 'Active' },
-    { id: 'DOC-023', title: 'Supplier Approval Procedure', category: 'SOP', expiresIn: 10, status: 'Active' },
-    { id: 'DOC-045', title: 'Internal Audit Procedure', category: 'SOP', expiresIn: 5, status: 'Active' },
-    { id: 'DOC-067', title: 'HACCP Plan - Production Line A', category: 'HACCP', expiresIn: 3, status: 'Active' }
-  ];
-  
-  // CAPA module integration data
-  const openCapas = [
-    { id: 'CAPA-2023-042', title: 'Temperature excursion in cold storage', priority: 'High', status: 'In Progress', dueIn: 5 },
-    { id: 'CAPA-2023-039', title: 'Missing training records for new employees', priority: 'Medium', status: 'Open', dueIn: 10 },
-    { id: 'CAPA-2023-036', title: 'Inconsistent allergen labeling', priority: 'Critical', status: 'In Progress', dueIn: 2 }
-  ];
-  
-  // Training module integration data
-  const trainingCompliance = [
-    { department: 'Production', employeeCount: 28, completedCount: 24, compliance: 86 },
-    { department: 'Quality', employeeCount: 12, completedCount: 11, compliance: 92 },
-    { department: 'Warehouse', employeeCount: 15, completedCount: 12, compliance: 80 },
-    { department: 'Management', employeeCount: 8, completedCount: 7, compliance: 88 }
-  ];
-  
-  // Audit module integration data
-  const upcomingAudits = [
-    { id: 'AUD-2023-12', title: 'Monthly GMP Audit', type: 'Internal', scheduled: '2023-09-15', status: 'Scheduled' },
-    { id: 'AUD-2023-13', title: 'FSSC 22000 Surveillance', type: 'External', scheduled: '2023-09-28', status: 'Scheduled' },
-    { id: 'AUD-2023-14', title: 'Supplier Audit - Ingredients Inc', type: 'Supplier', scheduled: '2023-10-05', status: 'Planned' }
-  ];
-  
-  // HACCP module integration data
-  const ccpDeviations = [
-    { id: 'CCP-01', name: 'Cooking Temperature', deviations: 2, lastDeviation: '2023-09-01', status: 'Under Control' },
-    { id: 'CCP-02', name: 'Metal Detection', deviations: 0, lastDeviation: 'None', status: 'Under Control' },
-    { id: 'CCP-03', name: 'Cold Storage Temperature', deviations: 3, lastDeviation: '2023-09-05', status: 'Action Required' }
-  ];
-  
-  const renderModuleContent = () => {
-    switch (activeModule) {
-      case 'documents':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expiring Documents</CardTitle>
-                <CardDescription>Documents that will expire in the next 30 days</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Document ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Expires In</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expiringDocuments.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell className="font-medium">{doc.id}</TableCell>
-                        <TableCell>{doc.title}</TableCell>
-                        <TableCell>{doc.category}</TableCell>
-                        <TableCell>{doc.expiresIn} days</TableCell>
-                        <TableCell>
-                          <Badge variant={doc.expiresIn <= 5 ? "destructive" : "outline"}>
-                            {doc.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between gap-4">
-              <Button onClick={() => handleGenerateReport('Document Expiry')}>
-                Generate Expiry Report
-              </Button>
-              <Button variant="outline" onClick={() => onNavigateToModule('documents')}>
-                Go to Document Management
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'capa':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Open CAPAs</CardTitle>
-                <CardDescription>Corrective actions that require attention</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>CAPA ID</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Due In</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {openCapas.map((capa) => (
-                      <TableRow key={capa.id}>
-                        <TableCell className="font-medium">{capa.id}</TableCell>
-                        <TableCell>{capa.title}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              capa.priority === 'Critical' ? "destructive" : 
-                              capa.priority === 'High' ? "default" : 
-                              "outline"
-                            }
-                          >
-                            {capa.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{capa.status}</TableCell>
-                        <TableCell>{capa.dueIn} days</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between gap-4">
-              <Button onClick={() => handleGenerateReport('CAPA Status')}>
-                Generate CAPA Status Report
-              </Button>
-              <Button variant="outline" onClick={() => onNavigateToModule('capa')}>
-                Go to CAPA Management
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'training':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Training Compliance</CardTitle>
-                <CardDescription>Current training compliance by department</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {trainingCompliance.map((dept) => (
-                    <div key={dept.department} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">{dept.department}</span>
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({dept.completedCount}/{dept.employeeCount} employees trained)
-                          </span>
-                        </div>
-                        <span className="font-medium">{dept.compliance}%</span>
-                      </div>
-                      <Progress value={dept.compliance} className="h-2" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between gap-4">
-              <Button onClick={() => handleGenerateReport('Training Compliance')}>
-                Generate Training Report
-              </Button>
-              <Button variant="outline" onClick={() => onNavigateToModule('training')}>
-                Go to Training Module
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'audits':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Audits</CardTitle>
-                <CardDescription>Scheduled audits for the next 30 days</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Audit ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Scheduled Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {upcomingAudits.map((audit) => (
-                      <TableRow key={audit.id}>
-                        <TableCell className="font-medium">{audit.id}</TableCell>
-                        <TableCell>{audit.title}</TableCell>
-                        <TableCell>{audit.type}</TableCell>
-                        <TableCell>{audit.scheduled}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{audit.status}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between gap-4">
-              <Button onClick={() => handleGenerateReport('Audit Schedule')}>
-                Generate Audit Schedule Report
-              </Button>
-              <Button variant="outline" onClick={() => onNavigateToModule('internal-audits')}>
-                Go to Audit Management
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'haccp':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>CCP Monitoring Status</CardTitle>
-                <CardDescription>Current status of critical control points</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>CCP ID</TableHead>
-                      <TableHead>CCP Name</TableHead>
-                      <TableHead>Deviations (Last 30 Days)</TableHead>
-                      <TableHead>Last Deviation</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ccpDeviations.map((ccp) => (
-                      <TableRow key={ccp.id}>
-                        <TableCell className="font-medium">{ccp.id}</TableCell>
-                        <TableCell>{ccp.name}</TableCell>
-                        <TableCell>{ccp.deviations}</TableCell>
-                        <TableCell>{ccp.lastDeviation}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={ccp.status === 'Action Required' ? "destructive" : "outline"}
-                          >
-                            {ccp.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between gap-4">
-              <Button onClick={() => handleGenerateReport('CCP Monitoring')}>
-                Generate CCP Monitoring Report
-              </Button>
-              <Button variant="outline" onClick={() => onNavigateToModule('haccp')}>
-                Go to HACCP Module
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      default:
-        return null;
-    }
+  // Function to navigate to selected module
+  const handleNavigateToModule = (path: string) => {
+    onNavigateToModule(path);
+    toast({
+      title: "Navigating to module",
+      description: "Redirecting to the selected module section.",
+    });
   };
   
+  // Function to handle settings updates
+  const saveSettings = () => {
+    toast({
+      title: "Settings saved",
+      description: "Your integration settings have been saved successfully.",
+    });
+  };
+  
+  // Function to refresh module data
+  const refreshModuleData = (moduleId: string) => {
+    toast({
+      title: "Data refreshed",
+      description: `${modules.find(m => m.id === moduleId)?.name} data has been refreshed.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Module Integration</h3>
+        <Button onClick={saveSettings}>
+          <Settings className="h-4 w-4 mr-2" />
+          Save Settings
+        </Button>
       </div>
       
-      <Tabs defaultValue="documents" value={activeModule} onValueChange={setActiveModule}>
-        <TabsList>
-          {modules.map((module) => (
-            <TabsTrigger key={module.id} value={module.id} className="flex items-center gap-2">
-              {module.icon}
-              <span>{module.name}</span>
-            </TabsTrigger>
-          ))}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2 w-[400px]">
+          <TabsTrigger value="configured">Configured Modules</TabsTrigger>
+          <TabsTrigger value="available">Available Modules</TabsTrigger>
         </TabsList>
         
-        <TabsContent value={activeModule} className="mt-6">
-          {renderModuleContent()}
+        <TabsContent value="configured">
+          {configuredModules.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Configured Modules</h3>
+                  <p className="text-muted-foreground mb-4">
+                    You haven't configured any modules for integration with reports yet.
+                  </p>
+                  <Button onClick={() => setActiveTab('available')}>
+                    Explore Available Modules
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {configuredModules.map((module) => (
+                <Card key={module.id} className="overflow-hidden">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        {module.icon}
+                        <div>
+                          <CardTitle>{module.name}</CardTitle>
+                          <CardDescription>{module.description}</CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label htmlFor={`enable-${module.id}`}>Integration Status</Label>
+                        <Switch
+                          id={`enable-${module.id}`}
+                          defaultChecked={module.isConfigured}
+                          onCheckedChange={() => toggleModuleConfiguration(module.id)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor={`autorefresh-${module.id}`}>Auto-refresh Reports</Label>
+                        <Switch id={`autorefresh-${module.id}`} defaultChecked />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="flex justify-between">
+                        <Button variant="outline" size="sm" onClick={() => refreshModuleData(module.id)}>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Refresh
+                        </Button>
+                        <Button size="sm" onClick={() => handleNavigateToModule(module.path)}>
+                          Open Module
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="available">
+          {unconfiguredModules.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">All Modules Configured</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Great job! You've configured all available modules for integration.
+                  </p>
+                  <Button onClick={() => setActiveTab('configured')}>
+                    View Configured Modules
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {unconfiguredModules.map((module) => (
+                <Card key={module.id} className="overflow-hidden">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        {module.icon}
+                        <div>
+                          <CardTitle>{module.name}</CardTitle>
+                          <CardDescription>{module.description}</CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Configure this module to access {module.availableReports.length} specialized reports.
+                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label htmlFor={`enable-${module.id}`}>Enable Integration</Label>
+                        <Switch
+                          id={`enable-${module.id}`}
+                          defaultChecked={module.isConfigured}
+                          onCheckedChange={() => toggleModuleConfiguration(module.id)}
+                        />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="flex justify-end">
+                        <Button size="sm" onClick={() => handleNavigateToModule(module.path)}>
+                          Configure Module
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      {selectedModuleId && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Module Configuration Details</CardTitle>
+            <CardDescription>
+              Configure how this module integrates with the reporting system
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="data-refresh">Data Refresh Interval</Label>
+                <Select defaultValue="daily">
+                  <SelectTrigger id="data-refresh">
+                    <SelectValue placeholder="Select interval" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realtime">Real-time</SelectItem>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="data-retention">Data Retention</Label>
+                <Select defaultValue="1year">
+                  <SelectTrigger id="data-retention">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30days">30 Days</SelectItem>
+                    <SelectItem value="90days">90 Days</SelectItem>
+                    <SelectItem value="180days">6 Months</SelectItem>
+                    <SelectItem value="1year">1 Year</SelectItem>
+                    <SelectItem value="forever">Forever</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Available Reports</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {modules.find(m => m.id === selectedModuleId)?.availableReports.map((report, index) => (
+                  <div className="flex items-center space-x-2" key={index}>
+                    <Checkbox id={`report-${index}`} />
+                    <Label htmlFor={`report-${index}`}>{report}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Advanced Settings</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="include-metadata" defaultChecked />
+                  <Label htmlFor="include-metadata">Include Metadata</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="historical-data" defaultChecked />
+                  <Label htmlFor="historical-data">Include Historical Data</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="auto-schedule" />
+                  <Label htmlFor="auto-schedule">Auto-schedule Reports</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="notify-changes" />
+                  <Label htmlFor="notify-changes">Notify on Data Changes</Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
