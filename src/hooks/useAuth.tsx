@@ -30,6 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData: User = {
             id: session.user.id,
             email: session.user.email || undefined,
+            full_name: session.user.user_metadata?.full_name,
+            name: session.user.user_metadata?.full_name,
+            avatar_url: session.user.user_metadata?.avatar_url,
             user_metadata: session.user.user_metadata,
             preferences: {
               reportLayout: 'grid', // Default preferences
@@ -54,6 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData: User = {
             id: session.user.id,
             email: session.user.email || undefined,
+            full_name: session.user.user_metadata?.full_name,
+            name: session.user.user_metadata?.full_name,
+            avatar_url: session.user.user_metadata?.avatar_url,
             user_metadata: session.user.user_metadata,
             preferences: {
               reportLayout: 'grid', // Default preferences

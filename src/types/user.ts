@@ -10,12 +10,21 @@ export interface UserPreferences {
     desktop?: boolean;
   };
   defaultView?: string;
+  dashboardView?: string;
   [key: string]: any; // Allow for additional preference properties
 }
 
 export interface User {
   id: string;
   email?: string;
+  name?: string;
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+  department?: string;
+  organization_id?: string;
+  facility_ids?: string[];
+  status?: 'active' | 'inactive' | 'pending';
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
@@ -33,4 +42,14 @@ export interface UserProfile {
   status?: string;
   avatar_url?: string;
   preferences?: UserPreferences;
+}
+
+export interface UserContextType {
+  user: User | null;
+  profile?: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateUser: (data: Partial<UserProfile>) => Promise<void>;
 }
