@@ -45,6 +45,12 @@ const Performance = lazy(() => import('@/pages/Performance'));
 import ScheduleAuditPage from "./pages/ScheduleAuditPage";
 import NewSupplierPage from "./pages/NewSupplierPage";
 
+// New page imports
+const Settings = lazy(() => import('@/pages/Settings'));
+const Certifications = lazy(() => import('@/pages/Certifications'));
+const KPIs = lazy(() => import('@/pages/KPIs'));
+const HACCP = lazy(() => import('@/pages/HACCP'));
+
 function App() {
   return (
     <>
@@ -123,7 +129,12 @@ function App() {
             {/* Testing and Verification routes */}
             <Route path="testing" element={<TestingVerification />} />
             
-            <Route path="haccp" element={<NotFound />} />
+            {/* New routes */}
+            <Route path="haccp" element={<HACCP />} />
+            <Route path="kpis" element={<KPIs />} />
+            <Route path="certifications" element={<Certifications />} />
+            <Route path="settings" element={<Settings />} />
+            
             <Route path="database-test" element={<DatabaseConnectionTest />} />
             <Route path="roles" element={<RoleManagement />} />
             
