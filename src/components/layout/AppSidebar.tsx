@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart2,
@@ -32,7 +31,7 @@ import {
   BookCheck,
   Search,
   HelpCircle,
-  Tool
+  Wrench
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
