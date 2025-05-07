@@ -4,37 +4,68 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
-  AlertCircle, 
-  Clipboard, 
-  UserCheck,
+  AlertTriangle, 
+  ClipboardCheck, 
+  Users,
   Building, 
-  ChevronDown,
-  Truck,
-  ShieldAlert,
+  FileCheck,
+  BoxesIcon,
+  ShieldCheck,
   BookOpen,
   BarChart2,
-  ClipboardCheck
+  CheckSquare,
+  MessageSquare,
+  GraduationCap,
+  Warehouse,
+  Activity,
+  LineChart,
+  Gauge,
+  Settings,
+  Award,
+  UserCheck,
+  Database,
+  Plus
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { name: 'Documents', path: '/documents', icon: <FileText className="h-5 w-5" /> },
-  { name: 'Non-Conformance', path: '/non-conformance', icon: <AlertCircle className="h-5 w-5" /> },
-  { name: 'CAPA', path: '/capa', icon: <ShieldAlert className="h-5 w-5" /> },
-  { name: 'Audits', path: '/audits', icon: <Clipboard className="h-5 w-5" /> },
-  { name: 'Training', path: '/training', icon: <BookOpen className="h-5 w-5" /> },
-  { name: 'Suppliers', path: '/suppliers', icon: <Truck className="h-5 w-5" /> },
-  { name: 'Facilities', path: '/facilities', icon: <Building className="h-5 w-5" /> },
-  { name: 'Users', path: '/users', icon: <UserCheck className="h-5 w-5" /> },
+  { name: 'Tasks', path: '/tasks', icon: <CheckSquare className="h-5 w-5" /> },
+  { name: 'CAPAs', path: '/capa', icon: <ClipboardCheck className="h-5 w-5" /> },
+  { name: 'Non-Conformance', path: '/non-conformance', icon: <AlertTriangle className="h-5 w-5" /> },
+  { name: 'Training', path: '/training', icon: <GraduationCap className="h-5 w-5" /> },
+  { name: 'Audits', path: '/audits', icon: <FileCheck className="h-5 w-5" /> },
+  { name: 'Standards', path: '/standards', icon: <BookOpen className="h-5 w-5" /> },
+  { name: 'Complaints', path: '/complaints', icon: <MessageSquare className="h-5 w-5" /> },
+  { name: 'Traceability', path: '/traceability', icon: <BoxesIcon className="h-5 w-5" /> },
+  { name: 'Suppliers', path: '/suppliers', icon: <Building className="h-5 w-5" /> },
+  { name: 'Facilities', path: '/facilities', icon: <Warehouse className="h-5 w-5" /> },
   { name: 'Reports', path: '/reports', icon: <BarChart2 className="h-5 w-5" /> },
-  { name: 'Tasks', path: '/tasks', icon: <ClipboardCheck className="h-5 w-5" /> },
+  { name: 'Analytics', path: '/analytics', icon: <LineChart className="h-5 w-5" /> },
+  { name: 'Performance', path: '/performance', icon: <Gauge className="h-5 w-5" /> },
+  { name: 'Users', path: '/users', icon: <Users className="h-5 w-5" /> },
 ];
 
 const Sidebar: React.FC = () => {
+  const { user } = useAuth();
+  
   return (
-    <aside className="w-64 bg-gray-900 text-white h-screen flex flex-col overflow-y-auto">
-      <div className="p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Quality System</h1>
+    <aside className="w-64 bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col h-screen overflow-y-auto">
+      <div className="p-4 border-b border-border/60">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">ComplianceCore</h1>
+      </div>
+      
+      {/* Create New button */}
+      <div className="p-2">
+        <NavLink
+          to="/create"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-accent text-white rounded-md hover:bg-accent/90 transition-colors"
+        >
+          <Plus size={16} />
+          <span>Create New</span>
+        </NavLink>
       </div>
       
       <nav className="flex-1 p-4">
@@ -43,11 +74,12 @@ const Sidebar: React.FC = () => {
             <li key={item.name}>
               <NavLink
                 to={item.path}
-                className={({ isActive }) => `
-                  flex items-center px-4 py-2.5 text-sm font-medium rounded-md
-                  ${isActive ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
-                  transition-all duration-200
-                `}
+                className={({ isActive }) => cn(
+                  "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+                  isActive 
+                    ? "bg-accent/10 text-accent font-medium" 
+                    : "text-foreground hover:bg-secondary/80 hover:text-accent"
+                )}
               >
                 {item.icon}
                 <span className="ml-3">{item.name}</span>
@@ -57,16 +89,22 @@ const Sidebar: React.FC = () => {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-border/60 bg-secondary/30">
         <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <span className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center text-sm">
-              QS
-            </span>
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium overflow-hidden">
+            {user?.avatar_url ? (
+              <img 
+                src={user.avatar_url} 
+                alt="User avatar" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{user?.full_name?.charAt(0) || 'U'}</span>
+            )}
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium">Quality System</p>
-            <p className="text-xs text-gray-400">v1.0.0</p>
+            <p className="text-sm font-medium">{user?.full_name || 'User'}</p>
+            <p className="text-xs text-muted-foreground">{user?.email || 'user@company.com'}</p>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import AppSidebar from './AppSidebar';
 import TopNav from './TopNav';
 
 interface SidebarLayoutProps {
@@ -11,10 +11,10 @@ interface SidebarLayoutProps {
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <AppSidebar />
       <div className="flex flex-col flex-1 overflow-y-auto">
         <TopNav />
-        <main className="flex-1 p-4 bg-gray-50">
+        <main className="flex-1 p-4 bg-background/80">
           {children || <Outlet />}
         </main>
       </div>

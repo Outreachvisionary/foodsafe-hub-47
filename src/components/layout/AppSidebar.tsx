@@ -25,14 +25,23 @@ import {
   Award,
   BarChart,
   Clipboard,
-  PieChart
+  PieChart,
+  UserCheck,
+  Database,
+  Cloud,
+  BookCheck,
+  Search,
+  HelpCircle,
+  Tool
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { NavSection } from '@/types/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const AppSidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
@@ -58,6 +67,7 @@ const AppSidebar = () => {
         { name: 'Standards', path: '/standards', icon: BookOpen },
         { name: 'Complaints', path: '/complaints', icon: MessageSquare },
         { name: 'KPIs', path: '/kpis', icon: Activity },
+        { name: 'HACCP', path: '/haccp', icon: ShieldCheck },
       ]
     },
     {
@@ -82,6 +92,8 @@ const AppSidebar = () => {
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Organizations', path: '/organizations', icon: Building },
         { name: 'Departments', path: '/departments', icon: Building },
+        { name: 'Roles', path: '/roles', icon: UserCheck },
+        { name: 'Database Test', path: '/database-test', icon: Database },
         { name: 'Certifications', path: '/certifications', icon: Award },
         { name: 'Settings', path: '/settings', icon: Settings },
       ]
@@ -148,12 +160,20 @@ const AppSidebar = () => {
       {/* User profile section */}
       <div className="p-4 border-t border-border/60 bg-secondary/30">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
-            CC
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium overflow-hidden">
+            {user?.avatar_url ? (
+              <img 
+                src={user.avatar_url} 
+                alt="User avatar" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{user?.full_name?.charAt(0) || 'U'}</span>
+            )}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Admin User</span>
-            <span className="text-xs text-muted-foreground">admin@company.com</span>
+            <span className="text-sm font-medium">{user?.full_name || 'User'}</span>
+            <span className="text-xs text-muted-foreground">{user?.email || 'user@company.com'}</span>
           </div>
         </div>
       </div>
