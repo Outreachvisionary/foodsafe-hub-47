@@ -1384,6 +1384,132 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_metrics: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string
+          id: string
+          metric_name: string
+          metric_target: number | null
+          metric_unit: string | null
+          metric_value: number
+          progress_value: number | null
+          trend: number | null
+          trend_period: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          icon: string
+          id?: string
+          metric_name: string
+          metric_target?: number | null
+          metric_unit?: string | null
+          metric_value: number
+          progress_value?: number | null
+          trend?: number | null
+          trend_period?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          metric_name?: string
+          metric_target?: number | null
+          metric_unit?: string | null
+          metric_value?: number
+          progress_value?: number | null
+          trend?: number | null
+          trend_period?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kpi_production_data: {
+        Row: {
+          actual: number
+          created_at: string
+          id: string
+          month: string
+          target: number
+          updated_at: string
+        }
+        Insert: {
+          actual: number
+          created_at?: string
+          id?: string
+          month: string
+          target: number
+          updated_at?: string
+        }
+        Update: {
+          actual?: number
+          created_at?: string
+          id?: string
+          month?: string
+          target?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kpi_quality_data: {
+        Row: {
+          created_at: string
+          defect_rate: number
+          id: string
+          month: string
+          return_rate: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          defect_rate: number
+          id?: string
+          month: string
+          return_rate: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          defect_rate?: number
+          id?: string
+          month?: string
+          return_rate?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kpi_safety_data: {
+        Row: {
+          created_at: string
+          id: string
+          incidents: number
+          month: string
+          near_misses: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          incidents: number
+          month: string
+          near_misses: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          incidents?: number
+          month?: string
+          near_misses?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       module_relationships: {
         Row: {
           created_at: string | null
