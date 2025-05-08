@@ -114,11 +114,6 @@ const KPIs = () => {
     fetchData();
   }, [timeframe, toast]);
   
-  // Find a specific KPI metric by name
-  const findMetric = (name: string) => {
-    return kpiMetrics.find(metric => metric.metric_name === name);
-  };
-
   // Create Icon component from string name
   const getIconComponent = (iconName: string) => {
     const icons = {
@@ -127,7 +122,10 @@ const KPIs = () => {
       AlertTriangle,
       Clock,
       BarChart,
-      Activity
+      Activity,
+      FileCheck,
+      BarChart2,
+      PieChart
     };
     return icons[iconName as keyof typeof icons] || Activity;
   };
@@ -188,7 +186,7 @@ const KPIs = () => {
                 <div className="space-y-2">
                   <Label htmlFor="kpi-category">Category</Label>
                   <Select>
-                    <SelectTrigger>
+                    <SelectTrigger id="kpi-category">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,7 +213,7 @@ const KPIs = () => {
                 <div className="space-y-2">
                   <Label htmlFor="kpi-frequency">Measurement Frequency</Label>
                   <Select>
-                    <SelectTrigger>
+                    <SelectTrigger id="kpi-frequency">
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     <SelectContent>
@@ -632,3 +630,4 @@ const KPIs = () => {
 };
 
 export default KPIs;
+
