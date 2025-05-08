@@ -351,12 +351,13 @@ const KPIs = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {loading ? (
-          // Skeleton loaders for KPI cards during loading
+          // Fix: Add missing required 'target' prop to skeleton loaders
           Array(4).fill(0).map((_, index) => (
             <KPICard
               key={`skeleton-${index}`}
               title=""
               value={0}
+              target={0}
               icon={Activity}
               isLoading={true}
             />
