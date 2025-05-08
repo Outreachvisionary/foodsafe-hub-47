@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,32 @@ import {
 import { toast } from 'sonner';
 import { updateNonConformance } from '@/services/nonConformanceService';
 import { NonConformance } from '@/types/non-conformance';
+import { z } from 'zod';
+import { validateAndToast, ValidationSchemas } from '@/lib/validation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+// Define the validation schema for NonConformance details
+const ncDetailsSchema = z.object({
+  title: ValidationSchemas.required.min(3, "Title must be at least 3 characters"),
+  item_name: ValidationSchemas.required,
+  item_category: ValidationSchemas.required,
+  reason_category: ValidationSchemas.required,
+  priority: ValidationSchemas.required,
+  risk_level: z.string().optional(),
+  description: z.string().optional(),
+  reason_details: z.string().optional(),
+  resolution_details: z.string().optional(),
+  quantity: ValidationSchemas.positiveNumber.optional(),
+  quantity_on_hold: ValidationSchemas.positiveNumber.optional(),
+  units: z.string().optional(),
+  location: z.string().optional(),
+  department: z.string().optional(),
+  assigned_to: z.string().optional(),
+});
+
+type NCDetailsFormValues = z.infer<typeof ncDetailsSchema>;
 
 interface NCDetailsFormProps {
   data: NonConformance;
@@ -21,22 +48,31 @@ interface NCDetailsFormProps {
 }
 
 const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
-  const [formData, setFormData] = useState<Partial<NonConformance>>(data);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  // Initialize the form with react-hook-form and zod validation
+  const form = useForm<NCDetailsFormValues>({
+    resolver: zodResolver(ncDetailsSchema),
+    defaultValues: {
+      title: data.title || '',
+      item_name: data.item_name || '',
+      item_category: data.item_category as string || '',
+      reason_category: data.reason_category as string || '',
+      priority: data.priority || '',
+      risk_level: data.risk_level as string || '',
+      description: data.description || '',
+      reason_details: data.reason_details || '',
+      resolution_details: data.resolution_details || '',
+      quantity: data.quantity || undefined,
+      quantity_on_hold: data.quantity_on_hold || undefined,
+      units: data.units || '',
+      location: data.location || '',
+      department: data.department || '',
+      assigned_to: data.assigned_to || '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: NCDetailsFormValues) => {
     try {
       setIsSubmitting(true);
       
@@ -44,10 +80,10 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
       const userId = data.created_by || 'system';
       
       // Call the update service
-      await updateNonConformance(data.id, formData, userId);
+      await updateNonConformance(data.id, values, userId);
       
       // Notify parent component
-      onSave(formData);
+      onSave(values);
       
       toast.success('Non-conformance details updated successfully');
     } catch (error) {
@@ -84,123 +120,159 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
   const riskLevels = ['High', 'Moderate', 'Low'];
   
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={formData.title || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="item_name">Item Name</Label>
-                <Input
-                  id="item_name"
-                  name="item_name"
-                  value={formData.item_name || ''}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="item_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Item Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="item_category">Item Category</Label>
-                <Select 
-                  value={formData.item_category as string} 
-                  onValueChange={(value) => handleSelectChange('item_category', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {itemCategories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={form.control}
+                name="item_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Item Category</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {itemCategories.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="reason_category">Reason Category</Label>
-                <Select 
-                  value={formData.reason_category as string} 
-                  onValueChange={(value) => handleSelectChange('reason_category', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {reasonCategories.map(reason => (
-                      <SelectItem key={reason} value={reason}>
-                        {reason}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={form.control}
+                name="reason_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Reason Category</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select reason" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {reasonCategories.map(reason => (
+                            <SelectItem key={reason} value={reason}>
+                              {reason}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select 
-                  value={formData.priority || ''} 
-                  onValueChange={(value) => handleSelectChange('priority', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorities.map(priority => (
-                      <SelectItem key={priority} value={priority}>
-                        {priority}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Priority</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priorities.map(priority => (
+                            <SelectItem key={priority} value={priority}>
+                              {priority}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="risk_level">Risk Level</Label>
-                <Select 
-                  value={formData.risk_level as string || ''} 
-                  onValueChange={(value) => handleSelectChange('risk_level', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select risk level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {riskLevels.map(level => (
-                      <SelectItem key={level} value={level}>
-                        {level}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description || ''}
-                onChange={handleChange}
-                rows={3}
+              <FormField
+                control={form.control}
+                name="risk_level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Risk Level</FormLabel>
+                    <FormControl>
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select risk level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {riskLevels.map(level => (
+                            <SelectItem key={level} value={level}>
+                              {level}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
         
@@ -210,90 +282,132 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  value={formData.quantity || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="quantity_on_hold">Quantity on Hold</Label>
-                <Input
-                  id="quantity_on_hold"
-                  name="quantity_on_hold"
-                  type="number"
-                  value={formData.quantity_on_hold || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="quantity_on_hold"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity on Hold</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="units">Units</Label>
-                <Input
-                  id="units"
-                  name="units"
-                  value={formData.units || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="units"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Units</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={formData.location || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  name="department"
-                  value={formData.department || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="assigned_to">Assigned To</Label>
-                <Input
-                  id="assigned_to"
-                  name="assigned_to"
-                  value={formData.assigned_to || ''}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="reason_details">Reason Details</Label>
-              <Textarea
-                id="reason_details"
-                name="reason_details"
-                value={formData.reason_details || ''}
-                onChange={handleChange}
-                rows={3}
+              <FormField
+                control={form.control}
+                name="assigned_to"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned To</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="resolution_details">Resolution Details</Label>
-              <Textarea
-                id="resolution_details"
-                name="resolution_details"
-                value={formData.resolution_details || ''}
-                onChange={handleChange}
-                rows={3}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="reason_details"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reason Details</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="resolution_details"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resolution Details</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
         
@@ -305,8 +419,8 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
             {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 };
 

@@ -1,155 +1,80 @@
 
-export enum NCStatus {
-  Draft = 'Draft',
-  Open = 'Open',
-  InProgress = 'In_Progress',
-  Resolved = 'Resolved',
-  Closed = 'Closed',
-  OnHold = 'On_Hold',
-  Reopened = 'Reopened'
-}
-
-export enum NCRiskLevel {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Critical = 'Critical'
-}
-
-export enum NCCategory {
-  Equipment = 'Equipment',
-  Process = 'Process',
-  Material = 'Material',
-  Method = 'Method',
-  Environment = 'Environment',
-  Personnel = 'Personnel',
-  Other = 'Other'
-}
-
-export type NCItemCategory = 
-  | 'Processing Equipment'
-  | 'Product Storage Tanks'
-  | 'Finished Product'
-  | 'Finished Products'
-  | 'Raw Products'
-  | 'Raw Material'
-  | 'Packaging Materials'
-  | 'Packaging Material'
-  | 'Equipment'
-  | 'Facility'
-  | 'Personnel'
+export type NonConformanceItemCategory = 
+  | 'Equipment' 
+  | 'Facility' 
+  | 'Finished Product' 
+  | 'Raw Material' 
+  | 'Packaging Materials' 
+  | 'Packaging' 
   | 'Other';
 
-export type NCReasonCategory = 
-  | 'Contamination'
-  | 'Quality Issues'
+export type NonConformanceReasonCategory = 
   | 'Quality Issue'
-  | 'Regulatory Non-Compliance'
-  | 'Equipment Malfunction'
-  | 'Documentation Error'
-  | 'Process Deviation'
-  | 'Foreign Material'
-  | 'Temperature Abuse'
-  | 'Packaging Defect'
-  | 'Labeling Error'
   | 'Food Safety'
   | 'Damaged'
+  | 'Process Deviation'
+  | 'Foreign Material'
   | 'Expired'
   | 'Other';
+
+export type NonConformanceStatus = 
+  | 'On Hold'
+  | 'Under Investigation'
+  | 'Under Review'
+  | 'Approved for Use'
+  | 'Released'
+  | 'Disposed'
+  | 'Resolved'
+  | 'Closed';
 
 export interface NonConformance {
   id: string;
   title: string;
   description?: string;
-  status: NCStatus | string;
+  item_name: string;
+  item_category: NonConformanceItemCategory | string;
+  reason_category: NonConformanceReasonCategory | string;
+  status: NonConformanceStatus | string;
+  reported_date: string;
   created_at: string;
   updated_at: string;
+  review_date?: string | null;
+  resolution_date?: string | null;
   created_by: string;
   assigned_to?: string;
-  department?: string;
-  location?: string;
-  root_cause?: string;
-  item_name: string;
-  item_id?: string;
-  item_category: NCItemCategory | string;
-  reason_category?: NCReasonCategory | string;
+  reviewer?: string | null;
+  resolution_details?: string | null;
+  capa_id?: string | null;
   reason_details?: string;
-  resolution_details?: string;
-  risk_level?: NCRiskLevel | string;
-  severity?: string;
+  location?: string;
+  department?: string;
   priority?: string;
-  immediate_action?: string;
-  corrective_action?: string;
-  preventive_action?: string;
-  capa_id?: string;
-  attachments?: string[];
-  due_date?: string;
-  closed_date?: string;
-  reported_date?: string;
-  review_date?: string;
-  resolution_date?: string;
+  risk_level?: string;
   quantity?: number;
   quantity_on_hold?: number;
-  units?: string;
   tags?: string[];
-  reviewer?: string;
-}
-
-export interface NCDetailsProps {
-  id: string;
-  title?: string;
-  status?: NCStatus | string;
-  itemName?: string;
-  itemCategory?: string;
-  description?: string;
-  onStatusChange?: (status: NCStatus) => void;
-  onClose?: () => void;
+  units?: string;
 }
 
 export interface NCActivity {
   id: string;
   non_conformance_id: string;
   action: string;
-  performed_by: string;
-  performed_at: string;
-  previous_status?: NCStatus | string;
-  new_status?: NCStatus | string;
   comments?: string;
+  performed_at: string;
+  performed_by: string;
+  previous_status?: NonConformanceStatus | null;
+  new_status?: NonConformanceStatus | null;
 }
 
 export interface NCAttachment {
   id: string;
   non_conformance_id: string;
   file_name: string;
-  file_path: string;
   file_type: string;
+  file_path: string;
   file_size: number;
   description?: string;
   uploaded_at: string;
   uploaded_by: string;
-}
-
-export interface NCFilter {
-  status?: (NCStatus | string)[];
-  item_category?: (NCItemCategory | string)[];
-  reason_category?: (NCReasonCategory | string)[];
-  date_range?: {
-    start?: string;
-    end?: string;
-  };
-  search?: string;
-}
-
-export interface NCStats {
-  total: number;
-  byStatus: Record<string, number>;
-  byCategory: Record<string, number>;
-  byReasonCategory: Record<string, number>;
-  byRiskLevel: Record<string, number>;
-  byReason?: Record<string, number>;
-  overdue: number;
-  pendingReview: number;
-  recentlyResolved: number;
-  totalQuantityOnHold?: number;
-  recentItems?: NonConformance[];
 }
