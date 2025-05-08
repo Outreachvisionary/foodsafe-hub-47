@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/components/ui/use-toast";
-import { fetchProductionData, fetchQualityData, fetchSafetyData, fetchKpiMetrics, ProductionData, QualityData, SafetyData, KpiMetric } from '@/services/kpiService';
+import { fetchAllKpiData, ProductionData, QualityData, SafetyData, KpiMetric } from '@/services/kpiService';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // KPI card component
 const KPICard = ({ 
@@ -27,8 +28,25 @@ const KPICard = ({
   trendPeriod = "vs. last month",
   icon: Icon,
   progressValue = 0,
+  isLoading = false
 }) => {
   const isPositiveTrend = trend >= 0;
+  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-2 w-full" />
+          <Skeleton className="h-4 w-1/4" />
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card>
@@ -73,6 +91,33 @@ const KPICard = ({
   );
 };
 
+// Chart skeleton loader
+const ChartSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <Skeleton className="h-6 w-1/3 mb-1" />
+      <Skeleton className="h-4 w-1/2" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-[300px] w-full" />
+    </CardContent>
+  </Card>
+);
+
+// Stats card skeleton loader
+const StatsCardSkeleton = () => (
+  <Card>
+    <CardHeader className="pb-2">
+      <Skeleton className="h-4 w-1/2" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-6 w-1/4 mb-2" />
+      <Skeleton className="h-4 w-3/4 mb-2" />
+      <Skeleton className="h-4 w-1/3" />
+    </CardContent>
+  </Card>
+);
+
 const KPIs = () => {
   const [timeframe, setTimeframe] = useState('monthly');
   const [productionData, setProductionData] = useState<ProductionData[]>([]);
@@ -80,27 +125,29 @@ const KPIs = () => {
   const [safetyData, setSafetyData] = useState<SafetyData[]>([]);
   const [kpiMetrics, setKpiMetrics] = useState<KpiMetric[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [dataFetchError, setDataFetchError] = useState(false);
   
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      if (!initialLoadComplete) {
+        setLoading(true);
+      }
+      setDataFetchError(false);
       
       try {
-        const [production, quality, safety, metrics] = await Promise.all([
-          fetchProductionData(),
-          fetchQualityData(),
-          fetchSafetyData(),
-          fetchKpiMetrics()
-        ]);
+        const allData = await fetchAllKpiData();
         
-        setProductionData(production);
-        setQualityData(quality);
-        setSafetyData(safety);
-        setKpiMetrics(metrics);
+        setProductionData(allData.productionData);
+        setQualityData(allData.qualityData);
+        setSafetyData(allData.safetyData);
+        setKpiMetrics(allData.kpiMetrics);
+        setInitialLoadComplete(true);
       } catch (error) {
         console.error("Error fetching KPI data:", error);
+        setDataFetchError(true);
         toast({
           title: "Error loading KPI data",
           description: "Please try again later",
@@ -129,6 +176,61 @@ const KPIs = () => {
     };
     return icons[iconName as keyof typeof icons] || Activity;
   };
+  
+  // Render loading state or error state
+  if (loading && !initialLoadComplete) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <DashboardHeader
+            title={
+              <div className="flex items-center gap-2">
+                <Target className="h-8 w-8 text-primary" />
+                <span>Key Performance Indicators</span>
+              </div>
+            }
+            subtitle="Monitor and analyze your organization's critical metrics"
+            className="mb-0"
+          />
+        </div>
+        
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <LoadingSpinner size="lg" className="mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading KPI data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataFetchError) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <DashboardHeader
+            title={
+              <div className="flex items-center gap-2">
+                <Target className="h-8 w-8 text-primary" />
+                <span>Key Performance Indicators</span>
+              </div>
+            }
+            subtitle="Monitor and analyze your organization's critical metrics"
+            className="mb-0"
+          />
+        </div>
+        
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Error Loading Data</h3>
+            <p className="text-muted-foreground mb-4">Unable to load KPI data from the server.</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="container mx-auto p-4">
@@ -247,66 +349,82 @@ const KPIs = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading KPI data...</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {kpiMetrics.map(metric => {
-              const IconComponent = getIconComponent(metric.icon);
-              return (
-                <KPICard 
-                  key={metric.id}
-                  title={metric.metric_name}
-                  value={metric.metric_value}
-                  target={metric.metric_target}
-                  unit={metric.metric_unit || ""}
-                  trend={metric.trend}
-                  trendPeriod={metric.trend_period}
-                  progressValue={metric.progress_value}
-                  icon={IconComponent}
-                />
-              );
-            })}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {loading ? (
+          // Skeleton loaders for KPI cards during loading
+          Array(4).fill(0).map((_, index) => (
+            <KPICard
+              key={`skeleton-${index}`}
+              title=""
+              value={0}
+              icon={Activity}
+              isLoading={true}
+            />
+          ))
+        ) : (
+          kpiMetrics.map(metric => {
+            const IconComponent = getIconComponent(metric.icon);
+            return (
+              <KPICard 
+                key={metric.id}
+                title={metric.metric_name}
+                value={metric.metric_value}
+                target={metric.metric_target}
+                unit={metric.metric_unit || ""}
+                trend={metric.trend}
+                trendPeriod={metric.trend_period}
+                progressValue={metric.progress_value}
+                icon={IconComponent}
+                isLoading={false}
+              />
+            );
+          })
+        )}
+      </div>
 
-          <Tabs defaultValue="production" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-6">
-              <TabsTrigger value="production">Production</TabsTrigger>
-              <TabsTrigger value="quality">Quality</TabsTrigger>
-              <TabsTrigger value="safety">Safety</TabsTrigger>
-              <TabsTrigger value="compliance">Compliance</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="production" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Production Efficiency vs Target</CardTitle>
-                  <CardDescription>Monthly production efficiency compared to target</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsBarChart data={productionData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis domain={[0, 120]} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="actual" name="Actual" fill="#3b82f6" />
-                        <Bar dataKey="target" name="Target" fill="#93c5fd" />
-                      </RechartsBarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Tabs defaultValue="production" className="w-full">
+        <TabsList className="grid grid-cols-4 mb-6">
+          <TabsTrigger value="production">Production</TabsTrigger>
+          <TabsTrigger value="quality">Quality</TabsTrigger>
+          <TabsTrigger value="safety">Safety</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="production" className="space-y-6">
+          {loading ? <ChartSkeleton /> : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Production Efficiency vs Target</CardTitle>
+                <CardDescription>Monthly production efficiency compared to target</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsBarChart data={productionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis domain={[0, 120]} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="actual" name="Actual" fill="#3b82f6" />
+                      <Bar dataKey="target" name="Target" fill="#93c5fd" />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {loading ? (
+              <>
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+              </>
+            ) : (
+              // ... keep existing code for Production Volume, Equipment Downtime, and Materials Utilization cards
+              <>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Production Volume</CardTitle>
@@ -348,33 +466,46 @@ const KPIs = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="quality" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quality Metrics Trend</CardTitle>
-                  <CardDescription>Defect rate and return rate over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsLineChart data={qualityData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="defect_rate" name="Defect Rate %" stroke="#3b82f6" />
-                        <Line type="monotone" dataKey="return_rate" name="Return Rate %" stroke="#f59e0b" />
-                      </RechartsLineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              </>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="quality" className="space-y-6">
+          {loading ? <ChartSkeleton /> : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Quality Metrics Trend</CardTitle>
+                <CardDescription>Defect rate and return rate over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={qualityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="defect_rate" name="Defect Rate %" stroke="#3b82f6" />
+                      <Line type="monotone" dataKey="return_rate" name="Return Rate %" stroke="#f59e0b" />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {loading ? (
+              <>
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+              </>
+            ) : (
+              // ... keep existing code for Quality tab cards
+              <>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">First-Time Pass Rate</CardTitle>
@@ -410,33 +541,46 @@ const KPIs = () => {
                     <Progress value={94.7 / 95 * 100} className="h-2" />
                   </CardContent>
                 </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="safety" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Safety Incidents</CardTitle>
-                  <CardDescription>Incidents and near misses by month</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsBarChart data={safetyData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="incidents" name="Reportable Incidents" fill="#ef4444" />
-                        <Bar dataKey="near_misses" name="Near Misses" fill="#f59e0b" />
-                      </RechartsBarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              </>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="safety" className="space-y-6">
+          {loading ? <ChartSkeleton /> : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Safety Incidents</CardTitle>
+                <CardDescription>Incidents and near misses by month</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsBarChart data={safetyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="incidents" name="Reportable Incidents" fill="#ef4444" />
+                      <Bar dataKey="near_misses" name="Near Misses" fill="#f59e0b" />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {loading ? (
+              <>
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+              </>
+            ) : (
+              // ... keep existing code for Safety tab cards
+              <>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Days Since Last Incident</CardTitle>
@@ -471,69 +615,82 @@ const KPIs = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="compliance" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Compliance Overview</CardTitle>
-                  <CardDescription>Key compliance metrics and status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileCheck className="h-5 w-5 text-green-500" />
-                          <span className="font-medium">Document Compliance</span>
-                        </div>
-                        <span className="font-bold">98.3%</span>
+              </>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="compliance" className="space-y-6">
+          {loading ? <ChartSkeleton /> : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Compliance Overview</CardTitle>
+                <CardDescription>Key compliance metrics and status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* ... keep existing code for compliance content */}
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="h-5 w-5 text-green-500" />
+                        <span className="font-medium">Document Compliance</span>
                       </div>
-                      <Progress value={98.3} className="h-2" />
-                      <p className="text-xs text-muted-foreground">5 documents pending approval</p>
+                      <span className="font-bold">98.3%</span>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <div className="flex items-center gap-2">
-                          <BarChart2 className="h-5 w-5 text-green-500" />
-                          <span className="font-medium">Audit Findings</span>
-                        </div>
-                        <span className="font-bold">3 open</span>
-                      </div>
-                      <Progress value={85} className="h-2" />
-                      <p className="text-xs text-muted-foreground">17 closed, 3 open out of 20 total</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <div className="flex items-center gap-2">
-                          <Activity className="h-5 w-5 text-amber-500" />
-                          <span className="font-medium">Training Compliance</span>
-                        </div>
-                        <span className="font-bold">92.7%</span>
-                      </div>
-                      <Progress value={92.7} className="h-2" />
-                      <p className="text-xs text-muted-foreground">15 employees with overdue training</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <div className="flex items-center gap-2">
-                          <PieChart className="h-5 w-5 text-green-500" />
-                          <span className="font-medium">Regulatory Requirements</span>
-                        </div>
-                        <span className="font-bold">100%</span>
-                      </div>
-                      <Progress value={100} className="h-2" />
-                      <p className="text-xs text-muted-foreground">All regulatory requirements fulfilled</p>
-                    </div>
+                    <Progress value={98.3} className="h-2" />
+                    <p className="text-xs text-muted-foreground">5 documents pending approval</p>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <BarChart2 className="h-5 w-5 text-green-500" />
+                        <span className="font-medium">Audit Findings</span>
+                      </div>
+                      <span className="font-bold">3 open</span>
+                    </div>
+                    <Progress value={85} className="h-2" />
+                    <p className="text-xs text-muted-foreground">17 closed, 3 open out of 20 total</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-amber-500" />
+                        <span className="font-medium">Training Compliance</span>
+                      </div>
+                      <span className="font-bold">92.7%</span>
+                    </div>
+                    <Progress value={92.7} className="h-2" />
+                    <p className="text-xs text-muted-foreground">15 employees with overdue training</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <PieChart className="h-5 w-5 text-green-500" />
+                        <span className="font-medium">Regulatory Requirements</span>
+                      </div>
+                      <span className="font-bold">100%</span>
+                    </div>
+                    <Progress value={100} className="h-2" />
+                    <p className="text-xs text-muted-foreground">All regulatory requirements fulfilled</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {loading ? (
+              <>
+                <ChartSkeleton />
+                <ChartSkeleton />
+              </>
+            ) : (
+              // ... keep existing code for Latest Compliance Activities and Upcoming Compliance Tasks
+              <>
                 <Card>
                   <CardHeader>
                     <CardTitle>Latest Compliance Activities</CardTitle>
@@ -620,14 +777,13 @@ const KPIs = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+              </>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
 export default KPIs;
-
