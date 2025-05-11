@@ -50,6 +50,7 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Certifications = lazy(() => import('@/pages/Certifications'));
 const KPIs = lazy(() => import('@/pages/KPIs'));
 const HACCP = lazy(() => import('@/pages/HACCP'));
+const HaccpModule = lazy(() => import('@/pages/HaccpModule'));
 
 function App() {
   return (
@@ -129,8 +130,11 @@ function App() {
             {/* Testing and Verification routes */}
             <Route path="testing" element={<TestingVerification />} />
             
-            {/* New routes */}
+            {/* HACCP Routes */}
             <Route path="haccp" element={<HACCP />} />
+            <Route path="haccp-module" element={<HaccpModule />} />
+            
+            {/* New routes */}
             <Route path="kpis" element={<KPIs />} />
             <Route path="certifications" element={<Certifications />} />
             <Route path="settings" element={<Settings />} />
