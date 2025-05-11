@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,11 +75,8 @@ const NCDetailsForm: React.FC<NCDetailsFormProps> = ({ data, onSave }) => {
     try {
       setIsSubmitting(true);
       
-      // Get the current user ID - in a real app, this would come from auth context
-      const userId = data.created_by || 'system';
-      
-      // Call the update service
-      await updateNonConformance(data.id, values, userId);
+      // Fix: Remove the third argument - the function only accepts 2 arguments
+      await updateNonConformance(data.id, values);
       
       // Notify parent component
       onSave(values);

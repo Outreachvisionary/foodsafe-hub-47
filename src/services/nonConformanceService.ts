@@ -1,4 +1,3 @@
-
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { adaptNCForAPI, adaptAPIToNC } from '@/utils/nonConformanceAdapters';
 import { toast } from 'sonner';
@@ -76,7 +75,7 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
   }
 };
 
-// Update non-conformance
+// Update non-conformance - updated signature to match calls (2 params)
 export const updateNonConformance = async (id: string, data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
     // Mock API call
@@ -169,7 +168,7 @@ export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAt
   }
 };
 
-// Upload NC attachment
+// Upload NC attachment - updated signature to match calls (3 params)
 export const uploadNCAttachment = async (
   nonConformanceId: string,
   file: File,
