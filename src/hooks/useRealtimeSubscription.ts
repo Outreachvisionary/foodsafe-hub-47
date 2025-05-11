@@ -15,6 +15,7 @@ interface UseRealtimeSubscriptionOptions<T> {
   onError?: (error: Error) => void;
   initialFetch?: boolean;
   cacheTime?: number; // Time in ms to cache data
+  relatedTables?: string[]; // Related tables to listen for changes
 }
 
 export function useRealtimeSubscription<T extends Record<string, any>>(
@@ -28,7 +29,8 @@ export function useRealtimeSubscription<T extends Record<string, any>>(
     onDataChange,
     onError,
     initialFetch = true,
-    cacheTime = 30000 // Default 30s cache
+    cacheTime = 30000, // Default 30s cache
+    relatedTables = []
   } = options;
   
   const [data, setData] = useState<T[]>([]);
@@ -37,6 +39,7 @@ export function useRealtimeSubscription<T extends Record<string, any>>(
   
   // Use refs for data that doesn't need to trigger re-renders
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const relatedChannelsRef = useRef<RealtimeChannel[]>([]);
   const cacheRef = useRef<{
     data: T[] | null;
     timestamp: number;
@@ -99,7 +102,7 @@ export function useRealtimeSubscription<T extends Record<string, any>>(
     }
   }, [initialFetch, fetchData]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription to primary table
   useEffect(() => {
     console.log(`Setting up realtime subscription for ${table}`);
     
@@ -146,6 +149,62 @@ export function useRealtimeSubscription<T extends Record<string, any>>(
       }
     };
   }, [table, fetchData]);
+
+  // Set up subscriptions for related tables
+  useEffect(() => {
+    if (!relatedTables || relatedTables.length === 0) return;
+
+    console.log(`Setting up related table subscriptions for ${table}:`, relatedTables);
+    
+    // Clean up existing related channels
+    relatedChannelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    
+    relatedChannelsRef.current = [];
+    
+    // Create a subscription for each related table
+    relatedTables.forEach(relatedTable => {
+      const channel = supabase
+        .channel(`public:${relatedTable}:${table}`)
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: relatedTable 
+          }, 
+          (payload) => {
+            console.log(`Related table update from ${relatedTable}:`, payload);
+            
+            // Invalidate cache to force refetch of main data
+            cacheRef.current.timestamp = 0;
+            
+            // Fetch fresh data for the primary table
+            fetchData();
+            
+            // Show a toast notification for the related table update
+            const event = payload.eventType;
+            toast({
+              title: `${relatedTable.charAt(0).toUpperCase() + relatedTable.slice(1)} ${event.toLowerCase()}d`,
+              description: `Changes in ${relatedTable.replace(/_/g, ' ')} may affect this view.`,
+            });
+          }
+        )
+        .subscribe((status) => {
+          console.log(`Subscription status for related table ${relatedTable}:`, status);
+        });
+      
+      relatedChannelsRef.current.push(channel);
+    });
+
+    return () => {
+      console.log(`Unsubscribing from related tables for ${table}`);
+      relatedChannelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      relatedChannelsRef.current = [];
+    };
+  }, [table, relatedTables, fetchData]);
 
   return { data, loading, error, refetch: fetchData };
 }

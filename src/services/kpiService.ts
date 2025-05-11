@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for KPI data
@@ -34,6 +35,35 @@ export interface KpiMetric {
   icon: string;
   category: string;
 }
+
+// Source types for module integration
+export type KpiDataSource = 'manual' | 'haccp' | 'audit' | 'non_conformance' | 'capa' | 'supplier' | 'training';
+
+// Enhanced KPI service with module source mapping
+interface ModuleSourceData {
+  module: KpiDataSource;
+  tableName: string; 
+  metrics: string[];
+}
+
+// Define which modules feed into which KPI metrics
+const kpiSourceMapping: Record<string, ModuleSourceData[]> = {
+  'quality': [
+    { module: 'non_conformance', tableName: 'non_conformances', metrics: ['status', 'item_category'] },
+    { module: 'audit', tableName: 'audits', metrics: ['status', 'findings_count'] }
+  ],
+  'safety': [
+    { module: 'non_conformance', tableName: 'non_conformances', metrics: ['status', 'reason_category'] }
+  ],
+  'compliance': [
+    { module: 'haccp', tableName: 'haccp_plans', metrics: ['status'] },
+    { module: 'audit', tableName: 'audits', metrics: ['status', 'findings_count'] },
+    { module: 'capa', tableName: 'capa_actions', metrics: ['status'] }
+  ],
+  'production': [
+    { module: 'supplier', tableName: 'suppliers', metrics: ['status', 'compliance_status'] }
+  ]
+};
 
 // Use a caching mechanism to prevent unnecessary refetches
 let cachedData = {
@@ -120,14 +150,14 @@ export const fetchSafetyData = async (): Promise<SafetyData[]> => {
   return data || [];
 };
 
-// Fetch KPI metrics
+// Fetch KPI metrics with source data integration
 export const fetchKpiMetrics = async (): Promise<KpiMetric[]> => {
   // Return cached data if valid
   if (isCacheValid() && cachedData.kpiMetrics) {
     return cachedData.kpiMetrics;
   }
 
-  const { data, error } = await supabase
+  const { data: storedMetrics, error } = await supabase
     .from('kpi_metrics')
     .select('*');
 
@@ -136,10 +166,80 @@ export const fetchKpiMetrics = async (): Promise<KpiMetric[]> => {
     return [];
   }
 
-  // Update cache
-  cachedData.kpiMetrics = data || [];
+  // Enrich metrics with module data
+  const enrichedMetrics = await Promise.all(storedMetrics.map(async (metric) => {
+    // For demonstration, we'll update specific metrics based on module data
+    if (metric.category === 'quality') {
+      const metric_value = await calculateQualityMetric(metric.metric_name);
+      if (metric_value !== null) {
+        metric.metric_value = metric_value;
+      }
+    } else if (metric.category === 'compliance') {
+      const metric_value = await calculateComplianceMetric(metric.metric_name);
+      if (metric_value !== null) {
+        metric.metric_value = metric_value;
+      }
+    }
+    
+    return metric;
+  }));
+
+  // Update cache with enriched metrics
+  cachedData.kpiMetrics = enrichedMetrics;
   cachedData.timestamp = Date.now();
-  return data || [];
+  return enrichedMetrics;
+};
+
+// Calculate quality metrics from source modules
+const calculateQualityMetric = async (metricName: string): Promise<number | null> => {
+  try {
+    if (metricName === 'Quality Score') {
+      // Example: Calculate quality score based on non-conformances
+      const { count: totalCount } = await supabase
+        .from('non_conformances')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: resolvedCount } = await supabase
+        .from('non_conformances')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['Resolved', 'Closed']);
+      
+      if (totalCount && totalCount > 0) {
+        return Math.round((resolvedCount / totalCount) * 100);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error calculating quality metric:', error);
+    return null;
+  }
+};
+
+// Calculate compliance metrics from source modules
+const calculateComplianceMetric = async (metricName: string): Promise<number | null> => {
+  try {
+    if (metricName === 'Compliance Rate') {
+      // Example: Calculate compliance rate based on audit findings
+      const { data: audits } = await supabase
+        .from('audits')
+        .select('*');
+      
+      if (audits && audits.length > 0) {
+        const totalFindings = audits.reduce((sum, audit) => sum + (audit.findings_count || 0), 0);
+        const avgFindingsPerAudit = totalFindings / audits.length;
+        // Lower findings = higher compliance (inverse relationship)
+        // Max of 10 findings per audit would be 0% compliance in this example
+        const complianceRate = Math.max(0, 100 - (avgFindingsPerAudit * 10));
+        return Math.round(complianceRate);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error calculating compliance metric:', error);
+    return null;
+  }
 };
 
 // Function to fetch all KPI data at once to minimize loading flicker
@@ -188,4 +288,88 @@ export const clearKpiCache = () => {
     kpiMetrics: null,
     timestamp: 0
   };
+};
+
+// Function to update KPI metrics manually when needed
+export const updateKpiMetric = async (
+  id: string, 
+  updates: Partial<Omit<KpiMetric, 'id'>>
+): Promise<KpiMetric | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('kpi_metrics')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    // Invalidate cache to ensure fresh data on next fetch
+    clearKpiCache();
+    
+    return data;
+  } catch (error) {
+    console.error('Error updating KPI metric:', error);
+    return null;
+  }
+};
+
+// Function to manually add new data points for time-series data
+export const addProductionDataPoint = async (
+  dataPoint: Omit<ProductionData, 'id'>
+): Promise<ProductionData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('kpi_production_data')
+      .insert(dataPoint)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    clearKpiCache();
+    return data;
+  } catch (error) {
+    console.error('Error adding production data point:', error);
+    return null;
+  }
+};
+
+// Similar functions for other KPI data types
+export const addQualityDataPoint = async (
+  dataPoint: Omit<QualityData, 'id'>
+): Promise<QualityData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('kpi_quality_data')
+      .insert(dataPoint)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    clearKpiCache();
+    return data;
+  } catch (error) {
+    console.error('Error adding quality data point:', error);
+    return null;
+  }
+};
+
+export const addSafetyDataPoint = async (
+  dataPoint: Omit<SafetyData, 'id'>
+): Promise<SafetyData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('kpi_safety_data')
+      .insert(dataPoint)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    clearKpiCache();
+    return data;
+  } catch (error) {
+    console.error('Error adding safety data point:', error);
+    return null;
+  }
 };
