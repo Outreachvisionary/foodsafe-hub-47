@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { fetchAllKpiData, ProductionData, QualityData, SafetyData, KpiMetric } from '@/services/kpiService';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -351,7 +351,6 @@ const KPIs = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {loading ? (
-          // Fix: Add missing required 'target' prop to skeleton loaders
           Array(4).fill(0).map((_, index) => (
             <KPICard
               key={`skeleton-${index}`}
