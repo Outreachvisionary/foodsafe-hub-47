@@ -31,14 +31,14 @@ ChartJS.register(
 
 interface ChartProps {
   type: 'bar' | 'line' | 'pie';
-  data: ChartData<'bar' | 'line' | 'pie'>;
-  options?: ChartOptions<'bar' | 'line' | 'pie'>;
+  data: ChartData<any>;
+  options?: ChartOptions<any>;
   height?: number | string;
   width?: number | string;
 }
 
 const Chart: React.FC<ChartProps> = ({ type, data, options, height = '100%', width = '100%' }) => {
-  const chartOptions: ChartOptions = {
+  const chartOptions: ChartOptions<any> = {
     responsive: true,
     maintainAspectRatio: false,
     ...options
