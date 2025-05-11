@@ -18,7 +18,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { fetchNonConformances } from '@/services/nonConformanceService';
+import { getAllNonConformances } from '@/services/nonConformanceService';
 import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
 import NCStatusBadge from './NCStatusBadge';
 import { toast } from 'sonner';
@@ -41,7 +41,8 @@ const NCList: React.FC<NCListProps> = ({ onSelectItem }) => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchNonConformances();
+        const result = await getAllNonConformances();
+        const data = result.data || [];
         console.log('Loaded NC data:', data);
         setNonConformances(data as unknown as NonConformance[]);
         setFilteredNCs(data as unknown as NonConformance[]);

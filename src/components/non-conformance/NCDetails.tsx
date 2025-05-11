@@ -7,6 +7,7 @@ import NCAttachmentUploader from './NCAttachmentUploader';
 import NCCAPAIntegration from './NCCAPAIntegration';
 import NCDetailsHeader from './NCDetailsHeader';
 import NCActionsPanel from './NCActionsPanel';
+import { NonConformance } from '@/types/non-conformance';
 
 interface NCDetailsProps {
   id: string;
@@ -48,7 +49,7 @@ const NCDetails: React.FC<NCDetailsProps> = ({
   resolution,
 }) => {
   const [activeTab, setActiveTab] = useState('details');
-  const [ncData, setNcData] = useState({
+  const [ncData, setNcData] = useState<Partial<NonConformance>>({
     id,
     title,
     status,
@@ -75,10 +76,16 @@ const NCDetails: React.FC<NCDetailsProps> = ({
   return (
     <div className="space-y-6">
       <NCDetailsHeader 
-        title={ncData.title} 
-        id={ncData.id} 
-        status={ncData.status} 
-        reportedDate={ncData.reported_date}
+        nonConformance={{
+          id: ncData.id || '',
+          title: ncData.title || '',
+          status: ncData.status || '',
+          reported_date: ncData.reported_date || '',
+          created_at: ncData.reported_date || '',
+          updated_at: ncData.reported_date || '',
+          item_name: ncData.item_name || '',
+          item_category: ncData.item_category || ''
+        } as NonConformance}
       />
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -110,11 +117,11 @@ const NCDetails: React.FC<NCDetailsProps> = ({
           
           <div className="md:col-span-1">
             <NCActionsPanel
-              nonConformanceId={id}
-              currentStatus={status} 
-              onStatusChange={(newStatus) => {
-                setNcData(prev => ({ ...prev, status: newStatus }));
-              }}
+              id={id}
+              title={title}
+              onEdit={() => console.log('Edit NC:', id)}
+              onGenerateCapa={() => console.log('Generate CAPA for NC:', id)}
+              onViewCapa={ncData.capa_id ? () => console.log('View CAPA:', ncData.capa_id) : undefined}
             />
           </div>
         </div>

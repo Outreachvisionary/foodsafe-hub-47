@@ -1,565 +1,295 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
-import { 
-  createNonConformance, 
-  updateNonConformance, 
-  fetchNonConformanceById 
-} from '@/services/nonConformanceService';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { getNonConformanceById, createNonConformance, updateNonConformance } from '@/services/nonConformanceService';
+import { NonConformance, NonConformanceItemCategory, NonConformanceReasonCategory, NonConformanceStatus } from '@/types/non-conformance';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { z } from 'zod';
+import { validateAndToast } from '@/lib/validation';
 
 interface NCFormProps {
-  id?: string; // If provided, we're editing an existing item
-  isDialog?: boolean;
+  id?: string;
   onClose?: () => void;
-  onSuccess?: (nc: NonConformance) => void;
 }
 
-const NCForm: React.FC<NCFormProps> = ({ id, isDialog, onClose, onSuccess }) => {
-  const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [nonConformance, setNonConformance] = useState<Partial<NonConformance>>({});
   
-  const form = useForm<NonConformance>({
-    defaultValues: {
-      title: '',
-      description: '',
-      item_name: '',
-      item_category: 'Other',
-      reason_category: 'Other',
-      reason_details: '',
-      status: NCStatus.OnHold,
-      created_by: 'current-user', // This should be the actual user ID in a real app
-      reported_date: new Date().toISOString(),
-      quantity: 0,
-      quantity_on_hold: 0,
-      units: ''
-    }
-  });
-
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors }
+  } = useForm<Partial<NonConformance>>();
+  
+  // Item categories
+  const itemCategories: NonConformanceItemCategory[] = [
+    'Equipment',
+    'Facility',
+    'Finished Product',
+    'Raw Material',
+    'Packaging Materials',
+    'Packaging',
+    'Other'
+  ];
+  
+  // Reason categories
+  const reasonCategories: NonConformanceReasonCategory[] = [
+    'Quality Issue',
+    'Food Safety',
+    'Damaged',
+    'Process Deviation',
+    'Foreign Material',
+    'Expired',
+    'Other'
+  ];
+  
+  // Status options
+  const statusOptions: NonConformanceStatus[] = [
+    'On Hold',
+    'Under Investigation',
+    'Under Review',
+    'Approved for Use',
+    'Released',
+    'Disposed',
+    'Resolved',
+    'Closed'
+  ];
+  
+  // Load existing non-conformance if editing
   useEffect(() => {
-    const loadNonConformance = async () => {
-      if (!id) {
-        setInitialLoad(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const ncData = await fetchNonConformanceById(id);
-        
-        // Reset form with loaded data
-        form.reset(ncData);
-      } catch (error) {
-        console.error('Error loading non-conformance:', error);
-        toast({
-          title: 'Failed to load data',
-          description: 'There was an error loading the non-conformance details.',
-          variant: 'destructive',
+    if (id) {
+      setLoading(true);
+      
+      getNonConformanceById(id)
+        .then((data) => {
+          setNonConformance(data);
+          
+          // Set form values
+          Object.entries(data).forEach(([key, value]) => {
+            setValue(key as any, value);
+          });
+        })
+        .catch((error) => {
+          console.error('Error loading non-conformance:', error);
+          toast.error('Failed to load non-conformance details');
+        })
+        .finally(() => {
+          setLoading(false);
         });
-        
-        // Navigate back on error
-        if (!isDialog && onClose) {
-          onClose();
-        } else {
-          navigate('/non-conformance');
-        }
-      } finally {
-        setLoading(false);
-        setInitialLoad(false);
-      }
-    };
-
-    loadNonConformance();
-  }, [id, form, navigate, onClose, isDialog, toast]);
-
-  const onSubmit = async (data: NonConformance) => {
+    }
+  }, [id, setValue]);
+  
+  const onSubmit = async (data: Partial<NonConformance>) => {
+    // Validate form data
+    const formSchema = z.object({
+      title: z.string().min(3, "Title must be at least 3 characters"),
+      item_name: z.string().min(1, "Item name is required"),
+      item_category: z.string().min(1, "Item category is required"),
+      reason_category: z.string().min(1, "Reason category is required")
+    });
+    
+    const validation = validateAndToast(formSchema, data, { title: 'Validation Error' });
+    if (!validation.success) return;
+    
     try {
       setLoading(true);
       
-      let result: NonConformance;
-      
       if (id) {
         // Update existing non-conformance
-        result = await updateNonConformance(id, {
-          ...data,
-          updated_at: new Date().toISOString()
-        }, data.created_by); 
-        
-        toast({
-          title: 'Updated successfully',
-          description: 'The non-conformance has been updated successfully.'
-        });
+        await updateNonConformance(id, data, 'current-user');
+        toast.success('Non-conformance updated successfully');
       } else {
         // Create new non-conformance
-        // Ensure the description has a value even if empty
-        const formattedData = {
-          ...data,
-          description: data.description || '',
-          reported_date: new Date().toISOString()
-        };
-        
-        result = await createNonConformance(formattedData);
-        
-        toast({
-          title: 'Created successfully',
-          description: 'The non-conformance has been created successfully.'
-        });
+        await createNonConformance(data, 'current-user');
+        toast.success('Non-conformance created successfully');
       }
       
-      if (onSuccess) {
-        onSuccess(result);
-      } else if (isDialog && onClose) {
-        onClose();
-      } else {
-        navigate(`/non-conformance/${result.id}`);
-      }
+      // Close the form
+      if (onClose) onClose();
     } catch (error) {
       console.error('Error saving non-conformance:', error);
-      toast({
-        title: 'Failed to save',
-        description: 'There was an error saving the non-conformance.',
-        variant: 'destructive',
-      });
+      toast.error('Failed to save non-conformance');
     } finally {
       setLoading(false);
     }
   };
-
-  if (initialLoad && id) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  // Define status options as an array of valid NCStatus values
-  const statusOptions = [
-    NCStatus.OnHold,
-    NCStatus.UnderReview,
-    NCStatus.Released,
-    NCStatus.Disposed
-  ];
-
+  
   return (
-    <Card className={isDialog ? '' : 'max-w-3xl mx-auto'}>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          {!isDialog && (
-            <Button 
-              variant="ghost" 
-              onClick={() => onClose ? onClose() : navigate('/non-conformance')}
-              className="mr-2"
+    <Card className="p-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              placeholder="Enter a title"
+              {...register('title', { required: true })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              defaultValue={nonConformance.status || 'On Hold'} 
+              onValueChange={(value) => setValue('status', value)}
             >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <CardTitle>{id ? 'Edit Non-Conformance' : 'Create Non-Conformance'}</CardTitle>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="item_name">Item Name</Label>
+            <Input
+              id="item_name"
+              placeholder="Enter item name"
+              {...register('item_name', { required: true })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="item_category">Item Category</Label>
+            <Select 
+              defaultValue={nonConformance.item_category} 
+              onValueChange={(value) => setValue('item_category', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {itemCategories.map((category) => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="reason_category">Reason Category</Label>
+            <Select 
+              defaultValue={nonConformance.reason_category} 
+              onValueChange={(value) => setValue('reason_category', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select reason" />
+              </SelectTrigger>
+              <SelectContent>
+                {reasonCategories.map((reason) => (
+                  <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="assigned_to">Assigned To</Label>
+            <Input
+              id="assigned_to"
+              placeholder="Enter assignee"
+              {...register('assigned_to')}
+            />
+          </div>
+          
+          <div className="space-y-2 col-span-1 md:col-span-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Describe the non-conformance"
+              rows={4}
+              {...register('description')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="reason_details">Reason Details</Label>
+            <Textarea
+              id="reason_details"
+              placeholder="Provide detailed explanation"
+              rows={3}
+              {...register('reason_details')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              placeholder="Enter location"
+              {...register('location')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="0"
+              placeholder="Enter quantity"
+              {...register('quantity', { valueAsNumber: true })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="quantity_on_hold">Quantity On Hold</Label>
+            <Input
+              id="quantity_on_hold"
+              type="number"
+              min="0"
+              placeholder="Enter quantity on hold"
+              {...register('quantity_on_hold', { valueAsNumber: true })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="units">Units</Label>
+            <Input
+              id="units"
+              placeholder="Enter units (kg, liters, etc.)"
+              {...register('units')}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <Input
+              id="department"
+              placeholder="Enter department"
+              {...register('department')}
+            />
+          </div>
         </div>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="title"
-                rules={{ required: 'Title is required' }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter a title" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      A concise title for the non-conformance
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                rules={{ required: 'Status is required' }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value as string}
-                      disabled={!id} // Only allow status change when editing
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {statusOptions.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status.replace('_', ' ')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Current status of the non-conformance
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Provide a detailed description of the non-conformance" 
-                      className="min-h-[100px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Detailed explanation of the non-conformance issue
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="item_name"
-                rules={{ required: 'Item name is required' }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter item name" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Name of the non-conforming item
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="item_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item ID (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter item ID" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Identifier for the item if applicable
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Total Quantity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter total quantity"
-                        value={field.value?.toString() || '0'}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Total quantity of affected items
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="quantity_on_hold"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity On Hold</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter quantity on hold"
-                        value={field.value?.toString() || '0'}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Quantity of items currently on hold
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="units"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Units</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., kg, liters, pieces"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Unit of measurement for quantities
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="item_category"
-              rules={{ required: 'Category is required' }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Item Category</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value?.toString()}
-                      className="grid grid-cols-2 gap-4 md:grid-cols-3"
-                    >
-                      {([
-                        'Processing Equipment',
-                        'Product Storage Tanks',
-                        'Finished Products',
-                        'Raw Products',
-                        'Packaging Materials',
-                        'Other'
-                      ] as NCItemCategory[]).map((category) => (
-                        <FormItem key={category} className="flex items-center space-x-2">
-                          <FormControl>
-                            <RadioGroupItem value={category} />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">{category}</FormLabel>
-                        </FormItem>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="reason_category"
-                rules={{ required: 'Reason is required' }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason for Non-Conformance</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value as string}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select reason" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {([
-                          'Contamination',
-                          'Quality Issues',
-                          'Regulatory Non-Compliance',
-                          'Equipment Malfunction',
-                          'Documentation Error',
-                          'Process Deviation',
-                          'Other'
-                        ] as NCReasonCategory[]).map((reason) => (
-                          <SelectItem key={reason} value={reason}>
-                            {reason}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="reason_details"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Additional Reason Details</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Provide additional details about the reason" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter location" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Where the non-conformance was found
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter department" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Department responsible for the non-conformance
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="assigned_to"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned To (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter assignee" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Person responsible for handling this non-conformance
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority (Optional)</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange}
-                      defaultValue={field.value as string}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {['Critical', 'High', 'Medium', 'Low'].map((priority) => (
-                          <SelectItem key={priority} value={priority}>
-                            {priority}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Priority level for resolving this issue
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end space-x-2">
-            {onClose && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-            )}
-            <Button 
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : id ? 'Update' : 'Create'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
+        
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Saving...' : id ? 'Update' : 'Create'}
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 };

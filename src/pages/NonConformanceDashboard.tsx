@@ -1,6 +1,3 @@
-
-// Only fixing the NCStats import
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNCStats } from '@/services/nonConformanceService';
@@ -184,7 +181,7 @@ const NonConformanceDashboard: React.FC = () => {
                   </TabsContent>
                   <TabsContent value="reason" className="mt-0">
                     <BarChartComponent 
-                      data={Object.entries(stats.byReason).map(([name, value]) => ({
+                      data={Object.entries(stats.byReason || {}).map(([name, value]) => ({
                         name: name.length > 15 ? name.substring(0, 12) + '...' : name,
                         value: value as number
                       }))} 

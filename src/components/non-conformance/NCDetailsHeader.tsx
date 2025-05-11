@@ -10,8 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button';
-import { NCStatus } from '@/types/enums';
-import NCStatusBadge from './NCStatusBadge';
 import { NonConformance } from '@/types/non-conformance';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +23,7 @@ const NCDetailsHeader: React.FC<NCDetailsHeaderProps> = ({ nonConformance }) => 
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0">
       <div className="flex items-center space-x-2">
         <h2 className="text-2xl font-bold">{nonConformance.title}</h2>
-        <NCStatusBadge status={nonConformance.status} />
+        <Badge variant="outline">{nonConformance.status}</Badge>
       </div>
       <div className="flex items-center space-x-2">
         <Button variant="outline" size="sm">

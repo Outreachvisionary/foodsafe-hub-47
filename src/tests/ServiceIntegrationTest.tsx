@@ -36,12 +36,12 @@ describe('Service Integration Testing', () => {
     (supabase.from as jest.Mock).mockImplementation(mockFrom);
     
     // Call the service function
-    const result = await nonConformanceService.fetchNonConformances();
+    const result = await nonConformanceService.getAllNonConformances();
     
     // Verify the results
     expect(mockFrom).toHaveBeenCalledWith('non_conformances');
     expect(mockFromSelect).toHaveBeenCalled();
-    expect(result).toEqual(mockNCData);
+    expect(result.data).toEqual(mockNCData);
   });
   
   // Test Document Service
