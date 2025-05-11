@@ -259,52 +259,51 @@ const CourseCreation = () => {
                         </div>
                       ))}
                     </div>
-                    <Button onClick={addQuestion}>Add Question</Button>
+                    <Button 
+                      type="button" 
+                      onClick={addQuestion}
+                      className="w-full"
+                    >
+                      Add Question
+                    </Button>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Existing Questions ({questions.length})</Label>
-                    {questions.length === 0 ? (
-                      <div className="text-center p-4 border rounded-md">
-                        <p className="text-muted-foreground">No questions added yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {questions.map((q, index) => (
-                          <Card key={index}>
-                            <CardContent className="p-4">
-                              <div className="flex justify-between">
-                                <p className="font-medium">{q.question}</p>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-8 w-8 p-0" 
-                                  onClick={() => removeQuestion(index)}
-                                >
-                                  &times;
-                                </Button>
-                              </div>
-                              <div className="mt-2 space-y-1">
-                                {q.options.map((option, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-2">
-                                    <span className="text-xs font-medium">{optIndex + 1}.</span>
-                                    <span className={optIndex === q.correctAnswer ? "font-bold" : ""}>
-                                      {option} {optIndex === q.correctAnswer && "(Correct)"}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {questions.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Quiz Questions ({questions.length})</h3>
+                      {questions.map((q, index) => (
+                        <div key={index} className="border rounded-md p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-medium">{q.question}</h4>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeQuestion(index)}
+                              className="text-red-500 h-8 w-8 p-0"
+                            >
+                              ×
+                            </Button>
+                          </div>
+                          <ol className="list-decimal list-inside space-y-1">
+                            {q.options.map((opt, optIndex) => (
+                              <li 
+                                key={optIndex} 
+                                className={optIndex === q.correctAnswer ? "text-green-600 font-medium" : ""}
+                              >
+                                {opt} {optIndex === q.correctAnswer && "(Correct)"}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline">Preview</Button>
             <Button onClick={saveCourse}>Save Course</Button>
           </CardFooter>
         </Card>
