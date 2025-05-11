@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -10,7 +9,8 @@ import {
   Title, 
   Tooltip, 
   Legend,
-  Filler
+  Filler,
+  ChartOptions
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getMockComplianceTrendData } from '@/services/mockDataService';
@@ -66,7 +66,7 @@ const ComplianceTrendChart: React.FC<ComplianceTrendChartProps> = ({ title = "Co
     ],
   };
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
       legend: {

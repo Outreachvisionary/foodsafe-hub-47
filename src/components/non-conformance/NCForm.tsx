@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { getNonConformanceById, createNonConformance, updateNonConformance } from '@/services/nonConformanceService';
-import { NonConformance, NonConformanceItemCategory, NonConformanceReasonCategory, NonConformanceStatus } from '@/types/non-conformance';
+import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 import { validateAndToast } from '@/lib/validation';
@@ -31,7 +31,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
   } = useForm<Partial<NonConformance>>();
   
   // Item categories
-  const itemCategories: NonConformanceItemCategory[] = [
+  const itemCategories: NCItemCategory[] = [
     'Equipment',
     'Facility',
     'Finished Product',
@@ -42,7 +42,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
   ];
   
   // Reason categories
-  const reasonCategories: NonConformanceReasonCategory[] = [
+  const reasonCategories: NCReasonCategory[] = [
     'Quality Issue',
     'Food Safety',
     'Damaged',
@@ -53,15 +53,15 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
   ];
   
   // Status options
-  const statusOptions: NonConformanceStatus[] = [
-    'On Hold',
-    'Under Investigation',
-    'Under Review',
-    'Approved for Use',
-    'Released',
-    'Disposed',
-    'Resolved',
-    'Closed'
+  const statusOptions: NCStatus[] = [
+    NCStatus.OnHold,
+    NCStatus.InProgress,
+    NCStatus.UnderReview,
+    NCStatus.Resolved,
+    NCStatus.Closed,
+    NCStatus.Released,
+    NCStatus.Disposed,
+    NCStatus.Approved
   ];
   
   // Load existing non-conformance if editing
@@ -105,11 +105,11 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
       
       if (id) {
         // Update existing non-conformance
-        await updateNonConformance(id, data, 'current-user');
+        await updateNonConformance(id, data);
         toast.success('Non-conformance updated successfully');
       } else {
         // Create new non-conformance
-        await createNonConformance(data, 'current-user');
+        await createNonConformance(data);
         toast.success('Non-conformance created successfully');
       }
       

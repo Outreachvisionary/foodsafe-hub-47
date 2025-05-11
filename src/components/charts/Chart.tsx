@@ -10,7 +10,9 @@ import {
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartData,
+  ChartOptions
 } from 'chart.js';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 
@@ -29,14 +31,14 @@ ChartJS.register(
 
 interface ChartProps {
   type: 'bar' | 'line' | 'pie';
-  data: any;
-  options?: any;
+  data: ChartData<'bar' | 'line' | 'pie'>;
+  options?: ChartOptions<'bar' | 'line' | 'pie'>;
   height?: number | string;
   width?: number | string;
 }
 
 const Chart: React.FC<ChartProps> = ({ type, data, options, height = '100%', width = '100%' }) => {
-  const chartOptions = {
+  const chartOptions: ChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     ...options
