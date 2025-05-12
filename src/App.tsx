@@ -30,7 +30,7 @@ const NonConformanceFormPage = lazy(() => import('@/pages/NonConformanceFormPage
 const UserManagement = lazy(() => import('@/pages/UserManagement'));
 const AuditsModule = lazy(() => import('@/pages/AuditsModule'));
 const Traceability = lazy(() => import('@/pages/Traceability'));
-const ComplaintManagement = lazy(() => import('@/pages/ComplaintManagement'));
+const ComplaintsManagement = lazy(() => import('@/pages/ComplaintsManagement'));
 const SupplierManagement = lazy(() => import('@/pages/SupplierManagement'));
 const DatabaseConnectionTest = lazy(() => import('@/pages/DatabaseConnectionTest'));
 const RoleManagement = lazy(() => import('@/pages/RoleManagement'));
@@ -111,7 +111,7 @@ function App() {
             <Route path="suppliers/new" element={<NewSupplierPage />} />
             
             {/* Complaints */}
-            <Route path="complaints" element={<ComplaintManagement />} />
+            <Route path="complaints" element={<ComplaintsManagement />} />
             
             {/* Reports */}
             <Route path="reports" element={<Reports />} />
