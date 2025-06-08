@@ -126,7 +126,7 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
 // Update a complaint's status
 export const updateComplaintStatus = async (
   id: string, 
-  status: ComplaintStatus,
+  status: string,
   userId: string
 ): Promise<Complaint> => {
   try {
@@ -145,7 +145,7 @@ export const updateComplaintStatus = async (
       .update({ 
         status, 
         updated_at: new Date().toISOString(),
-        resolution_date: status === ComplaintStatus.Resolved ? new Date().toISOString() : null
+        resolution_date: status === 'Resolved' ? new Date().toISOString() : null
       })
       .eq('id', id)
       .select()

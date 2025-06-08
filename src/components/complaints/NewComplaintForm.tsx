@@ -3,7 +3,13 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ComplaintCategory, ComplaintPriority, ComplaintStatus } from '@/types/complaint';
+import { 
+  ComplaintCategory, 
+  ComplaintPriority, 
+  ComplaintStatus,
+  ComplaintCategoryValues,
+  ComplaintPriorityValues
+} from '@/types/complaint';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -57,7 +63,7 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
       title: '',
       description: '',
       category: '',
-      priority: ComplaintPriority.Medium,
+      priority: 'Medium',
       customer_name: '',
       customer_contact: '',
       product_involved: '',
@@ -81,7 +87,7 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
         lot_number: values.lot_number,
         assigned_to: values.assigned_to,
         created_by: userId,
-        status: ComplaintStatus.New,
+        status: 'New' as ComplaintStatus,
         reported_date: new Date().toISOString(),
       });
       
@@ -161,7 +167,7 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(ComplaintCategory).map((category) => (
+                        {ComplaintCategoryValues.map((category) => (
                           <SelectItem key={category} value={category}>
                             {category.replace(/_/g, ' ')}
                           </SelectItem>
@@ -189,7 +195,7 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(ComplaintPriority).map((priority) => (
+                        {ComplaintPriorityValues.map((priority) => (
                           <SelectItem key={priority} value={priority}>
                             {priority}
                           </SelectItem>

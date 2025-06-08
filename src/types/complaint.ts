@@ -1,5 +1,5 @@
 
-export type ComplaintStatus = 'New' | 'Under_Investigation' | 'Resolved' | 'Closed';
+export type ComplaintStatus = 'New' | 'Under_Investigation' | 'Resolved' | 'Closed' | 'Reopened';
 export type ComplaintPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type ComplaintCategory = 
   | 'Product_Quality' 
@@ -43,3 +43,31 @@ export interface CreateComplaintRequest {
   status: ComplaintStatus;
   reported_date: string;
 }
+
+export interface ComplaintFilter {
+  status?: ComplaintStatus | ComplaintStatus[];
+  category?: ComplaintCategory | ComplaintCategory[];
+  priority?: ComplaintPriority | ComplaintPriority[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+}
+
+export interface ComplaintListProps {
+  complaints: Complaint[];
+  onComplaintClick?: (complaint: Complaint) => void;
+}
+
+// Enum values for easy iteration
+export const ComplaintStatusValues = ['New', 'Under_Investigation', 'Resolved', 'Closed', 'Reopened'] as const;
+export const ComplaintPriorityValues = ['Low', 'Medium', 'High', 'Critical'] as const;
+export const ComplaintCategoryValues = [
+  'Product_Quality',
+  'Food_Safety', 
+  'Packaging',
+  'Delivery',
+  'Customer_Service',
+  'Other'
+] as const;

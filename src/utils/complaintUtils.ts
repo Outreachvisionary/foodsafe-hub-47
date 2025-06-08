@@ -52,17 +52,17 @@ export const convertToComplaintStatus = (status: string): ComplaintStatus => {
   
   switch (normalized.toLowerCase()) {
     case 'new':
-      return ComplaintStatus.New;
+      return 'New';
     case 'under_investigation':
-      return ComplaintStatus.Under_Investigation;
+      return 'Under_Investigation';
     case 'resolved':
-      return ComplaintStatus.Resolved;
+      return 'Resolved';
     case 'closed':
-      return ComplaintStatus.Closed;
+      return 'Closed';
     case 'reopened':
-      return ComplaintStatus.Reopened;
+      return 'Reopened';
     default:
-      return ComplaintStatus.New;
+      return 'New';
   }
 };
 

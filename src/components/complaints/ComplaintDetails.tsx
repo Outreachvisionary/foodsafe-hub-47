@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, MessageSquare, CheckCircle } from 'lucide-react';
-import { Complaint, ComplaintStatus } from '@/types/complaint';
+import { Complaint, ComplaintStatus, ComplaintStatusValues } from '@/types/complaint';
 import { fetchComplaintById, updateComplaintStatus } from '@/services/complaintService';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -161,62 +162,23 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleStatusUpdate(ComplaintStatus.New)}
-              disabled={updatingStatus || complaint.status === ComplaintStatus.New}
-            >
-              {complaint.status === ComplaintStatus.New ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  New
-                </>
-              ) : (
-                'Mark as New'
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleStatusUpdate(ComplaintStatus.Under_Investigation)}
-              disabled={updatingStatus || complaint.status === ComplaintStatus.Under_Investigation}
-            >
-              {complaint.status === ComplaintStatus.Under_Investigation ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Under Investigation
-                </>
-              ) : (
-                'Mark as Under Investigation'
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleStatusUpdate(ComplaintStatus.Resolved)}
-              disabled={updatingStatus || complaint.status === ComplaintStatus.Resolved}
-            >
-              {complaint.status === ComplaintStatus.Resolved ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Resolved
-                </>
-              ) : (
-                'Mark as Resolved'
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleStatusUpdate(ComplaintStatus.Closed)}
-              disabled={updatingStatus || complaint.status === ComplaintStatus.Closed}
-            >
-              {complaint.status === ComplaintStatus.Closed ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Closed
-                </>
-              ) : (
-                'Mark as Closed'
-              )}
-            </Button>
+            {ComplaintStatusValues.map((status) => (
+              <Button
+                key={status}
+                variant="outline"
+                onClick={() => handleStatusUpdate(status)}
+                disabled={updatingStatus || complaint.status === status}
+              >
+                {complaint.status === status ? (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    {status.replace(/_/g, ' ')}
+                  </>
+                ) : (
+                  `Mark as ${status.replace(/_/g, ' ')}`
+                )}
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
