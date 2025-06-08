@@ -1,149 +1,167 @@
 
-// Document Status Enum
+// Document related enums matching database schema
 export enum DocumentStatus {
-  Draft = "Draft",
-  UnderReview = "Under Review", 
-  Approved = "Approved",
-  Rejected = "Rejected",
-  Archived = "Archived",
-  Expired = "Expired",
-  PendingReview = "Pending Review",
-  PendingApproval = "Pending Approval", 
-  Published = "Published",
-  Active = "Active",
-  Obsolete = "Obsolete",
-  InReview = "In Review"
+  Draft = 'Draft',
+  Under_Review = 'Under Review',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Active = 'Active',
+  Archived = 'Archived',
+  Expired = 'Expired'
 }
 
-// Checkout Status Enum
-export enum CheckoutStatus {
-  Available = "Available",
-  CheckedOut = "Checked Out", 
-  Locked = "Locked"
-}
-
-// Document Category Enum
 export enum DocumentCategory {
-  SOP = "SOP",
-  Policy = "Policy",
-  Form = "Form", 
-  Certificate = "Certificate",
-  AuditReport = "Audit Report",
-  HACCPPlan = "HACCP Plan",
-  TrainingMaterial = "Training Material",
-  SupplierDocumentation = "Supplier Documentation",
-  RiskAssessment = "Risk Assessment",
-  Other = "Other"
+  SOP = 'SOP',
+  Policy = 'Policy',
+  Form = 'Form',
+  Certificate = 'Certificate',
+  Audit_Report = 'Audit Report',
+  HACCP_Plan = 'HACCP Plan',
+  Training_Material = 'Training Material',
+  Supplier_Documentation = 'Supplier Documentation',
+  Risk_Assessment = 'Risk Assessment',
+  Other = 'Other'
 }
 
-// CAPA Status Enum
+export enum CheckoutStatus {
+  Available = 'Available',
+  Checked_Out = 'Checked_Out'
+}
+
+// CAPA related enums matching database schema
 export enum CAPAStatus {
-  Open = "Open",
-  InProgress = "In Progress",
-  Closed = "Closed", 
-  Overdue = "Overdue",
-  PendingVerification = "Pending Verification",
-  Completed = "Completed",
-  Verified = "Verified",
-  Rejected = "Rejected",
-  OnHold = "On Hold",
-  UnderReview = "Under Review"
+  Open = 'Open',
+  In_Progress = 'In Progress',
+  Pending_Verification = 'Pending Verification',
+  Closed = 'Closed',
+  Cancelled = 'Cancelled'
 }
 
-// CAPA Priority Enum
-export enum CAPAPriority {
-  Low = "Low",
-  Medium = "Medium", 
-  High = "High",
-  Critical = "Critical"
-}
-
-// CAPA Source Enum
 export enum CAPASource {
-  Audit = "Audit",
-  Complaint = "Complaint",
-  NonConformance = "Non-Conformance",
-  ManagementReview = "Management Review",
-  SupplierIssue = "Supplier Issue", 
-  CustomerComplaint = "Customer Complaint",
-  InternalReport = "Internal Report",
-  RegulatoryInspection = "Regulatory Inspection",
-  Other = "Other"
+  Audit = 'Audit',
+  Non_Conformance = 'Non Conformance',
+  Complaint = 'Complaint',
+  Management_Review = 'Management Review',
+  Risk_Assessment = 'Risk Assessment',
+  Other = 'Other'
 }
 
-// CAPA Effectiveness Rating Enum
-export enum CAPAEffectivenessRating {
-  Effective = "Effective",
-  PartiallyEffective = "Partially Effective",
-  NotEffective = "Not Effective", 
-  HighlyEffective = "Highly Effective"
+export enum CAPAPriority {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical'
 }
 
-// Complaint Status Enum
-export enum ComplaintStatus {
-  New = "New",
-  InProgress = "In Progress", 
-  Resolved = "Resolved",
-  Closed = "Closed",
-  Escalated = "Escalated"
+export enum EffectivenessRating {
+  Effective = 'Effective',
+  Partially_Effective = 'Partially Effective',
+  Ineffective = 'Ineffective',
+  Under_Review = 'Under Review'
 }
 
-// Complaint Category Enum
+// Complaint related enums
 export enum ComplaintCategory {
-  Quality = "Quality",
-  Safety = "Safety",
-  Service = "Service",
-  Delivery = "Delivery",
-  Other = "Other"
+  Product_Quality = 'Product Quality',
+  Packaging = 'Packaging',
+  Labeling = 'Labeling',
+  Foreign_Material = 'Foreign Material',
+  Contamination = 'Contamination',
+  Allergen = 'Allergen',
+  Service = 'Service',
+  Delivery = 'Delivery',
+  Other = 'Other'
 }
 
-// Complaint Priority Enum
-export enum ComplaintPriority {
-  Low = "Low",
-  Medium = "Medium",
-  High = "High", 
-  Critical = "Critical"
+export enum ComplaintStatus {
+  New = 'New',
+  Under_Investigation = 'Under Investigation',
+  In_Progress = 'In Progress',
+  Resolved = 'Resolved',
+  Closed = 'Closed'
 }
 
-// Non-Conformance Status Enum
+// Non-conformance related enums
 export enum NCStatus {
-  OnHold = "On Hold",
-  UnderReview = "Under Review",
-  Closed = "Closed",
-  Open = "Open", 
-  InProgress = "In Progress",
-  Resolved = "Resolved",
-  Completed = "Completed",
-  Overdue = "Overdue",
-  PendingVerification = "Pending Verification",
-  Verified = "Verified",
-  Rejected = "Rejected"
+  On_Hold = 'On Hold',
+  Under_Review = 'Under Review',
+  Released = 'Released',
+  Disposed = 'Disposed',
+  Resolved = 'Resolved',
+  Closed = 'Closed'
 }
 
-// Training Status Enum
+export enum NCItemCategory {
+  Raw_Material = 'Raw Material',
+  Finished_Product = 'Finished Product',
+  Packaging = 'Packaging',
+  Equipment = 'Equipment',
+  Process = 'Process',
+  Documentation = 'Documentation',
+  Other = 'Other'
+}
+
+export enum NCReasonCategory {
+  Quality_Defect = 'Quality Defect',
+  Contamination = 'Contamination',
+  Foreign_Material = 'Foreign Material',
+  Labeling_Error = 'Labeling Error',
+  Temperature_Abuse = 'Temperature Abuse',
+  Expired_Product = 'Expired Product',
+  Specification_Deviation = 'Specification Deviation',
+  Equipment_Failure = 'Equipment Failure',
+  Process_Deviation = 'Process Deviation',
+  Documentation_Error = 'Documentation Error',
+  Other = 'Other'
+}
+
+// Training related enums
 export enum TrainingStatus {
-  NotStarted = "Not Started",
-  InProgress = "In Progress",
-  Completed = "Completed",
-  Overdue = "Overdue",
-  Expired = "Expired"
+  Not_Started = 'Not Started',
+  In_Progress = 'In Progress',
+  Completed = 'Completed',
+  Overdue = 'Overdue',
+  Expired = 'Expired'
 }
 
-// Training Type Enum
-export enum TrainingType {
-  Online = "Online", 
-  InPerson = "In Person",
-  Hybrid = "Hybrid",
-  SelfPaced = "Self Paced"
+// Audit related enums
+export enum AuditStatus {
+  Scheduled = 'Scheduled',
+  In_Progress = 'In Progress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled'
 }
 
-// Training Category Enum
-export enum TrainingCategory {
-  FoodSafety = "Food Safety",
-  QualityControl = "Quality Control",
-  HACCP = "HACCP",
-  Allergen = "Allergen",
-  Sanitation = "Sanitation",
-  Safety = "Safety", 
-  Other = "Other"
+export enum FindingSeverity {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical'
+}
+
+export enum FindingStatus {
+  Open = 'Open',
+  In_Progress = 'In Progress',
+  Closed = 'Closed'
+}
+
+// Notification related enums
+export enum NotificationStatus {
+  Pending = 'Pending',
+  Sent = 'Sent',
+  Failed = 'Failed'
+}
+
+// Recall related enums
+export enum RecallType {
+  Simulation = 'Simulation',
+  Actual = 'Actual'
+}
+
+// Role related enums
+export enum RoleLevel {
+  Global = 'Global',
+  Organization = 'Organization',
+  Facility = 'Facility',
+  Department = 'Department'
 }

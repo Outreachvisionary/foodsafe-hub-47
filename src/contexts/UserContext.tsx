@@ -1,203 +1,165 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, ProfileData } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@supabase/supabase-js';
-import { UserProfile } from '@/types/user';
 
 interface UserContextType {
   user: User | null;
-  profile: UserProfile | null;
-  isAuthenticated: boolean;
   loading: boolean;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  updateUser: (userData: Partial<User>) => Promise<void>;
+  error: string | null;
+  fetchUserProfile: (userId: string) => Promise<User | null>;
+  updateUserProfile: (userId: string, updates: Partial<User>) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType>({
-  user: null,
-  profile: null,
-  isAuthenticated: false,
-  loading: true,
-  signOut: async () => {},
-  updateProfile: async () => {},
-  signIn: async () => {},
-  updateUser: async () => {}
-});
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const useUser = () => useContext(UserContext);
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+};
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface UserProviderProps {
+  children: ReactNode;
+}
+
+export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const session = supabase.auth.getSession();
-
-    const setupAuthListener = async () => {
-      const { data } = await session;
-      
-      if (data?.session?.user) {
-        setUser(data.session.user);
-        setIsAuthenticated(true);
-        await fetchProfile(data.session.user.id);
-      } else {
-        setLoading(false);
-      }
-      
-      const { data: listener } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
-          setUser(session?.user || null);
-          setIsAuthenticated(!!session?.user);
-          
-          if (session?.user) {
-            await fetchProfile(session.user.id);
-          } else {
-            setProfile(null);
-            setLoading(false);
-          }
-        }
-      );
-
-      return () => {
-        listener.subscription.unsubscribe();
-      };
-    };
-    
-    setupAuthListener();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
-      setUser(data.user);
-      setIsAuthenticated(true);
-      if (data.user) {
-        await fetchProfile(data.user.id);
-      }
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
-    }
-  };
+      setLoading(true);
+      setError(null);
 
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+      // First, get the user data from auth
+      const { data: authUser, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating profile:', error);
-      } else if (data) {
-        const userProfile: UserProfile = {
-          id: data.id,
-          full_name: data.full_name,
-          email: user.email || data.email || undefined,
-          role: data.role,
-          department: data.department,
-          organization_id: data.organization_id,
-          status: data.status,
-          avatar_url: data.avatar_url,
-          assigned_facility_ids: data.assigned_facility_ids || [],
-          department_id: data.department_id,
-          preferred_language: data.preferred_language,
-          preferences: typeof data.preferences === 'object' && data.preferences !== null 
-            ? data.preferences as any 
-            : {},
-          created_at: data.created_at,
-          updated_at: data.updated_at
-        };
-        setProfile(userProfile);
-      }
-    } catch (error) {
-      console.error('Unexpected error updating profile:', error);
-    }
-  };
-
-  const updateUser = async (userData: Partial<User>) => {
-    if (!user) return;
-    
-    try {
-      console.log('Updating user data:', userData);
-      setUser(prev => prev ? { ...prev, ...userData } : null);
-    } catch (error) {
-      console.error('Error updating user:', error);
-    }
-  };
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
+      // Then get the profile data from profiles table
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (data) {
-        const userProfile: UserProfile = {
-          id: data.id,
-          full_name: data.full_name,
-          email: user?.email || undefined,
-          role: data.role,
-          department: data.department,
-          organization_id: data.organization_id,
-          status: data.status,
-          avatar_url: data.avatar_url,
-          assigned_facility_ids: data.assigned_facility_ids || [],
-          department_id: data.department_id,
-          preferred_language: data.preferred_language,
-          preferences: typeof data.preferences === 'object' && data.preferences !== null 
-            ? data.preferences as any 
-            : {},
-          created_at: data.created_at,
-          updated_at: data.updated_at
+      if (profileError) throw profileError;
+
+      if (profile && authUser.user) {
+        const userData: User = {
+          id: profile.id,
+          email: authUser.user.email || '', // Get email from auth user
+          full_name: profile.full_name || '',
+          avatar_url: profile.avatar_url,
+          role: profile.role || '',
+          department: profile.department || '',
+          organization_id: profile.organization_id || '',
+          preferences: profile.preferences,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
+          status: (profile.status as 'active' | 'inactive' | 'pending') || 'active',
+          preferred_language: profile.preferred_language || '',
+          department_id: profile.department_id || '',
+          assigned_facility_ids: profile.assigned_facility_ids || [],
         };
-        setProfile(userProfile);
+
+        setUser(userData);
+        return userData;
       }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+
+      return null;
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch user profile');
+      return null;
+    } finally {
       setLoading(false);
     }
   };
 
-  const value = {
+  const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.full_name,
+          avatar_url: updates.avatar_url,
+          role: updates.role,
+          department: updates.department,
+          organization_id: updates.organization_id,
+          preferences: updates.preferences,
+          status: updates.status as 'active' | 'inactive' | 'pending',
+          preferred_language: updates.preferred_language,
+          department_id: updates.department_id,
+          assigned_facility_ids: updates.assigned_facility_ids,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update local user state
+      if (user) {
+        setUser({ ...user, ...updates });
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Error updating user profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update user profile');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshUser = async (): Promise<void> => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      await fetchUserProfile(authUser.id);
+    }
+  };
+
+  // Initialize user on mount
+  useEffect(() => {
+    const initializeUser = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await fetchUserProfile(authUser.id);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    initializeUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value: UserContextType = {
     user,
-    profile,
-    isAuthenticated,
     loading,
-    signOut,
-    updateProfile,
-    signIn,
-    updateUser
+    error,
+    fetchUserProfile,
+    updateUserProfile,
+    refreshUser,
   };
 
   return (
@@ -206,5 +168,3 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </UserContext.Provider>
   );
 };
-
-export default UserContext;

@@ -1,8 +1,5 @@
 
-export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Completed' | 'Verified' | 'Rejected' | 'On Hold' | 'Under Review';
-export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
-export type CAPASource = 'Audit' | 'Complaint' | 'Non-Conformance' | 'Management Review' | 'Supplier Issue' | 'Customer Complaint' | 'Internal Report' | 'Regulatory Inspection' | 'Other';
-export type CAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective' | 'Highly Effective';
+import { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating } from '@/types/enums';
 
 export interface CAPA {
   id: string;
@@ -15,36 +12,59 @@ export interface CAPA {
   status: CAPAStatus;
   assigned_to: string;
   created_by: string;
-  created_at: string;
-  updated_at: string;
+  source: CAPASource;
+  source_id?: string;
   due_date: string;
   completion_date?: string;
   verification_date?: string;
-  source: CAPASource;
-  source_id?: string;
-  department?: string;
-  effectiveness_verified?: boolean;
-  effectiveness_rating?: CAPAEffectivenessRating;
   effectiveness_criteria?: string;
+  effectiveness_verified: boolean;
+  effectiveness_rating?: EffectivenessRating;
+  department?: string;
   verification_method?: string;
   verified_by?: string;
-  fsma204_compliant?: boolean;
+  fsma204_compliant: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CAPAActivity {
+  id: string;
+  capa_id: string;
+  action_type: string;
+  action_description: string;
+  performed_by: string;
+  performed_at: string;
+  old_status?: CAPAStatus;
+  new_status?: CAPAStatus;
+  metadata?: any;
+}
+
+export interface CAPAStats {
+  total: number;
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  pendingVerificationCount: number;
+  byPriority: Record<CAPAPriority, number>;
+  bySource: Record<CAPASource, number>;
+  byDepartment: Record<string, number>;
+  recentActivities: CAPAActivity[];
 }
 
 export interface CreateCAPARequest {
   title: string;
   description: string;
+  priority: CAPAPriority;
+  assigned_to: string;
+  source: CAPASource;
+  source_id?: string;
+  due_date: string;
   root_cause?: string;
   corrective_action?: string;
   preventive_action?: string;
-  priority: CAPAPriority;
-  assigned_to: string;
-  created_by: string;
-  due_date: string;
-  source: CAPASource;
-  source_id?: string;
-  department?: string;
   effectiveness_criteria?: string;
+  department?: string;
 }
 
 export interface UpdateCAPARequest {
@@ -60,90 +80,13 @@ export interface UpdateCAPARequest {
   due_date?: string;
   completion_date?: string;
   verification_date?: string;
-  department?: string;
-  effectiveness_verified?: boolean;
-  effectiveness_rating?: CAPAEffectivenessRating;
   effectiveness_criteria?: string;
+  effectiveness_verified?: boolean;
+  effectiveness_rating?: EffectivenessRating;
+  department?: string;
   verification_method?: string;
   verified_by?: string;
 }
 
-export interface CAPAActivity {
-  id: string;
-  capa_id: string;
-  action_type: string;
-  action_description: string;
-  performed_by: string;
-  performed_at: string;
-  old_status?: CAPAStatus;
-  new_status?: CAPAStatus;
-  metadata?: any;
-}
-
-export interface CAPAEffectivenessAssessment {
-  id: string;
-  capa_id: string;
-  assessment_date: string;
-  root_cause_eliminated?: boolean;
-  preventive_measures_implemented?: boolean;
-  documentation_complete?: boolean;
-  score?: number;
-  rating?: CAPAEffectivenessRating;
-  recurrence_check?: string;
-  notes?: string;
-  created_by: string;
-}
-
-export interface CAPAFilter {
-  status?: CAPAStatus | CAPAStatus[];
-  priority?: CAPAPriority | CAPAPriority[];
-  source?: CAPASource | CAPASource[];
-  assigned_to?: string;
-  department?: string | string[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-  searchTerm?: string;
-}
-
-export interface CAPAListProps {
-  items?: CAPA[];
-  capas?: CAPA[];
-  loading?: boolean;
-  error?: string;
-  onCAPAClick?: (capa: CAPA) => void;
-  onCAPAEdit?: (capa: CAPA) => void;
-  onCAPADelete?: (capaId: string) => void;
-}
-
-export interface CAPAStats {
-  total: number;
-  open: number;
-  inProgress: number;
-  completed: number;
-  overdue: number;
-  openCount: number;
-  closedCount: number;
-  overdueCount: number;
-  pendingVerificationCount: number;
-  effectivenessRate: number;
-  byPriority: Record<string, number>;
-  bySource: Record<string, number>;
-  byDepartment: Record<string, number>;
-  byStatus: Record<string, number>;
-  byMonth: Record<string, number>;
-  recentActivities?: CAPAActivity[];
-}
-
-export interface CreateCAPADialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: any) => void;
-}
-
-// Enum values for easy iteration
-export const CAPAStatusValues = ['Open', 'In Progress', 'Closed', 'Overdue', 'Pending Verification', 'Completed', 'Verified', 'Rejected', 'On Hold', 'Under Review'] as const;
-export const CAPAPriorityValues = ['Low', 'Medium', 'High', 'Critical'] as const;
-export const CAPASourceValues = ['Audit', 'Complaint', 'Non-Conformance', 'Management Review', 'Supplier Issue', 'Customer Complaint', 'Internal Report', 'Regulatory Inspection', 'Other'] as const;
-export const CAPAEffectivenessRatingValues = ['Effective', 'Partially Effective', 'Not Effective', 'Highly Effective'] as const;
+// Export enums for backward compatibility
+export { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating };

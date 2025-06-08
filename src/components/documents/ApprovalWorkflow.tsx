@@ -9,7 +9,9 @@ export function ApprovalWorkflow() {
   const { 
     documents, 
     loading, 
-    error
+    error,
+    approveDocument,
+    rejectDocument
   } = useDocument();
   
   const [isApproving, setIsApproving] = useState(false);
@@ -19,8 +21,7 @@ export function ApprovalWorkflow() {
   const handleApprove = async (documentId: string) => {
     setIsApproving(true);
     try {
-      // Simple approval logic - would be implemented in context
-      console.log('Approving document:', documentId, currentComment);
+      await approveDocument(documentId);
       setCurrentComment("");
     } catch (err) {
       console.error("Failed to approve document:", err);
@@ -32,8 +33,7 @@ export function ApprovalWorkflow() {
   const handleReject = async (documentId: string) => {
     setIsRejecting(true);
     try {
-      // Simple rejection logic - would be implemented in context
-      console.log('Rejecting document:', documentId, currentComment);
+      await rejectDocument(documentId);
       setCurrentComment("");
     } catch (err) {
       console.error("Failed to reject document:", err);

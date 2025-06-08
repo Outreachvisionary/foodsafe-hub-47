@@ -148,3 +148,6 @@ export interface DocumentListProps {
   onDocumentEdit?: (document: Document) => void;
   onDocumentDelete?: (documentId: string) => void;
 }
+
+// Export enums for backward compatibility
+export { DocumentStatus, CheckoutStatus, DocumentCategory };

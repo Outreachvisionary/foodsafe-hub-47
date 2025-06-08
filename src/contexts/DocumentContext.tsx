@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Document, DocumentFilter } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
+import { Document, DocumentFilter, DocumentStatus } from '@/types/document';
 import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentContextType {

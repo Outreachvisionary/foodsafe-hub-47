@@ -10,7 +10,7 @@ export interface User {
   preferences?: any;
   created_at: string;
   updated_at: string;
-  status: string;
+  status: 'active' | 'inactive' | 'pending';
   preferred_language: string;
   department_id: string;
   assigned_facility_ids: string[];
@@ -57,4 +57,20 @@ export interface UpdateUserRequest {
   status?: 'active' | 'inactive' | 'pending';
   department_id?: string;
   assigned_facility_ids?: string[];
+}
+
+// For backward compatibility with profiles table
+export interface ProfileData {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: 'active' | 'inactive' | 'pending';
+  organization_id: string;
+  created_at: string;
+  updated_at: string;
+  preferred_language: string;
+  department_id: string;
+  assigned_facility_ids: string[];
 }

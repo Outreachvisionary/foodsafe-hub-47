@@ -6,14 +6,10 @@ import {
   DocumentComment,
   DocumentFilter,
   DocumentAccess,
+  DocumentStatus,
+  CheckoutStatus,
+  DocumentCategory
 } from '@/types/document';
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
-import { 
-  documentStatusToString, 
-  stringToDocumentStatus, 
-  checkoutStatusToString, 
-  stringToCheckoutStatus 
-} from '@/utils/documentAdapters';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -34,8 +30,7 @@ export const useDocumentService = () => {
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-          const statusStrings = statuses.map(status => documentStatusToString(status));
-          query = query.in('status', statusStrings as any);
+          query = query.in('status', statuses);
         }
         
         if (filter.created_by) {
@@ -69,8 +64,9 @@ export const useDocumentService = () => {
       
       const documents: Document[] = (data || []).map(item => ({
         ...item,
-        status: stringToDocumentStatus(item.status as string),
-        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available'),
+        status: item.status as DocumentStatus,
+        checkout_status: (item.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        category: item.category as DocumentCategory,
       }));
       
       return documents;
@@ -99,8 +95,9 @@ export const useDocumentService = () => {
       
       const document: Document = {
         ...data,
-        status: stringToDocumentStatus(data.status as string),
-        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available'),
+        status: data.status as DocumentStatus,
+        checkout_status: (data.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        category: data.category as DocumentCategory,
       };
       
       return document;
@@ -130,21 +127,18 @@ export const useDocumentService = () => {
       
       if (docError) throw docError;
       
-      if (stringToCheckoutStatus(doc.checkout_status as string) === CheckoutStatus.CheckedOut) {
+      if (doc.checkout_status === CheckoutStatus.Checked_Out) {
         setError('Document is already checked out by another user.');
         return false;
       }
       
-      const checkoutStatusStr = checkoutStatusToString(CheckoutStatus.CheckedOut);
-      
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusStr as any,
-          checkout_by: userId,
-          checkout_date: new Date().toISOString(),
+          checkout_status: CheckoutStatus.Checked_Out,
           checkout_user_id: userId,
-          checkout_user_name: userName
+          checkout_user_name: userName,
+          checkout_timestamp: new Date().toISOString()
         })
         .eq('id', documentId);
       
@@ -158,7 +152,6 @@ export const useDocumentService = () => {
           user_name: userName,
           user_role: 'User',
           action: 'checkout',
-          checkout_action: 'checkout',
           timestamp: new Date().toISOString(),
           comments: `Document checked out by ${userName}`
         });
@@ -183,18 +176,14 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
-      const availableStatusStr = checkoutStatusToString(CheckoutStatus.Available);
-      const activeStatusStr = documentStatusToString(DocumentStatus.Active);
-      
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: availableStatusStr as any,
-          checkout_by: null,
-          checkout_date: null,
+          checkout_status: CheckoutStatus.Available,
           checkout_user_id: null,
           checkout_user_name: null,
-          status: activeStatusStr as any
+          checkout_timestamp: null,
+          status: DocumentStatus.Active
         })
         .eq('id', documentId);
       
@@ -208,7 +197,6 @@ export const useDocumentService = () => {
           user_name: userName,
           user_role: 'User',
           action: 'checkin',
-          checkout_action: 'checkin',
           timestamp: new Date().toISOString(),
           comments: comment || `Document checked in by ${userName}`
         });
@@ -242,7 +230,7 @@ export const useDocumentService = () => {
         version: item.version,
         version_number: item.version_number || item.version,
         file_name: item.file_name,
-        file_path: item.file_path || '',
+        file_path: item.file_name, // Use file_name as fallback since file_path might not exist
         file_size: item.file_size,
         created_by: item.created_by,
         created_at: item.created_at,
@@ -268,19 +256,15 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
-      const statusStr = documentStatusToString(DocumentStatus.Draft);
-      const checkoutStatusStr = checkoutStatusToString(CheckoutStatus.Available);
-      
       const newDocument = {
         title: document.title || 'Untitled Document',
         description: document.description,
         file_name: document.file_name || 'unnamed.txt',
-        file_path: document.file_path,
         file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
-        category: document.category || 'Other',
-        status: statusStr as any,
-        checkout_status: checkoutStatusStr as any,
+        category: document.category || DocumentCategory.Other,
+        status: DocumentStatus.Draft,
+        checkout_status: CheckoutStatus.Available,
         version: 1,
         created_by: document.created_by || 'system',
         created_at: new Date().toISOString(),
@@ -306,8 +290,9 @@ export const useDocumentService = () => {
       
       return {
         ...data,
-        status: stringToDocumentStatus(data.status),
-        checkout_status: stringToCheckoutStatus(data.checkout_status),
+        status: data.status as DocumentStatus,
+        checkout_status: (data.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        category: data.category as DocumentCategory,
       } as Document;
     } catch (err) {
       console.error('Error creating document:', err);
