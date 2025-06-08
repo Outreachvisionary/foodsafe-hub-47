@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { capaStatusToString, stringToCAPAStatus } from '@/utils/capaAdapters';
+import { stringToCAPAStatus } from '@/utils/capaAdapters';
 
 /**
  * Creates a new CAPA activity entry
@@ -17,14 +17,18 @@ export const createCAPAActivity = async (
   metadata?: Record<string, any>
 ): Promise<CAPAActivity | null> => {
   try {
+    // Convert enum values to database string literals
+    const oldStatusStr = oldStatus ? convertStatusToDbString(oldStatus) : null;
+    const newStatusStr = newStatus ? convertStatusToDbString(newStatus) : null;
+    
     const activityData = {
       capa_id: capaId,
       action_type: actionType,
       action_description: actionDescription,
       performed_at: new Date().toISOString(),
       performed_by: performedBy,
-      old_status: oldStatus ? capaStatusToString(oldStatus) : null,
-      new_status: newStatus ? capaStatusToString(newStatus) : null,
+      old_status: oldStatusStr,
+      new_status: newStatusStr,
       metadata: metadata || {}
     };
     
@@ -44,10 +48,31 @@ export const createCAPAActivity = async (
       ...data,
       old_status: data.old_status ? stringToCAPAStatus(data.old_status) : undefined,
       new_status: data.new_status ? stringToCAPAStatus(data.new_status) : undefined,
+      metadata: data.metadata as Record<string, any> || {}
     } as CAPAActivity;
   } catch (error) {
     console.error('Error in createCAPAActivity:', error);
     return null;
+  }
+};
+
+// Helper function to convert enum to database string
+const convertStatusToDbString = (status: CAPAStatus): string => {
+  switch (status) {
+    case CAPAStatus.Open:
+      return 'Open';
+    case CAPAStatus.In_Progress:
+      return 'In Progress';
+    case CAPAStatus.Under_Review:
+      return 'Under Review';
+    case CAPAStatus.Pending_Verification:
+      return 'Pending Verification';
+    case CAPAStatus.Closed:
+      return 'Closed';
+    case CAPAStatus.Cancelled:
+      return 'Cancelled';
+    default:
+      return 'Open';
   }
 };
 
@@ -72,6 +97,7 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       ...activity,
       old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
       new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+      metadata: activity.metadata as Record<string, any> || {}
     })) as CAPAActivity[];
   } catch (error) {
     console.error('Error in getCAPAActivities:', error);
@@ -100,6 +126,7 @@ export const getRecentCAPAActivities = async (limit: number = 10): Promise<CAPAA
       ...activity,
       old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
       new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+      metadata: activity.metadata as Record<string, any> || {}
     })) as CAPAActivity[];
   } catch (error) {
     console.error('Error in getRecentCAPAActivities:', error);

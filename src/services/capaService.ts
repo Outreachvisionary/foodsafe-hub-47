@@ -183,7 +183,8 @@ export const getCAPAActivities = async (capaId: string) => {
     return (data || []).map(activity => ({
       ...activity,
       old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
-      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+      metadata: activity.metadata as Record<string, any> || {}
     }));
   } catch (error) {
     console.error('Error fetching CAPA activities:', error);
@@ -251,7 +252,8 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
     const mappedActivities = (activities || []).map(activity => ({
       ...activity,
       old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
-      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+      metadata: activity.metadata as Record<string, any> || {}
     }));
     
     return {

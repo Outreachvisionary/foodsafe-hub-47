@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAStats } from '@/types/capa';
 import { CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
+import { stringToCAPAStatus, stringToCAPASource, stringToCAPAPriority } from '@/utils/capaAdapters';
 
 export const fetchCAPAStats = async (): Promise<CAPAStats> => {
   try {
@@ -57,7 +58,7 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     // Process each CAPA action
     actions.forEach(capa => {
       // Count by status
-      const status = capa.status as CAPAStatus;
+      const status = stringToCAPAStatus(capa.status);
       if (stats.byStatus[status] !== undefined) {
         stats.byStatus[status]++;
       }
@@ -69,13 +70,13 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       if (status === CAPAStatus.Pending_Verification) stats.pendingVerificationCount++;
       
       // Count by source
-      const source = capa.source as CAPASource;
+      const source = stringToCAPASource(capa.source);
       if (stats.bySource[source] !== undefined) {
         stats.bySource[source]++;
       }
       
       // Count by priority
-      const priority = capa.priority as CAPAPriority;
+      const priority = stringToCAPAPriority(capa.priority);
       if (stats.byPriority[priority] !== undefined) {
         stats.byPriority[priority]++;
       }
@@ -139,7 +140,12 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       .order('performed_at', { ascending: false })
       .limit(10);
     
-    stats.recentActivities = activities || [];
+    stats.recentActivities = (activities || []).map(activity => ({
+      ...activity,
+      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+      metadata: activity.metadata as Record<string, any> || {}
+    }));
     
     return stats;
   } catch (error) {

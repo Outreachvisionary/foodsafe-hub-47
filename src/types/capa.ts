@@ -1,6 +1,9 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
 
+// Re-export enums for convenience
+export { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating };
+
 export interface CAPA {
   id: string;
   title: string;
@@ -71,6 +74,12 @@ export interface CAPAFilter {
   priority?: CAPAPriority | CAPAPriority[];
   source?: CAPASource | CAPASource[];
   searchTerm?: string;
+  createdDateFrom?: string;
+  createdDateTo?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  assignedTo?: string | string[];
+  department?: string | string[];
 }
 
 export interface UpdateCAPARequest {
@@ -90,4 +99,27 @@ export interface UpdateCAPARequest {
   verification_date?: string;
   verification_method?: string;
   verified_by?: string;
+}
+
+export interface CreateCAPARequest {
+  title: string;
+  description: string;
+  priority: CAPAPriority;
+  source: CAPASource;
+  assigned_to: string;
+  due_date: string;
+  department?: string;
+}
+
+export interface CAPAListProps {
+  items: CAPA[];
+  loading: boolean;
+  error: string | null;
+  onCAPAClick: (capa: CAPA) => void;
+}
+
+export interface CreateCAPADialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: CreateCAPARequest) => void;
 }
