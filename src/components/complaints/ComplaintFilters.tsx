@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { DateRangePicker } from '@/components/ui/date-picker';
+import { DateRangePicker, DateRange } from '@/components/ui/date-picker';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Search, FilterX, Filter } from 'lucide-react';
 
@@ -236,7 +236,7 @@ export function ComplaintFilters({ onFilterChange, onFilterClear }: ComplaintFil
                         <FormLabel>Date Range</FormLabel>
                         <FormControl>
                           <DateRangePicker
-                            dateRange={field.value || undefined}
+                            dateRange={field.value as DateRange}
                             onSelect={field.onChange}
                             placeholder="Select a date range"
                           />

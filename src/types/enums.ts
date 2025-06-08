@@ -2,13 +2,13 @@
 // Document Status Enum
 export enum DocumentStatus {
   Draft = "Draft",
-  UnderReview = "Under Review",
+  UnderReview = "Under Review", 
   Approved = "Approved",
   Rejected = "Rejected",
   Archived = "Archived",
   Expired = "Expired",
   PendingReview = "Pending Review",
-  PendingApproval = "Pending Approval",
+  PendingApproval = "Pending Approval", 
   Published = "Published",
   Active = "Active",
   Obsolete = "Obsolete",
@@ -18,7 +18,7 @@ export enum DocumentStatus {
 // Checkout Status Enum
 export enum CheckoutStatus {
   Available = "Available",
-  CheckedOut = "Checked Out",
+  CheckedOut = "Checked Out", 
   Locked = "Locked"
 }
 
@@ -26,7 +26,7 @@ export enum CheckoutStatus {
 export enum DocumentCategory {
   SOP = "SOP",
   Policy = "Policy",
-  Form = "Form",
+  Form = "Form", 
   Certificate = "Certificate",
   AuditReport = "Audit Report",
   HACCPPlan = "HACCP Plan",
@@ -40,7 +40,7 @@ export enum DocumentCategory {
 export enum CAPAStatus {
   Open = "Open",
   InProgress = "In Progress",
-  Closed = "Closed",
+  Closed = "Closed", 
   Overdue = "Overdue",
   PendingVerification = "Pending Verification",
   Completed = "Completed",
@@ -53,7 +53,7 @@ export enum CAPAStatus {
 // CAPA Priority Enum
 export enum CAPAPriority {
   Low = "Low",
-  Medium = "Medium",
+  Medium = "Medium", 
   High = "High",
   Critical = "Critical"
 }
@@ -64,7 +64,7 @@ export enum CAPASource {
   Complaint = "Complaint",
   NonConformance = "Non-Conformance",
   ManagementReview = "Management Review",
-  SupplierIssue = "Supplier Issue",
+  SupplierIssue = "Supplier Issue", 
   CustomerComplaint = "Customer Complaint",
   InternalReport = "Internal Report",
   RegulatoryInspection = "Regulatory Inspection",
@@ -75,14 +75,14 @@ export enum CAPASource {
 export enum CAPAEffectivenessRating {
   Effective = "Effective",
   PartiallyEffective = "Partially Effective",
-  NotEffective = "Not Effective",
+  NotEffective = "Not Effective", 
   HighlyEffective = "Highly Effective"
 }
 
 // Complaint Status Enum
 export enum ComplaintStatus {
   New = "New",
-  InProgress = "In Progress",
+  InProgress = "In Progress", 
   Resolved = "Resolved",
   Closed = "Closed",
   Escalated = "Escalated"
@@ -101,7 +101,7 @@ export enum ComplaintCategory {
 export enum ComplaintPriority {
   Low = "Low",
   Medium = "Medium",
-  High = "High",
+  High = "High", 
   Critical = "Critical"
 }
 
@@ -110,9 +110,14 @@ export enum NCStatus {
   OnHold = "On Hold",
   UnderReview = "Under Review",
   Closed = "Closed",
-  Open = "Open",
+  Open = "Open", 
   InProgress = "In Progress",
-  Resolved = "Resolved"
+  Resolved = "Resolved",
+  Completed = "Completed",
+  Overdue = "Overdue",
+  PendingVerification = "Pending Verification",
+  Verified = "Verified",
+  Rejected = "Rejected"
 }
 
 // Training Status Enum
@@ -126,7 +131,7 @@ export enum TrainingStatus {
 
 // Training Type Enum
 export enum TrainingType {
-  Online = "Online",
+  Online = "Online", 
   InPerson = "In Person",
   Hybrid = "Hybrid",
   SelfPaced = "Self Paced"
@@ -139,6 +144,6 @@ export enum TrainingCategory {
   HACCP = "HACCP",
   Allergen = "Allergen",
   Sanitation = "Sanitation",
-  Safety = "Safety",
+  Safety = "Safety", 
   Other = "Other"
 }

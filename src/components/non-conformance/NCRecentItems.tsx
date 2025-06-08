@@ -61,7 +61,7 @@ const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items = [] }) => {
               </span>
             )}
             
-            {isNonConformance(item) && item.status === NCStatus.Completed ? (
+            {item.status === NCStatus.Resolved || item.status === NCStatus.Closed ? (
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 Resolved
               </Badge>

@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Complaint, ComplaintFilter } from '@/types/complaint';
 import { fetchComplaints } from '@/services/complaintService';
-import { supabase } from '@/integrations/supabase/client';
-import useRealtimeSubscription from './useRealtimeSubscription';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 export function useComplaints(initialFilter?: ComplaintFilter) {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -12,10 +11,12 @@ export function useComplaints(initialFilter?: ComplaintFilter) {
   const [filter, setFilter] = useState<ComplaintFilter | undefined>(initialFilter);
 
   // Use realtime subscription for complaints table
-  const subscription = useRealtimeSubscription<Complaint>({
+  useRealtimeSubscription({
     table: 'complaints',
-    onDataChange: (newData) => {
-      setComplaints(newData);
+    onDataChange: (payload) => {
+      console.log('Complaints data changed:', payload);
+      // Refetch complaints when data changes
+      loadComplaints();
     },
     onError: (err) => {
       setError(err);
@@ -56,9 +57,9 @@ export function useComplaints(initialFilter?: ComplaintFilter) {
   }, []);
 
   return {
-    complaints: subscription.data && subscription.data.length > 0 ? subscription.data : complaints,
-    isLoading: isLoading || subscription.loading,
-    error: error || subscription.error,
+    complaints,
+    isLoading,
+    error,
     refresh: loadComplaints,
     filter,
     applyFilter,
