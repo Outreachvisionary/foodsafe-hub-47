@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, isValid, parseISO } from 'date-fns';
 import { CalendarDays, Users, Clock } from 'lucide-react';
 
 export interface UpcomingTrainingsProps {
@@ -12,10 +12,43 @@ export interface UpcomingTrainingsProps {
 }
 
 const UpcomingTrainings: React.FC<UpcomingTrainingsProps> = ({ sessions, loading = false }) => {
+  // Helper function to safely parse and validate dates
+  const safeParseDateAndFormat = (dateString: string | null | undefined, formatter: (date: Date) => string): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const parsedDate = parseISO(dateString);
+      if (!isValid(parsedDate)) return 'Invalid date';
+      return formatter(parsedDate);
+    } catch (error) {
+      console.error('Error parsing date:', dateString, error);
+      return 'Invalid date';
+    }
+  };
+
+  // Helper function to safely format distance to now
+  const safeFormatDistanceToNow = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const parsedDate = parseISO(dateString);
+      if (!isValid(parsedDate)) return 'Invalid date';
+      return formatDistanceToNow(parsedDate, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting distance to now:', dateString, error);
+      return 'Invalid date';
+    }
+  };
+
   // Filter sessions to only show upcoming (not completed) ones
   const upcomingSessions = sessions
     .filter(session => session.completion_status !== 'completed')
-    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+    .sort((a, b) => {
+      // Safe date comparison
+      const dateA = a.due_date ? parseISO(a.due_date) : new Date(0);
+      const dateB = b.due_date ? parseISO(b.due_date) : new Date(0);
+      return dateA.getTime() - dateB.getTime();
+    })
     .slice(0, 5); // Just show top 5
 
   if (loading) {
@@ -70,14 +103,14 @@ const UpcomingTrainings: React.FC<UpcomingTrainingsProps> = ({ sessions, loading
                       : 'bg-blue-100 text-blue-800 border-blue-200'
                   }
                 >
-                  {session.completion_status === 'overdue' ? 'Overdue' : formatDistanceToNow(new Date(session.due_date), { addSuffix: true })}
+                  {session.completion_status === 'overdue' ? 'Overdue' : safeFormatDistanceToNow(session.due_date)}
                 </Badge>
               </div>
               
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
                 <div className="flex items-center">
                   <Clock className="h-3.5 w-3.5 mr-1" />
-                  {format(new Date(session.due_date), 'MMM d, yyyy')}
+                  {safeParseDateAndFormat(session.due_date, (date) => format(date, 'MMM d, yyyy'))}
                 </div>
                 <div className="flex items-center">
                   <Users className="h-3.5 w-3.5 mr-1" />
