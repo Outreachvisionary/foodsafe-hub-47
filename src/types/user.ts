@@ -1,44 +1,35 @@
 
+// User types
 export interface UserPreferences {
-  reportLayout?: 'grid' | 'list';
-  theme?: 'light' | 'dark';
+  theme?: string;
+  notifications?: boolean;
   language?: string;
-  notifications?: {
-    email?: boolean;
-    push?: boolean;
-    sms?: boolean;
-  };
-  timezone?: string;
+  preferred_language?: string;
+  [key: string]: any;
+}
+
+export interface UserProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+  department?: string;
+  organization_id?: string;
+  department_id?: string;
+  assigned_facility_ids?: string[];
+  preferences?: UserPreferences;
+  preferred_language?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface User {
   id: string;
   email?: string;
-  full_name?: string;
-  name?: string;
-  avatar_url?: string;
   user_metadata?: any;
-  preferences?: UserPreferences;
-  role?: string;
-  department?: string;
-  organization_id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface UserProfile {
-  id: string;
-  full_name?: string | null;
-  email?: string;
-  role?: string | null;
-  department?: string | null;
-  organization_id?: string | null;
-  status?: string | null;
-  avatar_url?: string | null;
-  preferences?: UserPreferences;
-  assigned_facility_ids?: string[];
-  department_id?: string | null;
-  preferred_language?: string | null;
+  app_metadata?: any;
   created_at?: string;
   updated_at?: string;
 }

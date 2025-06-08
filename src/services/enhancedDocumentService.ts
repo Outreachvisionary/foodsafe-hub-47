@@ -1,55 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Document } from '@/types/document';
 
-// Cache for document counts to reduce API calls
-let documentCountsCache: Record<string, number> | null = null;
-let documentCountsCacheExpiry = 0;
-const CACHE_TTL = 60000; // 1 minute cache
-
-export const getDocumentCounts = async () => {
+export const fetchDocuments = async (): Promise<Document[]> => {
   try {
-    // Return cached data if available and not expired
-    const now = Date.now();
-    if (documentCountsCache && documentCountsCacheExpiry > now) {
-      return documentCountsCache;
-    }
-    
-    const { data: documents, error } = await supabase
-      .from('documents')
-      .select('status');
-      
-    if (error) throw error;
-    
-    const counts = documents.reduce((acc: Record<string, number>, doc) => {
-      acc[doc.status] = (acc[doc.status] || 0) + 1;
-      return acc;
-    }, {});
-    
-    // Update cache
-    documentCountsCache = counts;
-    documentCountsCacheExpiry = now + CACHE_TTL;
-    
-    return counts;
-  } catch (error) {
-    console.error('Error getting document counts:', error);
-    return {};
-  }
-};
-
-// Document cache
-const documentsCache: Record<string, any> = {
-  data: null,
-  expiry: 0
-};
-
-export const fetchDocuments = async () => {
-  try {
-    // Return cached data if available and not expired
-    const now = Date.now();
-    if (documentsCache.data && documentsCache.expiry > now) {
-      return documentsCache.data;
-    }
-    
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -57,67 +11,70 @@ export const fetchDocuments = async () => {
 
     if (error) throw error;
 
-    // Update cache
-    documentsCache.data = data || [];
-    documentsCache.expiry = now + CACHE_TTL;
-    
-    return documentsCache.data;
+    return data || [];
   } catch (error) {
     console.error('Error fetching documents:', error);
-    return [];
+    throw error;
   }
 };
 
-export const createDocument = async (documentData: any) => {
+export const getDocumentCounts = async (): Promise<Record<string, number>> => {
   try {
     const { data, error } = await supabase
       .from('documents')
-      .insert([documentData])
-      .select();
+      .select('status');
 
     if (error) throw error;
 
-    // Invalidate cache
-    documentCountsCache = null;
-    documentsCache.data = null;
+    const counts: Record<string, number> = {};
+    data?.forEach((doc) => {
+      const status = doc.status || 'Draft';
+      counts[status] = (counts[status] || 0) + 1;
+    });
 
-    // Properly handle the array type to avoid 'never' type errors
-    if (data && Array.isArray(data) && data.length > 0) {
-      return data[0];
-    }
-    return null;
+    return counts;
+  } catch (error) {
+    console.error('Error fetching document counts:', error);
+    return {};
+  }
+};
+
+export const createDocument = async (document: Partial<Document>): Promise<Document> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .insert([document])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
   } catch (error) {
     console.error('Error creating document:', error);
     throw error;
   }
 };
 
-export const updateDocument = async (id: string, documentData: any) => {
+export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
     const { data, error } = await supabase
       .from('documents')
-      .update(documentData)
+      .update(updates)
       .eq('id', id)
-      .select();
+      .select()
+      .single();
 
     if (error) throw error;
 
-    // Invalidate cache
-    documentCountsCache = null;
-    documentsCache.data = null;
-
-    // Properly handle the array type to avoid 'never' type errors
-    if (data && Array.isArray(data) && data.length > 0) {
-      return data[0];
-    }
-    return null;
+    return data;
   } catch (error) {
     console.error('Error updating document:', error);
     throw error;
   }
 };
 
-export const deleteDocument = async (id: string) => {
+export const deleteDocument = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('documents')
@@ -125,10 +82,6 @@ export const deleteDocument = async (id: string) => {
       .eq('id', id);
 
     if (error) throw error;
-    
-    // Invalidate cache
-    documentCountsCache = null;
-    documentsCache.data = null;
   } catch (error) {
     console.error('Error deleting document:', error);
     throw error;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,10 +10,10 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
 import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
-import { DocumentStatus, CheckoutStatus } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -207,7 +206,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 </CardDescription>
               </div>
               <Badge className={`${getStatusColor(document.status)} font-normal`}>
-                {document.status.toString().replace('_', ' ')}
+                {document.status.replace('_', ' ')}
               </Badge>
             </div>
           </CardHeader>
@@ -418,7 +417,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <Label>Current Status</Label>
               <div>
                 <Badge className={`${getStatusColor(document.status)} font-normal`}>
-                  {document.status.toString().replace('_', ' ')}
+                  {document.status.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
@@ -434,7 +433,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 <option value="">Select status</option>
                 {Object.values(DocumentStatus).map((status) => (
                   <option key={status} value={status}>
-                    {status.toString().replace('_', ' ')}
+                    {status.replace('_', ' ')}
                   </option>
                 ))}
               </select>

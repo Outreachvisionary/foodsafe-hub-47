@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { FolderOpen, Home } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DocumentBreadcrumbProps {
   path: string;
@@ -9,37 +9,43 @@ interface DocumentBreadcrumbProps {
 }
 
 const DocumentBreadcrumb: React.FC<DocumentBreadcrumbProps> = ({ path, onNavigate }) => {
-  const parts = path.split('/').filter(Boolean);
+  const pathSegments = path.split('/').filter(Boolean);
   
   return (
-    <Breadcrumb className="mb-4">
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => onNavigate('/')} className="flex items-center gap-1">
-            <Home className="h-4 w-4" />
-            <span>Root</span>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+    <nav className="flex items-center space-x-1 text-sm">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onNavigate('/')}
+        className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
+      >
+        <Home className="h-4 w-4" />
+        <span>Documents</span>
+      </Button>
+      
+      {pathSegments.map((segment, index) => {
+        const segmentPath = '/' + pathSegments.slice(0, index + 1).join('/');
+        const isLast = index === pathSegments.length - 1;
         
-        {parts.map((part, index) => {
-          const currentPath = '/' + parts.slice(0, index + 1).join('/');
-          return (
-            <React.Fragment key={index}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink 
-                  onClick={() => onNavigate(currentPath)}
-                  className="flex items-center gap-1"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  <span>{part}</span>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </React.Fragment>
-          );
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
+        return (
+          <React.Fragment key={segmentPath}>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate(segmentPath)}
+              className={`text-sm ${
+                isLast 
+                  ? 'text-foreground font-medium' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {segment}
+            </Button>
+          </React.Fragment>
+        );
+      })}
+    </nav>
   );
 };
 

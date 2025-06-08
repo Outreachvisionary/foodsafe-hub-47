@@ -1,117 +1,56 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-
-type TableName = 'documents' | 'capa_actions' | 'non_conformances' | 'complaints' | 'audits' | 'training_records' | 'suppliers';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseRealtimeSubscriptionOptions {
-  table: TableName;
-  event?: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
-  filter?: string;
-  onInsert?: (payload: RealtimePostgresChangesPayload<any>) => void;
-  onUpdate?: (payload: RealtimePostgresChangesPayload<any>) => void;
-  onDelete?: (payload: RealtimePostgresChangesPayload<any>) => void;
-  enabled?: boolean;
+  table: string;
+  onDataChange?: (data: any) => void;
+  onError?: (error: Error) => void;
 }
 
-export const useRealtimeSubscription = (options: UseRealtimeSubscriptionOptions) => {
-  const {
-    table,
-    event = '*',
-    filter,
-    onInsert,
-    onUpdate,
-    onDelete,
-    enabled = true
-  } = options;
-
+export const useRealtimeSubscription = <T = any>({
+  table,
+  onDataChange,
+  onError
+}: UseRealtimeSubscriptionOptions) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!enabled) return;
-
-    const channelName = `realtime:${table}`;
-    
-    try {
-      // Create channel
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event,
-            schema: 'public',
-            table,
-            filter
-          },
-          (payload) => {
-            console.log(`Realtime ${payload.eventType} on ${table}:`, payload);
-            
-            switch (payload.eventType) {
-              case 'INSERT':
-                onInsert?.(payload);
-                break;
-              case 'UPDATE':
-                onUpdate?.(payload);
-                break;
-              case 'DELETE':
-                onDelete?.(payload);
-                break;
-            }
+    const channel = supabase
+      .channel(`realtime:${table}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: table
+        },
+        (payload) => {
+          if (onDataChange) {
+            onDataChange(payload);
           }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setIsConnected(true);
-            setError(null);
-            console.log(`Subscribed to realtime changes for ${table}`);
-          } else if (status === 'CHANNEL_ERROR') {
-            setIsConnected(false);
-            setError('Failed to subscribe to realtime changes');
-            console.error(`Failed to subscribe to realtime changes for ${table}`);
-          } else if (status === 'TIMED_OUT') {
-            setIsConnected(false);
-            setError('Subscription timed out');
-            console.error(`Subscription timed out for ${table}`);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Subscribed to realtime updates for ${table}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          if (onError) {
+            onError(new Error(`Failed to subscribe to ${table} updates`));
           }
-        });
+        }
+      });
 
-      channelRef.current = channel;
+    channelRef.current = channel;
 
-    } catch (err) {
-      console.error(`Error setting up realtime subscription for ${table}:`, err);
-      setError('Failed to set up realtime subscription');
-    }
-
-    // Cleanup function
     return () => {
       if (channelRef.current) {
-        console.log(`Unsubscribing from realtime changes for ${table}`);
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
-        setIsConnected(false);
       }
     };
-  }, [table, event, filter, onInsert, onUpdate, onDelete, enabled]);
+  }, [table, onDataChange, onError]);
 
-  const refresh = () => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      setIsConnected(false);
-    }
-    // Re-trigger the effect by updating a state
-    setError(null);
-  };
-
-  return {
-    isConnected,
-    error,
-    refresh
-  };
+  return channelRef.current;
 };
-
-export default useRealtimeSubscription;

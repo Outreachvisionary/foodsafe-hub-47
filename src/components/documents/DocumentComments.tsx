@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+import { MessageSquare, Send } from 'lucide-react';
 import { DocumentComment } from '@/types/document';
+import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentCommentsProps {
   documentId: string;
@@ -16,151 +17,121 @@ interface DocumentCommentsProps {
 const DocumentComments: React.FC<DocumentCommentsProps> = ({
   documentId,
   currentUserId,
-  currentUserName,
+  currentUserName
 }) => {
   const [comments, setComments] = useState<DocumentComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const { getDocumentComments, createDocumentComment } = useDocumentService();
 
   useEffect(() => {
-    fetchComments();
-  }, [documentId]);
+    const fetchComments = async () => {
+      setLoading(true);
+      try {
+        const data = await getDocumentComments(documentId);
+        setComments(data);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchComments = async () => {
-    setIsLoading(true);
-    try {
-      // For demonstration, we'll create some mock comments
-      const mockComments: DocumentComment[] = [
-        {
-          id: '1',
-          document_id: documentId,
-          content: 'This looks good to me. Ready for review.',
-          user_id: 'user1',
-          user_name: 'Sarah Johnson',
-          created_at: '2023-08-15T10:30:00Z',
-        },
-        {
-          id: '2',
-          document_id: documentId,
-          content: 'Please update section 3.2 with the latest regulations.',
-          user_id: 'user2',
-          user_name: 'David Chen',
-          created_at: '2023-08-16T14:15:00Z',
-        },
-      ];
-      
-      setComments(mockComments);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load comments',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchComments();
+  }, [documentId, getDocumentComments]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
-    
-    setIsLoading(true);
+
+    setSubmitting(true);
     try {
-      // In a real application, you'd save to the database
-      // For now, we'll simulate adding a comment
-      const mockNewComment: DocumentComment = {
-        id: `temp-${Date.now()}`,
-        document_id: documentId,
-        content: newComment,
-        user_id: currentUserId,
-        user_name: currentUserName,
-        created_at: new Date().toISOString(),
-      };
+      const comment = await createDocumentComment(
+        documentId,
+        currentUserId,
+        currentUserName,
+        newComment.trim()
+      );
       
-      setComments([...comments, mockNewComment]);
-      setNewComment('');
-      
-      toast({
-        title: 'Comment added',
-        description: 'Your comment has been added successfully',
-      });
+      if (comment) {
+        setComments(prev => [...prev, comment]);
+        setNewComment('');
+      }
     } catch (error) {
-      console.error('Error adding comment:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add your comment',
-        variant: 'destructive',
-      });
+      console.error('Error creating comment:', error);
     } finally {
-      setIsLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+  const formatDate = (dateStr: string): string => {
+    return new Date(dateStr).toLocaleString();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Comments</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          Comments ({comments.length})
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading && comments.length === 0 ? (
-          <div className="text-center py-4">Loading comments...</div>
-        ) : comments.length > 0 ? (
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                <Avatar>
-                  <AvatarFallback>{getInitials(comment.user_name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-baseline justify-between">
-                    <h4 className="font-semibold">{comment.user_name}</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm mt-1">{comment.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            No comments yet. Be the first to comment!
-          </div>
-        )}
-        
-        <div className="pt-4 border-t">
+        {/* New Comment Form */}
+        <div className="space-y-3">
           <Textarea
             placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px]"
+            rows={3}
           />
-          <div className="flex justify-end mt-2">
-            <Button 
-              onClick={handleSubmitComment} 
-              disabled={!newComment.trim() || isLoading}
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSubmitComment}
+              disabled={!newComment.trim() || submitting}
+              size="sm"
             >
-              {isLoading ? 'Posting...' : 'Post Comment'}
+              <Send className="h-4 w-4 mr-2" />
+              {submitting ? 'Posting...' : 'Post Comment'}
             </Button>
           </div>
         </div>
+
+        {/* Comments List */}
+        {loading ? (
+          <div className="text-center py-4 text-muted-foreground">
+            Loading comments...
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>No comments yet</p>
+            <p className="text-sm">Be the first to add a comment</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="" />
+                  <AvatarFallback>
+                    {comment.user_name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{comment.user_name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-sm">{comment.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
