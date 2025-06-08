@@ -135,7 +135,7 @@ export const useTrainingSessions = () => {
       // Convert status to string for database
       const dbUpdates = {
         ...updates,
-        status: updates.status ? trainingStatusToString(updates.status) : undefined
+        status: updates.status ? trainingStatusToString(updates.status) as any : undefined
       };
       
       const { data, error } = await supabase

@@ -148,25 +148,25 @@ const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
             <div className="text-sm text-muted-foreground">Total</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter(NCStatus.On_Hold)}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter('On_Hold')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-yellow-600">{counts.open}</div>
             <div className="text-sm text-muted-foreground">Open</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter(NCStatus.Under_Review)}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter('Under_Review')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">{counts.inReview}</div>
             <div className="text-sm text-muted-foreground">In Review</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter(NCStatus.Resolved)}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter('Resolved')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{counts.resolved}</div>
             <div className="text-sm text-muted-foreground">Resolved</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter(NCStatus.Closed)}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => handleStatusFilter('Closed')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-gray-600">{counts.closed}</div>
             <div className="text-sm text-muted-foreground">Closed</div>

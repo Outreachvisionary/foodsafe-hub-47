@@ -63,11 +63,14 @@ const CAPADetails: React.FC = () => {
     try {
       setActivitiesLoading(true);
       const fetchedActivities = await getCAPAActivities(capaId);
-      // Convert string status values to enum values
-      const convertedActivities = fetchedActivities.map(activity => ({
+      // Convert string status values to enum values and handle metadata
+      const convertedActivities: CAPAActivity[] = fetchedActivities.map(activity => ({
         ...activity,
         old_status: activity.old_status ? stringToCAPAStatus(activity.old_status as string) : undefined,
         new_status: activity.new_status ? stringToCAPAStatus(activity.new_status as string) : undefined,
+        metadata: (activity.metadata as any) || {},
+        capa_id: activity.capa_id || capaId,
+        performed_at: activity.performed_at || new Date().toISOString(),
       }));
       setActivities(convertedActivities);
     } catch (err) {

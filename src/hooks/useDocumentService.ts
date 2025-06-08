@@ -27,13 +27,13 @@ export const useDocumentService = () => {
         if (filter.category) {
           const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
           const categoryStrings = categories.map(cat => documentCategoryToString(cat));
-          query = query.in('category', categoryStrings as any);
+          query = query.in('category', categoryStrings);
         }
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
           const statusStrings = statuses.map(status => documentStatusToString(status));
-          query = query.in('status', statusStrings as any);
+          query = query.in('status', statusStrings);
         }
         
         if (filter.created_by) {
@@ -138,7 +138,7 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out),
+          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out) as any,
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -182,11 +182,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available) as any,
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
-          status: documentStatusToString(DocumentStatus.Published)
+          status: documentStatusToString(DocumentStatus.Published) as any
         })
         .eq('id', documentId);
       
@@ -265,9 +265,9 @@ export const useDocumentService = () => {
         file_name: document.file_name || 'unnamed.txt',
         file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
-        category: documentCategoryToString(document.category || DocumentCategory.Other),
-        status: documentStatusToString(DocumentStatus.Draft),
-        checkout_status: checkoutStatusToString(CheckoutStatus.Available),
+        category: documentCategoryToString(document.category || DocumentCategory.Other) as any,
+        status: documentStatusToString(DocumentStatus.Draft) as any,
+        checkout_status: checkoutStatusToString(CheckoutStatus.Available) as any,
         version: 1,
         created_by: document.created_by || 'system',
         created_at: new Date().toISOString(),
