@@ -174,6 +174,10 @@ const CAPA: React.FC = () => {
     navigate(`/capa/${capa.id}`);
   };
 
+  const handleFilterChange = (newFilters: Partial<CAPAFilter>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -232,7 +236,7 @@ const CAPA: React.FC = () => {
 
         <TabsContent value="all" className="space-y-4">
           <div className="grid md:grid-cols-4 gap-4">
-            <CAPAFilters />
+            <CAPAFilters onFilterChange={handleFilterChange} />
             <div className="md:col-span-3">
               <CAPAList
                 items={filteredCAPAs}
@@ -247,7 +251,7 @@ const CAPA: React.FC = () => {
         {['open', 'inProgress', 'completed', 'overdue'].map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-4">
             <div className="grid md:grid-cols-4 gap-4">
-              <CAPAFilters />
+              <CAPAFilters onFilterChange={handleFilterChange} />
               <div className="md:col-span-3">
                 <CAPAList
                   items={filteredCAPAs}

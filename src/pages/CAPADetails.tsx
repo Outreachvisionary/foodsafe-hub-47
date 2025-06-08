@@ -18,6 +18,7 @@ import CAPAStatusForm from '@/components/capa/CAPAStatusForm';
 import CAPAAttachments from '@/components/capa/CAPAAttachments';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
+import { stringToCAPAStatus } from '@/utils/typeAdapters';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -62,7 +63,13 @@ const CAPADetails: React.FC = () => {
     try {
       setActivitiesLoading(true);
       const fetchedActivities = await getCAPAActivities(capaId);
-      setActivities(fetchedActivities);
+      // Convert string status values to enum values
+      const convertedActivities = fetchedActivities.map(activity => ({
+        ...activity,
+        old_status: activity.old_status ? stringToCAPAStatus(activity.old_status as string) : undefined,
+        new_status: activity.new_status ? stringToCAPAStatus(activity.new_status as string) : undefined,
+      }));
+      setActivities(convertedActivities);
     } catch (err) {
       console.error('Error fetching CAPA activities:', err);
     } finally {
@@ -126,8 +133,8 @@ const CAPADetails: React.FC = () => {
           </Badge>
           <Badge 
             className={`text-sm font-normal px-2 py-1 ${
-              capa.status === CAPAStatus.Overdue ? 'bg-red-100 text-red-800' :
-              capa.status === CAPAStatus.Completed || capa.status === CAPAStatus.Closed ? 'bg-green-100 text-green-800' :
+              capa.status === CAPAStatus.Pending_Verification ? 'bg-red-100 text-red-800' :
+              capa.status === CAPAStatus.Closed ? 'bg-green-100 text-green-800' :
               'bg-blue-100 text-blue-800'
             }`}
           >
@@ -234,7 +241,7 @@ const CAPADetails: React.FC = () => {
           
           <CAPAInfoPanel capa={capa} />
           
-          {(capa.status === CAPAStatus.Completed || capa.status === CAPAStatus.Closed) && (
+          {(capa.status === CAPAStatus.Closed) && (
             <CAPAEffectivenessMonitor 
               id={capa.id}
               implementationDate={capa.completion_date || capa.updated_at}
