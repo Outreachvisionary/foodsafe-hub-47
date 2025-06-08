@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -138,7 +139,7 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out),
+          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out) as "Available" | "Checked_Out",
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -182,11 +183,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available) as "Available" | "Checked_Out",
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
-          status: documentStatusToString(DocumentStatus.Published)
+          status: documentStatusToString(DocumentStatus.Published) as "Draft" | "Pending Approval" | "Approved" | "Published" | "Archived" | "Expired"
         })
         .eq('id', documentId);
       
@@ -265,9 +266,9 @@ export const useDocumentService = () => {
         file_name: document.file_name || 'unnamed.txt',
         file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
-        category: documentCategoryToString(document.category || DocumentCategory.Other),
-        status: documentStatusToString(DocumentStatus.Draft),
-        checkout_status: checkoutStatusToString(CheckoutStatus.Available),
+        category: documentCategoryToString(document.category || DocumentCategory.Other) as "Other" | "SOP" | "Policy" | "Form" | "Certificate" | "Audit Report" | "HACCP Plan" | "Training Material" | "Supplier Documentation" | "Risk Assessment",
+        status: documentStatusToString(DocumentStatus.Draft) as "Draft" | "Pending Approval" | "Approved" | "Published" | "Archived" | "Expired",
+        checkout_status: checkoutStatusToString(CheckoutStatus.Available) as "Available" | "Checked_Out",
         version: 1,
         created_by: document.created_by || 'system',
         created_at: new Date().toISOString(),

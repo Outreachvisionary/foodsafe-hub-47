@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingStatus } from '@/types/enums';
+import { trainingStatusToString } from '@/utils/typeAdapters';
 
 interface TrainingSession {
   id: string;
@@ -53,7 +55,24 @@ export const useTrainingSessions = () => {
           throw new Error(error.message);
         }
 
-        setTrainingSessions(data || []);
+        // Transform data to match TrainingSession interface
+        const sessions: TrainingSession[] = (data || []).map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          category: item.category || 'General',
+          type: item.type || 'Online',
+          duration: item.duration || 60,
+          start_date: item.start_date,
+          end_date: item.end_date || item.start_date,
+          instructor: item.instructor || 'TBD',
+          location: item.location || 'Online',
+          capacity: item.capacity || 0,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        }));
+
+        setTrainingSessions(sessions);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -94,7 +113,7 @@ export const useTrainingSessions = () => {
       session_id: sessionId,
       employee_id: employeeId,
       employee_name: employeeName,
-      status: TrainingStatus.Not_Started, // Use correct enum value
+      status: TrainingStatus.Not_Started,
       assigned_date: new Date().toISOString(),
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       completion_date: null,
@@ -112,9 +131,16 @@ export const useTrainingSessions = () => {
   const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
     try {
       setLoading(true);
+      
+      // Convert status to string for database
+      const dbUpdates = {
+        ...updates,
+        status: updates.status ? trainingStatusToString(updates.status) : undefined
+      };
+      
       const { data, error } = await supabase
         .from('training_records')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', recordId)
         .select()
         .single();

@@ -18,15 +18,59 @@ interface TrainingRecord {
   next_recurrence: string | null;
 }
 
+interface TrainingSession {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  duration: number;
+  start_date: string;
+  end_date: string;
+  instructor: string;
+  location: string;
+  capacity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TrainingPlan {
+  id: string;
+  name: string;
+  description: string;
+  target_roles: string[];
+  target_departments: string[];
+  courses: string[];
+  priority: string;
+  status: string;
+  duration_days?: number;
+  is_required?: boolean;
+}
+
+interface DepartmentStat {
+  department: string;
+  totalAssigned: number;
+  completed: number;
+  overdue: number;
+  compliance: number;
+}
+
 interface TrainingContextType {
   trainingRecords: TrainingRecord[];
+  sessions: TrainingSession[];
+  trainingPlans: TrainingPlan[];
+  departmentStats: DepartmentStat[];
   loading: boolean;
+  isLoading: boolean;
   error: string | null;
   enrollUser: (sessionId: string, userId: string) => Promise<void>;
   startTraining: (recordId: string) => Promise<void>;
   completeTraining: (recordId: string, score: number) => Promise<void>;
   getTrainingRecordsByStatus: (status: TrainingStatus) => TrainingRecord[];
   getPendingTrainings: () => TrainingRecord[];
+  fetchPlans: () => Promise<void>;
+  createTrainingPlan: (plan: Partial<TrainingPlan>) => Promise<void>;
+  deleteTrainingPlan: (planId: string) => Promise<void>;
 }
 
 const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
@@ -48,6 +92,13 @@ interface TrainingProviderProps {
 
 export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) => {
   const [trainingRecords, setTrainingRecords] = useState<TrainingRecord[]>([]);
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+  const [departmentStats, setDepartmentStats] = useState<DepartmentStat[]>([
+    { department: 'Production', totalAssigned: 50, completed: 45, overdue: 5, compliance: 90 },
+    { department: 'Quality', totalAssigned: 25, completed: 23, overdue: 2, compliance: 92 },
+    { department: 'Maintenance', totalAssigned: 30, completed: 25, overdue: 5, compliance: 83 },
+  ]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,15 +208,92 @@ export const TrainingProvider: React.FC<TrainingProviderProps> = ({ children }) 
     return getTrainingRecordsByStatus(TrainingStatus.Not_Started);
   };
 
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockPlans: TrainingPlan[] = [
+        {
+          id: '1',
+          name: 'Food Safety Basics',
+          description: 'Essential food safety training for all staff',
+          target_roles: ['Production Staff', 'Quality Team'],
+          target_departments: ['Production', 'Quality'],
+          courses: ['FS-101', 'HACCP-101'],
+          priority: 'High',
+          status: 'Active',
+          duration_days: 5,
+          is_required: true,
+        },
+      ];
+      
+      setTrainingPlans(mockPlans);
+    } catch (error) {
+      setError('Failed to fetch training plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTrainingPlan = async (plan: Partial<TrainingPlan>) => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newPlan: TrainingPlan = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: plan.name || 'New Training Plan',
+        description: plan.description || '',
+        target_roles: plan.target_roles || [],
+        target_departments: plan.target_departments || [],
+        courses: plan.courses || [],
+        priority: plan.priority || 'Medium',
+        status: plan.status || 'Active',
+        duration_days: plan.duration_days,
+        is_required: plan.is_required,
+      };
+      
+      setTrainingPlans(prev => [...prev, newPlan]);
+    } catch (error) {
+      setError('Failed to create training plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTrainingPlan = async (planId: string) => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setTrainingPlans(prev => prev.filter(plan => plan.id !== planId));
+    } catch (error) {
+      setError('Failed to delete training plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: TrainingContextType = {
     trainingRecords,
+    sessions,
+    trainingPlans,
+    departmentStats,
     loading,
+    isLoading: loading,
     error,
     enrollUser,
     startTraining,
     completeTraining,
     getTrainingRecordsByStatus,
     getPendingTrainings,
+    fetchPlans,
+    createTrainingPlan,
+    deleteTrainingPlan,
   };
 
   return (

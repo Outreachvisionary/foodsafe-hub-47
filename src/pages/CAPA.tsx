@@ -27,9 +27,14 @@ const CAPA: React.FC = () => {
   const [capaStats, setCAPAStats] = useState<CAPAStats>({
     total: 0,
     open: 0,
+    openCount: 0,
     inProgress: 0,
     completed: 0,
+    closed: 0,
+    closedCount: 0,
     overdue: 0,
+    overdueCount: 0,
+    pendingVerificationCount: 0,
     byPriority: {} as Record<CAPAPriority, number>,
     bySource: {} as Record<CAPASource, number>,
     byDepartment: {},
@@ -94,17 +99,15 @@ const CAPA: React.FC = () => {
           filtered = filtered.filter(capa => capa.status === CAPAStatus.Open);
           break;
         case 'inProgress':
-          filtered = filtered.filter(capa => capa.status === CAPAStatus.InProgress);
+          filtered = filtered.filter(capa => capa.status === CAPAStatus.In_Progress);
           break;
         case 'completed':
           filtered = filtered.filter(capa => 
-            capa.status === CAPAStatus.Completed || 
-            capa.status === CAPAStatus.Verified || 
             capa.status === CAPAStatus.Closed
           );
           break;
         case 'overdue':
-          filtered = filtered.filter(capa => capa.status === CAPAStatus.Overdue);
+          filtered = filtered.filter(capa => capa.status === CAPAStatus.Pending_Verification);
           break;
       }
     }
@@ -229,10 +232,10 @@ const CAPA: React.FC = () => {
 
         <TabsContent value="all" className="space-y-4">
           <div className="grid md:grid-cols-4 gap-4">
-            <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
+            <CAPAFilters />
             <div className="md:col-span-3">
               <CAPAList
-                items={filteredCAPAs} // Changed from 'capas' to match props
+                items={filteredCAPAs}
                 loading={loading}
                 error={error}
                 onCAPAClick={handleCAPAClick}
@@ -244,10 +247,10 @@ const CAPA: React.FC = () => {
         {['open', 'inProgress', 'completed', 'overdue'].map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-4">
             <div className="grid md:grid-cols-4 gap-4">
-              <CAPAFilters filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
+              <CAPAFilters />
               <div className="md:col-span-3">
                 <CAPAList
-                  items={filteredCAPAs} // Changed from 'capas' to match props
+                  items={filteredCAPAs}
                   loading={loading}
                   error={error}
                   onCAPAClick={handleCAPAClick}
@@ -259,7 +262,7 @@ const CAPA: React.FC = () => {
       </Tabs>
 
       <CreateCAPADialog
-        open={showCreateDialog} // Changed from 'isOpen' to match props
+        isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)} 
         onSubmit={handleCreateCAPA}
       />
