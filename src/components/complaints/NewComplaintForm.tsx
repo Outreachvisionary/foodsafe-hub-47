@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -72,7 +73,7 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
       await createComplaint({
         title: values.title,
         description: values.description,
-        category: values.category,
+        category: values.category as ComplaintCategory,
         priority: values.priority as ComplaintPriority,
         customer_name: values.customer_name,
         customer_contact: values.customer_contact,
