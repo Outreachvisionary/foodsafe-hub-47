@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ComplaintCategory, ComplaintPriority, ComplaintStatus } from '@/types/enums';
+import { ComplaintCategory, ComplaintPriority, ComplaintStatus } from '@/types/complaint';
 import { Button } from '@/components/ui/button';
 import {
   Form,
