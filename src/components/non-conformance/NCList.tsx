@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-01',
           item_name: 'Product A',
           item_category: 'Finished Product',
+          created_by: 'john.doe@company.com',
         },
         {
           id: '2',
@@ -51,6 +53,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-05',
           item_name: 'Package X',
           item_category: 'Packaging',
+          created_by: 'jane.smith@company.com',
         },
         {
           id: '3',
@@ -61,6 +64,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-10',
           item_name: 'Process Y',
           item_category: 'Process',
+          created_by: 'mike.johnson@company.com',
         },
         {
           id: '4',
@@ -71,6 +75,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-15',
           item_name: 'Machine Z',
           item_category: 'Equipment',
+          created_by: 'sarah.wilson@company.com',
         },
         {
           id: '5',
@@ -81,6 +86,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-20',
           item_name: 'SOP-001',
           item_category: 'Documentation',
+          created_by: 'tom.brown@company.com',
         },
         {
           id: '6',
@@ -91,6 +97,7 @@ const NCList: React.FC = () => {
           updated_at: '2024-03-25',
           item_name: 'Product B',
           item_category: 'Finished Product',
+          created_by: 'lisa.davis@company.com',
         },
       ];
 
@@ -124,9 +131,8 @@ const NCList: React.FC = () => {
     return matchesSearch && matchesFilters;
   });
 
-  const getStatusBadgeColor = (status: string) => {
-    const ncStatus = stringToNCStatus(status);
-    switch (ncStatus) {
+  const getStatusBadgeColor = (status: NCStatus) => {
+    switch (status) {
       case NCStatus.On_Hold:
         return 'bg-red-100 text-red-800';
       case NCStatus.Under_Review:

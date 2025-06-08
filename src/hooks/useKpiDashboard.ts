@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,13 +45,23 @@ export const useKpiDashboard = () => {
       const { data, error } = await supabase
         .from('kpi_quality_data')
         .select('*')
-        .order('title', { ascending: true });
+        .order('month', { ascending: true });
 
       if (error) {
         console.error('Error fetching KPI data:', error);
         setError(error.message);
       } else {
-        setKPIData(data || []);
+        // Transform database data to match KPIData interface
+        const transformedData: KPIData[] = (data || []).map(item => ({
+          id: item.id,
+          title: `Quality Metrics - ${item.month}`,
+          value: item.defect_rate,
+          target: 2.0, // Default target
+          trend: item.return_rate - item.defect_rate,
+          description: `Defect rate: ${item.defect_rate}%, Return rate: ${item.return_rate}%`,
+          updated_at: item.updated_at,
+        }));
+        setKPIData(transformedData);
       }
     } catch (err) {
       console.error('Unexpected error fetching KPI data:', err);
@@ -66,13 +77,23 @@ export const useKpiDashboard = () => {
       const { data, error } = await supabase
         .from('kpi_safety_data')
         .select('*')
-        .order('title', { ascending: true });
+        .order('month', { ascending: true });
 
       if (error) {
         console.error('Error fetching safety data:', error);
         setError(error.message);
       } else {
-        setSafetyData(data || []);
+        // Transform database data to match SafetyData interface
+        const transformedData: SafetyData[] = (data || []).map(item => ({
+          id: item.id,
+          title: `Safety Metrics - ${item.month}`,
+          value: item.incidents,
+          target: 0, // Target zero incidents
+          trend: item.near_misses - item.incidents,
+          description: `Incidents: ${item.incidents}, Near misses: ${item.near_misses}`,
+          updated_at: item.updated_at,
+        }));
+        setSafetyData(transformedData);
       }
     } catch (err) {
       console.error('Unexpected error fetching safety data:', err);
@@ -88,13 +109,23 @@ export const useKpiDashboard = () => {
       const { data, error } = await supabase
         .from('kpi_metrics')
         .select('*')
-        .order('title', { ascending: true });
+        .order('metric_name', { ascending: true });
 
       if (error) {
         console.error('Error fetching metrics:', error);
         setError(error.message);
       } else {
-        setMetrics(data || []);
+        // Transform database data to match MetricsData interface
+        const transformedData: MetricsData[] = (data || []).map(item => ({
+          id: item.id,
+          title: item.metric_name,
+          value: item.metric_value,
+          target: item.metric_target || 100,
+          trend: item.trend || 0,
+          description: `${item.metric_name}: ${item.metric_value} ${item.metric_unit || ''}`,
+          updated_at: item.updated_at,
+        }));
+        setMetrics(transformedData);
       }
     } catch (err) {
       console.error('Unexpected error fetching metrics:', err);
@@ -106,13 +137,15 @@ export const useKpiDashboard = () => {
 
   useEffect(() => {
     fetchKPIData();
+    fetchSafetyData();
+    fetchMetrics();
 
     // Set up real-time subscriptions
     const qualityChannel = supabase
       .channel('kpi_quality_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'kpi_quality_data' }, 
-        () => fetchQualityData()
+        () => fetchKPIData()
       )
       .subscribe();
 

@@ -10,6 +10,7 @@ import {
   CheckoutStatus,
   DocumentCategory
 } from '@/types/document';
+import { documentCategoryToString, documentStatusToString, checkoutStatusToString } from '@/utils/typeAdapters';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -25,12 +26,14 @@ export const useDocumentService = () => {
       if (filter) {
         if (filter.category) {
           const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
-          query = query.in('category', categories);
+          const categoryStrings = categories.map(cat => documentCategoryToString(cat));
+          query = query.in('category', categoryStrings);
         }
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-          query = query.in('status', statuses);
+          const statusStrings = statuses.map(status => documentStatusToString(status));
+          query = query.in('status', statusStrings);
         }
         
         if (filter.created_by) {
@@ -127,7 +130,7 @@ export const useDocumentService = () => {
       
       if (docError) throw docError;
       
-      if (doc.checkout_status === CheckoutStatus.Checked_Out) {
+      if (doc.checkout_status === checkoutStatusToString(CheckoutStatus.Checked_Out)) {
         setError('Document is already checked out by another user.');
         return false;
       }
@@ -135,7 +138,7 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.Checked_Out,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out),
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -179,11 +182,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: CheckoutStatus.Available,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
-          status: DocumentStatus.Active
+          status: documentStatusToString(DocumentStatus.Published)
         })
         .eq('id', documentId);
       
@@ -230,7 +233,7 @@ export const useDocumentService = () => {
         version: item.version,
         version_number: item.version_number || item.version,
         file_name: item.file_name,
-        file_path: item.file_name, // Use file_name as fallback since file_path might not exist
+        file_path: item.file_name,
         file_size: item.file_size,
         created_by: item.created_by,
         created_at: item.created_at,
@@ -262,9 +265,9 @@ export const useDocumentService = () => {
         file_name: document.file_name || 'unnamed.txt',
         file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
-        category: document.category || DocumentCategory.Other,
-        status: DocumentStatus.Draft,
-        checkout_status: CheckoutStatus.Available,
+        category: documentCategoryToString(document.category || DocumentCategory.Other),
+        status: documentStatusToString(DocumentStatus.Draft),
+        checkout_status: checkoutStatusToString(CheckoutStatus.Available),
         version: 1,
         created_by: document.created_by || 'system',
         created_at: new Date().toISOString(),

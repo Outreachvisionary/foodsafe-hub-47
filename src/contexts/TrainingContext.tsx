@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { TrainingStatus } from '@/types/enums';
 
@@ -37,6 +38,9 @@ export const useTraining = () => {
   }
   return context;
 };
+
+// Export alias for backward compatibility
+export const useTrainingContext = useTraining;
 
 interface TrainingProviderProps {
   children: ReactNode;

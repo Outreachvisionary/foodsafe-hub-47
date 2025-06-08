@@ -1,247 +1,195 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, FileText, Download, Plus, Copy, FolderOpen } from 'lucide-react';
-import { DocumentCategory } from '@/types/document';
-import { useToast } from '@/hooks/use-toast';
+import { FileText, Search, Plus } from 'lucide-react';
+import { DocumentCategory } from '@/types/enums';
 
 interface DocumentTemplate {
   id: string;
-  title: string;
+  name: string;
   description: string;
   category: DocumentCategory;
-  lastUpdated: string;
-  format: string;
-  isRequired: boolean;
-  standardReference?: string;
+  fileSize: string;
+  lastModified: string;
 }
 
-const templateCategories = [
-  { name: 'SOPs', icon: <FileText className="h-6 w-6 text-blue-500" /> },
-  { name: 'Policies', icon: <FileText className="h-6 w-6 text-purple-500" /> },
-  { name: 'Forms', icon: <FileText className="h-6 w-6 text-green-500" /> },
-  { name: 'HACCP Plans', icon: <FileText className="h-6 w-6 text-orange-500" /> },
-  { name: 'Audit Checklists', icon: <FileText className="h-6 w-6 text-red-500" /> },
-  { name: 'All Templates', icon: <FolderOpen className="h-6 w-6 text-gray-500" /> },
-];
+const DocumentTemplates: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | 'all'>('all');
 
-const documentTemplates: DocumentTemplate[] = [
-  {
-    id: '1',
-    title: 'SOP Template',
-    description: 'Standard Operating Procedure template with all required sections for compliance',
-    category: 'SOP',
-    lastUpdated: '2023-08-15',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'SQF, FSSC 22000'
-  },
-  {
-    id: '2',
-    title: 'HACCP Plan Template',
-    description: 'Comprehensive HACCP plan template with hazard analysis and critical control points',
-    category: 'HACCP Plan',
-    lastUpdated: '2023-09-02',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'SQF, FSSC 22000, BRC'
-  },
-  {
-    id: '3',
-    title: 'Supplier Approval Form',
-    description: 'Form for collecting and reviewing supplier compliance information',
-    category: 'Form',
-    lastUpdated: '2023-07-30',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'SQF'
-  },
-  {
-    id: '4',
-    title: 'Internal Audit Checklist',
-    description: 'Comprehensive audit checklist aligned with GFSI standards',
-    category: 'Form',
-    lastUpdated: '2023-09-15',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'All Standards'
-  },
-  {
-    id: '5',
-    title: 'Food Safety Policy Template',
-    description: 'Template for creating a comprehensive food safety policy document',
-    category: 'Policy',
-    lastUpdated: '2023-08-20',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'All Standards'
-  },
-  {
-    id: '6',
-    title: 'Allergen Control Plan',
-    description: 'Template for documenting allergen control measures',
-    category: 'SOP',
-    lastUpdated: '2023-09-10',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'SQF, BRC'
-  },
-  {
-    id: '7',
-    title: 'Training Record Form',
-    description: 'Form for documenting employee training completion',
-    category: 'Form',
-    lastUpdated: '2023-07-15',
-    format: 'DOCX',
-    isRequired: false
-  },
-  {
-    id: '8',
-    title: 'Nonconformance Report',
-    description: 'Form for documenting and tracking non-conformances',
-    category: 'Form',
-    lastUpdated: '2023-08-05',
-    format: 'DOCX',
-    isRequired: true,
-    standardReference: 'All Standards'
-  }
-];
+  const templates: DocumentTemplate[] = [
+    {
+      id: '1',
+      name: 'Standard Operating Procedure Template',
+      description: 'Basic SOP template for food safety procedures',
+      category: DocumentCategory.SOP,
+      fileSize: '245 KB',
+      lastModified: '2024-03-15',
+    },
+    {
+      id: '2',
+      name: 'HACCP Plan Template',
+      description: 'Comprehensive HACCP plan template',
+      category: DocumentCategory.HACCP_Plan,
+      fileSize: '512 KB',
+      lastModified: '2024-03-10',
+    },
+    {
+      id: '3',
+      name: 'Inspection Checklist',
+      description: 'Daily inspection checklist form',
+      category: DocumentCategory.Form,
+      fileSize: '128 KB',
+      lastModified: '2024-03-12',
+    },
+    {
+      id: '4',
+      name: 'Training Record Form',
+      description: 'Employee training completion form',
+      category: DocumentCategory.Form,
+      fileSize: '92 KB',
+      lastModified: '2024-03-08',
+    },
+    {
+      id: '5',
+      name: 'Quality Policy Document',
+      description: 'Company quality policy template',
+      category: DocumentCategory.Policy,
+      fileSize: '324 KB',
+      lastModified: '2024-03-05',
+    },
+    {
+      id: '6',
+      name: 'Cleaning SOP',
+      description: 'Standard cleaning procedure',
+      category: DocumentCategory.SOP,
+      fileSize: '198 KB',
+      lastModified: '2024-03-03',
+    },
+    {
+      id: '7',
+      name: 'Corrective Action Form',
+      description: 'CAPA initiation form',
+      category: DocumentCategory.Form,
+      fileSize: '156 KB',
+      lastModified: '2024-03-01',
+    },
+    {
+      id: '8',
+      name: 'Audit Checklist',
+      description: 'Internal audit checklist',
+      category: DocumentCategory.Form,
+      fileSize: '201 KB',
+      lastModified: '2024-02-28',
+    },
+  ];
 
-const DocumentTemplates = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All Templates');
-  const { toast } = useToast();
-  
-  const filteredTemplates = documentTemplates.filter(template => {
-    const matchesSearch = 
-      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesCategory = selectedCategory === 'All Templates' ? true : 
-      (selectedCategory === 'SOPs' && template.category === 'SOP') ||
-      (selectedCategory === 'Policies' && template.category === 'Policy') ||
-      (selectedCategory === 'Forms' && template.category === 'Form') ||
-      (selectedCategory === 'HACCP Plans' && template.category === 'HACCP Plan') ||
-      (selectedCategory === 'Audit Checklists' && template.category === 'Form' && template.title.includes('Audit'));
-    
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const handleDownload = (template: DocumentTemplate) => {
-    toast({
-      title: "Template downloaded",
-      description: `${template.title} has been downloaded successfully.`,
-    });
+  const getCategoryColor = (category: DocumentCategory) => {
+    switch (category) {
+      case DocumentCategory.SOP:
+        return 'bg-blue-100 text-blue-800';
+      case DocumentCategory.HACCP_Plan:
+        return 'bg-green-100 text-green-800';
+      case DocumentCategory.Form:
+        return 'bg-yellow-100 text-yellow-800';
+      case DocumentCategory.Policy:
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handleUseTemplate = (template: DocumentTemplate) => {
-    toast({
-      title: "Template copied",
-      description: `A new document based on ${template.title} has been created.`,
-    });
-  };
+  const categories = Object.values(DocumentCategory);
 
   return (
-    <Card className="animate-fade-in">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl">Document Templates</CardTitle>
-        <CardDescription>
-          Standardized templates for creating consistent documentation
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="mb-6">
-          <div className="relative mb-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search templates..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {templateCategories.map((category) => (
-              <Button
-                key={category.name}
-                variant={selectedCategory === category.name ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category.name)}
-                className="flex items-center gap-2"
-              >
-                {category.icon}
-                <span>{category.name}</span>
-              </Button>
-            ))}
-          </div>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Document Templates</h1>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Template
+        </Button>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id} className="h-full hover:shadow-md transition-all">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{template.title}</CardTitle>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 ml-2">{template.format}</Badge>
-                </div>
-                <CardDescription className="line-clamp-2">{template.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Category:</span>
-                    <span>{template.category}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Last Updated:</span>
-                    <span>{template.lastUpdated}</span>
-                  </div>
-                  {template.standardReference && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Standards:</span>
-                      <span>{template.standardReference}</span>
-                    </div>
-                  )}
-                  {template.isRequired && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500">Required:</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">Yes</Badge>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-2">
-                <Button variant="outline" size="sm" onClick={() => handleDownload(template)}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Download
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value as DocumentCategory | 'all')}
+          className="px-3 py-2 border rounded-md"
+        >
+          <option value="all">All Categories</option>
+          {categories.map(category => (
+            <option key={category} value={category}>
+              {category.replace(/_/g, ' ')}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Templates Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredTemplates.map((template) => (
+          <Card key={template.id} className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+                <Badge className={getCategoryColor(template.category)}>
+                  {template.category.replace(/_/g, ' ')}
+                </Badge>
+              </div>
+              <CardTitle className="text-lg">{template.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                {template.description}
+              </p>
+              <div className="flex justify-between text-xs text-muted-foreground mb-4">
+                <span>{template.fileSize}</span>
+                <span>Modified: {template.lastModified}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">
+                  Preview
                 </Button>
-                <Button size="sm" onClick={() => handleUseTemplate(template)}>
-                  <Copy className="h-4 w-4 mr-1" />
+                <Button size="sm" className="flex-1">
                   Use Template
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
-          
-          {/* New Template Card */}
-          <Card className="h-full border-dashed hover:shadow-md transition-all flex flex-col items-center justify-center cursor-pointer">
-            <CardContent className="flex flex-col items-center justify-center h-full py-8">
-              <div className="bg-blue-50 rounded-full p-4 mb-4">
-                <Plus className="h-8 w-8 text-blue-500" />
               </div>
-              <h3 className="font-medium text-lg mb-2">Create New Template</h3>
-              <p className="text-center text-gray-500">
-                Create a custom document template for your organization
-              </p>
             </CardContent>
           </Card>
+        ))}
+      </div>
+
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No templates found</h3>
+          <p className="text-muted-foreground">
+            Try adjusting your search or filter criteria.
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 
