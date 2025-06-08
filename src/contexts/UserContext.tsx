@@ -10,6 +10,7 @@ interface UserContextType {
   fetchUserProfile: (userId: string) => Promise<User | null>;
   updateUserProfile: (userId: string, updates: Partial<User>) => Promise<boolean>;
   refreshUser: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -127,6 +128,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  const signOut = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+    } catch (err) {
+      console.error('Error signing out:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initialize user on mount
   useEffect(() => {
     const initializeUser = async () => {
@@ -160,6 +175,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     fetchUserProfile,
     updateUserProfile,
     refreshUser,
+    signOut,
   };
 
   return (

@@ -88,5 +88,30 @@ export interface UpdateCAPARequest {
   verified_by?: string;
 }
 
+export interface CAPAFilter {
+  status?: CAPAStatus | CAPAStatus[];
+  priority?: CAPAPriority | CAPAPriority[];
+  source?: CAPASource | CAPASource[];
+  department?: string | string[];
+  createdDateFrom?: string;
+  createdDateTo?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  assignedTo?: string | string[];
+  searchTerm?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface CAPAListProps {
+  items?: CAPA[];
+  capas?: CAPA[];
+  loading?: boolean;
+  error?: string | null;
+  onCAPAClick?: (capa: CAPA) => void;
+}
+
 // Export enums for backward compatibility
 export { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating };
