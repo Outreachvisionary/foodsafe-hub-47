@@ -57,25 +57,23 @@ const Breadcrumbs: React.FC = () => {
     <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground mb-4">
       <ol className="flex items-center space-x-2">
         {breadcrumbs.map((breadcrumb, index) => (
-          <React.Fragment key={breadcrumb.path}>
+          <li key={breadcrumb.path} className="flex items-center">
             {index > 0 && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground/60 mr-2" />
             )}
-            <li>
-              {breadcrumb.current ? (
-                <span className="text-foreground font-medium">
-                  {breadcrumb.label}
-                </span>
-              ) : (
-                <Link
-                  to={breadcrumb.path}
-                  className="hover:text-foreground transition-colors"
-                >
-                  {breadcrumb.label}
-                </Link>
-              )}
-            </li>
-          </React.Fragment>
+            {breadcrumb.current ? (
+              <span className="text-foreground font-medium">
+                {breadcrumb.label}
+              </span>
+            ) : (
+              <Link
+                to={breadcrumb.path}
+                className="hover:text-foreground transition-colors"
+              >
+                {breadcrumb.label}
+              </Link>
+            )}
+          </li>
         ))}
       </ol>
     </nav>

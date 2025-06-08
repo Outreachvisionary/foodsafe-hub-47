@@ -97,9 +97,10 @@ function App() {
             {/* Traceability */}
             <Route path="traceability" element={<Traceability />} />
             
-            {/* Non-conformance routes */}
+            {/* Non-conformance routes - Fixed routing */}
             <Route path="non-conformance" element={<NonConformance />} />
             <Route path="non-conformance/new" element={<NonConformanceFormPage />} />
+            <Route path="non-conformance/create" element={<NonConformanceFormPage />} />
             <Route path="non-conformance/:id" element={<NonConformanceFormPage />} />
             
             {/* CAPA routes */}

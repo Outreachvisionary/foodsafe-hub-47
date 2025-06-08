@@ -1,36 +1,18 @@
+
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
-import { adaptNCForAPI, adaptAPIToNC } from '@/utils/nonConformanceAdapters';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Mock data for demonstration purposes
-const mockNonConformances: NonConformance[] = [
-  {
-    id: 'nc-001',
-    title: 'Foreign material in product',
-    description: 'Metal fragments found in product batch',
-    status: 'On Hold',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    reported_date: new Date().toISOString(),
-    created_by: 'John Doe',
-    item_name: 'Product Batch 12345',
-    item_category: 'Finished Product',
-    reason_category: 'Foreign Material',
-    location: 'Production Line 2',
-    department: 'Production',
-    quantity: 100,
-    quantity_on_hold: 100,
-    units: 'kg'
-  },
-  // Add more mock data items if needed
-];
-
-// Get all non-conformances
+// Get all non-conformances with real-time data
 export const getAllNonConformances = async () => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { data: mockNonConformances };
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [] };
   } catch (error) {
     console.error('Error fetching non-conformances:', error);
     throw error;
@@ -40,13 +22,16 @@ export const getAllNonConformances = async () => {
 // Get non-conformance by ID
 export const getNonConformanceById = async (id: string): Promise<NonConformance> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const foundNC = mockNonConformances.find(nc => nc.id === id);
-    if (!foundNC) {
-      throw new Error(`Non-conformance with ID ${id} not found`);
-    }
-    return foundNC;
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error(`Non-conformance with ID ${id} not found`);
+    
+    return data as NonConformance;
   } catch (error) {
     console.error('Error fetching non-conformance:', error);
     throw error;
@@ -56,37 +41,41 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
 // Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const newNC: NonConformance = {
-      ...data,
-      id: `nc-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      reported_date: data.reported_date || new Date().toISOString(),
-      created_by: data.created_by || 'Current User',
-      status: data.status || 'On Hold'
-    } as NonConformance;
-    
-    return newNC;
+    const { data: newNC, error } = await supabase
+      .from('non_conformances')
+      .insert([{
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        reported_date: data.reported_date || new Date().toISOString(),
+        status: data.status || 'On Hold'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return newNC as NonConformance;
   } catch (error) {
     console.error('Error creating non-conformance:', error);
     throw error;
   }
 };
 
-// Update non-conformance - updated signature to match calls (2 params)
+// Update non-conformance
 export const updateNonConformance = async (id: string, data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const updatedNC: NonConformance = {
-      ...mockNonConformances.find(nc => nc.id === id) as NonConformance,
-      ...data,
-      updated_at: new Date().toISOString()
-    };
-    
-    return updatedNC;
+    const { data: updatedNC, error } = await supabase
+      .from('non_conformances')
+      .update({
+        ...data,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return updatedNC as NonConformance;
   } catch (error) {
     console.error('Error updating non-conformance:', error);
     throw error;
@@ -96,10 +85,12 @@ export const updateNonConformance = async (id: string, data: Partial<NonConforma
 // Delete non-conformance
 export const deleteNonConformance = async (id: string): Promise<void> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // In a real implementation, this would remove the item from the database
-    console.log(`Deleting non-conformance with ID: ${id}`);
+    const { error } = await supabase
+      .from('non_conformances')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   } catch (error) {
     console.error('Error deleting non-conformance:', error);
     throw error;
@@ -109,31 +100,14 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
 // Fetch NC activities
 export const fetchNCActivities = async (nonConformanceId: string): Promise<NCActivity[]> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Mock activity data
-    const activities: NCActivity[] = [
-      {
-        id: `act-${Date.now()}-1`,
-        non_conformance_id: nonConformanceId,
-        action: 'Status changed from Draft to On Hold',
-        performed_by: 'Quality Inspector',
-        performed_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        previous_status: 'Draft',
-        new_status: 'On Hold'
-      },
-      {
-        id: `act-${Date.now()}-2`,
-        non_conformance_id: nonConformanceId,
-        action: 'Updated quantity on hold from 0 to 100',
-        performed_by: 'Warehouse Manager',
-        performed_at: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-        comments: 'Material segregated and labeled'
-      }
-    ];
-    
-    return activities;
+    const { data, error } = await supabase
+      .from('nc_activities')
+      .select('*')
+      .eq('non_conformance_id', nonConformanceId)
+      .order('performed_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error fetching NC activities:', error);
     throw error;
@@ -143,55 +117,44 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
 // Fetch NC attachments
 export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Mock attachment data
-    const attachments: NCAttachment[] = [
-      {
-        id: `att-${Date.now()}-1`,
-        non_conformance_id: nonConformanceId,
-        file_name: 'incident_report.pdf',
-        file_path: `/attachments/${nonConformanceId}/incident_report.pdf`,
-        file_type: 'application/pdf',
-        file_size: 1024 * 1024 * 2.5, // 2.5 MB
-        description: 'Initial incident report',
-        uploaded_at: new Date(Date.now() - 86400000).toISOString(),
-        uploaded_by: 'Quality Inspector'
-      }
-    ];
-    
-    return attachments;
+    const { data, error } = await supabase
+      .from('nc_attachments')
+      .select('*')
+      .eq('non_conformance_id', nonConformanceId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error fetching NC attachments:', error);
     throw error;
   }
 };
 
-// Upload NC attachment - updated signature to match calls (3 params)
+// Upload NC attachment
 export const uploadNCAttachment = async (
   nonConformanceId: string,
   file: File,
   description?: string
 ): Promise<NCAttachment> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock successful upload
-    const newAttachment: NCAttachment = {
-      id: `att-${Date.now()}`,
-      non_conformance_id: nonConformanceId,
-      file_name: file.name,
-      file_path: `/attachments/${nonConformanceId}/${file.name}`,
-      file_type: file.type,
-      file_size: file.size,
-      description: description || '',
-      uploaded_at: new Date().toISOString(),
-      uploaded_by: 'Current User'
-    };
-    
-    return newAttachment;
+    const { data: newAttachment, error } = await supabase
+      .from('nc_attachments')
+      .insert([{
+        non_conformance_id: nonConformanceId,
+        file_name: file.name,
+        file_path: `/attachments/${nonConformanceId}/${file.name}`,
+        file_type: file.type,
+        file_size: file.size,
+        description: description || '',
+        uploaded_at: new Date().toISOString(),
+        uploaded_by: 'Current User'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return newAttachment as NCAttachment;
   } catch (error) {
     console.error('Error uploading attachment:', error);
     throw error;
@@ -201,41 +164,62 @@ export const uploadNCAttachment = async (
 // Fetch NC stats for dashboard
 export const fetchNCStats = async (): Promise<NCStats> => {
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const { data: nonConformances, error } = await supabase
+      .from('non_conformances')
+      .select('*');
+
+    if (error) throw error;
+
+    const ncs = nonConformances || [];
     
-    // Mock stats data
+    // Calculate stats from real data
     const stats: NCStats = {
-      total: 42,
-      byStatus: {
-        'On Hold': 12,
-        'Under Review': 8,
-        'In Progress': 15,
-        'Closed': 7
-      },
-      byCategory: {
-        'Finished Product': 18,
-        'Raw Material': 12,
-        'Equipment': 8,
-        'Packaging': 4
-      },
-      byReasonCategory: {
-        'Quality Issue': 15,
-        'Foreign Material': 10,
-        'Process Deviation': 9,
-        'Damaged': 5,
-        'Other': 3
-      },
-      byRiskLevel: {
-        'High': 7,
-        'Medium': 20,
-        'Low': 15
-      },
-      overdue: 5,
-      pendingReview: 8,
-      recentlyResolved: 3,
-      totalQuantityOnHold: 1250
+      total: ncs.length,
+      byStatus: {},
+      byCategory: {},
+      byReasonCategory: {},
+      byRiskLevel: {},
+      overdue: 0,
+      pendingReview: 0,
+      recentlyResolved: 0,
+      totalQuantityOnHold: 0,
+      recentItems: ncs.slice(0, 5)
     };
+
+    // Calculate status distribution
+    ncs.forEach(nc => {
+      const status = nc.status || 'Unknown';
+      stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+      
+      const category = nc.item_category || 'Unknown';
+      stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
+      
+      const reasonCategory = nc.reason_category || 'Unknown';
+      stats.byReasonCategory[reasonCategory] = (stats.byReasonCategory[reasonCategory] || 0) + 1;
+      
+      const riskLevel = nc.risk_level || 'Unknown';
+      stats.byRiskLevel[riskLevel] = (stats.byRiskLevel[riskLevel] || 0) + 1;
+      
+      // Add to quantity on hold
+      if (nc.quantity_on_hold) {
+        stats.totalQuantityOnHold += Number(nc.quantity_on_hold);
+      }
+      
+      // Count pending review
+      if (nc.status === 'Under Review') {
+        stats.pendingReview++;
+      }
+      
+      // Count recently resolved (last 30 days)
+      if (nc.resolution_date) {
+        const resolvedDate = new Date(nc.resolution_date);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        if (resolvedDate > thirtyDaysAgo) {
+          stats.recentlyResolved++;
+        }
+      }
+    });
     
     return stats;
   } catch (error) {
