@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { PlusCircle, FileText, Calendar, CheckCircle, AlertCircle, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAudits } from '@/hooks/useAudits';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import DashboardHeader from '@/components/DashboardHeader';
 
 const InternalAudits = () => {
   const navigate = useNavigate();
@@ -109,6 +111,7 @@ const InternalAudits = () => {
         </CardContent>
         <CardFooter className="pt-2">
           <Button variant="outline" size="sm" onClick={() => handleViewAudit(audit.id)}>
+            <Eye className="h-4 w-4 mr-2" />
             View Details
           </Button>
         </CardFooter>
@@ -142,6 +145,10 @@ const InternalAudits = () => {
         <div className="text-center py-8 text-gray-500">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p>No audits found in this category.</p>
+          <Button onClick={handleCreateAudit} className="mt-4">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Schedule Your First Audit
+          </Button>
         </div>
       );
     }
@@ -150,12 +157,27 @@ const InternalAudits = () => {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Internal Audits</h1>
+    <div className="space-y-6">
+      <DashboardHeader 
+        title="Internal Audits" 
+        subtitle="Manage and track your internal audit program"
+      />
+
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-muted-foreground">
+            Total Audits: {audits.length}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Upcoming: {upcomingAudits.length}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Active: {activeAudits.length}
+          </div>
+        </div>
         <Button onClick={handleCreateAudit}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          New Audit
+          Schedule New Audit
         </Button>
       </div>
 

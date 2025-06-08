@@ -28,7 +28,7 @@ const TrainingModule = lazy(() => import('@/pages/TrainingModule'));
 const NonConformance = lazy(() => import('@/pages/NonConformance'));
 const NonConformanceFormPage = lazy(() => import('@/pages/NonConformanceFormPage'));
 const UserManagement = lazy(() => import('@/pages/UserManagement'));
-const AuditsModule = lazy(() => import('@/pages/AuditsModule'));
+const InternalAudits = lazy(() => import('@/pages/InternalAudits'));
 const Traceability = lazy(() => import('@/pages/Traceability'));
 const ComplaintsManagement = lazy(() => import('@/pages/ComplaintsManagement'));
 const SupplierManagement = lazy(() => import('@/pages/SupplierManagement'));
@@ -90,14 +90,15 @@ function App() {
             {/* Training */}
             <Route path="training" element={<TrainingModule />} />
             
-            {/* Audits */}
-            <Route path="audits" element={<AuditsModule />} />
+            {/* Audits - Updated to use InternalAudits */}
+            <Route path="audits" element={<InternalAudits />} />
+            <Route path="audits/new" element={<ScheduleAuditPage />} />
             <Route path="audits/schedule" element={<ScheduleAuditPage />} />
             
             {/* Traceability */}
             <Route path="traceability" element={<Traceability />} />
             
-            {/* Non-conformance routes - Fixed routing */}
+            {/* Non-conformance routes - Fixed routing inconsistency */}
             <Route path="non-conformance" element={<NonConformance />} />
             <Route path="non-conformance/new" element={<NonConformanceFormPage />} />
             <Route path="non-conformance/create" element={<NonConformanceFormPage />} />
