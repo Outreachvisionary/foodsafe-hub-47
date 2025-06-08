@@ -30,16 +30,15 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       },
       bySource: {
         [CAPASource.Audit]: 0,
-        [CAPASource.CustomerComplaint]: 0,
-        [CAPASource.InternalReport]: 0,
-        [CAPASource.NonConformance]: 0,
-        [CAPASource.RegulatoryInspection]: 0,
-        [CAPASource.SupplierIssue]: 0,
+        [CAPASource.Customer_Complaint]: 0,
+        [CAPASource.Internal_Report]: 0,
+        [CAPASource.Non_Conformance]: 0,
+        [CAPASource.Supplier_Issue]: 0,
         [CAPASource.Other]: 0
       },
       byMonth: {},
       byDepartment: {},
-      recentActivities: [] // Added missing property
+      recentActivities: []
     };
     
     if (!data || data.length === 0) {

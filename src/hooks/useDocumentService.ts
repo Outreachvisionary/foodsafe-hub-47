@@ -34,13 +34,13 @@ export const useDocumentService = () => {
         if (filter.category) {
           const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
           const categoryStrings = categories.map(cat => documentCategoryToString(cat));
-          query = query.in('category', categoryStrings as any);
+          query = query.in('category', categoryStrings);
         }
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
           const statusStrings = statuses.map(status => documentStatusToString(status));
-          query = query.in('status', statusStrings as any);
+          query = query.in('status', statusStrings);
         }
         
         if (filter.created_by) {
@@ -137,7 +137,7 @@ export const useDocumentService = () => {
       
       if (docError) throw docError;
       
-      if (doc.checkout_status === 'Checked Out') {
+      if (doc.checkout_status === checkoutStatusToString(CheckoutStatus.Checked_Out)) {
         setError('Document is already checked out by another user.');
         return false;
       }
@@ -145,7 +145,7 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Checked Out' as any,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out),
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -189,11 +189,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: 'Available' as any,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
-          status: 'Published' as any
+          status: documentStatusToString(DocumentStatus.Published)
         })
         .eq('id', documentId);
       
@@ -292,7 +292,7 @@ export const useDocumentService = () => {
       
       const { data, error } = await supabase
         .from('documents')
-        .insert(newDocument as any)
+        .insert(newDocument)
         .select()
         .single();
       

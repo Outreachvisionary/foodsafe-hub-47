@@ -35,7 +35,6 @@ export enum EffectivenessRating {
   Effective = 'Effective',
   Partially_Effective = 'Partially Effective',
   Not_Effective = 'Not Effective',
-  Ineffective = 'Not Effective',
   Pending = 'Pending'
 }
 
@@ -53,7 +52,6 @@ export enum NCStatus {
 export enum DocumentStatus {
   Draft = 'Draft',
   Pending_Approval = 'Pending Approval',
-  PendingApproval = 'Pending Approval',
   PendingReview = 'Pending Review',
   Approved = 'Approved',
   Published = 'Published',
@@ -67,7 +65,6 @@ export enum DocumentStatus {
 export enum CheckoutStatus {
   Available = 'Available',
   Checked_Out = 'Checked Out',
-  CheckedOut = 'Checked Out',
   Locked = 'Locked'
 }
 

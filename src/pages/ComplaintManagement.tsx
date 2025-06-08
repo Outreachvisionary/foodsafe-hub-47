@@ -6,7 +6,7 @@ import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/e
 const ComplaintManagement: React.FC = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [filteredComplaints, setFilteredComplaints] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>(ComplaintCategory.ProductQuality);
+  const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory>(ComplaintCategory.Product_Quality);
   
   useEffect(() => {
     // Fetch complaints data
@@ -15,7 +15,7 @@ const ComplaintManagement: React.FC = () => {
         id: '1',
         title: 'Foreign object found in product',
         description: 'Customer found metal fragment in canned goods',
-        category: ComplaintCategory.ForeignMaterial,
+        category: ComplaintCategory.Foreign_Material,
         status: ComplaintStatus.Under_Investigation,
         priority: ComplaintPriority.High,
         reported_date: new Date().toISOString(),

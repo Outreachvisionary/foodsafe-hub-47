@@ -1,7 +1,7 @@
 
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { stringToCAPAStatus } from '@/utils/typeAdapters';
+import { stringToCAPAStatus, capaStatusToString } from '@/utils/typeAdapters';
 import { supabase } from '@/integrations/supabase/client';
 
 // Function to record CAPA activity
@@ -21,8 +21,8 @@ export const recordCAPAActivity = async (activityData: {
       action_description: activityData.action_description,
       performed_at: new Date().toISOString(),
       performed_by: activityData.performed_by,
-      old_status: activityData.old_status ? stringToCAPAStatus(activityData.old_status) : undefined,
-      new_status: activityData.new_status ? stringToCAPAStatus(activityData.new_status) : undefined,
+      old_status: activityData.old_status ? capaStatusToString(stringToCAPAStatus(activityData.old_status)) : undefined,
+      new_status: activityData.new_status ? capaStatusToString(stringToCAPAStatus(activityData.new_status)) : undefined,
       metadata: activityData.metadata
     };
 
