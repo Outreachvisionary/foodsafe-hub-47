@@ -1,159 +1,165 @@
-
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
-import { trainingStatusToString, stringToTrainingStatus } from '@/utils/trainingAdapters';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingStatus } from '@/types/enums';
 
-export interface TrainingSession {
+interface TrainingSession {
   id: string;
   title: string;
   description: string;
-  training_type: string;
-  training_category?: string;
-  assigned_to: string[];
-  department?: string;
-  start_date: string | null;
-  due_date: string | null;
-  completion_status: TrainingStatus;
-  created_by: string;
+  category: string;
+  type: string;
+  duration: number;
+  start_date: string;
+  end_date: string;
+  instructor: string;
+  location: string;
+  capacity: number;
   created_at: string;
   updated_at: string;
-  materials_id?: string[];
+}
+
+interface TrainingRecord {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  employee_name: string;
+  status: TrainingStatus;
+  assigned_date: string;
+  due_date: string;
+  completion_date: string | null;
+  score: number | null;
+  pass_threshold: number;
+  notes: string | null;
+  last_recurrence: string | null;
+  next_recurrence: string | null;
 }
 
 export const useTrainingSessions = () => {
-  const [sessions, setSessions] = useState<TrainingSession[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
+  const [trainingRecords, setTrainingRecords] = useState<TrainingRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchSessions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const fetchTrainingSessions = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('training_sessions')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .select('*')
-        .order('created_at', { ascending: false });
+        if (error) {
+          throw new Error(error.message);
+        }
 
-      if (error) throw error;
+        setTrainingSessions(data || []);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Map database records to TrainingSession objects
-      const mappedSessions: TrainingSession[] = data.map(session => ({
-        ...session,
-        completion_status: stringToTrainingStatus(session.completion_status as string)
-      }));
+    const fetchTrainingRecords = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('training_records')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      setSessions(mappedSessions);
-    } catch (err) {
-      console.error('Error fetching training sessions:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      
-      toast.error('Failed to fetch training sessions');
-    } finally {
-      setLoading(false);
-    }
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        setTrainingRecords(data?.map(record => ({
+          ...record,
+          status: record.status as TrainingStatus
+        })) || []);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrainingSessions();
+    fetchTrainingRecords();
   }, []);
 
-  const createSession = useCallback(async (sessionData: Partial<TrainingSession>) => {
-    try {
-      setLoading(true);
-      
-      // Ensure required fields are present
-      const requiredData = {
-        title: sessionData.title || 'Untitled Session',
-        training_type: sessionData.training_type || 'Other',
-        assigned_to: sessionData.assigned_to || [],
-        created_by: sessionData.created_by || 'system'
-      };
-      
-      // Convert enum to string for database storage
-      const completion_status = sessionData.completion_status ? 
-        trainingStatusToString(sessionData.completion_status) : 
-        trainingStatusToString(TrainingStatus.NotStarted);
-      
-      const newSession = {
-        ...sessionData,
-        ...requiredData,
-        completion_status
-      };
-      
-      // Use object instead of array for insert, and cast any string values that need to be enum values in the db
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .insert({...newSession, completion_status: completion_status as any})
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // Add the new session to the state
-      const convertedSession = {
-        ...data,
-        completion_status: stringToTrainingStatus(data.completion_status as string)
-      } as TrainingSession;
-      
-      setSessions(prev => [convertedSession, ...prev]);
-      
-      toast.success('Training session created successfully');
-      
-      return data;
-    } catch (err) {
-      console.error('Error creating training session:', err);
-      
-      toast.error('Failed to create training session');
-      
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const createTrainingRecord = (sessionId: string, employeeId: string, employeeName: string) => {
+    const newRecord = {
+      id: Math.random().toString(36).substr(2, 9),
+      session_id: sessionId,
+      employee_id: employeeId,
+      employee_name: employeeName,
+      status: TrainingStatus.Not_Started, // Use correct enum value
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      completion_date: null,
+      score: null,
+      pass_threshold: 80,
+      notes: null,
+      last_recurrence: null,
+      next_recurrence: null,
+    };
 
-  const updateSessionStatus = useCallback(async (sessionId: string, newStatus: TrainingStatus) => {
+    setTrainingRecords(prevRecords => [...prevRecords, newRecord]);
+    return newRecord;
+  };
+
+  const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
     try {
       setLoading(true);
-      
-      const statusString = trainingStatusToString(newStatus);
-      
       const { data, error } = await supabase
-        .from('training_sessions')
-        .update({ completion_status: statusString as any })
-        .eq('id', sessionId)
+        .from('training_records')
+        .update(updates)
+        .eq('id', recordId)
         .select()
         .single();
-      
-      if (error) throw error;
-      
-      // Update the session in the state
-      setSessions(prev => 
-        prev.map(session => 
-          session.id === sessionId ? { ...session, completion_status: newStatus } : session
-        )
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setTrainingRecords(prevRecords =>
+        prevRecords.map(record => (record.id === recordId ? { ...record, ...data, status: data.status as TrainingStatus } : record))
       );
-      
-      toast.success(`Training session status updated to ${trainingStatusToString(newStatus)}`);
-      
-      return data;
-    } catch (err) {
-      console.error('Error updating training session status:', err);
-      
-      toast.error('Failed to update training session status');
-      
-      return null;
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
+
+  const deleteTrainingRecord = async (recordId: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('training_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setTrainingRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
-    sessions,
+    trainingSessions,
+    trainingRecords,
     loading,
     error,
-    fetchSessions,
-    createSession,
-    updateSessionStatus
+    createTrainingRecord,
+    updateTrainingRecord,
+    deleteTrainingRecord
   };
 };
-
-export default useTrainingSessions;

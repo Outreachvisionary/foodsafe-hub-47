@@ -1,5 +1,5 @@
 
-import { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating, NCStatus, DocumentStatus, CheckoutStatus, ComplaintStatus, TrainingStatus } from '@/types/enums';
+import { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating, NCStatus, DocumentStatus, CheckoutStatus, ComplaintStatus, TrainingStatus, DocumentCategory } from '@/types/enums';
 
 // Helper function to format enum values for display
 export const formatEnumValue = (value: string): string => {
@@ -67,11 +67,28 @@ export const documentStatusToString = (status: DocumentStatus): string => {
   return status;
 };
 
+export const stringToDocumentCategory = (category: string): DocumentCategory => {
+  return category as DocumentCategory;
+};
+
+export const documentCategoryToString = (category: DocumentCategory): string => {
+  return category;
+};
+
 // Checkout Status helpers
 export const stringToCheckoutStatus = (status: string): CheckoutStatus => {
   return status as CheckoutStatus;
 };
 
 export const checkoutStatusToString = (status: CheckoutStatus): string => {
+  return status;
+};
+
+// Training Status helpers
+export const stringToTrainingStatus = (status: string): TrainingStatus => {
+  return status as TrainingStatus;
+};
+
+export const trainingStatusToString = (status: TrainingStatus): string => {
   return status;
 };

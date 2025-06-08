@@ -1,90 +1,79 @@
-
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, Tag, AlertTriangle } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { NonConformance } from '@/types/non-conformance';
+import { Clock, AlertTriangle } from 'lucide-react';
 import { NCStatus } from '@/types/enums';
-import NCStatusBadge from './NCStatusBadge';
+import { stringToNCStatus } from '@/utils/typeAdapters';
 
-interface NCRecentItemsProps {
-  items: Array<NonConformance | { id: string; title: string; status: string; createdAt: string; assignedTo: string; }>;
+interface NCItem {
+  id: string;
+  title: string;
+  status: string;
+  reportedDate: string;
 }
 
-const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items = [] }) => {
-  const navigate = useNavigate();
-  
-  if (items.length === 0) {
-    return (
-      <div className="p-6 text-center border rounded-md">
-        <p className="text-muted-foreground">No recent non-conformance items found.</p>
-      </div>
-    );
-  }
+const mockData: NCItem[] = [
+  {
+    id: 'NC-2023-001',
+    title: 'Damaged Packaging',
+    status: NCStatus.On_Hold,
+    reportedDate: '2023-11-15',
+  },
+  {
+    id: 'NC-2023-002',
+    title: 'Temperature Excursion',
+    status: NCStatus.Under_Review,
+    reportedDate: '2023-11-14',
+  },
+  {
+    id: 'NC-2023-003',
+    title: 'Incorrect Labeling',
+    status: NCStatus.Released,
+    reportedDate: '2023-11-13',
+  },
+];
 
-  const viewDetails = (id: string) => {
-    navigate(`/non-conformance/${id}`);
-  };
-
-  const isNonConformance = (item: any): item is NonConformance => {
-    return 'reported_date' in item;
+const NCRecentItems: React.FC = () => {
+  const getStatusColor = (statusString: string) => {
+    const status = stringToNCStatus(statusString);
+    switch (status) {
+      case NCStatus.On_Hold:
+        return 'bg-red-100 text-red-800';
+      case NCStatus.Under_Review:
+        return 'bg-yellow-100 text-yellow-800';
+      case NCStatus.Released:
+        return 'bg-green-100 text-green-800';
+      case NCStatus.Disposed:
+        return 'bg-gray-100 text-gray-800';
+      case NCStatus.Resolved:
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
-    <div className="space-y-4">
-      {items.map((item) => (
-        <div key={item.id} className="p-4 border rounded-md hover:bg-muted/10 transition-colors">
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <h4 className="font-medium">{item.title}</h4>
-              <p className="text-sm text-muted-foreground line-clamp-1">
-                {isNonConformance(item) ? item.description : ''}
-              </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Non-Conformances</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {mockData.map((item) => (
+          <div key={item.id} className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{item.title}</p>
+              <div className="flex items-center text-xs text-gray-500">
+                <Clock className="h-3 w-3 mr-1" />
+                Reported: {item.reportedDate}
+              </div>
             </div>
-            <NCStatusBadge status={item.status} />
+            <Badge className={`font-normal ${getStatusColor(item.status)}`}>
+              {item.status}
+            </Badge>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
-              {isNonConformance(item) 
-                ? formatDistanceToNow(new Date(item.reported_date), { addSuffix: true })
-                : formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-            </span>
-            
-            {isNonConformance(item) && item.item_category && (
-              <span className="flex items-center">
-                <Tag className="h-3 w-3 mr-1" />
-                {item.item_category.toString()}
-              </span>
-            )}
-            
-            {item.status === NCStatus.Resolved || item.status === NCStatus.Closed ? (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Resolved
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                Active
-              </Badge>
-            )}
-          </div>
-          
-          <div className="mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => viewDetails(item.id)}
-            >
-              View Details
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 };
 
