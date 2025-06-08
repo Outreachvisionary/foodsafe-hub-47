@@ -1,55 +1,44 @@
 
-// Define types related to user accounts and profiles
-
 export interface UserPreferences {
-  reportLayout?: string;
-  theme?: string;
+  reportLayout?: 'grid' | 'list';
+  theme?: 'light' | 'dark';
+  language?: string;
   notifications?: {
     email?: boolean;
     push?: boolean;
-    desktop?: boolean;
+    sms?: boolean;
   };
-  defaultView?: string;
-  dashboardView?: string;
-  [key: string]: any; // Allow for additional preference properties
+  timezone?: string;
 }
 
 export interface User {
   id: string;
   email?: string;
-  name?: string;
   full_name?: string;
+  name?: string;
   avatar_url?: string;
+  user_metadata?: any;
+  preferences?: UserPreferences;
   role?: string;
   department?: string;
   organization_id?: string;
-  facility_ids?: string[];
-  status?: 'active' | 'inactive' | 'pending';
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-  preferences?: UserPreferences;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserProfile {
   id: string;
-  full_name?: string;
+  full_name?: string | null;
   email?: string;
-  role?: string;
-  department?: string;
-  organization_id?: string;
-  status?: string;
-  avatar_url?: string;
+  role?: string | null;
+  department?: string | null;
+  organization_id?: string | null;
+  status?: string | null;
+  avatar_url?: string | null;
   preferences?: UserPreferences;
-}
-
-export interface UserContextType {
-  user: User | null;
-  profile?: UserProfile | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateUser: (data: Partial<UserProfile>) => Promise<void>;
+  assigned_facility_ids?: string[];
+  department_id?: string | null;
+  preferred_language?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { UserProfile } from '@/types/user'; // Ensure correct import
+import { UserProfile } from '@/types/user';
 
 interface UserContextType {
   user: User | null;
@@ -48,7 +48,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
       
-      // Set up subscription for auth changes
       const { data: listener } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
           setUser(session?.user || null);
@@ -69,8 +68,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     setupAuthListener();
-    
-    // No need to return a cleanup function as setupAuthListener handles it
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -118,7 +115,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error updating profile:', error);
       } else if (data) {
-        setProfile(data as UserProfile);
+        const userProfile: UserProfile = {
+          id: data.id,
+          full_name: data.full_name,
+          email: user.email || data.email || undefined,
+          role: data.role,
+          department: data.department,
+          organization_id: data.organization_id,
+          status: data.status,
+          avatar_url: data.avatar_url,
+          assigned_facility_ids: data.assigned_facility_ids || [],
+          department_id: data.department_id,
+          preferred_language: data.preferred_language,
+          preferences: typeof data.preferences === 'object' && data.preferences !== null 
+            ? data.preferences as any 
+            : {},
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+        setProfile(userProfile);
       }
     } catch (error) {
       console.error('Unexpected error updating profile:', error);
@@ -129,7 +144,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      // This is a simplified version as Supabase user updates require specific parameters
       console.log('Updating user data:', userData);
       setUser(prev => prev ? { ...prev, ...userData } : null);
     } catch (error) {
@@ -148,17 +162,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error fetching profile:', error);
       } else if (data) {
-        // Ensure data has the correct shape for UserProfile
         const userProfile: UserProfile = {
           id: data.id,
           full_name: data.full_name,
-          email: data.email,
+          email: user?.email || undefined,
           role: data.role,
           department: data.department,
           organization_id: data.organization_id,
           status: data.status,
           avatar_url: data.avatar_url,
-          preferences: data.preferences || {}
+          assigned_facility_ids: data.assigned_facility_ids || [],
+          department_id: data.department_id,
+          preferred_language: data.preferred_language,
+          preferences: typeof data.preferences === 'object' && data.preferences !== null 
+            ? data.preferences as any 
+            : {},
+          created_at: data.created_at,
+          updated_at: data.updated_at
         };
         setProfile(userProfile);
       }

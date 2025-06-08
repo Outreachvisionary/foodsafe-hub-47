@@ -1,115 +1,117 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-interface UseRealtimeSubscriptionProps<T> {
-  table: string;
-  onDataChange: (data: T[]) => void;
-  onError: (error: Error) => void;
-  filter?: { column: string; value: any };
-  initialFetch?: boolean;
-  relatedTables?: string[];
+type TableName = 'documents' | 'capa_actions' | 'non_conformances' | 'complaints' | 'audits' | 'training_records' | 'suppliers';
+
+interface UseRealtimeSubscriptionOptions {
+  table: TableName;
+  event?: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
+  filter?: string;
+  onInsert?: (payload: RealtimePostgresChangesPayload<any>) => void;
+  onUpdate?: (payload: RealtimePostgresChangesPayload<any>) => void;
+  onDelete?: (payload: RealtimePostgresChangesPayload<any>) => void;
+  enabled?: boolean;
 }
 
-export function useRealtimeSubscription<T>({
-  table,
-  onDataChange,
-  onError,
-  filter,
-  initialFetch = true,
-  relatedTables = []
-}: UseRealtimeSubscriptionProps<T>) {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(initialFetch);
-  const [error, setError] = useState<Error | null>(null);
+export const useRealtimeSubscription = (options: UseRealtimeSubscriptionOptions) => {
+  const {
+    table,
+    event = '*',
+    filter,
+    onInsert,
+    onUpdate,
+    onDelete,
+    enabled = true
+  } = options;
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let query = supabase.from(table).select('*');
+    if (!enabled) return;
+
+    const channelName = `realtime:${table}`;
     
-    if (filter) {
-      query = query.eq(filter.column, filter.value);
+    try {
+      // Create channel
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event,
+            schema: 'public',
+            table,
+            filter
+          },
+          (payload) => {
+            console.log(`Realtime ${payload.eventType} on ${table}:`, payload);
+            
+            switch (payload.eventType) {
+              case 'INSERT':
+                onInsert?.(payload);
+                break;
+              case 'UPDATE':
+                onUpdate?.(payload);
+                break;
+              case 'DELETE':
+                onDelete?.(payload);
+                break;
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+            setError(null);
+            console.log(`Subscribed to realtime changes for ${table}`);
+          } else if (status === 'CHANNEL_ERROR') {
+            setIsConnected(false);
+            setError('Failed to subscribe to realtime changes');
+            console.error(`Failed to subscribe to realtime changes for ${table}`);
+          } else if (status === 'TIMED_OUT') {
+            setIsConnected(false);
+            setError('Subscription timed out');
+            console.error(`Subscription timed out for ${table}`);
+          }
+        });
+
+      channelRef.current = channel;
+
+    } catch (err) {
+      console.error(`Error setting up realtime subscription for ${table}:`, err);
+      setError('Failed to set up realtime subscription');
     }
 
-    // Initial fetch
-    const fetchData = async () => {
-      if (!initialFetch) return;
-      
-      try {
-        setLoading(true);
-        const { data: initialData, error: fetchError } = await query;
-        
-        if (fetchError) throw fetchError;
-        
-        const typedData = (initialData as T[]) || [];
-        setData(typedData);
-        onDataChange(typedData);
-        setError(null);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to fetch data');
-        setError(error);
-        onError(error);
-      } finally {
-        setLoading(false);
+    // Cleanup function
+    return () => {
+      if (channelRef.current) {
+        console.log(`Unsubscribing from realtime changes for ${table}`);
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        setIsConnected(false);
       }
     };
+  }, [table, event, filter, onInsert, onUpdate, onDelete, enabled]);
 
-    fetchData();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel(`${table}_changes`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: table,
-          ...(filter && { filter: `${filter.column}=eq.${filter.value}` })
-        },
-        () => {
-          // Refetch data when changes occur
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [table, filter?.column, filter?.value, initialFetch]);
-
-  const refetch = async () => {
-    let query = supabase.from(table).select('*');
-    
-    if (filter) {
-      query = query.eq(filter.column, filter.value);
+  const refresh = () => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      setIsConnected(false);
     }
-
-    try {
-      setLoading(true);
-      const { data: newData, error: fetchError } = await query;
-      
-      if (fetchError) throw fetchError;
-      
-      const typedData = (newData as T[]) || [];
-      setData(typedData);
-      onDataChange(typedData);
-      setError(null);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to refetch data');
-      setError(error);
-      onError(error);
-    } finally {
-      setLoading(false);
-    }
+    // Re-trigger the effect by updating a state
+    setError(null);
   };
 
   return {
-    data,
-    loading,
+    isConnected,
     error,
-    refetch
+    refresh
   };
-}
+};
 
 export default useRealtimeSubscription;
