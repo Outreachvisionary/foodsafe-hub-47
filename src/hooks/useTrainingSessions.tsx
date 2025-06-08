@@ -51,7 +51,6 @@ export const useTrainingSessions = () => {
           throw new Error(error.message);
         }
 
-        // Map database fields to interface properties
         const sessions: TrainingSession[] = (data || []).map(item => ({
           id: item.id,
           title: item.title,
@@ -105,7 +104,7 @@ export const useTrainingSessions = () => {
         session_id: sessionId,
         employee_id: employeeId,
         employee_name: employeeName,
-        status: trainingStatusToString(TrainingStatus.Not_Started),
+        status: 'Not Started' as any,
         assigned_date: new Date().toISOString(),
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         completion_date: null,
@@ -141,7 +140,6 @@ export const useTrainingSessions = () => {
     try {
       setLoading(true);
       
-      // Convert status to string for database and remove undefined values
       const dbUpdates: any = {};
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
