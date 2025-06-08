@@ -11,28 +11,28 @@ export const getNextValidStatuses = (currentStatus: CAPAStatus | string): CAPASt
   
   switch (status) {
     case CAPAStatus.Open:
-      // From Open, can move to In_Progress or On_Hold
-      return [CAPAStatus.InProgress, CAPAStatus.OnHold];
+      // From Open, can move to In_Progress or Cancelled
+      return [CAPAStatus.In_Progress, CAPAStatus.Cancelled];
       
-    case CAPAStatus.InProgress:
-      // From In_Progress, can move to Completed, On_Hold, or Pending_Verification
-      return [CAPAStatus.Completed, CAPAStatus.OnHold, CAPAStatus.PendingVerification];
+    case CAPAStatus.In_Progress:
+      // From In_Progress, can move to Under_Review or Pending_Verification
+      return [CAPAStatus.Under_Review, CAPAStatus.Pending_Verification];
       
-    case CAPAStatus.PendingVerification:
-      // From Pending_Verification, can move to Verified, Rejected, or In_Progress (if needing more work)
-      return [CAPAStatus.Verified, CAPAStatus.Rejected, CAPAStatus.InProgress];
+    case CAPAStatus.Pending_Verification:
+      // From Pending_Verification, can move to Closed or back to In_Progress
+      return [CAPAStatus.Closed, CAPAStatus.In_Progress];
       
-    case CAPAStatus.Verified:
-      // From Verified, can only move to Closed
-      return [CAPAStatus.Closed];
+    case CAPAStatus.Under_Review:
+      // From Under_Review, can move to In_Progress or Cancelled
+      return [CAPAStatus.In_Progress, CAPAStatus.Cancelled];
       
-    case CAPAStatus.Rejected:
-      // From Rejected, can move back to In_Progress for more work
-      return [CAPAStatus.InProgress];
+    case CAPAStatus.Closed:
+      // From Closed, can reopen to In_Progress
+      return [CAPAStatus.In_Progress];
       
-    case CAPAStatus.OnHold:
-      // From On_Hold, can move to Open or In_Progress
-      return [CAPAStatus.Open, CAPAStatus.InProgress];
+    case CAPAStatus.Cancelled:
+      // From Cancelled, can reopen to Open
+      return [CAPAStatus.Open];
     
     default:
       // Default, return all statuses
@@ -52,17 +52,15 @@ export const canChangeStatus = (currentStatus: CAPAStatus | string, newStatus: C
 // Get status transitions for workflow visualization
 export const getStatusTransitions = () => {
   return [
-    { from: CAPAStatus.Open, to: CAPAStatus.InProgress },
-    { from: CAPAStatus.Open, to: CAPAStatus.OnHold },
-    { from: CAPAStatus.InProgress, to: CAPAStatus.Completed },
-    { from: CAPAStatus.InProgress, to: CAPAStatus.PendingVerification },
-    { from: CAPAStatus.InProgress, to: CAPAStatus.OnHold },
-    { from: CAPAStatus.PendingVerification, to: CAPAStatus.Verified },
-    { from: CAPAStatus.PendingVerification, to: CAPAStatus.Rejected },
-    { from: CAPAStatus.PendingVerification, to: CAPAStatus.InProgress },
-    { from: CAPAStatus.Verified, to: CAPAStatus.Closed },
-    { from: CAPAStatus.Rejected, to: CAPAStatus.InProgress },
-    { from: CAPAStatus.OnHold, to: CAPAStatus.Open },
-    { from: CAPAStatus.OnHold, to: CAPAStatus.InProgress }
+    { from: CAPAStatus.Open, to: CAPAStatus.In_Progress },
+    { from: CAPAStatus.Open, to: CAPAStatus.Cancelled },
+    { from: CAPAStatus.In_Progress, to: CAPAStatus.Under_Review },
+    { from: CAPAStatus.In_Progress, to: CAPAStatus.Pending_Verification },
+    { from: CAPAStatus.Under_Review, to: CAPAStatus.In_Progress },
+    { from: CAPAStatus.Under_Review, to: CAPAStatus.Cancelled },
+    { from: CAPAStatus.Pending_Verification, to: CAPAStatus.Closed },
+    { from: CAPAStatus.Pending_Verification, to: CAPAStatus.In_Progress },
+    { from: CAPAStatus.Closed, to: CAPAStatus.In_Progress },
+    { from: CAPAStatus.Cancelled, to: CAPAStatus.Open }
   ];
 };

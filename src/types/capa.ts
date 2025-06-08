@@ -1,31 +1,31 @@
 
-import { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
 
 export interface CAPA {
   id: string;
   title: string;
   description: string;
+  status: CAPAStatus;
+  priority: CAPAPriority;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  due_date: string;
+  assigned_to: string;
+  source: CAPASource;
+  source_id?: string;
+  completion_date?: string;
   root_cause?: string;
   corrective_action?: string;
   preventive_action?: string;
-  priority: CAPAPriority;
-  status: CAPAStatus;
-  assigned_to: string;
-  created_by: string;
-  source: CAPASource;
-  source_id?: string;
-  due_date: string;
-  completion_date?: string;
-  verification_date?: string;
   effectiveness_criteria?: string;
-  effectiveness_verified: boolean;
-  effectiveness_rating?: EffectivenessRating;
   department?: string;
+  fsma204_compliant?: boolean;
+  effectiveness_verified?: boolean;
+  effectiveness_rating?: EffectivenessRating;
+  verification_date?: string;
   verification_method?: string;
   verified_by?: string;
-  fsma204_compliant: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface CAPAActivity {
@@ -37,7 +37,7 @@ export interface CAPAActivity {
   performed_at: string;
   old_status?: CAPAStatus;
   new_status?: CAPAStatus;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }
 
 export interface CAPAStats {
@@ -51,79 +51,43 @@ export interface CAPAStats {
   overdue: number;
   overdueCount: number;
   pendingVerificationCount: number;
-  byPriority: Record<CAPAPriority, number>;
+  byStatus: Record<CAPAStatus, number>;
   bySource: Record<CAPASource, number>;
+  byPriority: Record<CAPAPriority, number>;
   byDepartment: Record<string, number>;
+  completedThisMonth: number;
+  averageResolutionTime: number;
+  upcomingDueDates: Array<{
+    id: string;
+    title: string;
+    due_date: string;
+    priority: string;
+  }>;
   recentActivities: CAPAActivity[];
-}
-
-export interface CreateCAPARequest {
-  title: string;
-  description: string;
-  priority: CAPAPriority;
-  assigned_to: string;
-  source: CAPASource;
-  source_id?: string;
-  due_date: string;
-  root_cause?: string;
-  corrective_action?: string;
-  preventive_action?: string;
-  effectiveness_criteria?: string;
-  department?: string;
-  created_by?: string;
-}
-
-export interface UpdateCAPARequest {
-  id: string;
-  title?: string;
-  description?: string;
-  root_cause?: string;
-  corrective_action?: string;
-  preventive_action?: string;
-  priority?: CAPAPriority;
-  status?: CAPAStatus;
-  assigned_to?: string;
-  due_date?: string;
-  completion_date?: string;
-  verification_date?: string;
-  effectiveness_criteria?: string;
-  effectiveness_verified?: boolean;
-  effectiveness_rating?: EffectivenessRating;
-  department?: string;
-  verification_method?: string;
-  verified_by?: string;
 }
 
 export interface CAPAFilter {
   status?: CAPAStatus | CAPAStatus[];
   priority?: CAPAPriority | CAPAPriority[];
   source?: CAPASource | CAPASource[];
-  department?: string | string[];
-  createdDateFrom?: string;
-  createdDateTo?: string;
-  dueDateFrom?: string;
-  dueDateTo?: string;
-  assignedTo?: string | string[];
   searchTerm?: string;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
 }
 
-export interface CAPAListProps {
-  items?: CAPA[];
-  capas?: CAPA[];
-  loading?: boolean;
-  error?: string | null;
-  onCAPAClick?: (capa: CAPA) => void;
+export interface UpdateCAPARequest {
+  title?: string;
+  description?: string;
+  status?: CAPAStatus;
+  priority?: CAPAPriority;
+  assigned_to?: string;
+  due_date?: string;
+  root_cause?: string;
+  corrective_action?: string;
+  preventive_action?: string;
+  effectiveness_criteria?: string;
+  department?: string;
+  effectiveness_verified?: boolean;
+  effectiveness_rating?: EffectivenessRating;
+  verification_date?: string;
+  verification_method?: string;
+  verified_by?: string;
 }
-
-export interface CreateCAPADialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: CreateCAPARequest) => void;
-}
-
-// Export enums for backward compatibility
-export { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating };

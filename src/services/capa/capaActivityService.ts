@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { capaStatusToString } from '@/utils/typeAdapters';
+import { capaStatusToString, stringToCAPAStatus } from '@/utils/capaAdapters';
 
 /**
  * Creates a new CAPA activity entry
@@ -23,8 +23,8 @@ export const createCAPAActivity = async (
       action_description: actionDescription,
       performed_at: new Date().toISOString(),
       performed_by: performedBy,
-      old_status: oldStatus ? capaStatusToString(oldStatus) as any : null,
-      new_status: newStatus ? capaStatusToString(newStatus) as any : null,
+      old_status: oldStatus ? capaStatusToString(oldStatus) : null,
+      new_status: newStatus ? capaStatusToString(newStatus) : null,
       metadata: metadata || {}
     };
     
@@ -39,7 +39,12 @@ export const createCAPAActivity = async (
       throw error;
     }
 
-    return data as CAPAActivity;
+    // Convert database response back to typed format
+    return {
+      ...data,
+      old_status: data.old_status ? stringToCAPAStatus(data.old_status) : undefined,
+      new_status: data.new_status ? stringToCAPAStatus(data.new_status) : undefined,
+    } as CAPAActivity;
   } catch (error) {
     console.error('Error in createCAPAActivity:', error);
     return null;
@@ -62,7 +67,12 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       throw error;
     }
 
-    return data as CAPAActivity[] || [];
+    // Convert database response back to typed format
+    return (data || []).map(activity => ({
+      ...activity,
+      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+    })) as CAPAActivity[];
   } catch (error) {
     console.error('Error in getCAPAActivities:', error);
     return [];
@@ -85,7 +95,12 @@ export const getRecentCAPAActivities = async (limit: number = 10): Promise<CAPAA
       throw error;
     }
 
-    return data as CAPAActivity[] || [];
+    // Convert database response back to typed format
+    return (data || []).map(activity => ({
+      ...activity,
+      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+    })) as CAPAActivity[];
   } catch (error) {
     console.error('Error in getRecentCAPAActivities:', error);
     return [];

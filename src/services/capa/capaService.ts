@@ -1,7 +1,7 @@
 
 import { CAPA, CAPAStats } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
-import { stringToCAPAPriority, stringToCAPASource } from '@/utils/typeAdapters';
+import { stringToCAPAPriority, stringToCAPASource, stringToCAPAStatus, stringToEffectivenessRating } from '@/utils/capaAdapters';
 import { supabase } from '@/integrations/supabase/client';
 
 // Mock CAPA stats for development
@@ -13,33 +13,40 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
     
     const capas = data || [];
     const total = capas.length;
-    const open = capas.filter(c => c.status === CAPAStatus.Open).length;
+    const open = capas.filter(c => c.status === 'Open').length;
     const openCount = open;
-    const closed = capas.filter(c => c.status === CAPAStatus.Closed).length;
+    const closed = capas.filter(c => c.status === 'Closed').length;
     const closedCount = closed;
-    const completed = capas.filter(c => c.status === CAPAStatus.Closed).length;
-    const inProgress = capas.filter(c => c.status === CAPAStatus.In_Progress).length;
+    const completed = capas.filter(c => c.status === 'Closed').length;
+    const inProgress = capas.filter(c => c.status === 'In Progress').length;
     const overdue = capas.filter(c => {
       const dueDate = new Date(c.due_date);
       const now = new Date();
-      return dueDate < now && c.status !== CAPAStatus.Closed;
+      return dueDate < now && c.status !== 'Closed';
     }).length;
     const overdueCount = overdue;
-    const pendingVerificationCount = capas.filter(c => c.status === CAPAStatus.Pending_Verification).length;
+    const pendingVerificationCount = capas.filter(c => c.status === 'Pending Verification').length;
     
     // Count by priority
     const byPriority = capas.reduce((acc, capa) => {
-      const priority = capa.priority as CAPAPriority;
+      const priority = stringToCAPAPriority(capa.priority);
       acc[priority] = (acc[priority] || 0) + 1;
       return acc;
     }, {} as Record<CAPAPriority, number>);
     
     // Count by source
     const bySource = capas.reduce((acc, capa) => {
-      const source = capa.source as CAPASource;
+      const source = stringToCAPASource(capa.source);
       acc[source] = (acc[source] || 0) + 1;
       return acc;
     }, {} as Record<CAPASource, number>);
+    
+    // Count by status
+    const byStatus = capas.reduce((acc, capa) => {
+      const status = stringToCAPAStatus(capa.status);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<CAPAStatus, number>);
     
     // Count by department
     const byDepartment = capas.reduce((acc, capa) => {
@@ -55,6 +62,12 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       .order('performed_at', { ascending: false })
       .limit(10);
     
+    const mappedActivities = (activities || []).map(activity => ({
+      ...activity,
+      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined
+    }));
+    
     return {
       total,
       open,
@@ -68,8 +81,12 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       pendingVerificationCount,
       byPriority,
       bySource,
+      byStatus,
       byDepartment,
-      recentActivities: activities || []
+      completedThisMonth: 0,
+      averageResolutionTime: 0,
+      upcomingDueDates: [],
+      recentActivities: mappedActivities
     };
   } catch (error) {
     console.error('Error fetching CAPA stats:', error);
@@ -86,7 +103,11 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       pendingVerificationCount: 0,
       byPriority: {} as Record<CAPAPriority, number>,
       bySource: {} as Record<CAPASource, number>,
+      byStatus: {} as Record<CAPAStatus, number>,
       byDepartment: {},
+      completedThisMonth: 0,
+      averageResolutionTime: 0,
+      upcomingDueDates: [],
       recentActivities: []
     };
   }
@@ -108,14 +129,14 @@ export const getCAPAById = async (id: string): Promise<CAPA | null> => {
       id: data.id,
       title: data.title,
       description: data.description,
-      status: data.status as CAPAStatus,
-      priority: data.priority as CAPAPriority,
+      status: stringToCAPAStatus(data.status),
+      priority: stringToCAPAPriority(data.priority),
       created_at: data.created_at,
       updated_at: data.updated_at,
       created_by: data.created_by,
       due_date: data.due_date,
       assigned_to: data.assigned_to,
-      source: data.source as CAPASource,
+      source: stringToCAPASource(data.source),
       source_id: data.source_id,
       completion_date: data.completion_date,
       root_cause: data.root_cause,
@@ -125,7 +146,7 @@ export const getCAPAById = async (id: string): Promise<CAPA | null> => {
       department: data.department,
       fsma204_compliant: data.fsma204_compliant,
       effectiveness_verified: data.effectiveness_verified,
-      effectiveness_rating: data.effectiveness_rating,
+      effectiveness_rating: data.effectiveness_rating ? stringToEffectivenessRating(data.effectiveness_rating) : undefined,
       verification_date: data.verification_date,
       verification_method: data.verification_method,
       verified_by: data.verified_by,

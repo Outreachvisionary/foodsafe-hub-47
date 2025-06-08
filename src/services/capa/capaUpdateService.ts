@@ -1,7 +1,7 @@
 
 import { CAPA } from '@/types/capa';
 import { supabase } from '@/integrations/supabase/client';
-import { stringToCAPASource } from '@/utils/typeAdapters';
+import { stringToCAPASource, stringToCAPAStatus, stringToCAPAPriority, stringToEffectivenessRating, capaStatusToString } from '@/utils/capaAdapters';
 import { CAPAStatus } from '@/types/enums';
 
 export const updateCAPA = async (
@@ -9,14 +9,25 @@ export const updateCAPA = async (
   capaData: Partial<CAPA>
 ): Promise<CAPA | null> => {
   try {
-    // Convert string to CAPASource enum if needed
-    if (capaData.source && typeof capaData.source === 'string') {
-      capaData.source = stringToCAPASource(capaData.source);
+    // Convert enum values to strings for database
+    const dbData: any = { ...capaData };
+    
+    if (capaData.status) {
+      dbData.status = capaStatusToString(capaData.status);
+    }
+    if (capaData.priority) {
+      dbData.priority = capaData.priority.toString();
+    }
+    if (capaData.source) {
+      dbData.source = capaData.source.toString();
+    }
+    if (capaData.effectiveness_rating) {
+      dbData.effectiveness_rating = capaData.effectiveness_rating.toString();
     }
     
     const { data, error } = await supabase
       .from('capa_actions')
-      .update(capaData)
+      .update(dbData)
       .eq('id', id)
       .select()
       .single();
@@ -26,10 +37,13 @@ export const updateCAPA = async (
       throw error;
     }
 
-    // Make sure we return properly typed data
+    // Convert back to typed result
     const result: CAPA = {
       ...data,
-      status: data.status as CAPAStatus,
+      status: stringToCAPAStatus(data.status),
+      priority: stringToCAPAPriority(data.priority),
+      source: stringToCAPASource(data.source),
+      effectiveness_rating: data.effectiveness_rating ? stringToEffectivenessRating(data.effectiveness_rating) : undefined,
     };
 
     return result;
@@ -52,11 +66,9 @@ export const completeCAPA = async (
     const { data, error } = await supabase
       .from('capa_actions')
       .update({
-        status: 'Completed',
+        status: 'Closed', // Use database string value
         completion_date: now,
-        effectiveness_criteria_met: completionDetails.effectivenessCriteriaMet || false,
-        completion_notes: completionDetails.completionNotes,
-        completed_by: completionDetails.completedBy,
+        effectiveness_verified: completionDetails.effectivenessCriteriaMet || false,
         updated_at: now
       })
       .eq('id', id)
@@ -74,15 +86,18 @@ export const completeCAPA = async (
       action_type: 'status_change',
       action_description: `CAPA marked as Completed by ${completionDetails.completedBy}`,
       performed_by: completionDetails.completedBy,
-      old_status: 'In_Progress',
-      new_status: 'Completed',
+      old_status: 'In Progress',
+      new_status: 'Closed',
       performed_at: now
     });
 
-    // Make sure we return properly typed data
+    // Convert back to typed result
     const result: CAPA = {
       ...data,
-      status: data.status as CAPAStatus,
+      status: stringToCAPAStatus(data.status),
+      priority: stringToCAPAPriority(data.priority),
+      source: stringToCAPASource(data.source),
+      effectiveness_rating: data.effectiveness_rating ? stringToEffectivenessRating(data.effectiveness_rating) : undefined,
     };
 
     return result;

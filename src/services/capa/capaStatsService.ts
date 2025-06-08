@@ -23,7 +23,17 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       overdue: 0,
       completedThisMonth: 0,
       averageResolutionTime: 0,
-      upcomingDueDates: []
+      upcomingDueDates: [],
+      open: 0,
+      openCount: 0,
+      closed: 0,
+      closedCount: 0,
+      completed: 0,
+      inProgress: 0,
+      overdueCount: 0,
+      pendingVerificationCount: 0,
+      byDepartment: {},
+      recentActivities: []
     };
     
     // Initialize all enum values with 0
@@ -51,6 +61,12 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
       if (stats.byStatus[status] !== undefined) {
         stats.byStatus[status]++;
       }
+      
+      // Update specific counters
+      if (status === CAPAStatus.Open) stats.open++;
+      if (status === CAPAStatus.Closed) stats.closed++;
+      if (status === CAPAStatus.In_Progress) stats.inProgress++;
+      if (status === CAPAStatus.Pending_Verification) stats.pendingVerificationCount++;
       
       // Count by source
       const source = capa.source as CAPASource;
@@ -96,7 +112,17 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
           });
         }
       }
+      
+      // Count by department
+      const dept = capa.department || 'Unassigned';
+      stats.byDepartment[dept] = (stats.byDepartment[dept] || 0) + 1;
     });
+    
+    // Set derived counters
+    stats.openCount = stats.open;
+    stats.closedCount = stats.closed;
+    stats.completed = stats.closed;
+    stats.overdueCount = stats.overdue;
     
     // Calculate average resolution time in days
     if (completedCount > 0) {
@@ -105,6 +131,15 @@ export const fetchCAPAStats = async (): Promise<CAPAStats> => {
     
     // Sort upcoming due dates by date
     stats.upcomingDueDates.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    
+    // Get recent activities
+    const { data: activities } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .order('performed_at', { ascending: false })
+      .limit(10);
+    
+    stats.recentActivities = activities || [];
     
     return stats;
   } catch (error) {

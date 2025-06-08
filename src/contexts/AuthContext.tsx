@@ -1,125 +1,84 @@
 
-import React, { createContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  role?: string;
-}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  error: Error | null;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
   signOut: () => Promise<void>;
+  updateUser: (data: any) => Promise<any>;
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  error: null,
-  signIn: async () => {},
-  signOut: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Get initial session
     const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            // In a real app, you would fetch more user details from profiles table
-          });
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-        console.error('Error fetching initial session:', err);
-      } finally {
-        setLoading(false);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      setLoading(false);
     };
 
     getInitialSession();
 
-    // Subscribe to auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setLoading(true);
-        
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            // In a real app, you would fetch more user details from profiles table
-          });
-        } else {
-          setUser(null);
-        }
-        
+        setUser(session?.user || null);
         setLoading(false);
       }
     );
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        throw error;
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Sign in failed'));
-      console.error('Error signing in:', err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    return result;
+  };
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    const result = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: metadata }
+    });
+    return result;
   };
 
   const signOut = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Sign out failed'));
-      console.error('Error signing out:', err);
-    } finally {
-      setLoading(false);
-    }
+    await supabase.auth.signOut();
+  };
+
+  const updateUser = async (data: any) => {
+    const result = await supabase.auth.updateUser(data);
+    return result;
+  };
+
+  const value = {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    updateUser
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
