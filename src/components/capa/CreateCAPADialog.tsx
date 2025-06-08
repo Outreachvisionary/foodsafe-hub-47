@@ -2,51 +2,50 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CreateCAPADialogProps, CAPAPriority, CAPASource } from '@/types/capa';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CreateCAPADialogProps, CreateCAPARequest } from '@/types/capa';
+import { CAPAPriority, CAPASource } from '@/types/enums';
 
-const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSubmit }) => {
+const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ isOpen, onClose, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<CAPAPriority>('Medium');
-  const [source, setSource] = useState<CAPASource>('Internal Report');
-  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState<CAPAPriority>(CAPAPriority.Medium);
+  const [source, setSource] = useState<CAPASource>(CAPASource.Internal_Report);
   const [assignedTo, setAssignedTo] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [department, setDepartment] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const capaData = {
+    const capaData: CreateCAPARequest = {
       title,
       description,
       priority,
       source,
+      assigned_to: assignedTo,
       due_date: dueDate,
-      assigned_to: assignedTo
+      department
     };
-    
-    onSubmit(capaData);
-    resetForm();
-  };
 
-  const resetForm = () => {
+    onSubmit(capaData);
+    
+    // Reset form
     setTitle('');
     setDescription('');
-    setPriority('Medium');
-    setSource('Internal Report');
-    setDueDate('');
+    setPriority(CAPAPriority.Medium);
+    setSource(CAPASource.Internal_Report);
     setAssignedTo('');
-  };
-
-  const handleClose = () => {
-    resetForm();
+    setDueDate('');
+    setDepartment('');
     onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New CAPA</DialogTitle>
@@ -54,7 +53,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="title" className="block text-sm font-medium">Title</label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={title}
@@ -63,57 +62,66 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
               required
             />
           </div>
-          
+
           <div className="space-y-2">
-            <label htmlFor="description" className="block text-sm font-medium">Description</label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the issue that requires corrective/preventive action"
-              rows={4}
+              placeholder="Enter detailed description"
+              rows={3}
               required
             />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="priority" className="block text-sm font-medium">Priority</label>
-              <Select value={priority} onValueChange={(value) => setPriority(value as CAPAPriority)}>
+              <Label htmlFor="priority">Priority *</Label>
+              <Select value={priority} onValueChange={(value: CAPAPriority) => setPriority(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Critical">Critical</SelectItem>
+                  <SelectItem value={CAPAPriority.Low}>Low</SelectItem>
+                  <SelectItem value={CAPAPriority.Medium}>Medium</SelectItem>
+                  <SelectItem value={CAPAPriority.High}>High</SelectItem>
+                  <SelectItem value={CAPAPriority.Critical}>Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
-              <label htmlFor="source" className="block text-sm font-medium">Source</label>
-              <Select value={source} onValueChange={(value) => setSource(value as CAPASource)}>
+              <Label htmlFor="source">Source *</Label>
+              <Select value={source} onValueChange={(value: CAPASource) => setSource(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select source" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Audit">Audit</SelectItem>
-                  <SelectItem value="Customer Complaint">Customer Complaint</SelectItem>
-                  <SelectItem value="Non-Conformance">Non-Conformance</SelectItem>
-                  <SelectItem value="Internal Report">Internal Report</SelectItem>
-                  <SelectItem value="Supplier Issue">Supplier Issue</SelectItem>
-                  <SelectItem value="Regulatory Inspection">Regulatory Inspection</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value={CAPASource.Audit}>Audit</SelectItem>
+                  <SelectItem value={CAPASource.Customer_Complaint}>Customer Complaint</SelectItem>
+                  <SelectItem value={CAPASource.Internal_Report}>Internal Report</SelectItem>
+                  <SelectItem value={CAPASource.Non_Conformance}>Non-Conformance</SelectItem>
+                  <SelectItem value={CAPASource.Supplier_Issue}>Supplier Issue</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="dueDate" className="block text-sm font-medium">Due Date</label>
+              <Label htmlFor="assignedTo">Assigned To *</Label>
+              <Input
+                id="assignedTo"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                placeholder="Enter assignee name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Due Date *</Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -122,24 +130,25 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="assignedTo" className="block text-sm font-medium">Assigned To</label>
-              <Input
-                id="assignedTo"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-                placeholder="Enter person responsible"
-                required
-              />
-            </div>
           </div>
-          
+
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <Input
+              id="department"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              placeholder="Enter department name"
+            />
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Create CAPA</Button>
+            <Button type="submit">
+              Create CAPA
+            </Button>
           </div>
         </form>
       </DialogContent>

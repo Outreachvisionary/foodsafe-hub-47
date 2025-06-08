@@ -118,5 +118,11 @@ export interface CAPAListProps {
   onCAPAClick?: (capa: CAPA) => void;
 }
 
+export interface CreateCAPADialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: CreateCAPARequest) => void;
+}
+
 // Export enums for backward compatibility
 export { CAPAStatus, CAPASource, CAPAPriority, EffectivenessRating };

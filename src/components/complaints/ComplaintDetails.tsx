@@ -1,188 +1,278 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, MessageSquare, CheckCircle } from 'lucide-react';
-import { Complaint, ComplaintStatus, ComplaintStatusValues } from '@/types/complaint';
-import { fetchComplaintById, updateComplaintStatus } from '@/services/complaintService';
-import { useUser } from '@/contexts/UserContext';
-import { useToast } from '@/hooks/use-toast';
-import { isComplaintStatusEqual } from '@/utils/complaintUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Complaint, UpdateComplaintRequest } from '@/types/complaint';
+import { ComplaintStatus } from '@/types/enums';
+import { formatEnumValue } from '@/utils/typeAdapters';
+import { CalendarDays, User, Package, Hash } from 'lucide-react';
 
-interface ComplaintDetailsProps {}
+interface ComplaintDetailsProps {
+  complaint: Complaint;
+  onUpdate: (updates: UpdateComplaintRequest) => void;
+  isEditing: boolean;
+  onEditToggle: () => void;
+}
 
-const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
-  const { complaintId } = useParams<{ complaintId: string }>();
-  const navigate = useNavigate();
-  const { user: currentUser } = useUser();
-  const { toast } = useToast();
-
-  const [complaint, setComplaint] = useState<Complaint | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
+  complaint,
+  onUpdate,
+  isEditing,
+  onEditToggle
+}) => {
+  const [formData, setFormData] = useState({
+    title: complaint.title,
+    description: complaint.description,
+    status: complaint.status,
+    assigned_to: complaint.assigned_to || '',
+    customer_name: complaint.customer_name || '',
+    customer_contact: complaint.customer_contact || '',
+    product_involved: complaint.product_involved || '',
+    lot_number: complaint.lot_number || ''
+  });
 
   useEffect(() => {
-    const loadComplaint = async () => {
-      if (!complaintId) {
-        toast({
-          title: "Error",
-          description: "Complaint ID is missing",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
+    setFormData({
+      title: complaint.title,
+      description: complaint.description,
+      status: complaint.status,
+      assigned_to: complaint.assigned_to || '',
+      customer_name: complaint.customer_name || '',
+      customer_contact: complaint.customer_contact || '',
+      product_involved: complaint.product_involved || '',
+      lot_number: complaint.lot_number || ''
+    });
+  }, [complaint]);
 
-      try {
-        setLoading(true);
-        const complaintData = await fetchComplaintById(complaintId);
-        setComplaint(complaintData);
-      } catch (error) {
-        console.error("Error loading complaint:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load complaint details",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleSave = () => {
+    onUpdate({
+      id: complaint.id,
+      ...formData
+    });
+    onEditToggle();
+  };
 
-    loadComplaint();
-  }, [complaintId, toast]);
-
-  const handleStatusUpdate = async (newStatus: ComplaintStatus) => {
-    if (!complaintId || !complaint) {
-      toast({
-        title: "Error",
-        description: "Complaint ID is missing",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setUpdatingStatus(true);
-      if (!currentUser?.id) throw new Error("User ID is missing");
-      
-      const updatedComplaint = await updateComplaintStatus(complaintId, newStatus, currentUser.id);
-      setComplaint(updatedComplaint);
-
-      toast({
-        title: "Complaint Status Updated",
-        description: `Complaint status updated to ${newStatus.replace(/_/g, " ")}`,
-      });
-    } catch (error) {
-      console.error("Error updating complaint status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update complaint status",
-        variant: "destructive",
-      });
-    } finally {
-      setUpdatingStatus(false);
+  const getStatusColor = (status: ComplaintStatus) => {
+    switch (status) {
+      case ComplaintStatus.New:
+        return 'bg-blue-100 text-blue-800';
+      case ComplaintStatus.Under_Investigation:
+        return 'bg-yellow-100 text-yellow-800';
+      case ComplaintStatus.Resolved:
+        return 'bg-green-100 text-green-800';
+      case ComplaintStatus.Closed:
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleGoBack = () => {
-    navigate('/complaints');
-  };
-
-  if (loading || !complaint) {
+  if (isEditing) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading complaint details...</span>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Complaint</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={4}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value: ComplaintStatus) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ComplaintStatus.New}>New</SelectItem>
+                  <SelectItem value={ComplaintStatus.Under_Investigation}>Under Investigation</SelectItem>
+                  <SelectItem value={ComplaintStatus.Resolved}>Resolved</SelectItem>
+                  <SelectItem value={ComplaintStatus.Closed}>Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assigned_to">Assigned To</Label>
+              <Input
+                id="assigned_to"
+                value={formData.assigned_to}
+                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                placeholder="Enter assignee name"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customer_name">Customer Name</Label>
+              <Input
+                id="customer_name"
+                value={formData.customer_name}
+                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                placeholder="Enter customer name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer_contact">Customer Contact</Label>
+              <Input
+                id="customer_contact"
+                value={formData.customer_contact}
+                onChange={(e) => setFormData({ ...formData, customer_contact: e.target.value })}
+                placeholder="Enter contact information"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="product_involved">Product Involved</Label>
+              <Input
+                id="product_involved"
+                value={formData.product_involved}
+                onChange={(e) => setFormData({ ...formData, product_involved: e.target.value })}
+                placeholder="Enter product name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lot_number">Lot Number</Label>
+              <Input
+                id="lot_number"
+                value={formData.lot_number}
+                onChange={(e) => setFormData({ ...formData, lot_number: e.target.value })}
+                placeholder="Enter lot number"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={onEditToggle}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              Save Changes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{complaint.title}</h1>
-          <p className="text-gray-500">
-            <MessageSquare className="inline-block h-4 w-4 mr-1 align-middle" />
-            Created on {new Date(complaint.created_at).toLocaleDateString()}
-          </p>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">{complaint.title}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(complaint.status)}>
+              {formatEnumValue(complaint.status)}
+            </Badge>
+            <Button variant="outline" size="sm" onClick={onEditToggle}>
+              Edit
+            </Button>
+          </div>
         </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
         <div>
-          <Button variant="outline" onClick={handleGoBack} className="mr-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to List
-          </Button>
+          <h3 className="font-medium mb-2">Description</h3>
+          <p className="text-gray-600">{complaint.description}</p>
         </div>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Complaint Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium">Category</p>
-              <Badge variant="secondary">{complaint.category.replace(/_/g, " ")}</Badge>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">
+                <span className="font-medium">Reported:</span> {new Date(complaint.reported_date).toLocaleDateString()}
+              </span>
             </div>
-            <div>
-              <p className="text-sm font-medium">Status</p>
-              <Badge variant="secondary">{complaint.status.replace(/_/g, " ")}</Badge>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Description</p>
-            <p className="text-gray-500">{complaint.description}</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium">Reported Date</p>
-              <p className="text-gray-500">{new Date(complaint.reported_date).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Priority</p>
-              <p className="text-gray-500">{complaint.priority}</p>
-            </div>
-          </div>
-          {complaint.resolution_date && (
-            <div>
-              <p className="text-sm font-medium">Resolution Date</p>
-              <p className="text-gray-500">{new Date(complaint.resolution_date).toLocaleDateString()}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            {complaint.assigned_to && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  <span className="font-medium">Assigned to:</span> {complaint.assigned_to}
+                </span>
+              </div>
+            )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2">
-            {ComplaintStatusValues.map((status) => (
-              <Button
-                key={status}
-                variant="outline"
-                onClick={() => handleStatusUpdate(status)}
-                disabled={updatingStatus || complaint.status === status}
-              >
-                {complaint.status === status ? (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    {status.replace(/_/g, ' ')}
-                  </>
-                ) : (
-                  `Mark as ${status.replace(/_/g, ' ')}`
-                )}
-              </Button>
-            ))}
+            {complaint.customer_name && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  <span className="font-medium">Customer:</span> {complaint.customer_name}
+                </span>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          <div className="space-y-4">
+            {complaint.product_involved && (
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  <span className="font-medium">Product:</span> {complaint.product_involved}
+                </span>
+              </div>
+            )}
+
+            {complaint.lot_number && (
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  <span className="font-medium">Lot Number:</span> {complaint.lot_number}
+                </span>
+              </div>
+            )}
+
+            {complaint.resolution_date && (
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  <span className="font-medium">Resolved:</span> {new Date(complaint.resolution_date).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>Category: <span className="font-medium">{formatEnumValue(complaint.category)}</span></span>
+            <span>Created by: <span className="font-medium">{complaint.created_by}</span></span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

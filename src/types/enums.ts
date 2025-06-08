@@ -1,49 +1,47 @@
 
-// Document related enums matching database schema
+// Document related enums
 export enum DocumentStatus {
   Draft = 'Draft',
-  Under_Review = 'Under Review',
+  Under_Review = 'Under_Review',
   Approved = 'Approved',
-  Rejected = 'Rejected',
-  Active = 'Active',
+  Published = 'Published',
   Archived = 'Archived',
-  Expired = 'Expired'
+  Rejected = 'Rejected'
 }
 
 export enum DocumentCategory {
   SOP = 'SOP',
   Policy = 'Policy',
   Form = 'Form',
+  Manual = 'Manual',
+  Training = 'Training',
+  HACCP_Plan = 'HACCP_Plan',
   Certificate = 'Certificate',
-  Audit_Report = 'Audit Report',
-  HACCP_Plan = 'HACCP Plan',
-  Training_Material = 'Training Material',
-  Supplier_Documentation = 'Supplier Documentation',
-  Risk_Assessment = 'Risk Assessment',
+  Report = 'Report',
   Other = 'Other'
 }
 
 export enum CheckoutStatus {
   Available = 'Available',
-  Checked_Out = 'Checked_Out'
+  Checked_Out = 'Checked_Out',
+  Locked = 'Locked'
 }
 
-// CAPA related enums matching database schema
+// CAPA related enums
 export enum CAPAStatus {
   Open = 'Open',
-  In_Progress = 'In Progress',
-  Pending_Verification = 'Pending Verification',
+  In_Progress = 'In_Progress',
+  Pending_Verification = 'Pending_Verification',
   Closed = 'Closed',
   Cancelled = 'Cancelled'
 }
 
 export enum CAPASource {
   Audit = 'Audit',
-  Non_Conformance = 'Non Conformance',
-  Complaint = 'Complaint',
-  Management_Review = 'Management Review',
-  Risk_Assessment = 'Risk Assessment',
-  Other = 'Other'
+  Customer_Complaint = 'Customer_Complaint',
+  Internal_Report = 'Internal_Report',
+  Non_Conformance = 'Non_Conformance',
+  Supplier_Issue = 'Supplier_Issue'
 }
 
 export enum CAPAPriority {
@@ -54,46 +52,23 @@ export enum CAPAPriority {
 }
 
 export enum EffectivenessRating {
-  Effective = 'Effective',
-  Partially_Effective = 'Partially Effective',
   Ineffective = 'Ineffective',
-  Under_Review = 'Under Review'
-}
-
-// Complaint related enums
-export enum ComplaintCategory {
-  Product_Quality = 'Product Quality',
-  Packaging = 'Packaging',
-  Labeling = 'Labeling',
-  Foreign_Material = 'Foreign Material',
-  Contamination = 'Contamination',
-  Allergen = 'Allergen',
-  Service = 'Service',
-  Delivery = 'Delivery',
-  Other = 'Other'
-}
-
-export enum ComplaintStatus {
-  New = 'New',
-  Under_Investigation = 'Under Investigation',
-  In_Progress = 'In Progress',
-  Resolved = 'Resolved',
-  Closed = 'Closed'
+  Partially_Effective = 'Partially_Effective',
+  Effective = 'Effective'
 }
 
 // Non-conformance related enums
 export enum NCStatus {
-  On_Hold = 'On Hold',
-  Under_Review = 'Under Review',
+  On_Hold = 'On_Hold',
+  Under_Review = 'Under_Review',
   Released = 'Released',
   Disposed = 'Disposed',
-  Resolved = 'Resolved',
-  Closed = 'Closed'
+  Resolved = 'Resolved'
 }
 
 export enum NCItemCategory {
-  Raw_Material = 'Raw Material',
-  Finished_Product = 'Finished Product',
+  Raw_Material = 'Raw_Material',
+  Finished_Product = 'Finished_Product',
   Packaging = 'Packaging',
   Equipment = 'Equipment',
   Process = 'Process',
@@ -102,65 +77,79 @@ export enum NCItemCategory {
 }
 
 export enum NCReasonCategory {
-  Quality_Defect = 'Quality Defect',
-  Contamination = 'Contamination',
-  Foreign_Material = 'Foreign Material',
-  Labeling_Error = 'Labeling Error',
-  Temperature_Abuse = 'Temperature Abuse',
-  Expired_Product = 'Expired Product',
-  Specification_Deviation = 'Specification Deviation',
-  Equipment_Failure = 'Equipment Failure',
-  Process_Deviation = 'Process Deviation',
-  Documentation_Error = 'Documentation Error',
+  Quality_Defect = 'Quality_Defect',
+  Safety_Issue = 'Safety_Issue',
+  Regulatory_Non_Compliance = 'Regulatory_Non_Compliance',
+  Process_Deviation = 'Process_Deviation',
+  Equipment_Failure = 'Equipment_Failure',
+  Documentation_Error = 'Documentation_Error',
+  Training_Gap = 'Training_Gap',
+  Supplier_Issue = 'Supplier_Issue',
   Other = 'Other'
+}
+
+// Complaint related enums
+export enum ComplaintCategory {
+  Product_Quality = 'Product_Quality',
+  Food_Safety = 'Food_Safety',
+  Service = 'Service',
+  Delivery = 'Delivery',
+  Packaging = 'Packaging',
+  Labeling = 'Labeling',
+  Other = 'Other'
+}
+
+export enum ComplaintStatus {
+  New = 'New',
+  Under_Investigation = 'Under_Investigation',
+  Resolved = 'Resolved',
+  Closed = 'Closed'
 }
 
 // Training related enums
 export enum TrainingStatus {
-  Not_Started = 'Not Started',
-  In_Progress = 'In Progress',
+  Not_Started = 'Not_Started',
+  In_Progress = 'In_Progress',
   Completed = 'Completed',
-  Overdue = 'Overdue',
+  Failed = 'Failed',
   Expired = 'Expired'
 }
 
 // Audit related enums
 export enum AuditStatus {
   Scheduled = 'Scheduled',
-  In_Progress = 'In Progress',
+  In_Progress = 'In_Progress',
   Completed = 'Completed',
   Cancelled = 'Cancelled'
 }
 
 export enum FindingSeverity {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Critical = 'Critical'
+  Critical = 'Critical',
+  Major = 'Major',
+  Minor = 'Minor',
+  Observation = 'Observation'
 }
 
 export enum FindingStatus {
   Open = 'Open',
-  In_Progress = 'In Progress',
+  In_Progress = 'In_Progress',
   Closed = 'Closed'
 }
 
-// Notification related enums
+// Recall related enums
+export enum RecallType {
+  Mock = 'Mock',
+  Actual = 'Actual'
+}
+
 export enum NotificationStatus {
   Pending = 'Pending',
   Sent = 'Sent',
   Failed = 'Failed'
 }
 
-// Recall related enums
-export enum RecallType {
-  Simulation = 'Simulation',
-  Actual = 'Actual'
-}
-
 // Role related enums
 export enum RoleLevel {
-  Global = 'Global',
   Organization = 'Organization',
   Facility = 'Facility',
   Department = 'Department'
