@@ -60,14 +60,14 @@ export const useTrainingSessions = () => {
           id: item.id,
           title: item.title,
           description: item.description,
-          category: item.category || 'General',
-          type: item.type || 'Online',
+          category: item.training_category || 'General',
+          type: item.training_type || 'Online',
           duration: item.duration || 60,
           start_date: item.start_date,
-          end_date: item.end_date || item.start_date,
-          instructor: item.instructor || 'TBD',
-          location: item.location || 'Online',
-          capacity: item.capacity || 0,
+          end_date: item.due_date || item.start_date,
+          instructor: item.created_by || 'TBD',
+          location: item.department || 'Online',
+          capacity: 0,
           created_at: item.created_at,
           updated_at: item.updated_at,
         }));
@@ -86,7 +86,7 @@ export const useTrainingSessions = () => {
         const { data, error } = await supabase
           .from('training_records')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('assigned_date', { ascending: false });
 
         if (error) {
           throw new Error(error.message);
@@ -107,25 +107,42 @@ export const useTrainingSessions = () => {
     fetchTrainingRecords();
   }, []);
 
-  const createTrainingRecord = (sessionId: string, employeeId: string, employeeName: string) => {
-    const newRecord = {
-      id: Math.random().toString(36).substr(2, 9),
-      session_id: sessionId,
-      employee_id: employeeId,
-      employee_name: employeeName,
-      status: TrainingStatus.Not_Started,
-      assigned_date: new Date().toISOString(),
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      completion_date: null,
-      score: null,
-      pass_threshold: 80,
-      notes: null,
-      last_recurrence: null,
-      next_recurrence: null,
-    };
+  const createTrainingRecord = async (sessionId: string, employeeId: string, employeeName: string) => {
+    try {
+      const newRecord = {
+        session_id: sessionId,
+        employee_id: employeeId,
+        employee_name: employeeName,
+        status: trainingStatusToString(TrainingStatus.Not_Started),
+        assigned_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        completion_date: null,
+        score: null,
+        pass_threshold: 80,
+        notes: null,
+        last_recurrence: null,
+        next_recurrence: null,
+      };
 
-    setTrainingRecords(prevRecords => [...prevRecords, newRecord]);
-    return newRecord;
+      const { data, error } = await supabase
+        .from('training_records')
+        .insert(newRecord)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const transformedRecord: TrainingRecord = {
+        ...data,
+        status: data.status as TrainingStatus
+      };
+
+      setTrainingRecords(prevRecords => [...prevRecords, transformedRecord]);
+      return transformedRecord;
+    } catch (error) {
+      console.error('Error creating training record:', error);
+      throw error;
+    }
   };
 
   const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
@@ -135,7 +152,7 @@ export const useTrainingSessions = () => {
       // Convert status to string for database
       const dbUpdates = {
         ...updates,
-        status: updates.status ? trainingStatusToString(updates.status) as any : undefined
+        status: updates.status ? trainingStatusToString(updates.status) : undefined
       };
       
       const { data, error } = await supabase

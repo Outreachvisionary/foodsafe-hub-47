@@ -11,6 +11,10 @@ export const stringToCAPAStatus = (status: string): CAPAStatus => {
   return status as CAPAStatus;
 };
 
+export const convertToCAPAStatus = (status: string): CAPAStatus => {
+  return status as CAPAStatus;
+};
+
 export const stringToCAPASource = (source: string): CAPASource => {
   return source as CAPASource;
 };

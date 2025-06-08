@@ -9,6 +9,7 @@ import { NonConformance } from '@/types/non-conformance';
 import { NCStatus } from '@/types/enums';
 import { stringToNCStatus } from '@/utils/typeAdapters';
 import NCStatusBadge from './NCStatusBadge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NCListProps {
   onItemClick?: (nc: NonConformance) => void;
@@ -16,77 +17,63 @@ interface NCListProps {
 }
 
 const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
-  const [nonConformances, setNonConformances] = useState<NonConformance[]>([
-    {
-      id: '1',
-      title: 'Temperature deviation in cold storage',
-      status: NCStatus.On_Hold,
-      reported_date: '2024-01-15',
-      created_at: '2024-01-15',
-      updated_at: '2024-01-15',
-      item_name: 'Frozen chicken',
-      item_category: 'Raw Materials',
-      created_by: 'John Doe'
-    },
-    {
-      id: '2',
-      title: 'Packaging material defect',
-      status: NCStatus.Under_Review,
-      reported_date: '2024-01-14',
-      created_at: '2024-01-14',
-      updated_at: '2024-01-14',
-      item_name: 'Plastic containers',
-      item_category: 'Packaging',
-      created_by: 'Jane Smith'
-    },
-    {
-      id: '3',
-      title: 'Foreign object found in production line',
-      status: NCStatus.Resolved,
-      reported_date: '2024-01-13',
-      created_at: '2024-01-13',
-      updated_at: '2024-01-13',
-      item_name: 'Metal fragment',
-      item_category: 'Foreign Object',
-      created_by: 'Mike Johnson'
-    },
-    {
-      id: '4',
-      title: 'Expired ingredient used in batch',
-      status: NCStatus.Closed,
-      reported_date: '2024-01-12',
-      created_at: '2024-01-12',
-      updated_at: '2024-01-12',
-      item_name: 'Flour',
-      item_category: 'Ingredient',
-      created_by: 'Sarah Wilson'
-    },
-    {
-      id: '5',
-      title: 'Improper labeling on finished product',
-      status: NCStatus.Released,
-      reported_date: '2024-01-11',
-      created_at: '2024-01-11',
-      updated_at: '2024-01-11',
-      item_name: 'Ready meals',
-      item_category: 'Finished Product',
-      created_by: 'Tom Brown'
-    },
-    {
-      id: '6',
-      title: 'Equipment malfunction affecting quality',
-      status: NCStatus.Disposed,
-      reported_date: '2024-01-10',
-      created_at: '2024-01-10',
-      updated_at: '2024-01-10',
-      item_name: 'Mixer unit',
-      item_category: 'Equipment',
-      created_by: 'Lisa Davis'
-    }
-  ]);
-
+  const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredNCs, setFilteredNCs] = useState<NonConformance[]>(nonConformances);
+  const [filteredNCs, setFilteredNCs] = useState<NonConformance[]>([]);
+
+  useEffect(() => {
+    fetchNonConformances();
+  }, []);
+
+  const fetchNonConformances = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('non_conformances')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedData: NonConformance[] = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        status: item.status as NCStatus,
+        reported_date: item.reported_date,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        item_name: item.item_name,
+        item_category: item.item_category,
+        created_by: item.created_by,
+        assigned_to: item.assigned_to,
+        reviewer: item.reviewer,
+        resolution_details: item.resolution_details,
+        location: item.location,
+        department: item.department,
+        priority: item.priority,
+        risk_level: item.risk_level,
+        tags: item.tags,
+        units: item.units,
+        quantity: item.quantity,
+        quantity_on_hold: item.quantity_on_hold,
+        item_id: item.item_id,
+        reason_details: item.reason_details,
+        review_date: item.review_date,
+        resolution_date: item.resolution_date,
+        capa_id: item.capa_id,
+        reason_category: item.reason_category
+      }));
+
+      setNonConformances(transformedData);
+      setFilteredNCs(transformedData);
+    } catch (error) {
+      console.error('Error fetching non-conformances:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const filtered = nonConformances.filter(nc =>
@@ -122,6 +109,14 @@ const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Loading non-conformances...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -229,7 +224,7 @@ const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
         ))}
       </div>
 
-      {filteredNCs.length === 0 && (
+      {filteredNCs.length === 0 && !loading && (
         <Card>
           <CardContent className="p-8 text-center">
             <div className="text-muted-foreground">

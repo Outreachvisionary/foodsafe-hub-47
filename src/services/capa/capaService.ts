@@ -1,91 +1,137 @@
 
 import { CAPA, CAPAStats } from '@/types/capa';
-import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
-import { convertToCAPAStatus, stringToCAPAPriority, stringToCAPASource } from '@/utils/typeAdapters';
+import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
+import { stringToCAPAPriority, stringToCAPASource } from '@/utils/typeAdapters';
 import { supabase } from '@/integrations/supabase/client';
 
 // Mock CAPA stats for development
 export const getCAPAStats = async (): Promise<CAPAStats> => {
-  // In a real application, this would fetch data from the API
-  return {
-    total: 85,
-    open: 32,
-    completed: 45,
-    overdue: 8,
-    inProgress: 0,
-    openCount: 32,
-    closedCount: 45,
-    overdueCount: 8,
-    pendingVerificationCount: 5,
-    effectivenessRate: 78,
-    byPriority: {
-      [CAPAPriority.Low]: 12,
-      [CAPAPriority.Medium]: 35,
-      [CAPAPriority.High]: 30,
-      [CAPAPriority.Critical]: 8
-    },
-    bySource: {
-      [CAPASource.Audit]: 25,
-      [CAPASource.CustomerComplaint]: 15,
-      [CAPASource.NonConformance]: 20,
-      [CAPASource.SupplierIssue]: 10,
-      [CAPASource.InternalReport]: 15,
-      [CAPASource.RegulatoryInspection]: 0, // Added missing property
-      [CAPASource.Other]: 0 // Added missing property
-    },
-    byDepartment: {
-      'Production': 30,
-      'QA': 25,
-      'Warehouse': 15,
-      'Maintenance': 10,
-      'Other': 5
-    },
-    byStatus: {
-      'Open': 15,
-      'In Progress': 17,
-      'Closed': 40,
-      'Overdue': 8,
-      'Pending_Verification': 5,
-      'Verified': 0
-    },
-    byMonth: {
-      'Jan': 5,
-      'Feb': 8,
-      'Mar': 10,
-      'Apr': 12,
-      'May': 15,
-      'Jun': 20,
-      'Jul': 15
-    },
-    recentActivities: [] // Added missing property
-  };
+  try {
+    const { data, error } = await supabase.from('capa_actions').select('*');
+    
+    if (error) throw error;
+    
+    const capas = data || [];
+    const total = capas.length;
+    const open = capas.filter(c => c.status === CAPAStatus.Open).length;
+    const openCount = open;
+    const closed = capas.filter(c => c.status === CAPAStatus.Closed).length;
+    const closedCount = closed;
+    const completed = capas.filter(c => c.status === CAPAStatus.Closed).length;
+    const inProgress = capas.filter(c => c.status === CAPAStatus.In_Progress).length;
+    const overdue = capas.filter(c => {
+      const dueDate = new Date(c.due_date);
+      const now = new Date();
+      return dueDate < now && c.status !== CAPAStatus.Closed;
+    }).length;
+    const overdueCount = overdue;
+    const pendingVerificationCount = capas.filter(c => c.status === CAPAStatus.Pending_Verification).length;
+    
+    // Count by priority
+    const byPriority = capas.reduce((acc, capa) => {
+      const priority = capa.priority as CAPAPriority;
+      acc[priority] = (acc[priority] || 0) + 1;
+      return acc;
+    }, {} as Record<CAPAPriority, number>);
+    
+    // Count by source
+    const bySource = capas.reduce((acc, capa) => {
+      const source = capa.source as CAPASource;
+      acc[source] = (acc[source] || 0) + 1;
+      return acc;
+    }, {} as Record<CAPASource, number>);
+    
+    // Count by department
+    const byDepartment = capas.reduce((acc, capa) => {
+      const dept = capa.department || 'Unassigned';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Get recent activities
+    const { data: activities } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .order('performed_at', { ascending: false })
+      .limit(10);
+    
+    return {
+      total,
+      open,
+      openCount,
+      closed,
+      closedCount,
+      completed,
+      inProgress,
+      overdue,
+      overdueCount,
+      pendingVerificationCount,
+      byPriority,
+      bySource,
+      byDepartment,
+      recentActivities: activities || []
+    };
+  } catch (error) {
+    console.error('Error fetching CAPA stats:', error);
+    return {
+      total: 0,
+      open: 0,
+      openCount: 0,
+      closed: 0,
+      closedCount: 0,
+      completed: 0,
+      inProgress: 0,
+      overdue: 0,
+      overdueCount: 0,
+      pendingVerificationCount: 0,
+      byPriority: {} as Record<CAPAPriority, number>,
+      bySource: {} as Record<CAPASource, number>,
+      byDepartment: {},
+      recentActivities: []
+    };
+  }
 };
 
-// Mock function to fetch a single CAPA
+// Function to fetch a single CAPA
 export const getCAPAById = async (id: string): Promise<CAPA | null> => {
-  // This would fetch from an API in production
-  const mockCapa: CAPA = {
-    id,
-    title: `CAPA-${id}`,
-    description: "Description of the CAPA item",
-    status: CAPAStatus.InProgress,
-    priority: CAPAPriority.High,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(), // Added required field
-    created_by: 'John Doe',
-    due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    assigned_to: 'Jane Smith',
-    source: CAPASource.Audit,
-    source_reference: 'Audit-2023-001',
-    root_cause: 'Process failure',
-    corrective_action: 'Update process documentation',
-    preventive_action: 'Staff training',
-    effectiveness_criteria: 'No recurrence for 90 days',
-    relatedDocuments: [],
-    relatedTraining: []
-  };
-  
-  return mockCapa;
-};
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-// Additional mock service functions can be added here
+    if (error) throw error;
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      status: data.status as CAPAStatus,
+      priority: data.priority as CAPAPriority,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      created_by: data.created_by,
+      due_date: data.due_date,
+      assigned_to: data.assigned_to,
+      source: data.source as CAPASource,
+      source_id: data.source_id,
+      completion_date: data.completion_date,
+      root_cause: data.root_cause,
+      corrective_action: data.corrective_action,
+      preventive_action: data.preventive_action,
+      effectiveness_criteria: data.effectiveness_criteria,
+      department: data.department,
+      fsma204_compliant: data.fsma204_compliant,
+      effectiveness_verified: data.effectiveness_verified,
+      effectiveness_rating: data.effectiveness_rating,
+      verification_date: data.verification_date,
+      verification_method: data.verification_method,
+      verified_by: data.verified_by,
+    } as CAPA;
+  } catch (error) {
+    console.error('Error fetching CAPA by ID:', error);
+    return null;
+  }
+};

@@ -1,9 +1,10 @@
 
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { convertToCAPAStatus } from '@/utils/typeAdapters';
+import { stringToCAPAStatus } from '@/utils/typeAdapters';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock function to record CAPA activity
+// Function to record CAPA activity
 export const recordCAPAActivity = async (activityData: {
   capa_id: string;
   action_type: string;
@@ -13,72 +14,55 @@ export const recordCAPAActivity = async (activityData: {
   new_status?: string;
   metadata?: Record<string, any>;
 }) => {
-  // In a real implementation, this would insert a record into the database
-  const activity: CAPAActivity = {
-    id: `activity-${Date.now()}`,
-    capa_id: activityData.capa_id,
-    action_type: activityData.action_type,
-    action_description: activityData.action_description,
-    performed_at: new Date().toISOString(),
-    performed_by: activityData.performed_by,
-    old_status: activityData.old_status ? convertToCAPAStatus(activityData.old_status) : undefined,
-    new_status: activityData.new_status ? convertToCAPAStatus(activityData.new_status) : undefined,
-    metadata: activityData.metadata
-  };
-  
-  // Simulate successful insertion
-  return Promise.resolve(activity);
+  try {
+    const activity = {
+      capa_id: activityData.capa_id,
+      action_type: activityData.action_type,
+      action_description: activityData.action_description,
+      performed_at: new Date().toISOString(),
+      performed_by: activityData.performed_by,
+      old_status: activityData.old_status ? stringToCAPAStatus(activityData.old_status) : undefined,
+      new_status: activityData.new_status ? stringToCAPAStatus(activityData.new_status) : undefined,
+      metadata: activityData.metadata
+    };
+
+    const { data, error } = await supabase
+      .from('capa_activities')
+      .insert(activity)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      ...data,
+      old_status: data.old_status ? stringToCAPAStatus(data.old_status) : undefined,
+      new_status: data.new_status ? stringToCAPAStatus(data.new_status) : undefined,
+    } as CAPAActivity;
+  } catch (error) {
+    console.error('Error recording CAPA activity:', error);
+    throw error;
+  }
 };
 
-// Mock function to get CAPA activities
+// Function to get CAPA activities
 export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
-  // Return mock data for CAPA activities
-  return [
-    {
-      id: '1',
-      capa_id: capaId,
-      action_type: 'created',
-      action_description: 'CAPA was created',
-      performed_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'John Doe',
-      old_status: undefined,
-      new_status: CAPAStatus.Open
-    },
-    {
-      id: '2',
-      capa_id: capaId,
-      action_type: 'status_change',
-      action_description: 'Status updated from Open to In Progress',
-      performed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'Jane Smith',
-      old_status: CAPAStatus.Open,
-      new_status: CAPAStatus.InProgress
-    },
-    {
-      id: '3',
-      capa_id: capaId,
-      action_type: 'comment',
-      action_description: 'Added root cause analysis',
-      performed_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'Jane Smith',
-      metadata: {
-        comments: 'Completed root cause analysis and identified key issues.'
-      }
-    },
-    {
-      id: '4',
-      capa_id: capaId,
-      action_type: 'document_linked',
-      action_description: 'Associated document with CAPA',
-      performed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      performed_by: 'John Doe',
-      metadata: {
-        documentId: 'doc-123',
-        documentName: 'Procedure Update'
-      }
-    }
-  ];
+  try {
+    const { data, error } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .eq('capa_id', capaId)
+      .order('performed_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(activity => ({
+      ...activity,
+      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
+      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
+    })) as CAPAActivity[];
+  } catch (error) {
+    console.error('Error fetching CAPA activities:', error);
+    return [];
+  }
 };

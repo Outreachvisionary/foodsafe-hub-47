@@ -27,13 +27,13 @@ export const useDocumentService = () => {
         if (filter.category) {
           const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
           const categoryStrings = categories.map(cat => documentCategoryToString(cat));
-          query = query.in('category', categoryStrings);
+          query = query.in('category', categoryStrings as any);
         }
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
           const statusStrings = statuses.map(status => documentStatusToString(status));
-          query = query.in('status', statusStrings);
+          query = query.in('status', statusStrings as any);
         }
         
         if (filter.created_by) {
@@ -265,9 +265,9 @@ export const useDocumentService = () => {
         file_name: document.file_name || 'unnamed.txt',
         file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
-        category: documentCategoryToString(document.category || DocumentCategory.Other) as any,
-        status: documentStatusToString(DocumentStatus.Draft) as any,
-        checkout_status: checkoutStatusToString(CheckoutStatus.Available) as any,
+        category: documentCategoryToString(document.category || DocumentCategory.Other),
+        status: documentStatusToString(DocumentStatus.Draft),
+        checkout_status: checkoutStatusToString(CheckoutStatus.Available),
         version: 1,
         created_by: document.created_by || 'system',
         created_at: new Date().toISOString(),
