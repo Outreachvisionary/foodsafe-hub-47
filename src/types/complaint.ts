@@ -12,17 +12,18 @@ export interface Complaint {
   status: ComplaintStatus;
   priority: ComplaintPriority;
   reported_date: string;
+  resolution_date?: string;
   created_at: string;
   updated_at: string;
   created_by: string;
   customer_name: string;
   customer_contact?: string;
-  resolved_date?: string;
-  resolution_notes?: string;
   assigned_to?: string;
   product_affected?: string;
+  product_involved?: string;
   lot_number?: string;
   capa_id?: string;
+  resolution_notes?: string;
 }
 
 export interface ComplaintFilter {

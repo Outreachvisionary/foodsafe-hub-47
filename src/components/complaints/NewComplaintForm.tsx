@@ -73,6 +73,8 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
       await createComplaint({
         ...values,
         created_by: userId,
+        status: 'New' as ComplaintStatus,
+        reported_date: new Date().toISOString(),
       });
       
       toast({

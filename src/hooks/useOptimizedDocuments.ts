@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { fetchDocuments, getDocumentCounts } from '@/services/enhancedDocumentService';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
@@ -86,9 +85,8 @@ export function useOptimizedDocuments(options: {
   }, [cacheTime, fetchCounts]);
 
   // Set up realtime subscription if enabled
-  const { refetch } = useRealtimeSubscription<Document>({
+  const subscription = useRealtimeSubscription<Document>({
     table: 'documents',
-    initialFetch: false, // We handle initial fetch separately
     onDataChange: (newData) => {
       // Invalidate cache
       documentCache.timestamp = 0;

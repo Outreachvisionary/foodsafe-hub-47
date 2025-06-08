@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import useRealtimeSubscription from './useRealtimeSubscription';
 import { 
@@ -21,37 +20,44 @@ export function useKpiDashboard() {
   // Subscribe to KPI metrics table with realtime updates
   const kpiMetricsSubscription = useRealtimeSubscription<KpiMetric>({
     table: 'kpi_metrics',
-    initialFetch: false, // We'll fetch all data at once instead
-    relatedTables: ['non_conformances', 'audits', 'capa_actions', 'haccp_plans'], // Listen for changes in related tables
     onDataChange: (newData) => {
       setKpiMetrics(newData);
+    },
+    onError: (err) => {
+      setError(err);
     }
   });
 
   // Subscribe to production data table
   const productionSubscription = useRealtimeSubscription<ProductionData>({
     table: 'kpi_production_data',
-    initialFetch: false,
     onDataChange: (newData) => {
       setProductionData(newData);
+    },
+    onError: (err) => {
+      setError(err);
     }
   });
 
   // Subscribe to quality data table
   const qualitySubscription = useRealtimeSubscription<QualityData>({
     table: 'kpi_quality_data',
-    initialFetch: false,
     onDataChange: (newData) => {
       setQualityData(newData);
+    },
+    onError: (err) => {
+      setError(err);
     }
   });
 
   // Subscribe to safety data table
   const safetySubscription = useRealtimeSubscription<SafetyData>({
     table: 'kpi_safety_data',
-    initialFetch: false,
     onDataChange: (newData) => {
       setSafetyData(newData);
+    },
+    onError: (err) => {
+      setError(err);
     }
   });
 

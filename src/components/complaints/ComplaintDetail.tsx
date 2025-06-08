@@ -39,7 +39,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { updateComplaint, updateComplaintStatus, fetchComplaintActivities, createCAPAFromComplaint } from '@/services/complaintService';
 import { getComplaintStatusColor } from '@/utils/complaintUtils';
-import { ArrowLeft, Calendar, Clock, FilePlus, LinkIcon, ExternalLink, UserCheck, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, FilePlus, LinkIcon, ExternalLink, UserCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ComplaintDetailProps {
