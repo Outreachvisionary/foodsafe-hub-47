@@ -37,7 +37,11 @@ const CAPA: React.FC = () => {
     pendingVerificationCount: 0,
     byPriority: {} as Record<CAPAPriority, number>,
     bySource: {} as Record<CAPASource, number>,
+    byStatus: {} as Record<CAPAStatus, number>,
     byDepartment: {},
+    completedThisMonth: 0,
+    averageResolutionTime: 0,
+    upcomingDueDates: [],
     recentActivities: []
   });
   
@@ -46,8 +50,7 @@ const CAPA: React.FC = () => {
     priority: undefined,
     source: undefined,
     department: undefined,
-    searchTerm: '',
-    dateRange: undefined
+    searchTerm: ''
   });
 
   // Fetch CAPAs on component mount
