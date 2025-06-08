@@ -1,51 +1,54 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { CAPAActivity } from '@/types/capa';
 import { CAPAStatus } from '@/types/enums';
-import { stringToCAPAStatus, capaStatusToString } from '@/utils/typeAdapters';
-import { supabase } from '@/integrations/supabase/client';
+import { capaStatusToString } from '@/utils/typeAdapters';
 
-// Function to record CAPA activity
-export const recordCAPAActivity = async (activityData: {
-  capa_id: string;
-  action_type: string;
-  action_description: string;
-  performed_by: string;
-  old_status?: string;
-  new_status?: string;
-  metadata?: Record<string, any>;
-}) => {
+/**
+ * Creates a new CAPA activity entry
+ */
+export const createCAPAActivity = async (
+  capaId: string,
+  actionType: string,
+  actionDescription: string,
+  performedBy: string,
+  oldStatus?: CAPAStatus,
+  newStatus?: CAPAStatus,
+  metadata?: Record<string, any>
+): Promise<CAPAActivity | null> => {
   try {
-    const activity = {
-      capa_id: activityData.capa_id,
-      action_type: activityData.action_type,
-      action_description: activityData.action_description,
+    const activityData = {
+      capa_id: capaId,
+      action_type: actionType,
+      action_description: actionDescription,
       performed_at: new Date().toISOString(),
-      performed_by: activityData.performed_by,
-      old_status: activityData.old_status ? capaStatusToString(stringToCAPAStatus(activityData.old_status)) : undefined,
-      new_status: activityData.new_status ? capaStatusToString(stringToCAPAStatus(activityData.new_status)) : undefined,
-      metadata: activityData.metadata
+      performed_by: performedBy,
+      old_status: oldStatus ? capaStatusToString(oldStatus) as any : null,
+      new_status: newStatus ? capaStatusToString(newStatus) as any : null,
+      metadata: metadata || {}
     };
-
+    
     const { data, error } = await supabase
       .from('capa_activities')
-      .insert(activity)
+      .insert(activityData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating CAPA activity:', error);
+      throw error;
+    }
 
-    return {
-      ...data,
-      old_status: data.old_status ? stringToCAPAStatus(data.old_status) : undefined,
-      new_status: data.new_status ? stringToCAPAStatus(data.new_status) : undefined,
-    } as CAPAActivity;
+    return data as CAPAActivity;
   } catch (error) {
-    console.error('Error recording CAPA activity:', error);
-    throw error;
+    console.error('Error in createCAPAActivity:', error);
+    return null;
   }
 };
 
-// Function to get CAPA activities
+/**
+ * Gets all activities for a specific CAPA
+ */
 export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]> => {
   try {
     const { data, error } = await supabase
@@ -54,15 +57,43 @@ export const getCAPAActivities = async (capaId: string): Promise<CAPAActivity[]>
       .eq('capa_id', capaId)
       .order('performed_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching CAPA activities:', error);
+      throw error;
+    }
 
-    return (data || []).map(activity => ({
-      ...activity,
-      old_status: activity.old_status ? stringToCAPAStatus(activity.old_status) : undefined,
-      new_status: activity.new_status ? stringToCAPAStatus(activity.new_status) : undefined,
-    })) as CAPAActivity[];
+    return data as CAPAActivity[] || [];
   } catch (error) {
-    console.error('Error fetching CAPA activities:', error);
+    console.error('Error in getCAPAActivities:', error);
     return [];
   }
+};
+
+/**
+ * Gets recent activities across all CAPAs
+ */
+export const getRecentCAPAActivities = async (limit: number = 10): Promise<CAPAActivity[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_activities')
+      .select('*')
+      .order('performed_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching recent CAPA activities:', error);
+      throw error;
+    }
+
+    return data as CAPAActivity[] || [];
+  } catch (error) {
+    console.error('Error in getRecentCAPAActivities:', error);
+    return [];
+  }
+};
+
+export default {
+  createCAPAActivity,
+  getCAPAActivities,
+  getRecentCAPAActivities
 };

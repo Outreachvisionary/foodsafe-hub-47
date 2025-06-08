@@ -1,106 +1,116 @@
 
-import { CAPAStats } from "@/types/capa";
-import { CAPAPriority, CAPASource } from "@/types/enums";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { CAPAStats } from '@/types/capa';
+import { CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
 
 export const fetchCAPAStats = async (): Promise<CAPAStats> => {
   try {
-    const { data, error } = await supabase.from('capa_actions').select('*');
+    // Fetch all CAPA actions
+    const { data: capas, error } = await supabase
+      .from('capa_actions')
+      .select('*');
     
     if (error) throw error;
     
-    // Initialize stats object with default values
+    const actions = capas || [];
+    
+    // Initialize counters
     const stats: CAPAStats = {
-      total: 0,
-      open: 0,
-      inProgress: 0,
-      completed: 0,
+      total: actions.length,
+      byStatus: {} as Record<CAPAStatus, number>,
+      bySource: {} as Record<CAPASource, number>,
+      byPriority: {} as Record<CAPAPriority, number>,
       overdue: 0,
-      openCount: 0,
-      closedCount: 0,
-      overdueCount: 0,
-      pendingVerificationCount: 0,
-      effectivenessRate: 0,
-      byStatus: {},
-      byPriority: {
-        [CAPAPriority.Low]: 0,
-        [CAPAPriority.Medium]: 0,
-        [CAPAPriority.High]: 0,
-        [CAPAPriority.Critical]: 0
-      },
-      bySource: {
-        [CAPASource.Audit]: 0,
-        [CAPASource.Customer_Complaint]: 0,
-        [CAPASource.Internal_Report]: 0,
-        [CAPASource.Non_Conformance]: 0,
-        [CAPASource.Supplier_Issue]: 0,
-        [CAPASource.Other]: 0
-      },
-      byMonth: {},
-      byDepartment: {},
-      recentActivities: []
+      completedThisMonth: 0,
+      averageResolutionTime: 0,
+      upcomingDueDates: []
     };
     
-    if (!data || data.length === 0) {
-      return stats;
-    }
+    // Initialize all enum values with 0
+    Object.values(CAPAStatus).forEach(status => {
+      stats.byStatus[status] = 0;
+    });
     
-    // Set total count
-    stats.total = data.length;
+    Object.values(CAPASource).forEach(source => {
+      stats.bySource[source] = 0;
+    });
     
-    // Count by status
-    data.forEach((capa: any) => {
+    Object.values(CAPAPriority).forEach(priority => {
+      stats.byPriority[priority] = 0;
+    });
+    
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let totalResolutionTime = 0;
+    let completedCount = 0;
+    
+    // Process each CAPA action
+    actions.forEach(capa => {
       // Count by status
-      if (capa.status === 'Open') {
-        stats.openCount++;
-        stats.open++;
-      } else if (capa.status === 'Closed') {
-        stats.closedCount++;
-      } else if (capa.status === 'Overdue') {
-        stats.overdueCount++;
-        stats.overdue++;
-      } else if (capa.status === 'Pending Verification' || capa.status === 'Verified') {
-        stats.pendingVerificationCount++;
-      }
-      
-      // Count by priority
-      if (capa.priority && stats.byPriority) {
-        const priority = capa.priority as CAPAPriority;
-        if (priority in stats.byPriority) {
-          stats.byPriority[priority]++;
-        }
+      const status = capa.status as CAPAStatus;
+      if (stats.byStatus[status] !== undefined) {
+        stats.byStatus[status]++;
       }
       
       // Count by source
-      if (capa.source && stats.bySource) {
-        const source = capa.source as CAPASource;
-        if (source in stats.bySource) {
-          stats.bySource[source]++;
-        }
+      const source = capa.source as CAPASource;
+      if (stats.bySource[source] !== undefined) {
+        stats.bySource[source]++;
       }
       
-      // Count by department
-      if (capa.department) {
-        if (!stats.byDepartment[capa.department]) {
-          stats.byDepartment[capa.department] = 0;
+      // Count by priority
+      const priority = capa.priority as CAPAPriority;
+      if (stats.byPriority[priority] !== undefined) {
+        stats.byPriority[priority]++;
+      }
+      
+      // Check if overdue
+      if (capa.due_date && new Date(capa.due_date) < now && status !== CAPAStatus.Closed) {
+        stats.overdue++;
+      }
+      
+      // Count completed this month
+      if (capa.completion_date && new Date(capa.completion_date) >= thisMonth) {
+        stats.completedThisMonth++;
+      }
+      
+      // Calculate resolution time for completed CAPAs
+      if (capa.completion_date && capa.created_at) {
+        const resolutionTime = new Date(capa.completion_date).getTime() - new Date(capa.created_at).getTime();
+        totalResolutionTime += resolutionTime;
+        completedCount++;
+      }
+      
+      // Add to upcoming due dates (next 30 days)
+      if (capa.due_date && status !== CAPAStatus.Closed) {
+        const dueDate = new Date(capa.due_date);
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        
+        if (dueDate <= thirtyDaysFromNow && dueDate >= now) {
+          stats.upcomingDueDates.push({
+            id: capa.id,
+            title: capa.title,
+            due_date: capa.due_date,
+            priority: capa.priority
+          });
         }
-        stats.byDepartment[capa.department]++;
       }
     });
     
-    // Calculate effectiveness rate (simplified example)
-    const effectiveCount = data.filter((capa: any) => 
-      capa.effectiveness_verified === true
-    ).length;
+    // Calculate average resolution time in days
+    if (completedCount > 0) {
+      stats.averageResolutionTime = Math.round(totalResolutionTime / completedCount / (1000 * 60 * 60 * 24));
+    }
     
-    stats.effectivenessRate = stats.closedCount > 0 
-      ? (effectiveCount / stats.closedCount) * 100 
-      : 0;
+    // Sort upcoming due dates by date
+    stats.upcomingDueDates.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
     
     return stats;
-    
   } catch (error) {
-    console.error("Error fetching CAPA statistics:", error);
+    console.error('Error fetching CAPA stats:', error);
     throw error;
   }
 };
+
+export default { fetchCAPAStats };

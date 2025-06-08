@@ -24,34 +24,22 @@ export const isStatusEqual = (status: CAPAStatus | string, targetStatus: CAPASta
 export const getNextAvailableStatuses = (currentStatus: CAPAStatus): CAPAStatus[] => {
   switch (currentStatus) {
     case CAPAStatus.Open:
-      return [CAPAStatus.InProgress, CAPAStatus.Rejected, CAPAStatus.OnHold];
+      return [CAPAStatus.In_Progress, CAPAStatus.Cancelled];
       
-    case CAPAStatus.InProgress:
-      return [CAPAStatus.OnHold, CAPAStatus.Completed, CAPAStatus.PendingVerification];
+    case CAPAStatus.In_Progress:
+      return [CAPAStatus.Under_Review, CAPAStatus.Pending_Verification];
       
-    case CAPAStatus.OnHold:
-      return [CAPAStatus.InProgress, CAPAStatus.Rejected];
+    case CAPAStatus.Under_Review:
+      return [CAPAStatus.In_Progress, CAPAStatus.Cancelled];
       
-    case CAPAStatus.Completed:
-      return [CAPAStatus.PendingVerification, CAPAStatus.Verified, CAPAStatus.Closed];
-      
-    case CAPAStatus.PendingVerification:
-      return [CAPAStatus.Verified, CAPAStatus.InProgress];
-      
-    case CAPAStatus.Verified:
-      return [CAPAStatus.Closed];
+    case CAPAStatus.Pending_Verification:
+      return [CAPAStatus.Closed, CAPAStatus.In_Progress];
       
     case CAPAStatus.Closed:
-      return [CAPAStatus.InProgress]; // Reopen
+      return [CAPAStatus.In_Progress]; // Reopen
       
-    case CAPAStatus.Rejected:
+    case CAPAStatus.Cancelled:
       return [CAPAStatus.Open]; // Reconsider
-      
-    case CAPAStatus.Overdue:
-      return [CAPAStatus.InProgress, CAPAStatus.OnHold, CAPAStatus.Rejected];
-      
-    case CAPAStatus.UnderReview:
-      return [CAPAStatus.InProgress, CAPAStatus.OnHold, CAPAStatus.Rejected];
       
     default:
       return [CAPAStatus.Open];
@@ -79,31 +67,19 @@ export const getStatusColorInfo = (status: CAPAStatus | string): { bg: string; t
     case CAPAStatus.Open.toLowerCase():
       return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
       
-    case CAPAStatus.InProgress.toLowerCase():
+    case CAPAStatus.In_Progress.toLowerCase().replace(/_/g, ' '):
       return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
       
-    case CAPAStatus.Completed.toLowerCase():
+    case CAPAStatus.Closed.toLowerCase():
       return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
       
-    case CAPAStatus.Closed.toLowerCase():
-      return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
-      
-    case CAPAStatus.Rejected.toLowerCase():
+    case CAPAStatus.Cancelled.toLowerCase():
       return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
       
-    case CAPAStatus.OnHold.toLowerCase():
-      return { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' };
-      
-    case CAPAStatus.Overdue.toLowerCase():
-      return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
-      
-    case CAPAStatus.PendingVerification.toLowerCase():
+    case CAPAStatus.Pending_Verification.toLowerCase().replace(/_/g, ' '):
       return { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200' };
       
-    case CAPAStatus.Verified.toLowerCase():
-      return { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' };
-      
-    case CAPAStatus.UnderReview.toLowerCase():
+    case CAPAStatus.Under_Review.toLowerCase().replace(/_/g, ' '):
       return { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200' };
       
     default:

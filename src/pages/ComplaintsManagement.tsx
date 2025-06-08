@@ -10,7 +10,7 @@ import ComplaintFilters from '@/components/complaints/ComplaintFilters';
 import ComplaintDetail from '@/components/complaints/ComplaintDetail';
 import NewComplaintForm from '@/components/complaints/NewComplaintForm';
 import useComplaints from '@/hooks/useComplaints';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ComplaintStatus } from '@/types/enums';
 
 const ComplaintsManagement: React.FC = () => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -70,7 +70,7 @@ const ComplaintsManagement: React.FC = () => {
                   <DialogTitle>Create New Complaint</DialogTitle>
                 </DialogHeader>
                 <NewComplaintForm 
-                  onSuccess={handleCreateSuccess}
+                  onSubmit={handleCreateSuccess}
                   onCancel={() => setIsNewComplaintOpen(false)}
                 />
               </DialogContent>
@@ -106,7 +106,7 @@ const ComplaintsManagement: React.FC = () => {
             
             <TabsContent value="new">
               <ComplaintsList 
-                complaints={complaints.filter(c => c.status === 'New')}
+                complaints={complaints.filter(c => c.status === ComplaintStatus.New)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
               />
@@ -114,7 +114,7 @@ const ComplaintsManagement: React.FC = () => {
             
             <TabsContent value="open">
               <ComplaintsList 
-                complaints={complaints.filter(c => c.status === 'Under_Investigation')}
+                complaints={complaints.filter(c => c.status === ComplaintStatus.Under_Investigation)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
               />
@@ -122,7 +122,7 @@ const ComplaintsManagement: React.FC = () => {
             
             <TabsContent value="resolved">
               <ComplaintsList 
-                complaints={complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed')}
+                complaints={complaints.filter(c => c.status === ComplaintStatus.Resolved || c.status === ComplaintStatus.Closed)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
               />
