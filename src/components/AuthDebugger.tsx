@@ -30,7 +30,7 @@ const AuthDebugger: React.FC = () => {
       
       results.profileRead = profileError ? `Error: ${profileError.message}` : 'Success';
 
-      // Test insert operation
+      // Test insert operation - using correct database enum values
       const { error: insertError } = await supabase
         .from('capa_actions')
         .insert({
@@ -39,19 +39,19 @@ const AuthDebugger: React.FC = () => {
           priority: 'Medium',
           assigned_to: 'test-user',
           created_by: 'test-user',
-          source: 'Internal_Report',
+          source: 'Internal Report',
           due_date: new Date().toISOString()
         });
 
       results.capaInsert = insertError ? `Error: ${insertError.message}` : 'Success';
 
-      // Test complaints insert
+      // Test complaints insert - using correct database enum values
       const { error: complaintError } = await supabase
         .from('complaints')
         .insert({
           title: 'Test Complaint',
           description: 'Test description',
-          category: 'Product_Quality',
+          category: 'Product Quality', // Use database enum value
           created_by: 'test-user'
         });
 

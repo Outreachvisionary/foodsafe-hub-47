@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, ProfileData } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +52,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (profileError) throw profileError;
 
       if (profile && authUser.user) {
+        // Safely handle preferences field
+        const preferences = profile.preferences && typeof profile.preferences === 'object' 
+          ? profile.preferences as Record<string, any>
+          : {};
+
         const userData: User = {
           id: profile.id,
           email: authUser.user.email || '', // Get email from auth user
@@ -62,7 +66,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           role: profile.role || '',
           department: profile.department || '',
           organization_id: profile.organization_id || '',
-          preferences: profile.preferences,
+          preferences,
           created_at: profile.created_at,
           updated_at: profile.updated_at,
           status: (profile.status as 'active' | 'inactive' | 'pending') || 'active',
@@ -74,7 +78,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         const profileData: ProfileData = {
           ...profile,
           email: authUser.user.email || '',
-          preferences: profile.preferences || {}
+          preferences
         };
 
         setUser(userData);

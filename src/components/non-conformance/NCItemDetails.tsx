@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NonConformance } from '@/types/non-conformance';
 import { Package } from 'lucide-react';
-import { isStatusEqual } from '@/utils/typeAdapters';
+import { NCStatus } from '@/types/enums';
 
 interface NCItemDetailsProps {
   nonConformance: NonConformance;
@@ -40,7 +40,7 @@ const NCItemDetails: React.FC<NCItemDetailsProps> = ({ nonConformance }) => {
           <div>
             <h3 className="text-sm font-medium text-gray-500">Quantity On Hold</h3>
             <div className="flex items-center">
-              {isStatusEqual(nonConformance.status, 'On Hold') && nonConformance.quantity_on_hold ? (
+              {nonConformance.status === NCStatus.On_Hold && nonConformance.quantity_on_hold ? (
                 <>
                   <Package className="h-3 w-3 text-orange-500 mr-1" />
                   <p>{nonConformance.quantity_on_hold ? `${nonConformance.quantity_on_hold} ${nonConformance.units || ''}` : 'N/A'}</p>

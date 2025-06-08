@@ -16,7 +16,13 @@ class DatabaseService {
       const { data: result, error } = await supabase
         .from('capa_actions')
         .insert({
-          ...data,
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          assigned_to: data.assigned_to,
+          created_by: data.created_by,
+          source: data.source,
+          due_date: data.due_date,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -72,7 +78,15 @@ class DatabaseService {
       const { data: result, error } = await supabase
         .from('complaints')
         .insert({
-          ...data,
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          priority: data.priority,
+          customer_name: data.customer_name,
+          customer_contact: data.customer_contact,
+          product_involved: data.product_involved,
+          lot_number: data.lot_number,
+          created_by: data.created_by || 'system',
           reported_date: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
