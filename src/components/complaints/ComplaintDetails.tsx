@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -147,10 +146,10 @@ const ComplaintDetails: React.FC<ComplaintDetailsProps> = () => {
               <p className="text-gray-500">{complaint.priority}</p>
             </div>
           </div>
-          {complaint.resolved_date && (
+          {complaint.resolution_date && (
             <div>
               <p className="text-sm font-medium">Resolution Date</p>
-              <p className="text-gray-500">{new Date(complaint.resolved_date).toLocaleDateString()}</p>
+              <p className="text-gray-500">{new Date(complaint.resolution_date).toLocaleDateString()}</p>
             </div>
           )}
         </CardContent>

@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ComplaintCategory, ComplaintPriority } from '@/types/enums';
+import { ComplaintCategory, ComplaintPriority, ComplaintStatus } from '@/types/enums';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -71,9 +70,17 @@ export function NewComplaintForm({ onSuccess, onCancel }: NewComplaintFormProps)
       setIsLoading(true);
       
       await createComplaint({
-        ...values,
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        priority: values.priority as ComplaintPriority,
+        customer_name: values.customer_name,
+        customer_contact: values.customer_contact,
+        product_involved: values.product_involved,
+        lot_number: values.lot_number,
+        assigned_to: values.assigned_to,
         created_by: userId,
-        status: 'New' as ComplaintStatus,
+        status: ComplaintStatus.New,
         reported_date: new Date().toISOString(),
       });
       
