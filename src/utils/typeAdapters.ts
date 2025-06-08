@@ -96,3 +96,12 @@ export const stringToTrainingStatus = (status: string): TrainingStatus => {
 export const trainingStatusToString = (status: TrainingStatus): string => {
   return status;
 };
+
+// Complaint Status helpers
+export const stringToComplaintStatus = (status: string): ComplaintStatus => {
+  return status as ComplaintStatus;
+};
+
+export const complaintStatusToString = (status: ComplaintStatus): string => {
+  return status;
+};

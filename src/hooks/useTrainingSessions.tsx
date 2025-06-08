@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingStatus } from '@/types/enums';
-import { trainingStatusToString } from '@/utils/typeAdapters';
+import { trainingStatusToString, stringToTrainingStatus } from '@/utils/typeAdapters';
 
 interface TrainingSession {
   id: string;
@@ -55,19 +55,19 @@ export const useTrainingSessions = () => {
           throw new Error(error.message);
         }
 
-        // Transform data to match TrainingSession interface
+        // Transform data to match TrainingSession interface with proper fallbacks
         const sessions: TrainingSession[] = (data || []).map(item => ({
           id: item.id,
           title: item.title,
-          description: item.description,
+          description: item.description || '',
           category: item.training_category || 'General',
           type: item.training_type || 'Online',
-          duration: item.duration || 60,
+          duration: 60, // Default duration since field doesn't exist in DB
           start_date: item.start_date,
           end_date: item.due_date || item.start_date,
           instructor: item.created_by || 'TBD',
           location: item.department || 'Online',
-          capacity: 0,
+          capacity: 0, // Default capacity since field doesn't exist in DB
           created_at: item.created_at,
           updated_at: item.updated_at,
         }));
@@ -94,7 +94,7 @@ export const useTrainingSessions = () => {
 
         setTrainingRecords(data?.map(record => ({
           ...record,
-          status: record.status as TrainingStatus
+          status: stringToTrainingStatus(record.status)
         })) || []);
       } catch (err: any) {
         setError(err.message);
@@ -134,7 +134,7 @@ export const useTrainingSessions = () => {
 
       const transformedRecord: TrainingRecord = {
         ...data,
-        status: data.status as TrainingStatus
+        status: stringToTrainingStatus(data.status)
       };
 
       setTrainingRecords(prevRecords => [...prevRecords, transformedRecord]);
@@ -167,7 +167,7 @@ export const useTrainingSessions = () => {
       }
 
       setTrainingRecords(prevRecords =>
-        prevRecords.map(record => (record.id === recordId ? { ...record, ...data, status: data.status as TrainingStatus } : record))
+        prevRecords.map(record => (record.id === recordId ? { ...record, ...data, status: stringToTrainingStatus(data.status) } : record))
       );
     } catch (err: any) {
       setError(err.message);

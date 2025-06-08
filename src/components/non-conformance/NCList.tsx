@@ -40,7 +40,7 @@ const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
         id: item.id,
         title: item.title,
         description: item.description,
-        status: item.status as NCStatus,
+        status: stringToNCStatus(item.status),
         reported_date: item.reported_date,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -216,7 +216,7 @@ const NCList: React.FC<NCListProps> = ({ onItemClick, onCreateNew }) => {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <NCStatusBadge status={nc.status} />
+                  <NCStatusBadge status={nc.status as NCStatus} />
                 </div>
               </div>
             </CardContent>

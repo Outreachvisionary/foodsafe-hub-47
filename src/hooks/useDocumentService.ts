@@ -68,7 +68,7 @@ export const useDocumentService = () => {
       const documents: Document[] = (data || []).map(item => ({
         ...item,
         status: item.status as DocumentStatus,
-        checkout_status: (item.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        checkout_status: item.checkout_status as CheckoutStatus || CheckoutStatus.Available,
         category: item.category as DocumentCategory,
       }));
       
@@ -99,7 +99,7 @@ export const useDocumentService = () => {
       const document: Document = {
         ...data,
         status: data.status as DocumentStatus,
-        checkout_status: (data.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        checkout_status: data.checkout_status as CheckoutStatus || CheckoutStatus.Available,
         category: data.category as DocumentCategory,
       };
       
@@ -138,7 +138,7 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out) as any,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Checked_Out),
           checkout_user_id: userId,
           checkout_user_name: userName,
           checkout_timestamp: new Date().toISOString()
@@ -182,11 +182,11 @@ export const useDocumentService = () => {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          checkout_status: checkoutStatusToString(CheckoutStatus.Available) as any,
+          checkout_status: checkoutStatusToString(CheckoutStatus.Available),
           checkout_user_id: null,
           checkout_user_name: null,
           checkout_timestamp: null,
-          status: documentStatusToString(DocumentStatus.Published) as any
+          status: documentStatusToString(DocumentStatus.Published)
         })
         .eq('id', documentId);
       
@@ -294,7 +294,7 @@ export const useDocumentService = () => {
       return {
         ...data,
         status: data.status as DocumentStatus,
-        checkout_status: (data.checkout_status as CheckoutStatus) || CheckoutStatus.Available,
+        checkout_status: data.checkout_status as CheckoutStatus || CheckoutStatus.Available,
         category: data.category as DocumentCategory,
       } as Document;
     } catch (err) {
