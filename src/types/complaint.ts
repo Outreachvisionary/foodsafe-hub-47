@@ -1,5 +1,5 @@
 
-import { ComplaintCategory, ComplaintStatus } from '@/types/enums';
+import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
 export interface Complaint {
   id: string;
@@ -7,6 +7,7 @@ export interface Complaint {
   description: string;
   category: ComplaintCategory;
   status: ComplaintStatus;
+  priority?: ComplaintPriority;
   reported_date: string;
   resolution_date?: string;
   assigned_to?: string;
@@ -24,6 +25,7 @@ export interface CreateComplaintRequest {
   title: string;
   description: string;
   category: ComplaintCategory;
+  priority?: ComplaintPriority;
   customer_name?: string;
   customer_contact?: string;
   product_involved?: string;
@@ -36,6 +38,7 @@ export interface UpdateComplaintRequest {
   description?: string;
   category?: ComplaintCategory;
   status?: ComplaintStatus;
+  priority?: ComplaintPriority;
   assigned_to?: string;
   customer_name?: string;
   customer_contact?: string;
@@ -45,4 +48,4 @@ export interface UpdateComplaintRequest {
 }
 
 // Export enums for backward compatibility
-export { ComplaintCategory, ComplaintStatus };
+export { ComplaintCategory, ComplaintStatus, ComplaintPriority };

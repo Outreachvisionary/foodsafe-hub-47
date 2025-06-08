@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
+  name?: string; // Added for compatibility
   avatar_url?: string;
   role: string;
   department: string;

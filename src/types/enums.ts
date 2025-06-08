@@ -6,7 +6,11 @@ export enum DocumentStatus {
   Approved = 'Approved',
   Published = 'Published',
   Archived = 'Archived',
-  Rejected = 'Rejected'
+  Rejected = 'Rejected',
+  PendingReview = 'PendingReview',
+  PendingApproval = 'PendingApproval',
+  Active = 'Active',
+  Expired = 'Expired'
 }
 
 export enum DocumentCategory {
@@ -24,6 +28,7 @@ export enum DocumentCategory {
 export enum CheckoutStatus {
   Available = 'Available',
   Checked_Out = 'Checked_Out',
+  CheckedOut = 'CheckedOut',
   Locked = 'Locked'
 }
 
@@ -41,7 +46,10 @@ export enum CAPASource {
   Customer_Complaint = 'Customer_Complaint',
   Internal_Report = 'Internal_Report',
   Non_Conformance = 'Non_Conformance',
-  Supplier_Issue = 'Supplier_Issue'
+  Supplier_Issue = 'Supplier_Issue',
+  Complaint = 'Complaint',
+  Other = 'Other',
+  Management_Review = 'Management_Review'
 }
 
 export enum CAPAPriority {
@@ -63,7 +71,8 @@ export enum NCStatus {
   Under_Review = 'Under_Review',
   Released = 'Released',
   Disposed = 'Disposed',
-  Resolved = 'Resolved'
+  Resolved = 'Resolved',
+  Closed = 'Closed'
 }
 
 export enum NCItemCategory {
@@ -106,6 +115,13 @@ export enum ComplaintStatus {
   Closed = 'Closed'
 }
 
+export enum ComplaintPriority {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical'
+}
+
 // Training related enums
 export enum TrainingStatus {
   Not_Started = 'Not_Started',
@@ -113,6 +129,29 @@ export enum TrainingStatus {
   Completed = 'Completed',
   Failed = 'Failed',
   Expired = 'Expired'
+}
+
+export enum TrainingType {
+  Orientation = 'Orientation',
+  Skills = 'Skills',
+  Safety = 'Safety',
+  Compliance = 'Compliance',
+  Quality = 'Quality',
+  Technical = 'Technical',
+  Refresher = 'Refresher'
+}
+
+export enum TrainingCategory {
+  Food_Safety = 'Food_Safety',
+  HACCP = 'HACCP',
+  GMP = 'GMP',
+  SQF = 'SQF',
+  BRC = 'BRC',
+  ISO = 'ISO',
+  Allergen = 'Allergen',
+  Chemical = 'Chemical',
+  Equipment = 'Equipment',
+  Documentation = 'Documentation'
 }
 
 // Audit related enums

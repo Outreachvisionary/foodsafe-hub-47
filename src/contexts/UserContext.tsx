@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface UserContextType {
   user: User | null;
+  profile?: ProfileData | null;
   loading: boolean;
   error: string | null;
   fetchUserProfile: (userId: string) => Promise<User | null>;
@@ -29,6 +30,7 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +57,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           id: profile.id,
           email: authUser.user.email || '', // Get email from auth user
           full_name: profile.full_name || '',
+          name: profile.full_name || '', // Add name field for compatibility
           avatar_url: profile.avatar_url,
           role: profile.role || '',
           department: profile.department || '',
@@ -69,6 +72,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         };
 
         setUser(userData);
+        setProfile(profile);
         return userData;
       }
 
@@ -134,6 +138,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      setProfile(null);
     } catch (err) {
       console.error('Error signing out:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');
@@ -161,6 +166,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         await fetchUserProfile(session.user.id);
       } else {
         setUser(null);
+        setProfile(null);
         setLoading(false);
       }
     });
@@ -170,6 +176,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const value: UserContextType = {
     user,
+    profile,
     loading,
     error,
     fetchUserProfile,

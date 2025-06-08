@@ -20,6 +20,9 @@ export const useDocumentContext = () => {
   return context;
 };
 
+// Named export for compatibility
+export const useDocument = useDocumentContext;
+
 interface DocumentProviderProps {
   children: ReactNode;
 }
