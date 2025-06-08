@@ -18,10 +18,10 @@ class DatabaseService {
         .insert({
           title: data.title,
           description: data.description,
-          priority: data.priority,
+          priority: data.priority.toString(),
           assigned_to: data.assigned_to,
-          created_by: data.created_by,
-          source: data.source,
+          created_by: data.created_by || 'system',
+          source: data.source.toString(),
           due_date: data.due_date,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -80,8 +80,8 @@ class DatabaseService {
         .insert({
           title: data.title,
           description: data.description,
-          category: data.category,
-          priority: data.priority,
+          category: data.category.toString(),
+          priority: data.priority?.toString(),
           customer_name: data.customer_name,
           customer_contact: data.customer_contact,
           product_involved: data.product_involved,

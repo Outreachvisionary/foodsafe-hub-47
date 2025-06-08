@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { databaseService } from '@/services/databaseService';
+import { CAPAPriority, CAPASource, ComplaintCategory } from '@/types/enums';
 
 const DatabaseTestComponent: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -15,16 +16,16 @@ const DatabaseTestComponent: React.FC = () => {
   const [capaForm, setCAPAForm] = useState({
     title: 'Test CAPA',
     description: 'Test CAPA description',
-    priority: 'Medium' as const,
+    priority: CAPAPriority.Medium,
     assigned_to: 'test-user',
-    source: 'Internal Report' as const,
+    source: CAPASource.Internal_Report,
     due_date: new Date().toISOString().split('T')[0]
   });
 
   const [complaintForm, setComplaintForm] = useState({
     title: 'Test Complaint',
     description: 'Test complaint description',
-    category: 'Product Quality' as const
+    category: ComplaintCategory.Product_Quality
   });
 
   const testCAPACreation = async () => {

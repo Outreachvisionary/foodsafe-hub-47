@@ -78,7 +78,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         const profileData: ProfileData = {
           ...profile,
           email: authUser.user.email || '',
-          preferences
+          preferences,
+          status: (profile.status as 'active' | 'inactive' | 'pending') || 'active'
         };
 
         setUser(userData);

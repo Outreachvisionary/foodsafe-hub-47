@@ -70,6 +70,7 @@ export interface CreateCAPARequest {
   preventive_action?: string;
   effectiveness_criteria?: string;
   department?: string;
+  created_by?: string;
 }
 
 export interface UpdateCAPARequest {
