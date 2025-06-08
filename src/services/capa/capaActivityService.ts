@@ -27,8 +27,8 @@ export const createCAPAActivity = async (
       action_description: actionDescription,
       performed_at: new Date().toISOString(),
       performed_by: performedBy,
-      old_status: oldStatusStr,
-      new_status: newStatusStr,
+      old_status: oldStatusStr as "Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification" | null,
+      new_status: newStatusStr as "Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification" | null,
       metadata: metadata || {}
     };
     

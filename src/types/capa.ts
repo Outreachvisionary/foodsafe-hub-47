@@ -113,6 +113,7 @@ export interface CreateCAPARequest {
 
 export interface CAPAListProps {
   items: CAPA[];
+  capas: CAPA[];
   loading: boolean;
   error: string | null;
   onCAPAClick: (capa: CAPA) => void;

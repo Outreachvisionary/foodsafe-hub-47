@@ -11,7 +11,7 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     if (filter) {
       if (filter.status) {
         const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-        const statusStrings = statuses.map(s => capaStatusToString(s));
+        const statusStrings = statuses.map(s => capaStatusToString(s)) as ("Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification")[];
         query = query.in('status', statusStrings);
       }
       
