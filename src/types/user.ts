@@ -74,4 +74,5 @@ export interface ProfileData {
   preferred_language: string;
   department_id: string;
   assigned_facility_ids: string[];
+  preferences?: Record<string, any>;
 }

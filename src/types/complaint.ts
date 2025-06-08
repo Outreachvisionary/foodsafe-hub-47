@@ -47,5 +47,16 @@ export interface UpdateComplaintRequest {
   resolution_date?: string;
 }
 
+export interface ComplaintFilter {
+  status?: ComplaintStatus | ComplaintStatus[];
+  category?: ComplaintCategory | ComplaintCategory[];
+  priority?: ComplaintPriority | ComplaintPriority[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  searchTerm?: string;
+}
+
 // Export enums for backward compatibility
 export { ComplaintCategory, ComplaintStatus, ComplaintPriority };

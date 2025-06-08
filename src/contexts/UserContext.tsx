@@ -71,8 +71,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           assigned_facility_ids: profile.assigned_facility_ids || [],
         };
 
+        const profileData: ProfileData = {
+          ...profile,
+          email: authUser.user.email || '',
+          preferences: profile.preferences || {}
+        };
+
         setUser(userData);
-        setProfile(profile);
+        setProfile(profileData);
         return userData;
       }
 

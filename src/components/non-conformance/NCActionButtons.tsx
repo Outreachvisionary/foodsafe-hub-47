@@ -2,7 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NonConformance, NCStatus } from '@/types/non-conformance';
+import { NonConformance } from '@/types/non-conformance';
+import { NCStatus } from '@/types/enums';
 import { isStatusEqual } from '@/utils/typeAdapters';
 
 interface NCActionButtonsProps {
@@ -15,12 +16,12 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
     // In a real implementation, this would call an API to update the status
     onUpdate({
       ...nonConformance,
-      status: newStatus
+      status: newStatus as any
     });
   };
 
   // Use the isStatusEqual helper to safely compare status values
-  const isCurrentStatus = (compareStatus: string): boolean => {
+  const isCurrentStatus = (compareStatus: NCStatus): boolean => {
     return isStatusEqual(nonConformance.status, compareStatus);
   };
 
@@ -31,44 +32,44 @@ export const NCActionButtons: React.FC<NCActionButtonsProps> = ({ nonConformance
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
-          {isCurrentStatus('On Hold') && (
+          {isCurrentStatus(NCStatus.On_Hold) && (
             <>
               <Button 
                 variant="outline" 
-                onClick={() => handleUpdateStatus('Under Investigation')}
+                onClick={() => handleUpdateStatus(NCStatus.Under_Review)}
               >
                 Start Investigation
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => handleUpdateStatus('Released')}
+                onClick={() => handleUpdateStatus(NCStatus.Released)}
               >
                 Release Item
               </Button>
             </>
           )}
           
-          {isCurrentStatus('Under Investigation') && (
+          {isCurrentStatus(NCStatus.Under_Review) && (
             <>
               <Button 
                 variant="outline"
-                onClick={() => handleUpdateStatus('Resolved')}
+                onClick={() => handleUpdateStatus(NCStatus.Resolved)}
               >
                 Mark as Resolved
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => handleUpdateStatus('Rejected')}
+                onClick={() => handleUpdateStatus(NCStatus.Disposed)}
               >
-                Reject Item
+                Dispose Item
               </Button>
             </>
           )}
           
-          {(isCurrentStatus('Resolved') || isCurrentStatus('Rejected')) && (
+          {(isCurrentStatus(NCStatus.Resolved) || isCurrentStatus(NCStatus.Disposed)) && (
             <Button 
               variant="outline"
-              onClick={() => handleUpdateStatus('Closed')}
+              onClick={() => handleUpdateStatus(NCStatus.Closed)}
             >
               Close Non-Conformance
             </Button>

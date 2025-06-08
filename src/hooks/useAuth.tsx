@@ -29,15 +29,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           const userData: User = {
             id: session.user.id,
-            email: session.user.email || undefined,
-            full_name: session.user.user_metadata?.full_name,
-            name: session.user.user_metadata?.full_name,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name || '',
+            name: session.user.user_metadata?.full_name || '',
             avatar_url: session.user.user_metadata?.avatar_url,
-            user_metadata: session.user.user_metadata,
+            role: '',
+            department: '',
+            organization_id: '',
             preferences: {
               reportLayout: 'grid', // Default preferences
               theme: 'light',
-            }
+            },
+            created_at: '',
+            updated_at: '',
+            status: 'active',
+            preferred_language: '',
+            department_id: '',
+            assigned_facility_ids: [],
           };
           setUser(userData);
         }
@@ -56,15 +64,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           const userData: User = {
             id: session.user.id,
-            email: session.user.email || undefined,
-            full_name: session.user.user_metadata?.full_name,
-            name: session.user.user_metadata?.full_name,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name || '',
+            name: session.user.user_metadata?.full_name || '',
             avatar_url: session.user.user_metadata?.avatar_url,
-            user_metadata: session.user.user_metadata,
+            role: '',
+            department: '',
+            organization_id: '',
             preferences: {
               reportLayout: 'grid', // Default preferences
               theme: 'light',
-            }
+            },
+            created_at: '',
+            updated_at: '',
+            status: 'active',
+            preferred_language: '',
+            department_id: '',
+            assigned_facility_ids: [],
           };
           setUser(userData);
         } else {
