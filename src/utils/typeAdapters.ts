@@ -39,3 +39,8 @@ export const capaPriorityToString = (priority: CAPAPriority): string => {
 export const effectivenessRatingToString = (rating: EffectivenessRating): string => {
   return rating;
 };
+
+// Helper function to check if string status equals enum status
+export const isStringStatusEqual = (stringStatus: string, enumStatus: CAPAStatus): boolean => {
+  return stringStatus === enumStatus;
+};

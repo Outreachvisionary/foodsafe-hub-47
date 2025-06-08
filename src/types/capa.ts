@@ -42,8 +42,13 @@ export interface CAPAActivity {
 
 export interface CAPAStats {
   total: number;
+  open: number;
   openCount: number;
+  closed: number;
   closedCount: number;
+  completed: number;
+  inProgress: number;
+  overdue: number;
   overdueCount: number;
   pendingVerificationCount: number;
   byPriority: Record<CAPAPriority, number>;

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CAPAEffectivenessRating } from '@/types/enums';
+import { EffectivenessRating } from '@/types/enums';
 import { useToast } from '@/hooks/use-toast';
 
 interface CAPAEffectivenessFormProps {
@@ -15,7 +15,7 @@ interface CAPAEffectivenessFormProps {
     rootCauseEliminated: boolean;
     preventiveMeasuresImplemented: boolean;
     documentationComplete: boolean;
-    rating: CAPAEffectivenessRating;
+    rating: EffectivenessRating;
     notes: string;
     score: number;
   }) => void;
@@ -26,7 +26,7 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId, o
   const [rootCauseEliminated, setRootCauseEliminated] = useState(false);
   const [preventiveMeasuresImplemented, setPreventiveMeasuresImplemented] = useState(false);
   const [documentationComplete, setDocumentationComplete] = useState(false);
-  const [rating, setRating] = useState<CAPAEffectivenessRating>(CAPAEffectivenessRating.NotEffective);
+  const [rating, setRating] = useState<EffectivenessRating>(EffectivenessRating.Ineffective);
   const [notes, setNotes] = useState('');
 
   const calculateScore = () => {
@@ -108,16 +108,15 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({ capaId, o
           <Label htmlFor="rating">Overall effectiveness rating</Label>
           <Select 
             value={rating} 
-            onValueChange={(value: CAPAEffectivenessRating) => setRating(value)}
+            onValueChange={(value: EffectivenessRating) => setRating(value)}
           >
             <SelectTrigger id="rating">
               <SelectValue placeholder="Select rating" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={CAPAEffectivenessRating.NotEffective}>Not Effective</SelectItem>
-              <SelectItem value={CAPAEffectivenessRating.PartiallyEffective}>Partially Effective</SelectItem>
-              <SelectItem value={CAPAEffectivenessRating.Effective}>Effective</SelectItem>
-              <SelectItem value={CAPAEffectivenessRating.HighlyEffective}>Highly Effective</SelectItem>
+              <SelectItem value={EffectivenessRating.Ineffective}>Ineffective</SelectItem>
+              <SelectItem value={EffectivenessRating.Partially_Effective}>Partially Effective</SelectItem>
+              <SelectItem value={EffectivenessRating.Effective}>Effective</SelectItem>
             </SelectContent>
           </Select>
         </div>

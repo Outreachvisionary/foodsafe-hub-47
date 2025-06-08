@@ -1,23 +1,18 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CAPAStatus, CAPAEffectivenessRating } from '@/types/enums';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CAPAStatus, EffectivenessRating } from '@/types/enums';
 import { useToast } from '@/hooks/use-toast';
+import { formatEnumValue } from '@/utils/typeAdapters';
 
 interface CAPAStatusFormProps {
   capaId: string;
   currentStatus: CAPAStatus;
-  onUpdateStatus: (newStatus: CAPAStatus) => Promise<void>;
+  onUpdateStatus: (status: CAPAStatus) => void;
 }
 
 const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({ 
@@ -25,94 +20,47 @@ const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({
   currentStatus, 
   onUpdateStatus 
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState<CAPAStatus | ''>('');
-  const [effectivenessRating, setEffectivenessRating] = useState<CAPAEffectivenessRating | ''>('');
-  const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [selectedStatus, setSelectedStatus] = useState<CAPAStatus>(currentStatus);
+  const [comments, setComments] = useState('');
 
-  // Function to get available status options based on current status
-  const getAvailableStatuses = (): CAPAStatus[] => {
-    switch (currentStatus) {
+  const getNextAllowedStatuses = (current: CAPAStatus): CAPAStatus[] => {
+    switch (current) {
       case CAPAStatus.Open:
-        return [CAPAStatus.InProgress, CAPAStatus.OnHold, CAPAStatus.Rejected];
-      case CAPAStatus.InProgress:
-        return [CAPAStatus.Open, CAPAStatus.OnHold, CAPAStatus.Completed];
-      case CAPAStatus.Completed:
-        return [CAPAStatus.PendingVerification, CAPAStatus.InProgress, CAPAStatus.Closed];
-      case CAPAStatus.PendingVerification:
-        return [CAPAStatus.Verified, CAPAStatus.InProgress];
-      case CAPAStatus.OnHold:
-        return [CAPAStatus.InProgress, CAPAStatus.Open, CAPAStatus.Rejected];
-      case CAPAStatus.Rejected:
-        return [CAPAStatus.Open];
-      case CAPAStatus.Verified:
-        return [CAPAStatus.Closed];
+        return [CAPAStatus.In_Progress, CAPAStatus.Cancelled];
+      case CAPAStatus.In_Progress:
+        return [CAPAStatus.Pending_Verification, CAPAStatus.Cancelled];
+      case CAPAStatus.Pending_Verification:
+        return [CAPAStatus.Closed, CAPAStatus.In_Progress];
       case CAPAStatus.Closed:
-        return [CAPAStatus.InProgress]; // Can reopen
-      case CAPAStatus.Overdue:
-        return [CAPAStatus.InProgress, CAPAStatus.OnHold, CAPAStatus.Rejected];
-      case CAPAStatus.UnderReview:
-        return [CAPAStatus.InProgress, CAPAStatus.PendingVerification, CAPAStatus.Rejected];
+        return [];
+      case CAPAStatus.Cancelled:
+        return [CAPAStatus.Open];
       default:
         return [];
     }
   };
 
-  // Check if verification form should be shown
-  const showVerificationForm = selectedStatus === CAPAStatus.Verified;
-
-  // Format status for display
-  const formatStatus = (status: string): string => {
-    return status.replace(/_/g, ' ');
-  };
-
-  // Handle status update submission
-  const handleSubmit = async () => {
-    if (!selectedStatus) {
+  const handleStatusUpdate = () => {
+    if (selectedStatus === currentStatus) {
       toast({
-        title: "Error",
-        description: "Please select a status",
-        variant: "destructive",
+        title: 'No Change',
+        description: 'Status is already set to the selected value',
+        variant: 'default',
       });
       return;
     }
 
-    if (showVerificationForm && !effectivenessRating) {
-      toast({
-        title: "Error",
-        description: "Please select an effectiveness rating",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Call the update function passed from parent
-      await onUpdateStatus(selectedStatus);
-      
-      toast({
-        title: "Status Updated",
-        description: `CAPA status changed to ${formatStatus(selectedStatus)}`,
-      });
-      
-      // Reset form
-      setSelectedStatus('');
-      setEffectivenessRating('');
-      setComment('');
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Update Failed",
-        description: "There was an error updating the status",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onUpdateStatus(selectedStatus);
+    setComments('');
+    
+    toast({
+      title: 'Status Updated',
+      description: `CAPA status changed to ${formatEnumValue(selectedStatus)}`,
+    });
   };
+
+  const allowedStatuses = getNextAllowedStatuses(currentStatus);
 
   return (
     <Card>
@@ -120,71 +68,62 @@ const CAPAStatusForm: React.FC<CAPAStatusFormProps> = ({
         <CardTitle>Update Status</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="status-select">Change status to</Label>
-          <Select 
-            value={selectedStatus} 
-            onValueChange={(value) => setSelectedStatus(value as CAPAStatus)}
-          >
-            <SelectTrigger id="status-select">
-              <SelectValue placeholder="Select new status" />
-            </SelectTrigger>
-            <SelectContent>
-              {getAvailableStatuses().map((status) => (
-                <SelectItem key={status} value={status}>
-                  {formatStatus(status)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <Label htmlFor="current-status">Current Status</Label>
+          <div className="p-2 bg-muted rounded">
+            {formatEnumValue(currentStatus)}
+          </div>
         </div>
-        
-        {showVerificationForm && (
-          <div>
-            <Label htmlFor="effectiveness-rating">Effectiveness Rating</Label>
+
+        {allowedStatuses.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="new-status">New Status</Label>
             <Select 
-              value={effectivenessRating} 
-              onValueChange={(value) => setEffectivenessRating(value as CAPAEffectivenessRating)}
+              value={selectedStatus} 
+              onValueChange={(value: CAPAStatus) => setSelectedStatus(value)}
             >
-              <SelectTrigger id="effectiveness-rating">
-                <SelectValue placeholder="Select effectiveness rating" />
+              <SelectTrigger id="new-status">
+                <SelectValue placeholder="Select new status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CAPAEffectivenessRating.NotEffective}>
-                  Not Effective
+                <SelectItem value={currentStatus}>
+                  {formatEnumValue(currentStatus)} (Current)
                 </SelectItem>
-                <SelectItem value={CAPAEffectivenessRating.PartiallyEffective}>
-                  Partially Effective
-                </SelectItem>
-                <SelectItem value={CAPAEffectivenessRating.Effective}>
-                  Effective
-                </SelectItem>
-                <SelectItem value={CAPAEffectivenessRating.HighlyEffective}>
-                  Highly Effective
-                </SelectItem>
+                {allowedStatuses.map(status => (
+                  <SelectItem key={status} value={status}>
+                    {formatEnumValue(status)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         )}
-        
-        <div>
-          <Label htmlFor="comment">Comment (optional)</Label>
+
+        <div className="space-y-2">
+          <Label htmlFor="comments">Comments (Optional)</Label>
           <Textarea
-            id="comment"
-            placeholder="Add a comment about this status change"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            id="comments"
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            placeholder="Add any comments about this status change..."
+            rows={3}
           />
         </div>
+
+        {allowedStatuses.length > 0 ? (
+          <Button 
+            onClick={handleStatusUpdate} 
+            className="w-full"
+            disabled={selectedStatus === currentStatus}
+          >
+            Update Status
+          </Button>
+        ) : (
+          <div className="text-sm text-muted-foreground text-center py-2">
+            No status changes allowed from current state
+          </div>
+        )}
       </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handleSubmit}
-          disabled={!selectedStatus || isSubmitting || (showVerificationForm && !effectivenessRating)}
-        >
-          {isSubmitting ? 'Updating...' : 'Update Status'}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

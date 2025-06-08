@@ -1,489 +1,248 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { CheckedState } from '@radix-ui/react-checkbox';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { DatePicker } from '@/components/ui/date-picker';
-import { CAPAFilter, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { X, Filter } from 'lucide-react';
+import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
+import { CAPAFilter } from '@/types/capa';
+import { formatEnumValue } from '@/utils/typeAdapters';
 
 interface CAPAFiltersProps {
-  filters: CAPAFilter;
-  setFilters: React.Dispatch<React.SetStateAction<CAPAFilter>>;
-  searchQuery?: string;
+  onFilterChange: (filters: CAPAFilter) => void;
+  initialFilters?: CAPAFilter;
 }
 
-const CAPAFilters: React.FC<CAPAFiltersProps> = ({ filters, setFilters, searchQuery }) => {
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    filters.dateRange?.start ? new Date(filters.dateRange.start) : undefined
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    filters.dateRange?.end ? new Date(filters.dateRange.end) : undefined
-  );
+const CAPAFilters: React.FC<CAPAFiltersProps> = ({ onFilterChange, initialFilters = {} }) => {
+  const [filters, setFilters] = useState<CAPAFilter>(initialFilters);
 
-  // Sample departments data
-  const departments = [
-    'Quality Assurance',
-    'Production',
-    'Maintenance',
-    'Management',
-    'Food Safety',
-    'Supply Chain',
-  ];
-
-  // Handle status filter change
-  const handleStatusChange = (status: CAPAStatus, checked: CheckedState) => {
-    if (checked) {
-      // Add status to filters
-      const currentStatuses = filters.status
-        ? Array.isArray(filters.status)
-          ? [...filters.status]
-          : [filters.status]
-        : [];
-      if (!currentStatuses.includes(status)) {
-        setFilters((prev) => ({
-          ...prev,
-          status: [...currentStatuses, status],
-        }));
-      }
-    } else {
-      // Remove status from filters
-      const currentStatuses = filters.status
-        ? Array.isArray(filters.status)
-          ? [...filters.status]
-          : [filters.status]
-        : [];
-      setFilters((prev) => ({
-        ...prev,
-        status: currentStatuses.filter((s) => s !== status),
-      }));
-    }
+  const updateFilter = (key: keyof CAPAFilter, value: any) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
   };
 
-  // Handle priority filter change
-  const handlePriorityChange = (priority: CAPAPriority, checked: CheckedState) => {
-    if (checked) {
-      // Add priority to filters
-      const currentPriorities = filters.priority
-        ? Array.isArray(filters.priority)
-          ? [...filters.priority]
-          : [filters.priority]
-        : [];
-      if (!currentPriorities.includes(priority)) {
-        setFilters((prev) => ({
-          ...prev,
-          priority: [...currentPriorities, priority],
-        }));
-      }
-    } else {
-      // Remove priority from filters
-      const currentPriorities = filters.priority
-        ? Array.isArray(filters.priority)
-          ? [...filters.priority]
-          : [filters.priority]
-        : [];
-      setFilters((prev) => ({
-        ...prev,
-        priority: currentPriorities.filter((p) => p !== priority),
-      }));
-    }
+  const removeFilter = (key: keyof CAPAFilter) => {
+    const newFilters = { ...filters };
+    delete newFilters[key];
+    setFilters(newFilters);
+    onFilterChange(newFilters);
   };
 
-  // Handle source filter change
-  const handleSourceChange = (source: CAPASource, checked: CheckedState) => {
-    if (checked) {
-      // Add source to filters
-      const currentSources = filters.source
-        ? Array.isArray(filters.source)
-          ? [...filters.source]
-          : [filters.source]
-        : [];
-      if (!currentSources.includes(source)) {
-        setFilters((prev) => ({
-          ...prev,
-          source: [...currentSources, source],
-        }));
-      }
-    } else {
-      // Remove source from filters
-      const currentSources = filters.source
-        ? Array.isArray(filters.source)
-          ? [...filters.source]
-          : [filters.source]
-        : [];
-      setFilters((prev) => ({
-        ...prev,
-        source: currentSources.filter((s) => s !== source),
-      }));
-    }
+  const clearAllFilters = () => {
+    setFilters({});
+    onFilterChange({});
   };
 
-  // Handle department filter change
-  const handleDepartmentChange = (department: string, checked: CheckedState) => {
-    if (checked) {
-      // Add department to filters
-      const currentDepartments = filters.department
-        ? Array.isArray(filters.department)
-          ? [...filters.department]
-          : [filters.department]
-        : [];
-      if (!currentDepartments.includes(department)) {
-        setFilters((prev) => ({
-          ...prev,
-          department: [...currentDepartments, department],
-        }));
-      }
-    } else {
-      // Remove department from filters
-      const currentDepartments = filters.department
-        ? Array.isArray(filters.department)
-          ? [...filters.department]
-          : [filters.department]
-        : [];
-      setFilters((prev) => ({
-        ...prev,
-        department: currentDepartments.filter((d) => d !== department),
-      }));
-    }
-  };
-
-  // Update date range filter when dates change
-  const handleStartDateChange = (date: Date | undefined) => {
-    setStartDate(date);
-    if (date) {
-      setFilters((prev) => ({
-        ...prev,
-        dateRange: {
-          start: date.toISOString(),
-          end: prev.dateRange?.end || endDate?.toISOString() || new Date().toISOString(),
-        },
-      }));
-    } else if (!endDate) {
-      // If both start and end dates are cleared, remove the date range filter
-      setFilters((prev) => ({
-        ...prev,
-        dateRange: undefined,
-      }));
-    }
-  };
-
-  const handleEndDateChange = (date: Date | undefined) => {
-    setEndDate(date);
-    if (date) {
-      setFilters((prev) => ({
-        ...prev,
-        dateRange: {
-          start: prev.dateRange?.start || startDate?.toISOString() || new Date().toISOString(),
-          end: date.toISOString(),
-        },
-      }));
-    } else if (!startDate) {
-      // If both start and end dates are cleared, remove the date range filter
-      setFilters((prev) => ({
-        ...prev,
-        dateRange: undefined,
-      }));
-    }
-  };
-
-  // Handle preset date ranges
-  const applyDatePreset = (preset: 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth') => {
-    const now = new Date();
-    let start: Date;
-    let end: Date = now;
-
-    switch (preset) {
-      case 'last7days':
-        start = new Date(now);
-        start.setDate(now.getDate() - 7);
-        break;
-      case 'last30days':
-        start = new Date(now);
-        start.setDate(now.getDate() - 30);
-        break;
-      case 'thisMonth':
-        start = startOfMonth(now);
-        end = endOfMonth(now);
-        break;
-      case 'lastMonth':
-        const lastMonth = new Date(now);
-        lastMonth.setMonth(now.getMonth() - 1);
-        start = startOfMonth(lastMonth);
-        end = endOfMonth(lastMonth);
-        break;
-      default:
-        start = new Date(now);
-        start.setDate(now.getDate() - 7);
-    }
-
-    setStartDate(start);
-    setEndDate(end);
-    setFilters((prev) => ({
-      ...prev,
-      dateRange: {
-        start: start.toISOString(),
-        end: end.toISOString(),
-      },
-    }));
-  };
-
-  // Reset all filters
-  const resetFilters = () => {
-    setFilters({
-      status: undefined,
-      priority: undefined,
-      source: undefined,
-      department: undefined,
-      dateRange: undefined,
-      searchTerm: searchQuery,
-    });
-    setStartDate(undefined);
-    setEndDate(undefined);
-  };
-
-  // Check if a status is selected
-  const isStatusSelected = (status: CAPAStatus): boolean => {
-    if (!filters.status) return false;
-    return Array.isArray(filters.status)
-      ? filters.status.includes(status)
-      : filters.status === status;
-  };
-
-  // Check if a priority is selected
-  const isPrioritySelected = (priority: CAPAPriority): boolean => {
-    if (!filters.priority) return false;
-    return Array.isArray(filters.priority)
-      ? filters.priority.includes(priority)
-      : filters.priority === priority;
-  };
-
-  // Check if a source is selected
-  const isSourceSelected = (source: CAPASource): boolean => {
-    if (!filters.source) return false;
-    return Array.isArray(filters.source)
-      ? filters.source.includes(source)
-      : filters.source === source;
-  };
-
-  // Check if a department is selected
-  const isDepartmentSelected = (department: string): boolean => {
-    if (!filters.department) return false;
+  const toggleStatusFilter = (status: CAPAStatus) => {
+    const currentStatuses = Array.isArray(filters.status) ? filters.status : 
+                           filters.status ? [filters.status] : [];
     
-    if (Array.isArray(filters.department)) {
-      return filters.department.includes(department);
-    }
+    const newStatuses = currentStatuses.includes(status)
+      ? currentStatuses.filter(s => s !== status)
+      : [...currentStatuses, status];
     
-    return filters.department === department;
+    updateFilter('status', newStatuses.length > 0 ? newStatuses : undefined);
   };
+
+  const togglePriorityFilter = (priority: CAPAPriority) => {
+    const currentPriorities = Array.isArray(filters.priority) ? filters.priority : 
+                             filters.priority ? [filters.priority] : [];
+    
+    const newPriorities = currentPriorities.includes(priority)
+      ? currentPriorities.filter(p => p !== priority)
+      : [...currentPriorities, priority];
+    
+    updateFilter('priority', newPriorities.length > 0 ? newPriorities : undefined);
+  };
+
+  const toggleSourceFilter = (source: CAPASource) => {
+    const currentSources = Array.isArray(filters.source) ? filters.source : 
+                          filters.source ? [filters.source] : [];
+    
+    const newSources = currentSources.includes(source)
+      ? currentSources.filter(s => s !== source)
+      : [...currentSources, source];
+    
+    updateFilter('source', newSources.length > 0 ? newSources : undefined);
+  };
+
+  const hasActiveFilters = Object.keys(filters).some(key => filters[key as keyof CAPAFilter] !== undefined);
+  const activeStatusFilters = Array.isArray(filters.status) ? filters.status : 
+                             filters.status ? [filters.status] : [];
+  const activePriorityFilters = Array.isArray(filters.priority) ? filters.priority : 
+                               filters.priority ? [filters.priority] : [];
+  const activeSourceFilters = Array.isArray(filters.source) ? filters.source : 
+                             filters.source ? [filters.source] : [];
 
   return (
-    <Card className="sticky top-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium flex justify-between items-center">
-          Filters
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Reset
-          </Button>
-        </CardTitle>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </CardTitle>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={clearAllFilters}>
+              Clear All
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4 pt-0">
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Status</Label>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isStatusSelected('Open')}
-                onCheckedChange={(checked) => handleStatusChange('Open', checked)}
-              />
-              <Label className="text-sm">Open</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isStatusSelected('In Progress')}
-                onCheckedChange={(checked) => handleStatusChange('In Progress', checked)}
-              />
-              <Label className="text-sm">In Progress</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isStatusSelected('Completed')}
-                onCheckedChange={(checked) => handleStatusChange('Completed', checked)}
-              />
-              <Label className="text-sm">Completed</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isStatusSelected('Closed')}
-                onCheckedChange={(checked) => handleStatusChange('Closed', checked)}
-              />
-              <Label className="text-sm">Closed</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isStatusSelected('Overdue')}
-                onCheckedChange={(checked) => handleStatusChange('Overdue', checked)}
-              />
-              <Label className="text-sm">Overdue</Label>
-            </div>
+      <CardContent className="space-y-4">
+        {/* Search */}
+        <div className="space-y-2">
+          <Label>Search</Label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search by title or description..."
+              value={filters.searchTerm || ''}
+              onChange={(e) => updateFilter('searchTerm', e.target.value || undefined)}
+            />
+            {filters.searchTerm && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeFilter('searchTerm')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
-        <Separator />
-
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Priority</Label>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isPrioritySelected('Low')}
-                onCheckedChange={(checked) => handlePriorityChange('Low', checked)}
-              />
-              <Label className="text-sm">Low</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isPrioritySelected('Medium')}
-                onCheckedChange={(checked) => handlePriorityChange('Medium', checked)}
-              />
-              <Label className="text-sm">Medium</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isPrioritySelected('High')}
-                onCheckedChange={(checked) => handlePriorityChange('High', checked)}
-              />
-              <Label className="text-sm">High</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isPrioritySelected('Critical')}
-                onCheckedChange={(checked) => handlePriorityChange('Critical', checked)}
-              />
-              <Label className="text-sm">Critical</Label>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Source</Label>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isSourceSelected('Audit')}
-                onCheckedChange={(checked) => handleSourceChange('Audit', checked)}
-              />
-              <Label className="text-sm">Audit</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isSourceSelected('Customer Complaint')}
-                onCheckedChange={(checked) => handleSourceChange('Customer Complaint', checked)}
-              />
-              <Label className="text-sm">Customer Complaint</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isSourceSelected('Internal Report')}
-                onCheckedChange={(checked) => handleSourceChange('Internal Report', checked)}
-              />
-              <Label className="text-sm">Internal Report</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isSourceSelected('Non-Conformance')}
-                onCheckedChange={(checked) => handleSourceChange('Non-Conformance', checked)}
-              />
-              <Label className="text-sm">Non-Conformance</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={isSourceSelected('Supplier Issue')}
-                onCheckedChange={(checked) => handleSourceChange('Supplier Issue', checked)}
-              />
-              <Label className="text-sm">Supplier Issue</Label>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Department</Label>
-          <div className="space-y-2">
-            {departments.map((department) => (
-              <div key={department} className="flex items-center space-x-2">
-                <Checkbox
-                  checked={isDepartmentSelected(department)}
-                  onCheckedChange={(checked) => handleDepartmentChange(department, checked)}
-                />
-                <Label className="text-sm">{department}</Label>
-              </div>
+        {/* Status Filters */}
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <div className="flex flex-wrap gap-2">
+            {Object.values(CAPAStatus).map((status) => (
+              <Badge
+                key={status}
+                variant={activeStatusFilters.includes(status) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => toggleStatusFilter(status)}
+              >
+                {formatEnumValue(status)}
+              </Badge>
             ))}
           </div>
         </div>
 
-        <Separator />
+        {/* Priority Filters */}
+        <div className="space-y-2">
+          <Label>Priority</Label>
+          <div className="flex flex-wrap gap-2">
+            {Object.values(CAPAPriority).map((priority) => (
+              <Badge
+                key={priority}
+                variant={activePriorityFilters.includes(priority) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => togglePriorityFilter(priority)}
+              >
+                {priority}
+              </Badge>
+            ))}
+          </div>
+        </div>
 
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Date Range</Label>
+        {/* Source Filters */}
+        <div className="space-y-2">
+          <Label>Source</Label>
+          <div className="flex flex-wrap gap-2">
+            {Object.values(CAPASource).map((source) => (
+              <Badge
+                key={source}
+                variant={activeSourceFilters.includes(source) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => toggleSourceFilter(source)}
+              >
+                {formatEnumValue(source)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Range Filters */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <div>
-              <Label className="text-xs mb-1 block">From</Label>
-              <DatePicker
-                date={startDate}
-                onSelect={handleStartDateChange}
-                placeholder="Start date"
-              />
-            </div>
-            <div>
-              <Label className="text-xs mb-1 block">To</Label>
-              <DatePicker
-                date={endDate}
-                onSelect={handleEndDateChange}
-                placeholder="End date"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1 pt-2">
+            <Label>Created Date From</Label>
+            <Input
+              type="date"
+              value={filters.createdDateFrom || ''}
+              onChange={(e) => updateFilter('createdDateFrom', e.target.value || undefined)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Created Date To</Label>
+            <Input
+              type="date"
+              value={filters.createdDateTo || ''}
+              onChange={(e) => updateFilter('createdDateTo', e.target.value || undefined)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Due Date From</Label>
+            <Input
+              type="date"
+              value={filters.dueDateFrom || ''}
+              onChange={(e) => updateFilter('dueDateFrom', e.target.value || undefined)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Due Date To</Label>
+            <Input
+              type="date"
+              value={filters.dueDateTo || ''}
+              onChange={(e) => updateFilter('dueDateTo', e.target.value || undefined)}
+            />
+          </div>
+        </div>
+
+        {/* Assigned To Filter */}
+        <div className="space-y-2">
+          <Label>Assigned To</Label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter assignee name..."
+              value={Array.isArray(filters.assignedTo) ? filters.assignedTo.join(', ') : filters.assignedTo || ''}
+              onChange={(e) => updateFilter('assignedTo', e.target.value || undefined)}
+            />
+            {filters.assignedTo && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => applyDatePreset('last7days')}
-                className="text-xs"
+                onClick={() => removeFilter('assignedTo')}
               >
-                Last 7 days
+                <X className="h-4 w-4" />
               </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Department Filter */}
+        <div className="space-y-2">
+          <Label>Department</Label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter department..."
+              value={Array.isArray(filters.department) ? filters.department.join(', ') : filters.department || ''}
+              onChange={(e) => updateFilter('department', e.target.value || undefined)}
+            />
+            {filters.department && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => applyDatePreset('last30days')}
-                className="text-xs"
+                onClick={() => removeFilter('department')}
               >
-                Last 30 days
+                <X className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => applyDatePreset('thisMonth')}
-                className="text-xs"
-              >
-                This month
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </CardContent>
