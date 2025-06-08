@@ -1,69 +1,83 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Lock, Unlock, User } from 'lucide-react';
+import { Lock, Unlock, UserCheck } from 'lucide-react';
 import { CheckoutStatus } from '@/types/enums';
 
 interface DocumentCheckoutActionsProps {
   status: CheckoutStatus;
   checkedOutBy?: string;
-  isCurrentUser: boolean;
-  onCheckout: () => void;
-  onCheckin: () => void;
+  isCurrentUser?: boolean;
+  onCheckout?: () => void;
+  onCheckin?: () => void;
+  disabled?: boolean;
 }
 
 const DocumentCheckoutActions: React.FC<DocumentCheckoutActionsProps> = ({
   status,
   checkedOutBy,
-  isCurrentUser,
+  isCurrentUser = false,
   onCheckout,
-  onCheckin
+  onCheckin,
+  disabled = false
 }) => {
-  if (status === CheckoutStatus.Available) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onCheckout}
-      >
-        <Lock className="h-4 w-4 mr-2" />
-        Check Out
-      </Button>
-    );
-  }
+  const getStatusDisplay = () => {
+    switch (status) {
+      case CheckoutStatus.Available:
+        return {
+          text: 'Available',
+          color: 'text-green-600',
+          icon: <Unlock className="h-4 w-4" />
+        };
+      case CheckoutStatus.Checked_Out:
+        return {
+          text: isCurrentUser ? 'Checked out by you' : `Checked out by ${checkedOutBy}`,
+          color: isCurrentUser ? 'text-blue-600' : 'text-red-600',
+          icon: <Lock className="h-4 w-4" />
+        };
+      default:
+        return {
+          text: 'Unknown',
+          color: 'text-gray-600',
+          icon: <Lock className="h-4 w-4" />
+        };
+    }
+  };
 
-  if (status === CheckoutStatus.CheckedOut) {
-    return (
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <User className="h-3 w-3" />
-          Checked out by {checkedOutBy}
-        </Badge>
-        {isCurrentUser && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCheckin}
-          >
-            <Unlock className="h-4 w-4 mr-2" />
-            Check In
-          </Button>
-        )}
+  const statusDisplay = getStatusDisplay();
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-1 text-sm ${statusDisplay.color}`}>
+        {statusDisplay.icon}
+        <span>{statusDisplay.text}</span>
       </div>
-    );
-  }
-
-  if (status === CheckoutStatus.Locked) {
-    return (
-      <Badge variant="destructive" className="flex items-center gap-1">
-        <Lock className="h-3 w-3" />
-        Locked
-      </Badge>
-    );
-  }
-
-  return null;
+      
+      {status === CheckoutStatus.Available && onCheckout && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onCheckout}
+          disabled={disabled}
+        >
+          <UserCheck className="h-4 w-4 mr-2" />
+          Check Out
+        </Button>
+      )}
+      
+      {status === CheckoutStatus.Checked_Out && isCurrentUser && onCheckin && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onCheckin}
+          disabled={disabled}
+        >
+          <Unlock className="h-4 w-4 mr-2" />
+          Check In
+        </Button>
+      )}
+    </div>
+  );
 };
 
 export default DocumentCheckoutActions;

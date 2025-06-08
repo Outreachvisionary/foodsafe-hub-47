@@ -1,62 +1,57 @@
-import React, { useState } from 'react';
-import { Document } from '@/types/document';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardCheck, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CheckCircle, XCircle, Clock, User } from 'lucide-react';
+import { Document } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
+import { documentStatusToString } from '@/utils/typeAdapters';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentApproverProps {
   document: Document;
-  onApprove: (document: Document, comment: string) => void;
-  onReject: (document: Document, reason: string) => void;
+  currentUserId: string;
+  currentUserName: string;
+  canApprove?: boolean;
+  onApprovalAction?: (action: 'approve' | 'reject', comment?: string) => void;
+  onStatusUpdate?: (status: DocumentStatus) => void;
 }
 
-const DocumentApprover: React.FC<DocumentApproverProps> = ({ 
-  document, 
-  onApprove, 
-  onReject 
+const DocumentApprover: React.FC<DocumentApproverProps> = ({
+  document,
+  currentUserId,
+  currentUserName,
+  canApprove = false,
+  onApprovalAction,
+  onStatusUpdate
 }) => {
+  const { toast } = useToast();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
-  // Debug function
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[DocumentApprover] ${message}`, data ? data : '');
-    }
-  };
+  const [newStatus, setNewStatus] = useState<DocumentStatus>(document.status);
 
   const handleApprove = async () => {
-    debugLog('Approve clicked', { document });
-    
-    if (!document || !document.id) {
-      toast({
-        title: "Error",
-        description: "Cannot approve: Invalid document data",
-        variant: "destructive"
-      });
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      debugLog('Approving document', { id: document.id, comment });
-      await onApprove(document, comment);
+      if (onApprovalAction) {
+        await onApprovalAction('approve', comment);
+      }
       
       toast({
-        title: "Document approved",
-        description: "The document has been approved successfully"
+        title: 'Document Approved',
+        description: 'The document has been successfully approved.',
       });
+      
+      setComment('');
     } catch (error) {
-      console.error('Error approving document:', error);
       toast({
-        title: "Error approving document",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to approve document. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -64,141 +59,199 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
   };
 
   const handleReject = async () => {
-    debugLog('Reject clicked', { document });
-    
-    if (!document || !document.id) {
-      toast({
-        title: "Error",
-        description: "Cannot reject: Invalid document data",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!comment.trim()) {
       toast({
-        title: "Comment required",
-        description: "Please provide a reason for rejecting this document",
-        variant: "destructive"
+        title: 'Comment Required',
+        description: 'Please provide a reason for rejecting this document.',
+        variant: 'destructive',
       });
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      debugLog('Rejecting document', { id: document.id, reason: comment });
-      await onReject(document, comment);
+      if (onApprovalAction) {
+        await onApprovalAction('reject', comment);
+      }
       
       toast({
-        title: "Document rejected",
-        description: "The document has been rejected"
+        title: 'Document Rejected',
+        description: 'The document has been rejected with comments.',
       });
+      
+      setComment('');
     } catch (error) {
-      console.error('Error rejecting document:', error);
       toast({
-        title: "Error rejecting document",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to reject document. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Document must be in "Pending Approval" status to be approved
-  if (!document) {
-    debugLog('No document provided');
-    return (
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold flex items-center">
-            <AlertCircle className="mr-2 h-5 w-5 text-destructive" />
-            No Document Selected
-          </CardTitle>
-          <CardDescription>
-            Please select a document for review
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const handleStatusChange = async () => {
+    if (newStatus === document.status) return;
+    
+    setIsSubmitting(true);
+    try {
+      if (onStatusUpdate) {
+        await onStatusUpdate(newStatus);
+      }
+      
+      toast({
+        title: 'Status Updated',
+        description: `Document status changed to ${newStatus.replace('_', ' ')}.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update document status. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  debugLog('Rendering with document', { id: document.id, status: document.status });
+  const getStatusIcon = (status: DocumentStatus) => {
+    switch (status) {
+      case DocumentStatus.Approved:
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case DocumentStatus.Rejected:
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case DocumentStatus.Pending_Approval:
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
-  // Fix the status check to use enum instead of string literal
-  if (document.status !== DocumentStatus.PendingApproval) {
-    return (
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold flex items-center">
-            <ClipboardCheck className="mr-2 h-5 w-5 text-primary" />
-            Document Review
-          </CardTitle>
-          <CardDescription>
-            This document is not pending approval. Current status: 
-            <Badge variant="outline" className="ml-2">
-              {document.status}
-            </Badge>
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const getStatusColor = (status: DocumentStatus) => {
+    switch (status) {
+      case DocumentStatus.Approved:
+        return 'bg-green-100 text-green-800';
+      case DocumentStatus.Rejected:
+        return 'bg-red-100 text-red-800';
+      case DocumentStatus.Pending_Approval:
+        return 'bg-yellow-100 text-yellow-800';
+      case DocumentStatus.Draft:
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
+    }
+  };
 
   return (
-    <Card className="bg-white">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-xl font-semibold flex items-center">
-          <ClipboardCheck className="mr-2 h-5 w-5 text-primary" />
-          Document Review
+        <CardTitle className="flex items-center gap-2">
+          {getStatusIcon(document.status)}
+          Document Approval
         </CardTitle>
-        <CardDescription>
-          Review and approve or reject this document
-        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">{document.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              Version {document.version} • {document.category}
-            </p>
-          </div>
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 flex items-center">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending Approval
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label>Current Status</Label>
+          <Badge className={getStatusColor(document.status)}>
+            {document.status.replace('_', ' ')}
           </Badge>
         </div>
 
-        <div>
-          <p className="text-sm mb-1 font-medium">Add review comments (required for rejection):</p>
-          <Textarea
-            placeholder="Enter any comments regarding your approval decision..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="min-h-[100px]"
-          />
-        </div>
+        {document.approvers && document.approvers.length > 0 && (
+          <div className="space-y-2">
+            <Label>Approvers</Label>
+            <div className="space-y-1">
+              {document.approvers.map((approver, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <User className="h-3 w-3" />
+                  {approver}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {canApprove && document.status === DocumentStatus.Pending_Approval && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="approval-comment">Comments</Label>
+              <Textarea
+                id="approval-comment"
+                placeholder="Add your approval comments or feedback..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleApprove}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {isSubmitting ? 'Approving...' : 'Approve'}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleReject}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                {isSubmitting ? 'Rejecting...' : 'Reject'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {onStatusUpdate && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="status-select">Update Status</Label>
+              <Select 
+                value={documentStatusToString(newStatus)} 
+                onValueChange={(value) => setNewStatus(value as DocumentStatus)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Draft)}>Draft</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Pending_Approval)}>Pending Approval</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Approved)}>Approved</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Published)}>Published</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Archived)}>Archived</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Expired)}>Expired</SelectItem>
+                  <SelectItem value={documentStatusToString(DocumentStatus.Rejected)}>Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newStatus !== document.status && (
+              <Button 
+                onClick={handleStatusChange}
+                disabled={isSubmitting}
+                variant="outline"
+                className="w-full"
+              >
+                {isSubmitting ? 'Updating...' : 'Update Status'}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {!canApprove && document.status === DocumentStatus.Pending_Approval && (
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">
+              This document is pending approval and cannot be modified.
+            </p>
+          </div>
+        )}
       </CardContent>
-      <CardFooter className="flex justify-end space-x-2">
-        <Button 
-          variant="outline" 
-          onClick={handleReject}
-          disabled={isSubmitting || !comment.trim()}
-          className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-        >
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-          Reject
-        </Button>
-        <Button 
-          variant="default" 
-          onClick={handleApprove}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-          Approve Document
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
