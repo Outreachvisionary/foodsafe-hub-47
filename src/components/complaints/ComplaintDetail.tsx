@@ -428,9 +428,11 @@ export const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         )}
                       />
                     </div>
-                    
+
                     <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                      <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
                       <Button type="submit" disabled={isLoading}>
                         {isLoading ? 'Saving...' : 'Save Changes'}
                       </Button>
@@ -438,103 +440,52 @@ export const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                   </form>
                 </Form>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-xl">{complaint.title}</h3>
-                    <p className="mt-2 text-gray-700 whitespace-pre-wrap">{complaint.description}</p>
+                    <h3 className="text-lg font-medium mb-2">{complaint.title}</h3>
+                    <p className="text-muted-foreground">{complaint.description}</p>
                   </div>
                   
+                  <Separator />
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <h4 className="font-medium mb-2">Complaint Information</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm">
-                          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-muted-foreground">Reported Date:</span>
-                          <span className="ml-2 font-medium">
-                            {format(new Date(complaint.reported_date), 'PPP')}
-                          </span>
-                        </div>
-                        {complaint.assigned_to && (
-                          <div className="flex items-center text-sm">
-                            <UserCheck className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-muted-foreground">Assigned To:</span>
-                            <span className="ml-2 font-medium">{complaint.assigned_to}</span>
-                          </div>
-                        )}
-                        {complaint.resolution_date && (
-                          <div className="flex items-center text-sm">
-                            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-muted-foreground">Resolution Date:</span>
-                            <span className="ml-2 font-medium">
-                              {format(new Date(complaint.resolution_date), 'PPP')}
-                            </span>
-                          </div>
-                        )}
-                        {complaint.capa_id && (
-                          <div className="flex items-center text-sm">
-                            <LinkIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-muted-foreground">Linked CAPA:</span>
-                            <Button 
-                              variant="link" 
-                              className="ml-1 p-0 h-auto text-sm"
-                              onClick={() => window.open(`/capa/${complaint.capa_id}`, '_blank')}
-                            >
-                              View CAPA <ExternalLink className="h-3 w-3 ml-1" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                    <div>
+                      <h4 className="font-medium">Customer Information</h4>
+                      <p><strong>Name:</strong> {complaint.customer_name}</p>
+                      {complaint.customer_contact && (
+                        <p><strong>Contact:</strong> {complaint.customer_contact}</p>
+                      )}
                     </div>
                     
-                    <div className="bg-muted p-4 rounded-lg">
-                      <h4 className="font-medium mb-2">Customer Information</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm">
-                          <span className="text-muted-foreground">Customer:</span>
-                          <span className="ml-2 font-medium">{complaint.customer_name}</span>
-                        </div>
-                        {complaint.customer_contact && (
-                          <div className="flex items-center text-sm">
-                            <span className="text-muted-foreground">Contact:</span>
-                            <span className="ml-2 font-medium">{complaint.customer_contact}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {(complaint.product_involved || complaint.lot_number) && (
-                        <>
-                          <h4 className="font-medium mb-2 mt-4">Product Information</h4>
-                          <div className="space-y-2">
-                            {complaint.product_involved && (
-                              <div className="flex items-center text-sm">
-                                <span className="text-muted-foreground">Product:</span>
-                                <span className="ml-2 font-medium">{complaint.product_involved}</span>
-                              </div>
-                            )}
-                            {complaint.lot_number && (
-                              <div className="flex items-center text-sm">
-                                <span className="text-muted-foreground">Lot Number:</span>
-                                <span className="ml-2 font-medium">{complaint.lot_number}</span>
-                              </div>
-                            )}
-                          </div>
-                        </>
+                    <div>
+                      <h4 className="font-medium">Product Information</h4>
+                      {complaint.product_involved && (
+                        <p><strong>Product:</strong> {complaint.product_involved}</p>
+                      )}
+                      {complaint.lot_number && (
+                        <p><strong>Lot Number:</strong> {complaint.lot_number}</p>
                       )}
                     </div>
                   </div>
                   
-                  {complaint.status === "New" && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center">
-                      <AlertTriangle className="h-5 w-5 mr-2 text-yellow-600" />
-                      <div>
-                        <h4 className="font-medium text-yellow-800">New Complaint</h4>
-                        <p className="text-sm text-yellow-700">
-                          This complaint has not been reviewed yet. Change the status to "Under Investigation" to start working on it.
-                        </p>
-                      </div>
+                  <Separator />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Reported Date</p>
+                      <p>{format(new Date(complaint.reported_date), 'PPP')}</p>
                     </div>
-                  )}
+                    {complaint.assigned_to && (
+                      <div>
+                        <p className="text-muted-foreground">Assigned To</p>
+                        <p>{complaint.assigned_to}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-muted-foreground">Created By</p>
+                      <p>{complaint.created_by}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -544,44 +495,31 @@ export const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Activity History</CardTitle>
+              <CardTitle>Activity History</CardTitle>
             </CardHeader>
             <CardContent>
               {isActivitiesLoading ? (
-                <div className="flex items-center justify-center p-8">
-                  <LoadingSpinner size="md" />
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner />
                 </div>
-              ) : activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="bg-muted p-4 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-medium">{activity.action_type}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(activity.performed_at), 'PPp')}
-                        </div>
-                      </div>
-                      <p className="text-sm">{activity.description}</p>
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        By: {activity.performed_by}
-                      </div>
-                      {activity.old_status && activity.new_status && (
-                        <div className="mt-2 flex items-center">
-                          <Badge variant="outline" className="mr-2">
-                            {activity.old_status.replace(/_/g, " ")}
-                          </Badge>
-                          <ArrowRight className="h-4 w-4 mx-1" />
-                          <Badge>
-                            {activity.new_status.replace(/_/g, " ")}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              ) : activities.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No activity history available</p>
                 </div>
               ) : (
-                <div className="text-center p-6 text-muted-foreground">
-                  No activities have been recorded for this complaint yet.
+                <div className="space-y-4">
+                  {activities.map((activity, index) => (
+                    <div key={index} className="flex items-start space-x-3 pb-4 border-b last:border-b-0">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm">{activity.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.performed_by} • {format(new Date(activity.timestamp), 'PPp')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

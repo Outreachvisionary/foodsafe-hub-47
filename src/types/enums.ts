@@ -96,3 +96,49 @@ export enum ComplaintCategory {
   Delivery = "Delivery",
   Other = "Other"
 }
+
+// Complaint Priority Enum
+export enum ComplaintPriority {
+  Low = "Low",
+  Medium = "Medium",
+  High = "High",
+  Critical = "Critical"
+}
+
+// Non-Conformance Status Enum
+export enum NCStatus {
+  OnHold = "On Hold",
+  UnderReview = "Under Review",
+  Closed = "Closed",
+  Open = "Open",
+  InProgress = "In Progress",
+  Resolved = "Resolved"
+}
+
+// Training Status Enum
+export enum TrainingStatus {
+  NotStarted = "Not Started",
+  InProgress = "In Progress",
+  Completed = "Completed",
+  Overdue = "Overdue",
+  Expired = "Expired"
+}
+
+// Training Type Enum
+export enum TrainingType {
+  Online = "Online",
+  InPerson = "In Person",
+  Hybrid = "Hybrid",
+  SelfPaced = "Self Paced"
+}
+
+// Training Category Enum
+export enum TrainingCategory {
+  FoodSafety = "Food Safety",
+  QualityControl = "Quality Control",
+  HACCP = "HACCP",
+  Allergen = "Allergen",
+  Sanitation = "Sanitation",
+  Safety = "Safety",
+  Other = "Other"
+}

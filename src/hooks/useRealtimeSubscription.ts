@@ -54,3 +54,6 @@ export const useRealtimeSubscription = <T = any>({
 
   return channelRef.current;
 };
+
+// Default export for backward compatibility
+export default useRealtimeSubscription;

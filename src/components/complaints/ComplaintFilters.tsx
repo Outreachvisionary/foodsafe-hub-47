@@ -236,8 +236,8 @@ export function ComplaintFilters({ onFilterChange, onFilterClear }: ComplaintFil
                         <FormLabel>Date Range</FormLabel>
                         <FormControl>
                           <DateRangePicker
-                            value={field.value || undefined}
-                            onChange={field.onChange}
+                            dateRange={field.value || undefined}
+                            onSelect={field.onChange}
                             placeholder="Select a date range"
                           />
                         </FormControl>

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document, DocumentFilter } from '@/types/document';
+import { DocumentStatus } from '@/types/enums';
 import { 
   fetchDocuments, 
   createDocument as createDocumentService,
@@ -13,9 +14,12 @@ interface DocumentContextType {
   loading: boolean;
   error: string | null;
   refreshDocuments: () => Promise<void>;
+  fetchDocuments: () => Promise<void>;
   createDocument: (document: Partial<Document>) => Promise<Document>;
   updateDocument: (id: string, updates: Partial<Document>) => Promise<Document>;
   deleteDocument: (id: string) => Promise<void>;
+  approveDocument: (id: string) => Promise<void>;
+  rejectDocument: (id: string, reason?: string) => Promise<void>;
   filterDocuments: (filter: DocumentFilter) => Document[];
 }
 
@@ -42,6 +46,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       setLoading(false);
     }
   };
+
+  const fetchDocumentsAlias = refreshDocuments;
 
   const createDocument = async (document: Partial<Document>): Promise<Document> => {
     try {
@@ -78,6 +84,29 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     }
   };
 
+  const approveDocument = async (id: string): Promise<void> => {
+    try {
+      await updateDocument(id, { status: DocumentStatus.Approved });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to approve document';
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
+  const rejectDocument = async (id: string, reason?: string): Promise<void> => {
+    try {
+      await updateDocument(id, { 
+        status: DocumentStatus.Rejected,
+        rejection_reason: reason 
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reject document';
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const filterDocuments = (filter: DocumentFilter): Document[] => {
     return documents.filter(doc => {
       if (filter.status && !filter.status.includes(doc.status)) return false;
@@ -99,9 +128,12 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       loading,
       error,
       refreshDocuments,
+      fetchDocuments: fetchDocumentsAlias,
       createDocument,
       updateDocument,
       deleteDocument,
+      approveDocument,
+      rejectDocument,
       filterDocuments
     }}>
       {children}
