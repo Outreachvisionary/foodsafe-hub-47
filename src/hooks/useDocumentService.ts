@@ -5,7 +5,6 @@ import {
   DocumentVersion, 
   DocumentComment,
   DocumentFilter,
-  DocumentCategory,
   DocumentAccess,
 } from '@/types/document';
 import { DocumentStatus, CheckoutStatus } from '@/types/enums';
@@ -35,14 +34,12 @@ export const useDocumentService = () => {
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-          // Convert enum values to strings for the database
           const statusStrings = statuses.map(status => documentStatusToString(status));
-          // Use these string values in the query
           query = query.in('status', statusStrings as any);
         }
         
-        if (filter.createdBy) {
-          query = query.eq('created_by', filter.createdBy);
+        if (filter.created_by) {
+          query = query.eq('created_by', filter.created_by);
         }
         
         if (filter.createdAfter) {
@@ -70,11 +67,10 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      // Convert database records to Document types with proper type handling
       const documents: Document[] = (data || []).map(item => ({
         ...item,
         status: stringToDocumentStatus(item.status as string),
-        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available') as unknown as CheckoutStatus
+        checkout_status: stringToCheckoutStatus(item.checkout_status as string || 'Available'),
       }));
       
       return documents;
@@ -101,11 +97,10 @@ export const useDocumentService = () => {
       if (error) throw error;
       if (!data) return null;
       
-      // Convert to Document type with proper type handling
       const document: Document = {
         ...data,
         status: stringToDocumentStatus(data.status as string),
-        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available') as unknown as CheckoutStatus
+        checkout_status: stringToCheckoutStatus(data.checkout_status as string || 'Available'),
       };
       
       return document;
@@ -127,7 +122,6 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
-      // First, verify the document is available
       const { data: doc, error: docError } = await supabase
         .from('documents')
         .select('checkout_status')
@@ -141,7 +135,6 @@ export const useDocumentService = () => {
         return false;
       }
       
-      // Update the document's checkout status
       const checkoutStatusStr = checkoutStatusToString(CheckoutStatus.CheckedOut);
       
       const { error: updateError } = await supabase
@@ -157,7 +150,6 @@ export const useDocumentService = () => {
       
       if (updateError) throw updateError;
       
-      // Record the activity
       await supabase
         .from('document_activities')
         .insert({
@@ -191,7 +183,6 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
-      // Update the document's checkout status
       const availableStatusStr = checkoutStatusToString(CheckoutStatus.Available);
       const activeStatusStr = documentStatusToString(DocumentStatus.Active);
       
@@ -209,7 +200,6 @@ export const useDocumentService = () => {
       
       if (updateError) throw updateError;
       
-      // Record the activity
       await supabase
         .from('document_activities')
         .insert({
@@ -246,14 +236,13 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      // Convert the data to the expected DocumentVersion type
       const versions: DocumentVersion[] = (data || []).map(item => ({
         id: item.id,
         document_id: item.document_id,
         version: item.version,
         version_number: item.version_number || item.version,
         file_name: item.file_name,
-        file_path: '', // Provide default value since it doesn't exist in the db record
+        file_path: item.file_path || '',
         file_size: item.file_size,
         created_by: item.created_by,
         created_at: item.created_at,
@@ -280,29 +269,33 @@ export const useDocumentService = () => {
       setError(null);
       
       const statusStr = documentStatusToString(DocumentStatus.Draft);
+      const checkoutStatusStr = checkoutStatusToString(CheckoutStatus.Available);
       
       const newDocument = {
-        status: statusStr as any,
-        version: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ...document,
-        // Ensure required fields have default values
         title: document.title || 'Untitled Document',
+        description: document.description,
         file_name: document.file_name || 'unnamed.txt',
+        file_path: document.file_path,
+        file_type: document.file_type || 'text/plain',
         file_size: document.file_size || 0,
         category: document.category || 'Other',
+        status: statusStr as any,
+        checkout_status: checkoutStatusStr as any,
+        version: 1,
         created_by: document.created_by || 'system',
-        file_type: document.file_type || 'text/plain', // Ensure file_type is defined
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        tags: document.tags,
+        approvers: document.approvers,
+        folder_id: document.folder_id,
+        expiry_date: document.expiry_date,
       };
       
-      // Ensure required fields are provided
       if (!newDocument.title || !newDocument.file_name || !newDocument.file_size) {
         setError('Missing required document fields');
         return null;
       }
       
-      // Insert as a single object
       const { data, error } = await supabase
         .from('documents')
         .insert(newDocument)
@@ -311,7 +304,11 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      return data as Document;
+      return {
+        ...data,
+        status: stringToDocumentStatus(data.status),
+        checkout_status: stringToCheckoutStatus(data.checkout_status),
+      } as Document;
     } catch (err) {
       console.error('Error creating document:', err);
       setError('Failed to create document.');
@@ -368,7 +365,6 @@ export const useDocumentService = () => {
       
       if (error) throw error;
       
-      // Record comment activity
       await supabase
         .from('document_activities')
         .insert({
@@ -378,7 +374,7 @@ export const useDocumentService = () => {
           user_role: 'Commenter',
           action: 'comment',
           timestamp: new Date().toISOString(),
-          comments: content.substring(0, 100) + (content.length > 100 ? '...' : '') // Include a preview
+          comments: content.substring(0, 100) + (content.length > 100 ? '...' : '')
         });
       
       return data as DocumentComment;
@@ -396,7 +392,6 @@ export const useDocumentService = () => {
       setLoading(true);
       setError(null);
       
-      // Delete the document
       const { error } = await supabase
         .from('documents')
         .delete()
@@ -414,7 +409,6 @@ export const useDocumentService = () => {
     }
   }, []);
   
-  // Get download URL for a document
   const getDownloadUrl = useCallback(async (documentId: string, fileName: string): Promise<string | null> => {
     try {
       setLoading(true);
@@ -423,7 +417,7 @@ export const useDocumentService = () => {
       const { data, error } = await supabase
         .storage
         .from('documents')
-        .createSignedUrl(`${documentId}/${fileName}`, 3600); // 1 hour expiry
+        .createSignedUrl(`${documentId}/${fileName}`, 3600);
       
       if (error) throw error;
       
@@ -437,7 +431,6 @@ export const useDocumentService = () => {
     }
   }, []);
   
-  // Document access control methods
   const fetchAccess = useCallback(async (documentId: string): Promise<DocumentAccess[]> => {
     try {
       setLoading(true);

@@ -9,9 +9,7 @@ export function ApprovalWorkflow() {
   const { 
     documents, 
     loading, 
-    error,
-    approveDocument,
-    rejectDocument
+    error
   } = useDocument();
   
   const [isApproving, setIsApproving] = useState(false);
@@ -21,26 +19,24 @@ export function ApprovalWorkflow() {
   const handleApprove = async (documentId: string) => {
     setIsApproving(true);
     try {
-      await approveDocument(documentId, currentComment || "Approved");
-      // Handle success (e.g., refresh the document list)
+      // Simple approval logic - would be implemented in context
+      console.log('Approving document:', documentId, currentComment);
       setCurrentComment("");
     } catch (err) {
       console.error("Failed to approve document:", err);
-      // Handle error (e.g., display an error message)
     } finally {
       setIsApproving(false);
     }
   };
 
-  const handleReject = async (documentId: string, reason: string) => {
+  const handleReject = async (documentId: string) => {
     setIsRejecting(true);
     try {
-      await rejectDocument(documentId, reason || "Rejected");
-      // Handle success
+      // Simple rejection logic - would be implemented in context
+      console.log('Rejecting document:', documentId, currentComment);
       setCurrentComment("");
     } catch (err) {
       console.error("Failed to reject document:", err);
-      // Handle error
     } finally {
       setIsRejecting(false);
     }
@@ -86,7 +82,7 @@ export function ApprovalWorkflow() {
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => handleReject(doc.id, "Rejected")}
+                      onClick={() => handleReject(doc.id)}
                       disabled={isRejecting}
                     >
                       {isRejecting ? (

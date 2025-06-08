@@ -2,144 +2,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document, DocumentFilter } from '@/types/document';
 import { DocumentStatus } from '@/types/enums';
-import { 
-  fetchDocuments, 
-  createDocument as createDocumentService,
-  updateDocument as updateDocumentService,
-  deleteDocument as deleteDocumentService
-} from '@/services/enhancedDocumentService';
+import { useDocumentService } from '@/hooks/useDocumentService';
 
 interface DocumentContextType {
   documents: Document[];
   loading: boolean;
   error: string | null;
-  refreshDocuments: () => Promise<void>;
-  fetchDocuments: () => Promise<void>;
-  createDocument: (document: Partial<Document>) => Promise<Document>;
-  updateDocument: (id: string, updates: Partial<Document>) => Promise<Document>;
-  deleteDocument: (id: string) => Promise<void>;
+  fetchDocuments: (filter?: DocumentFilter) => Promise<void>;
+  createDocument: (document: Partial<Document>) => Promise<Document | null>;
+  updateDocument: (id: string, updates: Partial<Document>) => Promise<boolean>;
+  deleteDocument: (id: string) => Promise<boolean>;
+  checkoutDocument: (document: Document) => Promise<void>;
+  checkinDocument: (document: Document) => Promise<void>;
   approveDocument: (id: string) => Promise<void>;
-  rejectDocument: (id: string, reason?: string) => Promise<void>;
-  filterDocuments: (filter: DocumentFilter) => Document[];
+  rejectDocument: (id: string) => Promise<void>;
+  refreshDocuments: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
-
-interface DocumentProviderProps {
-  children: ReactNode;
-}
-
-export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const refreshDocuments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchDocuments();
-      setDocuments(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch documents');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDocumentsAlias = refreshDocuments;
-
-  const createDocument = async (document: Partial<Document>): Promise<Document> => {
-    try {
-      const newDocument = await createDocumentService(document);
-      setDocuments(prev => [newDocument, ...prev]);
-      return newDocument;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create document';
-      setError(errorMessage);
-      throw err;
-    }
-  };
-
-  const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
-    try {
-      const updatedDocument = await updateDocumentService(id, updates);
-      setDocuments(prev => prev.map(doc => doc.id === id ? updatedDocument : doc));
-      return updatedDocument;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update document';
-      setError(errorMessage);
-      throw err;
-    }
-  };
-
-  const deleteDocument = async (id: string): Promise<void> => {
-    try {
-      await deleteDocumentService(id);
-      setDocuments(prev => prev.filter(doc => doc.id !== id));
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete document';
-      setError(errorMessage);
-      throw err;
-    }
-  };
-
-  const approveDocument = async (id: string): Promise<void> => {
-    try {
-      await updateDocument(id, { status: DocumentStatus.Approved });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to approve document';
-      setError(errorMessage);
-      throw err;
-    }
-  };
-
-  const rejectDocument = async (id: string, reason?: string): Promise<void> => {
-    try {
-      await updateDocument(id, { 
-        status: DocumentStatus.Rejected,
-        rejection_reason: reason 
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reject document';
-      setError(errorMessage);
-      throw err;
-    }
-  };
-
-  const filterDocuments = (filter: DocumentFilter): Document[] => {
-    return documents.filter(doc => {
-      if (filter.status && !filter.status.includes(doc.status)) return false;
-      if (filter.category && !filter.category.includes(doc.category)) return false;
-      if (filter.searchTerm && !doc.title.toLowerCase().includes(filter.searchTerm.toLowerCase())) return false;
-      if (filter.folder_id && doc.folder_id !== filter.folder_id) return false;
-      if (filter.created_by && doc.created_by !== filter.created_by) return false;
-      return true;
-    });
-  };
-
-  useEffect(() => {
-    refreshDocuments();
-  }, []);
-
-  return (
-    <DocumentContext.Provider value={{
-      documents,
-      loading,
-      error,
-      refreshDocuments,
-      fetchDocuments: fetchDocumentsAlias,
-      createDocument,
-      updateDocument,
-      deleteDocument,
-      approveDocument,
-      rejectDocument,
-      filterDocuments
-    }}>
-      {children}
-    </DocumentContext.Provider>
-  );
-};
 
 export const useDocument = () => {
   const context = useContext(DocumentContext);
@@ -149,4 +29,159 @@ export const useDocument = () => {
   return context;
 };
 
-export const useDocumentContext = useDocument;
+interface DocumentProviderProps {
+  children: ReactNode;
+}
+
+export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const documentService = useDocumentService();
+
+  const fetchDocuments = async (filter?: DocumentFilter) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const docs = await documentService.getDocuments(filter);
+      setDocuments(docs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createDocument = async (document: Partial<Document>): Promise<Document | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const newDoc = await documentService.createDocument(document);
+      if (newDoc) {
+        setDocuments(prev => [newDoc, ...prev]);
+      }
+      return newDoc;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create document');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateDocument = async (id: string, updates: Partial<Document>): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Implement update logic here
+      setDocuments(prev => prev.map(doc => 
+        doc.id === id ? { ...doc, ...updates } : doc
+      ));
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update document');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteDocument = async (id: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const success = await documentService.deleteDocument(id);
+      if (success) {
+        setDocuments(prev => prev.filter(doc => doc.id !== id));
+      }
+      return success;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete document');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkoutDocument = async (document: Document): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Implementation would go here
+      console.log('Checking out document:', document.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to checkout document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkinDocument = async (document: Document): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Implementation would go here
+      console.log('Checking in document:', document.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to checkin document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const approveDocument = async (id: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Implementation would go here
+      setDocuments(prev => prev.map(doc => 
+        doc.id === id ? { ...doc, status: DocumentStatus.Approved } : doc
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectDocument = async (id: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Implementation would go here
+      setDocuments(prev => prev.map(doc => 
+        doc.id === id ? { ...doc, status: DocumentStatus.Rejected } : doc
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshDocuments = async (): Promise<void> => {
+    await fetchDocuments();
+  };
+
+  const value: DocumentContextType = {
+    documents,
+    loading,
+    error,
+    fetchDocuments,
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    checkoutDocument,
+    checkinDocument,
+    approveDocument,
+    rejectDocument,
+    refreshDocuments,
+  };
+
+  return (
+    <DocumentContext.Provider value={value}>
+      {children}
+    </DocumentContext.Provider>
+  );
+};

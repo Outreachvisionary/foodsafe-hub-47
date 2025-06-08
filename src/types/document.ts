@@ -1,7 +1,7 @@
 
-export type DocumentStatus = 'Draft' | 'Under Review' | 'Approved' | 'Rejected' | 'Archived' | 'Expired' | 'Pending Review' | 'Pending Approval' | 'Published' | 'Active' | 'Obsolete' | 'In Review';
-export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Audit Report' | 'HACCP Plan' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment' | 'Other';
-export type CheckoutStatus = 'Available' | 'Checked_Out' | 'Locked';
+import { DocumentStatus, CheckoutStatus, DocumentCategory } from '@/types/enums';
+
+export type DocumentVersionType = 'major' | 'minor';
 export type DocumentActionType = 'view' | 'edit' | 'download' | 'delete' | 'archive' | 'approve' | 'reject' | 'checkout' | 'checkin';
 
 export interface Document {
@@ -83,7 +83,7 @@ export interface DocumentVersion {
   created_by: string;
   created_at: string;
   change_notes?: string;
-  version_type?: 'major' | 'minor';
+  version_type?: DocumentVersionType;
   change_summary?: string;
   check_in_comment?: string;
   modified_by?: string;
@@ -137,6 +137,9 @@ export interface DocumentFilter {
   folder_id?: string;
   created_by?: string;
   tags?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
+  expiringBefore?: string;
 }
 
 export interface DocumentListProps {
