@@ -7,12 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Clock, PlusCircle, Search } from 'lucide-react';
-import { CAPA, CAPAListProps } from '@/types/capa';
-import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
-import { getCAPAs } from '@/services/capaService';
+import { CAPA, CAPAListProps, CAPAStatus, CAPAPriority, CAPASource } from '@/types/capa';
 
 const CAPAList: React.FC<CAPAListProps> = ({ 
   items, 
+  capas,
   loading, 
   error, 
   onCAPAClick 
@@ -20,12 +19,15 @@ const CAPAList: React.FC<CAPAListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<CAPAStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<CAPAPriority | ''>('');
-  const [filteredItems, setFilteredItems] = useState<CAPA[]>(items || []);
+  const [filteredItems, setFilteredItems] = useState<CAPA[]>([]);
   const navigate = useNavigate();
 
+  // Use items or capas, whichever is provided
+  const dataSource = items || capas || [];
+
   useEffect(() => {
-    if (items) {
-      let filtered = [...items];
+    if (dataSource) {
+      let filtered = [...dataSource];
       
       // Apply search filter
       if (searchQuery) {
@@ -48,21 +50,21 @@ const CAPAList: React.FC<CAPAListProps> = ({
       
       setFilteredItems(filtered);
     }
-  }, [items, searchQuery, statusFilter, priorityFilter]);
+  }, [dataSource, searchQuery, statusFilter, priorityFilter]);
 
   const getStatusBadge = (status: CAPAStatus) => {
     switch (status) {
-      case CAPAStatus.Open:
+      case 'Open':
         return <Badge variant="outline" className="bg-blue-50 text-blue-700">Open</Badge>;
-      case CAPAStatus.InProgress:
+      case 'In Progress':
         return <Badge variant="outline" className="bg-amber-50 text-amber-700">In Progress</Badge>;
-      case CAPAStatus.Completed:
+      case 'Completed':
         return <Badge variant="outline" className="bg-green-50 text-green-700">Completed</Badge>;
-      case CAPAStatus.Closed:
+      case 'Closed':
         return <Badge variant="outline" className="bg-green-50 text-green-700">Closed</Badge>;
-      case CAPAStatus.Overdue:
+      case 'Overdue':
         return <Badge variant="outline" className="bg-red-50 text-red-700">Overdue</Badge>;
-      case CAPAStatus.PendingVerification:
+      case 'Pending Verification':
         return <Badge variant="outline" className="bg-purple-50 text-purple-700">Pending Verification</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -71,13 +73,13 @@ const CAPAList: React.FC<CAPAListProps> = ({
   
   const getPriorityBadge = (priority: CAPAPriority) => {
     switch (priority) {
-      case CAPAPriority.Critical:
+      case 'Critical':
         return <Badge className="bg-red-100 text-red-800">Critical</Badge>;
-      case CAPAPriority.High:
+      case 'High':
         return <Badge className="bg-amber-100 text-amber-800">High</Badge>;
-      case CAPAPriority.Medium:
+      case 'Medium':
         return <Badge className="bg-blue-100 text-blue-800">Medium</Badge>;
-      case CAPAPriority.Low:
+      case 'Low':
         return <Badge className="bg-green-100 text-green-800">Low</Badge>;
       default:
         return <Badge>{priority}</Badge>;
@@ -86,14 +88,14 @@ const CAPAList: React.FC<CAPAListProps> = ({
   
   const getStatusIcon = (status: CAPAStatus) => {
     switch (status) {
-      case CAPAStatus.Completed:
-      case CAPAStatus.Closed:
+      case 'Completed':
+      case 'Closed':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case CAPAStatus.Overdue:
+      case 'Overdue':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case CAPAStatus.Open:
-      case CAPAStatus.InProgress:
-      case CAPAStatus.PendingVerification:
+      case 'Open':
+      case 'In Progress':
+      case 'Pending Verification':
         return <Clock className="h-4 w-4 text-blue-500" />;
       default:
         return null;
@@ -128,12 +130,12 @@ const CAPAList: React.FC<CAPAListProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Statuses</SelectItem>
-              <SelectItem value={CAPAStatus.Open}>Open</SelectItem>
-              <SelectItem value={CAPAStatus.InProgress}>In Progress</SelectItem>
-              <SelectItem value={CAPAStatus.Completed}>Completed</SelectItem>
-              <SelectItem value={CAPAStatus.Closed}>Closed</SelectItem>
-              <SelectItem value={CAPAStatus.Overdue}>Overdue</SelectItem>
-              <SelectItem value={CAPAStatus.PendingVerification}>Pending Verification</SelectItem>
+              <SelectItem value="Open">Open</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="Closed">Closed</SelectItem>
+              <SelectItem value="Overdue">Overdue</SelectItem>
+              <SelectItem value="Pending Verification">Pending Verification</SelectItem>
             </SelectContent>
           </Select>
           
@@ -143,10 +145,10 @@ const CAPAList: React.FC<CAPAListProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Priorities</SelectItem>
-              <SelectItem value={CAPAPriority.Critical}>Critical</SelectItem>
-              <SelectItem value={CAPAPriority.High}>High</SelectItem>
-              <SelectItem value={CAPAPriority.Medium}>Medium</SelectItem>
-              <SelectItem value={CAPAPriority.Low}>Low</SelectItem>
+              <SelectItem value="Critical">Critical</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
             </SelectContent>
           </Select>
           
@@ -187,7 +189,7 @@ const CAPAList: React.FC<CAPAListProps> = ({
                 <TableRow 
                   key={capa.id} 
                   className="cursor-pointer hover:bg-gray-50" 
-                  onClick={() => onCAPAClick(capa)}
+                  onClick={() => onCAPAClick?.(capa)}
                 >
                   <TableCell className="font-medium">{capa.id.slice(0, 8)}</TableCell>
                   <TableCell>

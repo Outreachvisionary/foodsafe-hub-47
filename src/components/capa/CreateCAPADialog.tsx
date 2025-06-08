@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CreateCAPADialogProps } from '@/types/capa';
-import { CAPAPriority, CAPASource } from '@/types/enums';
+import { CreateCAPADialogProps, CAPAPriority, CAPASource } from '@/types/capa';
 
 const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<CAPAPriority>(CAPAPriority.Medium);
-  const [source, setSource] = useState<CAPASource>(CAPASource.InternalReport);
+  const [priority, setPriority] = useState<CAPAPriority>('Medium');
+  const [source, setSource] = useState<CAPASource>('Internal Report');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
 
@@ -35,8 +34,8 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setPriority(CAPAPriority.Medium);
-    setSource(CAPASource.InternalReport);
+    setPriority('Medium');
+    setSource('Internal Report');
     setDueDate('');
     setAssignedTo('');
   };
@@ -85,10 +84,10 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={CAPAPriority.Low}>Low</SelectItem>
-                  <SelectItem value={CAPAPriority.Medium}>Medium</SelectItem>
-                  <SelectItem value={CAPAPriority.High}>High</SelectItem>
-                  <SelectItem value={CAPAPriority.Critical}>Critical</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Critical">Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -100,13 +99,13 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ open, onClose, onSu
                   <SelectValue placeholder="Select source" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={CAPASource.Audit}>Audit</SelectItem>
-                  <SelectItem value={CAPASource.CustomerComplaint}>Customer Complaint</SelectItem>
-                  <SelectItem value={CAPASource.NonConformance}>Non-Conformance</SelectItem>
-                  <SelectItem value={CAPASource.InternalReport}>Internal Report</SelectItem>
-                  <SelectItem value={CAPASource.SupplierIssue}>Supplier Issue</SelectItem>
-                  <SelectItem value={CAPASource.RegulatoryInspection}>Regulatory Inspection</SelectItem>
-                  <SelectItem value={CAPASource.Other}>Other</SelectItem>
+                  <SelectItem value="Audit">Audit</SelectItem>
+                  <SelectItem value="Customer Complaint">Customer Complaint</SelectItem>
+                  <SelectItem value="Non-Conformance">Non-Conformance</SelectItem>
+                  <SelectItem value="Internal Report">Internal Report</SelectItem>
+                  <SelectItem value="Supplier Issue">Supplier Issue</SelectItem>
+                  <SelectItem value="Regulatory Inspection">Regulatory Inspection</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

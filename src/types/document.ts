@@ -1,7 +1,8 @@
 
-export type DocumentStatus = 'Draft' | 'Under Review' | 'Approved' | 'Rejected' | 'Archived' | 'Expired';
+export type DocumentStatus = 'Draft' | 'Under Review' | 'Approved' | 'Rejected' | 'Archived' | 'Expired' | 'Pending Review' | 'Pending Approval' | 'Published' | 'Active' | 'Obsolete' | 'In Review';
 export type DocumentCategory = 'SOP' | 'Policy' | 'Form' | 'Certificate' | 'Audit Report' | 'HACCP Plan' | 'Training Material' | 'Supplier Documentation' | 'Risk Assessment' | 'Other';
-export type CheckoutStatus = 'Available' | 'Checked_Out';
+export type CheckoutStatus = 'Available' | 'Checked_Out' | 'Locked';
+export type DocumentActionType = 'view' | 'edit' | 'download' | 'delete' | 'archive' | 'approve' | 'reject' | 'checkout' | 'checkin';
 
 export interface Document {
   id: string;
@@ -77,11 +78,12 @@ export interface DocumentVersion {
   document_id: string;
   version: number;
   file_name: string;
+  file_path: string;
   file_size: number;
   created_by: string;
   created_at: string;
   change_notes?: string;
-  version_type?: string;
+  version_type?: 'major' | 'minor';
   change_summary?: string;
   check_in_comment?: string;
   modified_by?: string;
@@ -90,6 +92,38 @@ export interface DocumentVersion {
   diff_data?: any;
   editor_metadata?: any;
   is_binary_file?: boolean;
+}
+
+export interface DocumentActivity {
+  id: string;
+  document_id: string;
+  action: DocumentActionType;
+  user_id: string;
+  user_name: string;
+  user_role: string;
+  timestamp: string;
+  comments?: string;
+}
+
+export interface DocumentComment {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at: string;
+  folder_id?: string;
 }
 
 export interface DocumentFilter {

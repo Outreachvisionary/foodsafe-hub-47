@@ -1,8 +1,8 @@
 
-export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification';
+export type CAPAStatus = 'Open' | 'In Progress' | 'Closed' | 'Overdue' | 'Pending Verification' | 'Completed' | 'Verified' | 'Rejected' | 'On Hold' | 'Under Review';
 export type CAPAPriority = 'Low' | 'Medium' | 'High' | 'Critical';
-export type CAPASource = 'Audit' | 'Complaint' | 'Non-Conformance' | 'Management Review' | 'Supplier Issue' | 'Other';
-export type CAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective';
+export type CAPASource = 'Audit' | 'Complaint' | 'Non-Conformance' | 'Management Review' | 'Supplier Issue' | 'Customer Complaint' | 'Internal Report' | 'Regulatory Inspection' | 'Other';
+export type CAPAEffectivenessRating = 'Effective' | 'Partially Effective' | 'Not Effective' | 'Highly Effective';
 
 export interface CAPA {
   id: string;
@@ -99,6 +99,7 @@ export interface CAPAFilter {
   priority?: CAPAPriority | CAPAPriority[];
   source?: CAPASource | CAPASource[];
   assigned_to?: string;
+  department?: string | string[];
   dateRange?: {
     start: string;
     end: string;
@@ -107,14 +108,42 @@ export interface CAPAFilter {
 }
 
 export interface CAPAListProps {
-  capas: CAPA[];
+  items?: CAPA[];
+  capas?: CAPA[];
+  loading?: boolean;
+  error?: string;
   onCAPAClick?: (capa: CAPA) => void;
   onCAPAEdit?: (capa: CAPA) => void;
   onCAPADelete?: (capaId: string) => void;
 }
 
+export interface CAPAStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  completed: number;
+  overdue: number;
+  openCount: number;
+  closedCount: number;
+  overdueCount: number;
+  pendingVerificationCount: number;
+  effectivenessRate: number;
+  byPriority: Record<string, number>;
+  bySource: Record<string, number>;
+  byDepartment: Record<string, number>;
+  byStatus: Record<string, number>;
+  byMonth: Record<string, number>;
+  recentActivities?: CAPAActivity[];
+}
+
+export interface CreateCAPADialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}
+
 // Enum values for easy iteration
-export const CAPAStatusValues = ['Open', 'In Progress', 'Closed', 'Overdue', 'Pending Verification'] as const;
+export const CAPAStatusValues = ['Open', 'In Progress', 'Closed', 'Overdue', 'Pending Verification', 'Completed', 'Verified', 'Rejected', 'On Hold', 'Under Review'] as const;
 export const CAPAPriorityValues = ['Low', 'Medium', 'High', 'Critical'] as const;
-export const CAPASourceValues = ['Audit', 'Complaint', 'Non-Conformance', 'Management Review', 'Supplier Issue', 'Other'] as const;
-export const CAPAEffectivenessRatingValues = ['Effective', 'Partially Effective', 'Not Effective'] as const;
+export const CAPASourceValues = ['Audit', 'Complaint', 'Non-Conformance', 'Management Review', 'Supplier Issue', 'Customer Complaint', 'Internal Report', 'Regulatory Inspection', 'Other'] as const;
+export const CAPAEffectivenessRatingValues = ['Effective', 'Partially Effective', 'Not Effective', 'Highly Effective'] as const;

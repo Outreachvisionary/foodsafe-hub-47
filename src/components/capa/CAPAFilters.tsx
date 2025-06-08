@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -304,36 +305,36 @@ const CAPAFilters: React.FC<CAPAFiltersProps> = ({ filters, setFilters, searchQu
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isStatusSelected(CAPAStatus.Open)}
-                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Open, checked)}
+                checked={isStatusSelected('Open')}
+                onCheckedChange={(checked) => handleStatusChange('Open', checked)}
               />
               <Label className="text-sm">Open</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isStatusSelected(CAPAStatus.InProgress)}
-                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.InProgress, checked)}
+                checked={isStatusSelected('In Progress')}
+                onCheckedChange={(checked) => handleStatusChange('In Progress', checked)}
               />
               <Label className="text-sm">In Progress</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isStatusSelected(CAPAStatus.Completed)}
-                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Completed, checked)}
+                checked={isStatusSelected('Completed')}
+                onCheckedChange={(checked) => handleStatusChange('Completed', checked)}
               />
               <Label className="text-sm">Completed</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isStatusSelected(CAPAStatus.Closed)}
-                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Closed, checked)}
+                checked={isStatusSelected('Closed')}
+                onCheckedChange={(checked) => handleStatusChange('Closed', checked)}
               />
               <Label className="text-sm">Closed</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isStatusSelected(CAPAStatus.Overdue)}
-                onCheckedChange={(checked) => handleStatusChange(CAPAStatus.Overdue, checked)}
+                checked={isStatusSelected('Overdue')}
+                onCheckedChange={(checked) => handleStatusChange('Overdue', checked)}
               />
               <Label className="text-sm">Overdue</Label>
             </div>
@@ -347,29 +348,29 @@ const CAPAFilters: React.FC<CAPAFiltersProps> = ({ filters, setFilters, searchQu
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isPrioritySelected(CAPAPriority.Low)}
-                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Low, checked)}
+                checked={isPrioritySelected('Low')}
+                onCheckedChange={(checked) => handlePriorityChange('Low', checked)}
               />
               <Label className="text-sm">Low</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isPrioritySelected(CAPAPriority.Medium)}
-                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Medium, checked)}
+                checked={isPrioritySelected('Medium')}
+                onCheckedChange={(checked) => handlePriorityChange('Medium', checked)}
               />
               <Label className="text-sm">Medium</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isPrioritySelected(CAPAPriority.High)}
-                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.High, checked)}
+                checked={isPrioritySelected('High')}
+                onCheckedChange={(checked) => handlePriorityChange('High', checked)}
               />
               <Label className="text-sm">High</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isPrioritySelected(CAPAPriority.Critical)}
-                onCheckedChange={(checked) => handlePriorityChange(CAPAPriority.Critical, checked)}
+                checked={isPrioritySelected('Critical')}
+                onCheckedChange={(checked) => handlePriorityChange('Critical', checked)}
               />
               <Label className="text-sm">Critical</Label>
             </div>
@@ -383,36 +384,36 @@ const CAPAFilters: React.FC<CAPAFiltersProps> = ({ filters, setFilters, searchQu
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isSourceSelected(CAPASource.Audit)}
-                onCheckedChange={(checked) => handleSourceChange(CAPASource.Audit, checked)}
+                checked={isSourceSelected('Audit')}
+                onCheckedChange={(checked) => handleSourceChange('Audit', checked)}
               />
               <Label className="text-sm">Audit</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isSourceSelected(CAPASource.CustomerComplaint)}
-                onCheckedChange={(checked) => handleSourceChange(CAPASource.CustomerComplaint, checked)}
+                checked={isSourceSelected('Customer Complaint')}
+                onCheckedChange={(checked) => handleSourceChange('Customer Complaint', checked)}
               />
               <Label className="text-sm">Customer Complaint</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isSourceSelected(CAPASource.InternalReport)}
-                onCheckedChange={(checked) => handleSourceChange(CAPASource.InternalReport, checked)}
+                checked={isSourceSelected('Internal Report')}
+                onCheckedChange={(checked) => handleSourceChange('Internal Report', checked)}
               />
               <Label className="text-sm">Internal Report</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isSourceSelected(CAPASource.NonConformance)}
-                onCheckedChange={(checked) => handleSourceChange(CAPASource.NonConformance, checked)}
+                checked={isSourceSelected('Non-Conformance')}
+                onCheckedChange={(checked) => handleSourceChange('Non-Conformance', checked)}
               />
               <Label className="text-sm">Non-Conformance</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={isSourceSelected(CAPASource.SupplierIssue)}
-                onCheckedChange={(checked) => handleSourceChange(CAPASource.SupplierIssue, checked)}
+                checked={isSourceSelected('Supplier Issue')}
+                onCheckedChange={(checked) => handleSourceChange('Supplier Issue', checked)}
               />
               <Label className="text-sm">Supplier Issue</Label>
             </div>
