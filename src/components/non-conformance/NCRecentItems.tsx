@@ -1,77 +1,65 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle } from 'lucide-react';
-import { NCStatus } from '@/types/enums';
-import { stringToNCStatus } from '@/utils/typeAdapters';
+import { Clock } from 'lucide-react';
+import { NonConformance } from '@/types/non-conformance';
+import { formatEnumValue } from '@/utils/typeAdapters';
 
-interface NCItem {
-  id: string;
-  title: string;
-  status: string;
-  reportedDate: string;
+interface NCRecentItemsProps {
+  items: NonConformance[];
 }
 
-const mockData: NCItem[] = [
-  {
-    id: 'NC-2023-001',
-    title: 'Damaged Packaging',
-    status: NCStatus.On_Hold,
-    reportedDate: '2023-11-15',
-  },
-  {
-    id: 'NC-2023-002',
-    title: 'Temperature Excursion',
-    status: NCStatus.Under_Review,
-    reportedDate: '2023-11-14',
-  },
-  {
-    id: 'NC-2023-003',
-    title: 'Incorrect Labeling',
-    status: NCStatus.Released,
-    reportedDate: '2023-11-13',
-  },
-];
+const NCRecentItems: React.FC<NCRecentItemsProps> = ({ items }) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
-const NCRecentItems: React.FC = () => {
-  const getStatusColor = (statusString: string) => {
-    const status = stringToNCStatus(statusString);
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case NCStatus.On_Hold:
-        return 'bg-red-100 text-red-800';
-      case NCStatus.Under_Review:
-        return 'bg-yellow-100 text-yellow-800';
-      case NCStatus.Released:
-        return 'bg-green-100 text-green-800';
-      case NCStatus.Disposed:
-        return 'bg-gray-100 text-gray-800';
-      case NCStatus.Resolved:
-        return 'bg-blue-100 text-blue-800';
+      case 'On Hold':
+        return 'secondary';
+      case 'Under Review':
+        return 'outline';
+      case 'Resolved':
+        return 'default';
+      case 'Closed':
+        return 'secondary';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'outline';
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Non-Conformances</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Recent Non-Conformances
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {mockData.map((item) => (
-          <div key={item.id} className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{item.title}</p>
-              <div className="flex items-center text-xs text-gray-500">
-                <Clock className="h-3 w-3 mr-1" />
-                Reported: {item.reportedDate}
+      <CardContent>
+        <div className="space-y-4">
+          {items.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">
+              No recent non-conformances found.
+            </p>
+          ) : (
+            items.slice(0, 5).map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex-1">
+                  <h4 className="font-medium">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {item.item_name} • {formatDate(item.reported_date)}
+                  </p>
+                </div>
+                <Badge variant={getStatusVariant(item.status as string)}>
+                  {formatEnumValue(item.status as string)}
+                </Badge>
               </div>
-            </div>
-            <Badge className={`font-normal ${getStatusColor(item.status)}`}>
-              {item.status}
-            </Badge>
-          </div>
-        ))}
+            ))
+          )}
+        </div>
       </CardContent>
     </Card>
   );

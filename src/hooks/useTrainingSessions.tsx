@@ -8,14 +8,10 @@ interface TrainingSession {
   id: string;
   title: string;
   description: string;
-  category: string;
-  type: string;
-  duration: number;
   start_date: string;
-  end_date: string;
-  instructor: string;
-  location: string;
-  capacity: number;
+  due_date: string;
+  created_by: string;
+  department: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,19 +51,15 @@ export const useTrainingSessions = () => {
           throw new Error(error.message);
         }
 
-        // Transform data to match TrainingSession interface with proper fallbacks
+        // Map database fields to interface properties
         const sessions: TrainingSession[] = (data || []).map(item => ({
           id: item.id,
           title: item.title,
           description: item.description || '',
-          category: item.training_category || 'General',
-          type: item.training_type || 'Online',
-          duration: 60, // Default duration since field doesn't exist in DB
           start_date: item.start_date,
-          end_date: item.due_date || item.start_date,
-          instructor: item.created_by || 'TBD',
-          location: item.department || 'Online',
-          capacity: 0, // Default capacity since field doesn't exist in DB
+          due_date: item.due_date || item.start_date,
+          created_by: item.created_by || 'TBD',
+          department: item.department || 'General',
           created_at: item.created_at,
           updated_at: item.updated_at,
         }));
@@ -149,11 +141,17 @@ export const useTrainingSessions = () => {
     try {
       setLoading(true);
       
-      // Convert status to string for database
-      const dbUpdates = {
-        ...updates,
-        status: updates.status ? trainingStatusToString(updates.status) : undefined
-      };
+      // Convert status to string for database and remove undefined values
+      const dbUpdates: any = {};
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (key === 'status' && value) {
+            dbUpdates[key] = trainingStatusToString(value as TrainingStatus);
+          } else {
+            dbUpdates[key] = value;
+          }
+        }
+      });
       
       const { data, error } = await supabase
         .from('training_records')

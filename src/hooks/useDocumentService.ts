@@ -10,7 +10,14 @@ import {
   CheckoutStatus,
   DocumentCategory
 } from '@/types/document';
-import { documentCategoryToString, documentStatusToString, checkoutStatusToString } from '@/utils/typeAdapters';
+import { 
+  documentCategoryToString, 
+  documentStatusToString, 
+  checkoutStatusToString,
+  stringToDocumentCategory,
+  stringToDocumentStatus,
+  stringToCheckoutStatus
+} from '@/utils/typeAdapters';
 
 export const useDocumentService = () => {
   const [loading, setLoading] = useState(false);
@@ -27,13 +34,13 @@ export const useDocumentService = () => {
         if (filter.category) {
           const categories = Array.isArray(filter.category) ? filter.category : [filter.category];
           const categoryStrings = categories.map(cat => documentCategoryToString(cat));
-          query = query.in('category', categoryStrings as any);
+          query = query.in('category', categoryStrings);
         }
         
         if (filter.status) {
           const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
           const statusStrings = statuses.map(status => documentStatusToString(status));
-          query = query.in('status', statusStrings as any);
+          query = query.in('status', statusStrings);
         }
         
         if (filter.created_by) {
@@ -67,9 +74,9 @@ export const useDocumentService = () => {
       
       const documents: Document[] = (data || []).map(item => ({
         ...item,
-        status: item.status as DocumentStatus,
-        checkout_status: item.checkout_status as CheckoutStatus || CheckoutStatus.Available,
-        category: item.category as DocumentCategory,
+        status: stringToDocumentStatus(item.status),
+        checkout_status: stringToCheckoutStatus(item.checkout_status || 'Available'),
+        category: stringToDocumentCategory(item.category),
       }));
       
       return documents;
@@ -98,9 +105,9 @@ export const useDocumentService = () => {
       
       const document: Document = {
         ...data,
-        status: data.status as DocumentStatus,
-        checkout_status: data.checkout_status as CheckoutStatus || CheckoutStatus.Available,
-        category: data.category as DocumentCategory,
+        status: stringToDocumentStatus(data.status),
+        checkout_status: stringToCheckoutStatus(data.checkout_status || 'Available'),
+        category: stringToDocumentCategory(data.category),
       };
       
       return document;
@@ -293,9 +300,9 @@ export const useDocumentService = () => {
       
       return {
         ...data,
-        status: data.status as DocumentStatus,
-        checkout_status: data.checkout_status as CheckoutStatus || CheckoutStatus.Available,
-        category: data.category as DocumentCategory,
+        status: stringToDocumentStatus(data.status),
+        checkout_status: stringToCheckoutStatus(data.checkout_status || 'Available'),
+        category: stringToDocumentCategory(data.category),
       } as Document;
     } catch (err) {
       console.error('Error creating document:', err);

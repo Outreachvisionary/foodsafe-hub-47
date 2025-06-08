@@ -1,195 +1,100 @@
 
-// Document related enums
-export enum DocumentStatus {
-  Draft = 'Draft',
-  Under_Review = 'Under_Review',
-  Approved = 'Approved',
-  Published = 'Published',
-  Archived = 'Archived',
-  Rejected = 'Rejected',
-  PendingReview = 'PendingReview',
-  PendingApproval = 'PendingApproval',
-  Active = 'Active',
-  Expired = 'Expired'
-}
-
-export enum DocumentCategory {
-  SOP = 'SOP',
-  Policy = 'Policy',
-  Form = 'Form',
-  Manual = 'Manual',
-  Training = 'Training',
-  HACCP_Plan = 'HACCP_Plan',
-  Certificate = 'Certificate',
-  Report = 'Report',
-  Other = 'Other'
-}
-
-export enum CheckoutStatus {
-  Available = 'Available',
-  Checked_Out = 'Checked_Out',
-  CheckedOut = 'CheckedOut',
-  Locked = 'Locked'
-}
-
-// CAPA related enums
+// CAPA Status Enum
 export enum CAPAStatus {
   Open = 'Open',
-  In_Progress = 'In_Progress',
-  Pending_Verification = 'Pending_Verification',
+  In_Progress = 'In Progress', 
+  Under_Review = 'Under Review',
   Closed = 'Closed',
   Cancelled = 'Cancelled'
 }
 
+// CAPA Source Enum
 export enum CAPASource {
   Audit = 'Audit',
-  Customer_Complaint = 'Customer_Complaint',
-  Internal_Report = 'Internal_Report',
-  Non_Conformance = 'Non_Conformance',
-  Supplier_Issue = 'Supplier_Issue',
-  Complaint = 'Complaint',
-  Other = 'Other',
-  Management_Review = 'Management_Review'
+  Customer_Complaint = 'Customer Complaint',
+  Non_Conformance = 'Non Conformance',
+  Internal_Review = 'Internal Review',
+  Management_Review = 'Management Review',
+  Other = 'Other'
 }
 
+// CAPA Priority Enum
 export enum CAPAPriority {
-  Low = 'Low',
-  Medium = 'Medium',
+  Critical = 'Critical',
   High = 'High',
-  Critical = 'Critical'
+  Medium = 'Medium',
+  Low = 'Low'
 }
 
+// Effectiveness Rating Enum
 export enum EffectivenessRating {
-  Ineffective = 'Ineffective',
-  Partially_Effective = 'Partially_Effective',
-  Effective = 'Effective'
+  Effective = 'Effective',
+  Partially_Effective = 'Partially Effective',
+  Not_Effective = 'Not Effective',
+  Pending = 'Pending'
 }
 
-// Non-conformance related enums
+// NC Status Enum
 export enum NCStatus {
-  On_Hold = 'On_Hold',
-  Under_Review = 'Under_Review',
-  Released = 'Released',
-  Disposed = 'Disposed',
+  On_Hold = 'On Hold',
+  Under_Review = 'Under Review',
   Resolved = 'Resolved',
   Closed = 'Closed'
 }
 
-export enum NCItemCategory {
-  Raw_Material = 'Raw_Material',
-  Finished_Product = 'Finished_Product',
-  Packaging = 'Packaging',
-  Equipment = 'Equipment',
-  Process = 'Process',
-  Documentation = 'Documentation',
-  Other = 'Other'
-}
-
-export enum NCReasonCategory {
-  Quality_Defect = 'Quality_Defect',
-  Safety_Issue = 'Safety_Issue',
-  Regulatory_Non_Compliance = 'Regulatory_Non_Compliance',
-  Process_Deviation = 'Process_Deviation',
-  Equipment_Failure = 'Equipment_Failure',
-  Documentation_Error = 'Documentation_Error',
-  Training_Gap = 'Training_Gap',
-  Supplier_Issue = 'Supplier_Issue',
-  Other = 'Other'
-}
-
-// Complaint related enums
-export enum ComplaintCategory {
-  Product_Quality = 'Product_Quality',
-  Food_Safety = 'Food_Safety',
-  Service = 'Service',
-  Delivery = 'Delivery',
-  Packaging = 'Packaging',
-  Labeling = 'Labeling',
-  Other = 'Other'
-}
-
-export enum ComplaintStatus {
-  New = 'New',
-  Under_Investigation = 'Under_Investigation',
-  Resolved = 'Resolved',
-  Closed = 'Closed'
-}
-
-export enum ComplaintPriority {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Critical = 'Critical'
-}
-
-// Training related enums
-export enum TrainingStatus {
-  Not_Started = 'Not_Started',
-  In_Progress = 'In_Progress',
-  Completed = 'Completed',
-  Failed = 'Failed',
+// Document Status Enum
+export enum DocumentStatus {
+  Draft = 'Draft',
+  Pending_Approval = 'Pending Approval',
+  Approved = 'Approved',
+  Published = 'Published',
+  Archived = 'Archived',
   Expired = 'Expired'
 }
 
-export enum TrainingType {
-  Orientation = 'Orientation',
-  Skills = 'Skills',
-  Safety = 'Safety',
-  Compliance = 'Compliance',
-  Quality = 'Quality',
-  Technical = 'Technical',
-  Refresher = 'Refresher'
+// Checkout Status Enum
+export enum CheckoutStatus {
+  Available = 'Available',
+  Checked_Out = 'Checked_Out'
 }
 
-export enum TrainingCategory {
-  Food_Safety = 'Food_Safety',
-  HACCP = 'HACCP',
-  GMP = 'GMP',
-  SQF = 'SQF',
-  BRC = 'BRC',
-  ISO = 'ISO',
-  Allergen = 'Allergen',
-  Chemical = 'Chemical',
-  Equipment = 'Equipment',
-  Documentation = 'Documentation'
+// Document Category Enum
+export enum DocumentCategory {
+  SOP = 'SOP',
+  Policy = 'Policy',
+  Form = 'Form',
+  Certificate = 'Certificate',
+  Audit_Report = 'Audit Report',
+  HACCP_Plan = 'HACCP Plan',
+  Training_Material = 'Training Material',
+  Supplier_Documentation = 'Supplier Documentation',
+  Risk_Assessment = 'Risk Assessment',
+  Other = 'Other'
 }
 
-// Audit related enums
-export enum AuditStatus {
-  Scheduled = 'Scheduled',
-  In_Progress = 'In_Progress',
+// Training Status Enum
+export enum TrainingStatus {
+  Not_Started = 'Not Started',
+  In_Progress = 'In Progress',
   Completed = 'Completed',
-  Cancelled = 'Cancelled'
+  Overdue = 'Overdue'
 }
 
-export enum FindingSeverity {
-  Critical = 'Critical',
-  Major = 'Major',
-  Minor = 'Minor',
-  Observation = 'Observation'
-}
-
-export enum FindingStatus {
-  Open = 'Open',
-  In_Progress = 'In_Progress',
+// Complaint Status Enum
+export enum ComplaintStatus {
+  New = 'New',
+  Under_Investigation = 'Under Investigation',
+  Resolved = 'Resolved',
   Closed = 'Closed'
 }
 
-// Recall related enums
-export enum RecallType {
-  Mock = 'Mock',
-  Actual = 'Actual'
-}
-
-export enum NotificationStatus {
-  Pending = 'Pending',
-  Sent = 'Sent',
-  Failed = 'Failed'
-}
-
-// Role related enums
-export enum RoleLevel {
-  Organization = 'Organization',
-  Facility = 'Facility',
-  Department = 'Department'
+// Complaint Category Enum
+export enum ComplaintCategory {
+  Product_Quality = 'Product_Quality',
+  Food_Safety = 'Food_Safety',
+  Foreign_Material = 'Foreign_Material',
+  Packaging = 'Packaging',
+  Delivery = 'Delivery',
+  Service = 'Service',
+  Other = 'Other'
 }
