@@ -1,8 +1,8 @@
 
-import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
 // Re-export enums for convenience
-export { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating };
+export { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating };
 
 export interface CAPA {
   id: string;
@@ -25,7 +25,7 @@ export interface CAPA {
   department?: string;
   fsma204_compliant?: boolean;
   effectiveness_verified?: boolean;
-  effectiveness_rating?: EffectivenessRating;
+  effectiveness_rating?: CAPAEffectivenessRating;
   verification_date?: string;
   verification_method?: string;
   verified_by?: string;
@@ -95,7 +95,7 @@ export interface UpdateCAPARequest {
   effectiveness_criteria?: string;
   department?: string;
   effectiveness_verified?: boolean;
-  effectiveness_rating?: EffectivenessRating;
+  effectiveness_rating?: CAPAEffectivenessRating;
   verification_date?: string;
   verification_method?: string;
   verified_by?: string;

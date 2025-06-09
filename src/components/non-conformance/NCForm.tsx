@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { getNonConformanceById, createNonConformance, updateNonConformance } from '@/services/nonConformanceService';
-import { NonConformance, NCStatus, NCItemCategory, NCReasonCategory } from '@/types/non-conformance';
+import { NonConformance } from '@/types/non-conformance';
+import { NCStatus, NCItemCategory, NCReasonCategory } from '@/types/enums';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 import { validateAndToast } from '@/lib/validation';
@@ -31,38 +32,13 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
   } = useForm<Partial<NonConformance>>();
   
   // Item categories
-  const itemCategories: NCItemCategory[] = [
-    'Equipment',
-    'Facility',
-    'Finished Product',
-    'Raw Material',
-    'Packaging Materials',
-    'Packaging',
-    'Other'
-  ];
+  const itemCategories = Object.values(NCItemCategory);
   
   // Reason categories
-  const reasonCategories: NCReasonCategory[] = [
-    'Quality Issue',
-    'Food Safety',
-    'Damaged',
-    'Process Deviation',
-    'Foreign Material',
-    'Expired',
-    'Other'
-  ];
+  const reasonCategories = Object.values(NCReasonCategory);
   
   // Status options
-  const statusOptions: NCStatus[] = [
-    NCStatus.OnHold,
-    NCStatus.InProgress,
-    NCStatus.UnderReview,
-    NCStatus.Resolved,
-    NCStatus.Closed,
-    NCStatus.Released,
-    NCStatus.Disposed,
-    NCStatus.Approved
-  ];
+  const statusOptions = Object.values(NCStatus);
   
   // Load existing non-conformance if editing
   useEffect(() => {
@@ -139,7 +115,7 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose }) => {
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
             <Select 
-              defaultValue={nonConformance.status || 'On Hold'} 
+              defaultValue={nonConformance.status || NCStatus.On_Hold} 
               onValueChange={(value) => setValue('status', value)}
             >
               <SelectTrigger>

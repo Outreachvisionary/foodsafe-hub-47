@@ -1,5 +1,20 @@
 
-import { DocumentCategory, DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { 
+  DocumentCategory, 
+  DocumentStatus, 
+  CheckoutStatus,
+  CAPAStatus,
+  CAPAPriority,
+  CAPASource,
+  CAPAEffectivenessRating,
+  TrainingStatus,
+  TrainingType,
+  TrainingCategory,
+  NCStatus,
+  ComplaintStatus,
+  ComplaintCategory,
+  ComplaintPriority
+} from '@/types/enums';
 
 export const formatEnumValue = (value: string): string => {
   return value.replace(/_/g, ' ');
@@ -95,25 +110,191 @@ export const stringToCheckoutStatus = (status: string): CheckoutStatus => {
 };
 
 // CAPA Status conversions
-export const stringToCAPAStatus = (status: string): any => {
-  return status; // For now, return as string until CAPA enums are fully implemented
+export const stringToCAPAStatus = (status: string): CAPAStatus => {
+  switch (status) {
+    case 'Open':
+      return CAPAStatus.Open;
+    case 'In Progress':
+      return CAPAStatus.In_Progress;
+    case 'Under Review':
+      return CAPAStatus.Under_Review;
+    case 'Approved':
+      return CAPAStatus.Approved;
+    case 'Closed':
+      return CAPAStatus.Closed;
+    case 'Cancelled':
+      return CAPAStatus.Cancelled;
+    case 'Pending Verification':
+      return CAPAStatus.Pending_Verification;
+    case 'Completed':
+      return CAPAStatus.Completed;
+    case 'Rejected':
+      return CAPAStatus.Rejected;
+    case 'On Hold':
+      return CAPAStatus.On_Hold;
+    case 'Overdue':
+      return CAPAStatus.Overdue;
+    case 'Verified':
+      return CAPAStatus.Verified;
+    default:
+      return CAPAStatus.Open;
+  }
 };
 
-// Training related conversions
-export const trainingStatusToString = (status: any): string => {
-  return String(status);
-};
-
-export const stringToTrainingStatus = (status: string): any => {
+export const capaStatusToString = (status: CAPAStatus): string => {
   return status;
 };
 
+// Training related conversions
+export const trainingStatusToString = (status: TrainingStatus): string => {
+  return status;
+};
+
+export const stringToTrainingStatus = (status: string): TrainingStatus => {
+  switch (status) {
+    case 'Not Started':
+      return TrainingStatus.Not_Started;
+    case 'In Progress':
+      return TrainingStatus.In_Progress;
+    case 'Completed':
+      return TrainingStatus.Completed;
+    case 'Expired':
+      return TrainingStatus.Expired;
+    case 'Failed':
+      return TrainingStatus.Failed;
+    default:
+      return TrainingStatus.Not_Started;
+  }
+};
+
 // Non-conformance related conversions
-export const stringToNCStatus = (status: string): any => {
+export const stringToNCStatus = (status: string): NCStatus => {
+  switch (status) {
+    case 'Open':
+      return NCStatus.Open;
+    case 'Under Investigation':
+      return NCStatus.Under_Investigation;
+    case 'Under Review':
+      return NCStatus.Under_Review;
+    case 'Resolved':
+      return NCStatus.Resolved;
+    case 'Closed':
+      return NCStatus.Closed;
+    case 'On Hold':
+      return NCStatus.On_Hold;
+    case 'In Progress':
+      return NCStatus.InProgress;
+    case 'Released':
+      return NCStatus.Released;
+    case 'Disposed':
+      return NCStatus.Disposed;
+    case 'Approved':
+      return NCStatus.Approved;
+    default:
+      return NCStatus.Open;
+  }
+};
+
+export const ncStatusToString = (status: NCStatus): string => {
   return status;
 };
 
 // Effectiveness rating conversions
-export const effectivenessRatingToString = (rating: any): string => {
-  return String(rating);
+export const effectivenessRatingToString = (rating: CAPAEffectivenessRating): string => {
+  return rating;
+};
+
+export const stringToEffectivenessRating = (rating: string): CAPAEffectivenessRating => {
+  switch (rating) {
+    case 'Not Assessed':
+      return CAPAEffectivenessRating.Not_Assessed;
+    case 'Ineffective':
+      return CAPAEffectivenessRating.Ineffective;
+    case 'Not Effective':
+      return CAPAEffectivenessRating.Not_Effective;
+    case 'Partially Effective':
+      return CAPAEffectivenessRating.Partially_Effective;
+    case 'Effective':
+      return CAPAEffectivenessRating.Effective;
+    case 'Pending':
+      return CAPAEffectivenessRating.Pending;
+    default:
+      return CAPAEffectivenessRating.Not_Assessed;
+  }
+};
+
+// Complaint related conversions
+export const stringToComplaintStatus = (status: string): ComplaintStatus => {
+  switch (status) {
+    case 'Open':
+      return ComplaintStatus.Open;
+    case 'In Progress':
+      return ComplaintStatus.In_Progress;
+    case 'Under Investigation':
+      return ComplaintStatus.Under_Investigation;
+    case 'Resolved':
+      return ComplaintStatus.Resolved;
+    case 'Closed':
+      return ComplaintStatus.Closed;
+    case 'Rejected':
+      return ComplaintStatus.Rejected;
+    case 'Pending Review':
+      return ComplaintStatus.Pending_Review;
+    default:
+      return ComplaintStatus.Open;
+  }
+};
+
+export const complaintStatusToString = (status: ComplaintStatus): string => {
+  return status;
+};
+
+export const stringToComplaintCategory = (category: string): ComplaintCategory => {
+  switch (category) {
+    case 'Product Quality':
+      return ComplaintCategory.Product_Quality;
+    case 'Food Safety':
+      return ComplaintCategory.Food_Safety;
+    case 'Packaging':
+      return ComplaintCategory.Packaging;
+    case 'Delivery':
+      return ComplaintCategory.Delivery;
+    case 'Customer Service':
+      return ComplaintCategory.Customer_Service;
+    case 'Allergen':
+      return ComplaintCategory.Allergen;
+    case 'Foreign Object':
+      return ComplaintCategory.Foreign_Object;
+    case 'Contamination':
+      return ComplaintCategory.Contamination;
+    case 'Other':
+      return ComplaintCategory.Other;
+    default:
+      return ComplaintCategory.Other;
+  }
+};
+
+export const complaintCategoryToString = (category: ComplaintCategory): string => {
+  return category;
+};
+
+export const stringToComplaintPriority = (priority: string): ComplaintPriority => {
+  switch (priority) {
+    case 'Low':
+      return ComplaintPriority.Low;
+    case 'Medium':
+      return ComplaintPriority.Medium;
+    case 'High':
+      return ComplaintPriority.High;
+    case 'Critical':
+      return ComplaintPriority.Critical;
+    case 'Urgent':
+      return ComplaintPriority.Urgent;
+    default:
+      return ComplaintPriority.Medium;
+  }
+};
+
+export const complaintPriorityToString = (priority: ComplaintPriority): string => {
+  return priority;
 };
