@@ -165,3 +165,31 @@ export const fetchRelatedTraining = async (sourceId: string): Promise<any[]> => 
     return [];
   }
 };
+
+// Helper function to assign training to employees
+export const assignTrainingToEmployees = async (
+  sessionId: string,
+  employeeIds: string[],
+  employeeNames: Record<string, string>
+): Promise<void> => {
+  try {
+    // Use proper TrainingStatus enum values
+    const assignments = employeeIds.map(employeeId => ({
+      session_id: sessionId,
+      employee_id: employeeId,
+      employee_name: employeeNames[employeeId] || 'Unknown Employee',
+      status: 'Not Started' as const,
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+    }));
+
+    const { error } = await supabase
+      .from('training_records')
+      .insert(assignments);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error assigning training to employees:', error);
+    throw error;
+  }
+};

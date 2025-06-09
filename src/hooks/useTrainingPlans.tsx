@@ -21,15 +21,16 @@ export const useTrainingPlans = () => {
       // Transform database fields to match TrainingPlan interface
       const transformedPlans: TrainingPlan[] = (data || []).map(plan => ({
         ...plan,
-        name: plan.name || plan.title || 'Untitled Plan',
-        target_roles: plan.target_roles || plan.targetRoles || [],
-        target_departments: plan.target_departments || plan.targetDepartments || [],
-        courses: plan.courses || plan.coursesIncluded || [],
-        priority: plan.priority || 'Medium',
-        startDate: plan.start_date || plan.startDate,
-        endDate: plan.end_date || plan.endDate,
-        duration_days: plan.duration_days || plan.durationDays,
-        is_required: plan.is_required || plan.isRequired || false
+        name: plan.name || 'Untitled Plan',
+        target_roles: plan.target_roles || [],
+        target_departments: plan.target_departments || [],
+        courses: plan.courses || [],
+        priority: (plan.priority || 'Medium') as any,
+        startDate: plan.start_date,
+        endDate: plan.end_date,
+        duration_days: plan.duration_days,
+        is_required: plan.is_required || false,
+        is_active: plan.is_active !== false // Default to true if not specified
       }));
 
       setTrainingPlans(transformedPlans);
@@ -47,19 +48,18 @@ export const useTrainingPlans = () => {
       // Transform frontend data to database format
       const dbPlan = {
         name: planData.name,
-        title: planData.title || planData.name,
         description: planData.description,
-        target_roles: planData.target_roles || planData.targetRoles || [],
-        target_departments: planData.target_departments || planData.targetDepartments || [],
-        courses: planData.courses || planData.coursesIncluded || [],
+        target_roles: planData.target_roles || [],
+        target_departments: planData.target_departments || [],
+        courses: planData.courses || [],
         priority: planData.priority || 'Medium',
         status: planData.status || 'Active',
         is_active: planData.is_active !== false,
-        is_required: planData.is_required || planData.isRequired || false,
+        is_required: planData.is_required || false,
         created_by: 'current_user',
-        start_date: planData.startDate || planData.start_date,
-        end_date: planData.endDate || planData.end_date,
-        duration_days: planData.durationDays || planData.duration_days
+        start_date: planData.startDate,
+        end_date: planData.endDate,
+        duration_days: planData.duration_days
       };
 
       const { data, error } = await supabase
@@ -73,15 +73,16 @@ export const useTrainingPlans = () => {
       // Transform back to frontend format
       const newPlan: TrainingPlan = {
         ...data,
-        name: data.name || data.title || 'Untitled Plan',
+        name: data.name || 'Untitled Plan',
         target_roles: data.target_roles || [],
         target_departments: data.target_departments || [],
         courses: data.courses || [],
-        priority: data.priority || 'Medium',
+        priority: (data.priority || 'Medium') as any,
         startDate: data.start_date,
         endDate: data.end_date,
         duration_days: data.duration_days,
-        is_required: data.is_required || false
+        is_required: data.is_required || false,
+        is_active: data.is_active !== false
       };
 
       setTrainingPlans(prev => [newPlan, ...prev]);
@@ -102,10 +103,10 @@ export const useTrainingPlans = () => {
       // Transform updates to database format
       const dbUpdates = {
         ...updates,
-        start_date: updates.startDate || updates.start_date,
-        end_date: updates.endDate || updates.end_date,
-        duration_days: updates.durationDays || updates.duration_days,
-        is_required: updates.isRequired || updates.is_required
+        start_date: updates.startDate,
+        end_date: updates.endDate,
+        duration_days: updates.duration_days,
+        is_required: updates.is_required
       };
 
       const { data, error } = await supabase
@@ -120,15 +121,16 @@ export const useTrainingPlans = () => {
       // Transform back to frontend format
       const updatedPlan: TrainingPlan = {
         ...data,
-        name: data.name || data.title || 'Untitled Plan',
+        name: data.name || 'Untitled Plan',
         target_roles: data.target_roles || [],
         target_departments: data.target_departments || [],
         courses: data.courses || [],
-        priority: data.priority || 'Medium',
+        priority: (data.priority || 'Medium') as any,
         startDate: data.start_date,
         endDate: data.end_date,
         duration_days: data.duration_days,
-        is_required: data.is_required || false
+        is_required: data.is_required || false,
+        is_active: data.is_active !== false
       };
 
       setTrainingPlans(prev => prev.map(plan => 
