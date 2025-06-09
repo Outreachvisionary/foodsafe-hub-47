@@ -27,6 +27,7 @@ const CreateCAPADialog: React.FC<CreateCAPADialogProps> = ({ isOpen, onClose, on
       priority,
       source,
       assigned_to: assignedTo,
+      created_by: 'current-user', // TODO: Get from auth context
       due_date: dueDate,
       department
     };

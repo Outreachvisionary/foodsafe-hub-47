@@ -1,4 +1,3 @@
-
 import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
 export interface Complaint {
@@ -30,6 +29,7 @@ export interface CreateComplaintRequest {
   customer_contact?: string;
   product_involved?: string;
   lot_number?: string;
+  created_by: string;
 }
 
 export interface UpdateComplaintRequest {

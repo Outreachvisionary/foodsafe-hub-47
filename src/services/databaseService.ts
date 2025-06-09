@@ -2,6 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CreateCAPARequest } from '@/types/capa';
 import { Complaint, CreateComplaintRequest } from '@/types/complaint';
+import { stringToCAPAStatus, stringToCAPAPriority, stringToCAPASource, stringToEffectivenessRating, capaPriorityToString, capaSourceToString } from '@/utils/capaAdapters';
+import { complaintCategoryToDbString, complaintStatusToDbString, stringToComplaintCategory, stringToComplaintStatus } from '@/services/complaintService';
 
 class DatabaseService {
   // Generic error handler
@@ -18,19 +20,26 @@ class DatabaseService {
         .insert({
           title: data.title,
           description: data.description,
-          priority: data.priority.toString(),
+          priority: capaPriorityToString(data.priority),
           assigned_to: data.assigned_to,
-          created_by: data.created_by || 'system',
-          source: data.source.toString(),
+          created_by: data.created_by,
+          source: capaSourceToString(data.source),
           due_date: data.due_date,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          department: data.department,
+          status: 'Open'
         })
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        priority: stringToCAPAPriority(result.priority),
+        status: stringToCAPAStatus(result.status),
+        source: stringToCAPASource(result.source),
+        effectiveness_rating: result.effectiveness_rating ? stringToEffectivenessRating(result.effectiveness_rating) : undefined
+      };
     } catch (error) {
       this.handleError(error, 'Create CAPA');
       throw error;
@@ -39,18 +48,35 @@ class DatabaseService {
 
   async updateCAPA(id: string, data: Partial<CAPA>): Promise<CAPA> {
     try {
+      const updateData: any = {
+        ...data,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Convert enums to strings for database
+      if (data.priority) {
+        updateData.priority = capaPriorityToString(data.priority);
+      }
+      if (data.source) {
+        updateData.source = capaSourceToString(data.source);
+      }
+
       const { data: result, error } = await supabase
         .from('capa_actions')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        priority: stringToCAPAPriority(result.priority),
+        status: stringToCAPAStatus(result.status),
+        source: stringToCAPASource(result.source),
+        effectiveness_rating: result.effectiveness_rating ? stringToEffectivenessRating(result.effectiveness_rating) : undefined
+      };
     } catch (error) {
       this.handleError(error, 'Update CAPA');
       throw error;
@@ -65,7 +91,14 @@ class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(item => ({
+        ...item,
+        priority: stringToCAPAPriority(item.priority),
+        status: stringToCAPAStatus(item.status),
+        source: stringToCAPASource(item.source),
+        effectiveness_rating: item.effectiveness_rating ? stringToEffectivenessRating(item.effectiveness_rating) : undefined
+      }));
     } catch (error) {
       this.handleError(error, 'Get CAPAs');
       return [];
@@ -80,22 +113,26 @@ class DatabaseService {
         .insert({
           title: data.title,
           description: data.description,
-          category: data.category.toString(),
+          category: complaintCategoryToDbString(data.category),
           priority: data.priority?.toString(),
           customer_name: data.customer_name,
           customer_contact: data.customer_contact,
           product_involved: data.product_involved,
           lot_number: data.lot_number,
-          created_by: data.created_by || 'system',
-          reported_date: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          created_by: data.created_by,
+          status: 'New',
+          reported_date: new Date().toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        category: stringToComplaintCategory(result.category),
+        status: stringToComplaintStatus(result.status)
+      };
     } catch (error) {
       this.handleError(error, 'Create Complaint');
       throw error;
@@ -104,18 +141,33 @@ class DatabaseService {
 
   async updateComplaint(id: string, data: Partial<Complaint>): Promise<Complaint> {
     try {
+      const updateData: any = {
+        ...data,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Convert enums to strings for database
+      if (data.category) {
+        updateData.category = complaintCategoryToDbString(data.category);
+      }
+      if (data.status) {
+        updateData.status = complaintStatusToDbString(data.status);
+      }
+
       const { data: result, error } = await supabase
         .from('complaints')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      
+      return {
+        ...result,
+        category: stringToComplaintCategory(result.category),
+        status: stringToComplaintStatus(result.status)
+      };
     } catch (error) {
       this.handleError(error, 'Update Complaint');
       throw error;
@@ -130,7 +182,12 @@ class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(item => ({
+        ...item,
+        category: stringToComplaintCategory(item.category),
+        status: stringToComplaintStatus(item.status)
+      }));
     } catch (error) {
       this.handleError(error, 'Get Complaints');
       return [];

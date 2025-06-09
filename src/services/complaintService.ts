@@ -1,11 +1,11 @@
 
-import { Complaint, ComplaintFilter } from '@/types/complaint';
+import { Complaint, ComplaintFilter, CreateComplaintRequest } from '@/types/complaint';
 import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 // Helper function to convert enum to database string
-const complaintCategoryToDbString = (category: ComplaintCategory): string => {
+export const complaintCategoryToDbString = (category: ComplaintCategory): string => {
   switch (category) {
     case ComplaintCategory.Product_Quality:
       return 'Product Quality';
@@ -18,7 +18,7 @@ const complaintCategoryToDbString = (category: ComplaintCategory): string => {
     case ComplaintCategory.Delivery:
       return 'Delivery';
     case ComplaintCategory.Service:
-      return 'Service';
+      return 'Customer Service';
     case ComplaintCategory.Labeling:
       return 'Labeling';
     case ComplaintCategory.Other:
@@ -28,7 +28,7 @@ const complaintCategoryToDbString = (category: ComplaintCategory): string => {
   }
 };
 
-const complaintStatusToDbString = (status: ComplaintStatus): string => {
+export const complaintStatusToDbString = (status: ComplaintStatus): string => {
   switch (status) {
     case ComplaintStatus.New:
       return 'New';
@@ -40,6 +40,44 @@ const complaintStatusToDbString = (status: ComplaintStatus): string => {
       return 'Closed';
     default:
       return 'New';
+  }
+};
+
+export const stringToComplaintCategory = (category: string): ComplaintCategory => {
+  switch (category) {
+    case 'Product Quality':
+      return ComplaintCategory.Product_Quality;
+    case 'Food Safety':
+      return ComplaintCategory.Food_Safety;
+    case 'Foreign Material':
+      return ComplaintCategory.Foreign_Material;
+    case 'Packaging':
+      return ComplaintCategory.Packaging;
+    case 'Delivery':
+      return ComplaintCategory.Delivery;
+    case 'Customer Service':
+      return ComplaintCategory.Service;
+    case 'Labeling':
+      return ComplaintCategory.Labeling;
+    case 'Other':
+      return ComplaintCategory.Other;
+    default:
+      return ComplaintCategory.Other;
+  }
+};
+
+export const stringToComplaintStatus = (status: string): ComplaintStatus => {
+  switch (status) {
+    case 'New':
+      return ComplaintStatus.New;
+    case 'Under Investigation':
+      return ComplaintStatus.Under_Investigation;
+    case 'Resolved':
+      return ComplaintStatus.Resolved;
+    case 'Closed':
+      return ComplaintStatus.Closed;
+    default:
+      return ComplaintStatus.New;
   }
 };
 
@@ -56,34 +94,19 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
       if (filters.status) {
         if (Array.isArray(filters.status)) {
           const statusStrings = filters.status.map(s => complaintStatusToDbString(s));
-          query = query.in('status', statusStrings as any);
+          query = query.in('status', statusStrings);
         } else {
-          query = query.eq('status', complaintStatusToDbString(filters.status) as any);
+          query = query.eq('status', complaintStatusToDbString(filters.status));
         }
       }
       
       if (filters.category) {
         if (Array.isArray(filters.category)) {
           const categoryStrings = filters.category.map(c => complaintCategoryToDbString(c));
-          query = query.in('category', categoryStrings as any);
+          query = query.in('category', categoryStrings);
         } else {
-          query = query.eq('category', complaintCategoryToDbString(filters.category) as any);
+          query = query.eq('category', complaintCategoryToDbString(filters.category));
         }
-      }
-      
-      if (filters.priority) {
-        if (Array.isArray(filters.priority)) {
-          const priorityStrings = filters.priority.map(p => p.toString());
-          query = query.in('priority', priorityStrings as any);
-        } else {
-          query = query.eq('priority', filters.priority.toString() as any);
-        }
-      }
-      
-      if (filters.dateRange) {
-        query = query
-          .gte('reported_date', filters.dateRange.start)
-          .lte('reported_date', filters.dateRange.end);
       }
       
       if (filters.searchTerm) {
@@ -95,7 +118,11 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
     
     if (error) throw error;
     
-    return data as unknown as Complaint[];
+    return (data || []).map(item => ({
+      ...item,
+      category: stringToComplaintCategory(item.category),
+      status: stringToComplaintStatus(item.status)
+    }));
   } catch (error) {
     console.error('Error fetching complaints:', error);
     toast({
@@ -118,7 +145,11 @@ export const fetchComplaintById = async (id: string): Promise<Complaint> => {
 
     if (error) throw error;
     
-    return data as unknown as Complaint;
+    return {
+      ...data,
+      category: stringToComplaintCategory(data.category),
+      status: stringToComplaintStatus(data.status)
+    };
   } catch (error) {
     console.error('Error fetching complaint:', error);
     throw new Error('Failed to fetch complaint details');
@@ -126,23 +157,19 @@ export const fetchComplaintById = async (id: string): Promise<Complaint> => {
 };
 
 // Create a new complaint
-export const createComplaint = async (complaint: Omit<Complaint, 'id' | 'created_at' | 'updated_at'>): Promise<Complaint> => {
+export const createComplaint = async (complaint: CreateComplaintRequest): Promise<Complaint> => {
   try {
-    // Convert enum values to database strings
     const dbComplaint = {
       title: complaint.title,
       description: complaint.description,
       category: complaintCategoryToDbString(complaint.category),
-      status: complaint.status ? complaintStatusToDbString(complaint.status) : 'New',
-      reported_date: complaint.reported_date,
-      resolution_date: complaint.resolution_date,
-      assigned_to: complaint.assigned_to,
+      status: 'New',
+      reported_date: new Date().toISOString(),
       created_by: complaint.created_by,
       customer_name: complaint.customer_name,
       customer_contact: complaint.customer_contact,
       product_involved: complaint.product_involved,
-      lot_number: complaint.lot_number,
-      capa_id: complaint.capa_id
+      lot_number: complaint.lot_number
     };
 
     const { data, error } = await supabase
@@ -153,7 +180,11 @@ export const createComplaint = async (complaint: Omit<Complaint, 'id' | 'created
 
     if (error) throw error;
     
-    return data as unknown as Complaint;
+    return {
+      ...data,
+      category: stringToComplaintCategory(data.category),
+      status: stringToComplaintStatus(data.status)
+    };
   } catch (error) {
     console.error('Error creating complaint:', error);
     throw new Error('Failed to create complaint');
@@ -163,10 +194,8 @@ export const createComplaint = async (complaint: Omit<Complaint, 'id' | 'created
 // Update an existing complaint
 export const updateComplaint = async (id: string, updates: Partial<Complaint>): Promise<Complaint> => {
   try {
-    // Don't allow updates to id, created_at, and similar fields
     const { id: _, created_at, updated_at, ...updateData } = updates;
     
-    // Convert enum values to database strings
     const dbUpdates: any = { ...updateData, updated_at: new Date().toISOString() };
     if (updateData.category) {
       dbUpdates.category = complaintCategoryToDbString(updateData.category);
@@ -184,7 +213,11 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
 
     if (error) throw error;
     
-    return data as unknown as Complaint;
+    return {
+      ...data,
+      category: stringToComplaintCategory(data.category),
+      status: stringToComplaintStatus(data.status)
+    };
   } catch (error) {
     console.error('Error updating complaint:', error);
     throw new Error('Failed to update complaint');
@@ -198,20 +231,10 @@ export const updateComplaintStatus = async (
   userId: string
 ): Promise<Complaint> => {
   try {
-    const { data: complaint, error: fetchError } = await supabase
-      .from('complaints')
-      .select('status')
-      .eq('id', id)
-      .single();
-      
-    if (fetchError) throw fetchError;
-    
-    const oldStatus = complaint.status;
-    
     const { data, error } = await supabase
       .from('complaints')
       .update({ 
-        status: status as any, 
+        status: status, 
         updated_at: new Date().toISOString(),
         resolution_date: status === 'Resolved' ? new Date().toISOString() : null
       })
@@ -221,18 +244,20 @@ export const updateComplaintStatus = async (
 
     if (error) throw error;
     
-    return data as unknown as Complaint;
+    return {
+      ...data,
+      category: stringToComplaintCategory(data.category),
+      status: stringToComplaintStatus(data.status)
+    };
   } catch (error) {
     console.error('Error updating complaint status:', error);
     throw new Error('Failed to update complaint status');
   }
 };
 
-// Fetch activities for a specific complaint
+// Fetch activities for a specific complaint (placeholder)
 export const fetchComplaintActivities = async (complaintId: string) => {
   try {
-    // Note: complaint_activities table doesn't exist in the database schema
-    // Return empty array for now
     console.log('Complaint activities not available - table does not exist');
     return [];
   } catch (error) {
@@ -241,7 +266,7 @@ export const fetchComplaintActivities = async (complaintId: string) => {
   }
 };
 
-// Add a new activity to a complaint
+// Add a new activity to a complaint (placeholder)
 export const addComplaintActivity = async (
   complaintId: string, 
   activityType: string, 
@@ -249,8 +274,6 @@ export const addComplaintActivity = async (
   userId: string
 ) => {
   try {
-    // Note: complaint_activities table doesn't exist in the database schema
-    // Return mock data for now
     console.log('Complaint activity logging not available - table does not exist');
     return null;
   } catch (error) {
@@ -262,7 +285,6 @@ export const addComplaintActivity = async (
 // Create a CAPA from a complaint
 export const createCAPAFromComplaint = async (complaintId: string, userId: string) => {
   try {
-    // Get complaint details first
     const { data: complaint, error: fetchError } = await supabase
       .from('complaints')
       .select('*')
@@ -271,7 +293,6 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
       
     if (fetchError) throw fetchError;
     
-    // Create a new CAPA
     const { data: capa, error: capaError } = await supabase
       .from('capa_actions')
       .insert({
@@ -282,14 +303,13 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
         status: 'Open',
         created_by: userId,
         assigned_to: complaint.assigned_to || userId,
-        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default due date: 1 week
+        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();
       
     if (capaError) throw capaError;
     
-    // Link the CAPA to the complaint
     const { error: updateError } = await supabase
       .from('complaints')
       .update({ 
@@ -299,14 +319,6 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
       .eq('id', complaintId);
       
     if (updateError) throw updateError;
-    
-    // Record this activity (if complaint_activities table existed)
-    await addComplaintActivity(
-      complaintId,
-      'CAPA Created',
-      `CAPA action created with ID: ${capa.id}`,
-      userId
-    );
     
     return capa;
   } catch (error) {
@@ -333,15 +345,10 @@ export const getComplaintStatistics = async () => {
       avgResolutionTime: 0
     };
     
-    // Calculate statistics
     data.forEach((complaint) => {
-      // By status
       stats.byStatus[complaint.status] = (stats.byStatus[complaint.status] || 0) + 1;
-      
-      // By category
       stats.byCategory[complaint.category] = (stats.byCategory[complaint.category] || 0) + 1;
       
-      // Count high priority open complaints (priority column doesn't exist yet)
       if ((complaint.status === 'New' || complaint.status === 'Under Investigation')) {
         stats.openHighPriority++;
       }

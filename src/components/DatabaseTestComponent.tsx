@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ const DatabaseTestComponent: React.FC = () => {
     description: 'Test CAPA description',
     priority: CAPAPriority.Medium,
     assigned_to: 'test-user',
+    created_by: 'test-user',
     source: CAPASource.Internal_Report,
     due_date: new Date().toISOString().split('T')[0]
   });
@@ -25,7 +25,8 @@ const DatabaseTestComponent: React.FC = () => {
   const [complaintForm, setComplaintForm] = useState({
     title: 'Test Complaint',
     description: 'Test complaint description',
-    category: ComplaintCategory.Product_Quality
+    category: ComplaintCategory.Product_Quality,
+    created_by: 'test-user'
   });
 
   const testCAPACreation = async () => {
@@ -118,6 +119,14 @@ const DatabaseTestComponent: React.FC = () => {
                 onChange={(e) => setCAPAForm({ ...capaForm, assigned_to: e.target.value })}
               />
             </div>
+            <div>
+              <Label htmlFor="capa-created-by">Created By</Label>
+              <Input
+                id="capa-created-by"
+                value={capaForm.created_by}
+                onChange={(e) => setCAPAForm({ ...capaForm, created_by: e.target.value })}
+              />
+            </div>
             <div className="col-span-2">
               <Label htmlFor="capa-description">Description</Label>
               <Textarea
@@ -141,6 +150,14 @@ const DatabaseTestComponent: React.FC = () => {
                 id="complaint-title"
                 value={complaintForm.title}
                 onChange={(e) => setComplaintForm({ ...complaintForm, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="complaint-created-by">Created By</Label>
+              <Input
+                id="complaint-created-by"
+                value={complaintForm.created_by}
+                onChange={(e) => setComplaintForm({ ...complaintForm, created_by: e.target.value })}
               />
             </div>
             <div className="col-span-2">
