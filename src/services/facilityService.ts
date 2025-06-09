@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Facility as TypedFacility } from '@/types/facility';
 
 export interface Facility {
   id?: string;
@@ -19,22 +20,33 @@ export interface Facility {
   facility_type?: string;
 }
 
-export const createFacility = async (facilityData: Omit<Facility, 'id' | 'created_at' | 'updated_at'>): Promise<Facility> => {
+export const createFacility = async (facilityData: Omit<Facility, 'id' | 'created_at' | 'updated_at'>): Promise<TypedFacility> => {
   try {
+    // Ensure name is provided as it's required
+    if (!facilityData.name) {
+      throw new Error('Facility name is required');
+    }
+
     const dataToInsert = {
-      ...facilityData,
+      name: facilityData.name,
+      organization_id: facilityData.organization_id,
+      description: facilityData.description || '',
+      address: facilityData.address || '',
+      contact_email: facilityData.contact_email || '',
+      contact_phone: facilityData.contact_phone || '',
+      status: facilityData.status || 'active',
+      country: facilityData.country || '',
+      state: facilityData.state || '',
+      city: facilityData.city || '',
+      zipcode: facilityData.zipcode || '',
+      facility_type: facilityData.facility_type || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
-    // Ensure name is provided as it's required
-    if (!dataToInsert.name) {
-      throw new Error('Facility name is required');
-    }
-
     const { data, error } = await supabase
       .from('facilities')
-      .insert([dataToInsert])
+      .insert(dataToInsert)
       .select()
       .single();
 
@@ -43,14 +55,14 @@ export const createFacility = async (facilityData: Omit<Facility, 'id' | 'create
       throw error;
     }
 
-    return data as Facility;
+    return data as TypedFacility;
   } catch (error) {
     console.error('Error in createFacility:', error);
     throw error;
   }
 };
 
-export const getFacilities = async (): Promise<Facility[]> => {
+export const getFacilities = async (): Promise<TypedFacility[]> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
@@ -62,14 +74,14 @@ export const getFacilities = async (): Promise<Facility[]> => {
       throw error;
     }
 
-    return data as Facility[];
+    return data as TypedFacility[];
   } catch (error) {
     console.error('Error in getFacilities:', error);
     return [];
   }
 };
 
-export const getFacilityById = async (id: string): Promise<Facility> => {
+export const getFacilityById = async (id: string): Promise<TypedFacility> => {
   try {
     const { data, error } = await supabase
       .from('facilities')
@@ -82,14 +94,14 @@ export const getFacilityById = async (id: string): Promise<Facility> => {
       throw error;
     }
 
-    return data as Facility;
+    return data as TypedFacility;
   } catch (error) {
     console.error('Error in getFacilityById:', error);
     throw error;
   }
 };
 
-export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility> => {
+export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<TypedFacility> => {
   try {
     const updateData = {
       ...updates,
@@ -108,7 +120,7 @@ export const updateFacility = async (id: string, updates: Partial<Facility>): Pr
       throw error;
     }
 
-    return data as Facility;
+    return data as TypedFacility;
   } catch (error) {
     console.error('Error in updateFacility:', error);
     throw error;

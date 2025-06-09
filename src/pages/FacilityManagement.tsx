@@ -74,7 +74,15 @@ const FacilityManagement = () => {
       try {
         if (!isNewFacility && id) {
           const facilityData = await getFacilityById(id);
-          setFacility(facilityData);
+          // Cast to ensure proper typing
+          const typedFacility: Facility = {
+            ...facilityData,
+            id: facilityData.id || '',
+            created_at: facilityData.created_at || new Date().toISOString(),
+            updated_at: facilityData.updated_at || new Date().toISOString(),
+            organization_id: facilityData.organization_id || ''
+          };
+          setFacility(typedFacility);
           
           // Populate form with facility data
           form.reset({
@@ -156,7 +164,7 @@ const FacilityManagement = () => {
       console.log('Submitting facility data:', data);
       
       // Process the facility data
-      const facilityData: Partial<Facility> = {
+      const facilityData = {
         ...data,
         // Get the location fields from the form data or the location component
         address: data.address || locationData.address,
@@ -165,32 +173,14 @@ const FacilityManagement = () => {
         city: data.city || locationData.city,
         zipcode: data.zipcode || locationData.zipcode,
         organization_id: data.organization_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
       };
       
       console.log('Final facility data being sent to API:', facilityData);
-      let savedFacility: any; // Use any to handle type mismatch
       
       if (isNewFacility) {
         // Create new facility
         console.log('Creating new facility with data:', facilityData);
-        const newFacilityData = {
-          name: facilityData.name as string,
-          organization_id: facilityData.organization_id as string,
-          status: facilityData.status as 'active' | 'inactive' | 'pending',
-          description: facilityData.description,
-          address: facilityData.address,
-          country: facilityData.country,
-          state: facilityData.state,
-          city: facilityData.city,
-          zipcode: facilityData.zipcode,
-          contact_email: facilityData.contact_email,
-          contact_phone: facilityData.contact_phone,
-          created_at: facilityData.created_at,
-          updated_at: facilityData.updated_at
-        };
-        savedFacility = await createFacility(newFacilityData);
+        const savedFacility = await createFacility(facilityData);
         console.log('Facility created successfully:', savedFacility);
         toast({
           title: 'Facility Created',
@@ -200,10 +190,7 @@ const FacilityManagement = () => {
       } else {
         // Update existing facility
         console.log('Updating facility with data:', facilityData);
-        if (facilityData.status) {
-          facilityData.status = facilityData.status as 'active' | 'inactive' | 'pending';
-        }
-        savedFacility = await updateFacility(id!, facilityData as any); // Use any to handle type mismatch
+        const savedFacility = await updateFacility(id!, facilityData);
         console.log('Facility updated successfully:', savedFacility);
         toast({
           title: 'Facility Updated',

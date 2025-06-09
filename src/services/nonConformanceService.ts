@@ -41,15 +41,36 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
 // Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
+    const insertData = {
+      title: data.title || '',
+      description: data.description || '',
+      item_name: data.item_name || '',
+      item_category: data.item_category || 'Other',
+      reason_category: data.reason_category || 'Other',
+      status: data.status || 'On Hold',
+      created_by: data.created_by || '',
+      assigned_to: data.assigned_to,
+      department: data.department,
+      location: data.location,
+      priority: data.priority,
+      risk_level: data.risk_level,
+      quantity: data.quantity || 0,
+      quantity_on_hold: data.quantity_on_hold || 0,
+      tags: data.tags,
+      units: data.units,
+      item_id: data.item_id,
+      reason_details: data.reason_details,
+      reviewer: data.reviewer,
+      resolution_details: data.resolution_details,
+      capa_id: data.capa_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      reported_date: data.reported_date || new Date().toISOString(),
+    };
+
     const { data: newNC, error } = await supabase
       .from('non_conformances')
-      .insert([{
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        reported_date: data.reported_date || new Date().toISOString(),
-        status: data.status || 'On Hold'
-      }])
+      .insert(insertData)
       .select()
       .single();
 
@@ -64,12 +85,25 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
 // Update non-conformance
 export const updateNonConformance = async (id: string, data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
+    const updateData: any = {
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+
+    // Ensure enum values are strings
+    if (updateData.status) {
+      updateData.status = String(updateData.status);
+    }
+    if (updateData.item_category) {
+      updateData.item_category = String(updateData.item_category);
+    }
+    if (updateData.reason_category) {
+      updateData.reason_category = String(updateData.reason_category);
+    }
+
     const { data: updatedNC, error } = await supabase
       .from('non_conformances')
-      .update({
-        ...data,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

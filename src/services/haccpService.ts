@@ -56,13 +56,14 @@ export const createHaccpPlan = async (planData: Omit<HaccpPlan, 'id' | 'created_
       last_review_date: planData.last_review_date,
       next_review_date: planData.next_review_date,
       ccp_count: planData.ccp_count || 0,
+      product_scope: '', // Add required field
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase
       .from('haccp_plans')
-      .insert([dataToInsert])
+      .insert(dataToInsert)
       .select()
       .single();
 
@@ -135,7 +136,7 @@ export const createCCP = async (ccpData: Omit<CriticalControlPoint, 'id' | 'crea
 
     const { data, error } = await supabase
       .from('ccps')
-      .insert([dataToInsert])
+      .insert(dataToInsert)
       .select()
       .single();
 
