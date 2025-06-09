@@ -1,4 +1,3 @@
-
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -41,13 +40,14 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
 // Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
+    // Ensure required fields and convert types
     const insertData = {
       title: data.title || '',
       description: data.description || '',
       item_name: data.item_name || '',
-      item_category: data.item_category || 'Other',
-      reason_category: data.reason_category || 'Other',
-      status: data.status || 'On Hold',
+      item_category: String(data.item_category || 'Other') as 'Other' | 'Processing Equipment' | 'Product Storage Tanks' | 'Finished Products' | 'Raw Products' | 'Packaging Materials',
+      reason_category: String(data.reason_category || 'Other') as 'Other' | 'Contamination' | 'Quality Issues' | 'Regulatory Non-Compliance' | 'Equipment Malfunction' | 'Documentation Error' | 'Process Deviation' | 'Foreign Material' | 'Temperature Abuse' | 'Packaging Defect' | 'Labeling Error' | 'Food Safety' | 'Damaged' | 'Expired',
+      status: String(data.status || 'On Hold') as 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Resolved' | 'Closed' | 'Approved' | 'Rejected',
       created_by: data.created_by || '',
       assigned_to: data.assigned_to,
       department: data.department,
@@ -90,7 +90,7 @@ export const updateNonConformance = async (id: string, data: Partial<NonConforma
       updated_at: new Date().toISOString()
     };
 
-    // Ensure enum values are strings
+    // Ensure enum values are proper strings
     if (updateData.status) {
       updateData.status = String(updateData.status);
     }
@@ -206,7 +206,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
 
     const ncs = nonConformances || [];
     
-    // Calculate stats from real data
     const stats: NCStats = {
       total: ncs.length,
       byStatus: {},
@@ -220,7 +219,6 @@ export const fetchNCStats = async (): Promise<NCStats> => {
       recentItems: ncs.slice(0, 5)
     };
 
-    // Calculate status distribution
     ncs.forEach(nc => {
       const status = nc.status || 'Unknown';
       stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
@@ -234,17 +232,14 @@ export const fetchNCStats = async (): Promise<NCStats> => {
       const riskLevel = nc.risk_level || 'Unknown';
       stats.byRiskLevel[riskLevel] = (stats.byRiskLevel[riskLevel] || 0) + 1;
       
-      // Add to quantity on hold
       if (nc.quantity_on_hold) {
         stats.totalQuantityOnHold += Number(nc.quantity_on_hold);
       }
       
-      // Count pending review
       if (nc.status === 'Under Review') {
         stats.pendingReview++;
       }
       
-      // Count recently resolved (last 30 days)
       if (nc.resolution_date) {
         const resolvedDate = new Date(nc.resolution_date);
         const thirtyDaysAgo = new Date();

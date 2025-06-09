@@ -30,7 +30,13 @@ export const fetchApprovalWorkflows = async (): Promise<ApprovalWorkflow[]> => {
       
     if (error) throw error;
     
-    return data || [];
+    // Convert Json type to Record<string, any> for approval_history
+    return (data || []).map(item => ({
+      ...item,
+      approval_history: typeof item.approval_history === 'object' && item.approval_history !== null 
+        ? item.approval_history as Record<string, any>
+        : {}
+    })) as ApprovalWorkflow[];
   } catch (error) {
     console.error('Error fetching approval workflows:', error);
     toast.error('Failed to load approval workflows');
@@ -52,7 +58,13 @@ export const fetchApprovalWorkflowById = async (id: string): Promise<ApprovalWor
       
     if (error) throw error;
     
-    return data;
+    // Convert Json type to Record<string, any> for approval_history
+    return {
+      ...data,
+      approval_history: typeof data.approval_history === 'object' && data.approval_history !== null 
+        ? data.approval_history as Record<string, any>
+        : {}
+    };
   } catch (error) {
     console.error(`Error fetching approval workflow with ID ${id}:`, error);
     toast.error('Failed to load approval workflow details');
@@ -132,7 +144,12 @@ export const createApprovalWorkflow = async (
       })
       .eq('id', supplierId);
     
-    return data;
+    return {
+      ...data,
+      approval_history: typeof data.approval_history === 'object' && data.approval_history !== null 
+        ? data.approval_history as Record<string, any>
+        : {}
+    };
   } catch (error) {
     if (error.message !== 'Duplicate workflow') {
       console.error('Error creating approval workflow:', error);
@@ -159,10 +176,12 @@ export const advanceWorkflowStep = async (
     if (fetchError) throw fetchError;
     
     const currentStep = workflow.current_step;
-    const approvalHistory = workflow.approval_history || { steps: [] };
+    const approvalHistory = (typeof workflow.approval_history === 'object' && workflow.approval_history !== null 
+      ? workflow.approval_history as Record<string, any>
+      : { steps: [] });
     
     // Update the current step to completed
-    const updatedSteps = approvalHistory.steps.map(step => {
+    const updatedSteps = (approvalHistory.steps || []).map((step: any) => {
       if (step.step === currentStep) {
         return {
           ...step,
@@ -182,7 +201,7 @@ export const advanceWorkflowStep = async (
     });
     
     // Determine if this was the final step
-    const isLastStep = !approvalHistory.steps.some(step => step.step === currentStep + 1);
+    const isLastStep = !(approvalHistory.steps || []).some((step: any) => step.step === currentStep + 1);
     const newStatus = isLastStep ? 'approved' : 'in_progress';
     
     // Update the workflow
@@ -213,7 +232,12 @@ export const advanceWorkflowStep = async (
         .eq('id', workflow.supplier_id);
     }
     
-    return data;
+    return {
+      ...data,
+      approval_history: typeof data.approval_history === 'object' && data.approval_history !== null 
+        ? data.approval_history as Record<string, any>
+        : {}
+    };
   } catch (error) {
     console.error(`Error advancing workflow with ID ${workflowId}:`, error);
     toast.error('Failed to advance approval workflow');
@@ -238,10 +262,12 @@ export const rejectWorkflow = async (
     if (fetchError) throw fetchError;
     
     const currentStep = workflow.current_step;
-    const approvalHistory = workflow.approval_history || { steps: [] };
+    const approvalHistory = (typeof workflow.approval_history === 'object' && workflow.approval_history !== null 
+      ? workflow.approval_history as Record<string, any>
+      : { steps: [] });
     
     // Update the current step to rejected
-    const updatedSteps = approvalHistory.steps.map(step => {
+    const updatedSteps = (approvalHistory.steps || []).map((step: any) => {
       if (step.step === currentStep) {
         return {
           ...step,
@@ -279,7 +305,12 @@ export const rejectWorkflow = async (
       })
       .eq('id', workflow.supplier_id);
     
-    return data;
+    return {
+      ...data,
+      approval_history: typeof data.approval_history === 'object' && data.approval_history !== null 
+        ? data.approval_history as Record<string, any>
+        : {}
+    };
   } catch (error) {
     console.error(`Error rejecting workflow with ID ${workflowId}:`, error);
     toast.error('Failed to reject approval workflow');
@@ -316,10 +347,12 @@ export const editWorkflowStep = async (
       throw new Error('Cannot edit completed or rejected workflows');
     }
     
-    const approvalHistory = workflow.approval_history || { steps: [] };
+    const approvalHistory = (typeof workflow.approval_history === 'object' && workflow.approval_history !== null 
+      ? workflow.approval_history as Record<string, any>
+      : { steps: [] });
     
     // Update step statuses
-    const updatedSteps = approvalHistory.steps.map(step => {
+    const updatedSteps = (approvalHistory.steps || []).map((step: any) => {
       if (step.step === currentStep) {
         // Current step becomes pending
         return {
@@ -380,7 +413,12 @@ export const editWorkflowStep = async (
       
     if (error) throw error;
     
-    return data;
+    return {
+      ...data,
+      approval_history: typeof data.approval_history === 'object' && data.approval_history !== null 
+        ? data.approval_history as Record<string, any>
+        : {}
+    };
   } catch (error) {
     console.error(`Error editing workflow step for workflow ID ${workflowId}:`, error);
     toast.error(error.message || 'Failed to edit approval workflow step');
