@@ -51,12 +51,23 @@ export const fetchActiveDocuments = async (): Promise<Document[]> => {
 
 export const createDocument = async (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> => {
   try {
-    // Convert enum types to database strings
-    const dbDocument = {
-      ...document,
+    // Convert enum types to database strings and ensure proper typing
+    const dbDocument: any = {
+      title: document.title,
+      description: document.description,
+      file_name: document.file_name,
+      file_type: document.file_type,
+      file_size: document.file_size,
       category: documentCategoryToDbString(document.category),
       status: documentStatusToDbString(document.status),
-      checkout_status: document.checkout_status ? checkoutStatusToDbString(document.checkout_status) : 'Available'
+      checkout_status: document.checkout_status ? checkoutStatusToDbString(document.checkout_status) : 'Available',
+      version: document.version,
+      created_by: document.created_by,
+      tags: document.tags,
+      approvers: document.approvers,
+      folder_id: document.folder_id,
+      expiry_date: document.expiry_date,
+      file_path: document.file_path
     };
 
     const { data, error } = await supabase
@@ -83,13 +94,22 @@ export const createDocument = async (document: Omit<Document, 'id' | 'created_at
 export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
     // Convert enum types to database strings
-    const dbUpdates = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-      ...(updates.category && { category: documentCategoryToDbString(updates.category) }),
-      ...(updates.status && { status: documentStatusToDbString(updates.status) }),
-      ...(updates.checkout_status && { checkout_status: checkoutStatusToDbString(updates.checkout_status) })
+    const dbUpdates: any = {
+      updated_at: new Date().toISOString()
     };
+
+    // Only include fields that are being updated
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.file_name !== undefined) dbUpdates.file_name = updates.file_name;
+    if (updates.file_type !== undefined) dbUpdates.file_type = updates.file_type;
+    if (updates.file_size !== undefined) dbUpdates.file_size = updates.file_size;
+    if (updates.category !== undefined) dbUpdates.category = documentCategoryToDbString(updates.category);
+    if (updates.status !== undefined) dbUpdates.status = documentStatusToDbString(updates.status);
+    if (updates.checkout_status !== undefined) dbUpdates.checkout_status = checkoutStatusToDbString(updates.checkout_status);
+    if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+    if (updates.approvers !== undefined) dbUpdates.approvers = updates.approvers;
+    if (updates.expiry_date !== undefined) dbUpdates.expiry_date = updates.expiry_date;
 
     const { data, error } = await supabase
       .from('documents')
