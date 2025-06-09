@@ -226,6 +226,8 @@ export const stringToEffectivenessRating = (rating: string): CAPAEffectivenessRa
 // Complaint related conversions
 export const stringToComplaintStatus = (status: string): ComplaintStatus => {
   switch (status) {
+    case 'New':
+      return ComplaintStatus.New;
     case 'Open':
       return ComplaintStatus.Open;
     case 'In Progress':

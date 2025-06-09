@@ -1,5 +1,5 @@
 
-import { CAPAStatus, CAPAPriority, CAPASource, EffectivenessRating } from '@/types/enums';
+import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
 // CAPA Status conversions
 export const stringToCAPAStatus = (status: string): CAPAStatus => {
@@ -123,30 +123,30 @@ export const capaSourceToString = (source: CAPASource): string => {
 };
 
 // Effectiveness Rating conversions
-export const stringToEffectivenessRating = (rating: string): EffectivenessRating => {
+export const stringToEffectivenessRating = (rating: string): CAPAEffectivenessRating => {
   switch (rating) {
     case 'Effective':
-      return EffectivenessRating.Effective;
+      return CAPAEffectivenessRating.Effective;
     case 'Partially Effective':
-      return EffectivenessRating.Partially_Effective;
+      return CAPAEffectivenessRating.Partially_Effective;
     case 'Not Effective':
-      return EffectivenessRating.Not_Effective;
+      return CAPAEffectivenessRating.Not_Effective;
     case 'Pending':
-      return EffectivenessRating.Pending;
+      return CAPAEffectivenessRating.Pending;
     default:
-      return EffectivenessRating.Pending;
+      return CAPAEffectivenessRating.Pending;
   }
 };
 
-export const effectivenessRatingToString = (rating: EffectivenessRating): string => {
+export const effectivenessRatingToString = (rating: CAPAEffectivenessRating): string => {
   switch (rating) {
-    case EffectivenessRating.Effective:
+    case CAPAEffectivenessRating.Effective:
       return 'Effective';
-    case EffectivenessRating.Partially_Effective:
+    case CAPAEffectivenessRating.Partially_Effective:
       return 'Partially Effective';
-    case EffectivenessRating.Not_Effective:
+    case CAPAEffectivenessRating.Not_Effective:
       return 'Not Effective';
-    case EffectivenessRating.Pending:
+    case CAPAEffectivenessRating.Pending:
       return 'Pending';
     default:
       return 'Pending';

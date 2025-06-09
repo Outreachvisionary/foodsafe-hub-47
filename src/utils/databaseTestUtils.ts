@@ -134,7 +134,7 @@ export const testDatabaseTable = async (tableName: string): Promise<TestResult> 
   }
 };
 
-export const testDatabaseFunction = async (functionName: string): Promise<TestResult> => {
+export const testDatabaseFunction = async (functionName: string): Promise<FunctionTestResult> => {
   const startTime = performance.now();
   
   try {
@@ -143,6 +143,7 @@ export const testDatabaseFunction = async (functionName: string): Promise<TestRe
     
     if (error) {
       return {
+        functionName,
         status: 'error',
         details: `Function '${functionName}' failed`,
         error: error.message,
@@ -151,6 +152,7 @@ export const testDatabaseFunction = async (functionName: string): Promise<TestRe
     }
     
     return {
+      functionName,
       status: 'success',
       details: `Function '${functionName}' executed successfully`,
       duration
@@ -158,6 +160,7 @@ export const testDatabaseFunction = async (functionName: string): Promise<TestRe
   } catch (error) {
     const duration = performance.now() - startTime;
     return {
+      functionName,
       status: 'error',
       details: `Function '${functionName}' failed`,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -205,17 +208,19 @@ export const testDatabase = async (): Promise<DatabaseTestResult> => {
   };
 };
 
-export const testServiceIntegration = async (): Promise<TestResult> => {
+export const testServiceIntegration = async (): Promise<FunctionTestResult> => {
   try {
     // Test basic service integration
     const result = await testSupabaseDatabase();
     return {
+      functionName: 'Service Integration',
       status: result.status,
       details: 'Service integration test completed',
       duration: result.duration
     };
   } catch (error) {
     return {
+      functionName: 'Service Integration',
       status: 'error',
       details: 'Service integration test failed',
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -223,15 +228,17 @@ export const testServiceIntegration = async (): Promise<TestResult> => {
   }
 };
 
-export const testRouterNavigation = async (): Promise<TestResult> => {
+export const testRouterNavigation = async (route?: string): Promise<FunctionTestResult> => {
   return {
+    functionName: `Navigation${route ? ` - ${route}` : ''}`,
     status: 'success',
     details: 'Router navigation test completed - client-side routing working'
   };
 };
 
-export const testCrossModuleIntegration = async (): Promise<TestResult> => {
+export const testCrossModuleIntegration = async (): Promise<FunctionTestResult> => {
   return {
+    functionName: 'Cross-Module Integration',
     status: 'success',
     details: 'Cross-module integration test completed'
   };

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { EffectivenessRating } from '@/types/enums';
+import { CAPAEffectivenessRating } from '@/types/enums';
 import { effectivenessRatingToString } from '@/utils/typeAdapters';
 
 interface CAPAEffectivenessFormProps {
@@ -21,7 +21,7 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({
   onCancel
 }) => {
   const [formData, setFormData] = useState({
-    rating: EffectivenessRating.Pending,
+    rating: CAPAEffectivenessRating.Pending,
     rootCauseEliminated: false,
     preventiveMeasuresImplemented: false,
     documentationComplete: false,
@@ -40,7 +40,7 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({
   const handleRatingChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      rating: value as EffectivenessRating
+      rating: value as CAPAEffectivenessRating
     }));
   };
 
@@ -49,8 +49,8 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({
     if (formData.rootCauseEliminated) score += 25;
     if (formData.preventiveMeasuresImplemented) score += 25;
     if (formData.documentationComplete) score += 25;
-    if (formData.rating === EffectivenessRating.Effective) score += 25;
-    else if (formData.rating === EffectivenessRating.Partially_Effective) score += 15;
+    if (formData.rating === CAPAEffectivenessRating.Effective) score += 25;
+    else if (formData.rating === CAPAEffectivenessRating.Partially_Effective) score += 15;
     
     setFormData(prev => ({ ...prev, score }));
   };
@@ -74,16 +74,16 @@ const CAPAEffectivenessForm: React.FC<CAPAEffectivenessFormProps> = ({
                   <SelectValue placeholder="Select rating" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={effectivenessRatingToString(EffectivenessRating.Effective)}>
+                  <SelectItem value={effectivenessRatingToString(CAPAEffectivenessRating.Effective)}>
                     Effective
                   </SelectItem>
-                  <SelectItem value={effectivenessRatingToString(EffectivenessRating.Partially_Effective)}>
+                  <SelectItem value={effectivenessRatingToString(CAPAEffectivenessRating.Partially_Effective)}>
                     Partially Effective
                   </SelectItem>
-                  <SelectItem value={effectivenessRatingToString(EffectivenessRating.Not_Effective)}>
+                  <SelectItem value={effectivenessRatingToString(CAPAEffectivenessRating.Not_Effective)}>
                     Not Effective
                   </SelectItem>
-                  <SelectItem value={effectivenessRatingToString(EffectivenessRating.Pending)}>
+                  <SelectItem value={effectivenessRatingToString(CAPAEffectivenessRating.Pending)}>
                     Pending
                   </SelectItem>
                 </SelectContent>

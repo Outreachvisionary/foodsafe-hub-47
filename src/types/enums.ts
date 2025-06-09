@@ -64,6 +64,7 @@ export enum CAPASource {
   Audit = 'Audit',
   Complaint = 'Complaint',
   Internal_Report = 'Internal Report',
+  Internal_Review = 'Internal Review',
   Supplier_Issue = 'Supplier Issue',
   Regulatory = 'Regulatory'
 }
@@ -147,6 +148,7 @@ export enum NCReasonCategory {
 
 // Complaint related enums
 export enum ComplaintStatus {
+  New = 'New',
   Open = 'Open',
   In_Progress = 'In Progress',
   Under_Investigation = 'Under Investigation',
@@ -162,9 +164,12 @@ export enum ComplaintCategory {
   Packaging = 'Packaging',
   Delivery = 'Delivery',
   Customer_Service = 'Customer Service',
+  Service = 'Customer Service', // Alias
   Allergen = 'Allergen',
   Foreign_Object = 'Foreign Object',
+  Foreign_Material = 'Foreign Material', // Alias for Foreign_Object
   Contamination = 'Contamination',
+  Labeling = 'Labeling',
   Other = 'Other'
 }
 
