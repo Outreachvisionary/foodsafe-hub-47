@@ -21,16 +21,14 @@ export const getPriorityColor = (priority: Priority): string => {
 
 export const getStatusColor = (status: ComplaintStatus): string => {
   switch (status) {
-    case 'New':
+    case ComplaintStatus.New:
       return 'text-blue-600 bg-blue-100';
-    case 'Under_Investigation':
+    case ComplaintStatus.Under_Investigation:
       return 'text-orange-600 bg-orange-100';
-    case 'Resolved':
+    case ComplaintStatus.Resolved:
       return 'text-green-600 bg-green-100';
-    case 'Closed':
+    case ComplaintStatus.Closed:
       return 'text-gray-600 bg-gray-100';
-    case 'Reopened':
-      return 'text-red-600 bg-red-100';
     default:
       return 'text-gray-600 bg-gray-100';
   }
@@ -39,16 +37,14 @@ export const getStatusColor = (status: ComplaintStatus): string => {
 // Add the missing function that components are trying to import
 export const getComplaintStatusColor = (status: ComplaintStatus): { bg: string; text: string; border: string } => {
   switch (status) {
-    case 'New':
+    case ComplaintStatus.New:
       return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
-    case 'Under_Investigation':
+    case ComplaintStatus.Under_Investigation:
       return { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200' };
-    case 'Resolved':
+    case ComplaintStatus.Resolved:
       return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
-    case 'Closed':
+    case ComplaintStatus.Closed:
       return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
-    case 'Reopened':
-      return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
     default:
       return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
   }
@@ -76,20 +72,19 @@ export const sortComplaintsByPriority = (complaints: any[]) => {
 
 export const getOverdueComplaints = (complaints: any[], dueDays: number = 30) => {
   return complaints.filter(complaint => {
-    if (complaint.status === 'Closed' || complaint.status === 'Resolved') return false;
+    if (complaint.status === ComplaintStatus.Closed || complaint.status === ComplaintStatus.Resolved) return false;
     return calculateDaysOpen(complaint.reported_date) > dueDays;
   });
 };
 
 export const mapComplaintStatus = (status: string): ComplaintStatus => {
   const statusMap: Record<string, ComplaintStatus> = {
-    'New': 'New',
-    'Under Investigation': 'Under_Investigation', 
-    'Under_Investigation': 'Under_Investigation',
-    'Resolved': 'Resolved',
-    'Closed': 'Closed',
-    'Reopened': 'Reopened'
+    'New': ComplaintStatus.New,
+    'Under Investigation': ComplaintStatus.Under_Investigation, 
+    'Under_Investigation': ComplaintStatus.Under_Investigation,
+    'Resolved': ComplaintStatus.Resolved,
+    'Closed': ComplaintStatus.Closed
   };
   
-  return statusMap[status] || 'New';
+  return statusMap[status] || ComplaintStatus.New;
 };

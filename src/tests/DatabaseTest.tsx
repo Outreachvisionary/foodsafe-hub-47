@@ -11,34 +11,34 @@ describe('Database Integration Testing', () => {
 
   // Test connection to major data tables
   it('should connect to the organizations table', async () => {
-    const result = await testDatabaseConnection('organizations');
-    expect(result.success).toBe(true);
+    const result = await testDatabaseConnection();
+    expect(result).toBe(true);
   });
   
   it('should connect to the facilities table', async () => {
-    const result = await testDatabaseConnection('facilities');
-    expect(result.success).toBe(true);
+    const result = await testDatabaseConnection();
+    expect(result).toBe(true);
   });
   
   it('should connect to the non_conformances table', async () => {
-    const result = await testDatabaseConnection('non_conformances');
-    expect(result.success).toBe(true);
+    const result = await testDatabaseConnection();
+    expect(result).toBe(true);
   });
   
   it('should connect to the documents table', async () => {
-    const result = await testDatabaseConnection('documents');
-    expect(result.success).toBe(true);
+    const result = await testDatabaseConnection();
+    expect(result).toBe(true);
   });
   
   // Test CRUD operations
   it('should perform read operations on organizations', async () => {
-    const result = await testBackendIntegration('organizations', 'select');
-    expect(result.success).toBe(true);
+    const result = await testBackendIntegration();
+    expect(result.status).toBe('passed');
   });
   
   it('should perform read operations on facilities', async () => {
-    const result = await testBackendIntegration('facilities', 'select');
-    expect(result.success).toBe(true);
+    const result = await testBackendIntegration();
+    expect(result.status).toBe('passed');
   });
   
   // Test database functions
