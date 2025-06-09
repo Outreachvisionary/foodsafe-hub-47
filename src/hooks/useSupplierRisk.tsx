@@ -5,26 +5,10 @@ import {
   createRiskAssessment, 
   getRiskDistribution, 
   getRiskCategoryScores, 
-  getHighRiskSuppliers 
+  getHighRiskSuppliers,
+  SupplierRiskAssessment
 } from '@/services/supplierRiskService';
 import { toast } from 'sonner';
-
-interface RiskAssessment {
-  id: string;
-  supplierId: string;
-  assessmentDate: string;
-  assessedBy: string;
-  overallScore: number;
-  foodSafetyScore?: number;
-  qualitySystemScore?: number;
-  regulatoryScore?: number;
-  deliveryScore?: number;
-  traceabilityScore?: number;
-  riskFactors?: Record<string, any>;
-  riskLevel: 'Low' | 'Medium' | 'High';
-  nextAssessmentDate?: string;
-  notes?: string;
-}
 
 interface RiskDistribution {
   totalSuppliers: number;
@@ -37,7 +21,7 @@ interface RiskDistribution {
 }
 
 export function useSupplierRisk(supplierId?: string) {
-  const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
+  const [riskAssessment, setRiskAssessment] = useState<SupplierRiskAssessment | null>(null);
   const [riskDistribution, setRiskDistribution] = useState<RiskDistribution | null>(null);
   const [categoryScores, setCategoryScores] = useState<{ category: string; score: number }[]>([]);
   const [highRiskSuppliers, setHighRiskSuppliers] = useState<any[]>([]);
@@ -78,33 +62,33 @@ export function useSupplierRisk(supplierId?: string) {
   };
 
   // Create a new risk assessment
-  const addRiskAssessment = async (assessment: Omit<RiskAssessment, 'id'>) => {
+  const addRiskAssessment = async (assessment: Omit<SupplierRiskAssessment, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const newAssessment = await createRiskAssessment(assessment);
       setRiskAssessment(newAssessment);
       
       // Update category scores if this is for the current supplier
-      if (assessment.supplierId === supplierId) {
+      if (assessment.supplier_id === supplierId) {
         const scores: { category: string; score: number }[] = [];
         
-        if (assessment.foodSafetyScore !== undefined) {
-          scores.push({ category: 'Food Safety', score: assessment.foodSafetyScore });
+        if (assessment.food_safety_score !== undefined) {
+          scores.push({ category: 'Food Safety', score: assessment.food_safety_score });
         }
         
-        if (assessment.qualitySystemScore !== undefined) {
-          scores.push({ category: 'Quality System', score: assessment.qualitySystemScore });
+        if (assessment.quality_system_score !== undefined) {
+          scores.push({ category: 'Quality System', score: assessment.quality_system_score });
         }
         
-        if (assessment.regulatoryScore !== undefined) {
-          scores.push({ category: 'Regulatory', score: assessment.regulatoryScore });
+        if (assessment.regulatory_score !== undefined) {
+          scores.push({ category: 'Regulatory', score: assessment.regulatory_score });
         }
         
-        if (assessment.deliveryScore !== undefined) {
-          scores.push({ category: 'Delivery', score: assessment.deliveryScore });
+        if (assessment.delivery_score !== undefined) {
+          scores.push({ category: 'Delivery', score: assessment.delivery_score });
         }
         
-        if (assessment.traceabilityScore !== undefined) {
-          scores.push({ category: 'Traceability', score: assessment.traceabilityScore });
+        if (assessment.traceability_score !== undefined) {
+          scores.push({ category: 'Traceability', score: assessment.traceability_score });
         }
         
         setCategoryScores(scores);

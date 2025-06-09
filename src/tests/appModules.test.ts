@@ -7,7 +7,7 @@ import * as trainingService from '@/services/trainingService';
 describe('App Module Tests', () => {
   it('should have all required CAPA service methods', () => {
     expect(capaService.getCAPAs).toBeDefined();
-    expect(capaService.getCAPAById).toBeDefined();
+    expect(capaService.createCAPA).toBeDefined();
   });
 
   it('should have all required document service methods', () => {

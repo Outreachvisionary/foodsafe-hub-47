@@ -1,166 +1,176 @@
 
-import { Routes } from 'react-router-dom';
-import { lazy } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface RouteInfo {
-  path: string;
-  element: string;
-  children?: RouteInfo[];
-  requiresAuth?: boolean;
+export interface RouteTestConfig {
+  route: string;
+  description: string;
+  expectedElements?: string[];
+  requiredData?: string;
+  testActions?: string[];
 }
 
-/**
- * Extracts route information from React Router's Routes component
- */
-export const extractRoutes = (routes: typeof Routes) => {
-  const routesInfo: RouteInfo[] = [];
-  
-  // This is a simplified version - in a real implementation, 
-  // we would need to recursively traverse the Routes and Route components
-  
-  return routesInfo;
-};
-
-/**
- * Verifies the status of a route
- */
-export const verifyRoute = async (path: string): Promise<{
-  exists: boolean;
-  accessible: boolean;
-  requiresAuth: boolean;
-  error?: string;
-}> => {
-  try {
-    // In a real implementation, we'd use the actual router to verify routes
-    // For now, we'll simulate this with a simple check
-    
-    // This checks if the route exists in the router configuration
-    const routeExists = true;
-    
-    // This checks if the route is accessible (not a 404)
-    const routeAccessible = true;
-    
-    // This checks if the route requires authentication
-    const requiresAuth = path !== '/auth' && path !== '/onboarding';
-    
-    return {
-      exists: routeExists,
-      accessible: routeAccessible,
-      requiresAuth,
-    };
-  } catch (error) {
-    return {
-      exists: false,
-      accessible: false,
-      requiresAuth: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+export const testRoutes: RouteTestConfig[] = [
+  {
+    route: '/dashboard',
+    description: 'Dashboard page with metrics and charts',
+    expectedElements: ['Overview Card', 'Recent Activities', 'Charts'],
+    requiredData: 'metrics'
+  },
+  {
+    route: '/documents',
+    description: 'Document management system',
+    expectedElements: ['Document List', 'Upload Button', 'Search'],
+    requiredData: 'documents'
+  },
+  {
+    route: '/capa',
+    description: 'CAPA management module',
+    expectedElements: ['CAPA List', 'Create Button', 'Status Filters'],
+    requiredData: 'capa_actions'
+  },
+  {
+    route: '/non-conformance',
+    description: 'Non-conformance tracking',
+    expectedElements: ['NC List', 'Create Form', 'Status Updates'],
+    requiredData: 'non_conformances'
+  },
+  {
+    route: '/audits',
+    description: 'Audit management system',
+    expectedElements: ['Audit Schedule', 'Findings', 'Reports'],
+    requiredData: 'audits'
+  },
+  {
+    route: '/training',
+    description: 'Training management module',
+    expectedElements: ['Training Sessions', 'Records', 'Assignments'],
+    requiredData: 'training_sessions'
+  },
+  {
+    route: '/suppliers',
+    description: 'Supplier management system',
+    expectedElements: ['Supplier List', 'Risk Assessment', 'Documents'],
+    requiredData: 'suppliers'
+  },
+  {
+    route: '/traceability',
+    description: 'Product traceability system',
+    expectedElements: ['Product Tree', 'Recall Simulation', 'Chain Links'],
+    requiredData: 'products'
   }
-};
+];
 
-/**
- * Tests navigation to a route
- */
-export const testRouteNavigation = async (path: string): Promise<{
-  success: boolean;
-  error?: string;
-}> => {
+export const validateRouteData = async (tableName: string): Promise<boolean> => {
   try {
-    // In a real implementation, we'd use the actual router to navigate
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-};
-
-/**
- * Tests database connection and queries for a specific module
- */
-export const testDatabaseConnection = async (module: string): Promise<{
-  success: boolean;
-  message: string;
-  details?: any;
-}> => {
-  try {
-    // Test the database connection by running a simple query
-    const { data, error } = await supabase.from(module).select('count(*)', { count: 'exact' });
+    // Validate table exists by trying to select from it
+    const validTables = [
+      'audits', 'capa_actions', 'documents', 'training_sessions', 
+      'haccp_plans', 'facilities', 'organizations', 'departments',
+      'folders', 'document_versions', 'document_workflows', 'suppliers',
+      'non_conformances', 'products', 'components'
+    ];
     
-    if (error) throw error;
-    
-    return { 
-      success: true, 
-      message: `Successfully connected to ${module} table`,
-      details: data
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to connect to ${module} table`,
-      details: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
-
-/**
- * Tests a full round-trip API call with database interaction
- */
-export const testBackendIntegration = async (
-  module: string, 
-  operation: 'select' | 'insert' | 'update' | 'delete',
-  payload?: any
-): Promise<{
-  success: boolean;
-  message: string;
-  data?: any;
-  error?: any;
-}> => {
-  try {
-    let result;
-    
-    switch (operation) {
-      case 'select':
-        result = await supabase
-          .from(module)
-          .select('*')
-          .limit(1);
-        break;
-      case 'insert':
-        result = await supabase
-          .from(module)
-          .insert(payload)
-          .select();
-        break;
-      case 'update':
-        result = await supabase
-          .from(module)
-          .update(payload)
-          .eq('id', payload.id)
-          .select();
-        break;
-      case 'delete':
-        result = await supabase
-          .from(module)
-          .delete()
-          .eq('id', payload.id);
-        break;
+    if (!validTables.includes(tableName)) {
+      console.warn(`Table ${tableName} is not in the valid tables list`);
+      return false;
     }
-    
-    if (result.error) throw result.error;
-    
-    return {
-      success: true,
-      message: `Successfully performed ${operation} operation on ${module}`,
-      data: result.data
-    };
+
+    const { error } = await supabase
+      .from(tableName)
+      .select('id')
+      .limit(1);
+
+    return !error;
   } catch (error) {
-    return {
-      success: false,
-      message: `Failed to perform ${operation} operation on ${module}`,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+    console.error(`Error validating table ${tableName}:`, error);
+    return false;
   }
+};
+
+export const runRouteTests = async (): Promise<{ passed: number; failed: number; results: any[] }> => {
+  const results = [];
+  let passed = 0;
+  let failed = 0;
+
+  for (const test of testRoutes) {
+    try {
+      const result = {
+        route: test.route,
+        description: test.description,
+        status: 'unknown',
+        dataValidation: false,
+        error: null
+      };
+
+      // Test data validation if required
+      if (test.requiredData) {
+        const tableExists = await validateRouteData(test.requiredData);
+        result.dataValidation = tableExists;
+      } else {
+        result.dataValidation = true;
+      }
+
+      // Basic route validation (simplified)
+      result.status = result.dataValidation ? 'pass' : 'fail';
+      
+      if (result.status === 'pass') {
+        passed++;
+      } else {
+        failed++;
+      }
+
+      results.push(result);
+    } catch (error) {
+      failed++;
+      results.push({
+        route: test.route,
+        description: test.description,
+        status: 'error',
+        dataValidation: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  return { passed, failed, results };
+};
+
+export const getRouteHealth = async (route: string): Promise<{
+  healthy: boolean;
+  issues: string[];
+  recommendations: string[];
+}> => {
+  const issues: string[] = [];
+  const recommendations: string[] = [];
+
+  const testConfig = testRoutes.find(t => t.route === route);
+  if (!testConfig) {
+    issues.push('Route not found in test configuration');
+    recommendations.push('Add route to test configuration');
+    return { healthy: false, issues, recommendations };
+  }
+
+  // Validate required data
+  if (testConfig.requiredData) {
+    const isValid = await validateRouteData(testConfig.requiredData);
+    if (!isValid) {
+      issues.push(`Required data source "${testConfig.requiredData}" is not accessible`);
+      recommendations.push(`Check database connectivity and table permissions for "${testConfig.requiredData}"`);
+    }
+  }
+
+  const healthy = issues.length === 0;
+  
+  if (healthy) {
+    recommendations.push('Route appears to be functioning correctly');
+  }
+
+  return { healthy, issues, recommendations };
+};
+
+export default {
+  testRoutes,
+  validateRouteData,
+  runRouteTests,
+  getRouteHealth
 };

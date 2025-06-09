@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Certification {
@@ -43,8 +42,6 @@ export const getCertificationTraining = async (): Promise<any[]> => {
 export const createCertificationTraining = async (trainingData: {
   title: string;
   description?: string;
-  duration_hours: number;
-  pass_threshold?: number;
   created_by: string;
 }): Promise<any> => {
   try {
@@ -53,7 +50,6 @@ export const createCertificationTraining = async (trainingData: {
       .insert({
         title: trainingData.title,
         description: trainingData.description || '',
-        duration_hours: trainingData.duration_hours,
         created_by: trainingData.created_by,
         assigned_to: [],
         completion_status: 'Not Started',
@@ -76,8 +72,6 @@ export const updateCertificationTraining = async (
   updates: Partial<{
     title: string;
     description?: string;
-    duration_hours: number;
-    pass_threshold?: number;
   }>
 ): Promise<any> => {
   try {

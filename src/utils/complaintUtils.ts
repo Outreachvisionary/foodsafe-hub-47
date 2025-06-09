@@ -1,82 +1,79 @@
 
 import { ComplaintStatus } from '@/types/complaint';
 
-/**
- * Check if two status values are equivalent
- */
-export const isComplaintStatusEqual = (status1: string | ComplaintStatus, status2: string | ComplaintStatus): boolean => {
-  if (!status1 || !status2) return false;
-  
-  // Normalize status strings - handle both underscore and space variations
-  const normalize = (status: string | ComplaintStatus) => {
-    return status.toString().toLowerCase().replace(/[_\s]/g, '');
-  };
-  
-  return normalize(status1) === normalize(status2);
-};
+export const priorityLevels = ['Low', 'Medium', 'High', 'Critical'] as const;
+export type Priority = typeof priorityLevels[number];
 
-/**
- * Get display name for complaint status
- */
-export const getComplaintStatusDisplayName = (status: string | ComplaintStatus): string => {
-  if (!status) return 'Unknown';
-  
-  // Convert database format to display format
-  const statusMap: Record<string, string> = {
-    'Under_Investigation': 'Under Investigation',
-    'Under Investigation': 'Under Investigation',
-    'Product_Quality': 'Product Quality',
-    'Product Quality': 'Product Quality',
-    'Foreign_Material': 'Foreign Material',
-    'Foreign Material': 'Foreign Material',
-    'Customer_Service': 'Customer Service',
-    'Customer Service': 'Customer Service'
-  };
-  
-  return statusMap[status.toString()] || status.toString();
-};
-
-/**
- * Get color scheme for complaint status badges
- */
-export const getComplaintStatusColor = (status: string | ComplaintStatus): { bg: string, text: string, border?: string } => {
-  const statusStr = status.toString().toLowerCase().replace(/[_\s]/g, '');
-  
-  if (statusStr.includes('new')) {
-    return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
-  } else if (statusStr.includes('under') || statusStr.includes('investigation')) {
-    return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
-  } else if (statusStr.includes('resolved')) {
-    return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
-  } else if (statusStr.includes('closed')) {
-    return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
-  } else if (statusStr.includes('escalated')) {
-    return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
+export const getPriorityColor = (priority: Priority): string => {
+  switch (priority) {
+    case 'Low':
+      return 'text-green-600 bg-green-100';
+    case 'Medium':
+      return 'text-yellow-600 bg-yellow-100';
+    case 'High':
+      return 'text-orange-600 bg-orange-100';
+    case 'Critical':
+      return 'text-red-600 bg-red-100';
+    default:
+      return 'text-gray-600 bg-gray-100';
   }
-  
-  return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200' };
 };
 
-/**
- * Convert string to ComplaintStatus enum value
- */
-export const convertToComplaintStatus = (status: string): ComplaintStatus => {
+export const getStatusColor = (status: ComplaintStatus): string => {
+  switch (status) {
+    case 'New':
+      return 'text-blue-600 bg-blue-100';
+    case 'In Progress':
+      return 'text-yellow-600 bg-yellow-100';
+    case 'Under Investigation':
+      return 'text-orange-600 bg-orange-100';
+    case 'Resolved':
+      return 'text-green-600 bg-green-100';
+    case 'Closed':
+      return 'text-gray-600 bg-gray-100';
+    case 'Escalated':
+      return 'text-red-600 bg-red-100';
+    default:
+      return 'text-gray-600 bg-gray-100';
+  }
+};
+
+export const formatComplaintId = (id: string): string => {
+  return `COMP-${id.substring(0, 8).toUpperCase()}`;
+};
+
+export const calculateDaysOpen = (reportedDate: string): number => {
+  const reported = new Date(reportedDate);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - reported.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+export const getComplaintsByStatus = (complaints: any[], status: ComplaintStatus) => {
+  return complaints.filter(complaint => complaint.status === status);
+};
+
+export const sortComplaintsByPriority = (complaints: any[]) => {
+  const priorityOrder = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+  return complaints.sort((a, b) => (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - (priorityOrder[a.priority as keyof typeof priorityOrder] || 0));
+};
+
+export const getOverdueComplaints = (complaints: any[], dueDays: number = 30) => {
+  return complaints.filter(complaint => {
+    if (complaint.status === 'Closed' || complaint.status === 'Resolved') return false;
+    return calculateDaysOpen(complaint.reported_date) > dueDays;
+  });
+};
+
+export const mapComplaintStatus = (status: string): ComplaintStatus => {
   const statusMap: Record<string, ComplaintStatus> = {
-    'new': 'New',
-    'under_investigation': 'Under Investigation',
-    'under investigation': 'Under Investigation',
-    'resolved': 'Resolved',
-    'closed': 'Closed',
-    'escalated': 'Escalated'
+    'New': 'New',
+    'In Progress': 'In Progress', 
+    'Under Investigation': 'Under Investigation',
+    'Resolved': 'Resolved',
+    'Closed': 'Closed',
+    'Escalated': 'Escalated'
   };
   
-  const normalized = status.toLowerCase().replace(/[_\s]/g, '_');
-  return statusMap[normalized] || 'New';
-};
-
-export default {
-  isComplaintStatusEqual,
-  getComplaintStatusDisplayName,
-  getComplaintStatusColor,
-  convertToComplaintStatus
+  return statusMap[status] || 'New';
 };
