@@ -120,7 +120,6 @@ class DatabaseService {
           title: data.title,
           description: data.description,
           category: complaintCategoryToDbString(data.category),
-          priority: data.priority?.toString(),
           customer_name: data.customer_name,
           customer_contact: data.customer_contact,
           product_involved: data.product_involved,

@@ -1,4 +1,3 @@
-
 import { Complaint, ComplaintFilter, CreateComplaintRequest } from '@/types/complaint';
 import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,18 +23,18 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
       if (filters.status) {
         if (Array.isArray(filters.status)) {
           const statusStrings = filters.status.map(s => complaintStatusToDbString(s));
-          query = query.in('status', statusStrings);
+          query = query.in('status', statusStrings as any);
         } else {
-          query = query.eq('status', complaintStatusToDbString(filters.status));
+          query = query.eq('status', complaintStatusToDbString(filters.status) as any);
         }
       }
       
       if (filters.category) {
         if (Array.isArray(filters.category)) {
           const categoryStrings = filters.category.map(c => complaintCategoryToDbString(c));
-          query = query.in('category', categoryStrings);
+          query = query.in('category', categoryStrings as any);
         } else {
-          query = query.eq('category', complaintCategoryToDbString(filters.category));
+          query = query.eq('category', complaintCategoryToDbString(filters.category) as any);
         }
       }
       
@@ -52,7 +51,7 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
       ...item,
       category: stringToComplaintCategory(item.category),
       status: stringToComplaintStatus(item.status),
-      priority: item.priority ? stringToComplaintPriority(item.priority) : undefined
+      priority: undefined // Priority field doesn't exist in database
     }));
   } catch (error) {
     console.error('Error fetching complaints:', error);
@@ -80,7 +79,7 @@ export const fetchComplaintById = async (id: string): Promise<Complaint> => {
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
+      priority: undefined // Priority field doesn't exist in database
     };
   } catch (error) {
     console.error('Error fetching complaint:', error);
@@ -116,7 +115,7 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
+      priority: undefined // Priority field doesn't exist in database
     };
   } catch (error) {
     console.error('Error creating complaint:', error);
@@ -127,7 +126,7 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
 // Update an existing complaint
 export const updateComplaint = async (id: string, updates: Partial<Complaint>): Promise<Complaint> => {
   try {
-    const { id: _, created_at, updated_at, ...updateData } = updates;
+    const { id: _, created_at, updated_at, priority, ...updateData } = updates;
     
     const dbUpdates: any = { ...updateData, updated_at: new Date().toISOString() };
     if (updateData.category) {
@@ -150,7 +149,7 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
+      priority: undefined // Priority field doesn't exist in database
     };
   } catch (error) {
     console.error('Error updating complaint:', error);
@@ -168,7 +167,7 @@ export const updateComplaintStatus = async (
     const { data, error } = await supabase
       .from('complaints')
       .update({ 
-        status: status, 
+        status: status as any, 
         updated_at: new Date().toISOString(),
         resolution_date: status === 'Resolved' ? new Date().toISOString() : null
       })
@@ -182,7 +181,7 @@ export const updateComplaintStatus = async (
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
+      priority: undefined // Priority field doesn't exist in database
     };
   } catch (error) {
     console.error('Error updating complaint status:', error);
