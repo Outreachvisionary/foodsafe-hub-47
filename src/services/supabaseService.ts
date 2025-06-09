@@ -1,7 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingRecord, TrainingSession } from '@/types/training';
-import { trainingStatusToString } from '@/utils/trainingTypeMapper';
+import { TrainingStatus } from '@/types/enums';
+import { stringToTrainingStatus, trainingStatusToString } from '@/utils/trainingTypeMapper';
 
 export const getTrainingRecordById = async (id: string): Promise<TrainingRecord | null> => {
   const { data, error } = await supabase
@@ -15,7 +16,11 @@ export const getTrainingRecordById = async (id: string): Promise<TrainingRecord 
     return null;
   }
 
-  return data;
+  // Convert string status from database to enum
+  return {
+    ...data,
+    status: stringToTrainingStatus(data.status)
+  };
 };
 
 export const createTrainingRecord = async (
@@ -38,7 +43,11 @@ export const createTrainingRecord = async (
     throw error;
   }
 
-  return data;
+  // Convert string status back to enum for return
+  return {
+    ...data,
+    status: stringToTrainingStatus(data.status)
+  };
 };
 
 export const createTrainingSession = async (
@@ -76,7 +85,12 @@ export const updateTrainingRecord = async (
     .single();
 
   if (error) throw error;
-  return data;
+  
+  // Convert string status back to enum for return
+  return {
+    ...data,
+    status: stringToTrainingStatus(data.status)
+  };
 };
 
 export const deleteTrainingRecord = async (id: string): Promise<void> => {

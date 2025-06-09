@@ -12,18 +12,19 @@ const trainingAssignmentService = {
       const assignments = [];
       
       for (const employeeId of employeeIds) {
-        for (const courseId of plan.coursesIncluded) {
+        const courses = plan.courses || plan.coursesIncluded || [];
+        for (const courseId of courses) {
           // Calculate due date based on plan duration
           const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + (plan.durationDays || 30));
+          dueDate.setDate(dueDate.getDate() + (plan.durationDays || plan.duration_days || 30));
           
           assignments.push({
             employee_id: employeeId,
             employee_name: 'Employee Name', // In a real app, look up the name
-            course_id: courseId,
+            session_id: courseId, // Using course ID as session ID for now
             due_date: dueDate.toISOString(),
             status: 'Not Started',
-            assigned_by: 'System', // Automatic assignment
+            assigned_date: new Date().toISOString(),
           });
         }
       }
