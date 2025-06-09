@@ -17,6 +17,7 @@ import TrainingModule from '@/pages/TrainingModule';
 import Traceability from '@/pages/Traceability';
 import SupplierManagement from '@/pages/SupplierManagement';
 import AuditsModule from '@/pages/AuditsModule';
+import DatabaseConnectionTest from '@/components/DatabaseConnectionTest';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/test-db" element={<DatabaseConnectionTest />} />
                 <Route 
                   path="/dashboard" 
                   element={

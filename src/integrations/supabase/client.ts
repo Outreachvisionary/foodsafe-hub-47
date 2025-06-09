@@ -7,8 +7,15 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 2
+    }
   }
 })

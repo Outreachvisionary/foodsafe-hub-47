@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/Loading';
 
 interface ProtectedRouteProps {
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useUser(); // Change isLoading to loading to match UserContext
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {

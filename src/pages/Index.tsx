@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import Hero from '@/components/Hero';
 import Navigation from '@/components/Navigation';
 import FeaturesSection from '@/components/FeaturesSection';
