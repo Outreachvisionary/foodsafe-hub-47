@@ -1,23 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, Clock, FileSpreadsheet } from 'lucide-react';
-import { FoodSafetyCategory } from '@/hooks/useAuditTraining';
-
-interface Employee {
-  id: string;
-  name: string;
-  department?: string;
-}
+import { X } from 'lucide-react';
 
 interface TrainingAssignmentFormProps {
   recommendedCourses: string[];
-  employees: Employee[];
+  employees: Array<{id: string, name: string, department?: string}>;
   priority: 'low' | 'medium' | 'high' | 'critical';
   dueDate: string;
   onDueDateChange: (date: string) => void;
@@ -55,10 +47,10 @@ const TrainingAssignmentForm: React.FC<TrainingAssignmentFormProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-sm font-medium mb-1 block">Training Course</Label>
+        <Label htmlFor="course">Training Course</Label>
         <Select value={selectedCourse} onValueChange={onSelectCourse}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a course" />
+            <SelectValue placeholder="Select a training course" />
           </SelectTrigger>
           <SelectContent>
             {recommendedCourses.map((course) => (
@@ -66,113 +58,83 @@ const TrainingAssignmentForm: React.FC<TrainingAssignmentFormProps> = ({
                 {course}
               </SelectItem>
             ))}
-            <SelectItem value="custom">Custom Training...</SelectItem>
           </SelectContent>
         </Select>
+      </div>
 
-        {selectedCourse === 'custom' && (
-          <Input 
-            className="mt-2"
-            placeholder="Enter custom training course title"
-            onChange={(e) => onSelectCourse(e.target.value)}
-          />
-        )}
-      </div>
-      
       <div>
-        <Label className="text-sm font-medium mb-1 block">Priority</Label>
-        <Select value={priority} onValueChange={(value) => onPriorityChange(value as 'low' | 'medium' | 'high' | 'critical')}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="critical">Critical (24 hours)</SelectItem>
-            <SelectItem value="high">High (3 days)</SelectItem>
-            <SelectItem value="medium">Medium (1 week)</SelectItem>
-            <SelectItem value="low">Low (2 weeks)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div>
-        <Label className="text-sm font-medium mb-1 block">Due Date</Label>
-        <div className="relative">
-          <Input 
-            type="date" 
-            value={dueDate} 
-            onChange={(e) => onDueDateChange(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-          />
-          <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-        </div>
-      </div>
-      
-      <div>
-        <Label className="text-sm font-medium mb-1 block">Assign To</Label>
-        <Select>
+        <Label htmlFor="assignees">Assign To</Label>
+        <Select onValueChange={onSelectAssignee}>
           <SelectTrigger>
             <SelectValue placeholder="Select employees" />
           </SelectTrigger>
           <SelectContent>
-            {employees.map((employee) => (
-              <SelectItem 
-                key={employee.id} 
-                value={employee.id}
-                onClick={() => {
-                  if (!assignees.includes(employee.id)) {
-                    onSelectAssignee(employee.id);
-                  }
-                }}
-              >
-                {employee.name} {employee.department ? `- ${employee.department}` : ''}
-              </SelectItem>
-            ))}
+            {employees
+              .filter(emp => !assignees.includes(emp.id))
+              .map((emp) => (
+                <SelectItem key={emp.id} value={emp.id}>
+                  {emp.name} {emp.department && `(${emp.department})`}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
         
         {assignees.length > 0 && (
-          <div className="mt-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-gray-500" />
-              <span>{assignees.length} employee(s) selected</span>
-            </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {assignees.map(id => {
-                const emp = employees.find(e => e.id === id);
-                return (
-                  <Badge key={id} variant="outline" className="flex items-center gap-1">
-                    {emp?.name || assigneeNames[id] || id}
-                    <button
-                      onClick={() => onRemoveAssignee(id)}
-                      className="ml-1 text-xs hover:text-destructive"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                );
-              })}
-            </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {assignees.map((assigneeId) => (
+              <Badge key={assigneeId} variant="secondary" className="flex items-center gap-1">
+                {assigneeNames[assigneeId]}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => onRemoveAssignee(assigneeId)}
+                />
+              </Badge>
+            ))}
           </div>
         )}
       </div>
 
       <div>
-        <Label className="text-sm font-medium mb-1 block">Additional Notes</Label>
-        <Textarea 
-          placeholder="Enter any additional information or instructions..."
-          className="h-24"
-          value={notes}
-          onChange={(e) => onNotesChange(e.target.value)}
+        <Label htmlFor="priority">Priority</Label>
+        <Select value={priority} onValueChange={onPriorityChange}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="dueDate">Due Date</Label>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => onDueDateChange(e.target.value)}
+          className="w-full p-2 border rounded-md"
         />
       </div>
-      
+
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          value={notes}
+          onChange={(e) => onNotesChange(e.target.value)}
+          placeholder="Additional notes for this training assignment"
+          rows={3}
+        />
+      </div>
+
       <Button 
-        className="w-full" 
         onClick={onAssign}
-        disabled={isLoading}
+        disabled={isLoading || !selectedCourse || assignees.length === 0}
+        className="w-full"
       >
-        {isLoading ? <Clock className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-        Assign Training
+        {isLoading ? 'Assigning...' : 'Assign Training'}
       </Button>
     </div>
   );

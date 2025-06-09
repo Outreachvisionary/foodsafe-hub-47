@@ -5,10 +5,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   testDatabaseTable, 
-  testDatabaseFunction, 
   testSupabaseAuth, 
   testSupabaseDatabase 
 } from '@/utils/databaseTestUtils';
@@ -18,7 +17,7 @@ const DatabaseConnectionTest: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [databaseResults, setDatabaseResults] = useState<any[]>([]);
   const [tablesChecked, setTablesChecked] = useState<string[]>([]);
-  const { user } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Automatically run a basic connection check on component mount

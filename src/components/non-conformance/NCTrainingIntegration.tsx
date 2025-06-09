@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,11 +127,10 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
       // 1. Create a training session
       const sessionId = uuidv4();
       const newSession = {
-        id: sessionId,
         title: trainingCourse,
         description: `Remedial training for NC: ${ncTitle}`,
-        training_type: 'compliance' as TrainingType,
-        training_category: trainingCategory as unknown as TrainingCategory,
+        training_type: TrainingType.Mandatory,
+        training_category: TrainingCategory.Other,
         assigned_to: assignees.map(id => assigneeNames[id] || id),
         start_date: new Date().toISOString(),
         due_date: new Date(dueDate).toISOString(),
@@ -154,7 +152,7 @@ const NCTrainingIntegration: React.FC<NCTrainingIntegrationProps> = ({
           session_id: sessionId,
           employee_id: assigneeId,
           employee_name: empName,
-          status: 'Not Started' as TrainingStatus,
+          status: TrainingStatus.Not_Started,
           assigned_date: new Date().toISOString(),
           due_date: new Date(dueDate).toISOString(),
           notes

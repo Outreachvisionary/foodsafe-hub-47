@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingRecord } from '@/types/training';
-import { trainingStatusToString } from '@/utils/typeAdapters';
+import { TrainingRecord, TrainingSession } from '@/types/training';
+import { trainingStatusToString } from '@/utils/trainingTypeMapper';
 
 export const getTrainingRecordById = async (id: string): Promise<TrainingRecord | null> => {
   const { data, error } = await supabase
@@ -20,14 +21,37 @@ export const getTrainingRecordById = async (id: string): Promise<TrainingRecord 
 export const createTrainingRecord = async (
   record: Omit<TrainingRecord, 'id'>
 ): Promise<TrainingRecord> => {
+  // Convert enum values to strings for database storage
+  const dbRecord = {
+    ...record,
+    status: trainingStatusToString(record.status)
+  };
+
   const { data, error } = await supabase
     .from('training_records')
-    .insert([record])
+    .insert([dbRecord])
     .select()
     .single();
 
   if (error) {
     console.error('Error creating training record:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createTrainingSession = async (
+  session: Omit<TrainingSession, 'id'>
+): Promise<TrainingSession> => {
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .insert([session])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating training session:', error);
     throw error;
   }
 
@@ -64,5 +88,28 @@ export const deleteTrainingRecord = async (id: string): Promise<void> => {
   if (error) {
     console.error('Error deleting training record:', error);
     throw error;
+  }
+};
+
+export const fetchRelatedTraining = async (sourceId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        *,
+        training_records:target_id (
+          *,
+          training_sessions:session_id (*)
+        )
+      `)
+      .eq('source_id', sourceId)
+      .eq('source_type', 'non_conformance')
+      .eq('target_type', 'training');
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching related training:', error);
+    return [];
   }
 };
