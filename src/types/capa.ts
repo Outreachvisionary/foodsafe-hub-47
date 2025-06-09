@@ -107,6 +107,7 @@ export interface CreateCAPARequest {
   priority: CAPAPriority;
   source: CAPASource;
   assigned_to: string;
+  created_by: string;
   due_date: string;
   department?: string;
 }

@@ -11,12 +11,12 @@ import { CAPAStatusBadge } from './CAPAStatusBadge';
 
 const CAPAList: React.FC<CAPAListProps> = ({ 
   items = [], 
-  capas = [], 
   loading = false, 
   error = null, 
   onCAPAClick 
 }) => {
-  const capaItems = items.length > 0 ? items : capas;
+  // Use items as the primary prop, with capas as fallback for backwards compatibility
+  const capaItems = items;
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
