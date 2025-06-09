@@ -34,7 +34,7 @@ export const createFacility = async (facilityData: Omit<Facility, 'id' | 'create
 
     const { data, error } = await supabase
       .from('facilities')
-      .insert(dataToInsert)
+      .insert([dataToInsert])
       .select()
       .single();
 
@@ -66,6 +66,26 @@ export const getFacilities = async (): Promise<Facility[]> => {
   } catch (error) {
     console.error('Error in getFacilities:', error);
     return [];
+  }
+};
+
+export const getFacilityById = async (id: string): Promise<Facility> => {
+  try {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching facility:', error);
+      throw error;
+    }
+
+    return data as Facility;
+  } catch (error) {
+    console.error('Error in getFacilityById:', error);
+    throw error;
   }
 };
 
@@ -115,6 +135,7 @@ export const deleteFacility = async (id: string): Promise<void> => {
 export default {
   createFacility,
   getFacilities,
+  getFacilityById,
   updateFacility,
   deleteFacility
 };

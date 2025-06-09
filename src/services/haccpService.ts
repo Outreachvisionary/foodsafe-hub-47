@@ -45,14 +45,24 @@ export const createHaccpPlan = async (planData: Omit<HaccpPlan, 'id' | 'created_
     }
 
     const dataToInsert = {
-      ...planData,
+      title: planData.title,
+      created_by: planData.created_by,
+      description: planData.description || '',
+      facility_id: planData.facility_id,
+      version: planData.version || 1,
+      status: planData.status || 'Draft',
+      approved_by: planData.approved_by,
+      approved_date: planData.approved_date,
+      last_review_date: planData.last_review_date,
+      next_review_date: planData.next_review_date,
+      ccp_count: planData.ccp_count || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase
       .from('haccp_plans')
-      .insert(dataToInsert)
+      .insert([dataToInsert])
       .select()
       .single();
 
@@ -110,14 +120,22 @@ export const createCCP = async (ccpData: Omit<CriticalControlPoint, 'id' | 'crea
     }
 
     const dataToInsert = {
-      ...ccpData,
+      haccp_plan_id: ccpData.haccp_plan_id,
+      step_number: ccpData.step_number,
+      step_description: ccpData.step_description,
+      hazard_description: ccpData.hazard_description,
+      critical_limits: ccpData.critical_limits,
+      monitoring_procedure: ccpData.monitoring_procedure,
+      corrective_actions: ccpData.corrective_actions,
+      verification_activities: ccpData.verification_activities,
+      record_keeping: ccpData.record_keeping,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase
       .from('ccps')
-      .insert(dataToInsert)
+      .insert([dataToInsert])
       .select()
       .single();
 

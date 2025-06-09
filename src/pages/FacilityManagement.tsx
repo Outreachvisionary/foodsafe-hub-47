@@ -72,11 +72,34 @@ const FacilityManagement = () => {
     const loadFacility = async () => {
       setLoading(true);
       try {
-        if (!id) {
-          return;
+        if (!isNewFacility && id) {
+          const facilityData = await getFacilityById(id);
+          setFacility(facilityData);
+          
+          // Populate form with facility data
+          form.reset({
+            name: facilityData.name || '',
+            description: facilityData.description || '',
+            address: facilityData.address || '',
+            contact_email: facilityData.contact_email || '',
+            contact_phone: facilityData.contact_phone || '',
+            status: (facilityData.status as 'active' | 'inactive' | 'pending') || 'active',
+            organization_id: facilityData.organization_id || '',
+            country: facilityData.country || '',
+            state: facilityData.state || '',
+            city: facilityData.city || '',
+            zipcode: facilityData.zipcode || '',
+          });
+          
+          // Set location data
+          setLocationData({
+            address: facilityData.address,
+            country: facilityData.country,
+            state: facilityData.state,
+            city: facilityData.city,
+            zipcode: facilityData.zipcode,
+          });
         }
-        const facilityData = await getFacilityById(id);
-        setFacility(facilityData);
       } catch (err) {
         console.error('Error fetching facility:', err);
         toast({
@@ -90,7 +113,7 @@ const FacilityManagement = () => {
     };
     
     loadFacility();
-  }, [id]);
+  }, [id, isNewFacility, form, toast]);
 
   useEffect(() => {
     if (locationData) {
@@ -147,7 +170,7 @@ const FacilityManagement = () => {
       };
       
       console.log('Final facility data being sent to API:', facilityData);
-      let savedFacility: Facility;
+      let savedFacility: any; // Use any to handle type mismatch
       
       if (isNewFacility) {
         // Create new facility
@@ -180,7 +203,7 @@ const FacilityManagement = () => {
         if (facilityData.status) {
           facilityData.status = facilityData.status as 'active' | 'inactive' | 'pending';
         }
-        savedFacility = await updateFacility(id!, facilityData as Facility);
+        savedFacility = await updateFacility(id!, facilityData as any); // Use any to handle type mismatch
         console.log('Facility updated successfully:', savedFacility);
         toast({
           title: 'Facility Updated',
