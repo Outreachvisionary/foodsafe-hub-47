@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CreateCAPARequest } from '@/types/capa';
 import { Complaint, CreateComplaintRequest } from '@/types/complaint';
-import { stringToCAPAStatus, stringToCAPAPriority, stringToCAPASource, stringToEffectivenessRating, capaPriorityToString, capaSourceToString } from '@/utils/capaAdapters';
+import { stringToCAPAStatus, stringToCAPAPriority, stringToCAPASource, stringToEffectivenessRating, capaPriorityToString, capaSourceToString, capaStatusToString, effectivenessRatingToString } from '@/utils/capaAdapters';
 import { complaintCategoryToDbString, complaintStatusToDbString, stringToComplaintCategory, stringToComplaintStatus } from '@/utils/complaintAdapters';
 
 class DatabaseService {
@@ -59,6 +59,12 @@ class DatabaseService {
       }
       if (data.source) {
         updateData.source = capaSourceToString(data.source);
+      }
+      if (data.status) {
+        updateData.status = capaStatusToString(data.status);
+      }
+      if (data.effectiveness_rating) {
+        updateData.effectiveness_rating = effectivenessRatingToString(data.effectiveness_rating);
       }
 
       const { data: result, error } = await supabase
@@ -139,7 +145,7 @@ class DatabaseService {
     }
   }
 
-  async updateComplaint(id: string, data: Partial<Complaint>): Promise<Complaint> => {
+  async updateComplaint(id: string, data: Partial<Complaint>): Promise<Complaint> {
     try {
       const updateData: any = {
         ...data,
@@ -174,7 +180,7 @@ class DatabaseService {
     }
   }
 
-  async getComplaints(): Promise<Complaint[]> => {
+  async getComplaints(): Promise<Complaint[]> {
     try {
       const { data, error } = await supabase
         .from('complaints')
