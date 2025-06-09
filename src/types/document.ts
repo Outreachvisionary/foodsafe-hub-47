@@ -1,8 +1,7 @@
-
 import { DocumentStatus, CheckoutStatus, DocumentCategory } from '@/types/enums';
 
 export type DocumentVersionType = 'major' | 'minor';
-export type DocumentActionType = 'view' | 'edit' | 'download' | 'delete' | 'archive' | 'approve' | 'reject' | 'checkout' | 'checkin';
+export type DocumentActionType = 'view' | 'edit' | 'download' | 'delete' | 'archive' | 'approve' | 'reject' | 'checkout' | 'checkin' | 'comment';
 
 export interface Document {
   id: string;

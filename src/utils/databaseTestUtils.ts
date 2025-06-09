@@ -1,185 +1,151 @@
 
-export interface FunctionTestResult {
-  name: string;
-  status: 'pending' | 'passing' | 'failing' | 'partial';
-  message?: string;
-  details?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
 
-export interface DatabaseTestResult {
-  tableName: string;
-  status: 'success' | 'error';
-  recordCount?: number;
+interface TestResult {
+  status: 'success' | 'error' | 'warning';
+  tableName?: string;
   details: string;
+  recordCount?: number;
   duration?: number;
   error?: string;
 }
 
-export const runTest = async (testFunction: () => Promise<boolean>, testName: string): Promise<FunctionTestResult> => {
+export const testSupabaseDatabase = async (): Promise<TestResult> => {
+  const startTime = performance.now();
+  
   try {
-    const result = await testFunction();
+    // Test basic connection with a simple query
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+    
+    const duration = performance.now() - startTime;
+    
+    if (error) {
+      return {
+        status: 'error',
+        details: 'Database connection failed',
+        error: error.message,
+        duration
+      };
+    }
+    
     return {
-      name: testName,
-      status: result ? 'passing' : 'failing',
-      message: result ? 'Test passed' : 'Test failed'
+      status: 'success',
+      details: 'Database connection successful',
+      duration
     };
   } catch (error) {
+    const duration = performance.now() - startTime;
     return {
-      name: testName,
-      status: 'failing',
-      message: 'Test failed with error',
-      details: error instanceof Error ? error.message : String(error)
+      status: 'error',
+      details: 'Database connection failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
     };
   }
 };
 
-export const testDatabase = async (): Promise<FunctionTestResult> => {
+export const testSupabaseAuth = async (): Promise<TestResult> => {
+  const startTime = performance.now();
+  
   try {
-    // Mock implementation for database testing
+    const { data: { session }, error } = await supabase.auth.getSession();
+    const duration = performance.now() - startTime;
+    
+    if (error) {
+      return {
+        status: 'error',
+        details: 'Auth connection failed',
+        error: error.message,
+        duration
+      };
+    }
+    
     return {
-      name: 'Database Connection',
-      status: 'passing',
-      message: 'Successfully connected to database'
+      status: 'success',
+      details: session ? `Auth connected - User: ${session.user.email}` : 'Auth connected - No active session',
+      duration
     };
   } catch (error) {
+    const duration = performance.now() - startTime;
     return {
-      name: 'Database Connection',
-      status: 'failing',
-      message: 'Failed to connect to database',
-      details: error instanceof Error ? error.message : String(error)
+      status: 'error',
+      details: 'Auth connection failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
     };
   }
 };
 
-export const testDatabaseTable = async (tableName: string): Promise<DatabaseTestResult> => {
+export const testDatabaseTable = async (tableName: string): Promise<TestResult> => {
+  const startTime = performance.now();
+  
   try {
-    // Mock implementation for database table testing
+    const { data, error, count } = await supabase
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+    
+    const duration = performance.now() - startTime;
+    
+    if (error) {
+      return {
+        status: 'error',
+        tableName,
+        details: `Table '${tableName}' access failed`,
+        error: error.message,
+        duration
+      };
+    }
+    
     return {
+      status: 'success',
       tableName,
-      status: 'success',
-      recordCount: 10,
-      details: `Successfully connected to table ${tableName}`,
-      duration: 50
+      details: `Table '${tableName}' accessible`,
+      recordCount: count || 0,
+      duration
     };
   } catch (error) {
+    const duration = performance.now() - startTime;
     return {
+      status: 'error',
       tableName,
-      status: 'error',
-      details: `Failed to connect to table ${tableName}`,
-      error: error instanceof Error ? error.message : String(error)
+      details: `Table '${tableName}' access failed`,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
     };
   }
 };
 
-export const testDatabaseFunction = async (functionName: string): Promise<FunctionTestResult> => {
+export const testDatabaseFunction = async (functionName: string): Promise<TestResult> => {
+  const startTime = performance.now();
+  
   try {
-    // Mock implementation for database function testing
+    const { data, error } = await supabase.rpc(functionName);
+    const duration = performance.now() - startTime;
+    
+    if (error) {
+      return {
+        status: 'error',
+        details: `Function '${functionName}' failed`,
+        error: error.message,
+        duration
+      };
+    }
+    
     return {
-      name: `Function: ${functionName}`,
-      status: 'passing',
-      message: `Successfully executed function ${functionName}`
-    };
-  } catch (error) {
-    return {
-      name: `Function: ${functionName}`,
-      status: 'failing',
-      message: `Failed to execute function ${functionName}`,
-      details: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-export const testSupabaseAuth = async (): Promise<DatabaseTestResult> => {
-  try {
-    // Mock implementation for Supabase auth testing
-    return {
-      tableName: 'Auth System',
       status: 'success',
-      details: 'Successfully connected to Supabase Auth',
-      duration: 30
+      details: `Function '${functionName}' executed successfully`,
+      duration
     };
   } catch (error) {
+    const duration = performance.now() - startTime;
     return {
-      tableName: 'Auth System',
       status: 'error',
-      details: 'Failed to connect to Supabase Auth',
-      error: error instanceof Error ? error.message : String(error)
+      details: `Function '${functionName}' failed`,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
     };
   }
 };
-
-export const testSupabaseDatabase = async (): Promise<DatabaseTestResult> => {
-  try {
-    // Mock implementation for Supabase database testing
-    return {
-      tableName: 'Database',
-      status: 'success',
-      details: 'Successfully connected to Supabase Database',
-      duration: 40
-    };
-  } catch (error) {
-    return {
-      tableName: 'Database',
-      status: 'error',
-      details: 'Failed to connect to Supabase Database',
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-export const testServiceIntegration = async (serviceName: string): Promise<FunctionTestResult> => {
-  try {
-    // Mock implementation for service integration testing
-    return {
-      name: `Service Integration: ${serviceName}`,
-      status: 'passing',
-      message: `Successfully tested ${serviceName} integration`
-    };
-  } catch (error) {
-    return {
-      name: `Service Integration: ${serviceName}`,
-      status: 'failing',
-      message: `Failed to test ${serviceName} integration`,
-      details: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-export const testRouterNavigation = async (route: string): Promise<FunctionTestResult> => {
-  try {
-    // Mock implementation for router navigation testing
-    return {
-      name: `Router Navigation: ${route}`,
-      status: 'passing',
-      message: `Successfully navigated to ${route}`
-    };
-  } catch (error) {
-    return {
-      name: `Router Navigation: ${route}`,
-      status: 'failing',
-      message: `Failed to navigate to ${route}`,
-      details: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-export const testCrossModuleIntegration = async (): Promise<FunctionTestResult> => {
-  try {
-    // Mock implementation for cross-module integration testing
-    return {
-      name: 'Cross-Module Integration',
-      status: 'passing',
-      message: 'Successfully tested cross-module integration'
-    };
-  } catch (error) {
-    return {
-      name: 'Cross-Module Integration',
-      status: 'failing',
-      message: 'Failed to test cross-module integration',
-      details: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-// Export the FunctionTestResult as default export to support both import approaches
-export default FunctionTestResult;
