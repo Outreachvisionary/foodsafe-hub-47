@@ -93,8 +93,8 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
     const dbComplaint = {
       title: complaint.title,
       description: complaint.description,
-      category: complaintCategoryToDbString(complaint.category),
-      status: 'New',
+      category: complaintCategoryToDbString(complaint.category) as any,
+      status: 'New' as any,
       reported_date: new Date().toISOString(),
       created_by: complaint.created_by,
       customer_name: complaint.customer_name,
@@ -130,10 +130,10 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
     
     const dbUpdates: any = { ...updateData, updated_at: new Date().toISOString() };
     if (updateData.category) {
-      dbUpdates.category = complaintCategoryToDbString(updateData.category);
+      dbUpdates.category = complaintCategoryToDbString(updateData.category) as any;
     }
     if (updateData.status) {
-      dbUpdates.status = complaintStatusToDbString(updateData.status);
+      dbUpdates.status = complaintStatusToDbString(updateData.status) as any;
     }
     
     const { data, error } = await supabase

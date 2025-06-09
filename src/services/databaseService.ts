@@ -119,13 +119,13 @@ class DatabaseService {
         .insert({
           title: data.title,
           description: data.description,
-          category: complaintCategoryToDbString(data.category),
+          category: complaintCategoryToDbString(data.category) as any,
           customer_name: data.customer_name,
           customer_contact: data.customer_contact,
           product_involved: data.product_involved,
           lot_number: data.lot_number,
           created_by: data.created_by,
-          status: 'New',
+          status: 'New' as any,
           reported_date: new Date().toISOString()
         })
         .select()
@@ -153,10 +153,10 @@ class DatabaseService {
       
       // Convert enums to strings for database
       if (data.category) {
-        updateData.category = complaintCategoryToDbString(data.category);
+        updateData.category = complaintCategoryToDbString(data.category) as any;
       }
       if (data.status) {
-        updateData.status = complaintStatusToDbString(data.status);
+        updateData.status = complaintStatusToDbString(data.status) as any;
       }
 
       const { data: result, error } = await supabase

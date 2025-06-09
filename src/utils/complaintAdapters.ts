@@ -38,6 +38,7 @@ export const stringToComplaintCategory = (category: string): ComplaintCategory =
     case 'Delivery':
       return ComplaintCategory.Delivery;
     case 'Customer Service':
+    case 'Service':
       return ComplaintCategory.Service;
     case 'Labeling':
       return ComplaintCategory.Labeling;
