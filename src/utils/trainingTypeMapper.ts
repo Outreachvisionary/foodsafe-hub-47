@@ -1,104 +1,77 @@
 
-import { 
-  TrainingStatus, 
-  TrainingType, 
-  TrainingCategory 
-} from '@/types/enums';
-import { TrainingPriority } from '@/types/training';
+import { TrainingType, TrainingCategory, TrainingStatus } from '@/types/enums';
 
-// Map database string values to our type system
-export function mapToTrainingType(value: string): TrainingType {
-  const mapping: Record<string, TrainingType> = {
-    'onboarding': TrainingType.Onboarding,
-    'compliance': TrainingType.Compliance,
-    'technical': TrainingType.Technical,
-    'safety': TrainingType.Safety,
-    'quality': TrainingType.Quality,
-    'management': TrainingType.Management,
-    'other': TrainingType.Other
-  };
-  
-  return mapping[value.toLowerCase()] || TrainingType.Other;
-}
-
-export function mapToTrainingCategory(value: string): TrainingCategory {
-  const mapping: Record<string, TrainingCategory> = {
-    'food_safety': TrainingCategory.FoodSafety,
-    'haccp': TrainingCategory.HACCP,
-    'sqf': TrainingCategory.SQF,
-    'gmp': TrainingCategory.GMP,
-    'sanitation': TrainingCategory.Sanitation,
-    'allergen': TrainingCategory.Allergen,
-    'regulatory_compliance': TrainingCategory.RegulatoryCompliance,
-    'equipment_operation': TrainingCategory.EquipmentOperation,
-    'other': TrainingCategory.Other
-  };
-  
-  return mapping[value.toLowerCase()] || TrainingCategory.Other;
-}
-
-export function mapToTrainingStatus(value: string): TrainingStatus {
-  const mapping: Record<string, TrainingStatus> = {
-    'not started': TrainingStatus.Not_Started,
-    'in progress': TrainingStatus.In_Progress,
-    'completed': TrainingStatus.Completed,
-    'overdue': TrainingStatus.Overdue,
-    'cancelled': TrainingStatus.Cancelled,
-    'canceled': TrainingStatus.Cancelled, // Handle different spellings
-    // Map from database values to our TrainingStatus
-    'not-started': TrainingStatus.Not_Started,
-    'in-progress': TrainingStatus.In_Progress
-  };
-  
-  return mapping[value.toLowerCase()] || TrainingStatus.Not_Started;
-}
-
-export function mapToCompletionStatus(value: string): string {
-  const mapping: Record<string, string> = {
-    'Not Started': 'not-started',
-    'In Progress': 'in-progress',
-    'Completed': 'completed',
-    'Overdue': 'overdue',
-    'Cancelled': 'cancelled',
-    'Canceled': 'cancelled'
-  };
-  
-  return mapping[value] || 'not-started';
-}
-
-export function mapToTrainingPriority(value: string): TrainingPriority {
-  const mapping: Record<string, TrainingPriority> = {
-    'critical': TrainingPriority.Critical,
-    'high': TrainingPriority.High,
-    'medium': TrainingPriority.Medium,
-    'low': TrainingPriority.Low
-  };
-  
-  return mapping[value.toLowerCase()] || TrainingPriority.Medium;
-}
-
-export function mapToRecurrencePattern(value: string): string {
-  const mapping: Record<string, string> = {
-    'daily': 'daily',
-    'weekly': 'weekly',
-    'monthly': 'monthly',
-    'quarterly': 'quarterly',
-    'annual': 'annual',
-    'annually': 'annual', // Handle different wording
-    'Monthly': 'monthly', // Handle capitalization
-    'Annually': 'annual'
-  };
-  
-  return mapping[value] || 'monthly';
-}
-
-// Helper to ensure string arrays
-export function ensureStringArray(value: any): string[] {
-  if (Array.isArray(value)) {
-    return value;
+export const stringToTrainingType = (type: string): TrainingType => {
+  switch (type) {
+    case 'Online':
+      return TrainingType.Online;
+    case 'Classroom':
+      return TrainingType.Classroom;
+    case 'On the Job':
+      return TrainingType.On_the_Job;
+    case 'Certification':
+      return TrainingType.Certification;
+    case 'Refresher':
+      return TrainingType.Refresher;
+    case 'Mandatory':
+      return TrainingType.Mandatory;
+    default:
+      return TrainingType.Online;
   }
-  if (value === null || value === undefined) {
-    return [];
+};
+
+export const trainingTypeToString = (type: TrainingType): string => {
+  return type;
+};
+
+export const stringToTrainingCategory = (category: string): TrainingCategory => {
+  switch (category) {
+    case 'Food Safety':
+      return TrainingCategory.Food_Safety;
+    case 'HACCP':
+      return TrainingCategory.HACCP;
+    case 'GMP':
+      return TrainingCategory.GMP;
+    case 'Allergen Management':
+      return TrainingCategory.Allergen_Management;
+    case 'Personal Hygiene':
+      return TrainingCategory.Personal_Hygiene;
+    case 'Equipment Operation':
+      return TrainingCategory.Equipment_Operation;
+    case 'Quality Control':
+      return TrainingCategory.Quality_Control;
+    case 'Documentation':
+      return TrainingCategory.Documentation;
+    case 'Leadership':
+      return TrainingCategory.Leadership;
+    case 'Other':
+      return TrainingCategory.Other;
+    default:
+      return TrainingCategory.Other;
   }
-  return [String(value)];
-}
+};
+
+export const trainingCategoryToString = (category: TrainingCategory): string => {
+  return category;
+};
+
+export const stringToTrainingStatus = (status: string): TrainingStatus => {
+  switch (status) {
+    case 'Not Started':
+      return TrainingStatus.Not_Started;
+    case 'In Progress':
+      return TrainingStatus.In_Progress;
+    case 'Completed':
+      return TrainingStatus.Completed;
+    case 'Expired':
+      return TrainingStatus.Expired;
+    case 'Failed':
+      return TrainingStatus.Failed;
+    default:
+      return TrainingStatus.Not_Started;
+  }
+};
+
+export const trainingStatusToString = (status: TrainingStatus): string => {
+  return status;
+};

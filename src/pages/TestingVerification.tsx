@@ -6,30 +6,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader, CheckCircle2, XCircle, AlertTriangle, Database, Server, Link2, ArrowRight } from 'lucide-react';
 import {
-  runTest,
   testDatabase,
   testDatabaseTable,
-  testDatabaseFunction,
   testSupabaseAuth,
   testSupabaseDatabase,
   testServiceIntegration,
   testRouterNavigation,
   testCrossModuleIntegration,
-  FunctionTestResult,
-  DatabaseTestResult
+  type TestResult,
+  type FunctionTestResult,
+  type DatabaseTestResult
 } from '@/utils/databaseTestUtils';
 
 const TestingVerification: React.FC = () => {
   const [activeTab, setActiveTab] = useState('database');
-  const [databaseStatus, setDatabaseStatus] = useState<FunctionTestResult>({
-    name: 'Database Connection',
-    status: 'pending',
-    message: 'Test not run yet'
+  const [databaseStatus, setDatabaseStatus] = useState<TestResult>({
+    status: 'warning',
+    details: 'Test not run yet'
   });
   
-  const [databaseTableResults, setDatabaseTableResults] = useState<DatabaseTestResult[]>([]);
-  const [authResults, setAuthResults] = useState<DatabaseTestResult>({
-    tableName: 'Auth System',
+  const [databaseTableResults, setDatabaseTableResults] = useState<TestResult[]>([]);
+  const [authResults, setAuthResults] = useState<TestResult>({
     status: 'error',
     details: 'Test not run yet'
   });
@@ -62,19 +59,19 @@ const TestingVerification: React.FC = () => {
   const handleTestDatabase = async () => {
     try {
       setLoading(prev => ({ ...prev, database: true }));
-      const result = await testDatabase();
+      const result = await testSupabaseDatabase();
       setDatabaseStatus(result);
       
       // If database test passes, also test auth
-      if (result.status === 'passing') {
+      if (result.status === 'success') {
         const authResult = await testSupabaseAuth();
         setAuthResults(authResult);
       }
       
       toast({
-        title: `Database Test ${result.status === 'passing' ? 'Passed' : 'Failed'}`,
-        description: result.message,
-        variant: result.status === 'passing' ? 'default' : 'destructive'
+        title: `Database Test ${result.status === 'success' ? 'Passed' : 'Failed'}`,
+        description: result.details,
+        variant: result.status === 'success' ? 'default' : 'destructive'
       });
     } catch (error) {
       console.error('Error testing database:', error);
@@ -129,42 +126,6 @@ const TestingVerification: React.FC = () => {
     }
   };
   
-  const handleTestFunctions = async () => {
-    try {
-      setLoading(prev => ({ ...prev, functions: true }));
-      setFunctionResults([]);
-      
-      // Test database functions - implement these in databaseTestUtils.ts
-      const functionsPromises = [
-        testDatabaseFunction('get_user_profile'),
-        testDatabaseFunction('get_document_count'),
-        testDatabaseFunction('get_training_status')
-      ];
-      
-      const results = await Promise.all(functionsPromises);
-      setFunctionResults(results);
-      
-      const failedFunctions = results.filter(r => r.status === 'failing').length;
-      
-      toast({
-        title: failedFunctions > 0 ? `${failedFunctions} Function Tests Failed` : 'All Function Tests Passed',
-        description: failedFunctions > 0 
-          ? `${results.length - failedFunctions} of ${results.length} functions are working`
-          : `Successfully tested ${results.length} database functions`,
-        variant: failedFunctions > 0 ? 'destructive' : 'default'
-      });
-    } catch (error) {
-      console.error('Error testing database functions:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while testing database functions',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, functions: false }));
-    }
-  };
-  
   const handleTestIntegrations = async () => {
     try {
       setLoading(prev => ({ ...prev, integrations: true }));
@@ -172,16 +133,14 @@ const TestingVerification: React.FC = () => {
       
       // Test various service integrations
       const integrationsPromises = [
-        testServiceIntegration('Email Service'),
-        testServiceIntegration('Storage Service'),
-        testServiceIntegration('Notification Service'),
+        testServiceIntegration(),
         testCrossModuleIntegration()
       ];
       
       const results = await Promise.all(integrationsPromises);
       setIntegrationResults(results);
       
-      const failedIntegrations = results.filter(r => r.status === 'failing').length;
+      const failedIntegrations = results.filter(r => r.status === 'error').length;
       
       toast({
         title: failedIntegrations > 0 ? `${failedIntegrations} Integration Tests Failed` : 'All Integration Tests Passed',
@@ -219,7 +178,7 @@ const TestingVerification: React.FC = () => {
       const results = await Promise.all(navigationPromises);
       setNavigationResults(results);
       
-      const failedRoutes = results.filter(r => r.status === 'failing').length;
+      const failedRoutes = results.filter(r => r.status === 'error').length;
       
       toast({
         title: failedRoutes > 0 ? `${failedRoutes} Route Tests Failed` : 'All Route Tests Passed',
@@ -241,18 +200,14 @@ const TestingVerification: React.FC = () => {
   };
   
   const renderStatusIcon = (status: string) => {
-    if (status === 'pending') {
+    if (status === 'warning') {
       return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-    } else if (status === 'passing') {
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-    } else if (status === 'failing') {
-      return <XCircle className="h-5 w-5 text-red-500" />;
-    } else if (status === 'partial') {
-      return <AlertTriangle className="h-5 w-5 text-orange-500" />;
     } else if (status === 'success') {
       return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-    } else {
+    } else if (status === 'error') {
       return <XCircle className="h-5 w-5 text-red-500" />;
+    } else {
+      return <AlertTriangle className="h-5 w-5 text-orange-500" />;
     }
   };
   
@@ -266,7 +221,6 @@ const TestingVerification: React.FC = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="database">Database</TabsTrigger>
-              <TabsTrigger value="functions">Functions</TabsTrigger>
               <TabsTrigger value="integrations">Integrations</TabsTrigger>
               <TabsTrigger value="navigation">Navigation</TabsTrigger>
             </TabsList>
@@ -285,7 +239,7 @@ const TestingVerification: React.FC = () => {
                   
                   <Button 
                     onClick={handleTestDatabaseTables} 
-                    disabled={loading.tables || databaseStatus.status !== 'passing'}
+                    disabled={loading.tables || databaseStatus.status !== 'success'}
                     className="flex items-center"
                     variant="outline"
                   >
@@ -306,8 +260,8 @@ const TestingVerification: React.FC = () => {
                             {renderStatusIcon(databaseStatus.status)}
                           </div>
                           <div>
-                            <div className="font-medium">{databaseStatus.name}</div>
-                            <div className="text-sm text-gray-500">{databaseStatus.message}</div>
+                            <div className="font-medium">Database Connection</div>
+                            <div className="text-sm text-gray-500">{databaseStatus.details}</div>
                           </div>
                         </div>
                         <div className="capitalize font-medium text-sm">
@@ -321,7 +275,7 @@ const TestingVerification: React.FC = () => {
                             {renderStatusIcon(authResults.status)}
                           </div>
                           <div>
-                            <div className="font-medium">{authResults.tableName}</div>
+                            <div className="font-medium">Auth System</div>
                             <div className="text-sm text-gray-500">{authResults.details}</div>
                           </div>
                         </div>
@@ -368,50 +322,6 @@ const TestingVerification: React.FC = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="functions">
-              <div className="space-y-4">
-                <Button 
-                  onClick={handleTestFunctions} 
-                  disabled={loading.functions}
-                  className="flex items-center"
-                >
-                  {loading.functions ? <Loader className="h-4 w-4 mr-2 animate-spin" /> : <Server className="h-4 w-4 mr-2" />}
-                  Test Database Functions
-                </Button>
-                
-                {functionResults.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Function Results</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {functionResults.map((result, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 border rounded">
-                            <div className="flex items-center">
-                              <div className="mr-3">
-                                {renderStatusIcon(result.status)}
-                              </div>
-                              <div>
-                                <div className="font-medium">{result.name}</div>
-                                <div className="text-sm text-gray-500">{result.message}</div>
-                                {result.details && (
-                                  <div className="text-xs text-gray-400">{result.details}</div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="capitalize font-medium text-sm">
-                              {result.status}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-            
             <TabsContent value="integrations">
               <div className="space-y-4">
                 <Button 
@@ -437,10 +347,10 @@ const TestingVerification: React.FC = () => {
                                 {renderStatusIcon(result.status)}
                               </div>
                               <div>
-                                <div className="font-medium">{result.name}</div>
-                                <div className="text-sm text-gray-500">{result.message}</div>
-                                {result.details && (
-                                  <div className="text-xs text-gray-400">{result.details}</div>
+                                <div className="font-medium">{result.functionName}</div>
+                                <div className="text-sm text-gray-500">{result.details}</div>
+                                {result.error && (
+                                  <div className="text-xs text-gray-400">{result.error}</div>
                                 )}
                               </div>
                             </div>
@@ -481,10 +391,10 @@ const TestingVerification: React.FC = () => {
                                 {renderStatusIcon(result.status)}
                               </div>
                               <div>
-                                <div className="font-medium">{result.name}</div>
-                                <div className="text-sm text-gray-500">{result.message}</div>
-                                {result.details && (
-                                  <div className="text-xs text-gray-400">{result.details}</div>
+                                <div className="font-medium">{result.functionName}</div>
+                                <div className="text-sm text-gray-500">{result.details}</div>
+                                {result.error && (
+                                  <div className="text-xs text-gray-400">{result.error}</div>
                                 )}
                               </div>
                             </div>

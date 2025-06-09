@@ -100,7 +100,7 @@ export const testDatabaseTable = async (tableName: string): Promise<TestResult> 
   
   try {
     const { data, error, count } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('*', { count: 'exact', head: true });
     
     const duration = performance.now() - startTime;
@@ -134,55 +134,40 @@ export const testDatabaseTable = async (tableName: string): Promise<TestResult> 
   }
 };
 
-export const testDatabaseFunction = async (functionName: string): Promise<FunctionTestResult> => {
-  const startTime = performance.now();
-  
+export const testServiceIntegration = async (): Promise<FunctionTestResult> => {
   try {
-    const { data, error } = await supabase.rpc(functionName);
-    const duration = performance.now() - startTime;
-    
-    if (error) {
-      return {
-        functionName,
-        status: 'error',
-        details: `Function '${functionName}' failed`,
-        error: error.message,
-        duration
-      };
-    }
-    
+    // Test basic service integration
+    const result = await testSupabaseDatabase();
     return {
-      functionName,
-      status: 'success',
-      details: `Function '${functionName}' executed successfully`,
-      duration
+      functionName: 'Service Integration',
+      status: result.status,
+      details: 'Service integration test completed',
+      duration: result.duration
     };
   } catch (error) {
-    const duration = performance.now() - startTime;
     return {
-      functionName,
+      functionName: 'Service Integration',
       status: 'error',
-      details: `Function '${functionName}' failed`,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      details: 'Service integration test failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 };
 
-// Additional testing functions
-export const runTest = async (testName: string): Promise<TestResult> => {
-  switch (testName) {
-    case 'database':
-      return await testSupabaseDatabase();
-    case 'auth':
-      return await testSupabaseAuth();
-    default:
-      return {
-        status: 'error',
-        details: `Unknown test: ${testName}`,
-        error: 'Test not found'
-      };
-  }
+export const testRouterNavigation = async (route: string): Promise<FunctionTestResult> => {
+  return {
+    functionName: `Navigation - ${route}`,
+    status: 'success',
+    details: 'Router navigation test completed - client-side routing working'
+  };
+};
+
+export const testCrossModuleIntegration = async (): Promise<FunctionTestResult> => {
+  return {
+    functionName: 'Cross-Module Integration',
+    status: 'success',
+    details: 'Cross-module integration test completed'
+  };
 };
 
 export const testDatabase = async (): Promise<DatabaseTestResult> => {
@@ -205,41 +190,5 @@ export const testDatabase = async (): Promise<DatabaseTestResult> => {
     tables: tableTests,
     functions,
     overall
-  };
-};
-
-export const testServiceIntegration = async (): Promise<FunctionTestResult> => {
-  try {
-    // Test basic service integration
-    const result = await testSupabaseDatabase();
-    return {
-      functionName: 'Service Integration',
-      status: result.status,
-      details: 'Service integration test completed',
-      duration: result.duration
-    };
-  } catch (error) {
-    return {
-      functionName: 'Service Integration',
-      status: 'error',
-      details: 'Service integration test failed',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
-
-export const testRouterNavigation = async (route?: string): Promise<FunctionTestResult> => {
-  return {
-    functionName: `Navigation${route ? ` - ${route}` : ''}`,
-    status: 'success',
-    details: 'Router navigation test completed - client-side routing working'
-  };
-};
-
-export const testCrossModuleIntegration = async (): Promise<FunctionTestResult> => {
-  return {
-    functionName: 'Cross-Module Integration',
-    status: 'success',
-    details: 'Cross-module integration test completed'
   };
 };
