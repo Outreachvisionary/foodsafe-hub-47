@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingRecord, TrainingSession } from '@/types/training';
-import { TrainingStatus } from '@/types/enums';
+import { TrainingStatus, TrainingType, TrainingCategory } from '@/types/enums';
 import { stringToTrainingStatus, trainingStatusToString } from '@/utils/trainingTypeMapper';
 
 export const getTrainingRecordById = async (id: string): Promise<TrainingRecord | null> => {
@@ -28,8 +28,18 @@ export const createTrainingRecord = async (
 ): Promise<TrainingRecord> => {
   // Convert enum values to strings for database storage
   const dbRecord = {
-    ...record,
-    status: trainingStatusToString(record.status)
+    session_id: record.session_id,
+    employee_id: record.employee_id,
+    employee_name: record.employee_name,
+    status: trainingStatusToString(record.status),
+    assigned_date: record.assigned_date,
+    due_date: record.due_date,
+    completion_date: record.completion_date,
+    score: record.score,
+    pass_threshold: record.pass_threshold,
+    last_recurrence: record.last_recurrence,
+    next_recurrence: record.next_recurrence,
+    notes: record.notes
   };
 
   const { data, error } = await supabase
@@ -53,9 +63,23 @@ export const createTrainingRecord = async (
 export const createTrainingSession = async (
   session: Omit<TrainingSession, 'id'>
 ): Promise<TrainingSession> => {
+  // Convert enums to strings for database storage
+  const dbSession = {
+    title: session.title,
+    description: session.description,
+    training_type: session.training_type, // Already a string from enum
+    training_category: session.training_category, // Already a string from enum
+    assigned_to: session.assigned_to,
+    start_date: session.start_date,
+    due_date: session.due_date,
+    created_by: session.created_by,
+    required_roles: session.required_roles,
+    is_recurring: session.is_recurring
+  };
+
   const { data, error } = await supabase
     .from('training_sessions')
-    .insert([session])
+    .insert([dbSession])
     .select()
     .single();
 
@@ -64,7 +88,21 @@ export const createTrainingSession = async (
     throw error;
   }
 
-  return data;
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    training_type: data.training_type as TrainingType,
+    training_category: data.training_category as TrainingCategory,
+    assigned_to: data.assigned_to,
+    start_date: data.start_date,
+    due_date: data.due_date,
+    created_by: data.created_by,
+    required_roles: data.required_roles,
+    is_recurring: data.is_recurring,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
 };
 
 export const updateTrainingRecord = async (

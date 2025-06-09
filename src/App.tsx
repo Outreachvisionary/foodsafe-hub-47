@@ -17,7 +17,7 @@ import TrainingModule from '@/pages/TrainingModule';
 import Traceability from '@/pages/Traceability';
 import SupplierManagement from '@/pages/SupplierManagement';
 import AuditsModule from '@/pages/AuditsModule';
-import DatabaseConnectionTest from '@/components/DatabaseConnectionTest';
+import DatabaseConnectionTest from '@/pages/DatabaseConnectionTest';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -50,7 +50,7 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/documents/*" 
+                  path="/documents" 
                   element={
                     <ProtectedRoute>
                       <Documents />
@@ -58,7 +58,15 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/capa/*" 
+                  path="/documents/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <Documents />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/capa" 
                   element={
                     <ProtectedRoute>
                       <CAPA />
@@ -66,7 +74,15 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/non-conformance/*" 
+                  path="/capa/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <CAPA />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/non-conformance" 
                   element={
                     <ProtectedRoute>
                       <NonConformance />
@@ -74,7 +90,15 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/training/*" 
+                  path="/non-conformance/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <NonConformance />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/training" 
                   element={
                     <ProtectedRoute>
                       <TrainingModule />
@@ -82,7 +106,15 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/traceability/*" 
+                  path="/training/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <TrainingModule />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/traceability" 
                   element={
                     <ProtectedRoute>
                       <Traceability />
@@ -90,7 +122,15 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/suppliers/*" 
+                  path="/traceability/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <Traceability />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/suppliers" 
                   element={
                     <ProtectedRoute>
                       <SupplierManagement />
@@ -98,7 +138,23 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/audits/*" 
+                  path="/suppliers/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <SupplierManagement />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/audits" 
+                  element={
+                    <ProtectedRoute>
+                      <AuditsModule />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/audits/:id" 
                   element={
                     <ProtectedRoute>
                       <AuditsModule />
