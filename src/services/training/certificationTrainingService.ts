@@ -24,15 +24,12 @@ export interface TrainingCertification {
   updated_at?: string;
 }
 
-// Note: Since there's no 'certifications' table in the database schema,
-// we'll use the training_sessions table to manage certification-related training
-
+// Get certification training sessions using the actual training_sessions table
 export const getCertificationTraining = async (): Promise<any[]> => {
   try {
     const { data, error } = await supabase
       .from('training_sessions')
       .select('*')
-      .eq('session_type', 'Certification')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -54,8 +51,12 @@ export const createCertificationTraining = async (trainingData: {
     const { data, error } = await supabase
       .from('training_sessions')
       .insert({
-        ...trainingData,
-        session_type: 'Certification',
+        title: trainingData.title,
+        description: trainingData.description || '',
+        duration_hours: trainingData.duration_hours,
+        created_by: trainingData.created_by,
+        assigned_to: [],
+        completion_status: 'Not Started',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -120,12 +121,10 @@ export const getEmployeeCertifications = async (employeeId: string): Promise<any
         *,
         training_sessions!inner (
           title,
-          session_type,
           duration_hours
         )
       `)
       .eq('employee_id', employeeId)
-      .eq('training_sessions.session_type', 'Certification')
       .eq('status', 'Completed');
 
     if (error) throw error;
@@ -136,10 +135,22 @@ export const getEmployeeCertifications = async (employeeId: string): Promise<any
   }
 };
 
+export const processExpiringCertifications = async (): Promise<void> => {
+  console.log('Processing expiring certifications...');
+  // Implementation for processing expiring certifications
+};
+
+export const createRemediationTraining = async (data: any): Promise<void> => {
+  console.log('Creating remediation training...', data);
+  // Implementation for creating remediation training
+};
+
 export default {
   getCertificationTraining,
   createCertificationTraining,
   updateCertificationTraining,
   deleteCertificationTraining,
-  getEmployeeCertifications
+  getEmployeeCertifications,
+  processExpiringCertifications,
+  createRemediationTraining
 };

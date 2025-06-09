@@ -1,3 +1,4 @@
+
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,13 +41,39 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
 // Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
+    // Map reason category to match database enum
+    const mapReasonCategory = (category: string) => {
+      const validCategories = [
+        'Other',
+        'Contamination', 
+        'Quality Issues',
+        'Regulatory Non-Compliance',
+        'Equipment Malfunction',
+        'Documentation Error',
+        'Process Deviation'
+      ];
+      
+      // Map common variations to valid enum values
+      const categoryMappings: Record<string, string> = {
+        'Foreign Material': 'Contamination',
+        'Temperature Abuse': 'Process Deviation',
+        'Packaging Defect': 'Quality Issues',
+        'Labeling Error': 'Documentation Error',
+        'Food Safety': 'Regulatory Non-Compliance',
+        'Damaged': 'Quality Issues',
+        'Expired': 'Quality Issues'
+      };
+      
+      return categoryMappings[category] || (validCategories.includes(category) ? category : 'Other');
+    };
+
     // Ensure required fields and convert types
     const insertData = {
       title: data.title || '',
       description: data.description || '',
       item_name: data.item_name || '',
       item_category: String(data.item_category || 'Other') as 'Other' | 'Processing Equipment' | 'Product Storage Tanks' | 'Finished Products' | 'Raw Products' | 'Packaging Materials',
-      reason_category: String(data.reason_category || 'Other') as 'Other' | 'Contamination' | 'Quality Issues' | 'Regulatory Non-Compliance' | 'Equipment Malfunction' | 'Documentation Error' | 'Process Deviation' | 'Foreign Material' | 'Temperature Abuse' | 'Packaging Defect' | 'Labeling Error' | 'Food Safety' | 'Damaged' | 'Expired',
+      reason_category: mapReasonCategory(String(data.reason_category || 'Other')) as 'Other' | 'Contamination' | 'Quality Issues' | 'Regulatory Non-Compliance' | 'Equipment Malfunction' | 'Documentation Error' | 'Process Deviation',
       status: String(data.status || 'On Hold') as 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Resolved' | 'Closed' | 'Approved' | 'Rejected',
       created_by: data.created_by || '',
       assigned_to: data.assigned_to,
@@ -148,7 +175,6 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
   }
 };
 
-// Fetch NC attachments
 export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
   try {
     const { data, error } = await supabase
@@ -165,7 +191,6 @@ export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAt
   }
 };
 
-// Upload NC attachment
 export const uploadNCAttachment = async (
   nonConformanceId: string,
   file: File,
@@ -195,7 +220,6 @@ export const uploadNCAttachment = async (
   }
 };
 
-// Fetch NC stats for dashboard
 export const fetchNCStats = async (): Promise<NCStats> => {
   try {
     const { data: nonConformances, error } = await supabase

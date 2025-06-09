@@ -1,85 +1,87 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TrainingAutomationConfig } from '@/types/training';
 
-const trainingConfigService = {
-  /**
-   * Get automation configuration
-   */
-  getAutomationConfig: async (): Promise<TrainingAutomationConfig | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('training_automation_config')
-        .select('*')
-        .limit(1)
-        .single();
-        
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No config found, create default
-          return await trainingConfigService.updateAutomationConfig({
-            enabled: true,
-            rules: [],
-            documentChangesTrigger: true,
-            newEmployeeTrigger: true,
-            roleCangeTrigger: true
-          });
-        }
-        throw error;
-      }
-      
-      return data as TrainingAutomationConfig;
-    } catch (error) {
-      console.error('Error getting training automation config:', error);
-      return null;
-    }
-  },
-  
-  /**
-   * Update automation configuration
-   */
-  updateAutomationConfig: async (config: Partial<TrainingAutomationConfig>): Promise<TrainingAutomationConfig | null> => {
-    try {
-      // Check if config exists
-      const { data: existingConfig, error: checkError } = await supabase
-        .from('training_automation_config')
-        .select('id')
-        .limit(1)
-        .single();
-        
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-      
-      let result;
-      
-      if (existingConfig) {
-        // Update existing config
-        const { data, error } = await supabase
-          .from('training_automation_config')
-          .update(config)
-          .eq('id', existingConfig.id)
-          .select('*')
-          .single();
-          
-        if (error) throw error;
-        result = data;
-      } else {
-        // Create new config
-        const { data, error } = await supabase
-          .from('training_automation_config')
-          .insert(config)
-          .select('*')
-          .single();
-          
-        if (error) throw error;
-        result = data;
-      }
-      
-      return result as TrainingAutomationConfig;
-    } catch (error) {
-      console.error('Error updating training automation config:', error);
-      return null;
-    }
-  },
+export interface TrainingAutomationConfig {
+  id: string;
+  enabled: boolean;
+  rules: Record<string, any>;
+  document_changes_trigger: boolean;
+  new_employee_trigger: boolean;
+  role_change_trigger: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+export const getAutomationConfig = async (): Promise<TrainingAutomationConfig | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('training_automation_config')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      enabled: data.enabled,
+      rules: typeof data.rules === 'object' && data.rules !== null 
+        ? data.rules as Record<string, any>
+        : {},
+      document_changes_trigger: data.document_changes_trigger,
+      new_employee_trigger: data.new_employee_trigger,
+      role_change_trigger: data.role_change_trigger,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      created_by: data.created_by
+    };
+  } catch (error) {
+    console.error('Error fetching automation config:', error);
+    return null;
+  }
 };
 
-export default trainingConfigService;
+export const updateAutomationConfig = async (
+  id: string,
+  updates: Partial<TrainingAutomationConfig>
+): Promise<TrainingAutomationConfig> => {
+  try {
+    const { data, error } = await supabase
+      .from('training_automation_config')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      enabled: data.enabled,
+      rules: typeof data.rules === 'object' && data.rules !== null 
+        ? data.rules as Record<string, any>
+        : {},
+      document_changes_trigger: data.document_changes_trigger,
+      new_employee_trigger: data.new_employee_trigger,
+      role_change_trigger: data.role_change_trigger,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      created_by: data.created_by
+    };
+  } catch (error) {
+    console.error('Error updating automation config:', error);
+    throw error;
+  }
+};
+
+export default {
+  getAutomationConfig,
+  updateAutomationConfig
+};

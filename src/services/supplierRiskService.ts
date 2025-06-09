@@ -57,7 +57,6 @@ export const getSupplierRiskAssessments = async (supplierId?: string): Promise<S
 
     if (error) throw error;
     
-    // Convert Json types to proper types and ensure type safety
     return (data || []).map(item => ({
       ...item,
       risk_factors: typeof item.risk_factors === 'object' && item.risk_factors !== null 
@@ -88,7 +87,6 @@ export const updateSupplierRiskAssessment = async (
 
     if (error) throw error;
     
-    // Convert Json types to proper types
     return {
       ...data,
       risk_factors: typeof data.risk_factors === 'object' && data.risk_factors !== null 
@@ -130,7 +128,6 @@ export const getLatestSupplierRiskAssessment = async (supplierId: string): Promi
     
     if (!data) return null;
     
-    // Convert Json types to proper types
     return {
       ...data,
       risk_factors: typeof data.risk_factors === 'object' && data.risk_factors !== null 
@@ -144,10 +141,123 @@ export const getLatestSupplierRiskAssessment = async (supplierId: string): Promi
   }
 };
 
+// Additional functions needed by useSupplierRisk hook
+export const fetchSupplierRiskAssessment = async (supplierId: string): Promise<SupplierRiskAssessment | null> => {
+  return getLatestSupplierRiskAssessment(supplierId);
+};
+
+export const createRiskAssessment = async (assessment: Omit<SupplierRiskAssessment, 'id'>): Promise<SupplierRiskAssessment> => {
+  return createSupplierRiskAssessment(assessment);
+};
+
+export const getRiskDistribution = async (): Promise<{
+  totalSuppliers: number;
+  highRiskCount: number;
+  mediumRiskCount: number;
+  lowRiskCount: number;
+  highRiskPercentage: number;
+  mediumRiskPercentage: number;
+  lowRiskPercentage: number;
+}> => {
+  try {
+    const { data, error } = await supabase
+      .from('supplier_risk_assessments')
+      .select('risk_level');
+
+    if (error) throw error;
+
+    const assessments = data || [];
+    const totalSuppliers = assessments.length;
+    const highRiskCount = assessments.filter(a => a.risk_level === 'High').length;
+    const mediumRiskCount = assessments.filter(a => a.risk_level === 'Medium').length;
+    const lowRiskCount = assessments.filter(a => a.risk_level === 'Low').length;
+
+    return {
+      totalSuppliers,
+      highRiskCount,
+      mediumRiskCount,
+      lowRiskCount,
+      highRiskPercentage: totalSuppliers > 0 ? (highRiskCount / totalSuppliers) * 100 : 0,
+      mediumRiskPercentage: totalSuppliers > 0 ? (mediumRiskCount / totalSuppliers) * 100 : 0,
+      lowRiskPercentage: totalSuppliers > 0 ? (lowRiskCount / totalSuppliers) * 100 : 0,
+    };
+  } catch (error) {
+    console.error('Error fetching risk distribution:', error);
+    return {
+      totalSuppliers: 0,
+      highRiskCount: 0,
+      mediumRiskCount: 0,
+      lowRiskCount: 0,
+      highRiskPercentage: 0,
+      mediumRiskPercentage: 0,
+      lowRiskPercentage: 0,
+    };
+  }
+};
+
+export const getRiskCategoryScores = async (supplierId: string): Promise<{ category: string; score: number }[]> => {
+  try {
+    const assessment = await getLatestSupplierRiskAssessment(supplierId);
+    if (!assessment) return [];
+
+    const scores: { category: string; score: number }[] = [];
+    
+    if (assessment.food_safety_score !== undefined) {
+      scores.push({ category: 'Food Safety', score: assessment.food_safety_score });
+    }
+    if (assessment.quality_system_score !== undefined) {
+      scores.push({ category: 'Quality System', score: assessment.quality_system_score });
+    }
+    if (assessment.regulatory_score !== undefined) {
+      scores.push({ category: 'Regulatory', score: assessment.regulatory_score });
+    }
+    if (assessment.delivery_score !== undefined) {
+      scores.push({ category: 'Delivery', score: assessment.delivery_score });
+    }
+    if (assessment.traceability_score !== undefined) {
+      scores.push({ category: 'Traceability', score: assessment.traceability_score });
+    }
+
+    return scores;
+  } catch (error) {
+    console.error('Error fetching risk category scores:', error);
+    return [];
+  }
+};
+
+export const getHighRiskSuppliers = async (): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('supplier_risk_assessments')
+      .select(`
+        *,
+        suppliers (
+          id,
+          name,
+          category,
+          country
+        )
+      `)
+      .eq('risk_level', 'High')
+      .order('assessment_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching high risk suppliers:', error);
+    return [];
+  }
+};
+
 export default {
   createSupplierRiskAssessment,
   getSupplierRiskAssessments,
   updateSupplierRiskAssessment,
   deleteSupplierRiskAssessment,
-  getLatestSupplierRiskAssessment
+  getLatestSupplierRiskAssessment,
+  fetchSupplierRiskAssessment,
+  createRiskAssessment,
+  getRiskDistribution,
+  getRiskCategoryScores,
+  getHighRiskSuppliers
 };
