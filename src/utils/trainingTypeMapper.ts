@@ -39,18 +39,18 @@ export function mapToTrainingCategory(value: string): TrainingCategory {
 
 export function mapToTrainingStatus(value: string): TrainingStatus {
   const mapping: Record<string, TrainingStatus> = {
-    'not started': TrainingStatus.NotStarted,
-    'in progress': TrainingStatus.InProgress,
+    'not started': TrainingStatus.Not_Started,
+    'in progress': TrainingStatus.In_Progress,
     'completed': TrainingStatus.Completed,
     'overdue': TrainingStatus.Overdue,
     'cancelled': TrainingStatus.Cancelled,
     'canceled': TrainingStatus.Cancelled, // Handle different spellings
     // Map from database values to our TrainingStatus
-    'not-started': TrainingStatus.NotStarted,
-    'in-progress': TrainingStatus.InProgress
+    'not-started': TrainingStatus.Not_Started,
+    'in-progress': TrainingStatus.In_Progress
   };
   
-  return mapping[value.toLowerCase()] || TrainingStatus.NotStarted;
+  return mapping[value.toLowerCase()] || TrainingStatus.Not_Started;
 }
 
 export function mapToCompletionStatus(value: string): string {

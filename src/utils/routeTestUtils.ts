@@ -76,7 +76,7 @@ export const validateRouteData = async (tableName: string): Promise<boolean> => 
     }
 
     const { error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('id')
       .limit(1);
 
@@ -168,9 +168,50 @@ export const getRouteHealth = async (route: string): Promise<{
   return { healthy, issues, recommendations };
 };
 
+// Add the missing functions that components are trying to import
+export const testDatabaseConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from('organizations').select('id').limit(1);
+    return !error;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return false;
+  }
+};
+
+export const testBackendIntegration = async (): Promise<{ status: string; tests: any[] }> => {
+  const tests = [];
+  
+  for (const table of ['organizations', 'documents', 'audits']) {
+    try {
+      const { error } = await supabase.from(table as any).select('id').limit(1);
+      tests.push({
+        name: `${table} table access`,
+        status: error ? 'failed' : 'passed',
+        error: error?.message
+      });
+    } catch (error) {
+      tests.push({
+        name: `${table} table access`,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+  
+  const allPassed = tests.every(test => test.status === 'passed');
+  
+  return {
+    status: allPassed ? 'passed' : 'failed',
+    tests
+  };
+};
+
 export default {
   testRoutes,
   validateRouteData,
   runRouteTests,
-  getRouteHealth
+  getRouteHealth,
+  testDatabaseConnection,
+  testBackendIntegration
 };

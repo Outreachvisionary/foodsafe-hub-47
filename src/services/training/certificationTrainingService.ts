@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Certification {
@@ -53,6 +54,7 @@ export const createCertificationTraining = async (trainingData: {
         created_by: trainingData.created_by,
         assigned_to: [],
         completion_status: 'Not Started',
+        training_type: 'certification',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -114,8 +116,7 @@ export const getEmployeeCertifications = async (employeeId: string): Promise<any
       .select(`
         *,
         training_sessions!inner (
-          title,
-          duration_hours
+          title
         )
       `)
       .eq('employee_id', employeeId)

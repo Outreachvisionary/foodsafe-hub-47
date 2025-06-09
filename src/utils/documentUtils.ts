@@ -46,3 +46,16 @@ export const getDocumentAge = (createdAt: string): string => {
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`;
   return `${Math.floor(diffInDays / 365)} years ago`;
 };
+
+// Add the missing function that components are trying to import
+export const compareDocumentStatus = (status1: DocumentStatus, status2: DocumentStatus): number => {
+  const statusOrder = {
+    [DocumentStatus.Draft]: 1,
+    [DocumentStatus.Pending_Approval]: 2,
+    [DocumentStatus.Approved]: 3,
+    [DocumentStatus.Rejected]: 4,
+    [DocumentStatus.Archived]: 5
+  };
+  
+  return statusOrder[status1] - statusOrder[status2];
+};
