@@ -3,83 +3,13 @@ import { Complaint, ComplaintFilter, CreateComplaintRequest } from '@/types/comp
 import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-
-// Helper function to convert enum to database string
-export const complaintCategoryToDbString = (category: ComplaintCategory): string => {
-  switch (category) {
-    case ComplaintCategory.Product_Quality:
-      return 'Product Quality';
-    case ComplaintCategory.Food_Safety:
-      return 'Food Safety';
-    case ComplaintCategory.Foreign_Material:
-      return 'Foreign Material';
-    case ComplaintCategory.Packaging:
-      return 'Packaging';
-    case ComplaintCategory.Delivery:
-      return 'Delivery';
-    case ComplaintCategory.Service:
-      return 'Customer Service';
-    case ComplaintCategory.Labeling:
-      return 'Labeling';
-    case ComplaintCategory.Other:
-      return 'Other';
-    default:
-      return 'Other';
-  }
-};
-
-export const complaintStatusToDbString = (status: ComplaintStatus): string => {
-  switch (status) {
-    case ComplaintStatus.New:
-      return 'New';
-    case ComplaintStatus.Under_Investigation:
-      return 'Under Investigation';
-    case ComplaintStatus.Resolved:
-      return 'Resolved';
-    case ComplaintStatus.Closed:
-      return 'Closed';
-    default:
-      return 'New';
-  }
-};
-
-export const stringToComplaintCategory = (category: string): ComplaintCategory => {
-  switch (category) {
-    case 'Product Quality':
-      return ComplaintCategory.Product_Quality;
-    case 'Food Safety':
-      return ComplaintCategory.Food_Safety;
-    case 'Foreign Material':
-      return ComplaintCategory.Foreign_Material;
-    case 'Packaging':
-      return ComplaintCategory.Packaging;
-    case 'Delivery':
-      return ComplaintCategory.Delivery;
-    case 'Customer Service':
-      return ComplaintCategory.Service;
-    case 'Labeling':
-      return ComplaintCategory.Labeling;
-    case 'Other':
-      return ComplaintCategory.Other;
-    default:
-      return ComplaintCategory.Other;
-  }
-};
-
-export const stringToComplaintStatus = (status: string): ComplaintStatus => {
-  switch (status) {
-    case 'New':
-      return ComplaintStatus.New;
-    case 'Under Investigation':
-      return ComplaintStatus.Under_Investigation;
-    case 'Resolved':
-      return ComplaintStatus.Resolved;
-    case 'Closed':
-      return ComplaintStatus.Closed;
-    default:
-      return ComplaintStatus.New;
-  }
-};
+import { 
+  complaintCategoryToDbString, 
+  complaintStatusToDbString, 
+  stringToComplaintCategory, 
+  stringToComplaintStatus,
+  stringToComplaintPriority
+} from '@/utils/complaintAdapters';
 
 // Fetch all complaints with optional filtering
 export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Complaint[]> => {
@@ -121,7 +51,8 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
     return (data || []).map(item => ({
       ...item,
       category: stringToComplaintCategory(item.category),
-      status: stringToComplaintStatus(item.status)
+      status: stringToComplaintStatus(item.status),
+      priority: item.priority ? stringToComplaintPriority(item.priority) : undefined
     }));
   } catch (error) {
     console.error('Error fetching complaints:', error);
@@ -148,7 +79,8 @@ export const fetchComplaintById = async (id: string): Promise<Complaint> => {
     return {
       ...data,
       category: stringToComplaintCategory(data.category),
-      status: stringToComplaintStatus(data.status)
+      status: stringToComplaintStatus(data.status),
+      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
     };
   } catch (error) {
     console.error('Error fetching complaint:', error);
@@ -183,7 +115,8 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
     return {
       ...data,
       category: stringToComplaintCategory(data.category),
-      status: stringToComplaintStatus(data.status)
+      status: stringToComplaintStatus(data.status),
+      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
     };
   } catch (error) {
     console.error('Error creating complaint:', error);
@@ -216,7 +149,8 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
     return {
       ...data,
       category: stringToComplaintCategory(data.category),
-      status: stringToComplaintStatus(data.status)
+      status: stringToComplaintStatus(data.status),
+      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
     };
   } catch (error) {
     console.error('Error updating complaint:', error);
@@ -247,7 +181,8 @@ export const updateComplaintStatus = async (
     return {
       ...data,
       category: stringToComplaintCategory(data.category),
-      status: stringToComplaintStatus(data.status)
+      status: stringToComplaintStatus(data.status),
+      priority: data.priority ? stringToComplaintPriority(data.priority) : undefined
     };
   } catch (error) {
     console.error('Error updating complaint status:', error);

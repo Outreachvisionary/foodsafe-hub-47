@@ -27,7 +27,10 @@ const NewComplaintForm: React.FC<NewComplaintFormProps> = ({ onSubmit, onCancel 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      created_by: 'current-user' // TODO: Get from auth context
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
