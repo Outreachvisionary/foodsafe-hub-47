@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
+import { documentCategoryToDbString, documentStatusToDbString, stringToDocumentCategory, stringToDocumentStatus } from '@/utils/documentAdapters';
 
 export const fetchDocuments = async (): Promise<Document[]> => {
   try {
@@ -11,7 +12,11 @@ export const fetchDocuments = async (): Promise<Document[]> => {
 
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      category: stringToDocumentCategory(item.category),
+      status: stringToDocumentStatus(item.status)
+    })) as Document[];
   } catch (error) {
     console.error('Error fetching documents:', error);
     throw error;
@@ -41,15 +46,25 @@ export const getDocumentCounts = async (): Promise<Record<string, number>> => {
 
 export const createDocument = async (document: Partial<Document>): Promise<Document> => {
   try {
+    const dbDocument = {
+      ...document,
+      category: document.category ? documentCategoryToDbString(document.category) as any : undefined,
+      status: document.status ? documentStatusToDbString(document.status) as any : undefined
+    };
+
     const { data, error } = await supabase
       .from('documents')
-      .insert([document])
+      .insert([dbDocument])
       .select()
       .single();
 
     if (error) throw error;
 
-    return data;
+    return {
+      ...data,
+      category: stringToDocumentCategory(data.category),
+      status: stringToDocumentStatus(data.status)
+    } as Document;
   } catch (error) {
     console.error('Error creating document:', error);
     throw error;
@@ -58,16 +73,26 @@ export const createDocument = async (document: Partial<Document>): Promise<Docum
 
 export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
+    const dbUpdates = {
+      ...updates,
+      category: updates.category ? documentCategoryToDbString(updates.category) as any : undefined,
+      status: updates.status ? documentStatusToDbString(updates.status) as any : undefined
+    };
+
     const { data, error } = await supabase
       .from('documents')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
 
-    return data;
+    return {
+      ...data,
+      category: stringToDocumentCategory(data.category),
+      status: stringToDocumentStatus(data.status)
+    } as Document;
   } catch (error) {
     console.error('Error updating document:', error);
     throw error;

@@ -1,7 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
 import { addDays, format, parse, isAfter, isBefore, addMonths } from 'date-fns';
-import { adaptDocumentToDatabase } from '@/utils/documentTypeAdapter';
+import { documentCategoryToDbString, documentStatusToDbString, checkoutStatusToDbString } from '@/utils/documentAdapters';
 
 export const getExpiringDocuments = async (daysThreshold: number = 30): Promise<Document[]> => {
   try {
@@ -127,11 +128,10 @@ export const autoArchiveExpiredDocuments = async (): Promise<void> => {
 
     // Update the status of each expired document to "Archived"
     for (const document of expiredDocuments) {
-      const dbDocument = adaptDocumentToDatabase({
-        ...document,
-        status: 'Archived',
+      const dbDocument = {
+        status: 'Archived' as any,
         updated_at: new Date().toISOString()
-      } as Document);
+      };
 
       const { error: updateError } = await supabase
         .from('documents')

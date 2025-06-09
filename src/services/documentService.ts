@@ -14,8 +14,8 @@ let mockDocuments: Document[] = [
     file_name: 'haccp_plan.pdf',
     file_size: 1024 * 1024,
     file_type: 'application/pdf',
-    category: 'HACCP Plan',
-    status: DocumentStatus.Active,
+    category: DocumentCategory.HACCP_Plan,
+    status: DocumentStatus.Published,
     version: 1,
     created_by: 'admin',
     created_at: '2023-07-01T00:00:00.000Z',
@@ -31,8 +31,8 @@ let mockDocuments: Document[] = [
     file_name: 'sanitation_sop.docx',
     file_size: 512 * 1024,
     file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    category: 'SOP',
-    status: DocumentStatus.Active,
+    category: DocumentCategory.SOP,
+    status: DocumentStatus.Published,
     version: 2,
     created_by: 'admin',
     created_at: '2023-06-15T00:00:00.000Z',
@@ -48,7 +48,7 @@ let mockDocuments: Document[] = [
     file_name: 'q2_audit.pdf',
     file_size: 2 * 1024 * 1024,
     file_type: 'application/pdf',
-    category: 'Audit Report',
+    category: DocumentCategory.Audit_Report,
     status: DocumentStatus.PendingReview,
     version: 1,
     created_by: 'auditor',
@@ -106,8 +106,8 @@ export const deleteDocument = async (id: string): Promise<void> => {
 export const fetchActiveDocuments = async () => {
   try {
     return {
-      status: DocumentStatus.Active,
-      documents: mockDocuments.filter(doc => doc.status === DocumentStatus.Active),
+      status: DocumentStatus.Published,
+      documents: mockDocuments.filter(doc => doc.status === DocumentStatus.Published),
     };
   } catch (error) {
     console.error("Error fetching active documents:", error);
@@ -123,9 +123,7 @@ export const createDocumentActivity = async (activityData: Omit<DocumentActivity
       user_id: activityData.user_id,
       user_name: activityData.user_name,
       user_role: activityData.user_role,
-      comments: activityData.comments,
-      version_id: activityData.version_id,
-      checkout_action: activityData.checkout_action
+      comments: activityData.comments
     };
     
     const { data, error } = await supabase
@@ -151,9 +149,7 @@ export const createDocumentActivity = async (activityData: Omit<DocumentActivity
       user_name: data.user_name,
       user_role: data.user_role,
       timestamp: data.timestamp,
-      comments: data.comments,
-      version_id: data.version_id,
-      checkout_action: data.checkout_action
+      comments: data.comments
     };
     
     return activity;
