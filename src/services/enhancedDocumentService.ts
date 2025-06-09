@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
-import { documentCategoryToDbString, documentStatusToDbString, stringToDocumentCategory, stringToDocumentStatus } from '@/utils/documentAdapters';
+import { documentCategoryToDbString, documentStatusToDbString, stringToDocumentCategory, stringToDocumentStatus, checkoutStatusToDbString } from '@/utils/documentAdapters';
 
 export const fetchDocuments = async (): Promise<Document[]> => {
   try {
@@ -46,11 +46,15 @@ export const getDocumentCounts = async (): Promise<Record<string, number>> => {
 
 export const createDocument = async (document: Partial<Document>): Promise<Document> => {
   try {
-    const dbDocument = {
+    const dbDocument: any = {
       ...document,
-      category: document.category ? documentCategoryToDbString(document.category) as any : undefined,
-      status: document.status ? documentStatusToDbString(document.status) as any : undefined
+      category: document.category ? documentCategoryToDbString(document.category) : undefined,
+      status: document.status ? documentStatusToDbString(document.status) : undefined,
+      checkout_status: document.checkout_status ? checkoutStatusToDbString(document.checkout_status) : undefined
     };
+
+    // Clean up enum fields that shouldn't be sent as enums
+    delete dbDocument.checkout_status; // Remove if it's an enum type
 
     const { data, error } = await supabase
       .from('documents')
@@ -73,11 +77,16 @@ export const createDocument = async (document: Partial<Document>): Promise<Docum
 
 export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
-    const dbUpdates = {
+    const dbUpdates: any = {
       ...updates,
-      category: updates.category ? documentCategoryToDbString(updates.category) as any : undefined,
-      status: updates.status ? documentStatusToDbString(updates.status) as any : undefined
+      category: updates.category ? documentCategoryToDbString(updates.category) : undefined,
+      status: updates.status ? documentStatusToDbString(updates.status) : undefined
     };
+
+    // Remove enum fields that cause type conflicts
+    if (dbUpdates.checkout_status) {
+      dbUpdates.checkout_status = checkoutStatusToDbString(dbUpdates.checkout_status);
+    }
 
     const { data, error } = await supabase
       .from('documents')
