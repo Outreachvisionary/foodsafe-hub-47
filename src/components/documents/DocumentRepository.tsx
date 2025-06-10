@@ -20,25 +20,19 @@ export const DocumentRepository = () => {
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
-  // Use optimized hook for better performance
+  // Use the main document context instead of optimized hook
   const { 
     documents,
     loading, 
     error,
-    refresh
-  } = useOptimizedDocuments({
-    initialFetch: true,
-    realtime: true,
-    cacheTime: 30000 // 30 seconds cache
-  });
-
-  // Mock folders for now since the context doesn't have real folders
-  const folders: any[] = [];  
+    refresh,
+    deleteDocument
+  } = useDocument();
 
   // Handle UI errors separately from the context error
   useEffect(() => {
     if (error) {
-      setRepositoryError(error.message);
+      setRepositoryError(error);
     } else {
       setRepositoryError(null);
     }
@@ -50,28 +44,21 @@ export const DocumentRepository = () => {
     
     let filtered = documents;
     
-    // Filter by path
-    filtered = filtered.filter(doc => {
-      const docPath = doc.file_path || '/';
-      return docPath === currentPath;
-    });
+    // Filter by path (for now, all documents are in root)
+    // In a real implementation, you'd filter based on folder_id or file_path
     
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(doc => 
         doc.title.toLowerCase().includes(term) || 
-        doc.description?.toLowerCase().includes(term)
+        doc.description?.toLowerCase().includes(term) ||
+        doc.file_name.toLowerCase().includes(term)
       );
     }
     
     return filtered;
-  }, [documents, currentPath, searchTerm]);
-
-  const currentFolders = useMemo(() => 
-    folders?.filter(folder => folder.path === currentPath) || [], 
-    [folders, currentPath]
-  );
+  }, [documents, searchTerm]);
 
   const handlePathChange = (path: string) => {
     setCurrentPath(path);
@@ -82,44 +69,40 @@ export const DocumentRepository = () => {
     refresh();
   };
 
-  const isRootPath = currentPath === '/';
-  const parentPath = isRootPath 
-    ? '/' 
-    : currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
-
   const handleCreateFolder = (folderName: string) => {
-    // Implementation for creating a folder
     console.log(`Creating folder ${folderName} at ${currentPath}`);
     setShowCreateFolderDialog(false);
-    // After creating folder, refresh the document list
     refresh();
   };
 
   const handleUploadDocument = (files: File[]) => {
-    // Implementation for uploading documents
     console.log(`Uploading ${files.length} files to ${currentPath}`);
     setShowUploadDialog(false);
-    // After uploading, refresh the document list
     refresh();
   };
 
-  const handleDeleteDocument = (documentId: string) => {
-    // Implementation for deleting a document
-    console.log(`Deleting document ${documentId}`);
-    // After deleting, refresh the document list
-    refresh();
-  };
-
-  const handleMoveDocument = (documentId: string, newPath: string) => {
-    // Implementation for moving a document
-    console.log(`Moving document ${documentId} to ${newPath}`);
-    // After moving, refresh the document list
-    refresh();
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await deleteDocument(documentId);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+    }
   };
 
   const handleDocumentClick = (document: DocumentType) => {
     setSelectedDocument(document);
     setShowDocumentPreview(true);
+    console.log('Viewing document:', document.title);
+  };
+
+  const handleDocumentEdit = (document: DocumentType) => {
+    console.log('Editing document:', document.title);
+    // TODO: Implement document editing functionality
+  };
+
+  const handleDocumentDownload = (document: DocumentType) => {
+    console.log('Downloading document:', document.title);
+    // TODO: Implement document download functionality
   };
 
   return (
@@ -147,6 +130,15 @@ export const DocumentRepository = () => {
             <FolderPlus className="h-4 w-4 mr-2" />
             New Folder
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={loading}
+          >
+            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -167,31 +159,8 @@ export const DocumentRepository = () => {
           <span className="ml-2 text-lg text-gray-600">Loading documents...</span>
         </div>
       ) : (
-        // Render folders and documents
         <div>
-          {/* Folders section */}
-          {currentFolders.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Folders</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {currentFolders.map((folder) => (
-                  <Card
-                    key={folder.id}
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handlePathChange(`${currentPath}/${folder.name}`)}
-                  >
-                    <CardContent className="p-4 flex items-center">
-                      <Folder className="h-5 w-5 mr-2 text-blue-500" />
-                      <span>{folder.name}</span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Documents section */}
-          <div>
+          <div className="mb-4">
             <h3 className="text-lg font-medium mb-3">Documents</h3>
             {filteredDocs.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg border">
@@ -204,13 +173,17 @@ export const DocumentRepository = () => {
                 </p>
               </div>
             ) : (
-              <DocumentGrid documents={filteredDocs} onDocumentClick={handleDocumentClick} />
+              <DocumentGrid 
+                documents={filteredDocs} 
+                onDocumentClick={handleDocumentClick}
+                onDocumentEdit={handleDocumentEdit}
+                onDocumentDelete={handleDeleteDocument}
+                onDocumentDownload={handleDocumentDownload}
+              />
             )}
           </div>
         </div>
       )}
-
-      {/* Upload dialog and create folder dialog components would be rendered here */}
     </div>
   );
 };

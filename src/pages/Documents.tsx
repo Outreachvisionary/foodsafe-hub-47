@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, RefreshCcw, FileText, Upload, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Plus, RefreshCcw, FileText, Upload } from 'lucide-react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useDocument } from '@/contexts/DocumentContext';
 import DocumentList from '@/components/documents/DocumentList';
@@ -17,7 +16,6 @@ import ApprovalWorkflow from '@/components/documents/ApprovalWorkflow';
 
 const Documents: React.FC = () => {
   const [activeTab, setActiveTab] = useState('repository');
-  const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   const { documents, loading, error, refresh } = useDocument();
@@ -28,15 +26,14 @@ const Documents: React.FC = () => {
 
   const handleUpload = (file: File, metadata: any) => {
     console.log('Uploading file:', file.name, 'with metadata:', metadata);
-    // TODO: Implement actual upload functionality
     setShowUploadDialog(false);
     refresh();
   };
 
-  const filteredDocuments = documents.filter(doc =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleCreateDocument = () => {
+    console.log('Creating new document');
+    // TODO: Implement document creation
+  };
 
   return (
     <SidebarLayout>
@@ -49,15 +46,15 @@ const Documents: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh}>
-              <RefreshCcw className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+              <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button onClick={() => setShowUploadDialog(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </Button>
-            <Button>
+            <Button onClick={handleCreateDocument}>
               <Plus className="h-4 w-4 mr-2" />
               New Document
             </Button>

@@ -12,8 +12,12 @@ interface DocumentContextType {
   fetchActive: () => Promise<void>;
   refreshDocuments: () => Promise<void>;
   createDocument: (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>) => Promise<Document>;
+  updateDocument: (id: string, updates: Partial<Document>) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
   approveDocument: (id: string) => Promise<void>;
   rejectDocument: (id: string, reason: string) => Promise<void>;
+  checkoutDocument: (id: string) => Promise<void>;
+  checkinDocument: (id: string, comment?: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -88,6 +92,44 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     }
   };
 
+  const handleUpdateDocument = async (id: string, updates: Partial<Document>) => {
+    try {
+      await updateDocument(id, updates);
+      await refresh();
+      toast({
+        title: 'Success',
+        description: 'Document updated successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update document';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    try {
+      await deleteDocument(id);
+      await refresh();
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete document';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
   const approveDocument = async (id: string) => {
     try {
       await updateDocument(id, { status: 'Approved' as any });
@@ -103,6 +145,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         description: errorMessage,
         variant: 'destructive',
       });
+      throw err;
     }
   };
 
@@ -124,6 +167,53 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         description: errorMessage,
         variant: 'destructive',
       });
+      throw err;
+    }
+  };
+
+  const checkoutDocument = async (id: string) => {
+    try {
+      await updateDocument(id, { 
+        checkout_status: 'Checked Out' as any,
+        checkout_timestamp: new Date().toISOString(),
+        is_locked: true
+      });
+      await refresh();
+      toast({
+        title: 'Success',
+        description: 'Document checked out successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to checkout document';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const checkinDocument = async (id: string, comment?: string) => {
+    try {
+      await updateDocument(id, { 
+        checkout_status: 'Available' as any,
+        checkout_timestamp: null,
+        is_locked: false
+      });
+      await refresh();
+      toast({
+        title: 'Success',
+        description: 'Document checked in successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to checkin document';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
     }
   };
 
@@ -139,8 +229,12 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     fetchActive,
     refreshDocuments,
     createDocument: handleCreateDocument,
+    updateDocument: handleUpdateDocument,
+    deleteDocument: handleDeleteDocument,
     approveDocument,
     rejectDocument,
+    checkoutDocument,
+    checkinDocument,
   };
 
   return (
