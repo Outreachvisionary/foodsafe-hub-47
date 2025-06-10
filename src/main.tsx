@@ -7,6 +7,7 @@ import './index.css';
 import { UserProvider } from './contexts/UserContext';
 import { PermissionProvider } from './contexts/PermissionContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { AuthProvider } from './contexts/AuthContext';
 import './i18n/i18n';
 import { ThemeProvider } from './components/ui/theme-provider';
 
@@ -14,15 +15,17 @@ import { ThemeProvider } from './components/ui/theme-provider';
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <UserProvider>
-        <PermissionProvider>
-          <LanguageProvider>
-            <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-              <App />
-            </ThemeProvider>
-          </LanguageProvider>
-        </PermissionProvider>
-      </UserProvider>
+      <AuthProvider>
+        <UserProvider>
+          <PermissionProvider>
+            <LanguageProvider>
+              <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+                <App />
+              </ThemeProvider>
+            </LanguageProvider>
+          </PermissionProvider>
+        </UserProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
