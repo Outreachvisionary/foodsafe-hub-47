@@ -1,6 +1,9 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DashboardOverview from '@/components/dashboard/DashboardOverview';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import DashboardHeader from '@/components/DashboardHeader';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -13,16 +16,15 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome, {getUserDisplayName()}!</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Dashboard content will be implemented here.</p>
-        </CardContent>
-      </Card>
-    </div>
+    <SidebarLayout>
+      <div className="space-y-6">
+        <DashboardHeader
+          title={`Welcome back, ${getUserDisplayName()}!`}
+          subtitle="Here's your food safety management overview"
+        />
+        <DashboardOverview />
+      </div>
+    </SidebarLayout>
   );
 };
 
