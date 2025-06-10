@@ -8,6 +8,7 @@ import { UserProvider } from './contexts/UserContext';
 import { PermissionProvider } from './contexts/PermissionContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { DocumentProvider } from './contexts/DocumentContext';
 import './i18n/i18n';
 import { ThemeProvider } from './components/ui/theme-provider';
 
@@ -20,7 +21,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           <PermissionProvider>
             <LanguageProvider>
               <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-                <App />
+                <DocumentProvider>
+                  <App />
+                </DocumentProvider>
               </ThemeProvider>
             </LanguageProvider>
           </PermissionProvider>
