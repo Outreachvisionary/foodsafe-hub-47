@@ -44,7 +44,7 @@ export const createTrainingRecord = async (
 
   const { data, error } = await supabase
     .from('training_records')
-    .insert([dbRecord])
+    .insert(dbRecord)
     .select()
     .single();
 
@@ -110,10 +110,17 @@ export const updateTrainingRecord = async (
   updates: Partial<TrainingRecord>
 ): Promise<TrainingRecord> => {
   // Convert enum values to strings for database storage
-  const dbUpdates = {
-    ...updates,
-    status: updates.status ? trainingStatusToString(updates.status) : undefined
-  };
+  const dbUpdates: any = {};
+  
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value !== undefined) {
+      if (key === 'status' && value) {
+        dbUpdates[key] = trainingStatusToString(value as TrainingStatus);
+      } else {
+        dbUpdates[key] = value;
+      }
+    }
+  });
 
   const { data, error } = await supabase
     .from('training_records')
@@ -173,21 +180,23 @@ export const assignTrainingToEmployees = async (
   employeeNames: Record<string, string>
 ): Promise<void> => {
   try {
-    // Create assignments with proper enum values
-    const assignments = employeeIds.map(employeeId => ({
-      session_id: sessionId,
-      employee_id: employeeId,
-      employee_name: employeeNames[employeeId] || 'Unknown Employee',
-      status: 'Not Started' as const, // Use enum literal
-      assigned_date: new Date().toISOString(),
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-    }));
+    // Create individual assignments
+    for (const employeeId of employeeIds) {
+      const assignment = {
+        session_id: sessionId,
+        employee_id: employeeId,
+        employee_name: employeeNames[employeeId] || 'Unknown Employee',
+        status: 'Not Started' as const,
+        assigned_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      };
 
-    const { error } = await supabase
-      .from('training_records')
-      .insert(assignments);
+      const { error } = await supabase
+        .from('training_records')
+        .insert(assignment);
 
-    if (error) throw error;
+      if (error) throw error;
+    }
   } catch (error) {
     console.error('Error assigning training to employees:', error);
     throw error;
