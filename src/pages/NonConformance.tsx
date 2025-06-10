@@ -90,6 +90,23 @@ const NonConformance: React.FC = () => {
     navigate(`/non-conformance/${nc.id}`);
   };
 
+  // Create a default NC object for the create form
+  const createDefaultNC = (): NCType => ({
+    id: '',
+    title: '',
+    description: '',
+    item_name: '',
+    item_category: 'Other',
+    reason_category: 'Other',
+    status: 'Draft',
+    reported_date: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: 'current-user',
+    priority: 'Medium',
+    risk_level: 'Low'
+  });
+
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6">
@@ -135,6 +152,9 @@ const NonConformance: React.FC = () => {
 
           <TabsContent value="all" className="space-y-4">
             <NCList
+              nonConformances={filteredNonConformances || []}
+              loading={loading}
+              error={error?.message || null}
               onItemClick={handleItemClick}
               onCreateNew={() => setShowCreateForm(true)}
             />
@@ -160,14 +180,10 @@ const NonConformance: React.FC = () => {
             <TabsContent value="details">
               {selectedNC ? (
                 <NCDetailsForm
-                  id={selectedNC.id}
-                  title={selectedNC.title}
-                  status={selectedNC.status}
-                  itemName={selectedNC.item_name}
-                  itemCategory={selectedNC.item_category}
-                  description={selectedNC.description}
-                  onStatusChange={(status) => handleUpdate(selectedNC.id, { status })}
-                  onClose={() => navigate('/non-conformance')}
+                  data={selectedNC}
+                  onSave={async (updatedData) => {
+                    await handleUpdate(selectedNC.id, updatedData);
+                  }}
                 />
               ) : (
                 <Card>
@@ -187,7 +203,12 @@ const NonConformance: React.FC = () => {
                 <CardTitle>Create Non-Conformance</CardTitle>
               </CardHeader>
               <CardContent>
-                <NCDetailsForm />
+                <NCDetailsForm 
+                  data={createDefaultNC()}
+                  onSave={async (ncData) => {
+                    await handleCreate(ncData);
+                  }}
+                />
               </CardContent>
               <div className="flex justify-end p-4">
                 <Button variant="secondary" onClick={() => setShowCreateForm(false)}>
