@@ -203,8 +203,34 @@ const NonConformance: React.FC = () => {
                 <NCDetailsForm 
                   data={createDefaultNC()}
                   onSave={async (ncData) => {
-                    // Convert the form data to the required type
-                    const { id, ...createData } = ncData;
+                    // Convert the form data to the required type by ensuring required properties
+                    const createData: Omit<NCType, 'id'> = {
+                      title: ncData.title || '',
+                      description: ncData.description || '',
+                      item_name: ncData.item_name || '',
+                      item_category: ncData.item_category || 'Other',
+                      reason_category: ncData.reason_category || 'Other',
+                      status: ncData.status || 'Draft',
+                      reported_date: ncData.reported_date || new Date().toISOString(),
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                      created_by: ncData.created_by || 'current-user',
+                      priority: ncData.priority || 'Medium',
+                      risk_level: ncData.risk_level || 'Low',
+                      assigned_to: ncData.assigned_to,
+                      department: ncData.department,
+                      location: ncData.location,
+                      quantity: ncData.quantity,
+                      quantity_on_hold: ncData.quantity_on_hold,
+                      tags: ncData.tags,
+                      units: ncData.units,
+                      reason_details: ncData.reason_details,
+                      reviewer: ncData.reviewer,
+                      resolution_details: ncData.resolution_details,
+                      capa_id: ncData.capa_id,
+                      review_date: ncData.review_date,
+                      resolution_date: ncData.resolution_date
+                    };
                     await handleCreate(createData);
                   }}
                 />
