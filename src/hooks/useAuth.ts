@@ -39,7 +39,7 @@ export const useAuth = (): AuthState & AuthActions => {
       if (profile) {
         const userData: User = {
           id: profile.id,
-          email: profile.email || '',
+          email: supabaseUser?.email || '',
           full_name: profile.full_name || '',
           name: profile.full_name || '',
           avatar_url: profile.avatar_url,
@@ -49,7 +49,7 @@ export const useAuth = (): AuthState & AuthActions => {
           preferences: profile.preferences || {},
           created_at: profile.created_at,
           updated_at: profile.updated_at,
-          status: profile.status || 'active',
+          status: (profile.status as 'active' | 'inactive' | 'pending') || 'active',
           preferred_language: profile.preferred_language || 'en',
           department_id: profile.department_id || '',
           assigned_facility_ids: profile.assigned_facility_ids || [],

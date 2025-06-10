@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth as useAuthHook } from '@/hooks/useAuth';
 import { User } from '@/types/user';
 
 interface AuthContextType {
@@ -25,12 +25,15 @@ export const useAuthContext = () => {
   return context;
 };
 
+// Export useAuth for backward compatibility
+export const useAuth = useAuthContext;
+
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth = useAuth();
+  const auth = useAuthHook();
 
   const value: AuthContextType = {
     user: auth.user,

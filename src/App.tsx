@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./App.css";
 
 // Import your pages and components
@@ -20,46 +21,50 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Index />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/documents" 
-            element={
-              <ProtectedRoute>
-                <Documents />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/capa" 
-            element={
-              <ProtectedRoute>
-                <CAPA />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/capa/:id" 
-            element={
-              <ProtectedRoute>
-                <CAPADetails />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </TooltipProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Index />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/documents" 
+                element={
+                  <ProtectedRoute>
+                    <Documents />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/capa" 
+                element={
+                  <ProtectedRoute>
+                    <CAPA />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/capa/:id" 
+                element={
+                  <ProtectedRoute>
+                    <CAPADetails />
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
