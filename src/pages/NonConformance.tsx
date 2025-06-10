@@ -1,205 +1,174 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, FilterX, SlidersHorizontal } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { NonConformance } from '@/types/non-conformance';
-import NCDetails from '@/components/non-conformance/NCDetails';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import DashboardHeader from '@/components/DashboardHeader';
-import Breadcrumbs from '@/components/layout/Breadcrumbs';
-import useNonConformances from '@/hooks/useNonConformances';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, RefreshCcw, Filter } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { NonConformance as NCType } from '@/types/non-conformance';
+import { useNonConformances } from '@/hooks/useNonConformances';
+import NCList from '@/components/non-conformance/NCList';
+import NCDashboard from '@/components/non-conformance/NCDashboard';
+import NCDetailsForm from '@/components/non-conformance/NCDetailsForm';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
-const NonConformancePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedNC, setSelectedNC] = useState<NonConformance | null>(null);
-  const [showNCDetails, setShowNCDetails] = useState(false);
+const NonConformance: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { nonConformances, isLoading, error, refresh } = useNonConformances();
+  const { id } = useParams();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedNC, setSelectedNC] = useState<NCType | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const handleViewDetails = (nc: NonConformance) => {
-    setSelectedNC(nc);
-    setShowNCDetails(true);
-  };
+  const {
+    nonConformances,
+    loading,
+    error,
+    fetchNonConformances,
+    createNonConformance,
+    updateNonConformance
+  } = useNonConformances();
 
-  const handleCreateNC = () => {
-    navigate('/non-conformance/new');
-  };
+  useEffect(() => {
+    fetchNonConformances();
+  }, []);
 
-  const resetFilters = () => {
-    setSearchQuery('');
-    toast({
-      title: "Filters Reset",
-      description: "All filters have been cleared"
-    });
-  };
-  
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (id) {
+      const nc = nonConformances?.find((nc) => nc.id === id);
+      setSelectedNC(nc || null);
+    } else {
+      setSelectedNC(null);
+    }
+  }, [id, nonConformances]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  // Filter non-conformances based on search query
-  const filteredNonConformances = nonConformances.filter(nc => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      nc.title.toLowerCase().includes(query) ||
-      nc.description?.toLowerCase().includes(query) ||
-      nc.id.toLowerCase().includes(query) ||
-      nc.item_name.toLowerCase().includes(query)
-    );
+  const filteredNonConformances = nonConformances?.filter((nc) => {
+    const searchStr = `${nc.title} ${nc.description} ${nc.reference_number}`.toLowerCase();
+    return searchStr.includes(searchQuery.toLowerCase());
   });
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader
-          title="Non-Conformance Management"
-          subtitle="Identify, track, and resolve non-conforming materials and products"
-        />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-red-600">Error loading non-conformances: {error.message}</p>
-              <Button onClick={refresh} className="mt-4">
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
+  const handleCreate = async (ncData: Omit<NCType, 'id'>) => {
+    try {
+      await createNonConformance(ncData);
+      setShowCreateForm(false);
+      fetchNonConformances();
+    } catch (err) {
+      console.error('Error creating non-conformance:', err);
+    }
+  };
+
+  const handleUpdate = async (id: string, ncData: Partial<NCType>) => {
+    try {
+      await updateNonConformance(id, ncData);
+      fetchNonConformances();
+      setSelectedNC(prev => prev ? { ...prev, ...ncData } : null);
+    } catch (err) {
+      console.error('Error updating non-conformance:', err);
+    }
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader
-        title="Non-Conformance Management"
-        subtitle="Identify, track, and resolve non-conforming materials and products"
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <Breadcrumbs />
-
-        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-          <div className="flex-1 flex items-center space-x-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search non-conformances..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
+    <SidebarLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Non-Conformance Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Track and manage non-conforming events
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => fetchNonConformances()}
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
             </Button>
-
-            <Button
-              variant="outline"
-              size="icon"
-              type="button"
-              onClick={resetFilters}
-            >
-              <FilterX className="h-4 w-4" />
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create NC
             </Button>
           </div>
-
-          <Button onClick={handleCreateNC}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Non-Conformance
-          </Button>
         </div>
 
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : filteredNonConformances.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <p>No non-conformances found.</p>
-                <p className="text-sm mt-1">
-                  {searchQuery ? 'Try adjusting your search terms.' : 'Create a new non-conformance to get started.'}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredNonConformances.map((nc) => (
-              <Card key={nc.id} className="hover:bg-gray-50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex-grow">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-medium">{nc.title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          nc.status === 'On Hold' ? 'bg-yellow-100 text-yellow-800' :
-                          nc.status === 'Under Review' ? 'bg-blue-100 text-blue-800' :
-                          nc.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {nc.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-1">
-                        Item: {nc.item_name} | Category: {nc.item_category}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">{nc.description}</p>
-                    </div>
-
-                    <div className="flex flex-col sm:items-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleViewDetails(nc)}>
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-        
-        {showNCDetails && selectedNC && (
-          <Dialog open={showNCDetails} onOpenChange={setShowNCDetails}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <NCDetails 
-                id={selectedNC.id}
-                title={selectedNC.title}
-                status={selectedNC.status.toString()}
-                description={selectedNC.description}
-                itemName={selectedNC.item_name}
-                itemCategory={selectedNC.item_category.toString()}
-                reportedDate={selectedNC.reported_date}
-                createdBy={selectedNC.created_by}
-                assignedTo={selectedNC.assigned_to}
-                reviewDate={selectedNC.review_date}
-                resolutionDate={selectedNC.resolution_date}
-                quantity={selectedNC.quantity}
-                quantityOnHold={selectedNC.quantity_on_hold}
-                units={selectedNC.units}
-                reasonCategory={selectedNC.reason_category?.toString()}
-                reasonDetails={selectedNC.reason_details}
-                resolution={selectedNC.resolution_details}
+        <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <div className="flex justify-between items-center">
+            <TabsList>
+              <TabsTrigger value="all">All Non-Conformances</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              {id && <TabsTrigger value="details">Details</TabsTrigger>}
+            </TabsList>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search NCs..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={handleSearch}
               />
-            </DialogContent>
-          </Dialog>
+            </div>
+          </div>
+
+          <TabsContent value="all" className="space-y-4">
+            <NCList
+              nonConformances={filteredNonConformances}
+              loading={loading}
+              error={error}
+            />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
+            <NCDashboard />
+          </TabsContent>
+
+          {id && (
+            <TabsContent value="details">
+              {selectedNC ? (
+                <NCDetailsForm
+                  nonConformance={selectedNC}
+                  onUpdate={handleUpdate}
+                />
+              ) : (
+                <Card>
+                  <CardContent>
+                    <p>Loading non-conformance details...</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
+        </Tabs>
+
+        {showCreateForm && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+            <Card className="max-w-2xl w-full">
+              <CardHeader>
+                <CardTitle>Create Non-Conformance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <NCDetailsForm onCreate={handleCreate} />
+              </CardContent>
+              <div className="flex justify-end p-4">
+                <Button variant="secondary" onClick={() => setShowCreateForm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
-      </main>
-    </div>
+      </div>
+    </SidebarLayout>
   );
 };
 
-export default NonConformancePage;
+export default NonConformance;

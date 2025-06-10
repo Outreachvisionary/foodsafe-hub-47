@@ -1,62 +1,60 @@
 
-import React, { useState } from 'react';
-import DashboardHeader from '@/components/DashboardHeader';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, RefreshCcw } from 'lucide-react';
 import SuppliersList from '@/components/suppliers/SuppliersList';
 import SupplierApproval from '@/components/suppliers/SupplierApproval';
-import SupplierDocuments from '@/components/suppliers/SupplierDocuments';
 import SupplierRiskAssessment from '@/components/suppliers/SupplierRiskAssessment';
-import StandardSelect from '@/components/suppliers/StandardSelect';
-import StandardRequirements from '@/components/suppliers/StandardRequirements';
-import { StandardName } from '@/types/supplier';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
-const SupplierManagement = () => {
-  const [selectedStandard, setSelectedStandard] = useState<StandardName>('SQF');
-  
+const SupplierManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('suppliers');
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader title="Supplier Management" subtitle="Manage suppliers, documentation, and compliance" />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <SidebarLayout>
+      <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
-          <div className="flex-1" />
-          <StandardSelect value={selectedStandard} onValueChange={setSelectedStandard} />
+          <div>
+            <h1 className="text-3xl font-bold">Supplier Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage supplier relationships and compliance
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline">
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Supplier
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="md:col-span-3">
-            <Tabs defaultValue="suppliers" className="w-full animate-fade-in">
-              <TabsList className="mb-8">
-                <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
-                <TabsTrigger value="approval">Approval Workflow</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-                <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="suppliers" className="space-y-6">
-                <SuppliersList />
-              </TabsContent>
-              
-              <TabsContent value="approval" className="space-y-6">
-                <SupplierApproval />
-              </TabsContent>
-              
-              <TabsContent value="documents" className="space-y-6">
-                <SupplierDocuments standard={selectedStandard} />
-              </TabsContent>
-              
-              <TabsContent value="risk" className="space-y-6">
-                <SupplierRiskAssessment />
-              </TabsContent>
-            </Tabs>
-          </div>
-          
-          <div className="md:col-span-1">
-            <StandardRequirements standard={selectedStandard} />
-          </div>
-        </div>
-      </main>
-    </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="suppliers">All Suppliers</TabsTrigger>
+            <TabsTrigger value="approval">Approval Process</TabsTrigger>
+            <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="suppliers">
+            <SuppliersList />
+          </TabsContent>
+
+          <TabsContent value="approval">
+            <SupplierApproval />
+          </TabsContent>
+
+          <TabsContent value="risk">
+            <SupplierRiskAssessment />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </SidebarLayout>
   );
 };
 

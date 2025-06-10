@@ -13,6 +13,7 @@ import CAPAList from '@/components/capa/CAPAList';
 import CAPAFilters from '@/components/capa/CAPAFilters';
 import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 import { getCAPAs, getCAPAStats } from '@/services/capaService';
 
 const CAPA: React.FC = () => {
@@ -182,77 +183,63 @@ const CAPA: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">CAPA Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage corrective and preventive actions
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => fetchCAPAs()}
-          >
-            <RefreshCcw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create CAPA
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="all">All CAPAs</TabsTrigger>
-            <TabsTrigger value="open">Open</TabsTrigger>
-            <TabsTrigger value="inProgress">In Progress</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            <TabsTrigger value="automated">Automated CAPA</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search CAPAs..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+    <SidebarLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">CAPA Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage corrective and preventive actions
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => fetchCAPAs()}
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create CAPA
+            </Button>
           </div>
         </div>
 
-        <TabsContent value="automated">
-          <AutomatedCAPAGenerator onCAPACreated={handleCreateCAPA} />
-        </TabsContent>
-
-        <TabsContent value="dashboard">
-          <CAPADashboard stats={capaStats} />
-        </TabsContent>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid md:grid-cols-4 gap-4">
-            <CAPAFilters onFilterChange={handleFilterChange} />
-            <div className="md:col-span-3">
-              <CAPAList
-                items={filteredCAPAs}
-                loading={loading}
-                error={error}
-                onCAPAClick={handleCAPAClick}
-              />
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex justify-between items-center">
+            <TabsList>
+              <TabsTrigger value="all">All CAPAs</TabsTrigger>
+              <TabsTrigger value="open">Open</TabsTrigger>
+              <TabsTrigger value="inProgress">In Progress</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+              <TabsTrigger value="automated">Automated CAPA</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search CAPAs..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
           </div>
-        </TabsContent>
 
-        {['open', 'inProgress', 'completed', 'overdue'].map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-4">
+          <TabsContent value="automated">
+            <AutomatedCAPAGenerator onCAPACreated={handleCreateCAPA} />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
+            <CAPADashboard stats={capaStats} />
+          </TabsContent>
+
+          <TabsContent value="all" className="space-y-4">
             <div className="grid md:grid-cols-4 gap-4">
               <CAPAFilters onFilterChange={handleFilterChange} />
               <div className="md:col-span-3">
@@ -265,15 +252,31 @@ const CAPA: React.FC = () => {
               </div>
             </div>
           </TabsContent>
-        ))}
-      </Tabs>
 
-      <CreateCAPADialog
-        isOpen={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)} 
-        onSubmit={handleCreateCAPA}
-      />
-    </div>
+          {['open', 'inProgress', 'completed', 'overdue'].map((tab) => (
+            <TabsContent key={tab} value={tab} className="space-y-4">
+              <div className="grid md:grid-cols-4 gap-4">
+                <CAPAFilters onFilterChange={handleFilterChange} />
+                <div className="md:col-span-3">
+                  <CAPAList
+                    items={filteredCAPAs}
+                    loading={loading}
+                    error={error}
+                    onCAPAClick={handleCAPAClick}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        <CreateCAPADialog
+          isOpen={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)} 
+          onSubmit={handleCreateCAPA}
+        />
+      </div>
+    </SidebarLayout>
   );
 };
 
