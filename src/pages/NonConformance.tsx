@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,21 @@ const NonConformance: React.FC = () => {
 
   const {
     nonConformances,
-    loading,
+    isLoading: loading,
     error,
-    fetchNonConformances,
-    createNonConformance,
-    updateNonConformance
+    refresh: fetchNonConformances,
   } = useNonConformances();
+
+  // Mock functions for create and update - replace with actual implementations
+  const createNonConformance = async (ncData: Omit<NCType, 'id'>) => {
+    console.log('Creating NC:', ncData);
+    // Implement actual create logic here
+  };
+
+  const updateNonConformance = async (id: string, ncData: Partial<NCType>) => {
+    console.log('Updating NC:', id, ncData);
+    // Implement actual update logic here
+  };
 
   useEffect(() => {
     fetchNonConformances();
@@ -48,7 +58,7 @@ const NonConformance: React.FC = () => {
   };
 
   const filteredNonConformances = nonConformances?.filter((nc) => {
-    const searchStr = `${nc.title} ${nc.description} ${nc.reference_number}`.toLowerCase();
+    const searchStr = `${nc.title} ${nc.description} ${nc.id}`.toLowerCase();
     return searchStr.includes(searchQuery.toLowerCase());
   });
 
@@ -121,22 +131,30 @@ const NonConformance: React.FC = () => {
 
           <TabsContent value="all" className="space-y-4">
             <NCList
-              nonConformances={filteredNonConformances}
+              items={filteredNonConformances || []}
               loading={loading}
-              error={error}
+              error={error?.message || null}
             />
           </TabsContent>
 
           <TabsContent value="dashboard">
-            <NCDashboard />
+            <NCDashboard 
+              stats={{
+                total: nonConformances?.length || 0,
+                open: 0,
+                closed: 0,
+                inProgress: 0
+              }}
+              onCreateNew={() => setShowCreateForm(true)}
+            />
           </TabsContent>
 
           {id && (
             <TabsContent value="details">
               {selectedNC ? (
                 <NCDetailsForm
-                  nonConformance={selectedNC}
-                  onUpdate={handleUpdate}
+                  initialData={selectedNC}
+                  onSubmit={(data) => handleUpdate(selectedNC.id, data)}
                 />
               ) : (
                 <Card>
@@ -156,7 +174,7 @@ const NonConformance: React.FC = () => {
                 <CardTitle>Create Non-Conformance</CardTitle>
               </CardHeader>
               <CardContent>
-                <NCDetailsForm onCreate={handleCreate} />
+                <NCDetailsForm onSubmit={handleCreate} />
               </CardContent>
               <div className="flex justify-end p-4">
                 <Button variant="secondary" onClick={() => setShowCreateForm(false)}>

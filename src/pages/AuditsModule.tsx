@@ -11,6 +11,14 @@ import SidebarLayout from '@/components/layout/SidebarLayout';
 const AuditsModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  const handleAuditComplete = (results: any) => {
+    console.log('Audit completed:', results);
+  };
+
+  const handleAuditCancel = () => {
+    console.log('Audit cancelled');
+  };
+
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6">
@@ -57,7 +65,13 @@ const AuditsModule: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="checklist">
-            <AuditChecklist />
+            <AuditChecklist 
+              auditId="default-audit"
+              standardType="ISO22000"
+              templateName="Internal Audit Checklist"
+              onComplete={handleAuditComplete}
+              onCancel={handleAuditCancel}
+            />
           </TabsContent>
 
           <TabsContent value="reports">

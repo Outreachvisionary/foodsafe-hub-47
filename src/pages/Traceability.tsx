@@ -13,6 +13,35 @@ import SidebarLayout from '@/components/layout/SidebarLayout';
 const Traceability: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Mock data and handlers
+  const mockProducts = [];
+  const mockComponents = [];
+  const mockSimulations = [];
+  const mockSupplyChainData = {
+    nodes: [],
+    links: []
+  };
+
+  const handleSearchProduct = (query: string) => {
+    console.log('Searching products:', query);
+  };
+
+  const handleSearchComponent = (query: string) => {
+    console.log('Searching components:', query);
+  };
+
+  const handleSelectProduct = (productId: string) => {
+    console.log('Selected product:', productId);
+  };
+
+  const handleSelectComponent = (componentId: string) => {
+    console.log('Selected component:', componentId);
+  };
+
+  const handleRunSimulation = (config: any) => {
+    console.log('Running simulation:', config);
+  };
+
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6">
@@ -56,15 +85,27 @@ const Traceability: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="products">
-            <ProductTraceabilityView />
+            <ProductTraceabilityView 
+              products={mockProducts}
+              components={mockComponents}
+              onSearchProduct={handleSearchProduct}
+              onSearchComponent={handleSearchComponent}
+              onSelectProduct={handleSelectProduct}
+              onSelectComponent={handleSelectComponent}
+            />
           </TabsContent>
 
           <TabsContent value="recall">
-            <RecallSimulationPanel />
+            <RecallSimulationPanel 
+              onRunSimulation={handleRunSimulation}
+              simulations={mockSimulations}
+            />
           </TabsContent>
 
           <TabsContent value="supply-chain">
-            <SupplyChainVisualization />
+            <SupplyChainVisualization 
+              data={mockSupplyChainData}
+            />
           </TabsContent>
 
           <TabsContent value="reports">

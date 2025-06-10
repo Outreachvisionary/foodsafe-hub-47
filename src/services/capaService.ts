@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStats, CAPAFilter, UpdateCAPARequest } from '@/types/capa';
 import { CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
@@ -6,6 +5,7 @@ import { stringToCAPAStatus, stringToCAPASource, stringToCAPAPriority, stringToE
 
 export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
   try {
+    console.log('Fetching CAPAs from database...');
     let query = supabase.from('capa_actions').select('*');
     
     if (filter) {
@@ -34,9 +34,20 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     
     const { data, error } = await query.order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
     
-    return (data || []).map(item => ({
+    console.log('Fetched CAPAs:', data?.length || 0);
+    
+    // If no data, return empty array but don't throw error
+    if (!data || data.length === 0) {
+      console.log('No CAPAs found in database');
+      return [];
+    }
+    
+    return data.map(item => ({
       id: item.id,
       title: item.title,
       description: item.description,
@@ -64,6 +75,7 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     }));
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
+    // Return empty array instead of throwing to prevent infinite loading
     return [];
   }
 };
@@ -194,11 +206,17 @@ export const getCAPAActivities = async (capaId: string) => {
 
 export const getCAPAStats = async (): Promise<CAPAStats> => {
   try {
+    console.log('Fetching CAPA stats...');
     const { data, error } = await supabase.from('capa_actions').select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching CAPA stats:', error);
+      throw error;
+    }
     
     const capas = data || [];
+    console.log('CAPA stats data:', capas.length);
+    
     const total = capas.length;
     const open = capas.filter(c => c.status === 'Open').length;
     const openCount = open;
