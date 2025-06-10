@@ -152,9 +152,6 @@ const NonConformance: React.FC = () => {
 
           <TabsContent value="all" className="space-y-4">
             <NCList
-              nonConformances={filteredNonConformances || []}
-              loading={loading}
-              error={error?.message || null}
               onItemClick={handleItemClick}
               onCreateNew={() => setShowCreateForm(true)}
             />
@@ -206,7 +203,9 @@ const NonConformance: React.FC = () => {
                 <NCDetailsForm 
                   data={createDefaultNC()}
                   onSave={async (ncData) => {
-                    await handleCreate(ncData);
+                    // Convert the form data to the required type
+                    const { id, ...createData } = ncData;
+                    await handleCreate(createData);
                   }}
                 />
               </CardContent>
