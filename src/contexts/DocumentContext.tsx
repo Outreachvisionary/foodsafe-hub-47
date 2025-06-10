@@ -1,122 +1,77 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '@/types/document';
-import { fetchDocuments, createDocument as createDocumentService } from '@/services/documentService';
+import { fetchDocuments, fetchActiveDocuments } from '@/services/documentService';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentContextType {
-  selectedDocument: Document | null;
-  setSelectedDocument: (document: Document | null) => void;
-  isDocumentPanelOpen: boolean;
-  setIsDocumentPanelOpen: (open: boolean) => void;
-  refreshDocuments: () => void;
   documents: Document[];
   loading: boolean;
   error: string | null;
-  createDocument?: (document: any) => Promise<void>;
-  fetchDocuments?: () => Promise<void>;
-  approveDocument?: (id: string) => Promise<void>;
-  rejectDocument?: (id: string) => Promise<void>;
+  refresh: () => Promise<void>;
+  fetchActive: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
-
-export const useDocumentContext = () => {
-  const context = useContext(DocumentContext);
-  if (context === undefined) {
-    throw new Error('useDocumentContext must be used within a DocumentProvider');
-  }
-  return context;
-};
-
-// Named export for compatibility
-export const useDocument = useDocumentContext;
 
 interface DocumentProviderProps {
   children: ReactNode;
 }
 
 export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [isDocumentPanelOpen, setIsDocumentPanelOpen] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const loadDocuments = async () => {
+  const refresh = async () => {
     try {
       setLoading(true);
       setError(null);
-      const docs = await fetchDocuments();
-      setDocuments(docs);
+      const data = await fetchDocuments();
+      setDocuments(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load documents');
-      console.error('Error loading documents:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load documents';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const refreshDocuments = () => {
-    loadDocuments();
-  };
-
-  const createDocument = async (document: any) => {
+  const fetchActive = async () => {
     try {
+      setLoading(true);
       setError(null);
-      await createDocumentService(document);
-      await loadDocuments(); // Refresh the list
+      const data = await fetchActiveDocuments();
+      setDocuments(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create document');
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load active documents';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchDocumentsMethod = async () => {
-    await loadDocuments();
-  };
-
-  const approveDocument = async (id: string) => {
-    try {
-      setError(null);
-      // Implementation would go here when available
-      console.log('Approving document:', id);
-      await loadDocuments(); // Refresh the list
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve document');
-      throw err;
-    }
-  };
-
-  const rejectDocument = async (id: string) => {
-    try {
-      setError(null);
-      // Implementation would go here when available
-      console.log('Rejecting document:', id);
-      await loadDocuments(); // Refresh the list
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reject document');
-      throw err;
-    }
-  };
-
-  // Load documents on mount
   useEffect(() => {
-    loadDocuments();
+    refresh();
   }, []);
 
   const value: DocumentContextType = {
-    selectedDocument,
-    setSelectedDocument,
-    isDocumentPanelOpen,
-    setIsDocumentPanelOpen,
-    refreshDocuments,
     documents,
     loading,
     error,
-    createDocument,
-    fetchDocuments: fetchDocumentsMethod,
-    approveDocument,
-    rejectDocument
+    refresh,
+    fetchActive,
   };
 
   return (
@@ -126,4 +81,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   );
 };
 
-export default DocumentContext;
+export const useDocument = (): DocumentContextType => {
+  const context = useContext(DocumentContext);
+  if (context === undefined) {
+    throw new Error('useDocument must be used within a DocumentProvider');
+  }
+  return context;
+};

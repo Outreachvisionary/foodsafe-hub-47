@@ -124,7 +124,7 @@ export const DocumentRepository = () => {
 
   return (
     <div className="space-y-4">
-      <DocumentRepositoryErrorHandler error={repositoryError} />
+      <DocumentRepositoryErrorHandler error={repositoryError} onRetry={handleRetry} />
       
       <div className="flex justify-between items-center">
         <DocumentBreadcrumb path={currentPath} onNavigate={handlePathChange} />

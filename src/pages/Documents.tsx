@@ -6,8 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, RefreshCcw, FileText, Upload, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import { useQuery } from '@tanstack/react-query';
-import { fetchDocuments } from '@/services/documentService';
+import { useDocument } from '@/contexts/DocumentContext';
 import DocumentList from '@/components/documents/DocumentList';
 import DocumentStats from '@/components/documents/DocumentStats';
 import DocumentRepository from '@/components/documents/DocumentRepository';
@@ -21,20 +20,17 @@ const Documents: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
-  const { data: documents = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['documents'],
-    queryFn: fetchDocuments,
-  });
+  const { documents, loading, error, refresh } = useDocument();
 
   const handleRefresh = () => {
-    refetch();
+    refresh();
   };
 
   const handleUpload = (file: File, metadata: any) => {
     console.log('Uploading file:', file.name, 'with metadata:', metadata);
     // TODO: Implement actual upload functionality
     setShowUploadDialog(false);
-    refetch();
+    refresh();
   };
 
   const filteredDocuments = documents.filter(doc =>
@@ -78,42 +74,17 @@ const Documents: React.FC = () => {
           </TabsList>
 
           <TabsContent value="repository">
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FileText className="h-5 w-5 mr-2" />
-                    Document Repository
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {error ? (
-                    <div className="text-center py-8">
-                      <p className="text-destructive">Error loading documents: {error.message}</p>
-                      <Button onClick={handleRefresh} className="mt-4">
-                        Try Again
-                      </Button>
-                    </div>
-                  ) : (
-                    <DocumentList 
-                      documents={filteredDocuments} 
-                      isLoading={isLoading}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Document Repository
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DocumentRepository />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="approvals">

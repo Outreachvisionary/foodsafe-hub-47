@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -18,17 +18,18 @@ export const DocumentRepositoryErrorHandler: React.FC<DocumentRepositoryErrorHan
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertCircle className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-between">
-        <span>{error}</span>
+      <AlertTitle>Error Loading Documents</AlertTitle>
+      <AlertDescription className="mt-2">
+        {error}
         {onRetry && (
           <Button
             variant="outline"
             size="sm"
             onClick={onRetry}
-            className="ml-2"
+            className="mt-2 ml-2"
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Retry
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
           </Button>
         )}
       </AlertDescription>
