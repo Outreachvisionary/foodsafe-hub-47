@@ -223,7 +223,6 @@ const CAPADetails: React.FC = () => {
                 <CardContent>
                   <DocumentList 
                     documents={[]} 
-                    showStatus={true}
                   />
                 </CardContent>
               </Card>

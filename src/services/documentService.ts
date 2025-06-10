@@ -50,10 +50,36 @@ export const fetchActiveDocuments = async (): Promise<Document[]> => {
 export const createDocument = async (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> => {
   try {
     const documentData = {
-      ...document,
-      status: documentStatusToDbString(document.status),
-      category: documentCategoryToDbString(document.category),
-      checkout_status: document.checkout_status || 'Available',
+      title: document.title,
+      description: document.description,
+      file_name: document.file_name,
+      file_path: document.file_path,
+      file_type: document.file_type,
+      file_size: document.file_size,
+      status: documentStatusToDbString(document.status) as any,
+      category: documentCategoryToDbString(document.category) as any,
+      checkout_status: (document.checkout_status || 'Available') as any,
+      version: document.version,
+      created_by: document.created_by,
+      tags: document.tags,
+      approvers: document.approvers,
+      folder_id: document.folder_id,
+      expiry_date: document.expiry_date,
+      last_review_date: document.last_review_date,
+      next_review_date: document.next_review_date,
+      current_version_id: document.current_version_id,
+      is_template: document.is_template,
+      checkout_user_id: document.checkout_user_id,
+      checkout_user_name: document.checkout_user_name,
+      checkout_timestamp: document.checkout_timestamp,
+      is_locked: document.is_locked,
+      linked_module: document.linked_module,
+      linked_item_id: document.linked_item_id,
+      workflow_status: document.workflow_status,
+      rejection_reason: document.rejection_reason,
+      last_action: document.last_action,
+      pending_since: document.pending_since,
+      custom_notification_days: document.custom_notification_days,
     };
 
     const { data, error } = await supabase
@@ -78,12 +104,30 @@ export const createDocument = async (document: Omit<Document, 'id' | 'created_at
 
 export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
-    const updateData = {
+    const updateData: any = {
       ...updates,
       updated_at: new Date().toISOString(),
-      ...(updates.status && { status: documentStatusToDbString(updates.status) }),
-      ...(updates.category && { category: documentCategoryToDbString(updates.category) }),
     };
+
+    // Convert enum values to database strings
+    if (updates.status) {
+      updateData.status = documentStatusToDbString(updates.status);
+    }
+    if (updates.category) {
+      updateData.category = documentCategoryToDbString(updates.category);
+    }
+
+    // Remove the enum fields to avoid conflicts
+    delete updateData.status;
+    delete updateData.category;
+
+    // Re-add them with proper types
+    if (updates.status) {
+      updateData.status = documentStatusToDbString(updates.status) as any;
+    }
+    if (updates.category) {
+      updateData.category = documentCategoryToDbString(updates.category) as any;
+    }
 
     const { data, error } = await supabase
       .from('documents')
