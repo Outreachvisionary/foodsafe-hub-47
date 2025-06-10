@@ -6,32 +6,23 @@ import { Button } from '@/components/ui/button';
 import { FileText, Download, Edit, Trash2, RefreshCcw } from 'lucide-react';
 import { Document } from '@/types/document';
 import { formatDistanceToNow } from 'date-fns';
+import { getDocumentStatusColor, formatDocumentStatus } from '@/utils/documentUtils';
 
 interface DocumentListProps {
   documents: Document[];
   isLoading?: boolean;
+  onDocumentClick?: (document: Document) => void;
+  onDocumentEdit?: (document: Document) => void;
+  onDocumentDelete?: (documentId: string) => void;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = false }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Published':
-        return 'bg-green-100 text-green-800';
-      case 'Draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'Pending_Approval':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Expired':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatStatus = (status: string) => {
-    return status.replace('_', ' ');
-  };
-
+const DocumentList: React.FC<DocumentListProps> = ({ 
+  documents, 
+  isLoading = false,
+  onDocumentClick,
+  onDocumentEdit,
+  onDocumentDelete
+}) => {
   const handleDownload = (document: Document) => {
     console.log('Download document:', document.id);
     // TODO: Implement download functionality
@@ -39,12 +30,22 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
 
   const handleEdit = (document: Document) => {
     console.log('Edit document:', document.id);
-    // TODO: Implement edit functionality
+    if (onDocumentEdit) {
+      onDocumentEdit(document);
+    }
   };
 
   const handleDelete = (document: Document) => {
     console.log('Delete document:', document.id);
-    // TODO: Implement delete functionality
+    if (onDocumentDelete) {
+      onDocumentDelete(document.id);
+    }
+  };
+
+  const handleRowClick = (document: Document) => {
+    if (onDocumentClick) {
+      onDocumentClick(document);
+    }
   };
 
   if (isLoading) {
@@ -83,7 +84,11 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
         </TableHeader>
         <TableBody>
           {documents.map((document) => (
-            <TableRow key={document.id}>
+            <TableRow 
+              key={document.id}
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => handleRowClick(document)}
+            >
               <TableCell>
                 <div className="flex items-center space-x-2">
                   <FileText className="h-4 w-4 text-gray-500" />
@@ -97,8 +102,8 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
                 <Badge variant="outline">{document.category}</Badge>
               </TableCell>
               <TableCell>
-                <Badge className={getStatusColor(document.status)}>
-                  {formatStatus(document.status)}
+                <Badge className={getDocumentStatusColor(document.status)}>
+                  {formatDocumentStatus(document.status)}
                 </Badge>
               </TableCell>
               <TableCell>v{document.version}</TableCell>
@@ -110,21 +115,30 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => handleDownload(document)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(document);
+                    }}
                   >
                     <Download className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => handleEdit(document)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(document);
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => handleDelete(document)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(document);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

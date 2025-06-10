@@ -10,10 +10,16 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchDocuments } from '@/services/documentService';
 import DocumentList from '@/components/documents/DocumentList';
 import DocumentStats from '@/components/documents/DocumentStats';
+import DocumentRepository from '@/components/documents/DocumentRepository';
+import ReviewQueue from '@/components/documents/ReviewQueue';
+import DocumentUploader from '@/components/documents/DocumentUploader';
+import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
+import ApprovalWorkflow from '@/components/documents/ApprovalWorkflow';
 
 const Documents: React.FC = () => {
   const [activeTab, setActiveTab] = useState('repository');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   const { data: documents = [], isLoading, error, refetch } = useQuery({
     queryKey: ['documents'],
@@ -21,6 +27,13 @@ const Documents: React.FC = () => {
   });
 
   const handleRefresh = () => {
+    refetch();
+  };
+
+  const handleUpload = (file: File, metadata: any) => {
+    console.log('Uploading file:', file.name, 'with metadata:', metadata);
+    // TODO: Implement actual upload functionality
+    setShowUploadDialog(false);
     refetch();
   };
 
@@ -44,7 +57,7 @@ const Documents: React.FC = () => {
               <RefreshCcw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button>
+            <Button onClick={() => setShowUploadDialog(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </Button>
@@ -104,42 +117,41 @@ const Documents: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="approvals">
-            <Card>
-              <CardHeader>
-                <CardTitle>Approval Workflow</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Document approval workflow will be displayed here.</p>
-              </CardContent>
-            </Card>
+            <ApprovalWorkflow />
           </TabsContent>
 
           <TabsContent value="expired">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expired Documents</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Expired documents will be displayed here.</p>
-              </CardContent>
-            </Card>
+            <ExpiredDocuments />
           </TabsContent>
 
           <TabsContent value="review">
-            <Card>
-              <CardHeader>
-                <CardTitle>Review Queue</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Documents pending review will be displayed here.</p>
-              </CardContent>
-            </Card>
+            <ReviewQueue />
           </TabsContent>
 
           <TabsContent value="stats">
             <DocumentStats documents={documents} />
           </TabsContent>
         </Tabs>
+
+        {showUploadDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Upload Document</h2>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowUploadDialog(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <DocumentUploader
+                onUpload={handleUpload}
+                isUploading={false}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </SidebarLayout>
   );

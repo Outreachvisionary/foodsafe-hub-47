@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
 import { DocumentStatus, CheckoutStatus, DocumentCategory } from '@/types/enums';
-import { documentCategoryToString, stringToDocumentCategory, documentStatusToString, stringToDocumentStatus } from '@/utils/typeAdapters';
+import { documentCategoryToDbString, stringToDocumentCategory, documentStatusToDbString, stringToDocumentStatus } from '@/utils/documentAdapters';
 
 export const fetchDocuments = async (): Promise<Document[]> => {
   try {
@@ -51,8 +51,8 @@ export const createDocument = async (document: Omit<Document, 'id' | 'created_at
   try {
     const documentData = {
       ...document,
-      status: documentStatusToString(document.status),
-      category: documentCategoryToString(document.category),
+      status: documentStatusToDbString(document.status),
+      category: documentCategoryToDbString(document.category),
       checkout_status: document.checkout_status || 'Available',
     };
 
@@ -81,8 +81,8 @@ export const updateDocument = async (id: string, updates: Partial<Document>): Pr
     const updateData = {
       ...updates,
       updated_at: new Date().toISOString(),
-      ...(updates.status && { status: documentStatusToString(updates.status) }),
-      ...(updates.category && { category: documentCategoryToString(updates.category) }),
+      ...(updates.status && { status: documentStatusToDbString(updates.status) }),
+      ...(updates.category && { category: documentCategoryToDbString(updates.category) }),
     };
 
     const { data, error } = await supabase
