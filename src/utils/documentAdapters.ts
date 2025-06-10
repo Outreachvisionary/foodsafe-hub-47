@@ -63,7 +63,7 @@ export const documentStatusToDbString = (status: DocumentStatus): string => {
       return 'Draft';
     case DocumentStatus.Pending_Approval:
       return 'Pending Approval';
-    case DocumentStatus.PendingReview:
+    case DocumentStatus.Pending_Review:
       return 'Pending Review';
     case DocumentStatus.Approved:
       return 'Approved';
@@ -88,7 +88,7 @@ export const stringToDocumentStatus = (status: string): DocumentStatus => {
     case 'Pending Approval':
       return DocumentStatus.Pending_Approval;
     case 'Pending Review':
-      return DocumentStatus.PendingReview;
+      return DocumentStatus.Pending_Review;
     case 'Approved':
       return DocumentStatus.Approved;
     case 'Published':

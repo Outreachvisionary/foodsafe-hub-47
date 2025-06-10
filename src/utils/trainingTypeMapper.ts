@@ -3,20 +3,16 @@ import { TrainingType, TrainingCategory, TrainingStatus } from '@/types/enums';
 
 export const stringToTrainingType = (type: string): TrainingType => {
   switch (type) {
-    case 'Online':
-      return TrainingType.Online;
-    case 'Classroom':
-      return TrainingType.Classroom;
-    case 'On the Job':
-      return TrainingType.On_the_Job;
-    case 'Certification':
-      return TrainingType.Certification;
-    case 'Refresher':
-      return TrainingType.Refresher;
     case 'Mandatory':
       return TrainingType.Mandatory;
+    case 'Optional':
+      return TrainingType.Optional;
+    case 'Refresher':
+      return TrainingType.Refresher;
+    case 'Certification':
+      return TrainingType.Certification;
     default:
-      return TrainingType.Online;
+      return TrainingType.Mandatory;
   }
 };
 
@@ -32,18 +28,16 @@ export const stringToTrainingCategory = (category: string): TrainingCategory => 
       return TrainingCategory.HACCP;
     case 'GMP':
       return TrainingCategory.GMP;
-    case 'Allergen Management':
-      return TrainingCategory.Allergen_Management;
-    case 'Personal Hygiene':
-      return TrainingCategory.Personal_Hygiene;
+    case 'Quality Management':
+      return TrainingCategory.Quality_Management;
+    case 'Regulatory Compliance':
+      return TrainingCategory.Regulatory_Compliance;
     case 'Equipment Operation':
       return TrainingCategory.Equipment_Operation;
-    case 'Quality Control':
-      return TrainingCategory.Quality_Control;
+    case 'Safety Procedures':
+      return TrainingCategory.Safety_Procedures;
     case 'Documentation':
       return TrainingCategory.Documentation;
-    case 'Leadership':
-      return TrainingCategory.Leadership;
     case 'Other':
       return TrainingCategory.Other;
     default:
@@ -65,8 +59,8 @@ export const stringToTrainingStatus = (status: string): TrainingStatus => {
       return TrainingStatus.Completed;
     case 'Expired':
       return TrainingStatus.Expired;
-    case 'Failed':
-      return TrainingStatus.Failed;
+    case 'Cancelled':
+      return TrainingStatus.Cancelled;
     default:
       return TrainingStatus.Not_Started;
   }
