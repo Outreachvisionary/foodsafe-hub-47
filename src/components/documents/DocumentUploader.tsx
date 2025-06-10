@@ -1,327 +1,161 @@
 
 import React, { useState, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { useDropzone } from 'react-dropzone';
-import { format } from 'date-fns';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { X, Upload, File, CalendarIcon } from 'lucide-react';
-import { Document, DocumentCategory } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
-import { useDocument } from '@/contexts/DocumentContext';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, FileText, X } from 'lucide-react';
+import { DocumentCategory, DocumentStatus } from '@/types/enums';
 
 interface DocumentUploaderProps {
-  onDocumentCreated?: (document: Document) => void;
+  onUpload: (file: File, metadata: any) => void;
+  isUploading?: boolean;
 }
 
-const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentCreated }) => {
+const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUpload, isUploading = false }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<string>('Other');
-  const [status, setStatus] = useState<DocumentStatus>(DocumentStatus.Draft);
-  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  
-  const { toast } = useToast();
-  const { fetchDocuments } = useDocument();
-  const documentService = useDocumentService();
+  const [category, setCategory] = useState<DocumentCategory>(DocumentCategory.Other);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const droppedFile = acceptedFiles[0];
-    setFile(droppedFile);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false });
-
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-  };
-
-  const handleStatusChange = (value: DocumentStatus) => {
-    setStatus(value);
-  };
-
-  const handleExpiryDateChange = (date: Date | undefined) => {
-    setExpiryDate(date);
-  };
-
-  const clearForm = () => {
-    setTitle('');
-    setDescription('');
-    setCategory('Other');
-    setStatus(DocumentStatus.Draft);
-    setExpiryDate(undefined);
-    setFile(null);
-  };
-
-  const createNewDocument = async (values: any) => {
-    try {
-      setUploading(true);
-      setErrorMessage(null);
-      
-      const documentData: Partial<Document> = {
-        id: values.id,
-        title: values.title,
-        description: values.description,
-        file_name: values.file_name,
-        file_path: values.file_path,
-        file_size: values.file_size,
-        file_type: values.file_type,
-        category: values.category,
-        status: values.status,
-        version: values.version,
-        created_at: values.created_at,
-        created_by: values.created_by,
-        updated_at: values.updated_at,
-        tags: values.tags,
-        approvers: values.approvers,
-        folder_id: values.folder_id,
-        expiry_date: values.expiry_date,
-        pending_since: values.pending_since
-      };
-
-      const newDocument = await documentService.createDocument(documentData);
-      
-      if (newDocument) {
-        toast({
-          title: "Document Created",
-          description: "New document has been created successfully"
-        });
-        
-        // Refresh the document list
-        if (fetchDocuments) {
-          await fetchDocuments();
-        }
-        
-        // Notify parent component
-        if (onDocumentCreated && newDocument) {
-          onDocumentCreated(newDocument);
-        }
-        
-        clearForm();
-      } else {
-        setErrorMessage("Failed to create document");
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setSelectedFile(file);
+      if (!title) {
+        setTitle(file.name.replace(/\.[^/.]+$/, ''));
       }
-    } catch (error: any) {
-      console.error("Error creating document:", error);
-      setErrorMessage(error.message || "Failed to create document");
-      toast({
-        title: "Error",
-        description: `Failed to create document: ${error.message}`,
-        variant: "destructive"
-      });
-    } finally {
-      setUploading(false);
+    }
+  }, [title]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif']
+    }
+  });
+
+  const handleUpload = () => {
+    if (selectedFile && title) {
+      const metadata = {
+        title,
+        description,
+        category,
+        status: DocumentStatus.Pending_Review
+      };
+      onUpload(selectedFile, metadata);
+      // Reset form
+      setSelectedFile(null);
+      setTitle('');
+      setDescription('');
+      setCategory(DocumentCategory.Other);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!file) {
-      setErrorMessage('Please select a file to upload');
-      return;
-    }
-
-    const newDocumentId = uuidv4();
-    const now = new Date().toISOString();
-
-    const values = {
-      id: newDocumentId,
-      title: title,
-      description: description,
-      file_name: file.name,
-      file_path: `${newDocumentId}/${file.name}`,
-      file_size: file.size,
-      file_type: file.type,
-      category: category,
-      status: status,
-      version: 1,
-      created_at: now,
-      created_by: 'user',
-      updated_at: now,
-      tags: [],
-      approvers: [],
-      folder_id: null,
-      expiry_date: expiryDate?.toISOString(),
-      pending_since: now
-    };
-
-    await createNewDocument(values);
+  const removeFile = () => {
+    setSelectedFile(null);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload New Document</CardTitle>
-        <CardDescription>Add a new document to the repository</CardDescription>
+        <CardTitle className="flex items-center">
+          <Upload className="h-5 w-5 mr-2" />
+          Upload Document
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {errorMessage && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <X className="h-5 w-5 text-red-400" aria-hidden="true" />
+        {!selectedFile ? (
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            {isDragActive ? (
+              <p className="text-lg">Drop the file here...</p>
+            ) : (
+              <div>
+                <p className="text-lg mb-2">Drag & drop a document here, or click to select</p>
+                <p className="text-sm text-gray-500">
+                  Supports PDF, DOC, DOCX, TXT, and image files
+                </p>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  There was an error creating the document.
-                </h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>{errorMessage}</p>
+            )}
+          </div>
+        ) : (
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <FileText className="h-8 w-8 text-blue-500 mr-3" />
+                <div>
+                  <p className="font-medium">{selectedFile.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
                 </div>
               </div>
+              <Button variant="ghost" size="sm" onClick={removeFile}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Document Title *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter document title"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter document description"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={category} onValueChange={(value) => setCategory(value as DocumentCategory)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(DocumentCategory).map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat.replace('_', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button 
+                onClick={handleUpload} 
+                disabled={!title || isUploading}
+                className="w-full"
+              >
+                {isUploading ? 'Uploading...' : 'Upload Document'}
+              </Button>
             </div>
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input
-              type="text"
-              id="title"
-              placeholder="Document Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Document Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={handleCategoryChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Other">Other</SelectItem>
-                  <SelectItem value="SOP">SOP</SelectItem>
-                  <SelectItem value="Policy">Policy</SelectItem>
-                  <SelectItem value="Form">Form</SelectItem>
-                  <SelectItem value="Certificate">Certificate</SelectItem>
-                  <SelectItem value="Audit Report">Audit Report</SelectItem>
-                  <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
-                  <SelectItem value="Training Material">Training Material</SelectItem>
-                  <SelectItem value="Supplier Documentation">Supplier Documentation</SelectItem>
-                  <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={handleStatusChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={DocumentStatus.Draft}>Draft</SelectItem>
-                  <SelectItem value={DocumentStatus.PendingReview}>Pending Review</SelectItem>
-                  <SelectItem value={DocumentStatus.Approved}>Approved</SelectItem>
-                  <SelectItem value={DocumentStatus.Active}>Active</SelectItem>
-                  <SelectItem value={DocumentStatus.Archived}>Archived</SelectItem>
-                  <SelectItem value={DocumentStatus.Rejected}>Rejected</SelectItem>
-                  <SelectItem value={DocumentStatus.Expired}>Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div>
-            <Label>Expiry Date</Label>
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-[240px] justify-start text-left font-normal',
-                    !expiryDate && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {expiryDate ? format(expiryDate, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={expiryDate}
-                  onSelect={handleExpiryDateChange}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div>
-            <Label>Upload Document</Label>
-            <div
-              {...getRootProps()}
-              className="relative border-2 border-dashed rounded-md cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-white"
-            >
-              <input {...getInputProps()} />
-              <div className="text-center py-12">
-                {file ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <File className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm text-gray-500">{file.name}</span>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="mx-auto h-6 w-6 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500">
-                      Drag 'n' drop some files here, or click to select files
-                    </p>
-                    <p className="text-xs text-gray-500">PDF, DOCX, JPG, PNG up to 10MB</p>
-                  </>
-                )}
-              </div>
-              {isDragActive ? (
-                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                  <p className="text-white font-semibold">Drop here...</p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <Button type="submit" disabled={uploading} className="w-full">
-            {uploading ? 'Uploading...' : 'Create Document'}
-          </Button>
-        </form>
       </CardContent>
     </Card>
   );

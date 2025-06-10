@@ -9,10 +9,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface DocumentListProps {
   documents: Document[];
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading }) => {
+const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = false }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Published':

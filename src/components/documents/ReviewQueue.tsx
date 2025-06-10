@@ -15,7 +15,7 @@ export const ReviewQueue: React.FC = () => {
     if (documents?.length) {
       // Filter documents that need review
       const pendingReview = documents.filter(doc => 
-        compareDocumentStatus(doc.status, DocumentStatus.PendingReview)
+        compareDocumentStatus(doc.status, DocumentStatus.Pending_Review)
       );
 
       const pendingApproval = documents.filter(doc => 
@@ -50,7 +50,10 @@ export const ReviewQueue: React.FC = () => {
               <p className="text-muted-foreground">No documents pending review</p>
             </div>
           ) : (
-            <DocumentList documents={pendingDocuments} />
+            <DocumentList 
+              documents={pendingDocuments} 
+              isLoading={loading}
+            />
           )}
         </CardContent>
       </Card>
