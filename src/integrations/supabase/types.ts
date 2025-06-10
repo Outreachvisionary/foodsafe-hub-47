@@ -3062,6 +3062,14 @@ export type Database = {
           expiry_date: string
         }[]
       }
+      get_current_user_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_facilities: {
         Args: { p_organization_id?: string; p_only_assigned?: boolean }
         Returns: {
@@ -3180,6 +3188,10 @@ export type Database = {
           _facility_id?: string
           _department_id?: string
         }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       supabase_realtime: {

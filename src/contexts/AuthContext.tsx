@@ -1,107 +1,47 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/types/user';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUser: (data: any) => Promise<any>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        } else {
-          setSession(session);
-          setUser(session?.user || null);
-        }
-      } catch (error) {
-        console.error('Error in getInitialSession:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const auth = useAuth();
 
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user || null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const result = await supabase.auth.signInWithPassword({ 
-      email, 
-      password 
-    });
-    return result;
-  };
-
-  const signUp = async (email: string, password: string, metadata?: any) => {
-    const result = await supabase.auth.signUp({
-      email,
-      password,
-      options: { 
-        data: metadata,
-        emailRedirectTo: `${window.location.origin}/auth`
-      }
-    });
-    return result;
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
-  const updateUser = async (data: any) => {
-    const result = await supabase.auth.updateUser(data);
-    return result;
-  };
-
-  const value = {
-    user,
-    session,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    updateUser
+  const value: AuthContextType = {
+    user: auth.user,
+    loading: auth.loading,
+    isAuthenticated: auth.isAuthenticated,
+    signIn: auth.signIn,
+    signUp: auth.signUp,
+    signOut: auth.signOut,
+    resetPassword: auth.resetPassword,
+    updatePassword: auth.updatePassword,
+    refreshUser: auth.refreshUser,
   };
 
   return (
@@ -110,5 +50,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
-export default AuthContext;

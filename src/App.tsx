@@ -12,6 +12,8 @@ import Documents from "./pages/Documents";
 import CAPADetails from "./pages/CAPADetails";
 import Dashboard from "./pages/Dashboard";
 import CAPA from "./pages/CAPA";
+import Auth from "./pages/Auth";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,11 +24,40 @@ function App() {
         <Toaster />
         <Sonner />
         <Routes>
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/capa" element={<CAPA />} />
-          <Route path="/capa/:id" element={<CAPADetails />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/documents" 
+            element={
+              <ProtectedRoute>
+                <Documents />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/capa" 
+            element={
+              <ProtectedRoute>
+                <CAPA />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/capa/:id" 
+            element={
+              <ProtectedRoute>
+                <CAPADetails />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </TooltipProvider>
     </QueryClientProvider>

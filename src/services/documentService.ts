@@ -3,9 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
 import { DocumentStatus, CheckoutStatus, DocumentCategory } from '@/types/enums';
 import { documentCategoryToDbString, stringToDocumentCategory, documentStatusToDbString, stringToDocumentStatus } from '@/utils/documentAdapters';
+import { storageService } from './storageService';
 
 export const fetchDocuments = async (): Promise<Document[]> => {
   try {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -27,6 +34,11 @@ export const fetchDocuments = async (): Promise<Document[]> => {
 
 export const fetchActiveDocuments = async (): Promise<Document[]> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -49,6 +61,11 @@ export const fetchActiveDocuments = async (): Promise<Document[]> => {
 
 export const createDocument = async (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const documentData = {
       title: document.title,
       description: document.description,
@@ -60,7 +77,7 @@ export const createDocument = async (document: Omit<Document, 'id' | 'created_at
       category: documentCategoryToDbString(document.category) as any,
       checkout_status: (document.checkout_status || 'Available') as any,
       version: document.version,
-      created_by: document.created_by,
+      created_by: user.id, // Use authenticated user ID
       tags: document.tags,
       approvers: document.approvers,
       folder_id: document.folder_id,
@@ -104,24 +121,17 @@ export const createDocument = async (document: Omit<Document, 'id' | 'created_at
 
 export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const updateData: any = {
       ...updates,
       updated_at: new Date().toISOString(),
     };
 
     // Convert enum values to database strings
-    if (updates.status) {
-      updateData.status = documentStatusToDbString(updates.status);
-    }
-    if (updates.category) {
-      updateData.category = documentCategoryToDbString(updates.category);
-    }
-
-    // Remove the enum fields to avoid conflicts
-    delete updateData.status;
-    delete updateData.category;
-
-    // Re-add them with proper types
     if (updates.status) {
       updateData.status = documentStatusToDbString(updates.status) as any;
     }
@@ -152,24 +162,76 @@ export const updateDocument = async (id: string, updates: Partial<Document>): Pr
 
 export const deleteDocument = async (id: string): Promise<void> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // First get the document to find its file path
+    const { data: document } = await supabase
+      .from('documents')
+      .select('file_path')
+      .eq('id', id)
+      .single();
+
+    // Delete the document record
     const { error } = await supabase
       .from('documents')
       .delete()
       .eq('id', id);
 
     if (error) throw error;
+
+    // Delete the associated file if it exists
+    if (document?.file_path) {
+      await storageService.deleteFile('documents', document.file_path);
+    }
   } catch (error) {
     console.error('Error deleting document:', error);
     throw error;
   }
 };
 
+export const uploadDocumentFile = async (file: File, documentId: string): Promise<string> => {
+  try {
+    const result = await storageService.uploadFile(file, {
+      bucket: 'documents',
+      folder: documentId,
+      filename: file.name,
+    });
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    return result.path;
+  } catch (error) {
+    console.error('Error uploading document file:', error);
+    throw error;
+  }
+};
+
+export const getDocumentDownloadUrl = async (filePath: string): Promise<string | null> => {
+  try {
+    return await storageService.getSignedUrl('documents', filePath, 3600);
+  } catch (error) {
+    console.error('Error getting document download URL:', error);
+    return null;
+  }
+};
+
 export const createDocumentActivity = async (activity: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('document_activities')
       .insert({
         ...activity,
+        user_id: user.id, // Ensure user_id is set to authenticated user
         timestamp: new Date().toISOString()
       })
       .select()
