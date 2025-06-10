@@ -32,6 +32,21 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
     return status.replace('_', ' ');
   };
 
+  const handleDownload = (document: Document) => {
+    console.log('Download document:', document.id);
+    // TODO: Implement download functionality
+  };
+
+  const handleEdit = (document: Document) => {
+    console.log('Edit document:', document.id);
+    // TODO: Implement edit functionality
+  };
+
+  const handleDelete = (document: Document) => {
+    console.log('Delete document:', document.id);
+    // TODO: Implement delete functionality
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -92,13 +107,25 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, isLoading = fals
               </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleDownload(document)}
+                  >
                     <Download className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleEdit(document)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleDelete(document)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

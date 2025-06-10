@@ -3,13 +3,13 @@
 export enum DocumentStatus {
   Draft = 'Draft',
   Pending_Approval = 'Pending_Approval',
+  Pending_Review = 'Pending_Review',
   Approved = 'Approved',
   Published = 'Published',
   Archived = 'Archived',
   Expired = 'Expired',
   Active = 'Active',
   In_Review = 'In_Review',
-  Pending_Review = 'Pending_Review',
   Rejected = 'Rejected',
   Obsolete = 'Obsolete'
 }
@@ -31,7 +31,8 @@ export enum DocumentCategory {
 // Checkout Status Enum
 export enum CheckoutStatus {
   Available = 'Available',
-  Checked_Out = 'Checked_Out'
+  Checked_Out = 'Checked_Out',
+  Locked = 'Locked'
 }
 
 // CAPA Priority Enum
@@ -59,7 +60,9 @@ export enum CAPASource {
 export enum CAPAStatus {
   Open = 'Open',
   In_Progress = 'In_Progress',
+  Under_Review = 'Under_Review',
   Pending_Review = 'Pending_Review',
+  Pending_Verification = 'Pending_Verification',
   Completed = 'Completed',
   Closed = 'Closed',
   Cancelled = 'Cancelled'
@@ -81,9 +84,13 @@ export const EffectivenessRating = CAPAEffectivenessRating;
 // Non-Conformance Status Enum
 export enum NCStatus {
   Open = 'Open',
+  On_Hold = 'On_Hold',
   Under_Investigation = 'Under_Investigation',
+  Under_Review = 'Under_Review',
   Pending_Review = 'Pending_Review',
   In_Progress = 'In_Progress',
+  Released = 'Released',
+  Disposed = 'Disposed',
   Resolved = 'Resolved',
   Closed = 'Closed',
   Cancelled = 'Cancelled'
@@ -130,11 +137,17 @@ export enum ComplaintStatus {
 // Complaint Category Enum
 export enum ComplaintCategory {
   Product_Quality = 'Product_Quality',
+  Food_Safety = 'Food_Safety',
   Service_Issue = 'Service_Issue',
+  Service = 'Service',
   Delivery_Problem = 'Delivery_Problem',
+  Delivery = 'Delivery',
   Packaging_Issue = 'Packaging_Issue',
+  Packaging = 'Packaging',
+  Labeling = 'Labeling',
   Safety_Concern = 'Safety_Concern',
   Documentation = 'Documentation',
+  Foreign_Material = 'Foreign_Material',
   Other = 'Other'
 }
 
