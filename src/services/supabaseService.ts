@@ -173,12 +173,12 @@ export const assignTrainingToEmployees = async (
   employeeNames: Record<string, string>
 ): Promise<void> => {
   try {
-    // Use proper TrainingStatus enum values
+    // Create assignments with proper enum values
     const assignments = employeeIds.map(employeeId => ({
       session_id: sessionId,
       employee_id: employeeId,
       employee_name: employeeNames[employeeId] || 'Unknown Employee',
-      status: 'Not Started' as const,
+      status: 'Not Started' as const, // Use enum literal
       assigned_date: new Date().toISOString(),
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
     }));

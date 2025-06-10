@@ -30,7 +30,7 @@ export const useTrainingPlans = () => {
         endDate: plan.end_date,
         duration_days: plan.duration_days,
         is_required: plan.is_required || false,
-        is_active: plan.is_active !== false // Default to true if not specified
+        is_active: plan.is_automated !== false // Map is_automated to is_active
       }));
 
       setTrainingPlans(transformedPlans);
@@ -54,7 +54,7 @@ export const useTrainingPlans = () => {
         courses: planData.courses || [],
         priority: planData.priority || 'Medium',
         status: planData.status || 'Active',
-        is_active: planData.is_active !== false,
+        is_automated: planData.is_active !== false, // Map is_active to is_automated
         is_required: planData.is_required || false,
         created_by: 'current_user',
         start_date: planData.startDate,
@@ -82,7 +82,7 @@ export const useTrainingPlans = () => {
         endDate: data.end_date,
         duration_days: data.duration_days,
         is_required: data.is_required || false,
-        is_active: data.is_active !== false
+        is_active: data.is_automated !== false // Map is_automated to is_active
       };
 
       setTrainingPlans(prev => [newPlan, ...prev]);
@@ -106,7 +106,8 @@ export const useTrainingPlans = () => {
         start_date: updates.startDate,
         end_date: updates.endDate,
         duration_days: updates.duration_days,
-        is_required: updates.is_required
+        is_required: updates.is_required,
+        is_automated: updates.is_active // Map is_active to is_automated
       };
 
       const { data, error } = await supabase
@@ -130,7 +131,7 @@ export const useTrainingPlans = () => {
         endDate: data.end_date,
         duration_days: data.duration_days,
         is_required: data.is_required || false,
-        is_active: data.is_active !== false
+        is_active: data.is_automated !== false // Map is_automated to is_active
       };
 
       setTrainingPlans(prev => prev.map(plan => 
