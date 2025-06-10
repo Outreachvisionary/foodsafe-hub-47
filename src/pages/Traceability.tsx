@@ -9,25 +9,28 @@ import RecallSimulationPanel from '@/components/traceability/RecallSimulationPan
 import SupplyChainVisualization from '@/components/traceability/SupplyChainVisualization';
 import TraceabilityReports from '@/components/traceability/TraceabilityReports';
 import SidebarLayout from '@/components/layout/SidebarLayout';
+import { useTraceability } from '@/hooks/useTraceability';
 
 const Traceability: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const {
+    products,
+    components,
+    productComponents,
+    affectedProducts,
+    loadProductComponents,
+    loadAffectedProducts,
+    addRecallSimulation
+  } = useTraceability();
 
-  // Mock data and handlers
-  const mockProducts = [];
-  const mockComponents = [];
-  const mockSimulations = [];
-  const mockSupplyChainData = {
-    nodes: [],
-    links: []
-  };
-
-  const handleSearchProduct = (query: string) => {
+  const handleSearchProduct = async (query: string): Promise<void> => {
     console.log('Searching products:', query);
+    await loadProductComponents(query);
   };
 
-  const handleSearchComponent = (query: string) => {
+  const handleSearchComponent = async (query: string): Promise<void> => {
     console.log('Searching components:', query);
+    await loadAffectedProducts(query);
   };
 
   const handleSelectProduct = (productId: string) => {
@@ -38,8 +41,17 @@ const Traceability: React.FC = () => {
     console.log('Selected component:', componentId);
   };
 
-  const handleRunSimulation = (config: any) => {
-    console.log('Running simulation:', config);
+  const handleRunSimulation = async (simulationData: any) => {
+    console.log('Running simulation:', simulationData);
+    return await addRecallSimulation({
+      ...simulationData,
+      created_by: 'current-user'
+    });
+  };
+
+  const mockSupplyChainData = {
+    nodes: [],
+    edges: []
   };
 
   return (
@@ -86,19 +98,19 @@ const Traceability: React.FC = () => {
 
           <TabsContent value="products">
             <ProductTraceabilityView 
-              products={mockProducts}
-              components={mockComponents}
+              products={products}
+              components={components}
               onSearchProduct={handleSearchProduct}
               onSearchComponent={handleSearchComponent}
-              onSelectProduct={handleSelectProduct}
-              onSelectComponent={handleSelectComponent}
+              productComponents={productComponents}
+              affectedProducts={affectedProducts}
             />
           </TabsContent>
 
           <TabsContent value="recall">
             <RecallSimulationPanel 
               onRunSimulation={handleRunSimulation}
-              simulations={mockSimulations}
+              simulations={[]}
             />
           </TabsContent>
 

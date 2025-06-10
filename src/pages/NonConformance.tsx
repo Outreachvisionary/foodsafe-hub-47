@@ -86,6 +86,10 @@ const NonConformance: React.FC = () => {
     setActiveTab(tab);
   };
 
+  const handleItemClick = (nc: NCType) => {
+    navigate(`/non-conformance/${nc.id}`);
+  };
+
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6">
@@ -131,9 +135,8 @@ const NonConformance: React.FC = () => {
 
           <TabsContent value="all" className="space-y-4">
             <NCList
-              items={filteredNonConformances || []}
-              loading={loading}
-              error={error?.message || null}
+              onItemClick={handleItemClick}
+              onCreateNew={() => setShowCreateForm(true)}
             />
           </TabsContent>
 
@@ -141,9 +144,13 @@ const NonConformance: React.FC = () => {
             <NCDashboard 
               stats={{
                 total: nonConformances?.length || 0,
-                open: 0,
-                closed: 0,
-                inProgress: 0
+                byStatus: {},
+                byCategory: {},
+                byReasonCategory: {},
+                byRiskLevel: {},
+                overdue: 0,
+                pendingReview: 0,
+                recentlyResolved: 0
               }}
               onCreateNew={() => setShowCreateForm(true)}
             />
@@ -153,8 +160,14 @@ const NonConformance: React.FC = () => {
             <TabsContent value="details">
               {selectedNC ? (
                 <NCDetailsForm
-                  initialData={selectedNC}
-                  onSubmit={(data) => handleUpdate(selectedNC.id, data)}
+                  id={selectedNC.id}
+                  title={selectedNC.title}
+                  status={selectedNC.status}
+                  itemName={selectedNC.item_name}
+                  itemCategory={selectedNC.item_category}
+                  description={selectedNC.description}
+                  onStatusChange={(status) => handleUpdate(selectedNC.id, { status })}
+                  onClose={() => navigate('/non-conformance')}
                 />
               ) : (
                 <Card>
@@ -174,7 +187,7 @@ const NonConformance: React.FC = () => {
                 <CardTitle>Create Non-Conformance</CardTitle>
               </CardHeader>
               <CardContent>
-                <NCDetailsForm onSubmit={handleCreate} />
+                <NCDetailsForm />
               </CardContent>
               <div className="flex justify-end p-4">
                 <Button variant="secondary" onClick={() => setShowCreateForm(false)}>
