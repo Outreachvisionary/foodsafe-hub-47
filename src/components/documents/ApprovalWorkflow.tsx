@@ -33,7 +33,8 @@ export function ApprovalWorkflow() {
   const handleReject = async (documentId: string) => {
     setIsRejecting(true);
     try {
-      await rejectDocument(documentId);
+      const rejectionReason = currentComment || "Document rejected by reviewer";
+      await rejectDocument(documentId, rejectionReason);
       setCurrentComment("");
     } catch (err) {
       console.error("Failed to reject document:", err);
