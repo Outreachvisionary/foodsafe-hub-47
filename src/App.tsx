@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Documents from "./pages/Documents";
 import CAPADetails from "./pages/CAPADetails";
 import Dashboard from "./pages/Dashboard";
+import CAPA from "./pages/CAPA";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents" element={<Documents />} />
+          <Route path="/capa" element={<CAPA />} />
           <Route path="/capa/:id" element={<CAPADetails />} />
         </Routes>
       </TooltipProvider>
