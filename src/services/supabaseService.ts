@@ -26,12 +26,12 @@ export const getTrainingRecordById = async (id: string): Promise<TrainingRecord 
 export const createTrainingRecord = async (
   record: Omit<TrainingRecord, 'id'>
 ): Promise<TrainingRecord> => {
-  // Convert enum values to strings for database storage
+  // Create the record without converting enum - the database expects the enum string directly
   const dbRecord = {
     session_id: record.session_id,
     employee_id: record.employee_id,
     employee_name: record.employee_name,
-    status: trainingStatusToString(record.status),
+    status: record.status, // Keep as enum, don't convert to string
     assigned_date: record.assigned_date,
     due_date: record.due_date,
     completion_date: record.completion_date,
