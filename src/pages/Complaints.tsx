@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, RefreshCcw, LineChart } from 'lucide-react';
+import { Plus, RefreshCcw, MessageSquare } from 'lucide-react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 
-const Analytics: React.FC = () => {
+const Complaints: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
@@ -14,9 +14,9 @@ const Analytics: React.FC = () => {
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Analytics</h1>
+            <h1 className="text-3xl font-bold">Complaints Management</h1>
             <p className="text-muted-foreground mt-1">
-              Analyze compliance data and trends
+              Track and manage customer complaints
             </p>
           </div>
           <div className="flex gap-2">
@@ -26,7 +26,7 @@ const Analytics: React.FC = () => {
             </Button>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Create Dashboard
+              Log Complaint
             </Button>
           </div>
         </div>
@@ -34,54 +34,54 @@ const Analytics: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="predictive">Predictive</TabsTrigger>
+            <TabsTrigger value="open">Open</TabsTrigger>
+            <TabsTrigger value="investigating">Investigating</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <LineChart className="h-5 w-5 mr-2" />
-                  Analytics Overview
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  Complaints Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Analytics dashboard and key insights will be displayed here.</p>
+                <p>Complaints dashboard and statistics will be displayed here.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="trends">
+          <TabsContent value="open">
             <Card>
               <CardHeader>
-                <CardTitle>Trend Analysis</CardTitle>
+                <CardTitle>Open Complaints</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Compliance trends and patterns will be displayed here.</p>
+                <p>Open complaints requiring attention will be displayed here.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="performance">
+          <TabsContent value="investigating">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Analysis</CardTitle>
+                <CardTitle>Under Investigation</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Performance metrics and benchmarking will be displayed here.</p>
+                <p>Complaints under investigation will be displayed here.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="predictive">
+          <TabsContent value="resolved">
             <Card>
               <CardHeader>
-                <CardTitle>Predictive Analytics</CardTitle>
+                <CardTitle>Resolved Complaints</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Predictive models and forecasting will be displayed here.</p>
+                <p>Resolved complaints and outcomes will be displayed here.</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -91,4 +91,4 @@ const Analytics: React.FC = () => {
   );
 };
 
-export default Analytics;
+export default Complaints;

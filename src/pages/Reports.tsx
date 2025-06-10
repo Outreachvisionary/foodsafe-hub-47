@@ -1,113 +1,105 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import DashboardHeader from '@/components/DashboardHeader';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ReportBuilder from '@/components/reports/ReportBuilder';
-import PrebuiltReports from '@/components/reports/PrebuiltReports';
-import ScheduledReports from '@/components/reports/ScheduledReports';
-import ModuleIntegration from '@/components/reports/ModuleIntegration';
-import { User } from '@/types/user';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, RefreshCcw, BarChart2, Download } from 'lucide-react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
-const Reports = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('prebuilt');
-  const [reportLayout, setReportLayout] = useState<string>('grid');
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Try to get layout from user preferences if available
-    if (user && user.preferences) {
-      setReportLayout(user.preferences.reportLayout || 'grid');
-    }
-  }, [user]);
-
-  const handleLayoutChange = async (layout: string) => {
-    setReportLayout(layout);
-    
-    // Save user preference
-    try {
-      if (user) {
-        // This would save to user preferences in a real implementation
-        console.log(`Saving layout preference: ${layout}`);
-        toast({
-          title: "Layout preference saved",
-          description: `Your reports will now display in ${layout} layout by default.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error saving preference:', error);
-      toast({
-        title: "Couldn't save preference",
-        description: "There was an issue saving your layout preference.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleNavigateToModule = (modulePath: string) => {
-    navigate(`/${modulePath}`);
-  };
+const Reports: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <>
-      <DashboardHeader 
-        title="Reports" 
-        subtitle="Generate and analyze reports across all modules"
-      />
-
+    <SidebarLayout>
       <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="pt-6">
-            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-              <div className="flex justify-between items-center mb-6">
-                <TabsList>
-                  <TabsTrigger value="prebuilt">Prebuilt Reports</TabsTrigger>
-                  <TabsTrigger value="builder">Report Builder</TabsTrigger>
-                  <TabsTrigger value="scheduled">Scheduled Reports</TabsTrigger>
-                  <TabsTrigger value="integrations">Module Integration</TabsTrigger>
-                </TabsList>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Reports</h1>
+            <p className="text-muted-foreground mt-1">
+              Generate and manage compliance reports
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline">
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
+          </div>
+        </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Layout:</span>
-                  <Select value={reportLayout} onValueChange={handleLayoutChange}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Layout" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="grid">Grid</SelectItem>
-                      <SelectItem value="list">List</SelectItem>
-                      <SelectItem value="detailed">Detailed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="compliance">Compliance</TabsTrigger>
+            <TabsTrigger value="audit">Audit Reports</TabsTrigger>
+            <TabsTrigger value="training">Training Reports</TabsTrigger>
+            <TabsTrigger value="custom">Custom Reports</TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="prebuilt" className="mt-0">
-                <PrebuiltReports layout={reportLayout} />
-              </TabsContent>
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart2 className="h-5 w-5 mr-2" />
+                  Reports Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Report dashboard and quick access to common reports will be displayed here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <TabsContent value="builder" className="mt-0">
-                <ReportBuilder />
-              </TabsContent>
+          <TabsContent value="compliance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Compliance Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Compliance status and regulatory reports will be displayed here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <TabsContent value="scheduled" className="mt-0">
-                <ScheduledReports />
-              </TabsContent>
+          <TabsContent value="audit">
+            <Card>
+              <CardHeader>
+                <CardTitle>Audit Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Audit findings and compliance reports will be displayed here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <TabsContent value="integrations" className="mt-0">
-                <ModuleIntegration onNavigateToModule={handleNavigateToModule} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+          <TabsContent value="training">
+            <Card>
+              <CardHeader>
+                <CardTitle>Training Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Training completion and effectiveness reports will be displayed here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="custom">
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Custom report builder and saved reports will be displayed here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </>
+    </SidebarLayout>
   );
 };
 

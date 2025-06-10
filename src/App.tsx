@@ -18,6 +18,22 @@ import Traceability from '@/pages/Traceability';
 import SupplierManagement from '@/pages/SupplierManagement';
 import AuditsModule from '@/pages/AuditsModule';
 import DatabaseConnectionTest from '@/pages/DatabaseConnectionTest';
+import Tasks from '@/pages/Tasks';
+import Facilities from '@/pages/Facilities';
+import Standards from '@/pages/Standards';
+import Complaints from '@/pages/Complaints';
+import KPIs from '@/pages/KPIs';
+import HACCP from '@/pages/HACCP';
+import Testing from '@/pages/Testing';
+import Reports from '@/pages/Reports';
+import Analytics from '@/pages/Analytics';
+import Performance from '@/pages/Performance';
+import Users from '@/pages/Users';
+import Organizations from '@/pages/Organizations';
+import Departments from '@/pages/Departments';
+import Roles from '@/pages/Roles';
+import Certifications from '@/pages/Certifications';
+import Settings from '@/pages/Settings';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -62,6 +78,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Documents />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/tasks" 
+                  element={
+                    <ProtectedRoute>
+                      <Tasks />
                     </ProtectedRoute>
                   } 
                 />
@@ -114,6 +138,62 @@ function App() {
                   } 
                 />
                 <Route 
+                  path="/facilities" 
+                  element={
+                    <ProtectedRoute>
+                      <Facilities />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/audits" 
+                  element={
+                    <ProtectedRoute>
+                      <AuditsModule />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/audits/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <AuditsModule />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/standards" 
+                  element={
+                    <ProtectedRoute>
+                      <Standards />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/complaints" 
+                  element={
+                    <ProtectedRoute>
+                      <Complaints />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/kpis" 
+                  element={
+                    <ProtectedRoute>
+                      <KPIs />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/haccp" 
+                  element={
+                    <ProtectedRoute>
+                      <HACCP />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
                   path="/traceability" 
                   element={
                     <ProtectedRoute>
@@ -146,18 +226,90 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/audits" 
+                  path="/testing" 
                   element={
                     <ProtectedRoute>
-                      <AuditsModule />
+                      <Testing />
                     </ProtectedRoute>
                   } 
                 />
                 <Route 
-                  path="/audits/:id" 
+                  path="/reports" 
                   element={
                     <ProtectedRoute>
-                      <AuditsModule />
+                      <Reports />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/analytics" 
+                  element={
+                    <ProtectedRoute>
+                      <Analytics />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/performance" 
+                  element={
+                    <ProtectedRoute>
+                      <Performance />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/users" 
+                  element={
+                    <ProtectedRoute>
+                      <Users />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/organizations" 
+                  element={
+                    <ProtectedRoute>
+                      <Organizations />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/departments" 
+                  element={
+                    <ProtectedRoute>
+                      <Departments />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/roles" 
+                  element={
+                    <ProtectedRoute>
+                      <Roles />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/database-test" 
+                  element={
+                    <ProtectedRoute>
+                      <DatabaseConnectionTest />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/certifications" 
+                  element={
+                    <ProtectedRoute>
+                      <Certifications />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
                     </ProtectedRoute>
                   } 
                 />
