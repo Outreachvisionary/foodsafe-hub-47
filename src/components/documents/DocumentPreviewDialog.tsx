@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { createDocumentActivity } from '@/services/documentService';
 import { useUserRole } from '@/hooks/useUserRole';

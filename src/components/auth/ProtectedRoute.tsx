@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -15,7 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false,
   fallbackPath = '/auth'
 }) => {
-  const { user, loading, isAuthenticated } = useAuthContext();
+  const { user, loading, isAuthenticated } = useAuth();
 
   // Show loading spinner while checking authentication
   if (loading) {

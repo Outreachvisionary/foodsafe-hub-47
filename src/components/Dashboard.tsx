@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
     publishedDocuments: documents.filter(d => d.status === 'Published').length,
     totalCAPAs: capas.length,
     openCAPAs: capas.filter(c => c.status === 'Open').length,
-    overdueCAPAs: capas.filter(c => new Date(c.due_date) < new Date() && c.status !== 'Completed').length,
+    overdueCAPAs: capas.filter(c => new Date(c.due_date) < new Date() && c.status !== 'Closed').length,
     totalNCs: nonConformances.length,
     openNCs: nonConformances.filter(nc => nc.status === 'On Hold').length,
   };
@@ -170,7 +170,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <Badge 
                       variant={
-                        capa.status === 'Completed' ? 'default' : 
+                        capa.status === 'Closed' ? 'default' : 
                         new Date(capa.due_date) < new Date() ? 'destructive' : 'secondary'
                       }
                     >

@@ -10,6 +10,7 @@ export const useNonConformances = () => {
     data: nonConformances = [],
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['non-conformances'],
     queryFn: nonConformanceService.getNonConformances,
@@ -32,5 +33,6 @@ export const useNonConformances = () => {
     error,
     createNonConformance: createMutation.mutate,
     isCreating: createMutation.isPending,
+    refresh: refetch,
   };
 };
