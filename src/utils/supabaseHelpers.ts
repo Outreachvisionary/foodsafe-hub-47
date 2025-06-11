@@ -71,11 +71,26 @@ export const fetchFacilities = async (): Promise<Facility[]> => {
  */
 export const insertFacility = async (facilityData: Partial<Facility>): Promise<Facility | null> => {
   try {
-    const userId = await getCurrentUserId();
-    
+    // Ensure name is provided as it's required
+    if (!facilityData.name) {
+      throw new Error('Facility name is required');
+    }
+
+    // Create insert data with only the fields that exist in the database
     const insertData = {
-      ...facilityData,
-      created_by: userId || 'system',
+      name: facilityData.name,
+      organization_id: facilityData.organization_id,
+      description: facilityData.description || null,
+      address: facilityData.address || null,
+      contact_email: facilityData.contact_email || null,
+      contact_phone: facilityData.contact_phone || null,
+      status: facilityData.status || 'active',
+      country: facilityData.country || null,
+      state: facilityData.state || null,
+      city: facilityData.city || null,
+      zipcode: facilityData.zipcode || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
     const { data, error } = await supabase
@@ -101,12 +116,25 @@ export const insertFacility = async (facilityData: Partial<Facility>): Promise<F
  */
 export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility | null> => {
   try {
+    // Create update data with only the fields that exist in the database
+    const updateData = {
+      ...(updates.name && { name: updates.name }),
+      ...(updates.organization_id && { organization_id: updates.organization_id }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.address !== undefined && { address: updates.address }),
+      ...(updates.contact_email !== undefined && { contact_email: updates.contact_email }),
+      ...(updates.contact_phone !== undefined && { contact_phone: updates.contact_phone }),
+      ...(updates.status && { status: updates.status }),
+      ...(updates.country !== undefined && { country: updates.country }),
+      ...(updates.state !== undefined && { state: updates.state }),
+      ...(updates.city !== undefined && { city: updates.city }),
+      ...(updates.zipcode !== undefined && { zipcode: updates.zipcode }),
+      updated_at: new Date().toISOString(),
+    };
+    
     const { data, error } = await supabase
       .from('facilities')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select('*')
       .single();
