@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DatabaseConnectionTest: React.FC = () => {
-  const { user, session } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [testResults, setTestResults] = useState<any>({});
   const [testing, setTesting] = useState(false);
 
@@ -32,10 +32,10 @@ const DatabaseConnectionTest: React.FC = () => {
         `Authenticated as: ${user.email}` : 
         'Not authenticated';
 
-      // Test 3: Session info
-      results.session = session ? 
-        `Session valid, expires: ${new Date(session.expires_at! * 1000).toLocaleString()}` : 
-        'No session';
+      // Test 3: Authentication status
+      results.authStatus = isAuthenticated ? 
+        'User is authenticated' : 
+        'No active authentication';
 
       // Test 4: Organizations table
       console.log('Testing organizations table...');
