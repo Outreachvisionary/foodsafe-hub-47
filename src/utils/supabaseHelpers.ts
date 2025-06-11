@@ -67,196 +67,128 @@ export const fetchFacilities = async (): Promise<Facility[]> => {
 };
 
 /**
- * Generic function to fetch data from any table with filtering
+ * Insert data into facilities table
  */
-export const fetchTableData = async <T>(
-  tableName: string,
-  options?: {
-    select?: string;
-    filters?: Array<{ column: string; operator: string; value: any }>;
-    orderBy?: { column: string; ascending?: boolean };
-    limit?: number;
-  }
-): Promise<T[]> => {
-  try {
-    let query = supabase.from(tableName);
-    
-    // Apply select
-    if (options?.select) {
-      query = query.select(options.select);
-    } else {
-      query = query.select('*');
-    }
-    
-    // Apply filters
-    if (options?.filters) {
-      options.filters.forEach(filter => {
-        query = (query as any)[filter.operator](filter.column, filter.value);
-      });
-    }
-    
-    // Apply ordering
-    if (options?.orderBy) {
-      query = query.order(options.orderBy.column, { 
-        ascending: options.orderBy.ascending ?? true 
-      });
-    }
-    
-    // Apply limit
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error(`Error fetching ${tableName}:`, handleSupabaseError(error, `fetch ${tableName}`));
-      return [];
-    }
-    
-    return data as T[];
-  } catch (error) {
-    console.error(`Unexpected error fetching ${tableName}:`, error);
-    return [];
-  }
-};
-
-/**
- * Generic function to insert data into any table
- */
-export const insertTableData = async <T>(
-  tableName: string,
-  data: Partial<T>,
-  options?: {
-    select?: string;
-    upsert?: boolean;
-  }
-): Promise<T | null> => {
+export const insertFacility = async (facilityData: Partial<Facility>): Promise<Facility | null> => {
   try {
     const userId = await getCurrentUserId();
     
-    let query = supabase.from(tableName);
-    
-    // Add user ID if not provided and user is authenticated
     const insertData = {
-      ...data,
-      ...(userId && !data.hasOwnProperty('created_by') ? { created_by: userId } : {}),
-      ...(userId && !data.hasOwnProperty('user_id') ? { user_id: userId } : {}),
+      ...facilityData,
+      created_by: userId || 'system',
     };
     
-    if (options?.upsert) {
-      query = query.upsert(insertData);
-    } else {
-      query = query.insert(insertData);
-    }
-    
-    if (options?.select) {
-      query = query.select(options.select);
-    } else {
-      query = query.select('*');
-    }
-    
-    const { data: result, error } = await query.single();
+    const { data, error } = await supabase
+      .from('facilities')
+      .insert(insertData)
+      .select('*')
+      .single();
     
     if (error) {
-      console.error(`Error inserting into ${tableName}:`, handleSupabaseError(error, `insert ${tableName}`));
+      console.error('Error inserting facility:', handleSupabaseError(error, 'insert facility'));
       return null;
     }
     
-    return result as T;
+    return data as Facility;
   } catch (error) {
-    console.error(`Unexpected error inserting into ${tableName}:`, error);
+    console.error('Unexpected error inserting facility:', error);
     return null;
   }
 };
 
 /**
- * Generic function to update data in any table
+ * Update facility data
  */
-export const updateTableData = async <T>(
-  tableName: string,
-  id: string,
-  updates: Partial<T>,
-  options?: {
-    select?: string;
-    idColumn?: string;
-  }
-): Promise<T | null> => {
+export const updateFacility = async (id: string, updates: Partial<Facility>): Promise<Facility | null> => {
   try {
-    const idColumn = options?.idColumn || 'id';
-    
-    let query = supabase
-      .from(tableName)
+    const { data, error } = await supabase
+      .from('facilities')
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
       })
-      .eq(idColumn, id);
-    
-    if (options?.select) {
-      query = query.select(options.select);
-    } else {
-      query = query.select('*');
-    }
-    
-    const { data, error } = await query.single();
+      .eq('id', id)
+      .select('*')
+      .single();
     
     if (error) {
-      console.error(`Error updating ${tableName}:`, handleSupabaseError(error, `update ${tableName}`));
+      console.error('Error updating facility:', handleSupabaseError(error, 'update facility'));
       return null;
     }
     
-    return data as T;
+    return data as Facility;
   } catch (error) {
-    console.error(`Unexpected error updating ${tableName}:`, error);
+    console.error('Unexpected error updating facility:', error);
     return null;
   }
 };
 
 /**
- * Generic function to delete data from any table
+ * Delete facility (soft delete by updating status)
  */
-export const deleteTableData = async (
-  tableName: string,
-  id: string,
-  options?: {
-    idColumn?: string;
-    softDelete?: boolean;
-  }
-): Promise<boolean> => {
+export const deleteFacility = async (id: string): Promise<boolean> => {
   try {
-    const idColumn = options?.idColumn || 'id';
-    
-    let query;
-    
-    if (options?.softDelete) {
-      // Soft delete by updating status
-      query = supabase
-        .from(tableName)
-        .update({ 
-          status: 'inactive',
-          updated_at: new Date().toISOString(),
-        })
-        .eq(idColumn, id);
-    } else {
-      // Hard delete
-      query = supabase
-        .from(tableName)
-        .delete()
-        .eq(idColumn, id);
-    }
-    
-    const { error } = await query;
+    const { error } = await supabase
+      .from('facilities')
+      .update({ 
+        status: 'inactive',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
     
     if (error) {
-      console.error(`Error deleting from ${tableName}:`, handleSupabaseError(error, `delete ${tableName}`));
+      console.error('Error deleting facility:', handleSupabaseError(error, 'delete facility'));
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error(`Unexpected error deleting from ${tableName}:`, error);
+    console.error('Unexpected error deleting facility:', error);
     return false;
+  }
+};
+
+/**
+ * Fetch non-conformances with error handling
+ */
+export const fetchNonConformances = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching non-conformances:', handleSupabaseError(error, 'fetch non-conformances'));
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error fetching non-conformances:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch CAPAs with error handling
+ */
+export const fetchCapas = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching CAPAs:', handleSupabaseError(error, 'fetch CAPAs'));
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error fetching CAPAs:', error);
+    return [];
   }
 };
 
@@ -264,8 +196,9 @@ export default {
   handleSupabaseError,
   getCurrentUserId,
   fetchFacilities,
-  fetchTableData,
-  insertTableData,
-  updateTableData,
-  deleteTableData,
+  insertFacility,
+  updateFacility,
+  deleteFacility,
+  fetchNonConformances,
+  fetchCapas,
 };
