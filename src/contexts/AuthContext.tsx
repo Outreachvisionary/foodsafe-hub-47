@@ -96,7 +96,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
       
       if (data.user) {
-        // Profile will be fetched in the auth state change handler
         toast.success('Signed in successfully');
       }
     } catch (error) {
@@ -108,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Sign up function
+  // Sign up function  
   const signUp = async (email: string, password: string, userData?: Partial<UserProfile>): Promise<void> => {
     try {
       setLoading(true);
@@ -132,7 +131,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await authHelpers.signOut();
       if (error) throw error;
       
-      // Clear local state
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -171,7 +169,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) throw error;
 
-      // Update local state
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -185,7 +182,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -195,7 +191,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch profile if user is authenticated
         if (session?.user) {
           try {
             const userProfile = await fetchProfile(session.user.id);
@@ -252,7 +247,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeSession();
 
-    // Cleanup function
     return () => {
       mounted = false;
       subscription.unsubscribe();

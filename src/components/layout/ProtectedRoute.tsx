@@ -13,11 +13,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <Loading />;
+    return <Loading message="Checking authentication..." />;
   }
 
   if (!user) {
-    // Redirect to login page if not authenticated
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
