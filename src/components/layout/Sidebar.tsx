@@ -49,7 +49,7 @@ const navItems = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   
   return (
     <aside className="w-64 bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col h-screen overflow-y-auto">
@@ -92,18 +92,18 @@ const Sidebar: React.FC = () => {
       <div className="p-4 border-t border-border/60 bg-secondary/30">
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium overflow-hidden">
-            {user?.avatar_url ? (
+            {profile?.avatar_url ? (
               <img 
-                src={user.avatar_url} 
+                src={profile.avatar_url} 
                 alt="User avatar" 
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span>{user?.full_name?.charAt(0) || 'U'}</span>
+              <span>{profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}</span>
             )}
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium">{user?.full_name || 'User'}</p>
+            <p className="text-sm font-medium">{profile?.full_name || user?.email || 'User'}</p>
             <p className="text-xs text-muted-foreground">{user?.email || 'user@company.com'}</p>
           </div>
         </div>

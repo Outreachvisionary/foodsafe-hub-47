@@ -111,7 +111,11 @@ const NCDetails: React.FC<NCDetailsProps> = ({
             </TabsContent>
             
             <TabsContent value="capa">
-              <NCCAPAIntegration nonConformanceId={id} />
+              <NCCAPAIntegration 
+                nonConformance={ncData as NonConformance}
+                onCreateCAPA={() => console.log('Create CAPA for NC:', id)}
+                onLinkCAPA={(ncId, capaId) => console.log('Link CAPA:', capaId, 'to NC:', ncId)}
+              />
             </TabsContent>
           </div>
           

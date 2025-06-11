@@ -41,7 +41,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const AppSidebar = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
@@ -161,18 +161,18 @@ const AppSidebar = () => {
       <div className="p-4 border-t border-border/60 bg-secondary/30">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium overflow-hidden">
-            {user?.avatar_url ? (
+            {profile?.avatar_url ? (
               <img 
-                src={user.avatar_url} 
+                src={profile.avatar_url} 
                 alt="User avatar" 
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span>{user?.full_name?.charAt(0) || 'U'}</span>
+              <span>{profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}</span>
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">{user?.full_name || 'User'}</span>
+            <span className="text-sm font-medium">{profile?.full_name || user?.email || 'User'}</span>
             <span className="text-xs text-muted-foreground">{user?.email || 'user@company.com'}</span>
           </div>
         </div>
