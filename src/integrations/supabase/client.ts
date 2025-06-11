@@ -17,5 +17,78 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     params: {
       eventsPerSecond: 2
     }
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-web'
+    }
   }
 })
+
+// Initialize auth state
+export const initializeAuth = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error) {
+      console.error('Error getting session:', error)
+      return null
+    }
+    return session
+  } catch (error) {
+    console.error('Failed to initialize auth:', error)
+    return null
+  }
+}
+
+// Auth helper functions
+export const authHelpers = {
+  signUp: async (email: string, password: string, userData?: Record<string, any>) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: userData || {}
+        }
+      })
+      return { data, error }
+    } catch (error) {
+      return { data: null, error }
+    }
+  },
+
+  signIn: async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      return { data, error }
+    } catch (error) {
+      return { data: null, error }
+    }
+  },
+
+  signOut: async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      return { error }
+    } catch (error) {
+      return { error }
+    }
+  },
+
+  resetPassword: async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      return { data, error }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+}
+
+export default supabase
