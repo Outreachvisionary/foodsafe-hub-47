@@ -14,12 +14,27 @@ const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // If authenticated, redirect to dashboard
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Show simple loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+    
     setIsSubmitting(true);
 
     try {
@@ -35,21 +50,15 @@ const Auth: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isSignUp ? 'Sign Up' : 'Sign In'}</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </CardTitle>
           <CardDescription>
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
+            {isSignUp ? 'Sign up for your account' : 'Sign in to your account'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -61,6 +70,7 @@ const Auth: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 required
               />
             </div>
@@ -71,20 +81,30 @@ const Auth: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting || !email || !password}
+            >
+              {isSubmitting ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
-          <div className="mt-4 text-center">
+          
+          <div className="mt-6 text-center">
             <Button
               variant="link"
               onClick={() => setIsSignUp(!isSignUp)}
               type="button"
+              className="text-sm"
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"
+              }
             </Button>
           </div>
         </CardContent>
