@@ -12,7 +12,6 @@ import {
   FileCheck,
   ShieldCheck,
   BookOpen,
-  Library,
   Gauge,
   GraduationCap,
   MessageSquare,
@@ -23,16 +22,8 @@ import {
   Activity,
   LineChart,
   Award,
-  BarChart,
-  Clipboard,
-  PieChart,
   UserCheck,
-  Database,
-  Cloud,
-  BookCheck,
-  Search,
-  HelpCircle,
-  Wrench
+  Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -44,7 +35,7 @@ const AppSidebar = () => {
   const { user, profile } = useAuth();
 
   const isActive = (path: string) => {
-    return location.pathname.startsWith(path);
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const navItems: NavSection[] = [
@@ -104,7 +95,7 @@ const AppSidebar = () => {
     <div className="w-64 min-h-screen bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col overflow-hidden">
       {/* Logo and brand section */}
       <div className="p-4 border-b border-border/60">
-        <Link to="/" className="flex items-center space-x-2">
+        <Link to="/dashboard" className="flex items-center space-x-2">
           <div className="bg-gradient-to-r from-primary to-accent rounded-md p-1.5">
             <span className="text-white font-bold">CC</span>
           </div>
@@ -116,7 +107,7 @@ const AppSidebar = () => {
 
       {/* Create New button */}
       <div className="flex-none p-2">
-        <Button variant="accent" className="w-full flex items-center gap-2" asChild>
+        <Button variant="default" className="w-full flex items-center gap-2 bg-accent hover:bg-accent/90" asChild>
           <Link to="/create">
             <Plus size={16} />
             <span>Create New</span>

@@ -20,6 +20,21 @@ import Users from "./pages/Users";
 import Organizations from "./pages/Organizations";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import Tasks from "./pages/Tasks";
+import TrainingModule from "./pages/TrainingModule";
+import AuditsModule from "./pages/AuditsModule";
+import Standards from "./pages/Standards";
+import Complaints from "./pages/Complaints";
+import KPIs from "./pages/KPIs";
+import HACCPPage from "./pages/HACCPPage";
+import Traceability from "./pages/Traceability";
+import Analytics from "./pages/Analytics";
+import Performance from "./pages/Performance";
+import Departments from "./pages/Departments";
+import Roles from "./pages/Roles";
+import Certifications from "./pages/Certifications";
+import Create from "./pages/Create";
+import DatabaseConnectionTest from "./pages/DatabaseConnectionTest";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import SidebarLayout from "./components/layout/SidebarLayout";
 
@@ -63,6 +78,14 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="/tasks" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Tasks />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="/capa" element={
                 <ProtectedRoute>
                   <SidebarLayout>
@@ -87,10 +110,106 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="/training" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <TrainingModule />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="/facilities" element={
                 <ProtectedRoute>
                   <SidebarLayout>
                     <Facilities />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/audits" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <AuditsModule />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/standards" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Standards />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/complaints" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Complaints />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/kpis" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <KPIs />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/haccp" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <HACCPPage />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/traceability" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Traceability />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/suppliers" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Organizations />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/testing" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <KPIs />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/reports" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Reports />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/analytics" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Analytics />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/performance" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Performance />
                   </SidebarLayout>
                 </ProtectedRoute>
               } />
@@ -111,10 +230,34 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              <Route path="/reports" element={
+              <Route path="/departments" element={
                 <ProtectedRoute>
                   <SidebarLayout>
-                    <Reports />
+                    <Departments />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/roles" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Roles />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/database-test" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <DatabaseConnectionTest />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/certifications" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Certifications />
                   </SidebarLayout>
                 </ProtectedRoute>
               } />
@@ -123,6 +266,14 @@ function App() {
                 <ProtectedRoute>
                   <SidebarLayout>
                     <Settings />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/create" element={
+                <ProtectedRoute>
+                  <SidebarLayout>
+                    <Create />
                   </SidebarLayout>
                 </ProtectedRoute>
               } />
