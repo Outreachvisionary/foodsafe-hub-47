@@ -48,6 +48,14 @@ export const formatDocumentStatus = (status: DocumentStatus | string): string =>
   }
 };
 
+export const compareDocumentStatus = (status: DocumentStatus | string, targetStatus: DocumentStatus): boolean => {
+  // Convert string status to enum for comparison
+  if (typeof status === 'string') {
+    return status === targetStatus.toString();
+  }
+  return status === targetStatus;
+};
+
 export const getWorkflowSteps = (requiresApproval: boolean) => {
   if (requiresApproval) {
     return [
