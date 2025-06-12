@@ -12,6 +12,7 @@ import "./App.css";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
+import DocumentCreate from "./pages/DocumentCreate";
 import CAPA from "./pages/CAPA";
 import CAPADetails from "./pages/CAPADetails";
 import Auth from "./pages/Auth";
@@ -77,6 +78,14 @@ function App() {
                     <ProtectedRoute>
                       <SidebarLayout>
                         <Documents />
+                      </SidebarLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/documents/create" element={
+                    <ProtectedRoute>
+                      <SidebarLayout>
+                        <DocumentCreate />
                       </SidebarLayout>
                     </ProtectedRoute>
                   } />

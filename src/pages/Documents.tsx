@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,13 +10,16 @@ import DocumentList from '@/components/documents/DocumentList';
 import DocumentStats from '@/components/documents/DocumentStats';
 import DocumentRepository from '@/components/documents/DocumentRepository';
 import ReviewQueue from '@/components/documents/ReviewQueue';
-import DocumentUploader from '@/components/documents/DocumentUploader';
 import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
 import ApprovalWorkflow from '@/components/documents/ApprovalWorkflow';
+import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
+import CreateFolderDialog from '@/components/documents/CreateFolderDialog';
 
 const Documents: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('repository');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
 
   const { documents, loading, error, refresh } = useDocument();
 
@@ -23,15 +27,8 @@ const Documents: React.FC = () => {
     refresh();
   };
 
-  const handleUpload = (file: File, metadata: any) => {
-    console.log('Uploading file:', file.name, 'with metadata:', metadata);
-    setShowUploadDialog(false);
-    refresh();
-  };
-
   const handleCreateDocument = () => {
-    console.log('Creating new document');
-    // TODO: Implement document creation
+    navigate('/create');
   };
 
   return (
@@ -77,7 +74,10 @@ const Documents: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DocumentRepository />
+              <DocumentRepository 
+                onShowUploadDialog={() => setShowUploadDialog(true)}
+                onShowCreateFolderDialog={() => setShowCreateFolderDialog(true)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -99,25 +99,15 @@ const Documents: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {showUploadDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Upload Document</h2>
-              <Button
-                variant="ghost"
-                onClick={() => setShowUploadDialog(false)}
-              >
-                ×
-              </Button>
-            </div>
-            <DocumentUploader
-              onUpload={handleUpload}
-              isUploading={false}
-            />
-          </div>
-        </div>
-      )}
+      <UploadDocumentDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+      />
+
+      <CreateFolderDialog
+        open={showCreateFolderDialog}
+        onOpenChange={setShowCreateFolderDialog}
+      />
     </div>
   );
 };

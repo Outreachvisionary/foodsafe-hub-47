@@ -9,18 +9,22 @@ import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
-import { useOptimizedDocuments } from '@/hooks/useOptimizedDocuments';
 
-export const DocumentRepository = () => {
+interface DocumentRepositoryProps {
+  onShowUploadDialog?: () => void;
+  onShowCreateFolderDialog?: () => void;
+}
+
+export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
+  onShowUploadDialog,
+  onShowCreateFolderDialog
+}) => {
   const [currentPath, setCurrentPath] = useState('/');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
-  // Use the main document context instead of optimized hook
   const { 
     documents,
     loading, 
@@ -44,9 +48,6 @@ export const DocumentRepository = () => {
     
     let filtered = documents;
     
-    // Filter by path (for now, all documents are in root)
-    // In a real implementation, you'd filter based on folder_id or file_path
-    
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -69,16 +70,20 @@ export const DocumentRepository = () => {
     refresh();
   };
 
-  const handleCreateFolder = (folderName: string) => {
-    console.log(`Creating folder ${folderName} at ${currentPath}`);
-    setShowCreateFolderDialog(false);
-    refresh();
+  const handleUploadClick = () => {
+    if (onShowUploadDialog) {
+      onShowUploadDialog();
+    } else {
+      console.log('Upload functionality not connected');
+    }
   };
 
-  const handleUploadDocument = (files: File[]) => {
-    console.log(`Uploading ${files.length} files to ${currentPath}`);
-    setShowUploadDialog(false);
-    refresh();
+  const handleCreateFolderClick = () => {
+    if (onShowCreateFolderDialog) {
+      onShowCreateFolderDialog();
+    } else {
+      console.log('Create folder functionality not connected');
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -115,7 +120,7 @@ export const DocumentRepository = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowUploadDialog(true)}
+            onClick={handleUploadClick}
             className="flex items-center"
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -124,7 +129,7 @@ export const DocumentRepository = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowCreateFolderDialog(true)}
+            onClick={handleCreateFolderClick}
             className="flex items-center"
           >
             <FolderPlus className="h-4 w-4 mr-2" />
