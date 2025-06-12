@@ -8,6 +8,7 @@ import { FolderPlus, Upload, Search, FileText, Folder, RefreshCcw } from 'lucide
 import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
+import DocumentFolders from './DocumentFolders';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
 
 interface DocumentRepositoryProps {
@@ -110,6 +111,14 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     // TODO: Implement document download functionality
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refresh();
+    } catch (error) {
+      console.error('Failed to refresh documents:', error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <DocumentRepositoryErrorHandler error={repositoryError} onRetry={handleRetry} />
@@ -138,7 +147,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={refresh}
+            onClick={handleRefresh}
             disabled={loading}
           >
             <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -147,48 +156,68 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-        <Input
-          type="search"
-          placeholder="Search documents..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <RefreshCcw className="h-8 w-8 animate-spin text-gray-400" />
-          <span className="ml-2 text-lg text-gray-600">Loading documents...</span>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <DocumentFolders onSelectFolder={(id, path) => setCurrentPath(path)} />
         </div>
-      ) : (
-        <div>
-          <div className="mb-4">
-            <h3 className="text-lg font-medium mb-3">Documents</h3>
-            {filteredDocs.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border">
-                <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 font-medium text-lg">No documents found</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {searchTerm 
-                    ? "Try adjusting your search terms" 
-                    : "Upload documents or create a new folder"}
-                </p>
-              </div>
-            ) : (
-              <DocumentGrid 
-                documents={filteredDocs} 
-                onDocumentClick={handleDocumentClick}
-                onDocumentEdit={handleDocumentEdit}
-                onDocumentDelete={handleDeleteDocument}
-                onDocumentDownload={handleDocumentDownload}
-              />
-            )}
+        
+        <div className="lg:col-span-3 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Search documents..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <RefreshCcw className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-2 text-lg text-gray-600">Loading documents...</span>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4">
+                <h3 className="text-lg font-medium mb-3">
+                  Documents ({filteredDocs.length})
+                </h3>
+                {filteredDocs.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 font-medium text-lg">No documents found</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {searchTerm 
+                        ? "Try adjusting your search terms" 
+                        : "Upload documents or create a new folder"}
+                    </p>
+                    <div className="mt-4 flex justify-center gap-2">
+                      <Button onClick={handleUploadClick} size="sm">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Document
+                      </Button>
+                      <Button onClick={handleCreateFolderClick} variant="outline" size="sm">
+                        <FolderPlus className="h-4 w-4 mr-2" />
+                        Create Folder
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <DocumentGrid 
+                    documents={filteredDocs} 
+                    onDocumentClick={handleDocumentClick}
+                    onDocumentEdit={handleDocumentEdit}
+                    onDocumentDelete={handleDeleteDocument}
+                    onDocumentDownload={handleDocumentDownload}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

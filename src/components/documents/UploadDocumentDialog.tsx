@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -26,46 +27,55 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   
-  const { createDocument } = useDocument();
+  const { createDocument, refresh } = useDocument();
+  const { toast } = useToast();
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      // Auto-fill title if not set
+      if (!title) {
+        setTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ''));
+      }
     }
   };
   
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !title || !category) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields and select a file',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setUploading(true);
     
     try {
-      // Implementation would go here
-      console.log('Uploading document', {
-        title,
-        description,
-        category,
-        file: selectedFile,
-        folderPath
-      });
-      
-      // Mock document creation
+      // Create document with proper integration
       const newDoc = {
-        id: Date.now().toString(),
         title,
         description,
         file_name: selectedFile.name,
         file_size: selectedFile.size,
         file_type: selectedFile.type,
+        file_path: folderPath,
         category,
-        status: 'Draft',
+        status: 'Draft' as const,
         version: 1,
-        created_by: 'current_user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_locked: false,
-        file_path: folderPath
+        created_by: 'current_user', // TODO: Get from auth context
       };
+      
+      await createDocument(newDoc);
+      
+      // Refresh the document list
+      await refresh();
+      
+      toast({
+        title: 'Success',
+        description: 'Document uploaded successfully',
+      });
       
       // Reset form
       setTitle('');
@@ -75,9 +85,22 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error uploading document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload document',
+        variant: 'destructive',
+      });
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setSelectedFile(null);
+    onOpenChange(false);
   };
   
   return (
@@ -88,7 +111,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={title}
@@ -108,7 +131,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Category *</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select category" />
@@ -125,7 +148,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="file">File</Label>
+            <Label htmlFor="file">File *</Label>
             <div className="flex items-center justify-center w-full">
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -151,11 +174,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
               </div>
             )}
           </div>
+          
+          <div className="text-sm text-muted-foreground">
+            Upload location: {folderPath}
+          </div>
         </div>
         <DialogFooter className="sm:justify-end">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={handleCancel}
             disabled={uploading}
           >
             Cancel
@@ -164,7 +191,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             onClick={handleUpload}
             disabled={!title || !category || !selectedFile || uploading}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? 'Uploading...' : 'Upload Document'}
           </Button>
         </DialogFooter>
       </DialogContent>

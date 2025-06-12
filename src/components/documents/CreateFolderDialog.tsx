@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDocument } from '@/contexts/DocumentContext';
 
 interface CreateFolderDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
   const [folderName, setFolderName] = useState('');
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
+  const { refresh } = useDocument();
   
   const handleCreate = async () => {
     if (!folderName.trim()) {
@@ -35,13 +37,17 @@ const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
     setCreating(true);
     
     try {
-      // Mock folder creation - in real implementation this would call an API
+      // TODO: Replace with actual API call when backend is ready
       console.log('Creating folder:', {
         name: folderName,
         parentPath
       });
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh the document list to show new folder
+      await refresh();
       
       toast({
         title: 'Success',
