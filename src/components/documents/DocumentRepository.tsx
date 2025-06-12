@@ -10,6 +10,7 @@ import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
 import DocumentFolders from './DocumentFolders';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
+import { toast } from 'sonner';
 
 interface DocumentRepositoryProps {
   onShowUploadDialog?: () => void;
@@ -21,6 +22,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   onShowCreateFolderDialog
 }) => {
   const [currentPath, setCurrentPath] = useState('/');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
@@ -31,7 +33,8 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     loading, 
     error,
     refresh,
-    deleteDocument
+    deleteDocument,
+    updateDocument
   } = useDocument();
 
   // Handle UI errors separately from the context error
@@ -43,11 +46,19 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     }
   }, [error]);
 
-  // Use memo for filtered documents to avoid recalculation on every render
+  // Filter documents based on current folder and search term
   const filteredDocs = useMemo(() => {
     if (!documents) return [];
     
     let filtered = documents;
+    
+    // Filter by current folder
+    if (selectedFolderId) {
+      filtered = filtered.filter(doc => doc.folder_id === selectedFolderId);
+    } else {
+      // Show documents not in any specific folder when no folder is selected
+      filtered = filtered.filter(doc => !doc.folder_id || doc.folder_id === 'root');
+    }
     
     // Filter by search term
     if (searchTerm) {
@@ -60,10 +71,16 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     }
     
     return filtered;
-  }, [documents, searchTerm]);
+  }, [documents, selectedFolderId, searchTerm]);
 
   const handlePathChange = (path: string) => {
     setCurrentPath(path);
+  };
+
+  const handleFolderSelect = (folderId: string, folderPath: string) => {
+    setSelectedFolderId(folderId);
+    setCurrentPath(folderPath);
+    console.log('Selected folder:', folderId, folderPath);
   };
 
   const handleRetry = () => {
@@ -88,10 +105,16 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   };
 
   const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) {
+      return;
+    }
+
     try {
       await deleteDocument(documentId);
+      toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Failed to delete document:', error);
+      toast.error('Failed to delete document');
     }
   };
 
@@ -104,18 +127,35 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   const handleDocumentEdit = (document: DocumentType) => {
     console.log('Editing document:', document.title);
     // TODO: Implement document editing functionality
+    toast.info('Document editing feature coming soon');
   };
 
   const handleDocumentDownload = (document: DocumentType) => {
     console.log('Downloading document:', document.title);
     // TODO: Implement document download functionality
+    toast.info('Document download feature coming soon');
+  };
+
+  const handleDocumentMove = async (documentId: string, targetFolderId: string) => {
+    try {
+      await updateDocument(documentId, { folder_id: targetFolderId });
+      toast.success('Document moved successfully');
+      
+      // Refresh to show updated folder structure
+      await refresh();
+    } catch (error) {
+      console.error('Failed to move document:', error);
+      toast.error('Failed to move document');
+    }
   };
 
   const handleRefresh = async () => {
     try {
       await refresh();
+      toast.success('Documents refreshed');
     } catch (error) {
       console.error('Failed to refresh documents:', error);
+      toast.error('Failed to refresh documents');
     }
   };
 
@@ -158,7 +198,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          <DocumentFolders onSelectFolder={(id, path) => setCurrentPath(path)} />
+          <DocumentFolders onSelectFolder={handleFolderSelect} />
         </div>
         
         <div className="lg:col-span-3 space-y-4">
@@ -182,7 +222,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
             <div>
               <div className="mb-4">
                 <h3 className="text-lg font-medium mb-3">
-                  Documents ({filteredDocs.length})
+                  Documents in {currentPath} ({filteredDocs.length})
                 </h3>
                 {filteredDocs.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50 rounded-lg border">
@@ -191,6 +231,8 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                     <p className="text-sm text-gray-500 mt-1">
                       {searchTerm 
                         ? "Try adjusting your search terms" 
+                        : selectedFolderId 
+                        ? "This folder is empty. Upload documents or move existing documents here."
                         : "Upload documents or create a new folder"}
                     </p>
                     <div className="mt-4 flex justify-center gap-2">
@@ -205,13 +247,22 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <DocumentGrid 
-                    documents={filteredDocs} 
-                    onDocumentClick={handleDocumentClick}
-                    onDocumentEdit={handleDocumentEdit}
-                    onDocumentDelete={handleDeleteDocument}
-                    onDocumentDownload={handleDocumentDownload}
-                  />
+                  <div>
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-700">
+                        💡 <strong>Tip:</strong> Drag and drop documents to move them between folders. 
+                        Documents with approval workflow will appear in the Approval Workflow tab.
+                      </p>
+                    </div>
+                    <DocumentGrid 
+                      documents={filteredDocs} 
+                      onDocumentClick={handleDocumentClick}
+                      onDocumentEdit={handleDocumentEdit}
+                      onDocumentDelete={handleDeleteDocument}
+                      onDocumentDownload={handleDocumentDownload}
+                      onDocumentMove={handleDocumentMove}
+                    />
+                  </div>
                 )}
               </div>
             </div>

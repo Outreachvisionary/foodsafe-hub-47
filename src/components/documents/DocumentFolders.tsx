@@ -9,46 +9,170 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+interface DocumentFolder {
+  id: string;
+  name: string;
+  parent_id?: string;
+  path: string;
+  document_count: number;
+  created_by: string;
+  created_at: string;
+}
+
 interface DocumentFoldersProps {
   onSelectFolder?: (folderId: string, folderPath: string) => void;
 }
 
 const DocumentFolders: React.FC<DocumentFoldersProps> = ({ onSelectFolder }) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [folders, setFolders] = useState<any[]>([]);
+  const [editingFolder, setEditingFolder] = useState<DocumentFolder | null>(null);
+  const [folders, setFolders] = useState<DocumentFolder[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  const { documents } = useDocument();
+  const { documents, refresh } = useDocument();
   
-  // Mock implementation
+  // Calculate document counts for folders based on actual documents
   useEffect(() => {
-    // This would normally fetch folders from an API
-    setFolders([
-      { id: '1', name: 'Quality Control', documentCount: 12 },
-      { id: '2', name: 'HACCP Plans', documentCount: 8 },
-      { id: '3', name: 'SOPs', documentCount: 15 },
-      { id: '4', name: 'Training Materials', documentCount: 6 }
-    ]);
-  }, []);
-  
-  const handleCreateFolder = () => {
-    // This would normally make an API call
-    const newFolder = {
-      id: Date.now().toString(),
-      name: newFolderName,
-      documentCount: 0
-    };
+    const folderCounts = documents.reduce((acc, doc) => {
+      const folderId = doc.folder_id || 'root';
+      acc[folderId] = (acc[folderId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Mock folders with real document counts
+    const mockFolders: DocumentFolder[] = [
+      { 
+        id: '1', 
+        name: 'Quality Control', 
+        path: '/Quality Control', 
+        document_count: folderCounts['1'] || 0,
+        created_by: 'system',
+        created_at: new Date().toISOString()
+      },
+      { 
+        id: '2', 
+        name: 'HACCP Plans', 
+        path: '/HACCP Plans', 
+        document_count: folderCounts['2'] || 0,
+        created_by: 'system',
+        created_at: new Date().toISOString()
+      },
+      { 
+        id: '3', 
+        name: 'SOPs', 
+        path: '/SOPs', 
+        document_count: folderCounts['3'] || 0,
+        created_by: 'system',
+        created_at: new Date().toISOString()
+      },
+      { 
+        id: '4', 
+        name: 'Training Materials', 
+        path: '/Training Materials', 
+        document_count: folderCounts['4'] || 0,
+        created_by: 'system',
+        created_at: new Date().toISOString()
+      }
+    ];
     
-    setFolders(prev => [...prev, newFolder]);
-    setCreateDialogOpen(false);
-    setNewFolderName('');
-    toast.success('Folder created successfully');
+    setFolders(mockFolders);
+  }, [documents]);
+  
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast.error('Please enter a folder name');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // TODO: Replace with actual API call when backend is ready
+      const newFolder: DocumentFolder = {
+        id: Date.now().toString(),
+        name: newFolderName,
+        path: `/${newFolderName}`,
+        document_count: 0,
+        created_by: 'current_user',
+        created_at: new Date().toISOString()
+      };
+      
+      setFolders(prev => [...prev, newFolder]);
+      setCreateDialogOpen(false);
+      setNewFolderName('');
+      toast.success('Folder created successfully');
+      
+      // Refresh documents to update folder relationships
+      await refresh();
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast.error('Failed to create folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditFolder = async () => {
+    if (!editingFolder || !newFolderName.trim()) {
+      toast.error('Please enter a folder name');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      setFolders(prev => prev.map(folder => 
+        folder.id === editingFolder.id 
+          ? { ...folder, name: newFolderName, path: `/${newFolderName}` }
+          : folder
+      ));
+      
+      setEditDialogOpen(false);
+      setEditingFolder(null);
+      setNewFolderName('');
+      toast.success('Folder updated successfully');
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      toast.error('Failed to update folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteFolder = async (folder: DocumentFolder) => {
+    if (folder.document_count > 0) {
+      toast.error('Cannot delete folder with documents');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the folder "${folder.name}"?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      setFolders(prev => prev.filter(f => f.id !== folder.id));
+      toast.success('Folder deleted successfully');
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast.error('Failed to delete folder');
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleFolderClick = (folder: any) => {
+  const handleFolderClick = (folder: DocumentFolder) => {
     if (onSelectFolder) {
-      onSelectFolder(folder.id, folder.name);
+      onSelectFolder(folder.id, folder.path);
     }
+  };
+
+  const openEditDialog = (folder: DocumentFolder) => {
+    setEditingFolder(folder);
+    setNewFolderName(folder.name);
+    setEditDialogOpen(true);
   };
   
   return (
@@ -66,19 +190,35 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({ onSelectFolder }) => 
             {folders.map(folder => (
               <div 
                 key={folder.id} 
-                className="p-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer"
+                className="p-3 flex justify-between items-center hover:bg-gray-50 cursor-pointer group"
                 onClick={() => handleFolderClick(folder)}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-1">
                   <Folder className="h-4 w-4 text-blue-500" />
-                  <span>{folder.name}</span>
-                  <span className="text-xs text-gray-500">({folder.documentCount})</span>
+                  <span className="font-medium">{folder.name}</span>
+                  <span className="text-xs text-gray-500">({folder.document_count})</span>
                 </div>
-                <div className="flex space-x-1">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditDialog(folder);
+                    }}
+                  >
                     <Edit className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFolder(folder);
+                    }}
+                  >
                     <Trash className="h-3.5 w-3.5" />
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -98,6 +238,7 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({ onSelectFolder }) => 
         </CardContent>
       </Card>
       
+      {/* Create Folder Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -118,8 +259,36 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({ onSelectFolder }) => 
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}>
-              Create Folder
+            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim() || loading}>
+              {loading ? 'Creating...' : 'Create Folder'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Folder Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Folder</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Folder Name</Label>
+              <Input
+                id="edit-name"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Enter folder name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditFolder} disabled={!newFolderName.trim() || loading}>
+              {loading ? 'Updating...' : 'Update Folder'}
             </Button>
           </DialogFooter>
         </DialogContent>

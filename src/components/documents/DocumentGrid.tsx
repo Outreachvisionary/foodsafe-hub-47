@@ -20,6 +20,7 @@ interface DocumentGridProps {
   onDocumentEdit?: (document: Document) => void;
   onDocumentDelete?: (documentId: string) => void;
   onDocumentDownload?: (document: Document) => void;
+  onDocumentMove?: (documentId: string, targetFolderId: string) => void;
 }
 
 const DocumentGrid: React.FC<DocumentGridProps> = ({
@@ -27,7 +28,8 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   onDocumentClick,
   onDocumentEdit,
   onDocumentDelete,
-  onDocumentDownload
+  onDocumentDownload,
+  onDocumentMove
 }) => {
   const handleDownload = (document: Document, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,6 +54,29 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, document: Document) => {
+    e.dataTransfer.setData('text/plain', document.id);
+    e.dataTransfer.effectAllowed = 'move';
+    console.log('Drag started for document:', document.title);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDocument: Document) => {
+    e.preventDefault();
+    const draggedDocumentId = e.dataTransfer.getData('text/plain');
+    
+    if (draggedDocumentId !== targetDocument.id && onDocumentMove) {
+      // Move to the same folder as the target document
+      const targetFolderId = targetDocument.folder_id || 'root';
+      onDocumentMove(draggedDocumentId, targetFolderId);
+      console.log('Document moved to folder:', targetFolderId);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {documents.map((document) => (
@@ -59,6 +84,10 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
           key={document.id}
           className="cursor-pointer hover:shadow-md transition-shadow group"
           onClick={() => onDocumentClick(document)}
+          draggable
+          onDragStart={(e) => handleDragStart(e, document)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, document)}
         >
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-3">
@@ -126,6 +155,12 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 <p className="text-xs text-muted-foreground line-clamp-2" title={document.description}>
                   {document.description}
                 </p>
+              )}
+
+              {(document.status === 'Pending_Approval' || document.status === 'Pending_Review') && (
+                <div className="text-xs text-orange-600 font-medium">
+                  ⏳ Awaiting {document.status === 'Pending_Approval' ? 'Approval' : 'Review'}
+                </div>
               )}
             </div>
           </CardContent>

@@ -6,9 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DocumentCategory, DocumentStatus } from '@/types/enums';
+import { stringToDocumentCategory } from '@/utils/documentAdapters';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -26,6 +29,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [category, setCategory] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
   
   const { createDocument, refresh } = useDocument();
   const { toast } = useToast();
@@ -53,6 +57,12 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     setUploading(true);
     
     try {
+      // Convert string category to DocumentCategory enum
+      const documentCategory = stringToDocumentCategory(category);
+      
+      // Determine initial status based on approval requirement
+      const initialStatus = requiresApproval ? DocumentStatus.Pending_Approval : DocumentStatus.Draft;
+      
       // Create document with proper integration
       const newDoc = {
         title,
@@ -61,10 +71,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         file_size: selectedFile.size,
         file_type: selectedFile.type,
         file_path: folderPath,
-        category,
-        status: 'Draft' as const,
+        category: documentCategory,
+        status: initialStatus,
         version: 1,
         created_by: 'current_user', // TODO: Get from auth context
+        approvers: requiresApproval ? ['approver1', 'approver2'] : [], // TODO: Get from form or default approvers
       };
       
       await createDocument(newDoc);
@@ -74,7 +85,9 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       
       toast({
         title: 'Success',
-        description: 'Document uploaded successfully',
+        description: requiresApproval 
+          ? 'Document uploaded and sent for approval' 
+          : 'Document uploaded successfully',
       });
       
       // Reset form
@@ -82,6 +95,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       setDescription('');
       setCategory('');
       setSelectedFile(null);
+      setRequiresApproval(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Error uploading document:', error);
@@ -100,6 +114,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     setDescription('');
     setCategory('');
     setSelectedFile(null);
+    setRequiresApproval(false);
     onOpenChange(false);
   };
   
@@ -143,8 +158,19 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 <SelectItem value="Certificate">Certificate</SelectItem>
                 <SelectItem value="Audit Report">Audit Report</SelectItem>
                 <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
+                <SelectItem value="Training Material">Training Material</SelectItem>
+                <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="requires-approval"
+              checked={requiresApproval}
+              onCheckedChange={setRequiresApproval}
+            />
+            <Label htmlFor="requires-approval">Requires Approval</Label>
           </div>
           
           <div className="space-y-2">
@@ -165,6 +191,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                   type="file"
                   className="hidden"
                   onChange={handleFileChange}
+                  accept=".pdf,.docx,.xlsx,.doc,.xls,.txt"
                 />
               </label>
             </div>
