@@ -3,14 +3,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Edit, Eye, MoreVertical } from 'lucide-react';
+import { FileText, Download, Edit, Eye, MoreVertical, Trash2, Lock, Unlock } from 'lucide-react';
 import { Document } from '@/types/document';
 import { formatDistanceToNow } from 'date-fns';
 import { getDocumentStatusColor, formatDocumentStatus } from '@/utils/documentUtils';
+import { CheckoutStatus } from '@/types/enums';
+import DocumentCheckoutActions from './DocumentCheckoutActions';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -21,6 +24,8 @@ interface DocumentGridProps {
   onDocumentDelete?: (documentId: string) => void;
   onDocumentDownload?: (document: Document) => void;
   onDocumentMove?: (documentId: string, targetFolderId: string) => void;
+  onDocumentCheckout?: (documentId: string) => void;
+  onDocumentCheckin?: (documentId: string) => void;
 }
 
 const DocumentGrid: React.FC<DocumentGridProps> = ({
@@ -29,7 +34,9 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   onDocumentEdit,
   onDocumentDelete,
   onDocumentDownload,
-  onDocumentMove
+  onDocumentMove,
+  onDocumentCheckout,
+  onDocumentCheckin
 }) => {
   const handleDownload = (document: Document, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -54,6 +61,20 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     }
   };
 
+  const handleCheckout = (document: Document, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDocumentCheckout) {
+      onDocumentCheckout(document.id);
+    }
+  };
+
+  const handleCheckin = (document: Document, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDocumentCheckin) {
+      onDocumentCheckin(document.id);
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, document: Document) => {
     e.dataTransfer.setData('text/plain', document.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -70,11 +91,24 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     const draggedDocumentId = e.dataTransfer.getData('text/plain');
     
     if (draggedDocumentId !== targetDocument.id && onDocumentMove) {
-      // Move to the same folder as the target document
       const targetFolderId = targetDocument.folder_id || 'root';
       onDocumentMove(draggedDocumentId, targetFolderId);
       console.log('Document moved to folder:', targetFolderId);
     }
+  };
+
+  const isCurrentUserCheckedOut = (document: Document) => {
+    return document.checkout_status === CheckoutStatus.Checked_Out && 
+           document.checkout_user_name === 'current_user'; // TODO: Get from auth context
+  };
+
+  const canEdit = (document: Document) => {
+    return document.checkout_status === CheckoutStatus.Available || isCurrentUserCheckedOut(document);
+  };
+
+  const canDelete = (document: Document) => {
+    return document.checkout_status === CheckoutStatus.Available && 
+           (document.status === 'Draft' || document.status === 'Rejected');
   };
 
   return (
@@ -82,13 +116,22 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
       {documents.map((document) => (
         <Card 
           key={document.id}
-          className="cursor-pointer hover:shadow-md transition-shadow group"
+          className="cursor-pointer hover:shadow-md transition-shadow group relative"
           onClick={() => onDocumentClick(document)}
           draggable
           onDragStart={(e) => handleDragStart(e, document)}
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, document)}
         >
+          {document.checkout_status === CheckoutStatus.Checked_Out && (
+            <div className="absolute top-2 right-2 z-10">
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                <Lock className="h-3 w-3 mr-1" />
+                Checked Out
+              </Badge>
+            </div>
+          )}
+          
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -119,16 +162,49 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </DropdownMenuItem>
-                  {onDocumentEdit && (
+                  
+                  <DropdownMenuItem onClick={() => onDocumentClick(document)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Checkout/Checkin Actions */}
+                  {document.checkout_status === CheckoutStatus.Available && (
+                    <DropdownMenuItem onClick={(e) => handleCheckout(document, e)}>
+                      <Lock className="h-4 w-4 mr-2" />
+                      Check Out
+                    </DropdownMenuItem>
+                  )}
+
+                  {isCurrentUserCheckedOut(document) && (
+                    <DropdownMenuItem onClick={(e) => handleCheckin(document, e)}>
+                      <Unlock className="h-4 w-4 mr-2" />
+                      Check In
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* Edit Action */}
+                  {canEdit(document) && onDocumentEdit && (
                     <DropdownMenuItem onClick={(e) => handleEdit(document, e)}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={() => onDocumentClick(document)}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View
-                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Delete Action */}
+                  {canDelete(document) && onDocumentDelete && (
+                    <DropdownMenuItem 
+                      onClick={(e) => handleDelete(document, e)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -157,6 +233,19 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 </p>
               )}
 
+              {/* Checkout Information */}
+              {document.checkout_status === CheckoutStatus.Checked_Out && (
+                <div className="text-xs text-orange-600 font-medium">
+                  🔒 Checked out by {document.checkout_user_name || 'Unknown User'}
+                  {document.checkout_timestamp && (
+                    <div className="text-gray-500">
+                      {formatDistanceToNow(new Date(document.checkout_timestamp), { addSuffix: true })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Status Indicators */}
               {(document.status === 'Pending_Approval' || document.status === 'Pending_Review') && (
                 <div className="text-xs text-orange-600 font-medium">
                   ⏳ Awaiting {document.status === 'Pending_Approval' ? 'Approval' : 'Review'}

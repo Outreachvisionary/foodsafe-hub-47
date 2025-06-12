@@ -11,6 +11,16 @@ import DocumentBreadcrumb from './DocumentBreadcrumb';
 import DocumentFolders from './DocumentFolders';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DocumentRepositoryProps {
   onShowUploadDialog?: () => void;
@@ -27,6 +37,8 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
   const { 
     documents,
@@ -34,7 +46,9 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     error,
     refresh,
     deleteDocument,
-    updateDocument
+    updateDocument,
+    checkoutDocument,
+    checkinDocument
   } = useDocument();
 
   // Handle UI errors separately from the context error
@@ -105,13 +119,18 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) {
-      return;
-    }
+    setDocumentToDelete(documentId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!documentToDelete) return;
 
     try {
-      await deleteDocument(documentId);
+      await deleteDocument(documentToDelete);
       toast.success('Document deleted successfully');
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     } catch (error) {
       console.error('Failed to delete document:', error);
       toast.error('Failed to delete document');
@@ -146,6 +165,26 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     } catch (error) {
       console.error('Failed to move document:', error);
       toast.error('Failed to move document');
+    }
+  };
+
+  const handleDocumentCheckout = async (documentId: string) => {
+    try {
+      await checkoutDocument(documentId);
+      toast.success('Document checked out successfully');
+    } catch (error) {
+      console.error('Failed to checkout document:', error);
+      toast.error('Failed to checkout document');
+    }
+  };
+
+  const handleDocumentCheckin = async (documentId: string) => {
+    try {
+      await checkinDocument(documentId);
+      toast.success('Document checked in successfully');
+    } catch (error) {
+      console.error('Failed to checkin document:', error);
+      toast.error('Failed to checkin document');
     }
   };
 
@@ -251,7 +290,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-sm text-blue-700">
                         💡 <strong>Tip:</strong> Drag and drop documents to move them between folders. 
-                        Documents with approval workflow will appear in the Approval Workflow tab.
+                        Use check-out to edit documents safely. Documents with approval workflow will appear in the Approval Workflow tab.
                       </p>
                     </div>
                     <DocumentGrid 
@@ -261,6 +300,8 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                       onDocumentDelete={handleDeleteDocument}
                       onDocumentDownload={handleDocumentDownload}
                       onDocumentMove={handleDocumentMove}
+                      onDocumentCheckout={handleDocumentCheckout}
+                      onDocumentCheckin={handleDocumentCheckin}
                     />
                   </div>
                 )}
@@ -269,6 +310,25 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the document
+              and remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteDocument} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
