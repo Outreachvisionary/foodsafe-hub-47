@@ -8,6 +8,7 @@ import { DocumentProvider } from "@/contexts/DocumentContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Documents from "./pages/Documents";
+import Dashboard from "./pages/Dashboard";
 import CreateDocumentForm from "./components/documents/CreateDocumentForm";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/documents/create" element={<CreateDocumentForm />} />
             </Routes>
