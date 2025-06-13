@@ -1,6 +1,39 @@
 
-import React, { useState } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { cn } from '@/lib/utils';
+
+// Sidebar Context
+interface SidebarContextType {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+
+interface SidebarProviderProps {
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const SidebarProvider = ({ children, defaultOpen = true }: SidebarProviderProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
+      <div className="flex min-h-screen w-full">
+        {children}
+      </div>
+    </SidebarContext.Provider>
+  );
+};
+
+const useSidebar = () => {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error('useSidebar must be used within a SidebarProvider');
+  }
+  return context;
+};
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -42,6 +75,25 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
   }
 );
 Sidebar.displayName = "Sidebar";
+
+interface SidebarInsetProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+}
+
+const SidebarInset = React.forwardRef<HTMLDivElement, SidebarInsetProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn("flex flex-1 flex-col overflow-hidden", className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
+);
+SidebarInset.displayName = "SidebarInset";
 
 // Add the missing exports
 interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -103,7 +155,10 @@ SidebarFooter.displayName = "SidebarFooter";
 
 export { 
   Sidebar, 
+  SidebarProvider,
+  SidebarInset,
   SidebarHeader, 
   SidebarContent, 
-  SidebarFooter 
+  SidebarFooter,
+  useSidebar
 };
