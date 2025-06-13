@@ -189,17 +189,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let mounted = true;
 
     // Get initial session
-    const initializeSession = async () => {
+    const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
+          if (mounted) setLoading(false);
           return;
         }
         
         if (!mounted) return;
         
+        console.log('Initial session:', session?.user?.id || 'No session');
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -214,9 +217,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error('Failed to initialize session:', error);
+        console.error('Failed to initialize auth:', error);
       } finally {
         if (mounted) {
+          console.log('Auth initialization complete');
           setLoading(false);
         }
       }
@@ -249,14 +253,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setProfile(null);
           }
         }
-        
-        if (mounted && !loading) {
-          setLoading(false);
-        }
       }
     );
 
-    initializeSession();
+    initializeAuth();
 
     return () => {
       mounted = false;
