@@ -222,17 +222,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
     const initializeAuth = async () => {
       try {
         console.log('Initializing auth...');
+        
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
-          if (mounted) {
-            setLoading(false);
-          }
           return;
         }
         
@@ -244,18 +242,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(session.user);
           
-          // Fetch profile after setting user
-          try {
-            const userProfile = await fetchProfile(session.user.id);
-            if (mounted) {
-              setProfile(userProfile);
+          // Fetch profile after setting user (use setTimeout to avoid blocking)
+          setTimeout(async () => {
+            if (!mounted) return;
+            try {
+              const userProfile = await fetchProfile(session.user.id);
+              if (mounted) {
+                setProfile(userProfile);
+              }
+            } catch (error) {
+              console.error('Error fetching initial profile:', error);
             }
-          } catch (error) {
-            console.error('Error fetching initial profile:', error);
-            if (mounted) {
-              setProfile(null);
-            }
-          }
+          }, 0);
         } else {
           setSession(null);
           setUser(null);
@@ -282,7 +280,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid potential deadlock
+          // Use setTimeout to avoid potential deadlock in auth state change handler
           setTimeout(async () => {
             if (!mounted) return;
             try {
