@@ -9,10 +9,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import ProtectedSidebarLayout from "@/components/layout/ProtectedSidebarLayout";
 
-// Pages
+// Import all pages
 import Index from "./pages/Index";
-import Documents from "./pages/Documents";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Documents from "./pages/Documents";
 import CAPA from "./pages/CAPA";
 import CAPADetails from "./pages/CAPADetails";
 import NonConformance from "./pages/NonConformance";
@@ -59,114 +60,124 @@ import Tasks from "./pages/Tasks";
 import TaskCreate from "./pages/TaskCreate";
 import Create from "./pages/Create";
 import Profile from "./pages/Profile";
-import Auth from "./pages/Auth";
 import DatabaseConnectionTest from "./pages/DatabaseConnectionTest";
 import CreateDocumentForm from "./components/documents/CreateDocumentForm";
 import DocumentCreate from "./pages/DocumentCreate";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <UserProvider>
-        <DocumentProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                
-                {/* Protected Routes with Sidebar Layout */}
-                <Route path="/dashboard" element={<ProtectedSidebarLayout><Dashboard /></ProtectedSidebarLayout>} />
-                
-                {/* Document Management */}
-                <Route path="/documents" element={<ProtectedSidebarLayout><Documents /></ProtectedSidebarLayout>} />
-                <Route path="/documents/create" element={<ProtectedSidebarLayout><CreateDocumentForm /></ProtectedSidebarLayout>} />
-                <Route path="/document-create" element={<ProtectedSidebarLayout><DocumentCreate /></ProtectedSidebarLayout>} />
-                
-                {/* Quality Management */}
-                <Route path="/capa" element={<ProtectedSidebarLayout><CAPA /></ProtectedSidebarLayout>} />
-                <Route path="/capa/:id" element={<ProtectedSidebarLayout><CAPADetails /></ProtectedSidebarLayout>} />
-                <Route path="/non-conformance" element={<ProtectedSidebarLayout><NonConformance /></ProtectedSidebarLayout>} />
-                <Route path="/non-conformance/dashboard" element={<ProtectedSidebarLayout><NonConformanceDashboard /></ProtectedSidebarLayout>} />
-                <Route path="/non-conformance/form" element={<ProtectedSidebarLayout><NonConformanceFormPage /></ProtectedSidebarLayout>} />
-                
-                {/* Training */}
-                <Route path="/training" element={<ProtectedSidebarLayout><TrainingModule /></ProtectedSidebarLayout>} />
-                
-                {/* Audits */}
-                <Route path="/audits" element={<ProtectedSidebarLayout><AuditsModule /></ProtectedSidebarLayout>} />
-                <Route path="/internal-audits" element={<ProtectedSidebarLayout><InternalAudits /></ProtectedSidebarLayout>} />
-                <Route path="/schedule-audit" element={<ProtectedSidebarLayout><ScheduleAuditPage /></ProtectedSidebarLayout>} />
-                
-                {/* Standards & HACCP */}
-                <Route path="/standards" element={<ProtectedSidebarLayout><Standards /></ProtectedSidebarLayout>} />
-                <Route path="/standards-page" element={<ProtectedSidebarLayout><StandardsPage /></ProtectedSidebarLayout>} />
-                <Route path="/haccp" element={<ProtectedSidebarLayout><HACCP /></ProtectedSidebarLayout>} />
-                <Route path="/haccp-page" element={<ProtectedSidebarLayout><HACCPPage /></ProtectedSidebarLayout>} />
-                <Route path="/haccp-module" element={<ProtectedSidebarLayout><HaccpModule /></ProtectedSidebarLayout>} />
-                
-                {/* Supply Chain */}
-                <Route path="/suppliers" element={<ProtectedSidebarLayout><SupplierManagement /></ProtectedSidebarLayout>} />
-                <Route path="/suppliers/new" element={<ProtectedSidebarLayout><NewSupplierPage /></ProtectedSidebarLayout>} />
-                <Route path="/traceability" element={<ProtectedSidebarLayout><Traceability /></ProtectedSidebarLayout>} />
-                <Route path="/testing" element={<ProtectedSidebarLayout><Testing /></ProtectedSidebarLayout>} />
-                <Route path="/testing-verification" element={<ProtectedSidebarLayout><TestingVerification /></ProtectedSidebarLayout>} />
-                
-                {/* Complaints */}
-                <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />
-                <Route path="/complaint-management" element={<ProtectedSidebarLayout><ComplaintManagement /></ProtectedSidebarLayout>} />
-                <Route path="/complaints-management" element={<ProtectedSidebarLayout><ComplaintsManagement /></ProtectedSidebarLayout>} />
-                
-                {/* Monitoring & Analytics */}
-                <Route path="/kpis" element={<ProtectedSidebarLayout><KPIs /></ProtectedSidebarLayout>} />
-                <Route path="/performance" element={<ProtectedSidebarLayout><Performance /></ProtectedSidebarLayout>} />
-                <Route path="/reports" element={<ProtectedSidebarLayout><Reports /></ProtectedSidebarLayout>} />
-                <Route path="/analytics" element={<ProtectedSidebarLayout><Analytics /></ProtectedSidebarLayout>} />
-                
-                {/* Facilities */}
-                <Route path="/facilities" element={<ProtectedSidebarLayout><Facilities /></ProtectedSidebarLayout>} />
-                <Route path="/facilities-list" element={<ProtectedSidebarLayout><FacilitiesList /></ProtectedSidebarLayout>} />
-                <Route path="/facility-management" element={<ProtectedSidebarLayout><FacilityManagement /></ProtectedSidebarLayout>} />
-                
-                {/* User Management */}
-                <Route path="/users" element={<ProtectedSidebarLayout><Users /></ProtectedSidebarLayout>} />
-                <Route path="/user-management" element={<ProtectedSidebarLayout><UserManagement /></ProtectedSidebarLayout>} />
-                <Route path="/user-create" element={<ProtectedSidebarLayout><UserCreate /></ProtectedSidebarLayout>} />
-                <Route path="/user-onboarding" element={<ProtectedSidebarLayout><UserOnboarding /></ProtectedSidebarLayout>} />
-                
-                {/* Organization Management */}
-                <Route path="/organizations" element={<ProtectedSidebarLayout><Organizations /></ProtectedSidebarLayout>} />
-                <Route path="/organizations-list" element={<ProtectedSidebarLayout><OrganizationsList /></ProtectedSidebarLayout>} />
-                <Route path="/organization-management" element={<ProtectedSidebarLayout><OrganizationManagement /></ProtectedSidebarLayout>} />
-                
-                {/* Department & Role Management */}
-                <Route path="/departments" element={<ProtectedSidebarLayout><Departments /></ProtectedSidebarLayout>} />
-                <Route path="/department-management" element={<ProtectedSidebarLayout><DepartmentManagement /></ProtectedSidebarLayout>} />
-                <Route path="/roles" element={<ProtectedSidebarLayout><Roles /></ProtectedSidebarLayout>} />
-                <Route path="/role-management" element={<ProtectedSidebarLayout><RoleManagement /></ProtectedSidebarLayout>} />
-                
-                {/* Tasks */}
-                <Route path="/tasks" element={<ProtectedSidebarLayout><Tasks /></ProtectedSidebarLayout>} />
-                <Route path="/task-create" element={<ProtectedSidebarLayout><TaskCreate /></ProtectedSidebarLayout>} />
-                
-                {/* System */}
-                <Route path="/certifications" element={<ProtectedSidebarLayout><Certifications /></ProtectedSidebarLayout>} />
-                <Route path="/settings" element={<ProtectedSidebarLayout><Settings /></ProtectedSidebarLayout>} />
-                <Route path="/create" element={<ProtectedSidebarLayout><Create /></ProtectedSidebarLayout>} />
-                <Route path="/profile" element={<ProtectedSidebarLayout><Profile /></ProtectedSidebarLayout>} />
-                <Route path="/database-test" element={<ProtectedSidebarLayout><DatabaseConnectionTest /></ProtectedSidebarLayout>} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </DocumentProvider>
-      </UserProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('App component rendering');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <UserProvider>
+          <DocumentProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  
+                  {/* Protected Routes with Sidebar Layout */}
+                  <Route path="/dashboard" element={<ProtectedSidebarLayout><Dashboard /></ProtectedSidebarLayout>} />
+                  
+                  {/* Document Management */}
+                  <Route path="/documents" element={<ProtectedSidebarLayout><Documents /></ProtectedSidebarLayout>} />
+                  <Route path="/documents/create" element={<ProtectedSidebarLayout><CreateDocumentForm /></ProtectedSidebarLayout>} />
+                  <Route path="/document-create" element={<ProtectedSidebarLayout><DocumentCreate /></ProtectedSidebarLayout>} />
+                  
+                  {/* Quality Management */}
+                  <Route path="/capa" element={<ProtectedSidebarLayout><CAPA /></ProtectedSidebarLayout>} />
+                  <Route path="/capa/:id" element={<ProtectedSidebarLayout><CAPADetails /></ProtectedSidebarLayout>} />
+                  <Route path="/non-conformance" element={<ProtectedSidebarLayout><NonConformance /></ProtectedSidebarLayout>} />
+                  <Route path="/non-conformance/dashboard" element={<ProtectedSidebarLayout><NonConformanceDashboard /></ProtectedSidebarLayout>} />
+                  <Route path="/non-conformance/form" element={<ProtectedSidebarLayout><NonConformanceFormPage /></ProtectedSidebarLayout>} />
+                  
+                  {/* Training */}
+                  <Route path="/training" element={<ProtectedSidebarLayout><TrainingModule /></ProtectedSidebarLayout>} />
+                  
+                  {/* Audits */}
+                  <Route path="/audits" element={<ProtectedSidebarLayout><AuditsModule /></ProtectedSidebarLayout>} />
+                  <Route path="/internal-audits" element={<ProtectedSidebarLayout><InternalAudits /></ProtectedSidebarLayout>} />
+                  <Route path="/schedule-audit" element={<ProtectedSidebarLayout><ScheduleAuditPage /></ProtectedSidebarLayout>} />
+                  
+                  {/* Standards & HACCP */}
+                  <Route path="/standards" element={<ProtectedSidebarLayout><Standards /></ProtectedSidebarLayout>} />
+                  <Route path="/standards-page" element={<ProtectedSidebarLayout><StandardsPage /></ProtectedSidebarLayout>} />
+                  <Route path="/haccp" element={<ProtectedSidebarLayout><HACCP /></ProtectedSidebarLayout>} />
+                  <Route path="/haccp-page" element={<ProtectedSidebarLayout><HACCPPage /></ProtectedSidebarLayout>} />
+                  <Route path="/haccp-module" element={<ProtectedSidebarLayout><HaccpModule /></ProtectedSidebarLayout>} />
+                  
+                  {/* Supply Chain */}
+                  <Route path="/suppliers" element={<ProtectedSidebarLayout><SupplierManagement /></ProtectedSidebarLayout>} />
+                  <Route path="/suppliers/new" element={<ProtectedSidebarLayout><NewSupplierPage /></ProtectedSidebarLayout>} />
+                  <Route path="/traceability" element={<ProtectedSidebarLayout><Traceability /></ProtectedSidebarLayout>} />
+                  <Route path="/testing" element={<ProtectedSidebarLayout><Testing /></ProtectedSidebarLayout>} />
+                  <Route path="/testing-verification" element={<ProtectedSidebarLayout><TestingVerification /></ProtectedSidebarLayout>} />
+                  
+                  {/* Complaints */}
+                  <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />
+                  <Route path="/complaint-management" element={<ProtectedSidebarLayout><ComplaintManagement /></ProtectedSidebarLayout>} />
+                  <Route path="/complaints-management" element={<ProtectedSidebarLayout><ComplaintsManagement /></ProtectedSidebarLayout>} />
+                  
+                  {/* Monitoring & Analytics */}
+                  <Route path="/kpis" element={<ProtectedSidebarLayout><KPIs /></ProtectedSidebarLayout>} />
+                  <Route path="/performance" element={<ProtectedSidebarLayout><Performance /></ProtectedSidebarLayout>} />
+                  <Route path="/reports" element={<ProtectedSidebarLayout><Reports /></ProtectedSidebarLayout>} />
+                  <Route path="/analytics" element={<ProtectedSidebarLayout><Analytics /></ProtectedSidebarLayout>} />
+                  
+                  {/* Facilities */}
+                  <Route path="/facilities" element={<ProtectedSidebarLayout><Facilities /></ProtectedSidebarLayout>} />
+                  <Route path="/facilities-list" element={<ProtectedSidebarLayout><FacilitiesList /></ProtectedSidebarLayout>} />
+                  <Route path="/facility-management" element={<ProtectedSidebarLayout><FacilityManagement /></ProtectedSidebarLayout>} />
+                  
+                  {/* User Management */}
+                  <Route path="/users" element={<ProtectedSidebarLayout><Users /></ProtectedSidebarLayout>} />
+                  <Route path="/user-management" element={<ProtectedSidebarLayout><UserManagement /></ProtectedSidebarLayout>} />
+                  <Route path="/user-create" element={<ProtectedSidebarLayout><UserCreate /></ProtectedSidebarLayout>} />
+                  <Route path="/user-onboarding" element={<ProtectedSidebarLayout><UserOnboarding /></ProtectedSidebarLayout>} />
+                  
+                  {/* Organization Management */}
+                  <Route path="/organizations" element={<ProtectedSidebarLayout><Organizations /></ProtectedSidebarLayout>} />
+                  <Route path="/organizations-list" element={<ProtectedSidebarLayout><OrganizationsList /></ProtectedSidebarLayout>} />
+                  <Route path="/organization-management" element={<ProtectedSidebarLayout><OrganizationManagement /></ProtectedSidebarLayout>} />
+                  
+                  {/* Department & Role Management */}
+                  <Route path="/departments" element={<ProtectedSidebarLayout><Departments /></ProtectedSidebarLayout>} />
+                  <Route path="/department-management" element={<ProtectedSidebarLayout><DepartmentManagement /></ProtectedSidebarLayout>} />
+                  <Route path="/roles" element={<ProtectedSidebarLayout><Roles /></ProtectedSidebarLayout>} />
+                  <Route path="/role-management" element={<ProtectedSidebarLayout><RoleManagement /></ProtectedSidebarLayout>} />
+                  
+                  {/* Tasks */}
+                  <Route path="/tasks" element={<ProtectedSidebarLayout><Tasks /></ProtectedSidebarLayout>} />
+                  <Route path="/task-create" element={<ProtectedSidebarLayout><TaskCreate /></ProtectedSidebarLayout>} />
+                  
+                  {/* System */}
+                  <Route path="/certifications" element={<ProtectedSidebarLayout><Certifications /></ProtectedSidebarLayout>} />
+                  <Route path="/settings" element={<ProtectedSidebarLayout><Settings /></ProtectedSidebarLayout>} />
+                  <Route path="/create" element={<ProtectedSidebarLayout><Create /></ProtectedSidebarLayout>} />
+                  <Route path="/profile" element={<ProtectedSidebarLayout><Profile /></ProtectedSidebarLayout>} />
+                  <Route path="/database-test" element={<ProtectedSidebarLayout><DatabaseConnectionTest /></ProtectedSidebarLayout>} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </DocumentProvider>
+        </UserProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

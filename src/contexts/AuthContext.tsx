@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   // Fetch user profile from the profiles table
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -225,6 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         console.log('Initializing auth...');
+        setLoading(true);
         
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -242,18 +244,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(session.user);
           
-          // Fetch profile after setting user (use setTimeout to avoid blocking)
-          setTimeout(async () => {
-            if (!mounted) return;
-            try {
-              const userProfile = await fetchProfile(session.user.id);
-              if (mounted) {
-                setProfile(userProfile);
-              }
-            } catch (error) {
-              console.error('Error fetching initial profile:', error);
+          // Fetch profile
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            if (mounted) {
+              setProfile(userProfile);
             }
-          }, 0);
+          } catch (error) {
+            console.error('Error fetching initial profile:', error);
+          }
         } else {
           setSession(null);
           setUser(null);
@@ -265,6 +264,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (mounted) {
           console.log('Auth initialization complete');
           setLoading(false);
+          setInitialized(true);
         }
       }
     };
@@ -280,25 +280,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid potential deadlock in auth state change handler
-          setTimeout(async () => {
-            if (!mounted) return;
-            try {
-              const userProfile = await fetchProfile(session.user.id);
-              if (mounted) {
-                setProfile(userProfile);
-              }
-            } catch (error) {
-              console.error('Error fetching profile during auth change:', error);
-              if (mounted) {
-                setProfile(null);
-              }
+          // Fetch profile for authenticated user
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            if (mounted) {
+              setProfile(userProfile);
             }
-          }, 0);
+          } catch (error) {
+            console.error('Error fetching profile during auth change:', error);
+            if (mounted) {
+              setProfile(null);
+            }
+          }
         } else {
           if (mounted) {
             setProfile(null);
           }
+        }
+        
+        // Set loading to false after auth state change is processed
+        if (mounted && initialized) {
+          setLoading(false);
         }
       }
     );
@@ -331,6 +333,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasSession: !!session,
     hasProfile: !!profile,
     loading,
+    initialized,
     isAuthenticated: !!user && !!session
   });
 

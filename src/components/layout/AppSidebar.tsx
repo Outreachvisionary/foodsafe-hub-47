@@ -57,7 +57,14 @@ const AppSidebar: React.FC = () => {
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
-  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  // Safely get display name
+  const getDisplayName = () => {
+    if (profile?.full_name) return profile.full_name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'User';
+  };
+
+  const displayName = getDisplayName();
   const displayEmail = user?.email || '';
 
   return (
