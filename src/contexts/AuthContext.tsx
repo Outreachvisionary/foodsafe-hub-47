@@ -57,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile from the profiles table
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -68,6 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return null;
       }
       
+      console.log('Profile fetched successfully:', data);
       return data as UserProfile;
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -77,9 +79,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Refresh profile data
   const refreshProfile = async (): Promise<void> => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user available for profile refresh');
+      return;
+    }
     
     try {
+      console.log('Refreshing profile for user:', user.id);
       const userProfile = await fetchProfile(user.id);
       setProfile(userProfile);
     } catch (error) {
@@ -90,14 +96,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign in function
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
+      console.log('Attempting to sign in user:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
       
       if (data.user) {
+        console.log('Sign in successful for user:', data.user.id);
         toast.success('Signed in successfully');
       }
     } catch (error) {
@@ -110,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign up function  
   const signUp = async (email: string, password: string, userData?: Partial<UserProfile>): Promise<void> => {
     try {
+      console.log('Attempting to sign up user:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -119,8 +131,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign up error:', error);
+        throw error;
+      }
       
+      console.log('Sign up successful');
       toast.success('Account created successfully! Please check your email to verify your account.');
     } catch (error) {
       console.error('Sign up error:', error);
@@ -132,9 +148,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign out function
   const signOut = async (): Promise<void> => {
     try {
+      console.log('Attempting to sign out');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
       
+      console.log('Sign out successful');
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -150,11 +171,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Reset password function
   const resetPassword = async (email: string): Promise<void> => {
     try {
+      console.log('Attempting to reset password for:', email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth`,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Password reset error:', error);
+        throw error;
+      }
       
+      console.log('Password reset email sent');
       toast.success('Password reset email sent');
     } catch (error) {
       console.error('Password reset error:', error);
@@ -165,16 +191,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Update profile function
   const updateProfile = async (updates: Partial<UserProfile>): Promise<void> => {
-    if (!user) throw new Error('No user logged in');
+    if (!user) {
+      console.error('Cannot update profile: no user logged in');
+      throw new Error('No user logged in');
+    }
 
     try {
+      console.log('Updating profile for user:', user.id);
       const { error } = await supabase
         .from('profiles')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update profile error:', error);
+        throw error;
+      }
 
+      console.log('Profile updated successfully');
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -196,17 +230,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (error) {
           console.error('Error getting initial session:', error);
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setLoading(false);
+          }
           return;
         }
         
         if (!mounted) return;
         
-        console.log('Initial session:', session?.user?.id || 'No session');
-        setSession(session);
-        setUser(session?.user ?? null);
+        console.log('Initial session check:', session ? 'Session found' : 'No session');
         
-        if (session?.user) {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          
+          // Fetch profile after setting user
           try {
             const userProfile = await fetchProfile(session.user.id);
             if (mounted) {
@@ -214,7 +252,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           } catch (error) {
             console.error('Error fetching initial profile:', error);
+            if (mounted) {
+              setProfile(null);
+            }
           }
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
@@ -231,23 +276,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('Auth state changed:', event, session ? 'Session active' : 'No session');
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          try {
-            const userProfile = await fetchProfile(session.user.id);
-            if (mounted) {
-              setProfile(userProfile);
+          // Use setTimeout to avoid potential deadlock
+          setTimeout(async () => {
+            if (!mounted) return;
+            try {
+              const userProfile = await fetchProfile(session.user.id);
+              if (mounted) {
+                setProfile(userProfile);
+              }
+            } catch (error) {
+              console.error('Error fetching profile during auth change:', error);
+              if (mounted) {
+                setProfile(null);
+              }
             }
-          } catch (error) {
-            console.error('Error fetching profile during auth change:', error);
-            if (mounted) {
-              setProfile(null);
-            }
-          }
+          }, 0);
         } else {
           if (mounted) {
             setProfile(null);
@@ -259,6 +308,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
 
     return () => {
+      console.log('Cleaning up auth context');
       mounted = false;
       subscription.unsubscribe();
     };
@@ -277,6 +327,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     refreshProfile,
   };
+
+  console.log('AuthProvider rendering with state:', {
+    hasUser: !!user,
+    hasSession: !!session,
+    hasProfile: !!profile,
+    loading,
+    isAuthenticated: !!user && !!session
+  });
 
   return (
     <AuthContext.Provider value={value}>

@@ -10,20 +10,29 @@ interface ProtectedSidebarLayoutProps {
 }
 
 const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ children }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, session } = useAuth();
   
-  console.log('ProtectedSidebarLayout - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', !!user);
+  console.log('ProtectedSidebarLayout render:', { 
+    loading, 
+    isAuthenticated, 
+    hasUser: !!user, 
+    hasSession: !!session,
+    userId: user?.id 
+  });
   
   // Show loading indicator while checking authentication
   if (loading) {
+    console.log('ProtectedSidebarLayout: Showing loading state');
     return <Loading message="Checking authentication..." />;
   }
   
   // Redirect to auth if not authenticated
-  if (!isAuthenticated || !user) {
-    console.log('Redirecting to auth - not authenticated');
+  if (!isAuthenticated || !user || !session) {
+    console.log('ProtectedSidebarLayout: Redirecting to auth - not authenticated');
     return <Navigate to="/auth" replace />;
   }
+  
+  console.log('ProtectedSidebarLayout: Rendering sidebar layout for authenticated user');
   
   // Show the sidebar layout with the children
   return (

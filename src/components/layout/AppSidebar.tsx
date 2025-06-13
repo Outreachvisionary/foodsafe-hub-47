@@ -26,14 +26,22 @@ import {
 const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile } = useAuth();
+
+  console.log('AppSidebar render:', { 
+    hasUser: !!user, 
+    hasProfile: !!profile,
+    userEmail: user?.email,
+    currentPath: location.pathname 
+  });
 
   const handleSignOut = async () => {
     try {
+      console.log('AppSidebar: Initiating sign out');
       await signOut();
       navigate('/auth');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('AppSidebar: Sign out error:', error);
     }
   };
 
@@ -48,6 +56,9 @@ const AppSidebar: React.FC = () => {
     { icon: Users, label: 'Users', path: '/users' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
+
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = user?.email || '';
 
   return (
     <Sidebar className="w-64">
@@ -73,7 +84,10 @@ const AppSidebar: React.FC = () => {
                 className={`w-full justify-start text-white hover:bg-white/10 ${
                   isActive ? 'bg-white/20' : ''
                 }`}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  console.log('Navigating to:', item.path);
+                  navigate(item.path);
+                }}
               >
                 <Icon className="mr-3 h-4 w-4" />
                 {item.label}
@@ -88,10 +102,10 @@ const AppSidebar: React.FC = () => {
           <User className="h-8 w-8 bg-white/20 rounded-full p-1" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">
-              {user?.email?.split('@')[0] || 'User'}
+              {displayName}
             </p>
             <p className="text-xs text-white/70 truncate">
-              {user?.email}
+              {displayEmail}
             </p>
           </div>
         </div>
