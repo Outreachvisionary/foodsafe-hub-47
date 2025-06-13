@@ -1,8 +1,8 @@
 
 import React, { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
-import AppSidebar from './AppSidebar';
-import TopNav from './TopNav';
+import { AppSidebar } from './AppSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 interface SidebarLayoutProps {
   children?: ReactNode;
@@ -10,15 +10,14 @@ interface SidebarLayoutProps {
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <SidebarProvider>
       <AppSidebar />
-      <div className="flex flex-col flex-1 overflow-y-auto">
-        <TopNav />
-        <main className="flex-1 p-4 bg-background/80">
+      <SidebarInset>
+        <main className="flex flex-1 flex-col gap-4 p-4">
           {children || <Outlet />}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 
