@@ -34,11 +34,9 @@ export class CrudService {
     try {
       const { table, select = '*', orderBy, filters, limit, offset } = options;
       
-      let query = supabase
-        .from(table as any)
-        .select(select);
+      let query = supabase.from(table as any);
 
-      // Apply filters
+      // Apply filters first
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
@@ -66,7 +64,8 @@ export class CrudService {
         query = query.range(offset, offset + (limit || 10) - 1);
       }
 
-      const { data, error } = await query;
+      // Apply select last
+      const { data, error } = await query.select(select);
 
       if (error) {
         console.error(`Error fetching ${table}:`, error);
@@ -99,17 +98,11 @@ export class CrudService {
         updated_at: new Date().toISOString(),
       };
 
-      let query = supabase
+      const { data: result, error } = await supabase
         .from(table as any)
-        .insert(recordData);
-
-      if (options?.returning) {
-        query = query.select(options.returning);
-      } else {
-        query = query.select('*');
-      }
-
-      const { data: result, error } = await query.single();
+        .insert(recordData)
+        .select(options?.returning || '*')
+        .single();
 
       if (error) {
         console.error(`Error creating ${table}:`, error);
@@ -142,18 +135,12 @@ export class CrudService {
         updated_at: new Date().toISOString(),
       };
 
-      let query = supabase
+      const { data, error } = await supabase
         .from(table as any)
         .update(updateData)
-        .eq('id', id);
-
-      if (options?.returning) {
-        query = query.select(options.returning);
-      } else {
-        query = query.select('*');
-      }
-
-      const { data, error } = await query.single();
+        .eq('id', id)
+        .select(options?.returning || '*')
+        .single();
 
       if (error) {
         console.error(`Error updating ${table}:`, error);
@@ -249,21 +236,30 @@ export class CrudService {
       let query = supabase.from(table as any);
 
       if (upsert) {
-        query = query.upsert(recordsWithAudit, {
-          onConflict: conflictColumns.join(','),
-        });
+        const { data: result, error } = await query
+          .upsert(recordsWithAudit, {
+            onConflict: conflictColumns.join(','),
+          })
+          .select('*');
+
+        if (error) {
+          console.error(`Error importing to ${table}:`, error);
+          throw new Error(handleSupabaseError(error, `import to ${table}`));
+        }
+
+        return result || [];
       } else {
-        query = query.insert(recordsWithAudit);
+        const { data: result, error } = await query
+          .insert(recordsWithAudit)
+          .select('*');
+
+        if (error) {
+          console.error(`Error importing to ${table}:`, error);
+          throw new Error(handleSupabaseError(error, `import to ${table}`));
+        }
+
+        return result || [];
       }
-
-      const { data: result, error } = await query.select('*');
-
-      if (error) {
-        console.error(`Error importing to ${table}:`, error);
-        throw new Error(handleSupabaseError(error, `import to ${table}`));
-      }
-
-      return result || [];
     } catch (error) {
       console.error(`Failed to import to ${options.table}:`, error);
       throw error;
