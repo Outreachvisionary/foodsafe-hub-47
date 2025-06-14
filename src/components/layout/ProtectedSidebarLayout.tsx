@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import SidebarLayout from './SidebarLayout';
+import MainLayout from './MainLayout';
 import Loading from '@/components/Loading';
 
 interface ProtectedSidebarLayoutProps {
@@ -32,13 +32,13 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
     return <Navigate to="/auth" replace />;
   }
   
-  console.log('ProtectedSidebarLayout: Rendering sidebar layout for authenticated user');
+  console.log('ProtectedSidebarLayout: Rendering main layout for authenticated user');
   
-  // Show the sidebar layout with the children
+  // Show the main layout with the children
   return (
-    <SidebarLayout>
+    <MainLayout>
       {children}
-    </SidebarLayout>
+    </MainLayout>
   );
 };
 

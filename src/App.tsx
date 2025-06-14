@@ -90,7 +90,7 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   
-                  {/* Protected Routes with Sidebar Layout */}
+                  {/* Protected Routes - All use ProtectedSidebarLayout which includes MainLayout */}
                   <Route path="/dashboard" element={<ProtectedSidebarLayout><Dashboard /></ProtectedSidebarLayout>} />
                   
                   {/* Document Management */}
