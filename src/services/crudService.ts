@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError, getCurrentUserId } from '@/utils/supabaseHelpers';
 
@@ -34,9 +33,10 @@ export class CrudService {
     try {
       const { table, select = '*', orderBy, filters, limit, offset } = options;
       
-      let query = supabase.from(table as any);
+      // Start with select to get the proper FilterBuilder type
+      let query = supabase.from(table as any).select(select);
 
-      // Apply filters first
+      // Apply filters
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
@@ -64,8 +64,7 @@ export class CrudService {
         query = query.range(offset, offset + (limit || 10) - 1);
       }
 
-      // Apply select last
-      const { data, error } = await query.select(select);
+      const { data, error } = await query;
 
       if (error) {
         console.error(`Error fetching ${table}:`, error);
