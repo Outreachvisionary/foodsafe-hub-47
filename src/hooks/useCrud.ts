@@ -93,6 +93,34 @@ export const useCrud = (options: UseCrudOptions) => {
     }
   }, [table, handleSuccess, handleError]);
 
+  const bulkDelete = useCallback(async (ids: string[], hardDelete: boolean = false) => {
+    setLoading(true);
+    try {
+      const deletedCount = await CrudService.bulkDelete(table, ids, hardDelete);
+      handleSuccess('Bulk Delete', { count: deletedCount });
+      return deletedCount;
+    } catch (err) {
+      handleError('Bulk Delete', err);
+      return 0;
+    } finally {
+      setLoading(false);
+    }
+  }, [table, handleSuccess, handleError]);
+
+  const bulkUpdate = useCallback(async (updates: Array<{ id: string; data: any }>) => {
+    setLoading(true);
+    try {
+      const results = await CrudService.bulkUpdate(table, updates);
+      handleSuccess('Bulk Update', results);
+      return results;
+    } catch (err) {
+      handleError('Bulk Update', err);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [table, handleSuccess, handleError]);
+
   const exportRecords = useCallback(async (exportOptions?: Partial<ExportOptions>) => {
     setLoading(true);
     try {
@@ -138,6 +166,8 @@ export const useCrud = (options: UseCrudOptions) => {
     createRecord,
     updateRecord,
     deleteRecord,
+    bulkDelete,
+    bulkUpdate,
     exportRecords,
     importRecords,
   };

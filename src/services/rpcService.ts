@@ -30,7 +30,7 @@ export class RpcService {
         ...(userId && !params.user_id && { user_id: userId }),
       };
 
-      const { data, error } = await supabase.rpc(functionName, enhancedParams);
+      const { data, error } = await supabase.rpc(functionName as any, enhancedParams);
 
       if (error) {
         console.error(`RPC ${functionName} error:`, error);
@@ -38,7 +38,7 @@ export class RpcService {
       }
 
       console.log(`RPC ${functionName} success:`, data);
-      return data;
+      return data as T;
     } catch (error) {
       console.error(`Failed to call RPC ${functionName}:`, error);
       throw error;
@@ -58,6 +58,140 @@ export class RpcService {
   static async getUserPermissions(userId?: string): Promise<any> {
     return this.callFunction('get_user_permissions', {
       params: userId ? { user_id: userId } : {},
+    });
+  }
+
+  /**
+   * Get user roles
+   */
+  static async getUserRoles(userId?: string): Promise<any> {
+    return this.callFunction('get_user_roles', {
+      params: userId ? { _user_id: userId } : {},
+    });
+  }
+
+  /**
+   * Check if user has permission
+   */
+  static async hasPermission(
+    permission: string,
+    userId?: string,
+    orgId?: string,
+    facilityId?: string,
+    departmentId?: string
+  ): Promise<boolean> {
+    return this.callFunction('has_permission', {
+      params: {
+        _user_id: userId,
+        _permission: permission,
+        _org_id: orgId,
+        _facility_id: facilityId,
+        _department_id: departmentId,
+      },
+    });
+  }
+
+  /**
+   * Check if user has role
+   */
+  static async hasRole(
+    roleName: string,
+    userId?: string,
+    orgId?: string,
+    facilityId?: string,
+    departmentId?: string
+  ): Promise<boolean> {
+    return this.callFunction('has_role', {
+      params: {
+        _user_id: userId,
+        _role_name: roleName,
+        _org_id: orgId,
+        _facility_id: facilityId,
+        _department_id: departmentId,
+      },
+    });
+  }
+
+  /**
+   * Get facilities for user
+   */
+  static async getFacilities(organizationId?: string, onlyAssigned: boolean = false): Promise<any> {
+    return this.callFunction('get_facilities', {
+      params: {
+        p_organization_id: organizationId,
+        p_only_assigned: onlyAssigned,
+      },
+    });
+  }
+
+  /**
+   * Get facility standards
+   */
+  static async getFacilityStandards(facilityId: string): Promise<any> {
+    return this.callFunction('get_facility_standards', {
+      params: {
+        p_facility_id: facilityId,
+      },
+    });
+  }
+
+  /**
+   * Update non-conformance status
+   */
+  static async updateNCStatus(
+    ncId: string,
+    newStatus: string,
+    userId: string,
+    comment?: string,
+    prevStatus?: string
+  ): Promise<any> {
+    return this.callFunction('update_nc_status', {
+      params: {
+        nc_id: ncId,
+        new_status: newStatus,
+        user_id: userId,
+        comment: comment || '',
+        prev_status: prevStatus,
+      },
+    });
+  }
+
+  /**
+   * Find product components for traceability
+   */
+  static async findProductComponents(productBatchLot: string): Promise<any> {
+    return this.callFunction('find_product_components', {
+      params: {
+        product_batch_lot: productBatchLot,
+      },
+    });
+  }
+
+  /**
+   * Find affected products by component
+   */
+  static async findAffectedProductsByComponent(componentBatchLot: string): Promise<any> {
+    return this.callFunction('find_affected_products_by_component', {
+      params: {
+        component_batch_lot: componentBatchLot,
+      },
+    });
+  }
+
+  /**
+   * Get related items
+   */
+  static async getRelatedItems(
+    sourceId: string,
+    sourceType: string,
+    targetType: string
+  ): Promise<any> {
+    return this.callFunction('get_related_items', {
+      params: {
+        p_source_id: sourceId,
+        p_source_type: sourceType,
+        p_target_type: targetType,
+      },
     });
   }
 

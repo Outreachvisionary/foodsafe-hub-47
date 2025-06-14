@@ -35,7 +35,7 @@ export class CrudService {
       const { table, select = '*', orderBy, filters, limit, offset } = options;
       
       let query = supabase
-        .from(table)
+        .from(table as any)
         .select(select);
 
       // Apply filters
@@ -73,7 +73,7 @@ export class CrudService {
         throw new Error(handleSupabaseError(error, `fetch ${table}`));
       }
 
-      return data || [];
+      return (data as T[]) || [];
     } catch (error) {
       console.error(`Failed to fetch ${options.table}:`, error);
       throw error;
@@ -100,7 +100,7 @@ export class CrudService {
       };
 
       let query = supabase
-        .from(table)
+        .from(table as any)
         .insert(recordData);
 
       if (options?.returning) {
@@ -116,7 +116,7 @@ export class CrudService {
         throw new Error(handleSupabaseError(error, `create ${table}`));
       }
 
-      return result;
+      return result as T;
     } catch (error) {
       console.error(`Failed to create ${table}:`, error);
       throw error;
@@ -143,7 +143,7 @@ export class CrudService {
       };
 
       let query = supabase
-        .from(table)
+        .from(table as any)
         .update(updateData)
         .eq('id', id);
 
@@ -160,7 +160,7 @@ export class CrudService {
         throw new Error(handleSupabaseError(error, `update ${table}`));
       }
 
-      return data;
+      return data as T;
     } catch (error) {
       console.error(`Failed to update ${table}:`, error);
       throw error;
@@ -178,7 +178,7 @@ export class CrudService {
     try {
       if (hardDelete) {
         const { error } = await supabase
-          .from(table)
+          .from(table as any)
           .delete()
           .eq('id', id);
 
@@ -190,7 +190,7 @@ export class CrudService {
         // Soft delete
         const userId = await getCurrentUserId();
         const { error } = await supabase
-          .from(table)
+          .from(table as any)
           .update({
             status: 'deleted',
             deleted_at: new Date().toISOString(),
@@ -246,7 +246,7 @@ export class CrudService {
         updated_at: new Date().toISOString(),
       }));
 
-      let query = supabase.from(table);
+      let query = supabase.from(table as any);
 
       if (upsert) {
         query = query.upsert(recordsWithAudit, {
@@ -266,6 +266,72 @@ export class CrudService {
       return result || [];
     } catch (error) {
       console.error(`Failed to import to ${options.table}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk operations
+   */
+  static async bulkDelete(table: string, ids: string[], hardDelete: boolean = false): Promise<number> {
+    try {
+      if (hardDelete) {
+        const { error, count } = await supabase
+          .from(table as any)
+          .delete({ count: 'exact' })
+          .in('id', ids);
+
+        if (error) throw error;
+        return count || 0;
+      } else {
+        const userId = await getCurrentUserId();
+        const { error, count } = await supabase
+          .from(table as any)
+          .update({
+            status: 'deleted',
+            deleted_at: new Date().toISOString(),
+            ...(userId && { deleted_by: userId }),
+          }, { count: 'exact' })
+          .in('id', ids);
+
+        if (error) throw error;
+        return count || 0;
+      }
+    } catch (error) {
+      console.error(`Failed to bulk delete from ${table}:`, error);
+      throw error;
+    }
+  }
+
+  static async bulkUpdate<T>(
+    table: string, 
+    updates: Array<{ id: string; data: Partial<T> }>
+  ): Promise<any[]> {
+    try {
+      const userId = await getCurrentUserId();
+      const results = [];
+
+      for (const update of updates) {
+        const updateData = {
+          ...update.data,
+          ...(userId && { updated_by: userId }),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+          .from(table as any)
+          .update(updateData)
+          .eq('id', update.id)
+          .select('*')
+          .single();
+
+        if (error) throw error;
+        results.push(data);
+      }
+
+      return results;
+    } catch (error) {
+      console.error(`Failed to bulk update ${table}:`, error);
       throw error;
     }
   }
