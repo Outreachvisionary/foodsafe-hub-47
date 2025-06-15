@@ -3,11 +3,17 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import DashboardHeader from '@/components/DashboardHeader';
+import Loading from '@/components/Loading';
 
 const Dashboard: React.FC = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAuthenticated } = useAuth();
   
-  console.log('Dashboard render:', { hasUser: !!user, hasProfile: !!profile, loading });
+  console.log('Dashboard render:', { 
+    hasUser: !!user, 
+    hasProfile: !!profile, 
+    loading, 
+    isAuthenticated 
+  });
   
   const getUserDisplayName = () => {
     if (!user) return 'Guest';
@@ -17,14 +23,12 @@ const Dashboard: React.FC = () => {
 
   // Show loading if still fetching auth state
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="Loading dashboard..." size="md" fullScreen={false} />;
+  }
+
+  // Additional safety check - this should be handled by ProtectedSidebarLayout
+  if (!isAuthenticated) {
+    return <Loading message="Redirecting to authentication..." size="md" fullScreen={false} />;
   }
 
   return (

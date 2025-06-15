@@ -63,11 +63,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle cases where profile doesn't exist
 
       if (error) {
         console.error('Error fetching profile:', error);
-        return null;
+        // If profile doesn't exist, create a basic one
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, will use basic user data');
+          return null;
+        }
+        throw error;
       }
       
       console.log('Profile fetched successfully:', data);
@@ -98,6 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       console.log('Attempting to sign in user:', email);
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -116,6 +122,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign in error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to sign in');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,6 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, userData?: Partial<UserProfile>): Promise<void> => {
     try {
       console.log('Attempting to sign up user:', email);
+      setLoading(true);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -143,6 +152,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign up error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create account');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -150,6 +161,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async (): Promise<void> => {
     try {
       console.log('Attempting to sign out');
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
@@ -166,6 +178,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign out error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to sign out');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -226,13 +240,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         console.log('Initializing auth...');
-        setLoading(true);
         
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
+          if (mounted) {
+            setLoading(false);
+            setInitialized(true);
+          }
           return;
         }
         
@@ -249,9 +266,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userProfile = await fetchProfile(session.user.id);
             if (mounted) {
               setProfile(userProfile);
+              console.log('Profile loading completed');
             }
           } catch (error) {
             console.error('Error fetching initial profile:', error);
+            if (mounted) {
+              setProfile(null);
+            }
           }
         } else {
           setSession(null);
@@ -276,8 +297,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         console.log('Auth state changed:', event, session ? 'Session active' : 'No session');
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Don't set loading here if already initialized
+        if (initialized && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') {
+          setSession(session);
+          setUser(session?.user ?? null);
+        } else {
+          setLoading(true);
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
         
         if (session?.user) {
           // Fetch profile for authenticated user
@@ -285,6 +313,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userProfile = await fetchProfile(session.user.id);
             if (mounted) {
               setProfile(userProfile);
+              console.log('Profile updated from auth state change');
             }
           } catch (error) {
             console.error('Error fetching profile during auth change:', error);
@@ -299,7 +328,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         // Set loading to false after auth state change is processed
-        if (mounted && initialized) {
+        if (mounted) {
           setLoading(false);
         }
       }
@@ -312,7 +341,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   const value: AuthContextType = {
     user,
