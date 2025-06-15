@@ -2,249 +2,210 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, RefreshCcw, Filter } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { NonConformance as NCType } from '@/types/non-conformance';
-import { useNonConformances } from '@/hooks/useNonConformances';
-import NCList from '@/components/non-conformance/NCList';
+import { Input } from '@/components/ui/input';
+import { Plus, RefreshCcw, Search, AlertTriangle, Clock, CheckCircle2, XCircle, TrendingUp, Eye } from 'lucide-react';
 import NCDashboard from '@/components/non-conformance/NCDashboard';
-import NCDetailsForm from '@/components/non-conformance/NCDetailsForm';
-import SidebarLayout from '@/components/layout/SidebarLayout';
+import NCList from '@/components/non-conformance/NCList';
+import NCRecentItems from '@/components/non-conformance/NCRecentItems';
 
 const NonConformance: React.FC = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedNC, setSelectedNC] = useState<NCType | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const {
-    nonConformances,
-    isLoading: loading,
-    error,
-    refresh: fetchNonConformances,
-  } = useNonConformances();
-
-  // Mock functions for create and update - replace with actual implementations
-  const createNonConformance = async (ncData: Omit<NCType, 'id'>) => {
-    console.log('Creating NC:', ncData);
-    // Implement actual create logic here
+  // Mock stats - in real app these would come from service
+  const ncStats = {
+    total: 89,
+    open: 34,
+    underReview: 21,
+    resolved: 34,
+    overdue: 12
   };
 
-  const updateNonConformance = async (id: string, ncData: Partial<NCType>) => {
-    console.log('Updating NC:', id, ncData);
-    // Implement actual update logic here
+  const getTabCounts = () => {
+    return {
+      all: ncStats.total,
+      open: ncStats.open,
+      review: ncStats.underReview,
+      resolved: ncStats.resolved,
+      overdue: ncStats.overdue,
+      dashboard: 0
+    };
   };
 
-  useEffect(() => {
-    fetchNonConformances();
-  }, []);
-
-  useEffect(() => {
-    if (id) {
-      const nc = nonConformances?.find((nc) => nc.id === id);
-      setSelectedNC(nc || null);
-    } else {
-      setSelectedNC(null);
-    }
-  }, [id, nonConformances]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const filteredNonConformances = nonConformances?.filter((nc) => {
-    const searchStr = `${nc.title} ${nc.description} ${nc.id}`.toLowerCase();
-    return searchStr.includes(searchQuery.toLowerCase());
-  });
-
-  const handleCreate = async (ncData: Omit<NCType, 'id'>) => {
-    try {
-      await createNonConformance(ncData);
-      setShowCreateForm(false);
-      fetchNonConformances();
-    } catch (err) {
-      console.error('Error creating non-conformance:', err);
-    }
-  };
-
-  const handleUpdate = async (id: string, ncData: Partial<NCType>) => {
-    try {
-      await updateNonConformance(id, ncData);
-      fetchNonConformances();
-      setSelectedNC(prev => prev ? { ...prev, ...ncData } : null);
-    } catch (err) {
-      console.error('Error updating non-conformance:', err);
-    }
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
-
-  const handleItemClick = (nc: NCType) => {
-    navigate(`/non-conformance/${nc.id}`);
-  };
-
-  // Create a default NC object for the create form
-  const createDefaultNC = (): NCType => ({
-    id: '',
-    title: '',
-    description: '',
-    item_name: '',
-    item_category: 'Other',
-    reason_category: 'Other',
-    status: 'Draft',
-    reported_date: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    created_by: 'current-user',
-    priority: 'Medium',
-    risk_level: 'Low'
-  });
+  const tabCounts = getTabCounts();
 
   return (
-    <SidebarLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Non-Conformance Management</h1>
-            <p className="text-muted-foreground mt-1">
-              Track and manage non-conforming events
+    <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 via-red-50 to-orange-50 min-h-screen">
+      {/* Enhanced Header */}
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="space-y-3">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 bg-clip-text text-transparent">
+              Non-Conformance Management
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl">
+              Track and manage non-conformances with comprehensive workflows and corrective actions
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-3">
             <Button 
-              variant="outline" 
-              onClick={() => fetchNonConformances()}
+              variant="outline"
+              className="shadow-lg hover:shadow-xl transition-all duration-300 border-red-200 hover:border-red-300 hover:bg-red-50"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
-              Refresh
+              Refresh Data
             </Button>
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button 
+              className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-700 hover:via-orange-700 hover:to-amber-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white border-0"
+            >
               <Plus className="h-4 w-4 mr-2" />
-              Create NC
+              Report Non-Conformance
             </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="all">All Non-Conformances</TabsTrigger>
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              {id && <TabsTrigger value="details">Details</TabsTrigger>}
-            </TabsList>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search NCs..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
+        {/* Enhanced Quick Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white transform hover:scale-105 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-red-100 text-sm font-medium uppercase tracking-wide">Total NCs</p>
+                  <p className="text-3xl font-bold">{ncStats.total}</p>
+                  <p className="text-red-200 text-xs">All items</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-full">
+                  <AlertTriangle className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white transform hover:scale-105 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-orange-100 text-sm font-medium uppercase tracking-wide">Open Items</p>
+                  <p className="text-3xl font-bold">{ncStats.open}</p>
+                  <p className="text-orange-200 text-xs">Need attention</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-full">
+                  <XCircle className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500 to-yellow-500 text-white transform hover:scale-105 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-amber-100 text-sm font-medium uppercase tracking-wide">Under Review</p>
+                  <p className="text-3xl font-bold">{ncStats.underReview}</p>
+                  <p className="text-amber-200 text-xs">Being investigated</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-full">
+                  <Eye className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white transform hover:scale-105 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-green-100 text-sm font-medium uppercase tracking-wide">Resolved</p>
+                  <p className="text-3xl font-bold">{ncStats.resolved}</p>
+                  <p className="text-green-200 text-xs">Successfully closed</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-full">
+                  <CheckCircle2 className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Enhanced Tabs */}
+      <div className="bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-red-50 px-6 py-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <TabsList className="grid w-full lg:w-auto grid-cols-3 lg:grid-cols-6 bg-white/70 backdrop-blur-sm shadow-md border border-gray-200/50">
+                <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-200">
+                  All ({tabCounts.all})
+                </TabsTrigger>
+                <TabsTrigger value="open" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white transition-all duration-200">
+                  Open ({tabCounts.open})
+                </TabsTrigger>
+                <TabsTrigger value="review" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white transition-all duration-200">
+                  Review ({tabCounts.review})
+                </TabsTrigger>
+                <TabsTrigger value="resolved" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all duration-200">
+                  Resolved ({tabCounts.resolved})
+                </TabsTrigger>
+                <TabsTrigger value="overdue" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-200">
+                  Overdue ({tabCounts.overdue})
+                </TabsTrigger>
+                <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white transition-all duration-200">
+                  Dashboard
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Enhanced Search */}
+              <div className="relative w-full lg:w-96">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  placeholder="Search non-conformances by ID, description, or category..."
+                  className="pl-12 pr-4 py-3 shadow-lg border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-400/20 bg-white/80 backdrop-blur-sm transition-all duration-200"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          <TabsContent value="all" className="space-y-4">
-            <NCList
-              onItemClick={handleItemClick}
-              onCreateNew={() => setShowCreateForm(true)}
-            />
-          </TabsContent>
+          <div className="p-6">
+            <TabsContent value="dashboard" className="mt-0">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-orange-50">
+                <CardHeader className="bg-gradient-to-r from-red-100 to-orange-100 border-b border-red-200/50">
+                  <CardTitle className="text-xl text-red-800 flex items-center gap-3">
+                    <div className="p-2 bg-red-500 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-white" />
+                    </div>
+                    Non-Conformance Analytics Dashboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <NCDashboard />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="dashboard">
-            <NCDashboard 
-              stats={{
-                total: nonConformances?.length || 0,
-                byStatus: {},
-                byCategory: {},
-                byReasonCategory: {},
-                byRiskLevel: {},
-                overdue: 0,
-                pendingReview: 0,
-                recentlyResolved: 0
-              }}
-              onCreateNew={() => setShowCreateForm(true)}
-            />
-          </TabsContent>
-
-          {id && (
-            <TabsContent value="details">
-              {selectedNC ? (
-                <NCDetailsForm
-                  data={selectedNC}
-                  onSave={async (updatedData) => {
-                    await handleUpdate(selectedNC.id, updatedData);
-                  }}
-                />
-              ) : (
-                <Card>
-                  <CardContent>
-                    <p>Loading non-conformance details...</p>
+            {['all', 'open', 'review', 'resolved', 'overdue'].map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-0">
+                <Card className="border-0 shadow-lg bg-white">
+                  <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200/50">
+                    <CardTitle className="text-lg text-red-800 flex items-center gap-3">
+                      <div className="p-2 bg-red-500 rounded-lg">
+                        <AlertTriangle className="h-5 w-5 text-white" />
+                      </div>
+                      Non-Conformance List ({tabCounts[tab as keyof typeof tabCounts]} items)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <NCList />
                   </CardContent>
                 </Card>
-              )}
-            </TabsContent>
-          )}
-        </Tabs>
-
-        {showCreateForm && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-            <Card className="max-w-2xl w-full">
-              <CardHeader>
-                <CardTitle>Create Non-Conformance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <NCDetailsForm 
-                  data={createDefaultNC()}
-                  onSave={async (ncData) => {
-                    // Convert the form data to the required type by ensuring required properties
-                    const createData: Omit<NCType, 'id'> = {
-                      title: ncData.title || '',
-                      description: ncData.description || '',
-                      item_name: ncData.item_name || '',
-                      item_category: ncData.item_category || 'Other',
-                      reason_category: ncData.reason_category || 'Other',
-                      status: ncData.status || 'Draft',
-                      reported_date: ncData.reported_date || new Date().toISOString(),
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
-                      created_by: ncData.created_by || 'current-user',
-                      priority: ncData.priority || 'Medium',
-                      risk_level: ncData.risk_level || 'Low',
-                      assigned_to: ncData.assigned_to,
-                      department: ncData.department,
-                      location: ncData.location,
-                      quantity: ncData.quantity,
-                      quantity_on_hold: ncData.quantity_on_hold,
-                      tags: ncData.tags,
-                      units: ncData.units,
-                      reason_details: ncData.reason_details,
-                      reviewer: ncData.reviewer,
-                      resolution_details: ncData.resolution_details,
-                      capa_id: ncData.capa_id,
-                      review_date: ncData.review_date,
-                      resolution_date: ncData.resolution_date
-                    };
-                    await handleCreate(createData);
-                  }}
-                />
-              </CardContent>
-              <div className="flex justify-end p-4">
-                <Button variant="secondary" onClick={() => setShowCreateForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </Card>
+              </TabsContent>
+            ))}
           </div>
-        )}
+        </Tabs>
       </div>
-    </SidebarLayout>
+    </div>
   );
 };
 
