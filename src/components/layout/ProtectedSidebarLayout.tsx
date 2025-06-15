@@ -20,7 +20,7 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
     userId: user?.id 
   });
   
-  // Show loading indicator while checking authentication
+  // Show loading indicator while checking authentication - but with timeout
   if (loading) {
     console.log('ProtectedSidebarLayout: Showing loading state');
     return <Loading message="Checking authentication..." />;

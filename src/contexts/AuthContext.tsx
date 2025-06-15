@@ -63,16 +63,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle to handle cases where profile doesn't exist
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        // If profile doesn't exist, create a basic one
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found, will use basic user data');
-          return null;
-        }
-        throw error;
+        // Don't throw error for missing profile, just return null
+        return null;
       }
       
       console.log('Profile fetched successfully:', data);
@@ -236,6 +232,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize auth state and set up listener
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
@@ -261,9 +258,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(session.user);
           
-          // Fetch profile
+          // Fetch profile with timeout to prevent hanging
           try {
-            const userProfile = await fetchProfile(session.user.id);
+            const profilePromise = fetchProfile(session.user.id);
+            const timeoutPromise = new Promise<UserProfile | null>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Profile fetch timeout')), 10000);
+            });
+            
+            const userProfile = await Promise.race([profilePromise, timeoutPromise]);
+            clearTimeout(timeoutId);
+            
             if (mounted) {
               setProfile(userProfile);
               console.log('Profile loading completed');
@@ -297,20 +301,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         console.log('Auth state changed:', event, session ? 'Session active' : 'No session');
         
-        // Don't set loading here if already initialized
-        if (initialized && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') {
-          setSession(session);
-          setUser(session?.user ?? null);
-        } else {
-          setLoading(true);
-          setSession(session);
-          setUser(session?.user ?? null);
+        // Clear any existing timeouts
+        if (timeoutId) {
+          clearTimeout(timeoutId);
         }
         
+        setSession(session);
+        setUser(session?.user ?? null);
+        
         if (session?.user) {
-          // Fetch profile for authenticated user
+          // Fetch profile for authenticated user with timeout
           try {
-            const userProfile = await fetchProfile(session.user.id);
+            const profilePromise = fetchProfile(session.user.id);
+            const timeoutPromise = new Promise<UserProfile | null>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Profile fetch timeout')), 10000);
+            });
+            
+            const userProfile = await Promise.race([profilePromise, timeoutPromise]);
+            clearTimeout(timeoutId);
+            
             if (mounted) {
               setProfile(userProfile);
               console.log('Profile updated from auth state change');
@@ -328,7 +337,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         // Set loading to false after auth state change is processed
-        if (mounted) {
+        if (mounted && initialized) {
           setLoading(false);
         }
       }
@@ -339,9 +348,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       console.log('Cleaning up auth context');
       mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       subscription.unsubscribe();
     };
-  }, [initialized]);
+  }, []);
 
   const value: AuthContextType = {
     user,
