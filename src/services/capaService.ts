@@ -11,7 +11,8 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     if (filter) {
       if (filter.status) {
         const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-        const statusStrings = statuses.map(s => capaStatusToString(s));
+        // Convert enum values to strings that match database values
+        const statusStrings = statuses.map(s => capaStatusToString(s)) as ("Open" | "In Progress" | "Pending Verification" | "Closed")[];
         query = query.in('status', statusStrings);
       }
       
