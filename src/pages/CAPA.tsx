@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Filter, Search, RefreshCcw } from 'lucide-react';
+import { Plus, RefreshCcw, Search } from 'lucide-react';
 import { CAPA as CAPAType, CAPAStats, CAPAFilter } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import CAPADashboard from '@/components/capa/CAPADashboard';
@@ -15,6 +15,7 @@ import CreateCAPADialog from '@/components/capa/CreateCAPADialog';
 import AutomatedCAPAGenerator from '@/components/capa/AutomatedCAPAGenerator';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { getCAPAs, getCAPAStats } from '@/services/capaService';
+import { toast } from 'sonner';
 
 const CAPA: React.FC = () => {
   const navigate = useNavigate();
@@ -54,45 +55,45 @@ const CAPA: React.FC = () => {
     searchTerm: ''
   });
 
-  // Fetch CAPAs on component mount
   useEffect(() => {
     fetchCAPAs();
     fetchStats();
   }, []);
 
-  // Apply filters whenever filters or capas change
   useEffect(() => {
     applyFilters();
   }, [filters, searchQuery, capas, activeTab]);
 
-  // Fetch CAPAs from the API
   const fetchCAPAs = async () => {
     setLoading(true);
     setError(null);
     
     try {
+      console.log('Fetching CAPAs...');
       const fetchedCAPAs = await getCAPAs();
-      
+      console.log('Fetched CAPAs:', fetchedCAPAs.length);
       setCAPAs(fetchedCAPAs);
     } catch (err) {
       console.error('Error fetching CAPAs:', err);
       setError('Failed to load CAPAs. Please try again.');
+      toast.error('Failed to load CAPAs');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch CAPA stats
   const fetchStats = async () => {
     try {
+      console.log('Fetching CAPA stats...');
       const stats = await getCAPAStats();
+      console.log('Fetched stats:', stats);
       setCAPAStats(stats);
     } catch (err) {
       console.error('Error fetching CAPA stats:', err);
+      toast.error('Failed to load CAPA statistics');
     }
   };
 
-  // Apply filters to capas
   const applyFilters = () => {
     let filtered = [...capas];
 
@@ -111,7 +112,11 @@ const CAPA: React.FC = () => {
           );
           break;
         case 'overdue':
-          filtered = filtered.filter(capa => capa.status === CAPAStatus.Pending_Verification);
+          filtered = filtered.filter(capa => {
+            const dueDate = new Date(capa.due_date);
+            const now = new Date();
+            return dueDate < now && capa.status !== CAPAStatus.Closed;
+          });
           break;
       }
     }
@@ -169,9 +174,12 @@ const CAPA: React.FC = () => {
     setFilteredCAPAs(filtered);
   };
 
-  const handleCreateCAPA = (capaData: any) => {
+  const handleCreateCAPA = async (capaData: any) => {
     console.log('CAPA created:', capaData);
-    fetchCAPAs(); // Refresh the list after creation
+    toast.success('CAPA created successfully');
+    await fetchCAPAs();
+    await fetchStats();
+    setShowCreateDialog(false);
   };
 
   const handleCAPAClick = (capa: CAPAType) => {
@@ -181,6 +189,22 @@ const CAPA: React.FC = () => {
   const handleFilterChange = (newFilters: Partial<CAPAFilter>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
+
+  const getTabCounts = () => {
+    return {
+      all: capas.length,
+      open: capas.filter(c => c.status === CAPAStatus.Open).length,
+      inProgress: capas.filter(c => c.status === CAPAStatus.In_Progress).length,
+      completed: capas.filter(c => c.status === CAPAStatus.Closed).length,
+      overdue: capas.filter(c => {
+        const dueDate = new Date(c.due_date);
+        const now = new Date();
+        return dueDate < now && c.status !== CAPAStatus.Closed;
+      }).length
+    };
+  };
+
+  const tabCounts = getTabCounts();
 
   return (
     <SidebarLayout>
@@ -195,7 +219,11 @@ const CAPA: React.FC = () => {
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={() => fetchCAPAs()}
+              onClick={() => {
+                fetchCAPAs();
+                fetchStats();
+              }}
+              disabled={loading}
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
               Refresh
@@ -210,13 +238,27 @@ const CAPA: React.FC = () => {
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex justify-between items-center">
             <TabsList>
-              <TabsTrigger value="all">All CAPAs</TabsTrigger>
-              <TabsTrigger value="open">Open</TabsTrigger>
-              <TabsTrigger value="inProgress">In Progress</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-              <TabsTrigger value="automated">Automated CAPA</TabsTrigger>
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="all">
+                All CAPAs ({tabCounts.all})
+              </TabsTrigger>
+              <TabsTrigger value="open">
+                Open ({tabCounts.open})
+              </TabsTrigger>
+              <TabsTrigger value="inProgress">
+                In Progress ({tabCounts.inProgress})
+              </TabsTrigger>
+              <TabsTrigger value="completed">
+                Completed ({tabCounts.completed})
+              </TabsTrigger>
+              <TabsTrigger value="overdue">
+                Overdue ({tabCounts.overdue})
+              </TabsTrigger>
+              <TabsTrigger value="automated">
+                Automated CAPA
+              </TabsTrigger>
+              <TabsTrigger value="dashboard">
+                Dashboard
+              </TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
               <div className="relative w-64">

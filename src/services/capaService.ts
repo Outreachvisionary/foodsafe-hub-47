@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStats, CAPAFilter, UpdateCAPARequest } from '@/types/capa';
 import { CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
@@ -11,7 +12,7 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     if (filter) {
       if (filter.status) {
         const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-        const statusStrings = statuses.map(s => capaStatusToString(s)) as ("Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification")[];
+        const statusStrings = statuses.map(s => capaStatusToString(s));
         query = query.in('status', statusStrings);
       }
       
@@ -41,7 +42,6 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     
     console.log('Fetched CAPAs:', data?.length || 0);
     
-    // If no data, return empty array but don't throw error
     if (!data || data.length === 0) {
       console.log('No CAPAs found in database');
       return [];
@@ -75,7 +75,6 @@ export const getCAPAs = async (filter?: CAPAFilter): Promise<CAPA[]> => {
     }));
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
-    // Return empty array instead of throwing to prevent infinite loading
     return [];
   }
 };
@@ -125,7 +124,6 @@ export const getCAPA = async (id: string): Promise<CAPA | null> => {
 
 export const updateCAPA = async (id: string, updates: Partial<UpdateCAPARequest>): Promise<CAPA> => {
   try {
-    // Convert enum values to strings for database
     const dbUpdates: any = {
       ...updates,
       updated_at: new Date().toISOString()
@@ -232,35 +230,30 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
     const overdueCount = overdue;
     const pendingVerificationCount = capas.filter(c => c.status === 'Pending Verification').length;
     
-    // Count by priority
     const byPriority = capas.reduce((acc, capa) => {
       const priority = stringToCAPAPriority(capa.priority);
       acc[priority] = (acc[priority] || 0) + 1;
       return acc;
     }, {} as Record<CAPAPriority, number>);
     
-    // Count by source
     const bySource = capas.reduce((acc, capa) => {
       const source = stringToCAPASource(capa.source);
       acc[source] = (acc[source] || 0) + 1;
       return acc;
     }, {} as Record<CAPASource, number>);
     
-    // Count by status
     const byStatus = capas.reduce((acc, capa) => {
       const status = stringToCAPAStatus(capa.status);
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<CAPAStatus, number>);
     
-    // Count by department
     const byDepartment = capas.reduce((acc, capa) => {
       const dept = capa.department || 'Unassigned';
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     
-    // Get recent activities
     const { data: activities } = await supabase
       .from('capa_activities')
       .select('*')
@@ -316,5 +309,56 @@ export const getCAPAStats = async (): Promise<CAPAStats> => {
       upcomingDueDates: [],
       recentActivities: []
     };
+  }
+};
+
+export const createCAPA = async (capaData: any): Promise<CAPA> => {
+  try {
+    const dbData = {
+      ...capaData,
+      status: capaStatusToString(capaData.status || CAPAStatus.Open),
+      priority: capaPriorityToString(capaData.priority),
+      source: capaSourceToString(capaData.source),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('capa_actions')
+      .insert([dbData])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      root_cause: data.root_cause,
+      corrective_action: data.corrective_action,
+      preventive_action: data.preventive_action,
+      priority: stringToCAPAPriority(data.priority),
+      status: stringToCAPAStatus(data.status),
+      assigned_to: data.assigned_to,
+      created_by: data.created_by,
+      source: stringToCAPASource(data.source),
+      source_id: data.source_id,
+      due_date: data.due_date,
+      completion_date: data.completion_date,
+      verification_date: data.verification_date,
+      effectiveness_criteria: data.effectiveness_criteria,
+      effectiveness_verified: data.effectiveness_verified,
+      effectiveness_rating: data.effectiveness_rating ? stringToEffectivenessRating(data.effectiveness_rating) : undefined,
+      department: data.department,
+      verification_method: data.verification_method,
+      verified_by: data.verified_by,
+      fsma204_compliant: data.fsma204_compliant,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  } catch (error) {
+    console.error('Error creating CAPA:', error);
+    throw error;
   }
 };
