@@ -48,6 +48,30 @@ interface DocumentProviderProps {
   children: ReactNode;
 }
 
+// Helper function to convert status for database operations
+const convertStatusForDatabase = (status: string): string => {
+  switch (status) {
+    case 'Pending_Review':
+      return 'Pending Approval'; // Map to available database status
+    case 'Pending_Approval':
+      return 'Pending Approval';
+    case 'Rejected':
+      return 'Draft'; // Map rejected to draft since it's not in database
+    default:
+      return status;
+  }
+};
+
+// Helper function to convert checkout status for database
+const convertCheckoutStatusForDatabase = (status: string): string => {
+  switch (status) {
+    case 'Checked_Out':
+      return 'Checked_Out';
+    default:
+      return 'Available';
+  }
+};
+
 export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -130,8 +154,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         file_type: data.file_type || '',
         file_size: data.file_size || 0,
         category: data.category || 'Other',
-        status: data.status || 'Draft',
-        checkout_status: data.checkout_status || 'Available',
+        status: convertStatusForDatabase(data.status || 'Draft'),
+        checkout_status: convertCheckoutStatusForDatabase(data.checkout_status || 'Available'),
         version: data.version || 1,
         created_by: user.id,
         created_at: new Date().toISOString(),
@@ -168,7 +192,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Document> }) => {
       const updateData = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Convert status if it exists in the updates
+        ...(updates.status && { status: convertStatusForDatabase(updates.status) }),
+        ...(updates.checkout_status && { checkout_status: convertCheckoutStatusForDatabase(updates.checkout_status) })
       };
 
       const { data, error } = await supabase
@@ -295,7 +322,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const approveDocumentMutation = useMutation({
     mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
       const updates = {
-        status: 'Approved' as const,
+        status: 'Approved',
         workflow_status: 'approved',
         pending_since: null
       };
@@ -323,7 +350,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const rejectDocumentMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const updates = {
-        status: 'Draft' as const,
+        status: 'Draft', // Map rejection to Draft since Rejected is not in database
         workflow_status: 'rejected',
         rejection_reason: reason,
         pending_since: null
@@ -410,10 +437,13 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     deleteFolder: deleteFolderMutation.mutateAsync,
     
     refresh: async () => {
-      await Promise.all([refetchDocuments(), refetchFolders()]);
+      await Promise.all([
+        refetchDocuments().then(() => {}),
+        refetchFolders().then(() => {})
+      ]);
     },
     refreshDocuments: async () => {
-      await refetchDocuments();
+      await refetchDocuments().then(() => {});
     },
     searchDocuments: (query: string) => {
       return documents.filter(doc =>

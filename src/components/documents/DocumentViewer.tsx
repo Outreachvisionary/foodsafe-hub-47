@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
 import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
+import { CheckoutStatus as EnumCheckoutStatus } from '@/types/enums';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -191,6 +191,17 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     }
   };
 
+  const convertCheckoutStatus = (status: CheckoutStatus): EnumCheckoutStatus => {
+    switch (status) {
+      case 'Available':
+        return EnumCheckoutStatus.Available;
+      case 'Checked_Out':
+        return EnumCheckoutStatus.Checked_Out;
+      default:
+        return EnumCheckoutStatus.Available;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row items-start gap-4">
@@ -269,7 +280,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={document.checkout_status || 'Available'}
+                  status={convertCheckoutStatus(document.checkout_status || 'Available')}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
