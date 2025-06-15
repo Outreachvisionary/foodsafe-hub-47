@@ -1,12 +1,12 @@
 
 import { CAPAStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating, NCStatus, TrainingStatus } from '@/types/enums';
 
-export const formatEnumValue = (value: string | CAPAStatus | CAPAPriority | CAPASource): string => {
+export const formatEnumValue = (value: string | CAPAStatus | CAPAPriority | CAPASource | NCStatus | TrainingStatus): string => {
   if (typeof value === 'string') {
     return value.replace(/_/g, ' ');
   }
   
-  return value.replace(/_/g, ' ');
+  return String(value).replace(/_/g, ' ');
 };
 
 export const isStringStatusEqual = (status1: string | CAPAStatus, status2: string | CAPAStatus): boolean => {
@@ -14,7 +14,7 @@ export const isStringStatusEqual = (status1: string | CAPAStatus, status2: strin
     if (typeof status === 'string') {
       return status.toLowerCase().replace(/\s+/g, '_');
     }
-    return status.toLowerCase();
+    return String(status).toLowerCase();
   };
   
   return normalize(status1) === normalize(status2);
@@ -146,8 +146,8 @@ export const stringToTrainingStatus = (status: string): TrainingStatus => {
       return TrainingStatus.In_Progress;
     case 'Completed':
       return TrainingStatus.Completed;
-    case 'Overdue':
-      return TrainingStatus.Overdue;
+    case 'Expired':
+      return TrainingStatus.Expired;
     case 'Cancelled':
       return TrainingStatus.Cancelled;
     default:
@@ -163,8 +163,8 @@ export const trainingStatusToString = (status: TrainingStatus): string => {
       return 'In Progress';
     case TrainingStatus.Completed:
       return 'Completed';
-    case TrainingStatus.Overdue:
-      return 'Overdue';
+    case TrainingStatus.Expired:
+      return 'Expired';
     case TrainingStatus.Cancelled:
       return 'Cancelled';
     default:

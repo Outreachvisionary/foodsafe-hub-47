@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA, CAPAStats, CAPAFilter, UpdateCAPARequest } from '@/types/capa';
 import { CAPAStatus, CAPASource, CAPAPriority } from '@/types/enums';
