@@ -25,7 +25,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<DocumentCategory>('Other');
+  const [category, setCategory] = useState<DocumentCategory>(DocumentCategory.Other);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
@@ -50,7 +50,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     
     try {
       // Determine initial status based on approval requirement
-      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Review' : 'Draft';
+      const initialStatus: DocumentStatus = requiresApproval ? DocumentStatus.Pending_Review : DocumentStatus.Draft;
       
       // Create document with proper integration
       const newDoc = {
@@ -90,7 +90,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCategory('Other');
+    setCategory(DocumentCategory.Other);
     setSelectedFile(null);
     setRequiresApproval(false);
     setExpiryDate('');

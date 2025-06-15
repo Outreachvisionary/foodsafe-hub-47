@@ -45,7 +45,7 @@ const Documents: React.FC = () => {
 
       const stats = {
         totalDocuments: documents.length,
-        pendingReview: documents.filter(doc => doc.status === 'Pending_Review').length,
+        pendingReview: documents.filter(doc => doc.status === DocumentStatus.Pending_Review).length,
         expiringSoon: documents.filter(doc => 
           doc.expiry_date && new Date(doc.expiry_date) <= thirtyDaysFromNow
         ).length,
@@ -257,7 +257,7 @@ const Documents: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-8">
                   <ReviewQueue 
-                    documents={documents.filter(doc => doc.status === 'Pending_Review')}
+                    documents={documents.filter(doc => doc.status === DocumentStatus.Pending_Review)}
                     isLoading={isLoading}
                   />
                 </CardContent>

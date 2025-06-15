@@ -20,7 +20,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import DocumentGrid from './DocumentGrid';
 import DocumentList from './DocumentList';
 import { Document } from '@/types/document';
-import { DocumentCategory, DocumentStatus } from '@/types/enums';
+import { DocumentCategory, DocumentStatus, CheckoutStatus } from '@/types/enums';
 
 interface DocumentRepositoryProps {
   searchQuery?: string;
@@ -104,11 +104,14 @@ const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const handleDocumentCheckout = async (documentId: string) => {
     try {
-      await updateDocument(documentId, {
-        checkout_status: 'Checked_Out',
-        checkout_user_name: 'Current User', // TODO: Get from auth context
-        checkout_timestamp: new Date().toISOString(),
-        is_locked: true
+      await updateDocument({
+        id: documentId,
+        updates: {
+          checkout_status: CheckoutStatus.Checked_Out,
+          checkout_user_name: 'Current User', // TODO: Get from auth context
+          checkout_timestamp: new Date().toISOString(),
+          is_locked: true
+        }
       });
     } catch (error) {
       console.error('Error checking out document:', error);
@@ -117,11 +120,14 @@ const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const handleDocumentCheckin = async (documentId: string) => {
     try {
-      await updateDocument(documentId, {
-        checkout_status: 'Available',
-        checkout_user_name: undefined,
-        checkout_timestamp: undefined,
-        is_locked: false
+      await updateDocument({
+        id: documentId,
+        updates: {
+          checkout_status: CheckoutStatus.Available,
+          checkout_user_name: undefined,
+          checkout_timestamp: undefined,
+          is_locked: false
+        }
       });
     } catch (error) {
       console.error('Error checking in document:', error);
