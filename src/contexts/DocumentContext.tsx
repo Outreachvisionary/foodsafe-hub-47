@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -146,8 +147,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       }
     },
     enabled: !!user,
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Fetch folders
@@ -179,8 +181,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       }
     },
     enabled: !!user,
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
+    staleTime: 30000,
   });
 
   // Calculate stats
@@ -200,6 +203,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     pendingReviewCount: documents.filter(doc => doc.status === 'Pending_Review').length,
     pendingApprovalCount: documents.filter(doc => doc.status === 'Pending_Approval').length,
   } : null;
+
+  // Only consider loading if both queries are loading and we don't have data yet
+  const loading = (documentsLoading && documents.length === 0) || (foldersLoading && folders.length === 0);
 
   // Document mutations
   const createDocumentMutation = useMutation({
@@ -460,7 +466,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const value: DocumentContextType = {
     documents: documents || [],
     folders: folders || [],
-    loading: documentsLoading || foldersLoading,
+    loading,
     error,
     stats,
     
