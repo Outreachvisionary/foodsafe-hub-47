@@ -22,6 +22,34 @@ const Documents: React.FC = () => {
     recentlyUpdated: 15
   };
 
+  // Mock documents data for DocumentStats component
+  const mockDocuments = [
+    {
+      id: '1',
+      title: 'Quality Manual',
+      description: 'Company quality management system manual',
+      category: 'Policy',
+      status: 'Published' as const,
+      version: '2.1',
+      created_at: '2024-01-15T10:00:00Z',
+      updated_at: '2024-01-20T14:30:00Z',
+      created_by: 'John Doe',
+      expiry_date: '2024-12-31'
+    },
+    {
+      id: '2',
+      title: 'SOP-001 Document Control',
+      description: 'Standard operating procedure for document control',
+      category: 'SOP',
+      status: 'Pending_Review' as const,
+      version: '1.0',
+      created_at: '2024-01-10T09:00:00Z',
+      updated_at: '2024-01-18T16:45:00Z',
+      created_by: 'Jane Smith',
+      expiry_date: '2024-11-30'
+    }
+  ];
+
   const getTabCounts = () => {
     return {
       repository: documentStats.totalDocuments,
@@ -220,7 +248,7 @@ const Documents: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <DocumentStats />
+                  <DocumentStats documents={mockDocuments} />
                 </CardContent>
               </Card>
             </TabsContent>

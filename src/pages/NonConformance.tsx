@@ -22,6 +22,37 @@ const NonConformance: React.FC = () => {
     overdue: 12
   };
 
+  // Mock stats for NCDashboard component
+  const mockNCStats = {
+    total: ncStats.total,
+    byStatus: {
+      'Open': ncStats.open,
+      'Under Review': ncStats.underReview,
+      'On Hold': 8,
+      'Released': ncStats.resolved
+    },
+    byCategory: {
+      'Quality Control': 25,
+      'Manufacturing': 18,
+      'Documentation': 12,
+      'Safety': 15,
+      'Process': 19
+    },
+    byReasonCategory: {
+      'Equipment Failure': 20,
+      'Human Error': 15,
+      'Material Defect': 18,
+      'Process Deviation': 22,
+      'Documentation Error': 14
+    },
+    totalQuantityOnHold: 156
+  };
+
+  const handleCreateNew = () => {
+    console.log('Creating new non-conformance');
+    // In real app, this would open a form or navigate to creation page
+  };
+
   const getTabCounts = () => {
     return {
       all: ncStats.total,
@@ -58,6 +89,7 @@ const NonConformance: React.FC = () => {
             </Button>
             <Button 
               className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-700 hover:via-orange-700 hover:to-amber-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white border-0"
+              onClick={handleCreateNew}
             >
               <Plus className="h-4 w-4 mr-2" />
               Report Non-Conformance
@@ -180,7 +212,7 @@ const NonConformance: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <NCDashboard />
+                  <NCDashboard stats={mockNCStats} onCreateNew={handleCreateNew} />
                 </CardContent>
               </Card>
             </TabsContent>
