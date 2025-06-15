@@ -49,7 +49,7 @@ interface DocumentProviderProps {
 }
 
 // Helper function to convert status for database operations
-const convertStatusForDatabase = (status: string): string => {
+const convertStatusForDatabase = (status: string): "Draft" | "Pending Approval" | "Approved" | "Published" | "Archived" | "Expired" => {
   switch (status) {
     case 'Pending_Review':
       return 'Pending Approval'; // Map to available database status
@@ -57,18 +57,57 @@ const convertStatusForDatabase = (status: string): string => {
       return 'Pending Approval';
     case 'Rejected':
       return 'Draft'; // Map rejected to draft since it's not in database
+    case 'Approved':
+      return 'Approved';
+    case 'Published':
+      return 'Published';
+    case 'Archived':
+      return 'Archived';
+    case 'Expired':
+      return 'Expired';
     default:
-      return status;
+      return 'Draft';
   }
 };
 
 // Helper function to convert checkout status for database
-const convertCheckoutStatusForDatabase = (status: string): string => {
+const convertCheckoutStatusForDatabase = (status: string): "Available" | "Checked_Out" => {
   switch (status) {
     case 'Checked_Out':
       return 'Checked_Out';
     default:
       return 'Available';
+  }
+};
+
+// Helper function to convert category for database
+const convertCategoryForDatabase = (category: string): "SOP" | "Policy" | "Form" | "Certificate" | "Audit Report" | "HACCP Plan" | "Training Material" | "Supplier Documentation" | "Risk Assessment" | "Other" => {
+  switch (category) {
+    case 'SOP':
+      return 'SOP';
+    case 'Policy':
+      return 'Policy';
+    case 'Form':
+      return 'Form';
+    case 'Certificate':
+      return 'Certificate';
+    case 'Audit_Report':
+    case 'Audit Report':
+      return 'Audit Report';
+    case 'HACCP_Plan':
+    case 'HACCP Plan':
+      return 'HACCP Plan';
+    case 'Training_Material':
+    case 'Training Material':
+      return 'Training Material';
+    case 'Supplier_Documentation':
+    case 'Supplier Documentation':
+      return 'Supplier Documentation';
+    case 'Risk_Assessment':
+    case 'Risk Assessment':
+      return 'Risk Assessment';
+    default:
+      return 'Other';
   }
 };
 
@@ -153,7 +192,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         file_name: data.file_name || '',
         file_type: data.file_type || '',
         file_size: data.file_size || 0,
-        category: data.category || 'Other',
+        category: convertCategoryForDatabase(data.category || 'Other'),
         status: convertStatusForDatabase(data.status || 'Draft'),
         checkout_status: convertCheckoutStatusForDatabase(data.checkout_status || 'Available'),
         version: data.version || 1,
@@ -190,13 +229,25 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
 
   const updateDocumentMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Document> }) => {
-      const updateData = {
+      const updateData: any = {
         ...updates,
         updated_at: new Date().toISOString(),
-        // Convert status if it exists in the updates
-        ...(updates.status && { status: convertStatusForDatabase(updates.status) }),
-        ...(updates.checkout_status && { checkout_status: convertCheckoutStatusForDatabase(updates.checkout_status) })
       };
+
+      // Convert status if it exists in the updates
+      if (updates.status) {
+        updateData.status = convertStatusForDatabase(updates.status);
+      }
+
+      // Convert checkout_status if it exists in the updates
+      if (updates.checkout_status) {
+        updateData.checkout_status = convertCheckoutStatusForDatabase(updates.checkout_status);
+      }
+
+      // Convert category if it exists in the updates
+      if (updates.category) {
+        updateData.category = convertCategoryForDatabase(updates.category);
+      }
 
       const { data, error } = await supabase
         .from('documents')
@@ -322,7 +373,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const approveDocumentMutation = useMutation({
     mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
       const updates = {
-        status: 'Approved',
+        status: 'Approved' as const,
         workflow_status: 'approved',
         pending_since: null
       };
@@ -350,7 +401,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const rejectDocumentMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const updates = {
-        status: 'Draft', // Map rejection to Draft since Rejected is not in database
+        status: 'Draft' as const, // Map rejection to Draft since Rejected is not in database
         workflow_status: 'rejected',
         rejection_reason: reason,
         pending_since: null
@@ -438,12 +489,12 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     
     refresh: async () => {
       await Promise.all([
-        refetchDocuments().then(() => {}),
-        refetchFolders().then(() => {})
+        refetchDocuments(),
+        refetchFolders()
       ]);
     },
     refreshDocuments: async () => {
-      await refetchDocuments().then(() => {});
+      await refetchDocuments();
     },
     searchDocuments: (query: string) => {
       return documents.filter(doc =>
