@@ -45,6 +45,14 @@ const NonConformance: React.FC = () => {
       'Process Deviation': 22,
       'Documentation Error': 14
     },
+    byRiskLevel: {
+      'High': 15,
+      'Medium': 35,
+      'Low': 39
+    },
+    overdue: ncStats.overdue,
+    pendingReview: ncStats.underReview,
+    recentlyResolved: 8,
     totalQuantityOnHold: 156
   };
 
