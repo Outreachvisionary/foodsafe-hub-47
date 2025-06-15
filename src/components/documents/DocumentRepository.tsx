@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDocument } from '@/contexts/DocumentContext';
-import { FolderPlus, Upload, Search, FileText, Folder, RefreshCcw } from 'lucide-react';
+import { FolderPlus, Upload, Search, FileText, Folder, RefreshCw } from 'lucide-react';
 import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
 import DocumentFolders from './DocumentFolders';
 import DocumentViewModeToggle from './DocumentViewModeToggle';
-import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -36,9 +35,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
-  const [showDocumentPreview, setShowDocumentPreview] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
@@ -54,18 +51,19 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     checkinDocument
   } = useDocument();
 
-  // Handle UI errors separately from the context error
-  useEffect(() => {
-    if (error) {
-      setRepositoryError(error);
-    } else {
-      setRepositoryError(null);
-    }
-  }, [error]);
+  console.log('DocumentRepository render:', { 
+    documentsCount: documents?.length, 
+    loading, 
+    error, 
+    hasDocuments: !!documents 
+  });
 
   // Filter documents based on current folder and search term
   const filteredDocs = useMemo(() => {
-    if (!documents) return [];
+    if (!documents || !Array.isArray(documents)) {
+      console.log('No documents array available');
+      return [];
+    }
     
     let filtered = documents;
     
@@ -81,19 +79,19 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(doc => 
-        doc.title.toLowerCase().includes(term) || 
+        doc.title?.toLowerCase().includes(term) || 
         doc.description?.toLowerCase().includes(term) ||
-        doc.file_name.toLowerCase().includes(term) ||
+        doc.file_name?.toLowerCase().includes(term) ||
         doc.tags?.some(tag => tag.toLowerCase().includes(term))
       );
     }
     
+    console.log('Filtered documents:', filtered.length);
     return filtered;
   }, [documents, selectedFolderId, searchTerm]);
 
   const handlePathChange = (path: string) => {
     setCurrentPath(path);
-    // Reset folder selection when navigating via breadcrumb
     if (path === '/') {
       setSelectedFolderId(null);
     }
@@ -105,16 +103,11 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     console.log('Selected folder:', folderId, folderPath);
   };
 
-  const handleRetry = () => {
-    setRepositoryError(null);
-    refresh();
-  };
-
   const handleUploadClick = () => {
     if (onShowUploadDialog) {
       onShowUploadDialog();
     } else {
-      console.log('Upload functionality not connected');
+      toast.info('Upload dialog not connected');
     }
   };
 
@@ -122,7 +115,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     if (onShowCreateFolderDialog) {
       onShowCreateFolderDialog();
     } else {
-      console.log('Create folder functionality not connected');
+      toast.info('Create folder dialog not connected');
     }
   };
 
@@ -147,19 +140,16 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const handleDocumentClick = (document: DocumentType) => {
     setSelectedDocument(document);
-    setShowDocumentPreview(true);
     console.log('Viewing document:', document.title);
   };
 
   const handleDocumentEdit = (document: DocumentType) => {
     console.log('Editing document:', document.title);
-    // TODO: Implement document editing functionality
     toast.info('Document editing feature coming soon');
   };
 
   const handleDocumentDownload = (document: DocumentType) => {
     console.log('Downloading document:', document.title);
-    // TODO: Implement document download functionality
     toast.info('Document download feature coming soon');
   };
 
@@ -167,8 +157,6 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     try {
       await updateDocument(documentId, { folder_id: targetFolderId });
       toast.success('Document moved successfully');
-      
-      // Refresh to show updated folder structure
       await refresh();
     } catch (error) {
       console.error('Failed to move document:', error);
@@ -206,10 +194,29 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     }
   };
 
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <FileText className="mx-auto h-12 w-12 mb-2" />
+              <h3 className="text-lg font-medium">Error Loading Documents</h3>
+              <p className="text-sm mt-2">{error}</p>
+            </div>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <DocumentRepositoryErrorHandler error={repositoryError} onRetry={handleRetry} />
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <DocumentBreadcrumb path={currentPath} onNavigate={handlePathChange} />
@@ -239,7 +246,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
             onClick={handleRefresh}
             disabled={loading}
           >
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -271,7 +278,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
           {/* Documents */}
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <RefreshCcw className="h-8 w-8 animate-spin text-gray-400" />
+              <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
               <span className="ml-2 text-lg text-gray-600">Loading documents...</span>
             </div>
           ) : (
@@ -280,7 +287,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                 <h3 className="text-lg font-medium">
                   {currentPath === '/' ? 'All Documents' : `Documents in ${currentPath}`} ({filteredDocs.length})
                 </h3>
-                {filteredDocs.length > 0 && (
+                {filteredDocs.length > 0 && documents && (
                   <span className="text-sm text-gray-500">
                     Showing {filteredDocs.length} of {documents.length} documents
                   </span>
@@ -313,15 +320,6 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {/* Quick tips */}
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-700">
-                      💡 <strong>Pro tip:</strong> Use checkout/checkin to edit documents safely. 
-                      Drag and drop documents to move them between folders. 
-                      Documents in workflow will appear in the Approval Workflow tab.
-                    </p>
-                  </div>
-                  
                   <DocumentGrid 
                     documents={filteredDocs} 
                     onDocumentClick={handleDocumentClick}

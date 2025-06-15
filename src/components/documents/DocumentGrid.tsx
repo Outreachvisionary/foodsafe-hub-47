@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -8,16 +8,19 @@ import {
   Download, 
   Edit, 
   Trash2, 
+  Eye, 
   Lock, 
   Unlock,
-  Eye,
-  Clock,
-  User,
-  FolderOpen
+  MoreVertical
 } from 'lucide-react';
 import { Document } from '@/types/document';
-import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface DocumentGridProps {
   documents: Document[];
@@ -37,59 +40,32 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   onDocumentEdit,
   onDocumentDelete,
   onDocumentDownload,
-  onDocumentMove,
   onDocumentCheckout,
   onDocumentCheckin,
   viewMode = 'grid'
 }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'Published':
-        return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'Draft':
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-      case 'Pending_Review':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'Pending_Approval':
-        return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
+      case 'Pending Approval':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Approved':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
+      case 'Published':
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'Rejected':
-        return 'bg-red-100 text-red-800 hover:bg-red-100';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'Archived':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Expired':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'SOP':
-        return '📋';
-      case 'Policy':
-        return '📜';
-      case 'Training Material':
-        return '📖';
-      case 'Form':
-        return '📝';
-      case 'Audit Report':
-        return '📊';
-      case 'Certificate':
-        return '🏆';
-      default:
-        return '📄';
-    }
-  };
-
-  const isDocumentExpiring = (document: Document) => {
-    if (!document.expiry_date) return false;
-    const expiryDate = new Date(document.expiry_date);
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    return expiryDate <= thirtyDaysFromNow;
-  };
-
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -97,8 +73,8 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const isCheckedOut = (document: Document) => {
-    return document.checkout_status === 'Checked_Out';
+  const isCheckedOut = (document: Document): boolean => {
+    return document.checkout_status === 'Checked_Out' || document.is_locked;
   };
 
   if (viewMode === 'list') {
@@ -107,119 +83,95 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
         {documents.map((document) => (
           <Card 
             key={document.id} 
-            className={cn(
-              "hover:shadow-md transition-shadow cursor-pointer",
-              isCheckedOut(document) && "border-orange-200 bg-orange-50",
-              isDocumentExpiring(document) && "border-red-200 bg-red-50"
-            )}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => onDocumentClick?.(document)}
           >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 flex-1">
-                  <div className="text-2xl">
-                    {getCategoryIcon(document.category)}
-                  </div>
-                  
+                  <FileText className="h-8 w-8 text-blue-500" />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <h3 
-                        className="font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600"
-                        onClick={() => onDocumentClick?.(document)}
-                      >
-                        {document.title}
-                      </h3>
-                      {isCheckedOut(document) && (
-                        <Lock className="h-4 w-4 text-orange-500" />
-                      )}
-                      {isDocumentExpiring(document) && (
-                        <Clock className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 mt-1">
-                      <Badge variant="outline" className={getStatusColor(document.status)}>
+                    <h3 className="text-sm font-medium truncate">{document.title}</h3>
+                    <p className="text-xs text-gray-500 truncate">{document.file_name}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {document.category}
+                      </Badge>
+                      <Badge className={`text-xs ${getStatusColor(document.status)}`}>
                         {document.status.replace('_', ' ')}
                       </Badge>
-                      <span className="text-sm text-gray-500">
-                        v{document.version}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {formatFileSize(document.file_size)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {formatDistanceToNow(new Date(document.updated_at), { addSuffix: true })}
-                      </span>
+                      {isCheckedOut(document) && (
+                        <Badge variant="destructive" className="text-xs">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Checked Out
+                        </Badge>
+                      )}
                     </div>
-                    
-                    {document.description && (
-                      <p className="text-sm text-gray-600 mt-1 truncate">
-                        {document.description}
-                      </p>
-                    )}
+                  </div>
+                  <div className="text-right text-xs text-gray-500">
+                    <div>v{document.version}</div>
+                    <div>{formatDistanceToNow(new Date(document.created_at), { addSuffix: true })}</div>
+                    <div>{formatFileSize(document.file_size)}</div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDocumentClick?.(document)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  
-                  {document.checkout_status === 'Available' ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDocumentCheckout?.(document.id)}
-                    >
-                      <Unlock className="h-4 w-4" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm">
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDocumentCheckin?.(document.id)}
-                      disabled={document.checkout_user_id !== 'current_user'} // Replace with actual user check
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentClick?.(document);
+                    }}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentDownload?.(document);
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentEdit?.(document);
+                    }}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    {isCheckedOut(document) ? (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        onDocumentCheckin?.(document.id);
+                      }}>
+                        <Unlock className="h-4 w-4 mr-2" />
+                        Check In
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        onDocumentCheckout?.(document.id);
+                      }}>
+                        <Lock className="h-4 w-4 mr-2" />
+                        Check Out
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDocumentDelete?.(document.id);
+                      }}
+                      className="text-red-600"
                     >
-                      <Lock className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDocumentEdit?.(document)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDocumentDownload?.(document)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDocumentDelete?.(document.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              
-              {isCheckedOut(document) && document.checkout_user_name && (
-                <div className="mt-3 flex items-center space-x-2 text-sm text-orange-600">
-                  <User className="h-4 w-4" />
-                  <span>Checked out by {document.checkout_user_name}</span>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -228,130 +180,112 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {documents.map((document) => (
         <Card 
           key={document.id} 
-          className={cn(
-            "hover:shadow-lg transition-all duration-200 cursor-pointer group",
-            isCheckedOut(document) && "border-orange-200 bg-orange-50",
-            isDocumentExpiring(document) && "border-red-200 bg-red-50"
-          )}
+          className="cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => onDocumentClick?.(document)}
         >
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="text-3xl">
-                {getCategoryIcon(document.category)}
-              </div>
-              <div className="flex items-center space-x-1">
-                {isCheckedOut(document) && (
-                  <Lock className="h-4 w-4 text-orange-500" />
-                )}
-                {isDocumentExpiring(document) && (
-                  <Clock className="h-4 w-4 text-red-500" />
-                )}
-              </div>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <FileText className="h-8 w-8 text-blue-500" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onDocumentClick?.(document);
+                  }}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onDocumentDownload?.(document);
+                  }}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onDocumentEdit?.(document);
+                  }}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  {isCheckedOut(document) ? (
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentCheckin?.(document.id);
+                    }}>
+                      <Unlock className="h-4 w-4 mr-2" />
+                      Check In
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentCheckout?.(document.id);
+                    }}>
+                      <Lock className="h-4 w-4 mr-2" />
+                      Check Out
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentDelete?.(document.id);
+                    }}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            
-            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <CardTitle className="text-sm truncate" title={document.title}>
               {document.title}
-            </h3>
-            
-            {document.description && (
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                {document.description}
-              </p>
-            )}
-            
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className={getStatusColor(document.status)}>
-                  {document.status.replace('_', ' ')}
+            </CardTitle>
+            <p className="text-xs text-gray-500 truncate" title={document.file_name}>
+              {document.file_name}
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <Badge variant="outline" className="text-xs">
+                  {document.category}
                 </Badge>
-                <span className="text-xs text-gray-500">v{document.version}</span>
+                <span className="text-gray-500">v{document.version}</span>
               </div>
               
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{formatFileSize(document.file_size)}</span>
-                <span>{document.file_type.toUpperCase()}</span>
+              <div className="flex items-center justify-between">
+                <Badge className={`text-xs ${getStatusColor(document.status)}`}>
+                  {document.status.replace('_', ' ')}
+                </Badge>
+                {isCheckedOut(document) && (
+                  <Badge variant="destructive" className="text-xs">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Locked
+                  </Badge>
+                )}
               </div>
               
               <div className="text-xs text-gray-500">
-                Updated {formatDistanceToNow(new Date(document.updated_at), { addSuffix: true })}
-              </div>
-            </div>
-            
-            {isCheckedOut(document) && document.checkout_user_name && (
-              <div className="mb-4 flex items-center space-x-2 text-xs text-orange-600">
-                <User className="h-3 w-3" />
-                <span>Checked out by {document.checkout_user_name}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDocumentEdit?.(document);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDocumentDownload?.(document);
-                  }}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
+                <div>{formatFileSize(document.file_size)}</div>
+                <div>{formatDistanceToNow(new Date(document.created_at), { addSuffix: true })}</div>
               </div>
               
-              <div className="flex space-x-1">
-                {document.checkout_status === 'Available' ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDocumentCheckout?.(document.id);
-                    }}
-                  >
-                    <Unlock className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDocumentCheckin?.(document.id);
-                    }}
-                    disabled={document.checkout_user_id !== 'current_user'} // Replace with actual user check
-                  >
-                    <Lock className="h-4 w-4" />
-                  </Button>
-                )}
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDocumentDelete?.(document.id);
-                  }}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {document.description && (
+                <p className="text-xs text-gray-600 line-clamp-2" title={document.description}>
+                  {document.description}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

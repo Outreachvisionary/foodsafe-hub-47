@@ -115,6 +115,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
+  console.log('DocumentProvider render with user:', !!user);
+
   // Fetch documents
   const { 
     data: documents = [], 
@@ -124,19 +126,28 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   } = useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .order('updated_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching documents:', error);
-        throw new Error(error.message);
+      console.log('Fetching documents...');
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .order('updated_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching documents:', error);
+          throw new Error(error.message);
+        }
+        
+        console.log('Documents fetched successfully:', data?.length || 0);
+        return data as Document[] || [];
+      } catch (err) {
+        console.error('Document fetch error:', err);
+        throw err;
       }
-      
-      return data as Document[];
     },
     enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch folders
@@ -148,19 +159,28 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   } = useQuery({
     queryKey: ['document-folders'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('document_folders')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching folders:', error);
-        throw new Error(error.message);
+      console.log('Fetching folders...');
+      try {
+        const { data, error } = await supabase
+          .from('document_folders')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching folders:', error);
+          throw new Error(error.message);
+        }
+        
+        console.log('Folders fetched successfully:', data?.length || 0);
+        return data as DocumentFolder[] || [];
+      } catch (err) {
+        console.error('Folder fetch error:', err);
+        throw err;
       }
-      
-      return data as DocumentFolder[];
     },
     enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Calculate stats
@@ -430,6 +450,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   useEffect(() => {
     if (documentsError || foldersError) {
       const errorMessage = documentsError?.message || foldersError?.message || 'Unknown error';
+      console.error('Setting error state:', errorMessage);
       setError(errorMessage);
     } else {
       setError(null);
@@ -437,8 +458,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   }, [documentsError, foldersError]);
 
   const value: DocumentContextType = {
-    documents,
-    folders,
+    documents: documents || [],
+    folders: folders || [],
     loading: documentsLoading || foldersLoading,
     error,
     stats,
@@ -487,12 +508,14 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     deleteFolder: deleteFolderMutation.mutateAsync,
     
     refresh: async () => {
+      console.log('Refreshing documents and folders...');
       await Promise.all([
         refetchDocuments(),
         refetchFolders()
       ]);
     },
     refreshDocuments: async () => {
+      console.log('Refreshing documents...');
       await refetchDocuments();
     },
     searchDocuments: (query: string) => {

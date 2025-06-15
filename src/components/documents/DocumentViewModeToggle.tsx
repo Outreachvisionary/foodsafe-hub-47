@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Grid3X3, List } from 'lucide-react';
+import { Grid3x3, List } from 'lucide-react';
 
 interface DocumentViewModeToggleProps {
   viewMode: 'grid' | 'list';
@@ -13,20 +13,20 @@ const DocumentViewModeToggle: React.FC<DocumentViewModeToggleProps> = ({
   onViewModeChange
 }) => {
   return (
-    <div className="flex items-center border rounded-lg p-1 bg-gray-50">
+    <div className="flex items-center border rounded-lg">
       <Button
         variant={viewMode === 'grid' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewModeChange('grid')}
-        className="h-8 w-8 p-0"
+        className="rounded-r-none"
       >
-        <Grid3X3 className="h-4 w-4" />
+        <Grid3x3 className="h-4 w-4" />
       </Button>
       <Button
         variant={viewMode === 'list' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewModeChange('list')}
-        className="h-8 w-8 p-0"
+        className="rounded-l-none"
       >
         <List className="h-4 w-4" />
       </Button>
