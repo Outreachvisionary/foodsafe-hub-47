@@ -1,269 +1,116 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentFolder, DocumentVersion, DocumentActivity, DocumentActionType } from '@/types/document';
-import { CrudService } from './crudService';
+import { Document } from '@/types/document';
+import { DocumentStatus, DocumentCategory, CheckoutStatus } from '@/types/enums';
+import { stringToDocumentStatus, stringToDocumentCategory, stringToCheckoutStatus } from '@/utils/documentAdapters';
 
-export class DocumentService extends CrudService {
-  // Document operations
-  static async getDocuments(filters?: any): Promise<Document[]> {
-    return this.fetchRecords<Document>({
-      table: 'documents',
-      select: '*',
-      filters,
-      orderBy: { column: 'updated_at', ascending: false }
-    });
-  }
+export const documentService = {
+  async getDocuments(): Promise<Document[]> {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('updated_at', { ascending: false });
 
-  static async getDocument(id: string): Promise<Document | null> {
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data as Document | null;
-  }
-
-  static async createDocument(data: Partial<Document>): Promise<Document> {
-    // Ensure required fields are present
-    const documentData = {
-      ...data,
-      category: data.category || 'Other',
-      status: data.status || 'Draft',
-      checkout_status: data.checkout_status || 'Available'
-    };
-    
-    return this.createRecord<Document>('documents', documentData);
-  }
-
-  static async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
-    return this.updateRecord<Document>('documents', id, updates);
-  }
-
-  static async deleteDocument(id: string): Promise<boolean> {
-    return this.deleteRecord('documents', id);
-  }
-
-  // Folder operations
-  static async getFolders(): Promise<DocumentFolder[]> {
-    return this.fetchRecords<DocumentFolder>({
-      table: 'document_folders',
-      select: '*',
-      orderBy: { column: 'name', ascending: true }
-    });
-  }
-
-  static async createFolder(data: Partial<DocumentFolder>): Promise<DocumentFolder> {
-    return this.createRecord<DocumentFolder>('document_folders', data);
-  }
-
-  static async updateFolder(id: string, updates: Partial<DocumentFolder>): Promise<DocumentFolder> {
-    return this.updateRecord<DocumentFolder>('document_folders', id, updates);
-  }
-
-  static async deleteFolder(id: string): Promise<boolean> {
-    // Check if folder has documents
-    const documents = await this.fetchRecords({
-      table: 'documents',
-      filters: { folder_id: id },
-      limit: 1
-    });
-
-    if (documents.length > 0) {
-      throw new Error('Cannot delete folder that contains documents');
-    }
-
-    return this.deleteRecord('document_folders', id, true); // Hard delete for folders
-  }
-
-  // Document workflow operations
-  static async submitForReview(documentId: string): Promise<Document> {
-    return this.updateDocument(documentId, {
-      status: 'Pending_Review',
-      workflow_status: 'review',
-      pending_since: new Date().toISOString()
-    });
-  }
-
-  static async approveDocument(documentId: string, approverComments?: string): Promise<Document> {
-    const updates: Partial<Document> = {
-      status: 'Approved',
-      workflow_status: 'approved',
-      pending_since: undefined
-    };
-
-    // Log approval activity
-    await this.logDocumentActivity(documentId, 'approved', approverComments);
-
-    return this.updateDocument(documentId, updates);
-  }
-
-  static async rejectDocument(documentId: string, rejectionReason: string): Promise<Document> {
-    const updates: Partial<Document> = {
-      status: 'Draft',
-      workflow_status: 'rejected',
-      rejection_reason: rejectionReason,
-      pending_since: undefined
-    };
-
-    // Log rejection activity
-    await this.logDocumentActivity(documentId, 'rejected', rejectionReason);
-
-    return this.updateDocument(documentId, updates);
-  }
-
-  static async publishDocument(documentId: string): Promise<Document> {
-    return this.updateDocument(documentId, {
-      status: 'Published',
-      workflow_status: 'published'
-    });
-  }
-
-  // Document checkout/checkin
-  static async checkoutDocument(documentId: string, userId: string, userName: string): Promise<Document> {
-    return this.updateDocument(documentId, {
-      checkout_status: 'Checked_Out',
-      checkout_user_id: userId,
-      checkout_user_name: userName,
-      checkout_timestamp: new Date().toISOString(),
-      is_locked: true
-    });
-  }
-
-  static async checkinDocument(documentId: string, versionData?: Partial<DocumentVersion>): Promise<Document> {
-    const updates: Partial<Document> = {
-      checkout_status: 'Available',
-      checkout_user_id: undefined,
-      checkout_user_name: undefined,
-      checkout_timestamp: undefined,
-      is_locked: false
-    };
-
-    // If version data is provided, increment version
-    if (versionData) {
-      const document = await this.getDocument(documentId);
-      if (document) {
-        updates.version = document.version + 1;
-        
-        // Create new version record
-        await this.createRecord('document_versions', {
-          document_id: documentId,
-          version: updates.version,
-          ...versionData
-        });
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
       }
+
+      // Transform database data to match our types
+      return (data || []).map(doc => ({
+        ...doc,
+        status: stringToDocumentStatus(doc.status),
+        category: stringToDocumentCategory(doc.category),
+        checkout_status: stringToCheckoutStatus(doc.checkout_status),
+        tags: doc.tags || [],
+        approvers: doc.approvers || []
+      }));
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+      throw error;
     }
+  },
 
-    return this.updateDocument(documentId, updates);
-  }
+  async createDocument(document: Partial<Document>): Promise<Document> {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .insert([{
+          ...document,
+          status: document.status || DocumentStatus.Draft,
+          category: document.category || DocumentCategory.Other,
+          checkout_status: CheckoutStatus.Available,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
 
-  // Activity logging
-  static async logDocumentActivity(
-    documentId: string, 
-    action: DocumentActionType, 
-    comments?: string, 
-    userId?: string
-  ): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    await this.createRecord('document_activities', {
-      document_id: documentId,
-      action,
-      comments,
-      user_id: userId || user?.id,
-      user_name: user?.email || 'Unknown',
-      user_role: 'User',
-      timestamp: new Date().toISOString()
-    });
-  }
-
-  // Create document activity function for external use
-  static async createDocumentActivity(activityData: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> {
-    const data = {
-      ...activityData,
-      timestamp: new Date().toISOString()
-    };
-    
-    return this.createRecord<DocumentActivity>('document_activities', data);
-  }
-
-  // Search and filter
-  static async searchDocuments(query: string, filters?: any): Promise<Document[]> {
-    const searchFilters = {
-      ...filters,
-      title: `%${query}%`
-    };
-
-    return this.fetchRecords<Document>({
-      table: 'documents',
-      select: '*',
-      filters: searchFilters,
-      orderBy: { column: 'updated_at', ascending: false }
-    });
-  }
-
-  // Document statistics
-  static async getDocumentStats(): Promise<any> {
-    const documents = await this.getDocuments();
-    
-    const stats = {
-      total: documents.length,
-      byStatus: {} as Record<string, number>,
-      byCategory: {} as Record<string, number>,
-      expiringCount: 0,
-      pendingReviewCount: 0,
-      pendingApprovalCount: 0
-    };
-
-    documents.forEach(doc => {
-      // Status counts
-      stats.byStatus[doc.status] = (stats.byStatus[doc.status] || 0) + 1;
-      
-      // Category counts
-      stats.byCategory[doc.category] = (stats.byCategory[doc.category] || 0) + 1;
-      
-      // Expiring documents (within 30 days)
-      if (doc.expiry_date) {
-        const expiryDate = new Date(doc.expiry_date);
-        const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        if (expiryDate <= thirtyDaysFromNow) {
-          stats.expiringCount++;
-        }
+      if (error) {
+        console.error('Error creating document:', error);
+        throw error;
       }
-      
-      // Pending counts
-      if (doc.status === 'Pending_Review') stats.pendingReviewCount++;
-      if (doc.status === 'Pending_Approval') stats.pendingApprovalCount++;
-    });
 
-    return stats;
+      return {
+        ...data,
+        status: stringToDocumentStatus(data.status),
+        category: stringToDocumentCategory(data.category),
+        checkout_status: stringToCheckoutStatus(data.checkout_status),
+        tags: data.tags || [],
+        approvers: data.approvers || []
+      };
+    } catch (error) {
+      console.error('Failed to create document:', error);
+      throw error;
+    }
+  },
+
+  async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating document:', error);
+        throw error;
+      }
+
+      return {
+        ...data,
+        status: stringToDocumentStatus(data.status),
+        category: stringToDocumentCategory(data.category),
+        checkout_status: stringToCheckoutStatus(data.checkout_status),
+        tags: data.tags || [],
+        approvers: data.approvers || []
+      };
+    } catch (error) {
+      console.error('Failed to update document:', error);
+      throw error;
+    }
+  },
+
+  async deleteDocument(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting document:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      throw error;
+    }
   }
-
-  // Fetch documents function for external use
-  static async fetchDocuments(filters?: any): Promise<Document[]> {
-    return this.getDocuments(filters);
-  }
-}
-
-export default DocumentService;
-
-// Export individual functions for easier importing
-export const { 
-  getDocuments, 
-  createDocument, 
-  updateDocument, 
-  deleteDocument,
-  getFolders,
-  createFolder,
-  updateFolder,
-  deleteFolder,
-  approveDocument,
-  rejectDocument,
-  checkoutDocument,
-  checkinDocument,
-  logDocumentActivity,
-  createDocumentActivity,
-  fetchDocuments,
-  getDocumentStats
-} = DocumentService;
+};

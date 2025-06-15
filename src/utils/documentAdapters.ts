@@ -29,7 +29,9 @@ export const documentCategoryToDbString = (category: DocumentCategory): string =
   }
 };
 
-export const stringToDocumentCategory = (category: string): DocumentCategory => {
+export const stringToDocumentCategory = (category: string | null | undefined): DocumentCategory => {
+  if (!category) return DocumentCategory.Other;
+  
   switch (category) {
     case 'SOP':
       return DocumentCategory.SOP;
@@ -81,7 +83,9 @@ export const documentStatusToDbString = (status: DocumentStatus): string => {
   }
 };
 
-export const stringToDocumentStatus = (status: string): DocumentStatus => {
+export const stringToDocumentStatus = (status: string | null | undefined): DocumentStatus => {
+  if (!status) return DocumentStatus.Draft;
+  
   switch (status) {
     case 'Draft':
       return DocumentStatus.Draft;
@@ -118,7 +122,9 @@ export const checkoutStatusToDbString = (status: CheckoutStatus): string => {
   }
 };
 
-export const stringToCheckoutStatus = (status: string): CheckoutStatus => {
+export const stringToCheckoutStatus = (status: string | null | undefined): CheckoutStatus => {
+  if (!status) return CheckoutStatus.Available;
+  
   switch (status) {
     case 'Available':
       return CheckoutStatus.Available;

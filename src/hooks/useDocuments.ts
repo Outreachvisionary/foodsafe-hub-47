@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { documentService } from '@/services/api';
+import { documentService } from '@/services/documentService';
 import { toast } from 'sonner';
 
 export const useDocuments = () => {
