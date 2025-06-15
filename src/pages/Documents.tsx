@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Plus, RefreshCcw, Search, FileText, Clock, CheckCircle2, AlertCircle, Folder, Upload, BarChart3 } from 'lucide-react';
+import { DocumentCategory, DocumentStatus } from '@/types/enums';
 import DocumentRepository from '@/components/documents/DocumentRepository';
 import ReviewQueue from '@/components/documents/ReviewQueue';
 import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
@@ -32,8 +33,8 @@ const Documents: React.FC = () => {
       file_path: '/documents/quality-manual-v2-1.pdf',
       file_size: 2048576,
       file_type: 'application/pdf',
-      category: 'Policy',
-      status: 'Published' as const,
+      category: DocumentCategory.Policy,
+      status: DocumentStatus.Published,
       version: 2,
       created_at: '2024-01-15T10:00:00Z',
       updated_at: '2024-01-20T14:30:00Z',
@@ -48,8 +49,8 @@ const Documents: React.FC = () => {
       file_path: '/documents/sop-001-document-control.pdf',
       file_size: 1048576,
       file_type: 'application/pdf',
-      category: 'SOP',
-      status: 'Pending_Review' as const,
+      category: DocumentCategory.SOP,
+      status: DocumentStatus.Pending_Review,
       version: 1,
       created_at: '2024-01-10T09:00:00Z',
       updated_at: '2024-01-18T16:45:00Z',
