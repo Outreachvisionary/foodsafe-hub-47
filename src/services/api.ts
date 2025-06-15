@@ -11,3 +11,18 @@ export const {
   updateDocument,
   deleteDocument
 } = documentService;
+
+// Mock exports for other services that are missing
+export const capaService = {
+  getCAPAs: async () => [],
+  createCAPA: async () => ({}),
+  updateCAPA: async () => ({}),
+  deleteCAPA: async () => {}
+};
+
+export const nonConformanceService = {
+  getNonConformances: async () => [],
+  createNonConformance: async () => ({}),
+  updateNonConformance: async () => ({}),
+  deleteNonConformance: async () => {}
+};

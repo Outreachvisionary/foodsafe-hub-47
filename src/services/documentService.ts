@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
 import { DocumentStatus, DocumentCategory, CheckoutStatus } from '@/types/enums';
-import { stringToDocumentStatus, stringToDocumentCategory, stringToCheckoutStatus } from '@/utils/documentAdapters';
+import { stringToDocumentStatus, stringToDocumentCategory, stringToCheckoutStatus, documentStatusToDbString, documentCategoryToDbString, checkoutStatusToDbString } from '@/utils/documentAdapters';
 
 export const documentService = {
   async getDocuments(): Promise<Document[]> {
@@ -34,16 +34,18 @@ export const documentService = {
 
   async createDocument(document: Partial<Document>): Promise<Document> {
     try {
+      const dbDocument = {
+        ...document,
+        status: documentStatusToDbString(document.status || DocumentStatus.Draft),
+        category: documentCategoryToDbString(document.category || DocumentCategory.Other),
+        checkout_status: checkoutStatusToDbString(CheckoutStatus.Available),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('documents')
-        .insert([{
-          ...document,
-          status: document.status || DocumentStatus.Draft,
-          category: document.category || DocumentCategory.Other,
-          checkout_status: CheckoutStatus.Available,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([dbDocument])
         .select()
         .single();
 
@@ -68,12 +70,24 @@ export const documentService = {
 
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     try {
+      const dbUpdates = {
+        ...updates,
+        status: updates.status ? documentStatusToDbString(updates.status) : undefined,
+        category: updates.category ? documentCategoryToDbString(updates.category) : undefined,
+        checkout_status: updates.checkout_status ? checkoutStatusToDbString(updates.checkout_status) : undefined,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remove undefined values
+      Object.keys(dbUpdates).forEach(key => {
+        if (dbUpdates[key as keyof typeof dbUpdates] === undefined) {
+          delete dbUpdates[key as keyof typeof dbUpdates];
+        }
+      });
+
       const { data, error } = await supabase
         .from('documents')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -114,3 +128,6 @@ export const documentService = {
     }
   }
 };
+
+// Export for backward compatibility
+export const fetchDocuments = documentService.getDocuments;

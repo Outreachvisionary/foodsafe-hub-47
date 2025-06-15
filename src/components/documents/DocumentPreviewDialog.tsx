@@ -1,192 +1,108 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { DocumentService } from '@/services/documentService';
-import { useUserRole } from '@/hooks/useUserRole';
-import { Eye, Edit, Download, Trash2, Archive, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Download, Edit, Eye } from 'lucide-react';
+import { Document } from '@/types/document';
+import { documentService } from '@/services/documentService';
 
 interface DocumentPreviewDialogProps {
   document: Document | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenChange?: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEdit?: (document: Document) => void;
+  onDownload?: (document: Document) => void;
 }
 
-const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: DocumentPreviewDialogProps) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { userRole } = useUserRole();
-  const [activityLog, setActivityLog] = useState<DocumentActivity | null>(null);
+const DocumentPreviewDialog: React.FC<DocumentPreviewDialogProps> = ({
+  document,
+  open,
+  onOpenChange,
+  onEdit,
+  onDownload
+}) => {
+  if (!document) return null;
 
-  useEffect(() => {
-    if (activityLog) {
-      toast({
-        title: "Activity Log Created",
-        description: `Activity: ${activityLog.action} for document ${document?.title}`,
-      });
-      setActivityLog(null);
-    }
-  }, [activityLog, toast, document]);
-
-  const createActivityLog = async (activityData: Omit<DocumentActivity, 'id' | 'timestamp'>) => {
-    try {
-      const newActivity = await DocumentService.createDocumentActivity(activityData);
-      setActivityLog(newActivity);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error creating activity log",
-        description: error.message,
-      });
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload(document);
     }
   };
 
-  const handleEditClick = () => {
-    // When edit is clicked, create an activity log
-    if (document && user) {
-      createActivityLog({
-        document_id: document.id,
-        action: "edit" as DocumentActionType,
-        user_id: user.id,
-        user_name: user.email || '',
-        user_role: userRole?.role_name || 'User',
-        comments: `Started editing document ${document.title}`
-      });
-      
-      // Redirect to the edit page
-      window.location.href = `/documents/edit/${document.id}`;
-    }
-  };
-
-  const handleDownloadClick = () => {
-    if (document && user) {
-      createActivityLog({
-        document_id: document.id,
-        action: "download" as DocumentActionType,
-        user_id: user.id,
-        user_name: user.email || '',
-        user_role: userRole?.role_name || 'User',
-        comments: `Downloaded document ${document.title}`
-      });
-
-      // Trigger the download
-      if (document.file_path) {
-        window.open(document.file_path, '_blank');
-      }
-    }
-  };
-
-  const handleDeleteClick = () => {
-    if (document && user) {
-      createActivityLog({
-        document_id: document.id,
-        action: "delete" as DocumentActionType,
-        user_id: user.id,
-        user_name: user.email || '',
-        user_role: userRole?.role_name || 'User',
-        comments: `Deleted document ${document.title}`
-      });
-
-      // Implement delete logic here
-      toast({
-        title: "Document Deleted",
-        description: `Document ${document.title} has been deleted.`,
-      });
-      onClose();
-    }
-  };
-
-  const handleArchiveClick = () => {
-    if (document && user) {
-      createActivityLog({
-        document_id: document.id,
-        action: "archive" as DocumentActionType,
-        user_id: user.id,
-        user_name: user.email || '',
-        user_role: userRole?.role_name || 'User',
-        comments: `Archived document ${document.title}`
-      });
-
-      // Implement archive logic here
-      toast({
-        title: "Document Archived",
-        description: `Document ${document.title} has been archived.`,
-      });
-      onClose();
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(document);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{document?.title || 'Document Preview'}</DialogTitle>
-          <DialogDescription>
-            {document?.description || 'Preview and manage document details'}
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            {document.title}
+          </DialogTitle>
         </DialogHeader>
-
-        {document ? (
-          <div className="space-y-4">
-            {document.file_path ? (
-              <iframe
-                src={document.file_path}
-                title="Document Preview"
-                className="w-full h-[600px]"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-48 border-2 border-dashed border-gray-300 rounded-lg">
-                <p className="text-muted-foreground">No file available for preview</p>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-2">
-              <Button variant="ghost" onClick={handleDownloadClick}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              <Button variant="secondary" onClick={handleEditClick}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteClick}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-              <Button variant="outline" onClick={handleArchiveClick}>
-                <Archive className="h-4 w-4 mr-2" />
-                Archive
-              </Button>
+        
+        <div className="space-y-6">
+          {/* Document Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Category</label>
+              <Badge variant="outline">{document.category}</Badge>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Status</label>
+              <Badge variant="outline">{document.status}</Badge>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Version</label>
+              <p className="text-sm">v{document.version}</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">File Size</label>
+              <p className="text-sm">{Math.round(document.file_size / 1024)} KB</p>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-muted-foreground">No document selected.</p>
+
+          {/* Description */}
+          {document.description && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-500">Description</label>
+              <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md">
+                {document.description}
+              </p>
+            </div>
+          )}
+
+          {/* File Preview Placeholder */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <div className="text-gray-500">
+              <Eye className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium mb-2">Document Preview</p>
+              <p className="text-sm">
+                {document.file_name}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                File preview functionality will be implemented based on file type
+              </p>
+            </div>
           </div>
-        )}
-        <DialogClose asChild>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="absolute top-2 right-2"
-          >
-            <XCircle className="h-4 w-4 mr-2" />
-            Close
-          </Button>
-        </DialogClose>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+            <Button onClick={handleEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
