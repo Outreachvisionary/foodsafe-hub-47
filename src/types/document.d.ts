@@ -1,4 +1,3 @@
-
 import { DocumentStatus, CheckoutStatus, CAPAPriority, CAPASource, CAPAEffectivenessRating } from '@/types/enums';
 
 // Re-export the types from enums for proper type compatibility
@@ -15,7 +14,7 @@ export interface Document {
   file_size: number;
   file_type: string;
   category: string;
-  status: DocumentStatus;
+  status: string;
   version: number;
   created_at: string;
   created_by: string;
@@ -23,7 +22,7 @@ export interface Document {
   tags?: string[];
   approvers?: string[];
   folders?: string[];
-  checkout_status?: CheckoutStatus;
+  checkout_status?: string;
   checkout_by?: string;
   checkout_date?: string;
   folder_id?: string | null;
@@ -88,7 +87,7 @@ export interface DocumentNotification {
 export type DocumentSortOption = 'title' | 'created_at' | 'updated_at' | 'category' | 'status';
 
 export interface DocumentFilterOptions {
-  status?: DocumentStatus[];
+  status?: string[];
   category?: string[];
   dateRange?: {
     start: string;

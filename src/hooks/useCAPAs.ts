@@ -38,13 +38,26 @@ export const useCAPAs = () => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: capaService.deleteCAPA,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['capas'] });
+      toast.success('CAPA deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete CAPA: ${error.message}`);
+    },
+  });
+
   return {
     capas,
     isLoading,
     error,
     createCAPA: createMutation.mutate,
     updateCAPA: updateMutation.mutate,
+    deleteCAPA: deleteMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

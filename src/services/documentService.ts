@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
 import { DocumentStatus, DocumentCategory, CheckoutStatus } from '@/types/enums';
-import { stringToDocumentStatus, stringToDocumentCategory, stringToCheckoutStatus, documentStatusToDbString, documentCategoryToDbString, checkoutStatusToDbString } from '@/utils/documentAdapters';
+import { documentStatusToDbString, documentCategoryToDbString, checkoutStatusToDbString, stringToDocumentStatus, stringToDocumentCategory, stringToCheckoutStatus } from '@/utils/documentAdapters';
 
 export const documentService = {
   async getDocuments(): Promise<Document[]> {
@@ -20,9 +20,9 @@ export const documentService = {
       // Transform database data to match our types
       return (data || []).map(doc => ({
         ...doc,
-        status: stringToDocumentStatus(doc.status),
-        category: stringToDocumentCategory(doc.category),
-        checkout_status: stringToCheckoutStatus(doc.checkout_status),
+        status: stringToDocumentStatus(doc.status) as any,
+        category: stringToDocumentCategory(doc.category) as any,
+        checkout_status: stringToCheckoutStatus(doc.checkout_status) as any,
         tags: doc.tags || [],
         approvers: doc.approvers || []
       }));
@@ -43,9 +43,14 @@ export const documentService = {
         updated_at: new Date().toISOString()
       };
 
+      // Remove undefined values and ensure required fields
+      const cleanDocument = Object.fromEntries(
+        Object.entries(dbDocument).filter(([_, value]) => value !== undefined)
+      );
+
       const { data, error } = await supabase
         .from('documents')
-        .insert([dbDocument])
+        .insert([cleanDocument])
         .select()
         .single();
 
@@ -56,9 +61,9 @@ export const documentService = {
 
       return {
         ...data,
-        status: stringToDocumentStatus(data.status),
-        category: stringToDocumentCategory(data.category),
-        checkout_status: stringToCheckoutStatus(data.checkout_status),
+        status: stringToDocumentStatus(data.status) as any,
+        category: stringToDocumentCategory(data.category) as any,
+        checkout_status: stringToCheckoutStatus(data.checkout_status) as any,
         tags: data.tags || [],
         approvers: data.approvers || []
       };
@@ -72,22 +77,20 @@ export const documentService = {
     try {
       const dbUpdates = {
         ...updates,
-        status: updates.status ? documentStatusToDbString(updates.status) : undefined,
-        category: updates.category ? documentCategoryToDbString(updates.category) : undefined,
-        checkout_status: updates.checkout_status ? checkoutStatusToDbString(updates.checkout_status) : undefined,
+        status: updates.status ? documentStatusToDbString(updates.status as any) : undefined,
+        category: updates.category ? documentCategoryToDbString(updates.category as any) : undefined,
+        checkout_status: updates.checkout_status ? checkoutStatusToDbString(updates.checkout_status as any) : undefined,
         updated_at: new Date().toISOString()
       };
 
       // Remove undefined values
-      Object.keys(dbUpdates).forEach(key => {
-        if (dbUpdates[key as keyof typeof dbUpdates] === undefined) {
-          delete dbUpdates[key as keyof typeof dbUpdates];
-        }
-      });
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(dbUpdates).filter(([_, value]) => value !== undefined)
+      );
 
       const { data, error } = await supabase
         .from('documents')
-        .update(dbUpdates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -99,9 +102,9 @@ export const documentService = {
 
       return {
         ...data,
-        status: stringToDocumentStatus(data.status),
-        category: stringToDocumentCategory(data.category),
-        checkout_status: stringToCheckoutStatus(data.checkout_status),
+        status: stringToDocumentStatus(data.status) as any,
+        category: stringToDocumentCategory(data.category) as any,
+        checkout_status: stringToCheckoutStatus(data.checkout_status) as any,
         tags: data.tags || [],
         approvers: data.approvers || []
       };

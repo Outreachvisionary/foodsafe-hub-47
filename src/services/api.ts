@@ -16,8 +16,8 @@ export const {
 export const capaService = {
   getCAPAs: async () => [],
   createCAPA: async () => ({}),
-  updateCAPA: async () => ({}),
-  deleteCAPA: async () => {}
+  updateCAPA: async (id: string, updates: any) => ({}),
+  deleteCAPA: async (id: string) => {}
 };
 
 export const nonConformanceService = {
