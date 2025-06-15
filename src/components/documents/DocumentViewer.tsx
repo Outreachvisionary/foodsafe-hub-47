@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -67,6 +68,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       case 'Pending_Approval':
       case 'Pending Approval':
         return DocumentStatus.Pending_Approval;
+      case 'Pending_Review':
+      case 'Pending Review':
+        return DocumentStatus.Pending_Review;
       case 'Approved':
         return DocumentStatus.Approved;
       case 'Published':
@@ -202,23 +206,26 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   const getStatusColor = (status: DocumentStatus): string => {
     switch (status) {
-      case 'Draft':
+      case DocumentStatus.Draft:
         return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'Pending_Approval':
+      case DocumentStatus.Pending_Approval:
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Approved':
-      case 'Published':
+      case DocumentStatus.Approved:
+      case DocumentStatus.Published:
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'Rejected':
+      case DocumentStatus.Rejected:
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'Archived':
+      case DocumentStatus.Archived:
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Expired':
+      case DocumentStatus.Expired:
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  // Convert document status to enum for display
+  const displayStatus = getDocumentStatusEnum(document.status);
 
   return (
     <div className="space-y-6">
@@ -233,8 +240,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   {document.file_name} • Version {activeVersion?.version || document.version}
                 </CardDescription>
               </div>
-              <Badge className={`${getStatusColor(document.status)} font-normal`}>
-                {document.status.replace('_', ' ')}
+              <Badge className={`${getStatusColor(displayStatus)} font-normal`}>
+                {displayStatus.replace('_', ' ')}
               </Badge>
             </div>
           </CardHeader>
@@ -444,8 +451,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <div className="space-y-2">
               <Label>Current Status</Label>
               <div>
-                <Badge className={`${getStatusColor(document.status)} font-normal`}>
-                  {document.status.replace('_', ' ')}
+                <Badge className={`${getStatusColor(displayStatus)} font-normal`}>
+                  {displayStatus.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
@@ -459,14 +466,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 onChange={(e) => setNewStatus(e.target.value as DocumentStatus)}
               >
                 <option value="">Select status</option>
-                <option value="Draft">Draft</option>
-                <option value="Pending_Review">Pending Review</option>
-                <option value="Pending_Approval">Pending Approval</option>
-                <option value="Approved">Approved</option>
-                <option value="Published">Published</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Archived">Archived</option>
-                <option value="Expired">Expired</option>
+                <option value={DocumentStatus.Draft}>Draft</option>
+                <option value={DocumentStatus.Pending_Review}>Pending Review</option>
+                <option value={DocumentStatus.Pending_Approval}>Pending Approval</option>
+                <option value={DocumentStatus.Approved}>Approved</option>
+                <option value={DocumentStatus.Published}>Published</option>
+                <option value={DocumentStatus.Rejected}>Rejected</option>
+                <option value={DocumentStatus.Archived}>Archived</option>
+                <option value={DocumentStatus.Expired}>Expired</option>
               </select>
             </div>
             
