@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
 import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
-import { CheckoutStatus as EnumCheckoutStatus } from '@/types/enums';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -21,6 +21,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+
+// Define the enum values that DocumentCheckoutActions expects
+enum EnumCheckoutStatus {
+  Available = 'Available',
+  Checked_Out = 'Checked_Out'
+}
 
 interface DocumentViewerProps {
   document: Document;

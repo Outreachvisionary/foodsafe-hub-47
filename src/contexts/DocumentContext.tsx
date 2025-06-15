@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -205,7 +204,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         tags: data.tags,
         approvers: data.approvers,
         expiry_date: data.expiry_date,
-        workflow_status: data.workflow_status,
+        workflow_status: data.workflow_status || 'draft',
       };
 
       const { data: result, error } = await supabase
