@@ -7,9 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle, XCircle, Clock, User } from 'lucide-react';
-import { Document } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
-import { documentStatusToString } from '@/utils/typeAdapters';
+import { Document, DocumentStatus } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 
 interface DocumentApproverProps {
@@ -117,11 +115,11 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
 
   const getStatusIcon = (status: DocumentStatus) => {
     switch (status) {
-      case DocumentStatus.Approved:
+      case 'Approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case DocumentStatus.Rejected:
+      case 'Rejected':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return <Clock className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
@@ -130,13 +128,13 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
 
   const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
-      case DocumentStatus.Approved:
+      case 'Approved':
         return 'bg-green-100 text-green-800';
-      case DocumentStatus.Rejected:
+      case 'Rejected':
         return 'bg-red-100 text-red-800';
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return 'bg-yellow-100 text-yellow-800';
-      case DocumentStatus.Draft:
+      case 'Draft':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-blue-100 text-blue-800';
@@ -173,7 +171,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
           </div>
         )}
 
-        {canApprove && document.status === DocumentStatus.Pending_Approval && (
+        {canApprove && document.status === 'Pending_Approval' && (
           <div className="space-y-4 border-t pt-4">
             <div className="space-y-2">
               <Label htmlFor="approval-comment">Comments</Label>
@@ -213,20 +211,20 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
             <div className="space-y-2">
               <Label htmlFor="status-select">Update Status</Label>
               <Select 
-                value={documentStatusToString(newStatus)} 
+                value={newStatus} 
                 onValueChange={(value) => setNewStatus(value as DocumentStatus)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Draft)}>Draft</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Pending_Approval)}>Pending Approval</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Approved)}>Approved</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Published)}>Published</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Archived)}>Archived</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Expired)}>Expired</SelectItem>
-                  <SelectItem value={documentStatusToString(DocumentStatus.Rejected)}>Rejected</SelectItem>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Pending_Approval">Pending Approval</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Published">Published</SelectItem>
+                  <SelectItem value="Archived">Archived</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -244,7 +242,7 @@ const DocumentApprover: React.FC<DocumentApproverProps> = ({
           </div>
         )}
 
-        {!canApprove && document.status === DocumentStatus.Pending_Approval && (
+        {!canApprove && document.status === 'Pending_Approval' && (
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
               This document is pending approval and cannot be modified.

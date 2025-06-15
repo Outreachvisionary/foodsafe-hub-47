@@ -9,15 +9,14 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
 import { useNavigate } from 'react-router-dom';
-import { DocumentCategory, DocumentStatus } from '@/types/enums';
-import { stringToDocumentCategory } from '@/utils/documentAdapters';
+import { DocumentCategory, DocumentStatus } from '@/types/document';
 import { toast } from 'sonner';
 import { FileText, Save, X } from 'lucide-react';
 
 const CreateDocumentForm: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('Other');
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
@@ -37,8 +36,7 @@ const CreateDocumentForm: React.FC = () => {
     setCreating(true);
 
     try {
-      const documentCategory = stringToDocumentCategory(category);
-      const initialStatus = requiresApproval ? DocumentStatus.Pending_Approval : DocumentStatus.Draft;
+      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Approval' : 'Draft';
       
       const newDocument = {
         title: title.trim(),
@@ -46,7 +44,7 @@ const CreateDocumentForm: React.FC = () => {
         file_name: `${title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`,
         file_type: 'text/plain',
         file_size: content.length,
-        category: documentCategory,
+        category: category,
         status: initialStatus,
         version: 1,
         created_by: 'current_user', // TODO: Get from auth context
@@ -113,7 +111,7 @@ const CreateDocumentForm: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select value={category} onValueChange={setCategory} required>
+                <Select value={category} onValueChange={(value) => setCategory(value as DocumentCategory)} required>
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>

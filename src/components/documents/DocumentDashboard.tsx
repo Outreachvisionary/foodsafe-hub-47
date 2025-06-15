@@ -5,9 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, FileText, Clock, CheckCircle, AlertTriangle, Archive, Plus } from 'lucide-react';
-import { DocumentStatus, DocumentCategory } from '@/types/enums';
-import { Document } from '@/types/document';
-import useDocumentService from '@/hooks/useDocumentService';
+import { DocumentStatus, DocumentCategory, Document } from '@/types/document';
+import { useDocument } from '@/contexts/DocumentContext';
 
 interface DocumentDashboardProps {
   onCreateNew?: () => void;
@@ -18,24 +17,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   onCreateNew,
   onDocumentSelect
 }) => {
-  const { getDocuments, loading, error } = useDocumentService();
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const { documents, loading, error } = useDocument();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const docs = await getDocuments();
-        setDocuments(docs);
-        setFilteredDocuments(docs);
-      } catch (err) {
-        console.error('Error fetching documents:', err);
-      }
-    };
-
-    fetchDocuments();
-  }, [getDocuments]);
 
   useEffect(() => {
     const filtered = documents.filter(doc =>
@@ -48,25 +32,25 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const getDocumentStats = () => {
     const stats = {
       total: documents.length,
-      published: documents.filter(d => d.status === DocumentStatus.Published).length,
-      pending: documents.filter(d => d.status === DocumentStatus.Pending_Approval).length,
-      draft: documents.filter(d => d.status === DocumentStatus.Draft).length,
-      expired: documents.filter(d => d.status === DocumentStatus.Expired).length,
+      published: documents.filter(d => d.status === 'Published').length,
+      pending: documents.filter(d => d.status === 'Pending_Approval').length,
+      draft: documents.filter(d => d.status === 'Draft').length,
+      expired: documents.filter(d => d.status === 'Expired').length,
     };
     return stats;
   };
 
   const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
-      case DocumentStatus.Published:
+      case 'Published':
         return 'bg-green-100 text-green-800';
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return 'bg-yellow-100 text-yellow-800';
-      case DocumentStatus.Draft:
+      case 'Draft':
         return 'bg-gray-100 text-gray-800';
-      case DocumentStatus.Expired:
+      case 'Expired':
         return 'bg-red-100 text-red-800';
-      case DocumentStatus.Archived:
+      case 'Archived':
         return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-blue-100 text-blue-800';
@@ -75,15 +59,15 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
   const getStatusIcon = (status: DocumentStatus) => {
     switch (status) {
-      case DocumentStatus.Published:
+      case 'Published':
         return <CheckCircle className="h-4 w-4" />;
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return <Clock className="h-4 w-4" />;
-      case DocumentStatus.Draft:
+      case 'Draft':
         return <FileText className="h-4 w-4" />;
-      case DocumentStatus.Expired:
+      case 'Expired':
         return <AlertTriangle className="h-4 w-4" />;
-      case DocumentStatus.Archived:
+      case 'Archived':
         return <Archive className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;

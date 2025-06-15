@@ -10,8 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useDocument } from '@/contexts/DocumentContext';
 import { Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DocumentCategory, DocumentStatus } from '@/types/enums';
-import { stringToDocumentCategory } from '@/utils/documentAdapters';
+import { DocumentCategory, DocumentStatus } from '@/types/document';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -26,7 +25,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('Other');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -57,11 +56,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     setUploading(true);
     
     try {
-      // Convert string category to DocumentCategory enum
-      const documentCategory = stringToDocumentCategory(category);
-      
       // Determine initial status based on approval requirement
-      const initialStatus = requiresApproval ? DocumentStatus.Pending_Approval : DocumentStatus.Draft;
+      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Approval' : 'Draft';
       
       // Create document with proper integration
       const newDoc = {
@@ -71,7 +67,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         file_size: selectedFile.size,
         file_type: selectedFile.type,
         file_path: folderPath,
-        category: documentCategory,
+        category: category,
         status: initialStatus,
         version: 1,
         created_by: 'current_user', // TODO: Get from auth context
@@ -93,7 +89,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       // Reset form
       setTitle('');
       setDescription('');
-      setCategory('');
+      setCategory('Other');
       setSelectedFile(null);
       setRequiresApproval(false);
       onOpenChange(false);
@@ -112,7 +108,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const handleCancel = () => {
     setTitle('');
     setDescription('');
-    setCategory('');
+    setCategory('Other');
     setSelectedFile(null);
     setRequiresApproval(false);
     onOpenChange(false);
@@ -147,7 +143,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(value) => setCategory(value as DocumentCategory)}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>

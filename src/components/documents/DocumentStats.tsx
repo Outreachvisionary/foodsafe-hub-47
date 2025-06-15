@@ -12,11 +12,11 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
-import { Document, DocumentStats } from '@/types/document';
+import { Document, type DocumentStats as DocumentStatsType } from '@/types/document';
 
 interface DocumentStatsProps {
   documents: Document[];
-  stats?: DocumentStats | null;
+  stats?: DocumentStatsType | null;
 }
 
 const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
@@ -152,10 +152,10 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary" className={getStatusColor(status)}>
-                      {count}
+                      {String(count)}
                     </Badge>
                     <span className="text-sm text-gray-500">
-                      {calculatedStats.total > 0 ? Math.round((Number(count) / calculatedStats.total) * 100) : 0}%
+                      {calculatedStats.total > 0 ? Math.round((count / calculatedStats.total) * 100) : 0}%
                     </span>
                   </div>
                 </div>
@@ -189,10 +189,10 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">
-                      {count}
+                      {String(count)}
                     </Badge>
                     <span className="text-sm text-gray-500">
-                      {calculatedStats.total > 0 ? Math.round((Number(count) / calculatedStats.total) * 100) : 0}%
+                      {calculatedStats.total > 0 ? Math.round((count / calculatedStats.total) * 100) : 0}%
                     </span>
                   </div>
                 </div>

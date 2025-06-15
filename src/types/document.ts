@@ -1,4 +1,46 @@
 
+// Use the database schema types directly to avoid conflicts
+export type DocumentStatus = 
+  | 'Draft'
+  | 'Pending_Review'
+  | 'Pending_Approval'
+  | 'Approved'
+  | 'Published'
+  | 'Rejected'
+  | 'Archived'
+  | 'Expired';
+
+export type DocumentCategory = 
+  | 'SOP'
+  | 'Policy'
+  | 'Form'
+  | 'Certificate'
+  | 'Audit Report'
+  | 'HACCP Plan'
+  | 'Training Material'
+  | 'Supplier Documentation'
+  | 'Risk Assessment'
+  | 'Other';
+
+export type CheckoutStatus = 
+  | 'Available'
+  | 'Checked_Out';
+
+export type DocumentActionType = 
+  | 'created'
+  | 'updated' 
+  | 'deleted'
+  | 'approved'
+  | 'rejected'
+  | 'published'
+  | 'archived'
+  | 'checkout'
+  | 'checkin'
+  | 'download'
+  | 'view'
+  | 'edit'
+  | 'archive';
+
 export interface Document {
   id: string;
   title: string;
@@ -52,6 +94,7 @@ export interface DocumentVersion {
   document_id: string;
   version: number;
   file_name: string;
+  file_path: string;
   file_size: number;
   created_at: string;
   created_by: string;
@@ -89,42 +132,23 @@ export interface DocumentStats {
   pendingApprovalCount: number;
 }
 
-export type DocumentActionType = 
-  | 'created'
-  | 'updated' 
-  | 'deleted'
-  | 'approved'
-  | 'rejected'
-  | 'published'
-  | 'archived'
-  | 'checkout'
-  | 'checkin'
-  | 'download'
-  | 'view'
-  | 'edit'
-  | 'archive';
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_role?: string;
+  permission_level: string;
+  granted_by: string;
+  granted_at: string;
+  folder_id?: string;
+}
 
-export type DocumentCategory = 
-  | 'SOP'
-  | 'Policy'
-  | 'Form'
-  | 'Certificate'
-  | 'Audit Report'
-  | 'HACCP Plan'
-  | 'Training Material'
-  | 'Supplier Documentation'
-  | 'Risk Assessment'
-  | 'Other';
-
-export type DocumentStatus = 
-  | 'Draft'
-  | 'Pending_Review'
-  | 'Pending_Approval'
-  | 'Approved'
-  | 'Published'
-  | 'Rejected'
-  | 'Archived';
-
-export type CheckoutStatus = 
-  | 'Available'
-  | 'Checked_Out';
+export interface DocumentComment {
+  id: string;
+  document_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+}

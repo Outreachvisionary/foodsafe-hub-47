@@ -125,13 +125,18 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       if (!user) throw new Error('User not authenticated');
       
       const documentData = {
-        ...data,
+        title: data.title || '',
+        file_name: data.file_name || '',
+        file_type: data.file_type || '',
+        file_size: data.file_size || 0,
+        category: data.category || 'Other',
+        status: data.status || 'Draft',
+        checkout_status: data.checkout_status || 'Available',
+        version: data.version || 1,
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        category: data.category || 'Other',
-        status: data.status || 'Draft',
-        checkout_status: data.checkout_status || 'Available'
+        ...data,
       };
 
       const { data: result, error } = await supabase
@@ -205,10 +210,12 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       if (!user) throw new Error('User not authenticated');
       
       const folderData = {
-        ...data,
+        name: data.name || '',
+        path: data.path || '',
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        ...data,
       };
 
       const { data: result, error } = await supabase
@@ -227,6 +234,52 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     onError: (error) => {
       console.error('Error creating folder:', error);
       toast.error('Failed to create folder');
+    },
+  });
+
+  const updateFolderMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<DocumentFolder> }) => {
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('document_folders')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as DocumentFolder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
+      toast.success('Folder updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating folder:', error);
+      toast.error('Failed to update folder');
+    },
+  });
+
+  const deleteFolderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('document_folders')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
+      toast.success('Folder deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting folder:', error);
+      toast.error('Failed to delete folder');
     },
   });
 
@@ -318,9 +371,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         updates: {
           checkout_status: 'Checked_Out',
           checkout_user_id: user.id,
-          checkout_user_name: user.email || 'Unknown',
+          checkout_user_name: user.email || '',
           checkout_timestamp: new Date().toISOString(),
-        },
+          is_locked: true
+        }
       });
     },
     
@@ -332,60 +386,31 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
           checkout_user_id: undefined,
           checkout_user_name: undefined,
           checkout_timestamp: undefined,
-          ...(versionData && { version: versionData.version }),
-        },
+          is_locked: false
+        }
       });
     },
-
+    
     approveDocument: (id: string, comments?: string) => 
       approveDocumentMutation.mutateAsync({ id, comments }),
-    
     rejectDocument: (id: string, reason: string) => 
       rejectDocumentMutation.mutateAsync({ id, reason }),
     
     createFolder: createFolderMutation.mutateAsync,
-    updateFolder: async (id: string, updates: Partial<DocumentFolder>) => {
-      const { data, error } = await supabase
-        .from('document_folders')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
-      return data as DocumentFolder;
-    },
-    
-    deleteFolder: async (id: string) => {
-      const { error } = await supabase
-        .from('document_folders')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
-    },
+    updateFolder: (id: string, updates: Partial<DocumentFolder>) => 
+      updateFolderMutation.mutateAsync({ id, updates }),
+    deleteFolder: deleteFolderMutation.mutateAsync,
     
     refresh: async () => {
       await Promise.all([refetchDocuments(), refetchFolders()]);
     },
-
-    refreshDocuments: async () => {
-      await refetchDocuments();
-    },
-    
+    refreshDocuments: refetchDocuments,
     searchDocuments: (query: string) => {
-      if (!query.trim()) return documents;
-      const searchTerm = query.toLowerCase();
       return documents.filter(doc =>
-        doc.title.toLowerCase().includes(searchTerm) ||
-        doc.description?.toLowerCase().includes(searchTerm) ||
-        doc.file_name.toLowerCase().includes(searchTerm) ||
-        doc.tags?.some(tag => tag.toLowerCase().includes(searchTerm))
+        doc.title.toLowerCase().includes(query.toLowerCase()) ||
+        doc.description?.toLowerCase().includes(query.toLowerCase())
       );
     },
-    
     getDocumentsByFolder: (folderId: string) => {
       return documents.filter(doc => doc.folder_id === folderId);
     },
@@ -397,5 +422,3 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     </DocumentContext.Provider>
   );
 };
-
-export default DocumentContext;
