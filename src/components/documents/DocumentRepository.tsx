@@ -1,15 +1,14 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useDocument } from '@/contexts/DocumentContext';
-import { FolderPlus, Upload, Search, FileText, Folder, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
-import DocumentBreadcrumb from './DocumentBreadcrumb';
 import DocumentFolders from './DocumentFolders';
-import DocumentViewModeToggle from './DocumentViewModeToggle';
+import DocumentHeader from './DocumentHeader';
+import DocumentSearch from './DocumentSearch';
+import EmptyDocumentsState from './EmptyDocumentsState';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -41,7 +40,6 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const { 
     documents,
-    folders,
     loading, 
     error,
     refresh,
@@ -201,14 +199,13 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
         <Card className="border-red-200 bg-red-50">
           <CardContent className="text-center py-12">
             <div className="text-red-600 mb-4">
-              <FileText className="mx-auto h-12 w-12 mb-2" />
+              <RefreshCw className="mx-auto h-12 w-12 mb-2" />
               <h3 className="text-lg font-medium">Error Loading Documents</h3>
               <p className="text-sm mt-2">{error}</p>
             </div>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <button onClick={handleRefresh} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
               Try Again
-            </Button>
+            </button>
           </CardContent>
         </Card>
       </div>
@@ -218,39 +215,16 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <DocumentBreadcrumb path={currentPath} onNavigate={handlePathChange} />
-        <div className="flex items-center gap-2">
-          <DocumentViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUploadClick}
-            className="flex items-center"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCreateFolderClick}
-            className="flex items-center"
-          >
-            <FolderPlus className="h-4 w-4 mr-2" />
-            New Folder
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <DocumentHeader
+        currentPath={currentPath}
+        viewMode={viewMode}
+        loading={loading}
+        onNavigate={handlePathChange}
+        onViewModeChange={setViewMode}
+        onUpload={handleUploadClick}
+        onCreateFolder={handleCreateFolderClick}
+        onRefresh={handleRefresh}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar with folders */}
@@ -264,16 +238,10 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
         {/* Main content area */}
         <div className="lg:col-span-3 space-y-6">
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search documents by title, description, filename, or tags..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <DocumentSearch
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
 
           {/* Documents */}
           {loading ? (
@@ -295,43 +263,24 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
               </div>
               
               {filteredDocs.length === 0 ? (
-                <Card className="border-2 border-dashed border-gray-300">
-                  <CardContent className="text-center py-12">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
-                    <p className="text-sm text-gray-500 mb-6">
-                      {searchTerm 
-                        ? "Try adjusting your search terms or clear the search to see all documents" 
-                        : selectedFolderId 
-                        ? "This folder is empty. Upload documents or move existing documents here."
-                        : "Get started by uploading your first document or creating a new folder"}
-                    </p>
-                    <div className="flex justify-center gap-3">
-                      <Button onClick={handleUploadClick}>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Document
-                      </Button>
-                      <Button onClick={handleCreateFolderClick} variant="outline">
-                        <FolderPlus className="h-4 w-4 mr-2" />
-                        Create Folder
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EmptyDocumentsState
+                  searchTerm={searchTerm}
+                  selectedFolderId={selectedFolderId}
+                  onUpload={handleUploadClick}
+                  onCreateFolder={handleCreateFolderClick}
+                />
               ) : (
-                <div className="space-y-4">
-                  <DocumentGrid 
-                    documents={filteredDocs} 
-                    onDocumentClick={handleDocumentClick}
-                    onDocumentEdit={handleDocumentEdit}
-                    onDocumentDelete={handleDeleteDocument}
-                    onDocumentDownload={handleDocumentDownload}
-                    onDocumentMove={handleDocumentMove}
-                    onDocumentCheckout={handleDocumentCheckout}
-                    onDocumentCheckin={handleDocumentCheckin}
-                    viewMode={viewMode}
-                  />
-                </div>
+                <DocumentGrid 
+                  documents={filteredDocs} 
+                  onDocumentClick={handleDocumentClick}
+                  onDocumentEdit={handleDocumentEdit}
+                  onDocumentDelete={handleDeleteDocument}
+                  onDocumentDownload={handleDocumentDownload}
+                  onDocumentMove={handleDocumentMove}
+                  onDocumentCheckout={handleDocumentCheckout}
+                  onDocumentCheckin={handleDocumentCheckin}
+                  viewMode={viewMode}
+                />
               )}
             </div>
           )}
