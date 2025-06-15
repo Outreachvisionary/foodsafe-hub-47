@@ -798,6 +798,57 @@ export type Database = {
           },
         ]
       }
+      document_folders: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          is_system_folder: boolean | null
+          name: string
+          organization_id: string | null
+          parent_id: string | null
+          path: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_system_folder?: boolean | null
+          name: string
+          organization_id?: string | null
+          parent_id?: string | null
+          path: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_system_folder?: boolean | null
+          name?: string
+          organization_id?: string | null
+          parent_id?: string | null
+          path?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_permission_types: {
         Row: {
           created_at: string | null

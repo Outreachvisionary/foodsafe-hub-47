@@ -1,240 +1,315 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Document } from '@/types/document';
-import { fetchDocuments, fetchActiveDocuments, createDocument, updateDocument, deleteDocument } from '@/services/documentService';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Document, DocumentFolder, DocumentStats } from '@/types/document';
+import { toast } from 'sonner';
+import { useAuth } from './AuthContext';
 
 interface DocumentContextType {
   documents: Document[];
+  folders: DocumentFolder[];
   loading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
-  fetchActive: () => Promise<void>;
-  refreshDocuments: () => Promise<void>;
-  createDocument: (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>) => Promise<Document>;
-  updateDocument: (id: string, updates: Partial<Document>) => Promise<void>;
+  stats: DocumentStats | null;
+  
+  // Document operations
+  createDocument: (data: Partial<Document>) => Promise<Document>;
+  updateDocument: (id: string, updates: Partial<Document>) => Promise<Document>;
   deleteDocument: (id: string) => Promise<void>;
-  approveDocument: (id: string) => Promise<void>;
-  rejectDocument: (id: string, reason: string) => Promise<void>;
   checkoutDocument: (id: string) => Promise<void>;
-  checkinDocument: (id: string, comment?: string) => Promise<void>;
+  checkinDocument: (id: string, versionData?: any) => Promise<void>;
+  
+  // Folder operations
+  createFolder: (data: Partial<DocumentFolder>) => Promise<DocumentFolder>;
+  updateFolder: (id: string, updates: Partial<DocumentFolder>) => Promise<DocumentFolder>;
+  deleteFolder: (id: string) => Promise<void>;
+  
+  // Utility functions
+  refresh: () => Promise<void>;
+  searchDocuments: (query: string) => Document[];
+  getDocumentsByFolder: (folderId: string) => Document[];
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
+
+export const useDocument = () => {
+  const context = useContext(DocumentContext);
+  if (context === undefined) {
+    throw new Error('useDocument must be used within a DocumentProvider');
+  }
+  return context;
+};
 
 interface DocumentProviderProps {
   children: ReactNode;
 }
 
 export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  const refresh = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchDocuments();
-      setDocuments(data);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load documents';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch documents
+  const { 
+    data: documents = [], 
+    isLoading: documentsLoading, 
+    error: documentsError,
+    refetch: refetchDocuments 
+  } = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw new Error(error.message);
+      }
+      
+      return data as Document[];
+    },
+    enabled: !!user,
+  });
 
-  const fetchActive = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchActiveDocuments();
-      setDocuments(data);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load active documents';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch folders
+  const { 
+    data: folders = [], 
+    isLoading: foldersLoading,
+    error: foldersError,
+    refetch: refetchFolders 
+  } = useQuery({
+    queryKey: ['document-folders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('document_folders')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching folders:', error);
+        throw new Error(error.message);
+      }
+      
+      return data as DocumentFolder[];
+    },
+    enabled: !!user,
+  });
 
-  const refreshDocuments = refresh;
+  // Calculate stats
+  const stats: DocumentStats | null = documents.length > 0 ? {
+    total: documents.length,
+    byStatus: documents.reduce((acc, doc) => {
+      acc[doc.status] = (acc[doc.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    byCategory: documents.reduce((acc, doc) => {
+      acc[doc.category] = (acc[doc.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    expiringCount: documents.filter(doc => 
+      doc.expiry_date && new Date(doc.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    ).length,
+    pendingReviewCount: documents.filter(doc => doc.status === 'Pending Review').length,
+    pendingApprovalCount: documents.filter(doc => doc.status === 'Pending Approval').length,
+  } : null;
 
-  const handleCreateDocument = async (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> => {
-    try {
-      const newDocument = await createDocument(document);
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document created successfully',
-      });
-      return newDocument;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+  // Document mutations
+  const createDocumentMutation = useMutation({
+    mutationFn: async (data: Partial<Document>) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const documentData = {
+        ...data,
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-  const handleUpdateDocument = async (id: string, updates: Partial<Document>) => {
-    try {
-      await updateDocument(id, updates);
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document updated successfully',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+      const { data: result, error } = await supabase
+        .from('documents')
+        .insert(documentData)
+        .select()
+        .single();
 
-  const handleDeleteDocument = async (id: string) => {
-    try {
-      await deleteDocument(id);
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document deleted successfully',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+      if (error) throw error;
+      return result as Document;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating document:', error);
+      toast.error('Failed to create document');
+    },
+  });
 
-  const approveDocument = async (id: string) => {
-    try {
-      await updateDocument(id, { status: 'Approved' as any });
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document approved successfully',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to approve document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+  const updateDocumentMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Document> }) => {
+      const { data, error } = await supabase
+        .from('documents')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
 
-  const rejectDocument = async (id: string, reason: string) => {
-    try {
-      await updateDocument(id, { 
-        status: 'Rejected' as any, 
-        rejection_reason: reason 
-      });
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document rejected',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reject document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+      if (error) throw error;
+      return data as Document;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating document:', error);
+      toast.error('Failed to update document');
+    },
+  });
 
-  const checkoutDocument = async (id: string) => {
-    try {
-      await updateDocument(id, { 
-        checkout_status: 'Checked Out' as any,
-        checkout_timestamp: new Date().toISOString(),
-        is_locked: true
-      });
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document checked out successfully',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to checkout document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
 
-  const checkinDocument = async (id: string, comment?: string) => {
-    try {
-      await updateDocument(id, { 
-        checkout_status: 'Available' as any,
-        checkout_timestamp: null,
-        is_locked: false
-      });
-      await refresh();
-      toast({
-        title: 'Success',
-        description: 'Document checked in successfully',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to checkin document';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    },
+  });
 
+  // Folder mutations
+  const createFolderMutation = useMutation({
+    mutationFn: async (data: Partial<DocumentFolder>) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const folderData = {
+        ...data,
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: result, error } = await supabase
+        .from('document_folders')
+        .insert(folderData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result as DocumentFolder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
+      toast.success('Folder created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating folder:', error);
+      toast.error('Failed to create folder');
+    },
+  });
+
+  // Handle errors
   useEffect(() => {
-    refresh();
-  }, []);
+    if (documentsError || foldersError) {
+      const errorMessage = documentsError?.message || foldersError?.message || 'Unknown error';
+      setError(errorMessage);
+    } else {
+      setError(null);
+    }
+  }, [documentsError, foldersError]);
 
   const value: DocumentContextType = {
     documents,
-    loading,
+    folders,
+    loading: documentsLoading || foldersLoading,
     error,
-    refresh,
-    fetchActive,
-    refreshDocuments,
-    createDocument: handleCreateDocument,
-    updateDocument: handleUpdateDocument,
-    deleteDocument: handleDeleteDocument,
-    approveDocument,
-    rejectDocument,
-    checkoutDocument,
-    checkinDocument,
+    stats,
+    
+    createDocument: createDocumentMutation.mutateAsync,
+    updateDocument: (id: string, updates: Partial<Document>) => 
+      updateDocumentMutation.mutateAsync({ id, updates }),
+    deleteDocument: deleteDocumentMutation.mutateAsync,
+    
+    checkoutDocument: async (id: string) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      await updateDocumentMutation.mutateAsync({
+        id,
+        updates: {
+          checkout_status: 'Checked Out',
+          checkout_user_id: user.id,
+          checkout_user_name: user.email || 'Unknown',
+          checkout_timestamp: new Date().toISOString(),
+        },
+      });
+    },
+    
+    checkinDocument: async (id: string, versionData?: any) => {
+      await updateDocumentMutation.mutateAsync({
+        id,
+        updates: {
+          checkout_status: 'Available',
+          checkout_user_id: null,
+          checkout_user_name: null,
+          checkout_timestamp: null,
+          ...(versionData && { version: versionData.version }),
+        },
+      });
+    },
+    
+    createFolder: createFolderMutation.mutateAsync,
+    updateFolder: async (id: string, updates: Partial<DocumentFolder>) => {
+      const { data, error } = await supabase
+        .from('document_folders')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
+      return data as DocumentFolder;
+    },
+    
+    deleteFolder: async (id: string) => {
+      const { error } = await supabase
+        .from('document_folders')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['document-folders'] });
+    },
+    
+    refresh: async () => {
+      await Promise.all([refetchDocuments(), refetchFolders()]);
+    },
+    
+    searchDocuments: (query: string) => {
+      if (!query.trim()) return documents;
+      const searchTerm = query.toLowerCase();
+      return documents.filter(doc =>
+        doc.title.toLowerCase().includes(searchTerm) ||
+        doc.description?.toLowerCase().includes(searchTerm) ||
+        doc.file_name.toLowerCase().includes(searchTerm) ||
+        doc.tags?.some(tag => tag.toLowerCase().includes(searchTerm))
+      );
+    },
+    
+    getDocumentsByFolder: (folderId: string) => {
+      return documents.filter(doc => doc.folder_id === folderId);
+    },
   };
 
   return (
@@ -244,12 +319,4 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   );
 };
 
-export const useDocument = (): DocumentContextType => {
-  const context = useContext(DocumentContext);
-  if (context === undefined) {
-    throw new Error('useDocument must be used within a DocumentProvider');
-  }
-  return context;
-};
-
-export const useDocumentContext = useDocument;
+export default DocumentContext;

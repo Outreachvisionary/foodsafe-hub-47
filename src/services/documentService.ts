@@ -1,250 +1,225 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
-import { DocumentStatus, CheckoutStatus, DocumentCategory } from '@/types/enums';
-import { documentCategoryToDbString, stringToDocumentCategory, documentStatusToDbString, stringToDocumentStatus } from '@/utils/documentAdapters';
-import { storageService } from './storageService';
+import { Document, DocumentFolder, DocumentVersion } from '@/types/document';
+import { CrudService } from './crudService';
 
-export const fetchDocuments = async (): Promise<Document[]> => {
-  try {
-    // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+export class DocumentService extends CrudService {
+  // Document operations
+  static async getDocuments(filters?: any): Promise<Document[]> {
+    return this.fetchRecords<Document>({
+      table: 'documents',
+      select: '*',
+      filters,
+      orderBy: { column: 'updated_at', ascending: false }
+    });
+  }
 
+  static async getDocument(id: string): Promise<Document | null> {
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return (data || []).map(item => ({
-      ...item,
-      status: stringToDocumentStatus(item.status),
-      checkout_status: (item.checkout_status || 'Available') as CheckoutStatus,
-      category: stringToDocumentCategory(item.category),
-    }));
-  } catch (error) {
-    console.error('Error fetching documents:', error);
-    throw error;
-  }
-};
-
-export const fetchActiveDocuments = async (): Promise<Document[]> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .in('status', ['Published', 'Approved'])
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return (data || []).map(item => ({
-      ...item,
-      status: stringToDocumentStatus(item.status),
-      checkout_status: (item.checkout_status || 'Available') as CheckoutStatus,
-      category: stringToDocumentCategory(item.category),
-    }));
-  } catch (error) {
-    console.error('Error fetching active documents:', error);
-    throw error;
-  }
-};
-
-export const createDocument = async (document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const documentData = {
-      title: document.title,
-      description: document.description,
-      file_name: document.file_name,
-      file_path: document.file_path,
-      file_type: document.file_type,
-      file_size: document.file_size,
-      status: documentStatusToDbString(document.status) as any,
-      category: documentCategoryToDbString(document.category) as any,
-      checkout_status: (document.checkout_status || 'Available') as any,
-      version: document.version,
-      created_by: user.id, // Use authenticated user ID
-      tags: document.tags,
-      approvers: document.approvers,
-      folder_id: document.folder_id,
-      expiry_date: document.expiry_date,
-      last_review_date: document.last_review_date,
-      next_review_date: document.next_review_date,
-      current_version_id: document.current_version_id,
-      is_template: document.is_template,
-      checkout_user_id: document.checkout_user_id,
-      checkout_user_name: document.checkout_user_name,
-      checkout_timestamp: document.checkout_timestamp,
-      is_locked: document.is_locked,
-      linked_module: document.linked_module,
-      linked_item_id: document.linked_item_id,
-      workflow_status: document.workflow_status,
-      rejection_reason: document.rejection_reason,
-      last_action: document.last_action,
-      pending_since: document.pending_since,
-      custom_notification_days: document.custom_notification_days,
-    };
-
-    const { data, error } = await supabase
-      .from('documents')
-      .insert(documentData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      status: stringToDocumentStatus(data.status),
-      checkout_status: (data.checkout_status || 'Available') as CheckoutStatus,
-      category: stringToDocumentCategory(data.category),
-    };
-  } catch (error) {
-    console.error('Error creating document:', error);
-    throw error;
-  }
-};
-
-export const updateDocument = async (id: string, updates: Partial<Document>): Promise<Document> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const updateData: any = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Convert enum values to database strings
-    if (updates.status) {
-      updateData.status = documentStatusToDbString(updates.status) as any;
-    }
-    if (updates.category) {
-      updateData.category = documentCategoryToDbString(updates.category) as any;
-    }
-
-    const { data, error } = await supabase
-      .from('documents')
-      .update(updateData)
       .eq('id', id)
-      .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    
-    return {
-      ...data,
-      status: stringToDocumentStatus(data.status),
-      checkout_status: (data.checkout_status || 'Available') as CheckoutStatus,
-      category: stringToDocumentCategory(data.category),
-    };
-  } catch (error) {
-    console.error('Error updating document:', error);
-    throw error;
+    return data as Document | null;
   }
-};
 
-export const deleteDocument = async (id: string): Promise<void> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // First get the document to find its file path
-    const { data: document } = await supabase
-      .from('documents')
-      .select('file_path')
-      .eq('id', id)
-      .single();
-
-    // Delete the document record
-    const { error } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    // Delete the associated file if it exists
-    if (document?.file_path) {
-      await storageService.deleteFile('documents', document.file_path);
-    }
-  } catch (error) {
-    console.error('Error deleting document:', error);
-    throw error;
+  static async createDocument(data: Partial<Document>): Promise<Document> {
+    return this.createRecord<Document>('documents', data);
   }
-};
 
-export const uploadDocumentFile = async (file: File, documentId: string): Promise<string> => {
-  try {
-    const result = await storageService.uploadFile(file, {
-      bucket: 'documents',
-      folder: documentId,
-      filename: file.name,
+  static async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
+    return this.updateRecord<Document>('documents', id, updates);
+  }
+
+  static async deleteDocument(id: string): Promise<boolean> {
+    return this.deleteRecord('documents', id);
+  }
+
+  // Folder operations
+  static async getFolders(): Promise<DocumentFolder[]> {
+    return this.fetchRecords<DocumentFolder>({
+      table: 'document_folders',
+      select: '*',
+      orderBy: { column: 'name', ascending: true }
+    });
+  }
+
+  static async createFolder(data: Partial<DocumentFolder>): Promise<DocumentFolder> {
+    return this.createRecord<DocumentFolder>('document_folders', data);
+  }
+
+  static async updateFolder(id: string, updates: Partial<DocumentFolder>): Promise<DocumentFolder> {
+    return this.updateRecord<DocumentFolder>('document_folders', id, updates);
+  }
+
+  static async deleteFolder(id: string): Promise<boolean> {
+    // Check if folder has documents
+    const documents = await this.fetchRecords({
+      table: 'documents',
+      filters: { folder_id: id },
+      limit: 1
     });
 
-    if (result.error) {
-      throw new Error(result.error);
+    if (documents.length > 0) {
+      throw new Error('Cannot delete folder that contains documents');
     }
 
-    return result.path;
-  } catch (error) {
-    console.error('Error uploading document file:', error);
-    throw error;
+    return this.deleteRecord('document_folders', id, true); // Hard delete for folders
   }
-};
 
-export const getDocumentDownloadUrl = async (filePath: string): Promise<string | null> => {
-  try {
-    return await storageService.getSignedUrl('documents', filePath, 3600);
-  } catch (error) {
-    console.error('Error getting document download URL:', error);
-    return null;
+  // Document workflow operations
+  static async submitForReview(documentId: string): Promise<Document> {
+    return this.updateDocument(documentId, {
+      status: 'Pending Review',
+      workflow_status: 'review',
+      pending_since: new Date().toISOString()
+    });
   }
-};
 
-export const createDocumentActivity = async (activity: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data, error } = await supabase
-      .from('document_activities')
-      .insert({
-        ...activity,
-        user_id: user.id, // Ensure user_id is set to authenticated user
-        timestamp: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      action: data.action as DocumentActionType
+  static async approveDocument(documentId: string, approverComments?: string): Promise<Document> {
+    const updates: Partial<Document> = {
+      status: 'Approved',
+      workflow_status: 'approved',
+      pending_since: null
     };
-  } catch (error) {
-    console.error('Error creating document activity:', error);
-    throw error;
+
+    // Log approval activity
+    await this.logDocumentActivity(documentId, 'approved', approverComments);
+
+    return this.updateDocument(documentId, updates);
   }
-};
+
+  static async rejectDocument(documentId: string, rejectionReason: string): Promise<Document> {
+    const updates: Partial<Document> = {
+      status: 'Draft',
+      workflow_status: 'rejected',
+      rejection_reason: rejectionReason,
+      pending_since: null
+    };
+
+    // Log rejection activity
+    await this.logDocumentActivity(documentId, 'rejected', rejectionReason);
+
+    return this.updateDocument(documentId, updates);
+  }
+
+  static async publishDocument(documentId: string): Promise<Document> {
+    return this.updateDocument(documentId, {
+      status: 'Published',
+      workflow_status: 'published'
+    });
+  }
+
+  // Document checkout/checkin
+  static async checkoutDocument(documentId: string, userId: string, userName: string): Promise<Document> {
+    return this.updateDocument(documentId, {
+      checkout_status: 'Checked Out',
+      checkout_user_id: userId,
+      checkout_user_name: userName,
+      checkout_timestamp: new Date().toISOString(),
+      is_locked: true
+    });
+  }
+
+  static async checkinDocument(documentId: string, versionData?: Partial<DocumentVersion>): Promise<Document> {
+    const updates: Partial<Document> = {
+      checkout_status: 'Available',
+      checkout_user_id: null,
+      checkout_user_name: null,
+      checkout_timestamp: null,
+      is_locked: false
+    };
+
+    // If version data is provided, increment version
+    if (versionData) {
+      const document = await this.getDocument(documentId);
+      if (document) {
+        updates.version = document.version + 1;
+        
+        // Create new version record
+        await this.createRecord('document_versions', {
+          document_id: documentId,
+          version: updates.version,
+          ...versionData
+        });
+      }
+    }
+
+    return this.updateDocument(documentId, updates);
+  }
+
+  // Activity logging
+  static async logDocumentActivity(
+    documentId: string, 
+    action: string, 
+    comments?: string, 
+    userId?: string
+  ): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    await this.createRecord('document_activities', {
+      document_id: documentId,
+      action,
+      comments,
+      user_id: userId || user?.id,
+      user_name: user?.email || 'Unknown',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Search and filter
+  static async searchDocuments(query: string, filters?: any): Promise<Document[]> {
+    const searchFilters = {
+      ...filters,
+      title: `%${query}%`
+    };
+
+    return this.fetchRecords<Document>({
+      table: 'documents',
+      select: '*',
+      filters: searchFilters,
+      orderBy: { column: 'updated_at', ascending: false }
+    });
+  }
+
+  // Document statistics
+  static async getDocumentStats(): Promise<any> {
+    const documents = await this.getDocuments();
+    
+    const stats = {
+      total: documents.length,
+      byStatus: {} as Record<string, number>,
+      byCategory: {} as Record<string, number>,
+      expiringCount: 0,
+      pendingReviewCount: 0,
+      pendingApprovalCount: 0
+    };
+
+    documents.forEach(doc => {
+      // Status counts
+      stats.byStatus[doc.status] = (stats.byStatus[doc.status] || 0) + 1;
+      
+      // Category counts
+      stats.byCategory[doc.category] = (stats.byCategory[doc.category] || 0) + 1;
+      
+      // Expiring documents (within 30 days)
+      if (doc.expiry_date) {
+        const expiryDate = new Date(doc.expiry_date);
+        const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        if (expiryDate <= thirtyDaysFromNow) {
+          stats.expiringCount++;
+        }
+      }
+      
+      // Pending counts
+      if (doc.status === 'Pending Review') stats.pendingReviewCount++;
+      if (doc.status === 'Pending Approval') stats.pendingApprovalCount++;
+    });
+
+    return stats;
+  }
+}
+
+export default DocumentService;

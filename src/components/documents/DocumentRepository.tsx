@@ -9,6 +9,7 @@ import { Document as DocumentType } from '@/types/document';
 import DocumentGrid from '@/components/documents/DocumentGrid';
 import DocumentBreadcrumb from './DocumentBreadcrumb';
 import DocumentFolders from './DocumentFolders';
+import DocumentViewModeToggle from './DocumentViewModeToggle';
 import { DocumentRepositoryErrorHandler } from './DocumentRepositoryErrorHandler';
 import { toast } from 'sonner';
 import {
@@ -34,6 +35,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   const [currentPath, setCurrentPath] = useState('/');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
@@ -42,6 +44,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const { 
     documents,
+    folders,
     loading, 
     error,
     refresh,
@@ -80,7 +83,8 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
       filtered = filtered.filter(doc => 
         doc.title.toLowerCase().includes(term) || 
         doc.description?.toLowerCase().includes(term) ||
-        doc.file_name.toLowerCase().includes(term)
+        doc.file_name.toLowerCase().includes(term) ||
+        doc.tags?.some(tag => tag.toLowerCase().includes(term))
       );
     }
     
@@ -89,6 +93,10 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
 
   const handlePathChange = (path: string) => {
     setCurrentPath(path);
+    // Reset folder selection when navigating via breadcrumb
+    if (path === '/') {
+      setSelectedFolderId(null);
+    }
   };
 
   const handleFolderSelect = (folderId: string, folderPath: string) => {
@@ -199,12 +207,14 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <DocumentRepositoryErrorHandler error={repositoryError} onRetry={handleRetry} />
       
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <DocumentBreadcrumb path={currentPath} onNavigate={handlePathChange} />
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <DocumentViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
           <Button
             variant="outline"
             size="sm"
@@ -236,22 +246,29 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar with folders */}
         <div className="lg:col-span-1">
-          <DocumentFolders onSelectFolder={handleFolderSelect} />
+          <DocumentFolders 
+            onSelectFolder={handleFolderSelect}
+            selectedFolderId={selectedFolderId}
+          />
         </div>
         
-        <div className="lg:col-span-3 space-y-4">
+        {/* Main content area */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
             <Input
               type="search"
-              placeholder="Search documents..."
+              placeholder="Search documents by title, description, filename, or tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
 
+          {/* Documents */}
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <RefreshCcw className="h-8 w-8 animate-spin text-gray-400" />
@@ -259,53 +276,65 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
             </div>
           ) : (
             <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-medium mb-3">
-                  Documents in {currentPath} ({filteredDocs.length})
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-medium">
+                  {currentPath === '/' ? 'All Documents' : `Documents in ${currentPath}`} ({filteredDocs.length})
                 </h3>
-                {filteredDocs.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg border">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 font-medium text-lg">No documents found</h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                {filteredDocs.length > 0 && (
+                  <span className="text-sm text-gray-500">
+                    Showing {filteredDocs.length} of {documents.length} documents
+                  </span>
+                )}
+              </div>
+              
+              {filteredDocs.length === 0 ? (
+                <Card className="border-2 border-dashed border-gray-300">
+                  <CardContent className="text-center py-12">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+                    <p className="text-sm text-gray-500 mb-6">
                       {searchTerm 
-                        ? "Try adjusting your search terms" 
+                        ? "Try adjusting your search terms or clear the search to see all documents" 
                         : selectedFolderId 
                         ? "This folder is empty. Upload documents or move existing documents here."
-                        : "Upload documents or create a new folder"}
+                        : "Get started by uploading your first document or creating a new folder"}
                     </p>
-                    <div className="mt-4 flex justify-center gap-2">
-                      <Button onClick={handleUploadClick} size="sm">
+                    <div className="flex justify-center gap-3">
+                      <Button onClick={handleUploadClick}>
                         <Upload className="h-4 w-4 mr-2" />
                         Upload Document
                       </Button>
-                      <Button onClick={handleCreateFolderClick} variant="outline" size="sm">
+                      <Button onClick={handleCreateFolderClick} variant="outline">
                         <FolderPlus className="h-4 w-4 mr-2" />
                         Create Folder
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {/* Quick tips */}
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700">
+                      💡 <strong>Pro tip:</strong> Use checkout/checkin to edit documents safely. 
+                      Drag and drop documents to move them between folders. 
+                      Documents in workflow will appear in the Approval Workflow tab.
+                    </p>
                   </div>
-                ) : (
-                  <div>
-                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-700">
-                        💡 <strong>Tip:</strong> Drag and drop documents to move them between folders. 
-                        Use check-out to edit documents safely. Documents with approval workflow will appear in the Approval Workflow tab.
-                      </p>
-                    </div>
-                    <DocumentGrid 
-                      documents={filteredDocs} 
-                      onDocumentClick={handleDocumentClick}
-                      onDocumentEdit={handleDocumentEdit}
-                      onDocumentDelete={handleDeleteDocument}
-                      onDocumentDownload={handleDocumentDownload}
-                      onDocumentMove={handleDocumentMove}
-                      onDocumentCheckout={handleDocumentCheckout}
-                      onDocumentCheckin={handleDocumentCheckin}
-                    />
-                  </div>
-                )}
-              </div>
+                  
+                  <DocumentGrid 
+                    documents={filteredDocs} 
+                    onDocumentClick={handleDocumentClick}
+                    onDocumentEdit={handleDocumentEdit}
+                    onDocumentDelete={handleDeleteDocument}
+                    onDocumentDownload={handleDocumentDownload}
+                    onDocumentMove={handleDocumentMove}
+                    onDocumentCheckout={handleDocumentCheckout}
+                    onDocumentCheckin={handleDocumentCheckin}
+                    viewMode={viewMode}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -318,13 +347,16 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the document
-              and remove all associated data.
+              and remove all associated data including version history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteDocument} className="bg-red-600 hover:bg-red-700">
-              Delete
+            <AlertDialogAction 
+              onClick={confirmDeleteDocument} 
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Document
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
