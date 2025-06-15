@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import CAPAStatusForm from '@/components/capa/CAPAStatusForm';
 import CAPAAttachments from '@/components/capa/CAPAAttachments';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
-import { stringToCAPAStatus } from '@/utils/typeAdapters';
+import { stringToCAPAStatus } from '@/utils/capaAdapters';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
