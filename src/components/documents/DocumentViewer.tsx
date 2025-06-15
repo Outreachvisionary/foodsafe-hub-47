@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
-import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -51,6 +52,35 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<DocumentStatus | null>(null);
   const [statusNote, setStatusNote] = useState('');
+
+  // Helper function to convert document checkout status to enum
+  const getCheckoutStatusEnum = (status: string | undefined): CheckoutStatus => {
+    if (status === 'Checked_Out' || status === 'Checked Out') {
+      return CheckoutStatus.Checked_Out;
+    }
+    return CheckoutStatus.Available;
+  };
+
+  // Helper function to convert document status to enum  
+  const getDocumentStatusEnum = (status: string): DocumentStatus => {
+    switch (status) {
+      case 'Pending_Approval':
+      case 'Pending Approval':
+        return DocumentStatus.Pending_Approval;
+      case 'Approved':
+        return DocumentStatus.Approved;
+      case 'Published':
+        return DocumentStatus.Published;
+      case 'Rejected':
+        return DocumentStatus.Rejected;
+      case 'Archived':
+        return DocumentStatus.Archived;
+      case 'Expired':
+        return DocumentStatus.Expired;
+      default:
+        return DocumentStatus.Draft;
+    }
+  };
 
   useEffect(() => {
     // In a real application, would fetch all versions and initial active version
@@ -268,7 +298,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={document.checkout_status || 'Available'}
+                  status={getCheckoutStatusEnum(document.checkout_status)}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
