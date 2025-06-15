@@ -69,14 +69,14 @@ export function useAuthForms() {
   });
 
   // Login handler
-  const onLogin = async (values: LoginFormValues) => {
+  const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      console.log('Attempting login with:', values.email);
+      console.log('Attempting login with:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password
+        email: email,
+        password: password
       });
       
       if (error) {
@@ -86,7 +86,7 @@ export function useAuthForms() {
           description: error.message,
           variant: "destructive"
         });
-        return;
+        return { error };
       }
       
       console.log('Login successful, user:', data.user);
@@ -100,6 +100,7 @@ export function useAuthForms() {
       const returnUrl = params.get('returnUrl') || '/dashboard';
       navigate(returnUrl);
       
+      return { data };
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -107,24 +108,26 @@ export function useAuthForms() {
         description: "An unexpected error occurred",
         variant: "destructive"
       });
+      return { error };
     } finally {
       setIsLoading(false);
     }
   };
 
   // Register handler
-  const onRegister = async (values: RegisterFormValues) => {
+  const signUp = async (email: string, password: string, options?: { data?: any }) => {
     try {
       setIsLoading(true);
-      console.log('Attempting registration with:', values.email);
+      console.log('Attempting registration with:', email);
+      
+      const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
+        email: email,
+        password: password,
         options: {
-          data: {
-            full_name: values.full_name
-          }
+          ...options,
+          emailRedirectTo: redirectUrl
         }
       });
       
@@ -135,7 +138,7 @@ export function useAuthForms() {
           description: error.message,
           variant: "destructive"
         });
-        return;
+        return { error };
       }
       
       if (data.user) {
@@ -155,10 +158,11 @@ export function useAuthForms() {
           });
           // Clear form and reset to login tab
           registerForm.reset();
-          return true; // Signal to switch to login tab
+          return { data, switchToLogin: true };
         }
       }
       
+      return { data };
     } catch (error) {
       console.error("Registration error:", error);
       toast({
@@ -166,11 +170,22 @@ export function useAuthForms() {
         description: "An unexpected error occurred",
         variant: "destructive"
       });
+      return { error };
     } finally {
       setIsLoading(false);
     }
-    
-    return false;
+  };
+
+  const onLogin = async (values: LoginFormValues) => {
+    return await signIn(values.email, values.password);
+  };
+
+  const onRegister = async (values: RegisterFormValues) => {
+    return await signUp(values.email, values.password, {
+      data: {
+        full_name: values.full_name
+      }
+    });
   };
 
   return {
@@ -178,6 +193,8 @@ export function useAuthForms() {
     registerForm,
     onLogin,
     onRegister,
+    signIn,
+    signUp,
     isLoading
   };
 }

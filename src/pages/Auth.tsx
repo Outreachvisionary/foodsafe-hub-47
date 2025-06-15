@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { useAuthForms } from '@/hooks/useAuthForms';
 
 const Auth: React.FC = () => {
-  const { signIn, signUp, isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  const { signIn, signUp } = useAuthForms();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If authenticated, redirect to dashboard
@@ -39,7 +42,11 @@ const Auth: React.FC = () => {
 
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        await signUp(email, password, {
+          data: {
+            full_name: fullName
+          }
+        });
       } else {
         await signIn(email, password);
       }
@@ -63,6 +70,19 @@ const Auth: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -88,7 +108,7 @@ const Auth: React.FC = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isSubmitting || !email || !password}
+              disabled={isSubmitting || !email || !password || (isSignUp && !fullName)}
             >
               {isSubmitting ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>

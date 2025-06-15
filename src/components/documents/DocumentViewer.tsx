@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,12 +20,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-
-// Define the enum values that DocumentCheckoutActions expects
-enum EnumCheckoutStatus {
-  Available = 'Available',
-  Checked_Out = 'Checked_Out'
-}
 
 interface DocumentViewerProps {
   document: Document;
@@ -197,17 +190,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     }
   };
 
-  const convertCheckoutStatus = (status: CheckoutStatus): EnumCheckoutStatus => {
-    switch (status) {
-      case 'Available':
-        return EnumCheckoutStatus.Available;
-      case 'Checked_Out':
-        return EnumCheckoutStatus.Checked_Out;
-      default:
-        return EnumCheckoutStatus.Available;
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row items-start gap-4">
@@ -286,7 +268,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={convertCheckoutStatus(document.checkout_status || 'Available')}
+                  status={document.checkout_status || 'Available'}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
