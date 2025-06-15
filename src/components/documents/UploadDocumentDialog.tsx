@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useDocument } from '@/contexts/DocumentContext';
 import { Upload } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { DocumentCategory, DocumentStatus } from '@/types/document';
+import { useDocuments } from '@/hooks/useDocuments';
+import { toast } from 'sonner';
+import { DocumentCategory, DocumentStatus } from '@/types/enums';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -27,11 +27,10 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('Other');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
+  const [expiryDate, setExpiryDate] = useState('');
   
-  const { createDocument, refresh } = useDocument();
-  const { toast } = useToast();
+  const { createDocument, isCreating } = useDocuments();
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -45,19 +44,13 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   
   const handleUpload = async () => {
     if (!selectedFile || !title || !category) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields and select a file',
-        variant: 'destructive',
-      });
+      toast.error('Please fill in all required fields and select a file');
       return;
     }
     
-    setUploading(true);
-    
     try {
       // Determine initial status based on approval requirement
-      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Approval' : 'Draft';
+      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Review' : 'Draft';
       
       // Create document with proper integration
       const newDoc = {
@@ -71,46 +64,40 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         status: initialStatus,
         version: 1,
         created_by: 'current_user', // TODO: Get from auth context
+        expiry_date: expiryDate || undefined,
         approvers: requiresApproval ? ['approver1', 'approver2'] : [], // TODO: Get from form or default approvers
+        tags: [],
+        pending_since: requiresApproval ? new Date().toISOString() : undefined
       };
       
       await createDocument(newDoc);
       
-      // Refresh the document list
-      await refresh();
-      
-      toast({
-        title: 'Success',
-        description: requiresApproval 
+      toast.success(
+        requiresApproval 
           ? 'Document uploaded and sent for approval' 
-          : 'Document uploaded successfully',
-      });
+          : 'Document uploaded successfully'
+      );
       
       // Reset form
-      setTitle('');
-      setDescription('');
-      setCategory('Other');
-      setSelectedFile(null);
-      setRequiresApproval(false);
+      resetForm();
       onOpenChange(false);
     } catch (error) {
       console.error('Error uploading document:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to upload document',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
+      toast.error('Failed to upload document');
     }
   };
 
-  const handleCancel = () => {
+  const resetForm = () => {
     setTitle('');
     setDescription('');
     setCategory('Other');
     setSelectedFile(null);
     setRequiresApproval(false);
+    setExpiryDate('');
+  };
+
+  const handleCancel = () => {
+    resetForm();
     onOpenChange(false);
   };
   
@@ -148,16 +135,23 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SOP">SOP</SelectItem>
-                <SelectItem value="Policy">Policy</SelectItem>
-                <SelectItem value="Form">Form</SelectItem>
-                <SelectItem value="Certificate">Certificate</SelectItem>
-                <SelectItem value="Audit Report">Audit Report</SelectItem>
-                <SelectItem value="HACCP Plan">HACCP Plan</SelectItem>
-                <SelectItem value="Training Material">Training Material</SelectItem>
-                <SelectItem value="Risk Assessment">Risk Assessment</SelectItem>
+                {Object.values(DocumentCategory).map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat.replace('_', ' ')}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expiry-date">Expiry Date (Optional)</Label>
+            <Input
+              id="expiry-date"
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+            />
           </div>
 
           <div className="flex items-center space-x-2">
@@ -206,15 +200,15 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
           <Button
             variant="outline"
             onClick={handleCancel}
-            disabled={uploading}
+            disabled={isCreating}
           >
             Cancel
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!title || !category || !selectedFile || uploading}
+            disabled={!title || !category || !selectedFile || isCreating}
           >
-            {uploading ? 'Uploading...' : 'Upload Document'}
+            {isCreating ? 'Uploading...' : 'Upload Document'}
           </Button>
         </DialogFooter>
       </DialogContent>

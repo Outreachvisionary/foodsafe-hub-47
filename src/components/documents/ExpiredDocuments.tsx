@@ -1,123 +1,114 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useDocument } from '@/contexts/DocumentContext';
-import { format, differenceInDays } from 'date-fns';
-import { Calendar, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, Calendar, RefreshCcw, Upload } from 'lucide-react';
+import { Document } from '@/types/document';
+import { formatDistanceToNow } from 'date-fns';
 
-const ExpiredDocuments = () => {
-  const { documents } = useDocument();
-  const [expiredDocs, setExpiredDocs] = useState<any[]>([]);
-  const [nearingExpiryDocs, setNearingExpiryDocs] = useState<any[]>([]);
+interface ExpiredDocumentsProps {
+  documents: Document[];
+  isLoading?: boolean;
+}
 
-  useEffect(() => {
-    if (!documents || documents.length === 0) return;
+const ExpiredDocuments: React.FC<ExpiredDocumentsProps> = ({ documents, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <RefreshCcw className="h-8 w-8 animate-spin text-gray-400" />
+        <span className="ml-2 text-lg text-gray-600">Loading expiring documents...</span>
+      </div>
+    );
+  }
 
-    const today = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
-    
-    const expired = documents.filter(doc => 
-      doc.expiry_date && new Date(doc.expiry_date) < today
-    ).sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime());
-    
-    const nearingExpiry = documents.filter(doc => 
-      doc.expiry_date && 
-      new Date(doc.expiry_date) >= today &&
-      new Date(doc.expiry_date) <= thirtyDaysFromNow
-    ).sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime());
-    
-    setExpiredDocs(expired);
-    setNearingExpiryDocs(nearingExpiry);
-  }, [documents]);
+  if (documents.length === 0) {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg border">
+        <Calendar className="mx-auto h-12 w-12 text-green-400" />
+        <h3 className="mt-2 font-medium text-lg">No documents expiring soon</h3>
+        <p className="text-sm text-gray-500 mt-1">
+          All documents are current and valid
+        </p>
+      </div>
+    );
+  }
+
+  const handleRenew = (documentId: string) => {
+    console.log('Renew document:', documentId);
+    // TODO: Implement document renewal workflow
+  };
+
+  const getDaysUntilExpiry = (expiryDate: string) => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getUrgencyLevel = (daysUntilExpiry: number) => {
+    if (daysUntilExpiry < 0) return { level: 'expired', color: 'bg-red-100 text-red-800 border-red-200' };
+    if (daysUntilExpiry <= 7) return { level: 'critical', color: 'bg-red-100 text-red-800 border-red-200' };
+    if (daysUntilExpiry <= 15) return { level: 'warning', color: 'bg-amber-100 text-amber-800 border-amber-200' };
+    return { level: 'notice', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+  };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center">
-          <Calendar className="h-5 w-5 mr-2 text-red-500" />
-          Document Expirations
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {expiredDocs.length === 0 && nearingExpiryDocs.length === 0 ? (
-          <div className="text-center py-8">
-            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">All Documents Valid</h3>
-            <p className="text-sm text-gray-500 max-w-xs mx-auto mt-2">
-              No documents are expired or nearing expiry dates.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {expiredDocs.length > 0 && (
-              <div className="space-y-3 mb-6">
-                <h3 className="font-medium flex items-center text-red-600">
-                  <XCircle className="h-4 w-4 mr-1.5" />
-                  Expired Documents ({expiredDocs.length})
-                </h3>
-                <div className="space-y-2">
-                  {expiredDocs.slice(0, 4).map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-2 border rounded-md bg-red-50">
-                      <div className="flex-grow">
-                        <p className="text-sm font-medium line-clamp-1">{doc.title}</p>
-                        <div className="flex items-center text-xs mt-1">
-                          <Badge variant="outline" className="font-normal text-xs bg-red-100 text-red-800 mr-2">
-                            Expired
-                          </Badge>
-                          <span className="text-gray-500">
-                            {format(new Date(doc.expiry_date), 'MMM d, yyyy')}
-                          </span>
-                        </div>
-                      </div>
+    <div className="space-y-4">
+      {documents.map((document) => {
+        const daysUntilExpiry = document.expiry_date ? getDaysUntilExpiry(document.expiry_date) : null;
+        const urgency = daysUntilExpiry !== null ? getUrgencyLevel(daysUntilExpiry) : null;
+        
+        return (
+          <Card key={document.id} className="border-l-4 border-l-red-500">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-lg">{document.title}</h3>
+                    {urgency && (
+                      <Badge className={urgency.color}>
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {daysUntilExpiry !== null && daysUntilExpiry < 0 
+                          ? 'Expired' 
+                          : `${daysUntilExpiry} days left`}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <p className="text-gray-600 mb-3">{document.description}</p>
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>Category: {document.category}</span>
+                    <span>Version: v{document.version}</span>
+                    <span>Created: {formatDistanceToNow(new Date(document.created_at), { addSuffix: true })}</span>
+                    <span>By: {document.created_by}</span>
+                  </div>
+
+                  {document.expiry_date && (
+                    <div className="mt-2 text-sm text-red-600">
+                      Expires: {new Date(document.expiry_date).toLocaleDateString()}
                     </div>
-                  ))}
-                  {expiredDocs.length > 4 && (
-                    <p className="text-xs text-center text-gray-500">And {expiredDocs.length - 4} more expired documents</p>
                   )}
                 </div>
-              </div>
-            )}
-            
-            {nearingExpiryDocs.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium flex items-center text-amber-600">
-                  <AlertTriangle className="h-4 w-4 mr-1.5" />
-                  Expiring Soon ({nearingExpiryDocs.length})
-                </h3>
-                <div className="space-y-2">
-                  {nearingExpiryDocs.slice(0, 4).map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-2 border rounded-md bg-amber-50">
-                      <div className="flex-grow">
-                        <p className="text-sm font-medium line-clamp-1">{doc.title}</p>
-                        <div className="flex items-center text-xs mt-1">
-                          <Badge variant="outline" className="font-normal text-xs bg-amber-100 text-amber-800 mr-2">
-                            {differenceInDays(new Date(doc.expiry_date), new Date())} days left
-                          </Badge>
-                          <span className="text-gray-500">
-                            {format(new Date(doc.expiry_date), 'MMM d, yyyy')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {nearingExpiryDocs.length > 4 && (
-                    <p className="text-xs text-center text-gray-500">And {nearingExpiryDocs.length - 4} more documents expiring soon</p>
-                  )}
+                
+                <div className="flex gap-2 ml-4">
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => handleRenew(document.id)}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    Renew
+                  </Button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="pt-0">
-        <Button variant="outline" className="w-full" size="sm">
-          View All Expirations
-        </Button>
-      </CardFooter>
-    </Card>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 };
 

@@ -10,54 +10,62 @@ import DocumentRepository from '@/components/documents/DocumentRepository';
 import ReviewQueue from '@/components/documents/ReviewQueue';
 import ExpiredDocuments from '@/components/documents/ExpiredDocuments';
 import DocumentStats from '@/components/documents/DocumentStats';
+import UploadDocumentDialog from '@/components/documents/UploadDocumentDialog';
+import { useDocuments } from '@/hooks/useDocuments';
+import { toast } from 'sonner';
 
 const Documents: React.FC = () => {
   const [activeTab, setActiveTab] = useState('repository');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  
+  const {
+    documents,
+    isLoading,
+    error,
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    isCreating
+  } = useDocuments();
 
-  // Mock stats - in real app these would come from service
-  const documentStats = {
-    totalDocuments: 1247,
-    pendingReview: 23,
-    expiringSoon: 8,
-    recentlyUpdated: 15
+  const [documentStats, setDocumentStats] = useState({
+    totalDocuments: 0,
+    pendingReview: 0,
+    expiringSoon: 0,
+    recentlyUpdated: 0
+  });
+
+  // Calculate stats from real documents
+  useEffect(() => {
+    if (documents.length > 0) {
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const stats = {
+        totalDocuments: documents.length,
+        pendingReview: documents.filter(doc => doc.status === 'Pending_Review').length,
+        expiringSoon: documents.filter(doc => 
+          doc.expiry_date && new Date(doc.expiry_date) <= thirtyDaysFromNow
+        ).length,
+        recentlyUpdated: documents.filter(doc => 
+          new Date(doc.updated_at) >= oneWeekAgo
+        ).length
+      };
+      
+      setDocumentStats(stats);
+    }
+  }, [documents]);
+
+  const handleRefresh = () => {
+    // The useDocuments hook will automatically refetch data
+    toast.success('Document list refreshed');
   };
 
-  // Mock documents data for DocumentStats component
-  const mockDocuments = [
-    {
-      id: '1',
-      title: 'Quality Manual',
-      description: 'Company quality management system manual',
-      file_name: 'quality-manual-v2-1.pdf',
-      file_path: '/documents/quality-manual-v2-1.pdf',
-      file_size: 2048576,
-      file_type: 'application/pdf',
-      category: DocumentCategory.Policy,
-      status: DocumentStatus.Published,
-      version: 2,
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-20T14:30:00Z',
-      created_by: 'John Doe',
-      expiry_date: '2024-12-31'
-    },
-    {
-      id: '2',
-      title: 'SOP-001 Document Control',
-      description: 'Standard operating procedure for document control',
-      file_name: 'sop-001-document-control.pdf',
-      file_path: '/documents/sop-001-document-control.pdf',
-      file_size: 1048576,
-      file_type: 'application/pdf',
-      category: DocumentCategory.SOP,
-      status: DocumentStatus.Pending_Review,
-      version: 1,
-      created_at: '2024-01-10T09:00:00Z',
-      updated_at: '2024-01-18T16:45:00Z',
-      created_by: 'Jane Smith',
-      expiry_date: '2024-11-30'
-    }
-  ];
+  const handleUploadDocument = () => {
+    setShowUploadDialog(true);
+  };
 
   const getTabCounts = () => {
     return {
@@ -69,6 +77,22 @@ const Documents: React.FC = () => {
   };
 
   const tabCounts = getTabCounts();
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading documents</h3>
+          <p className="text-gray-500 mb-4">{error.message}</p>
+          <Button onClick={handleRefresh}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
@@ -87,12 +111,16 @@ const Documents: React.FC = () => {
             <Button 
               variant="outline"
               className="shadow-lg hover:shadow-xl transition-all duration-300 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+              onClick={handleRefresh}
+              disabled={isLoading}
             >
-              <RefreshCcw className="h-4 w-4 mr-2" />
+              <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button 
               className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white border-0"
+              onClick={handleUploadDocument}
+              disabled={isCreating}
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Document
@@ -209,7 +237,10 @@ const Documents: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <DocumentRepository />
+                  <DocumentRepository 
+                    searchQuery={searchQuery}
+                    isLoading={isLoading}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -225,7 +256,10 @@ const Documents: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <ReviewQueue />
+                  <ReviewQueue 
+                    documents={documents.filter(doc => doc.status === 'Pending_Review')}
+                    isLoading={isLoading}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -241,7 +275,15 @@ const Documents: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <ExpiredDocuments />
+                  <ExpiredDocuments 
+                    documents={documents.filter(doc => {
+                      if (!doc.expiry_date) return false;
+                      const expiryDate = new Date(doc.expiry_date);
+                      const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                      return expiryDate <= thirtyDaysFromNow;
+                    })}
+                    isLoading={isLoading}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -257,13 +299,18 @@ const Documents: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <DocumentStats documents={mockDocuments} />
+                  <DocumentStats documents={documents} />
                 </CardContent>
               </Card>
             </TabsContent>
           </div>
         </Tabs>
       </div>
+
+      <UploadDocumentDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+      />
     </div>
   );
 };
