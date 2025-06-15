@@ -136,7 +136,13 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        ...data,
+        description: data.description,
+        file_path: data.file_path,
+        folder_id: data.folder_id,
+        tags: data.tags,
+        approvers: data.approvers,
+        expiry_date: data.expiry_date,
+        workflow_status: data.workflow_status,
       };
 
       const { data: result, error } = await supabase
@@ -215,7 +221,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        ...data,
+        parent_id: data.parent_id,
+        organization_id: data.organization_id,
+        is_system_folder: data.is_system_folder || false,
       };
 
       const { data: result, error } = await supabase
@@ -286,10 +294,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
   // Approval functions
   const approveDocumentMutation = useMutation({
     mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
-      const updates: Partial<Document> = {
-        status: 'Approved',
+      const updates = {
+        status: 'Approved' as const,
         workflow_status: 'approved',
-        pending_since: undefined
+        pending_since: null
       };
 
       const { data, error } = await supabase
@@ -314,11 +322,11 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
 
   const rejectDocumentMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const updates: Partial<Document> = {
-        status: 'Draft',
+      const updates = {
+        status: 'Draft' as const,
         workflow_status: 'rejected',
         rejection_reason: reason,
-        pending_since: undefined
+        pending_since: null
       };
 
       const { data, error } = await supabase
@@ -404,7 +412,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     refresh: async () => {
       await Promise.all([refetchDocuments(), refetchFolders()]);
     },
-    refreshDocuments: refetchDocuments,
+    refreshDocuments: async () => {
+      await refetchDocuments();
+    },
     searchDocuments: (query: string) => {
       return documents.filter(doc =>
         doc.title.toLowerCase().includes(query.toLowerCase()) ||

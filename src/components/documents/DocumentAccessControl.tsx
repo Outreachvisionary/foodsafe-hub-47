@@ -1,311 +1,207 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash, UserPlus, Users } from 'lucide-react';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Users, UserPlus, Trash2 } from 'lucide-react';
 import { DocumentAccess } from '@/types/document';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentAccessControlProps {
   documentId: string;
+  currentUserId: string;
+  onAccessUpdate?: (access: DocumentAccess[]) => void;
 }
 
-const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({ documentId }) => {
-  const [accessList, setAccessList] = useState<DocumentAccess[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUserId, setNewUserId] = useState('');
-  const [newUserRole, setNewUserRole] = useState('');
-  const [newPermissionLevel, setNewPermissionLevel] = useState('view');
-  
+const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
+  documentId,
+  currentUserId,
+  onAccessUpdate
+}) => {
   const { toast } = useToast();
-  const documentService = useDocumentService();
-  
+  const [accessList, setAccessList] = useState<DocumentAccess[]>([]);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newPermissionLevel, setNewPermissionLevel] = useState('read');
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Mock access data for demo
   useEffect(() => {
-    fetchAccessList();
-  }, [documentId]);
-  
-  const fetchAccessList = async () => {
-    setIsLoading(true);
-    try {
-      if (documentService.fetchAccess) {
-        const accessData = await documentService.fetchAccess(documentId);
-        setAccessList(accessData);
-      } else {
-        console.error('fetchAccess method not available');
-        toast({
-          title: 'Error',
-          description: 'Document access control is not available',
-          variant: 'destructive',
-        });
+    const mockAccess: DocumentAccess[] = [
+      {
+        id: '1',
+        document_id: documentId,
+        user_id: 'user1',
+        user_role: 'Manager',
+        permission_level: 'write',
+        granted_by: currentUserId,
+        granted_at: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        user_id: 'user2',
+        user_role: 'Quality Specialist',
+        permission_level: 'read',
+        granted_by: currentUserId,
+        granted_at: new Date().toISOString(),
       }
+    ];
+    setAccessList(mockAccess);
+  }, [documentId, currentUserId]);
+
+  const handleAddAccess = async () => {
+    if (!newUserEmail.trim()) return;
+
+    setIsAdding(true);
+    try {
+      const newAccess: DocumentAccess = {
+        id: Math.random().toString(),
+        document_id: documentId,
+        user_id: newUserEmail,
+        permission_level: newPermissionLevel,
+        granted_by: currentUserId,
+        granted_at: new Date().toISOString(),
+      };
+
+      const updatedAccess = [...accessList, newAccess];
+      setAccessList(updatedAccess);
+      onAccessUpdate?.(updatedAccess);
+      
+      setNewUserEmail('');
+      setNewPermissionLevel('read');
+      
+      toast({
+        title: 'Access granted',
+        description: `${newPermissionLevel} access granted to ${newUserEmail}`,
+      });
     } catch (error) {
-      console.error('Error fetching access list:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load access permissions',
+        description: 'Failed to grant access. Please try again.',
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsAdding(false);
     }
   };
-  
-  const handleAddAccess = async () => {
-    if (!newUserId.trim()) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please enter a user ID',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
+
+  const handleRemoveAccess = async (accessId: string) => {
     try {
-      if (documentService.grantAccess) {
-        const newAccess = await documentService.grantAccess(
-          documentId,
-          newUserId,
-          newPermissionLevel,
-          newUserRole
-        );
-        
-        if (newAccess) {
-          setAccessList((prev) => [...prev, newAccess]);
-          setIsAddDialogOpen(false);
-          resetForm();
-          
-          toast({
-            title: 'Access Granted',
-            description: `Access has been granted to user ${newUserId}`,
-          });
-        }
-      } else {
-        console.error('grantAccess method not available');
-        toast({
-          title: 'Error',
-          description: 'Cannot grant access, functionality not available',
-          variant: 'destructive',
-        });
-      }
+      const updatedAccess = accessList.filter(access => access.id !== accessId);
+      setAccessList(updatedAccess);
+      onAccessUpdate?.(updatedAccess);
+      
+      toast({
+        title: 'Access removed',
+        description: 'User access has been removed.',
+      });
     } catch (error) {
-      console.error('Error granting access:', error);
       toast({
         title: 'Error',
-        description: 'Failed to grant access',
+        description: 'Failed to remove access. Please try again.',
         variant: 'destructive',
       });
     }
   };
-  
-  const handleRevokeAccess = async (accessId: string) => {
-    try {
-      if (documentService.revokeAccess) {
-        await documentService.revokeAccess(accessId);
-        
-        setAccessList(prev => prev.filter(access => access.id !== accessId));
-        
-        toast({
-          title: 'Access Revoked',
-          description: 'Access has been revoked successfully',
-        });
-      } else {
-        console.error('revokeAccess method not available');
-        toast({
-          title: 'Error',
-          description: 'Cannot revoke access, functionality not available',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error revoking access:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to revoke access',
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  const resetForm = () => {
-    setNewUserId('');
-    setNewUserRole('');
-    setNewPermissionLevel('view');
-  };
-  
-  const getPermissionColor = (permissionLevel: string) => {
-    switch (permissionLevel) {
-      case 'owner':
-        return 'bg-primary/10 text-primary';
-      case 'edit':
-        return 'bg-accent/10 text-accent';
-      case 'comment':
-        return 'bg-amber-500/10 text-amber-500';
+
+  const getPermissionBadge = (level: string) => {
+    switch (level) {
+      case 'read':
+        return <Badge variant="secondary">Read</Badge>;
+      case 'write':
+        return <Badge variant="default">Write</Badge>;
+      case 'admin':
+        return <Badge variant="destructive">Admin</Badge>;
       default:
-        return 'bg-muted text-muted-foreground';
+        return <Badge variant="outline">{level}</Badge>;
     }
   };
-  
+
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl flex items-center">
-          <Users className="h-5 w-5 mr-2" />
-          Document Access Control
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Access Control
         </CardTitle>
-        <CardDescription>
-          Manage who can access, edit, or comment on this document
-        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-sm text-muted-foreground">
-            {accessList.length} {accessList.length === 1 ? 'user' : 'users'} with access
-          </div>
-          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Grant Access
-          </Button>
-        </div>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Loading access list...</span>
-          </div>
-        ) : accessList.length === 0 ? (
-          <div className="text-center py-6 border rounded-md">
-            <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <p className="font-medium">No custom access permissions</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Only document owners and administrators can access this document.
-            </p>
-            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add User Access
-            </Button>
-          </div>
-        ) : (
-          <div className="border rounded-md">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium">User</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Permission</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Granted By</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accessList.map((access) => (
-                  <tr key={access.id} className="border-t hover:bg-muted/30">
-                    <td className="px-4 py-3">{access.user_id}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${getPermissionColor(access.permission_level)}`}>
-                        {access.permission_level}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{access.granted_by}</td>
-                    <td className="px-4 py-3">
-                      {access.granted_at && new Date(access.granted_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleRevokeAccess(access.id)}
-                      >
-                        <Trash className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Grant Document Access</DialogTitle>
-              <DialogDescription>
-                Add a user to access this document with specific permissions.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">User ID</label>
-                <Input 
-                  placeholder="Enter user ID or email" 
-                  value={newUserId}
-                  onChange={(e) => setNewUserId(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">User Role (Optional)</label>
-                <Input 
-                  placeholder="e.g., Quality Manager" 
-                  value={newUserRole}
-                  onChange={(e) => setNewUserRole(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Permission Level</label>
-                <Select 
-                  value={newPermissionLevel} 
-                  onValueChange={setNewPermissionLevel}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select permission level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="view">View only</SelectItem>
-                    <SelectItem value="comment">View and comment</SelectItem>
-                    <SelectItem value="edit">Edit document</SelectItem>
-                    <SelectItem value="owner">Full control (Owner)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+      <CardContent className="space-y-4">
+        {/* Add new access */}
+        <div className="space-y-3 p-3 border rounded-lg">
+          <h4 className="font-medium text-sm">Grant Access</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="user-email" className="text-xs">User Email</Label>
+              <Input
+                id="user-email"
+                placeholder="user@example.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                size="sm"
+              />
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancel
+            <div className="space-y-1">
+              <Label htmlFor="permission" className="text-xs">Permission</Label>
+              <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="read">Read Only</SelectItem>
+                  <SelectItem value="write">Read & Write</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                onClick={handleAddAccess}
+                disabled={!newUserEmail.trim() || isAdding}
+                size="sm"
+                className="w-full"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {isAdding ? 'Adding...' : 'Grant'}
               </Button>
-              <Button onClick={handleAddAccess}>
-                Grant Access
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </div>
+        </div>
+
+        {/* Access list */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm">Current Access ({accessList.length})</h4>
+          {accessList.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              No access permissions set
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {accessList.map((access) => (
+                <div key={access.id} className="flex items-center justify-between p-2 border rounded">
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <p className="font-medium text-sm">{access.user_id}</p>
+                      {access.user_role && (
+                        <p className="text-xs text-muted-foreground">{access.user_role}</p>
+                      )}
+                    </div>
+                    {getPermissionBadge(access.permission_level)}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveAccess(access.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

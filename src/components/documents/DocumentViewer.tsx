@@ -13,8 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
-import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -174,18 +173,18 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   const getStatusColor = (status: DocumentStatus): string => {
     switch (status) {
-      case DocumentStatus.Draft:
+      case 'Draft':
         return 'bg-gray-100 text-gray-800 border-gray-200';
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case DocumentStatus.Approved:
-      case DocumentStatus.Published:
+      case 'Approved':
+      case 'Published':
         return 'bg-green-100 text-green-800 border-green-200';
-      case DocumentStatus.Rejected:
+      case 'Rejected':
         return 'bg-red-100 text-red-800 border-red-200';
-      case DocumentStatus.Archived:
+      case 'Archived':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case DocumentStatus.Expired:
+      case 'Expired':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -270,7 +269,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={document.checkout_status || CheckoutStatus.Available}
+                  status={document.checkout_status || 'Available'}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
@@ -431,11 +430,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 onChange={(e) => setNewStatus(e.target.value as DocumentStatus)}
               >
                 <option value="">Select status</option>
-                {Object.values(DocumentStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {status.replace('_', ' ')}
-                  </option>
-                ))}
+                <option value="Draft">Draft</option>
+                <option value="Pending_Review">Pending Review</option>
+                <option value="Pending_Approval">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="Published">Published</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Archived">Archived</option>
+                <option value="Expired">Expired</option>
               </select>
             </div>
             

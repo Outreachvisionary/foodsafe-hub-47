@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageSquare, Send } from 'lucide-react';
 import { DocumentComment } from '@/types/document';
-import { useDocumentService } from '@/hooks/useDocumentService';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentCommentsProps {
   documentId: string;
@@ -19,54 +19,78 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
   currentUserId,
   currentUserName
 }) => {
+  const { toast } = useToast();
   const [comments, setComments] = useState<DocumentComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const { getDocumentComments, createDocumentComment } = useDocumentService();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Mock comments for demo
   useEffect(() => {
-    const fetchComments = async () => {
-      setLoading(true);
-      try {
-        const data = await getDocumentComments(documentId);
-        setComments(data);
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-      } finally {
-        setLoading(false);
+    const mockComments: DocumentComment[] = [
+      {
+        id: '1',
+        document_id: documentId,
+        user_id: 'user1',
+        user_name: 'John Doe',
+        content: 'Please review the regulatory compliance section before final approval.',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: '2',
+        document_id: documentId,
+        user_id: 'user2',
+        user_name: 'Jane Smith',
+        content: 'Updated the safety procedures as requested. Ready for review.',
+        created_at: new Date(Date.now() - 172800000).toISOString(),
       }
-    };
-
-    fetchComments();
-  }, [documentId, getDocumentComments]);
+    ];
+    setComments(mockComments);
+  }, [documentId]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
-    setSubmitting(true);
+    setIsSubmitting(true);
     try {
-      const comment = await createDocumentComment(
-        documentId,
-        currentUserId,
-        currentUserName,
-        newComment.trim()
-      );
+      const comment: DocumentComment = {
+        id: Math.random().toString(),
+        document_id: documentId,
+        user_id: currentUserId,
+        user_name: currentUserName,
+        content: newComment.trim(),
+        created_at: new Date().toISOString(),
+      };
+
+      setComments(prev => [comment, ...prev]);
+      setNewComment('');
       
-      if (comment) {
-        setComments(prev => [...prev, comment]);
-        setNewComment('');
-      }
+      toast({
+        title: 'Comment added',
+        description: 'Your comment has been added successfully.',
+      });
     } catch (error) {
-      console.error('Error creating comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add comment. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleString();
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString();
   };
 
   return (
@@ -78,7 +102,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* New Comment Form */}
+        {/* Add new comment */}
         <div className="space-y-3">
           <Textarea
             placeholder="Add a comment..."
@@ -89,32 +113,26 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
           <div className="flex justify-end">
             <Button
               onClick={handleSubmitComment}
-              disabled={!newComment.trim() || submitting}
+              disabled={!newComment.trim() || isSubmitting}
               size="sm"
             >
               <Send className="h-4 w-4 mr-2" />
-              {submitting ? 'Posting...' : 'Post Comment'}
+              {isSubmitting ? 'Adding...' : 'Add Comment'}
             </Button>
           </div>
         </div>
 
-        {/* Comments List */}
-        {loading ? (
-          <div className="text-center py-4 text-muted-foreground">
-            Loading comments...
-          </div>
-        ) : comments.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>No comments yet</p>
-            <p className="text-sm">Be the first to add a comment</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+        {/* Comments list */}
+        <div className="space-y-4">
+          {comments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No comments yet. Be the first to comment!</p>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-gray-50">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" />
                   <AvatarFallback>
                     {comment.user_name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
@@ -123,15 +141,15 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">{comment.user_name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDate(comment.created_at)}
+                      {formatTimeAgo(comment.created_at)}
                     </span>
                   </div>
-                  <p className="text-sm">{comment.content}</p>
+                  <p className="text-sm text-gray-700">{comment.content}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </CardContent>
     </Card>
   );
