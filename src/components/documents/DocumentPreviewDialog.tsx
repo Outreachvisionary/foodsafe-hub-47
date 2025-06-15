@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Document, DocumentActivity, DocumentActionType } from '@/types/document';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { createDocumentActivity } from '@/services/documentService';
+import { DocumentService } from '@/services/documentService';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Eye, Edit, Download, Trash2, Archive, XCircle } from 'lucide-react';
 
@@ -42,7 +42,7 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
 
   const createActivityLog = async (activityData: Omit<DocumentActivity, 'id' | 'timestamp'>) => {
     try {
-      const newActivity = await createDocumentActivity(activityData);
+      const newActivity = await DocumentService.createDocumentActivity(activityData);
       setActivityLog(newActivity);
     } catch (error: any) {
       toast({
@@ -82,7 +82,9 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
       });
 
       // Trigger the download
-      window.open(document.file_path, '_blank');
+      if (document.file_path) {
+        window.open(document.file_path, '_blank');
+      }
     }
   };
 
@@ -138,11 +140,17 @@ const DocumentPreviewDialog = ({ document, isOpen, onClose, onOpenChange }: Docu
 
         {document ? (
           <div className="space-y-4">
-            <iframe
-              src={document.file_path}
-              title="Document Preview"
-              className="w-full h-[600px]"
-            />
+            {document.file_path ? (
+              <iframe
+                src={document.file_path}
+                title="Document Preview"
+                className="w-full h-[600px]"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-48 border-2 border-dashed border-gray-300 rounded-lg">
+                <p className="text-muted-foreground">No file available for preview</p>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-2">
               <Button variant="ghost" onClick={handleDownloadClick}>

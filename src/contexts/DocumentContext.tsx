@@ -19,6 +19,8 @@ interface DocumentContextType {
   deleteDocument: (id: string) => Promise<void>;
   checkoutDocument: (id: string) => Promise<void>;
   checkinDocument: (id: string, versionData?: any) => Promise<void>;
+  approveDocument: (id: string, comments?: string) => Promise<Document>;
+  rejectDocument: (id: string, reason: string) => Promise<Document>;
   
   // Folder operations
   createFolder: (data: Partial<DocumentFolder>) => Promise<DocumentFolder>;
@@ -27,6 +29,7 @@ interface DocumentContextType {
   
   // Utility functions
   refresh: () => Promise<void>;
+  refreshDocuments: () => Promise<void>;
   searchDocuments: (query: string) => Document[];
   getDocumentsByFolder: (folderId: string) => Document[];
 }
@@ -112,8 +115,8 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     expiringCount: documents.filter(doc => 
       doc.expiry_date && new Date(doc.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     ).length,
-    pendingReviewCount: documents.filter(doc => doc.status === 'Pending Review').length,
-    pendingApprovalCount: documents.filter(doc => doc.status === 'Pending Approval').length,
+    pendingReviewCount: documents.filter(doc => doc.status === 'Pending_Review').length,
+    pendingApprovalCount: documents.filter(doc => doc.status === 'Pending_Approval').length,
   } : null;
 
   // Document mutations
@@ -126,6 +129,9 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         created_by: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        category: data.category || 'Other',
+        status: data.status || 'Draft',
+        checkout_status: data.checkout_status || 'Available'
       };
 
       const { data: result, error } = await supabase
@@ -149,9 +155,14 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
 
   const updateDocumentMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Document> }) => {
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('documents')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -219,6 +230,64 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     },
   });
 
+  // Approval functions
+  const approveDocumentMutation = useMutation({
+    mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
+      const updates: Partial<Document> = {
+        status: 'Approved',
+        workflow_status: 'approved',
+        pending_since: undefined
+      };
+
+      const { data, error } = await supabase
+        .from('documents')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Document;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document approved successfully');
+    },
+    onError: (error) => {
+      console.error('Error approving document:', error);
+      toast.error('Failed to approve document');
+    },
+  });
+
+  const rejectDocumentMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const updates: Partial<Document> = {
+        status: 'Draft',
+        workflow_status: 'rejected',
+        rejection_reason: reason,
+        pending_since: undefined
+      };
+
+      const { data, error } = await supabase
+        .from('documents')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Document;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document rejected');
+    },
+    onError: (error) => {
+      console.error('Error rejecting document:', error);
+      toast.error('Failed to reject document');
+    },
+  });
+
   // Handle errors
   useEffect(() => {
     if (documentsError || foldersError) {
@@ -247,7 +316,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
       await updateDocumentMutation.mutateAsync({
         id,
         updates: {
-          checkout_status: 'Checked Out',
+          checkout_status: 'Checked_Out',
           checkout_user_id: user.id,
           checkout_user_name: user.email || 'Unknown',
           checkout_timestamp: new Date().toISOString(),
@@ -260,13 +329,19 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         id,
         updates: {
           checkout_status: 'Available',
-          checkout_user_id: null,
-          checkout_user_name: null,
-          checkout_timestamp: null,
+          checkout_user_id: undefined,
+          checkout_user_name: undefined,
+          checkout_timestamp: undefined,
           ...(versionData && { version: versionData.version }),
         },
       });
     },
+
+    approveDocument: (id: string, comments?: string) => 
+      approveDocumentMutation.mutateAsync({ id, comments }),
+    
+    rejectDocument: (id: string, reason: string) => 
+      rejectDocumentMutation.mutateAsync({ id, reason }),
     
     createFolder: createFolderMutation.mutateAsync,
     updateFolder: async (id: string, updates: Partial<DocumentFolder>) => {
@@ -294,6 +369,10 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     
     refresh: async () => {
       await Promise.all([refetchDocuments(), refetchFolders()]);
+    },
+
+    refreshDocuments: async () => {
+      await refetchDocuments();
     },
     
     searchDocuments: (query: string) => {

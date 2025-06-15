@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +15,7 @@ export function DocumentEditor() {
   const { 
     documents, 
     loading,
-    refreshDocuments = async () => {
-      console.error('refreshDocuments not implemented');
-    }
+    refresh
   } = useDocument();
   
   const { toast } = useToast();
@@ -39,7 +38,7 @@ export function DocumentEditor() {
       });
       
       // Refresh document list
-      await refreshDocuments();
+      await refresh();
       
     } catch (error) {
       toast({
@@ -105,11 +104,11 @@ export function DocumentEditor() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sop">Standard Operating Procedure</SelectItem>
-                    <SelectItem value="policy">Policy</SelectItem>
-                    <SelectItem value="form">Form</SelectItem>
-                    <SelectItem value="record">Record</SelectItem>
-                    <SelectItem value="training">Training Material</SelectItem>
+                    <SelectItem value="SOP">Standard Operating Procedure</SelectItem>
+                    <SelectItem value="Policy">Policy</SelectItem>
+                    <SelectItem value="Form">Form</SelectItem>
+                    <SelectItem value="Certificate">Certificate</SelectItem>
+                    <SelectItem value="Training Material">Training Material</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

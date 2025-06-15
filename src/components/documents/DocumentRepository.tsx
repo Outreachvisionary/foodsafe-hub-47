@@ -99,7 +99,7 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
     }
   };
 
-  const handleFolderSelect = (folderId: string, folderPath: string) => {
+  const handleFolderSelect = (folderId: string | null, folderPath: string) => {
     setSelectedFolderId(folderId);
     setCurrentPath(folderPath);
     console.log('Selected folder:', folderId, folderPath);
@@ -346,18 +346,12 @@ export const DocumentRepository: React.FC<DocumentRepositoryProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the document
-              and remove all associated data including version history.
+              This action cannot be undone. This will permanently delete the document.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDeleteDocument} 
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete Document
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmDeleteDocument}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

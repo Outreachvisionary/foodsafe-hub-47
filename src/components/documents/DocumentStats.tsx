@@ -12,11 +12,11 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
-import { Document, DocumentStats as DocumentStatsType } from '@/types/document';
+import { Document, DocumentStats } from '@/types/document';
 
 interface DocumentStatsProps {
   documents: Document[];
-  stats?: DocumentStatsType | null;
+  stats?: DocumentStats | null;
 }
 
 const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
@@ -34,8 +34,8 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
     expiringCount: documents.filter(doc => 
       doc.expiry_date && new Date(doc.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     ).length,
-    pendingReviewCount: documents.filter(doc => doc.status === 'Pending Review').length,
-    pendingApprovalCount: documents.filter(doc => doc.status === 'Pending Approval').length,
+    pendingReviewCount: documents.filter(doc => doc.status === 'Pending_Review').length,
+    pendingApprovalCount: documents.filter(doc => doc.status === 'Pending_Approval').length,
   };
 
   const getStatusIcon = (status: string) => {
@@ -44,9 +44,9 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
         return <CheckCircle className="h-5 w-5 text-green-600" />;
       case 'Draft':
         return <FileText className="h-5 w-5 text-gray-600" />;
-      case 'Pending Review':
+      case 'Pending_Review':
         return <Clock className="h-5 w-5 text-yellow-600" />;
-      case 'Pending Approval':
+      case 'Pending_Approval':
         return <AlertTriangle className="h-5 w-5 text-orange-600" />;
       case 'Approved':
         return <CheckCircle className="h-5 w-5 text-blue-600" />;
@@ -65,9 +65,9 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
         return 'bg-green-100 text-green-800';
       case 'Draft':
         return 'bg-gray-100 text-gray-800';
-      case 'Pending Review':
+      case 'Pending_Review':
         return 'bg-yellow-100 text-yellow-800';
-      case 'Pending Approval':
+      case 'Pending_Approval':
         return 'bg-orange-100 text-orange-800';
       case 'Approved':
         return 'bg-blue-100 text-blue-800';
@@ -148,14 +148,14 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                 <div key={status} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(status)}
-                    <span className="font-medium">{status}</span>
+                    <span className="font-medium">{status.replace('_', ' ')}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary" className={getStatusColor(status)}>
                       {count}
                     </Badge>
                     <span className="text-sm text-gray-500">
-                      {calculatedStats.total > 0 ? Math.round((count / calculatedStats.total) * 100) : 0}%
+                      {calculatedStats.total > 0 ? Math.round((Number(count) / calculatedStats.total) * 100) : 0}%
                     </span>
                   </div>
                 </div>
@@ -179,11 +179,11 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                     <span className="text-lg">
                       {category === 'SOP' && '📋'}
                       {category === 'Policy' && '📜'}
-                      {category === 'Manual' && '📖'}
+                      {category === 'Training Material' && '📖'}
                       {category === 'Form' && '📝'}
-                      {category === 'Report' && '📊'}
+                      {category === 'Audit Report' && '📊'}
                       {category === 'Certificate' && '🏆'}
-                      {!['SOP', 'Policy', 'Manual', 'Form', 'Report', 'Certificate'].includes(category) && '📄'}
+                      {!['SOP', 'Policy', 'Training Material', 'Form', 'Audit Report', 'Certificate'].includes(category) && '📄'}
                     </span>
                     <span className="font-medium">{category}</span>
                   </div>
@@ -192,7 +192,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                       {count}
                     </Badge>
                     <span className="text-sm text-gray-500">
-                      {calculatedStats.total > 0 ? Math.round((count / calculatedStats.total) * 100) : 0}%
+                      {calculatedStats.total > 0 ? Math.round((Number(count) / calculatedStats.total) * 100) : 0}%
                     </span>
                   </div>
                 </div>
@@ -221,11 +221,11 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                     <span className="text-lg">
                       {document.category === 'SOP' && '📋'}
                       {document.category === 'Policy' && '📜'}
-                      {document.category === 'Manual' && '📖'}
+                      {document.category === 'Training Material' && '📖'}
                       {document.category === 'Form' && '📝'}
-                      {document.category === 'Report' && '📊'}
+                      {document.category === 'Audit Report' && '📊'}
                       {document.category === 'Certificate' && '🏆'}
-                      {!['SOP', 'Policy', 'Manual', 'Form', 'Report', 'Certificate'].includes(document.category) && '📄'}
+                      {!['SOP', 'Policy', 'Training Material', 'Form', 'Audit Report', 'Certificate'].includes(document.category) && '📄'}
                     </span>
                     <div>
                       <p className="font-medium text-gray-900">{document.title}</p>
@@ -235,7 +235,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ documents, stats }) => {
                     </div>
                   </div>
                   <Badge variant="outline" className={getStatusColor(document.status)}>
-                    {document.status}
+                    {document.status.replace('_', ' ')}
                   </Badge>
                 </div>
               ))}

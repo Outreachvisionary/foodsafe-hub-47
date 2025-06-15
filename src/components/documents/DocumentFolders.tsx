@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface DocumentFoldersProps {
-  onSelectFolder?: (folderId: string, folderPath: string) => void;
+  onSelectFolder?: (folderId: string | null, folderPath: string) => void;
   selectedFolderId?: string | null;
 }
 
@@ -123,7 +123,7 @@ const DocumentFolders: React.FC<DocumentFoldersProps> = ({
   };
 
   // Show "All Documents" option
-  const rootDocumentCount = folderCounts['root'] || folderCounts[null] || 0;
+  const rootDocumentCount = folderCounts['root'] || folderCounts['null'] || 0;
   
   return (
     <>

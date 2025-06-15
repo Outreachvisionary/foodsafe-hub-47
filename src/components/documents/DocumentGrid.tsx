@@ -48,9 +48,9 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
         return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'Draft':
         return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-      case 'Pending Review':
+      case 'Pending_Review':
         return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
-      case 'Pending Approval':
+      case 'Pending_Approval':
         return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
       case 'Approved':
         return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
@@ -69,11 +69,11 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
         return '📋';
       case 'Policy':
         return '📜';
-      case 'Manual':
+      case 'Training Material':
         return '📖';
       case 'Form':
         return '📝';
-      case 'Report':
+      case 'Audit Report':
         return '📊';
       case 'Certificate':
         return '🏆';
@@ -97,6 +97,10 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const isCheckedOut = (document: Document) => {
+    return document.checkout_status === 'Checked_Out';
+  };
+
   if (viewMode === 'list') {
     return (
       <div className="space-y-2">
@@ -105,7 +109,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
             key={document.id} 
             className={cn(
               "hover:shadow-md transition-shadow cursor-pointer",
-              document.checkout_status === 'Checked Out' && "border-orange-200 bg-orange-50",
+              isCheckedOut(document) && "border-orange-200 bg-orange-50",
               isDocumentExpiring(document) && "border-red-200 bg-red-50"
             )}
           >
@@ -124,7 +128,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                       >
                         {document.title}
                       </h3>
-                      {document.checkout_status === 'Checked Out' && (
+                      {isCheckedOut(document) && (
                         <Lock className="h-4 w-4 text-orange-500" />
                       )}
                       {isDocumentExpiring(document) && (
@@ -134,7 +138,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                     
                     <div className="flex items-center space-x-4 mt-1">
                       <Badge variant="outline" className={getStatusColor(document.status)}>
-                        {document.status}
+                        {document.status.replace('_', ' ')}
                       </Badge>
                       <span className="text-sm text-gray-500">
                         v{document.version}
@@ -210,7 +214,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 </div>
               </div>
               
-              {document.checkout_status === 'Checked Out' && document.checkout_user_name && (
+              {isCheckedOut(document) && document.checkout_user_name && (
                 <div className="mt-3 flex items-center space-x-2 text-sm text-orange-600">
                   <User className="h-4 w-4" />
                   <span>Checked out by {document.checkout_user_name}</span>
@@ -230,7 +234,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
           key={document.id} 
           className={cn(
             "hover:shadow-lg transition-all duration-200 cursor-pointer group",
-            document.checkout_status === 'Checked Out' && "border-orange-200 bg-orange-50",
+            isCheckedOut(document) && "border-orange-200 bg-orange-50",
             isDocumentExpiring(document) && "border-red-200 bg-red-50"
           )}
           onClick={() => onDocumentClick?.(document)}
@@ -241,7 +245,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 {getCategoryIcon(document.category)}
               </div>
               <div className="flex items-center space-x-1">
-                {document.checkout_status === 'Checked Out' && (
+                {isCheckedOut(document) && (
                   <Lock className="h-4 w-4 text-orange-500" />
                 )}
                 {isDocumentExpiring(document) && (
@@ -263,7 +267,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className={getStatusColor(document.status)}>
-                  {document.status}
+                  {document.status.replace('_', ' ')}
                 </Badge>
                 <span className="text-xs text-gray-500">v{document.version}</span>
               </div>
@@ -278,7 +282,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
               </div>
             </div>
             
-            {document.checkout_status === 'Checked Out' && document.checkout_user_name && (
+            {isCheckedOut(document) && document.checkout_user_name && (
               <div className="mb-4 flex items-center space-x-2 text-xs text-orange-600">
                 <User className="h-3 w-3" />
                 <span>Checked out by {document.checkout_user_name}</span>

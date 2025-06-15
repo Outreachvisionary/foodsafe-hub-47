@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentFolder, DocumentVersion } from '@/types/document';
+import { Document, DocumentFolder, DocumentVersion, DocumentActivity, DocumentActionType } from '@/types/document';
 import { CrudService } from './crudService';
 
 export class DocumentService extends CrudService {
@@ -26,7 +26,15 @@ export class DocumentService extends CrudService {
   }
 
   static async createDocument(data: Partial<Document>): Promise<Document> {
-    return this.createRecord<Document>('documents', data);
+    // Ensure required fields are present
+    const documentData = {
+      ...data,
+      category: data.category || 'Other',
+      status: data.status || 'Draft',
+      checkout_status: data.checkout_status || 'Available'
+    };
+    
+    return this.createRecord<Document>('documents', documentData);
   }
 
   static async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
@@ -72,7 +80,7 @@ export class DocumentService extends CrudService {
   // Document workflow operations
   static async submitForReview(documentId: string): Promise<Document> {
     return this.updateDocument(documentId, {
-      status: 'Pending Review',
+      status: 'Pending_Review',
       workflow_status: 'review',
       pending_since: new Date().toISOString()
     });
@@ -82,7 +90,7 @@ export class DocumentService extends CrudService {
     const updates: Partial<Document> = {
       status: 'Approved',
       workflow_status: 'approved',
-      pending_since: null
+      pending_since: undefined
     };
 
     // Log approval activity
@@ -96,7 +104,7 @@ export class DocumentService extends CrudService {
       status: 'Draft',
       workflow_status: 'rejected',
       rejection_reason: rejectionReason,
-      pending_since: null
+      pending_since: undefined
     };
 
     // Log rejection activity
@@ -115,7 +123,7 @@ export class DocumentService extends CrudService {
   // Document checkout/checkin
   static async checkoutDocument(documentId: string, userId: string, userName: string): Promise<Document> {
     return this.updateDocument(documentId, {
-      checkout_status: 'Checked Out',
+      checkout_status: 'Checked_Out',
       checkout_user_id: userId,
       checkout_user_name: userName,
       checkout_timestamp: new Date().toISOString(),
@@ -126,9 +134,9 @@ export class DocumentService extends CrudService {
   static async checkinDocument(documentId: string, versionData?: Partial<DocumentVersion>): Promise<Document> {
     const updates: Partial<Document> = {
       checkout_status: 'Available',
-      checkout_user_id: null,
-      checkout_user_name: null,
-      checkout_timestamp: null,
+      checkout_user_id: undefined,
+      checkout_user_name: undefined,
+      checkout_timestamp: undefined,
       is_locked: false
     };
 
@@ -153,7 +161,7 @@ export class DocumentService extends CrudService {
   // Activity logging
   static async logDocumentActivity(
     documentId: string, 
-    action: string, 
+    action: DocumentActionType, 
     comments?: string, 
     userId?: string
   ): Promise<void> {
@@ -165,8 +173,19 @@ export class DocumentService extends CrudService {
       comments,
       user_id: userId || user?.id,
       user_name: user?.email || 'Unknown',
+      user_role: 'User',
       timestamp: new Date().toISOString()
     });
+  }
+
+  // Create document activity function for external use
+  static async createDocumentActivity(activityData: Omit<DocumentActivity, 'id' | 'timestamp'>): Promise<DocumentActivity> {
+    const data = {
+      ...activityData,
+      timestamp: new Date().toISOString()
+    };
+    
+    return this.createRecord<DocumentActivity>('document_activities', data);
   }
 
   // Search and filter
@@ -214,12 +233,37 @@ export class DocumentService extends CrudService {
       }
       
       // Pending counts
-      if (doc.status === 'Pending Review') stats.pendingReviewCount++;
-      if (doc.status === 'Pending Approval') stats.pendingApprovalCount++;
+      if (doc.status === 'Pending_Review') stats.pendingReviewCount++;
+      if (doc.status === 'Pending_Approval') stats.pendingApprovalCount++;
     });
 
     return stats;
   }
+
+  // Fetch documents function for external use
+  static async fetchDocuments(filters?: any): Promise<Document[]> {
+    return this.getDocuments(filters);
+  }
 }
 
 export default DocumentService;
+
+// Export individual functions for easier importing
+export const { 
+  getDocuments, 
+  createDocument, 
+  updateDocument, 
+  deleteDocument,
+  getFolders,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  approveDocument,
+  rejectDocument,
+  checkoutDocument,
+  checkinDocument,
+  logDocumentActivity,
+  createDocumentActivity,
+  fetchDocuments,
+  getDocumentStats
+} = DocumentService;
