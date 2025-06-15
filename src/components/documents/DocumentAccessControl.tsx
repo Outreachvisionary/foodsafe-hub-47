@@ -58,7 +58,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
     setIsAdding(true);
     try {
       const newAccess: DocumentAccess = {
-        id: Math.random().toString(),
+        id: Date.now().toString(),
         document_id: documentId,
         user_id: newUserEmail,
         permission_level: newPermissionLevel,
@@ -140,13 +140,13 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
                 placeholder="user@example.com"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                size="sm"
+                className="h-8"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="permission" className="text-xs">Permission</Label>
               <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
-                <SelectTrigger size="sm">
+                <SelectTrigger className="h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

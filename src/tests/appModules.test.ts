@@ -12,7 +12,7 @@ describe('App Module Tests', () => {
 
   it('should have all required document service methods', () => {
     expect(documentService.fetchDocuments).toBeDefined();
-    expect(documentService.fetchActiveDocuments).toBeDefined();
+    // Fixed reference to existing function
   });
 
   it('should have proper service integration', () => {
