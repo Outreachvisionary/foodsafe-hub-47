@@ -1,10 +1,9 @@
 
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-// Get all non-conformances with real-time data
-export const getAllNonConformances = async () => {
+// Get all non-conformances
+export const getAllNonConformances = async (): Promise<{ data: NonConformance[] }> => {
   try {
     const { data, error } = await supabase
       .from('non_conformances')
@@ -41,41 +40,14 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
 // Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    // Map reason category to match database enum
-    const mapReasonCategory = (category: string) => {
-      const validCategories = [
-        'Other',
-        'Contamination', 
-        'Quality Issues',
-        'Regulatory Non-Compliance',
-        'Equipment Malfunction',
-        'Documentation Error',
-        'Process Deviation'
-      ];
-      
-      // Map common variations to valid enum values
-      const categoryMappings: Record<string, string> = {
-        'Foreign Material': 'Contamination',
-        'Temperature Abuse': 'Process Deviation',
-        'Packaging Defect': 'Quality Issues',
-        'Labeling Error': 'Documentation Error',
-        'Food Safety': 'Regulatory Non-Compliance',
-        'Damaged': 'Quality Issues',
-        'Expired': 'Quality Issues'
-      };
-      
-      return categoryMappings[category] || (validCategories.includes(category) ? category : 'Other');
-    };
-
-    // Ensure required fields and convert types
     const insertData = {
       title: data.title || '',
       description: data.description || '',
       item_name: data.item_name || '',
-      item_category: String(data.item_category || 'Other') as 'Other' | 'Processing Equipment' | 'Product Storage Tanks' | 'Finished Products' | 'Raw Products' | 'Packaging Materials',
-      reason_category: mapReasonCategory(String(data.reason_category || 'Other')) as 'Other' | 'Contamination' | 'Quality Issues' | 'Regulatory Non-Compliance' | 'Equipment Malfunction' | 'Documentation Error' | 'Process Deviation',
-      status: String(data.status || 'On Hold') as 'On Hold' | 'Under Review' | 'Released' | 'Disposed' | 'Resolved' | 'Closed' | 'Approved' | 'Rejected',
-      created_by: data.created_by || '',
+      item_category: data.item_category || 'Other',
+      reason_category: data.reason_category || 'Other',
+      status: data.status || 'On Hold',
+      created_by: data.created_by || 'System',
       assigned_to: data.assigned_to,
       department: data.department,
       location: data.location,
@@ -83,15 +55,13 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
       risk_level: data.risk_level,
       quantity: data.quantity || 0,
       quantity_on_hold: data.quantity_on_hold || 0,
-      tags: data.tags,
+      tags: data.tags || [],
       units: data.units,
       item_id: data.item_id,
       reason_details: data.reason_details,
       reviewer: data.reviewer,
       resolution_details: data.resolution_details,
       capa_id: data.capa_id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
       reported_date: data.reported_date || new Date().toISOString(),
     };
 
@@ -110,23 +80,12 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
 };
 
 // Update non-conformance
-export const updateNonConformance = async (id: string, data: Partial<NonConformance>): Promise<NonConformance> => {
+export const updateNonConformance = async (id: string, updates: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    const updateData: any = {
-      ...data,
+    const updateData = {
+      ...updates,
       updated_at: new Date().toISOString()
     };
-
-    // Ensure enum values are proper strings
-    if (updateData.status) {
-      updateData.status = String(updateData.status);
-    }
-    if (updateData.item_category) {
-      updateData.item_category = String(updateData.item_category);
-    }
-    if (updateData.reason_category) {
-      updateData.reason_category = String(updateData.reason_category);
-    }
 
     const { data: updatedNC, error } = await supabase
       .from('non_conformances')
@@ -175,6 +134,7 @@ export const fetchNCActivities = async (nonConformanceId: string): Promise<NCAct
   }
 };
 
+// Fetch NC attachments
 export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAttachment[]> => {
   try {
     const { data, error } = await supabase
@@ -191,6 +151,7 @@ export const fetchNCAttachments = async (nonConformanceId: string): Promise<NCAt
   }
 };
 
+// Upload NC attachment
 export const uploadNCAttachment = async (
   nonConformanceId: string,
   file: File,
@@ -206,7 +167,6 @@ export const uploadNCAttachment = async (
         file_type: file.type,
         file_size: file.size,
         description: description || '',
-        uploaded_at: new Date().toISOString(),
         uploaded_by: 'Current User'
       }])
       .select()
@@ -220,6 +180,7 @@ export const uploadNCAttachment = async (
   }
 };
 
+// Fetch NC stats
 export const fetchNCStats = async (): Promise<NCStats> => {
   try {
     const { data: nonConformances, error } = await supabase

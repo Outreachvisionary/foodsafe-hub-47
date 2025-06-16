@@ -1,64 +1,53 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Plus, RefreshCcw, Search, AlertTriangle, Clock, CheckCircle2, XCircle, TrendingUp, Eye } from 'lucide-react';
-import NCDashboard from '@/components/non-conformance/NCDashboard';
+import { Plus, RefreshCcw, Search, AlertTriangle, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import NCList from '@/components/non-conformance/NCList';
-import NCRecentItems from '@/components/non-conformance/NCRecentItems';
+import NCForm from '@/components/non-conformance/NCForm';
+import { NonConformance } from '@/types/non-conformance';
+import { useNonConformances } from '@/hooks/useNonConformances';
 
-const NonConformance: React.FC = () => {
+const NonConformancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedNC, setSelectedNC] = useState<NonConformance | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
 
-  // Mock stats - in real app these would come from service
+  const { nonConformances, isLoading, refresh } = useNonConformances();
+
+  // Calculate stats
   const ncStats = {
-    total: 89,
-    open: 34,
-    underReview: 21,
-    resolved: 34,
-    overdue: 12
-  };
-
-  // Mock stats for NCDashboard component
-  const mockNCStats = {
-    total: ncStats.total,
-    byStatus: {
-      'Open': ncStats.open,
-      'Under Review': ncStats.underReview,
-      'On Hold': 8,
-      'Released': ncStats.resolved
-    },
-    byCategory: {
-      'Quality Control': 25,
-      'Manufacturing': 18,
-      'Documentation': 12,
-      'Safety': 15,
-      'Process': 19
-    },
-    byReasonCategory: {
-      'Equipment Failure': 20,
-      'Human Error': 15,
-      'Material Defect': 18,
-      'Process Deviation': 22,
-      'Documentation Error': 14
-    },
-    byRiskLevel: {
-      'High': 15,
-      'Medium': 35,
-      'Low': 39
-    },
-    overdue: ncStats.overdue,
-    pendingReview: ncStats.underReview,
-    recentlyResolved: 8,
-    totalQuantityOnHold: 156
+    total: nonConformances.length,
+    open: nonConformances.filter(nc => nc.status === 'On Hold').length,
+    underReview: nonConformances.filter(nc => nc.status === 'Under Review').length,
+    resolved: nonConformances.filter(nc => nc.status === 'Resolved').length,
+    overdue: 0 // Would need due dates to calculate this properly
   };
 
   const handleCreateNew = () => {
-    console.log('Creating new non-conformance');
-    // In real app, this would open a form or navigate to creation page
+    setShowCreateForm(true);
+  };
+
+  const handleEdit = (nc: NonConformance) => {
+    setSelectedNC(nc);
+    setShowEditForm(true);
+  };
+
+  const handleView = (nc: NonConformance) => {
+    setSelectedNC(nc);
+    // Could implement a view dialog here
+    console.log('View NC:', nc);
+  };
+
+  const handleCloseForm = () => {
+    setShowCreateForm(false);
+    setShowEditForm(false);
+    setSelectedNC(null);
   };
 
   const getTabCounts = () => {
@@ -68,7 +57,6 @@ const NonConformance: React.FC = () => {
       review: ncStats.underReview,
       resolved: ncStats.resolved,
       overdue: ncStats.overdue,
-      dashboard: 0
     };
   };
 
@@ -76,7 +64,7 @@ const NonConformance: React.FC = () => {
 
   return (
     <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 via-red-50 to-orange-50 min-h-screen">
-      {/* Enhanced Header */}
+      {/* Header */}
       <div className="space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-3">
@@ -90,6 +78,7 @@ const NonConformance: React.FC = () => {
           <div className="flex flex-wrap gap-3">
             <Button 
               variant="outline"
+              onClick={refresh}
               className="shadow-lg hover:shadow-xl transition-all duration-300 border-red-200 hover:border-red-300 hover:bg-red-50"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
@@ -105,7 +94,7 @@ const NonConformance: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced Quick Stats Cards */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white transform hover:scale-105 transition-all duration-300">
             <CardContent className="p-6">
@@ -146,7 +135,7 @@ const NonConformance: React.FC = () => {
                   <p className="text-amber-200 text-xs">Being investigated</p>
                 </div>
                 <div className="bg-white/20 p-3 rounded-full">
-                  <Eye className="h-8 w-8 text-white" />
+                  <Clock className="h-8 w-8 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -169,84 +158,38 @@ const NonConformance: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Tabs */}
+      {/* Main Content */}
       <div className="bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-red-50 px-6 py-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <TabsList className="grid w-full lg:w-auto grid-cols-3 lg:grid-cols-6 bg-white/70 backdrop-blur-sm shadow-md border border-gray-200/50">
-                <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-200">
-                  All ({tabCounts.all})
-                </TabsTrigger>
-                <TabsTrigger value="open" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white transition-all duration-200">
-                  Open ({tabCounts.open})
-                </TabsTrigger>
-                <TabsTrigger value="review" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white transition-all duration-200">
-                  Review ({tabCounts.review})
-                </TabsTrigger>
-                <TabsTrigger value="resolved" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all duration-200">
-                  Resolved ({tabCounts.resolved})
-                </TabsTrigger>
-                <TabsTrigger value="overdue" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-200">
-                  Overdue ({tabCounts.overdue})
-                </TabsTrigger>
-                <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white transition-all duration-200">
-                  Dashboard
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Enhanced Search */}
-              <div className="relative w-full lg:w-96">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="Search non-conformances by ID, description, or category..."
-                  className="pl-12 pr-4 py-3 shadow-lg border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-400/20 bg-white/80 backdrop-blur-sm transition-all duration-200"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6">
-            <TabsContent value="dashboard" className="mt-0">
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-orange-50">
-                <CardHeader className="bg-gradient-to-r from-red-100 to-orange-100 border-b border-red-200/50">
-                  <CardTitle className="text-xl text-red-800 flex items-center gap-3">
-                    <div className="p-2 bg-red-500 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-white" />
-                    </div>
-                    Non-Conformance Analytics Dashboard
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                  <NCDashboard stats={mockNCStats} onCreateNew={handleCreateNew} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {['all', 'open', 'review', 'resolved', 'overdue'].map((tab) => (
-              <TabsContent key={tab} value={tab} className="mt-0">
-                <Card className="border-0 shadow-lg bg-white">
-                  <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200/50">
-                    <CardTitle className="text-lg text-red-800 flex items-center gap-3">
-                      <div className="p-2 bg-red-500 rounded-lg">
-                        <AlertTriangle className="h-5 w-5 text-white" />
-                      </div>
-                      Non-Conformance List ({tabCounts[tab as keyof typeof tabCounts]} items)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8">
-                    <NCList />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            ))}
-          </div>
-        </Tabs>
+        <div className="p-6">
+          <NCList 
+            onItemClick={handleView}
+            onCreateNew={handleCreateNew}
+            onEdit={handleEdit}
+          />
+        </div>
       </div>
+
+      {/* Create Form Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Non-Conformance</DialogTitle>
+          </DialogHeader>
+          <NCForm onClose={handleCloseForm} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Form Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Non-Conformance</DialogTitle>
+          </DialogHeader>
+          <NCForm id={selectedNC?.id} onClose={handleCloseForm} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default NonConformance;
+export default NonConformancePage;
