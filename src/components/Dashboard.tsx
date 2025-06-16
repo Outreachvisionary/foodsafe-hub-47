@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useDocuments } from '@/hooks/useDocuments';
 import { Document } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
 
 const Dashboard: React.FC = () => {
   const { documents = [], isLoading } = useDocuments();
@@ -34,12 +32,11 @@ const Dashboard: React.FC = () => {
 
       const stats = {
         totalDocuments: documents.length,
-        pendingReview: documents.filter((doc: Document) => doc.status === DocumentStatus.Pending_Review).length,
+        pendingReview: documents.filter((doc: Document) => doc.status === 'Pending_Review').length,
         expiringSoon: documents.filter((doc: Document) => 
           doc.expiry_date && new Date(doc.expiry_date) <= thirtyDaysFromNow
         ).length,
-        recentlyUpdated: documents.length,
-        recentDocuments: documents.filter((doc: Document) => 
+        recentlyUpdated: documents.filter((doc: Document) => 
           new Date(doc.updated_at) >= oneWeekAgo
         ).length
       };
