@@ -70,7 +70,7 @@ export const getComplaintsByStatus = async (status: ComplaintStatus): Promise<Co
     const { data, error } = await supabase
       .from('complaints')
       .select('*')
-      .eq('status', dbStatus)
+      .eq('status', dbStatus as any)
       .order('reported_date', { ascending: false });
 
     if (error) throw error;
@@ -87,8 +87,8 @@ export const createComplaint = async (complaintData: Partial<Complaint>): Promis
     const dbComplaint = {
       title: complaintData.title,
       description: complaintData.description,
-      category: complaintData.category ? complaintCategoryToDbString(complaintData.category) : 'Other',
-      status: 'New', // Always create as New status
+      category: complaintData.category ? complaintCategoryToDbString(complaintData.category) as any : 'Other' as any,
+      status: 'New' as any, // Always create as New status
       reported_date: new Date().toISOString(),
       created_by: complaintData.created_by,
       customer_name: complaintData.customer_name,
@@ -119,8 +119,8 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
     
     if (updates.title) dbUpdates.title = updates.title;
     if (updates.description) dbUpdates.description = updates.description;
-    if (updates.category) dbUpdates.category = complaintCategoryToDbString(updates.category);
-    if (updates.status) dbUpdates.status = complaintStatusToDbString(updates.status);
+    if (updates.category) dbUpdates.category = complaintCategoryToDbString(updates.category) as any;
+    if (updates.status) dbUpdates.status = complaintStatusToDbString(updates.status) as any;
     if (updates.reported_date) dbUpdates.reported_date = updates.reported_date;
     if (updates.resolution_date) dbUpdates.resolution_date = updates.resolution_date;
     if (updates.customer_name) dbUpdates.customer_name = updates.customer_name;
