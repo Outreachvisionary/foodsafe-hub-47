@@ -1,6 +1,8 @@
 
 import { documentService } from './documentService';
 import * as nonConformanceService from './nonConformanceService';
+import * as complaintService from './complaintService';
+import * as capaService from './capaService';
 
 // Export the document service
 export { documentService };
@@ -16,10 +18,8 @@ export const {
 // Export non-conformance service
 export { nonConformanceService };
 
-// Mock exports for other services that are missing
-export const capaService = {
-  getCAPAs: async () => [],
-  createCAPA: async () => ({}),
-  updateCAPA: async (id: string, updates: any) => ({}),
-  deleteCAPA: async (id: string) => {}
-};
+// Export complaint service
+export { complaintService };
+
+// Export CAPA service
+export { capaService };

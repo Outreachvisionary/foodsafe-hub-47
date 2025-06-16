@@ -1,70 +1,82 @@
 
-import { useState, useEffect } from 'react';
-import { Complaint, ComplaintFilter } from '@/types/complaint';
-import { fetchComplaints } from '@/services/complaintService';
-import { useRealtimeSubscription } from './useRealtimeSubscription';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  fetchComplaints, 
+  createComplaint, 
+  updateComplaint, 
+  deleteComplaint,
+  fetchComplaintById 
+} from '@/services/complaintService';
+import { toast } from 'sonner';
+import { Complaint, ComplaintFilter, CreateComplaintRequest } from '@/types/complaint';
 
-export function useComplaints(initialFilter?: ComplaintFilter) {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [filter, setFilter] = useState<ComplaintFilter | undefined>(initialFilter);
+export const useComplaints = (filters?: ComplaintFilter) => {
+  const queryClient = useQueryClient();
 
-  // Use realtime subscription for complaints table
-  useRealtimeSubscription({
-    table: 'complaints',
-    onDataChange: (payload) => {
-      console.log('Complaints data changed:', payload);
-      // Refetch complaints when data changes
-      loadComplaints();
-    },
-    onError: (err) => {
-      setError(err);
-    }
+  const {
+    data: complaints = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['complaints', filters],
+    queryFn: () => fetchComplaints(filters),
   });
 
-  // Load complaints with filters
-  const loadComplaints = async (filterOptions?: ComplaintFilter) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const currentFilter = filterOptions || filter;
-      const data = await fetchComplaints(currentFilter);
-      setComplaints(data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('An error occurred while fetching complaints'));
-      console.error('Error loading complaints:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const createMutation = useMutation({
+    mutationFn: createComplaint,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      toast.success('Complaint created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create complaint: ${error.message}`);
+    },
+  });
 
-  // Apply new filter
-  const applyFilter = (newFilter: ComplaintFilter) => {
-    setFilter(newFilter);
-    loadComplaints(newFilter);
-  };
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Complaint> }) =>
+      updateComplaint(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      toast.success('Complaint updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update complaint: ${error.message}`);
+    },
+  });
 
-  // Clear filter
-  const clearFilter = () => {
-    setFilter(undefined);
-    loadComplaints(undefined);
-  };
-
-  // Initial load
-  useEffect(() => {
-    loadComplaints();
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: deleteComplaint,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      toast.success('Complaint deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete complaint: ${error.message}`);
+    },
+  });
 
   return {
     complaints,
     isLoading,
     error,
-    refresh: loadComplaints,
-    filter,
-    applyFilter,
-    clearFilter,
+    createComplaint: createMutation.mutate,
+    updateComplaint: updateMutation.mutate,
+    deleteComplaint: deleteMutation.mutate,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    refresh: refetch,
   };
-}
+};
+
+export const useComplaint = (id: string) => {
+  return useQuery({
+    queryKey: ['complaint', id],
+    queryFn: () => fetchComplaintById(id),
+    enabled: !!id,
+  });
+};
 
 export default useComplaints;

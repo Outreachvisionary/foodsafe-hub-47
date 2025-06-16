@@ -1,7 +1,8 @@
+
 import { Complaint, ComplaintFilter, CreateComplaintRequest } from '@/types/complaint';
 import { ComplaintStatus, ComplaintCategory, ComplaintPriority } from '@/types/enums';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   complaintCategoryToDbString, 
   complaintStatusToDbString, 
@@ -55,11 +56,7 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
     }));
   } catch (error) {
     console.error('Error fetching complaints:', error);
-    toast({
-      title: "Failed to load complaints",
-      description: "There was an error fetching the complaints data.",
-      variant: "destructive"
-    });
+    toast.error('Failed to load complaints');
     return [];
   }
 };
@@ -111,6 +108,8 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
 
     if (error) throw error;
     
+    toast.success('Complaint created successfully');
+    
     return {
       ...data,
       category: stringToComplaintCategory(data.category),
@@ -119,7 +118,8 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
     };
   } catch (error) {
     console.error('Error creating complaint:', error);
-    throw new Error('Failed to create complaint');
+    toast.error('Failed to create complaint');
+    throw error;
   }
 };
 
@@ -145,37 +145,7 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
 
     if (error) throw error;
     
-    return {
-      ...data,
-      category: stringToComplaintCategory(data.category),
-      status: stringToComplaintStatus(data.status),
-      priority: undefined // Priority field doesn't exist in database
-    };
-  } catch (error) {
-    console.error('Error updating complaint:', error);
-    throw new Error('Failed to update complaint');
-  }
-};
-
-// Update a complaint's status
-export const updateComplaintStatus = async (
-  id: string, 
-  status: string,
-  userId: string
-): Promise<Complaint> => {
-  try {
-    const { data, error } = await supabase
-      .from('complaints')
-      .update({ 
-        status: status as any, 
-        updated_at: new Date().toISOString(),
-        resolution_date: status === 'Resolved' ? new Date().toISOString() : null
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    toast.success('Complaint updated successfully');
     
     return {
       ...data,
@@ -184,35 +154,27 @@ export const updateComplaintStatus = async (
       priority: undefined // Priority field doesn't exist in database
     };
   } catch (error) {
-    console.error('Error updating complaint status:', error);
-    throw new Error('Failed to update complaint status');
+    console.error('Error updating complaint:', error);
+    toast.error('Failed to update complaint');
+    throw error;
   }
 };
 
-// Fetch activities for a specific complaint (placeholder)
-export const fetchComplaintActivities = async (complaintId: string) => {
+// Delete a complaint
+export const deleteComplaint = async (id: string): Promise<void> => {
   try {
-    console.log('Complaint activities not available - table does not exist');
-    return [];
-  } catch (error) {
-    console.error('Error fetching complaint activities:', error);
-    throw new Error('Failed to fetch complaint activity history');
-  }
-};
+    const { error } = await supabase
+      .from('complaints')
+      .delete()
+      .eq('id', id);
 
-// Add a new activity to a complaint (placeholder)
-export const addComplaintActivity = async (
-  complaintId: string, 
-  activityType: string, 
-  description: string, 
-  userId: string
-) => {
-  try {
-    console.log('Complaint activity logging not available - table does not exist');
-    return null;
+    if (error) throw error;
+    
+    toast.success('Complaint deleted successfully');
   } catch (error) {
-    console.error('Error adding complaint activity:', error);
-    throw new Error('Failed to record complaint activity');
+    console.error('Error deleting complaint:', error);
+    toast.error('Failed to delete complaint');
+    throw error;
   }
 };
 
@@ -230,14 +192,18 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
     const { data: capa, error: capaError } = await supabase
       .from('capa_actions')
       .insert({
-        title: `CAPA for ${complaint.title}`,
-        description: complaint.description,
+        title: `CAPA for Complaint: ${complaint.title}`,
+        description: `Corrective and Preventive Action for complaint: ${complaint.description}`,
         source: 'Customer Complaint',
-        priority: 'medium',
+        source_id: complaintId,
+        priority: 'Medium',
         status: 'Open',
         created_by: userId,
         assigned_to: complaint.assigned_to || userId,
-        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        root_cause: `Customer complaint regarding: ${complaint.category}`,
+        corrective_action: `Address immediate cause of complaint in ${complaint.product_involved || 'product'}`,
+        preventive_action: `Implement measures to prevent similar complaints`
       })
       .select()
       .single();
@@ -253,6 +219,18 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
       .eq('id', complaintId);
       
     if (updateError) throw updateError;
+
+    // Create module relationship
+    await supabase
+      .from('module_relationships')
+      .insert({
+        source_id: complaintId,
+        target_id: capa.id,
+        source_type: 'complaint',
+        target_type: 'capa',
+        relationship_type: 'generated_from',
+        created_by: userId
+      });
     
     return capa;
   } catch (error) {
@@ -274,7 +252,6 @@ export const getComplaintStatistics = async () => {
       total: data.length,
       byStatus: {} as Record<string, number>,
       byCategory: {} as Record<string, number>,
-      byPriority: {} as Record<string, number>,
       openHighPriority: 0,
       avgResolutionTime: 0
     };
@@ -300,9 +277,7 @@ export default {
   fetchComplaintById,
   createComplaint,
   updateComplaint,
-  updateComplaintStatus,
-  fetchComplaintActivities,
-  addComplaintActivity,
+  deleteComplaint,
   createCAPAFromComplaint,
   getComplaintStatistics
 };
