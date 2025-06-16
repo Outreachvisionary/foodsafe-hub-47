@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/types/document';
 
@@ -70,11 +71,11 @@ export const documentService = {
         file_path: document.file_path,
         file_type: document.file_type || '',
         file_size: document.file_size || 0,
-        category: mapTypeScriptStatus(document.category || 'Other'),
-        status: mapTypeScriptStatus(document.status || 'Draft'),
+        category: mapTypeScriptStatus(document.category || 'Other') as any,
+        status: mapTypeScriptStatus(document.status || 'Draft') as any,
         version: document.version || 1,
         created_by: document.created_by || '',
-        checkout_status: mapTypeScriptStatus(document.checkout_status || 'Available'),
+        checkout_status: mapTypeScriptStatus(document.checkout_status || 'Available') as any,
         tags: document.tags || [],
         approvers: document.approvers || [],
         created_at: new Date().toISOString(),
@@ -115,13 +116,13 @@ export const documentService = {
 
       // Convert TypeScript enums to database format
       if (dbUpdates.status) {
-        dbUpdates.status = mapTypeScriptStatus(dbUpdates.status);
+        dbUpdates.status = mapTypeScriptStatus(dbUpdates.status) as any;
       }
       if (dbUpdates.category) {
-        dbUpdates.category = mapTypeScriptStatus(dbUpdates.category);
+        dbUpdates.category = mapTypeScriptStatus(dbUpdates.category) as any;
       }
       if (dbUpdates.checkout_status) {
-        dbUpdates.checkout_status = mapTypeScriptStatus(dbUpdates.checkout_status);
+        dbUpdates.checkout_status = mapTypeScriptStatus(dbUpdates.checkout_status) as any;
       }
 
       // Remove undefined values
@@ -175,3 +176,4 @@ export const documentService = {
 
 // Export for backward compatibility
 export const fetchDocuments = documentService.getDocuments;
+
