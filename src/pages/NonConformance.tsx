@@ -50,6 +50,10 @@ const NonConformancePage: React.FC = () => {
     setSelectedNC(null);
   };
 
+  const handleRefresh = () => {
+    refresh();
+  };
+
   const getTabCounts = () => {
     return {
       all: ncStats.total,
@@ -78,7 +82,7 @@ const NonConformancePage: React.FC = () => {
           <div className="flex flex-wrap gap-3">
             <Button 
               variant="outline"
-              onClick={refresh}
+              onClick={handleRefresh}
               className="shadow-lg hover:shadow-xl transition-all duration-300 border-red-200 hover:border-red-300 hover:bg-red-50"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />

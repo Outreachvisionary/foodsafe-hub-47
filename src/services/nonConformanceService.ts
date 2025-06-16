@@ -1,6 +1,43 @@
-
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { supabase } from '@/integrations/supabase/client';
+
+// Mapping functions for enum conversion
+const mapNCStatusToDatabase = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'On Hold': 'On Hold',
+    'Under Review': 'Under Review',
+    'Resolved': 'Resolved',
+    'Closed': 'Closed',
+    'Released': 'Released',
+    'Disposed': 'Disposed'
+  };
+  return statusMap[status] || status;
+};
+
+const mapItemCategoryToDatabase = (category: string) => {
+  const categoryMap: Record<string, string> = {
+    'Processing Equipment': 'Processing Equipment',
+    'Product Storage Tanks': 'Product Storage Tanks',
+    'Finished Products': 'Finished Products',
+    'Raw Products': 'Raw Products',
+    'Packaging Materials': 'Packaging Materials',
+    'Other': 'Other'
+  };
+  return categoryMap[category] || 'Other';
+};
+
+const mapReasonCategoryToDatabase = (category: string) => {
+  const categoryMap: Record<string, string> = {
+    'Contamination': 'Contamination',
+    'Quality Issues': 'Quality Issues',
+    'Regulatory Non-Compliance': 'Regulatory Non-Compliance',
+    'Equipment Malfunction': 'Equipment Malfunction',
+    'Documentation Error': 'Documentation Error',
+    'Process Deviation': 'Process Deviation',
+    'Other': 'Other'
+  };
+  return categoryMap[category] || 'Other';
+};
 
 // Get all non-conformances
 export const getAllNonConformances = async (): Promise<{ data: NonConformance[] }> => {
@@ -44,9 +81,9 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
       title: data.title || '',
       description: data.description || '',
       item_name: data.item_name || '',
-      item_category: data.item_category || 'Other',
-      reason_category: data.reason_category || 'Other',
-      status: data.status || 'On Hold',
+      item_category: mapItemCategoryToDatabase(data.item_category || 'Other') as any,
+      reason_category: mapReasonCategoryToDatabase(data.reason_category || 'Other') as any,
+      status: mapNCStatusToDatabase(data.status || 'On Hold') as any,
       created_by: data.created_by || 'System',
       assigned_to: data.assigned_to,
       department: data.department,
@@ -82,10 +119,21 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
 // Update non-conformance
 export const updateNonConformance = async (id: string, updates: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    const updateData = {
+    const updateData: any = {
       ...updates,
       updated_at: new Date().toISOString()
     };
+
+    // Convert enum values to database format
+    if (updates.status) {
+      updateData.status = mapNCStatusToDatabase(updates.status as string);
+    }
+    if (updates.item_category) {
+      updateData.item_category = mapItemCategoryToDatabase(updates.item_category as string);
+    }
+    if (updates.reason_category) {
+      updateData.reason_category = mapReasonCategoryToDatabase(updates.reason_category as string);
+    }
 
     const { data: updatedNC, error } = await supabase
       .from('non_conformances')
@@ -114,6 +162,107 @@ export const deleteNonConformance = async (id: string): Promise<void> => {
   } catch (error) {
     console.error('Error deleting non-conformance:', error);
     throw error;
+  }
+};
+
+// Generate CAPA from non-conformance
+export const generateCAPAFromNC = async (ncId: string, isAutomatic: boolean = false): Promise<any> => {
+  try {
+    // Get the non-conformance details
+    const nc = await getNonConformanceById(ncId);
+    
+    // Prepare CAPA data based on NC
+    const capaData = {
+      title: `CAPA for NC: ${nc.title}`,
+      description: `Corrective and Preventive Action for Non-Conformance: ${nc.description || nc.title}`,
+      source: 'Non_Conformance',
+      source_id: ncId,
+      priority: nc.risk_level === 'Critical' ? 'High' : nc.risk_level === 'High' ? 'Medium' : 'Low',
+      assigned_to: nc.assigned_to || 'System',
+      created_by: nc.created_by || 'System',
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      department: nc.department,
+      root_cause: isAutomatic ? `Automatic analysis based on NC: ${nc.reason_details || nc.reason_category}` : '',
+      corrective_action: isAutomatic ? `Address immediate cause of ${nc.item_category} issue in ${nc.location || 'facility'}` : '',
+      preventive_action: isAutomatic ? `Implement preventive measures to avoid recurrence of ${nc.reason_category} issues` : '',
+      effectiveness_criteria: isAutomatic ? 'No recurrence of similar non-conformances within 90 days' : ''
+    };
+
+    // Create CAPA in database
+    const { data: capa, error } = await supabase
+      .from('capa_actions')
+      .insert(capaData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update the non-conformance with the CAPA ID
+    await updateNonConformance(ncId, { capa_id: capa.id });
+
+    // Create module relationship
+    await supabase
+      .from('module_relationships')
+      .insert({
+        source_id: ncId,
+        target_id: capa.id,
+        source_type: 'non_conformance',
+        target_type: 'capa',
+        relationship_type: 'generated_from',
+        created_by: nc.created_by || 'System'
+      });
+
+    return capa;
+  } catch (error) {
+    console.error('Error generating CAPA from NC:', error);
+    throw error;
+  }
+};
+
+// Link existing CAPA to non-conformance
+export const linkCAPAToNC = async (ncId: string, capaId: string): Promise<void> => {
+  try {
+    // Update the non-conformance with the CAPA ID
+    await updateNonConformance(ncId, { capa_id: capaId });
+
+    // Create module relationship
+    const nc = await getNonConformanceById(ncId);
+    await supabase
+      .from('module_relationships')
+      .insert({
+        source_id: ncId,
+        target_id: capaId,
+        source_type: 'non_conformance',
+        target_type: 'capa',
+        relationship_type: 'linked_to',
+        created_by: nc.created_by || 'System'
+      });
+  } catch (error) {
+    console.error('Error linking CAPA to NC:', error);
+    throw error;
+  }
+};
+
+// Get linked CAPAs for a non-conformance
+export const getLinkedCAPAs = async (ncId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('module_relationships')
+      .select(`
+        target_id,
+        relationship_type,
+        created_at,
+        capa_actions!inner(*)
+      `)
+      .eq('source_id', ncId)
+      .eq('source_type', 'non_conformance')
+      .eq('target_type', 'capa');
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching linked CAPAs:', error);
+    return [];
   }
 };
 

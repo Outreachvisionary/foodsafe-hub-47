@@ -5,6 +5,7 @@ import NCDetailsForm from './NCDetailsForm';
 import NCActivityTimeline from './NCActivityTimeline';
 import NCAttachmentUploader from './NCAttachmentUploader';
 import NCCAPAIntegration from './NCCAPAIntegration';
+import NCCAPAGenerator from './NCCAPAGenerator';
 import NCDetailsHeader from './NCDetailsHeader';
 import NCActionsPanel from './NCActionsPanel';
 import { NonConformance } from '@/types/non-conformance';
@@ -72,6 +73,11 @@ const NCDetails: React.FC<NCDetailsProps> = ({
   const handleDetailsUpdate = (updatedData: Partial<any>) => {
     setNcData(prev => ({ ...prev, ...updatedData }));
   };
+
+  const handleCAPAGenerated = (capaId: string) => {
+    setNcData(prev => ({ ...prev, capa_id: capaId }));
+    setActiveTab('capa'); // Switch to CAPA tab
+  };
   
   return (
     <div className="space-y-6">
@@ -88,12 +94,13 @@ const NCDetails: React.FC<NCDetailsProps> = ({
         } as NonConformance}
       />
       
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full mb-4">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-5 w-full mb-4">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="attachments">Attachments</TabsTrigger>
           <TabsTrigger value="capa">CAPA</TabsTrigger>
+          <TabsTrigger value="integration">Integration</TabsTrigger>
         </TabsList>
         
         <div className="grid md:grid-cols-4 gap-6">
@@ -117,6 +124,13 @@ const NCDetails: React.FC<NCDetailsProps> = ({
                 onLinkCAPA={(ncId, capaId) => console.log('Link CAPA:', capaId, 'to NC:', ncId)}
               />
             </TabsContent>
+
+            <TabsContent value="integration">
+              <NCCAPAGenerator 
+                nonConformance={ncData as NonConformance}
+                onCAPAGenerated={handleCAPAGenerated}
+              />
+            </TabsContent>
           </div>
           
           <div className="md:col-span-1">
@@ -124,8 +138,9 @@ const NCDetails: React.FC<NCDetailsProps> = ({
               id={id}
               title={title}
               onEdit={() => console.log('Edit NC:', id)}
-              onGenerateCapa={() => console.log('Generate CAPA for NC:', id)}
+              onGenerateCapa={() => setActiveTab('integration')}
               onViewCapa={ncData.capa_id ? () => console.log('View CAPA:', ncData.capa_id) : undefined}
+              capaId={ncData.capa_id}
             />
           </div>
         </div>
