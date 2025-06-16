@@ -82,23 +82,20 @@ export const getComplaintsByStatus = async (status: ComplaintStatus): Promise<Co
   }
 };
 
-export const createComplaint = async (complaint: Complaint): Promise<Complaint> => {
+export const createComplaint = async (complaintData: Partial<Complaint>): Promise<Complaint> => {
   try {
     const dbComplaint = {
-      title: complaint.title,
-      description: complaint.description,
-      category: complaintCategoryToDbString(complaint.category) as any,
-      status: complaintStatusToDbString(complaint.status) as any,
-      reported_date: complaint.reported_date,
-      created_by: complaint.created_by,
-      customer_name: complaint.customer_name,
-      customer_contact: complaint.customer_contact,
-      product_involved: complaint.product_involved,
-      lot_number: complaint.lot_number,
-      capa_id: complaint.capa_id,
-      created_at: complaint.created_at,
-      updated_at: complaint.updated_at,
-      assigned_to: complaint.assigned_to
+      title: complaintData.title,
+      description: complaintData.description,
+      category: complaintData.category ? complaintCategoryToDbString(complaintData.category) : 'Other',
+      status: 'New', // Always create as New status
+      reported_date: new Date().toISOString(),
+      created_by: complaintData.created_by,
+      customer_name: complaintData.customer_name,
+      customer_contact: complaintData.customer_contact,
+      product_involved: complaintData.product_involved,
+      lot_number: complaintData.lot_number,
+      assigned_to: complaintData.assigned_to
     };
 
     const { data, error } = await supabase
@@ -122,8 +119,8 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
     
     if (updates.title) dbUpdates.title = updates.title;
     if (updates.description) dbUpdates.description = updates.description;
-    if (updates.category) dbUpdates.category = complaintCategoryToDbString(updates.category) as any;
-    if (updates.status) dbUpdates.status = complaintStatusToDbString(updates.status) as any;
+    if (updates.category) dbUpdates.category = complaintCategoryToDbString(updates.category);
+    if (updates.status) dbUpdates.status = complaintStatusToDbString(updates.status);
     if (updates.reported_date) dbUpdates.reported_date = updates.reported_date;
     if (updates.resolution_date) dbUpdates.resolution_date = updates.resolution_date;
     if (updates.customer_name) dbUpdates.customer_name = updates.customer_name;
