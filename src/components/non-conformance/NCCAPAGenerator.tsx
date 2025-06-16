@@ -35,7 +35,7 @@ const NCCAPAGenerator: React.FC<NCCAPAGeneratorProps> = ({
   // Fetch available CAPAs for linking
   const { data: availableCAPAs = [] } = useQuery({
     queryKey: ['available-capas'],
-    queryFn: getCAPAs,
+    queryFn: () => getCAPAs(),
     enabled: showLinkDialog,
   });
 

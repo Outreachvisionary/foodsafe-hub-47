@@ -24,7 +24,7 @@ export const useNCCAPAIntegration = (ncId: string) => {
     isLoading: isLoadingAvailableCAPAs
   } = useQuery({
     queryKey: ['available-capas'],
-    queryFn: getCAPAs,
+    queryFn: () => getCAPAs(),
   });
 
   // Generate CAPA mutation
