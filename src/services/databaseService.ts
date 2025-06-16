@@ -1,214 +1,163 @@
-
+import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CreateCAPARequest } from '@/types/capa';
-import { Complaint, CreateComplaintRequest } from '@/types/complaint';
-import { stringToCAPAStatus, stringToCAPAPriority, stringToCAPASource, stringToEffectivenessRating, capaPriorityToString, capaSourceToString, capaStatusToString, effectivenessRatingToString } from '@/utils/capaAdapters';
-import { complaintCategoryToDbString, complaintStatusToDbString, stringToComplaintCategory, stringToComplaintStatus } from '@/utils/complaintAdapters';
+import { 
+  complaintCategoryToDbString, 
+  complaintStatusToDbString, 
+  stringToComplaintCategory, 
+  stringToComplaintStatus
+} from '@/utils/complaintAdapters';
 
-class DatabaseService {
-  // Generic error handler
-  private handleError(error: any, operation: string) {
-    console.error(`Database error in ${operation}:`, error);
-    throw new Error(`${operation} failed: ${error.message || 'Unknown error'}`);
+const convertDatabaseComplaintToComplaint = (dbComplaint: any): Complaint => {
+  return {
+    id: dbComplaint.id,
+    title: dbComplaint.title,
+    description: dbComplaint.description,
+    category: stringToComplaintCategory(dbComplaint.category),
+    status: stringToComplaintStatus(dbComplaint.status),
+    priority: ComplaintPriority.Medium, // Default since priority doesn't exist in DB
+    reported_date: dbComplaint.reported_date,
+    resolution_date: dbComplaint.resolution_date,
+    assigned_to: dbComplaint.assigned_to,
+    created_by: dbComplaint.created_by,
+    customer_name: dbComplaint.customer_name,
+    customer_contact: dbComplaint.customer_contact,
+    product_involved: dbComplaint.product_involved,
+    lot_number: dbComplaint.lot_number,
+    capa_id: dbComplaint.capa_id,
+    created_at: dbComplaint.created_at,
+    updated_at: dbComplaint.updated_at
+  };
+};
+
+export const getComplaints = async (): Promise<Complaint[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .order('reported_date', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(convertDatabaseComplaintToComplaint);
+  } catch (error) {
+    console.error('Error fetching complaints:', error);
+    throw error;
   }
+};
 
-  // CAPA operations
-  async createCAPA(data: CreateCAPARequest): Promise<CAPA> {
-    try {
-      const { data: result, error } = await supabase
-        .from('capa_actions')
-        .insert({
-          title: data.title,
-          description: data.description,
-          priority: capaPriorityToString(data.priority),
-          assigned_to: data.assigned_to,
-          created_by: data.created_by,
-          source: capaSourceToString(data.source),
-          due_date: data.due_date,
-          department: data.department,
-          status: 'Open'
-        })
-        .select()
-        .single();
+export const getComplaintById = async (id: string): Promise<Complaint | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error) throw error;
-      
-      return {
-        ...result,
-        priority: stringToCAPAPriority(result.priority),
-        status: stringToCAPAStatus(result.status),
-        source: stringToCAPASource(result.source),
-        effectiveness_rating: result.effectiveness_rating ? stringToEffectivenessRating(result.effectiveness_rating) : undefined
-      };
-    } catch (error) {
-      this.handleError(error, 'Create CAPA');
-      throw error;
-    }
+    if (error) throw error;
+    if (!data) return null;
+    
+    return convertDatabaseComplaintToComplaint(data);
+  } catch (error) {
+    console.error('Error fetching complaint:', error);
+    throw error;
   }
+};
 
-  async updateCAPA(id: string, data: Partial<CAPA>): Promise<CAPA> {
-    try {
-      const updateData: any = {
-        ...data,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Convert enums to strings for database
-      if (data.priority) {
-        updateData.priority = capaPriorityToString(data.priority);
-      }
-      if (data.source) {
-        updateData.source = capaSourceToString(data.source);
-      }
-      if (data.status) {
-        updateData.status = capaStatusToString(data.status);
-      }
-      if (data.effectiveness_rating) {
-        updateData.effectiveness_rating = effectivenessRatingToString(data.effectiveness_rating);
-      }
+export const getComplaintsByStatus = async (status: ComplaintStatus): Promise<Complaint[]> => {
+  try {
+    const dbStatus = complaintStatusToDbString(status);
+    const { data, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('status', dbStatus)
+      .order('reported_date', { ascending: false });
 
-      const { data: result, error } = await supabase
-        .from('capa_actions')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      return {
-        ...result,
-        priority: stringToCAPAPriority(result.priority),
-        status: stringToCAPAStatus(result.status),
-        source: stringToCAPASource(result.source),
-        effectiveness_rating: result.effectiveness_rating ? stringToEffectivenessRating(result.effectiveness_rating) : undefined
-      };
-    } catch (error) {
-      this.handleError(error, 'Update CAPA');
-      throw error;
-    }
+    if (error) throw error;
+    
+    return (data || []).map(convertDatabaseComplaintToComplaint);
+  } catch (error) {
+    console.error('Error fetching complaints by status:', error);
+    throw error;
   }
+};
 
-  async getCAPAs(): Promise<CAPA[]> {
-    try {
-      const { data, error } = await supabase
-        .from('capa_actions')
-        .select('*')
-        .order('created_at', { ascending: false });
+export const createComplaint = async (complaint: Complaint): Promise<Complaint> => {
+  try {
+    const dbComplaint = {
+      title: complaint.title,
+      description: complaint.description,
+      category: complaintCategoryToDbString(complaint.category) as any,
+      status: complaintStatusToDbString(complaint.status) as any,
+      reported_date: complaint.reported_date,
+      created_by: complaint.created_by,
+      customer_name: complaint.customer_name,
+      customer_contact: complaint.customer_contact,
+      product_involved: complaint.product_involved,
+      lot_number: complaint.lot_number,
+      capa_id: complaint.capa_id,
+      created_at: complaint.created_at,
+      updated_at: complaint.updated_at,
+      assigned_to: complaint.assigned_to
+    };
 
-      if (error) throw error;
-      
-      return (data || []).map(item => ({
-        ...item,
-        priority: stringToCAPAPriority(item.priority),
-        status: stringToCAPAStatus(item.status),
-        source: stringToCAPASource(item.source),
-        effectiveness_rating: item.effectiveness_rating ? stringToEffectivenessRating(item.effectiveness_rating) : undefined
-      }));
-    } catch (error) {
-      this.handleError(error, 'Get CAPAs');
-      return [];
-    }
+    const { data, error } = await supabase
+      .from('complaints')
+      .insert(dbComplaint)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return convertDatabaseComplaintToComplaint(data);
+  } catch (error) {
+    console.error('Error creating complaint:', error);
+    throw error;
   }
+};
 
-  // Complaint operations
-  async createComplaint(data: CreateComplaintRequest): Promise<Complaint> {
-    try {
-      const { data: result, error } = await supabase
-        .from('complaints')
-        .insert({
-          title: data.title,
-          description: data.description,
-          category: complaintCategoryToDbString(data.category) as any,
-          customer_name: data.customer_name,
-          customer_contact: data.customer_contact,
-          product_involved: data.product_involved,
-          lot_number: data.lot_number,
-          created_by: data.created_by,
-          status: 'New' as any,
-          reported_date: new Date().toISOString()
-        })
-        .select()
-        .single();
+export const updateComplaint = async (id: string, updates: Partial<Complaint>): Promise<Complaint> => {
+  try {
+    const dbUpdates: any = {};
+    
+    if (updates.title) dbUpdates.title = updates.title;
+    if (updates.description) dbUpdates.description = updates.description;
+    if (updates.category) dbUpdates.category = complaintCategoryToDbString(updates.category) as any;
+    if (updates.status) dbUpdates.status = complaintStatusToDbString(updates.status) as any;
+    if (updates.reported_date) dbUpdates.reported_date = updates.reported_date;
+    if (updates.resolution_date) dbUpdates.resolution_date = updates.resolution_date;
+    if (updates.customer_name) dbUpdates.customer_name = updates.customer_name;
+    if (updates.customer_contact) dbUpdates.customer_contact = updates.customer_contact;
+    if (updates.product_involved) dbUpdates.product_involved = updates.product_involved;
+    if (updates.lot_number) dbUpdates.lot_number = updates.lot_number;
+    if (updates.capa_id) dbUpdates.capa_id = updates.capa_id;
+    if (updates.assigned_to) dbUpdates.assigned_to = updates.assigned_to;
 
-      if (error) throw error;
-      
-      return {
-        ...result,
-        category: stringToComplaintCategory(result.category),
-        status: stringToComplaintStatus(result.status)
-      };
-    } catch (error) {
-      this.handleError(error, 'Create Complaint');
-      throw error;
-    }
+    const { data, error } = await supabase
+      .from('complaints')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return convertDatabaseComplaintToComplaint(data);
+  } catch (error) {
+    console.error('Error updating complaint:', error);
+    throw error;
   }
+};
 
-  async updateComplaint(id: string, data: Partial<Complaint>): Promise<Complaint> {
-    try {
-      const updateData: any = {
-        ...data,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Convert enums to strings for database
-      if (data.category) {
-        updateData.category = complaintCategoryToDbString(data.category) as any;
-      }
-      if (data.status) {
-        updateData.status = complaintStatusToDbString(data.status) as any;
-      }
+export const deleteComplaint = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('complaints')
+      .delete()
+      .eq('id', id);
 
-      const { data: result, error } = await supabase
-        .from('complaints')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      return {
-        ...result,
-        category: stringToComplaintCategory(result.category),
-        status: stringToComplaintStatus(result.status)
-      };
-    } catch (error) {
-      this.handleError(error, 'Update Complaint');
-      throw error;
-    }
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting complaint:', error);
+    throw error;
   }
-
-  async getComplaints(): Promise<Complaint[]> {
-    try {
-      const { data, error } = await supabase
-        .from('complaints')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      return (data || []).map(item => ({
-        ...item,
-        category: stringToComplaintCategory(item.category),
-        status: stringToComplaintStatus(item.status)
-      }));
-    } catch (error) {
-      this.handleError(error, 'Get Complaints');
-      return [];
-    }
-  }
-
-  // Authentication check
-  async checkAuth(): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      return !!user;
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      return false;
-    }
-  }
-}
-
-export const databaseService = new DatabaseService();
+};
