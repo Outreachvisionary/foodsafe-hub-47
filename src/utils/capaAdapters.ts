@@ -40,6 +40,11 @@ export const capaStatusToString = (status: CAPAStatus): string => {
   }
 };
 
+// Database string conversion functions
+export const capaStatusToDbString = (status: CAPAStatus): string => {
+  return capaStatusToString(status);
+};
+
 // CAPA Priority conversions
 export const stringToCAPAPriority = (priority: string): CAPAPriority => {
   switch (priority?.toLowerCase()) {
@@ -69,6 +74,10 @@ export const capaPriorityToString = (priority: CAPAPriority): string => {
     default:
       return 'Medium';
   }
+};
+
+export const capaPriorityToDbString = (priority: CAPAPriority): string => {
+  return capaPriorityToString(priority);
 };
 
 // CAPA Source conversions
@@ -122,6 +131,10 @@ export const capaSourceToString = (source: CAPASource): string => {
   }
 };
 
+export const capaSourceToDbString = (source: CAPASource): string => {
+  return capaSourceToString(source);
+};
+
 // Effectiveness Rating conversions
 export const stringToEffectivenessRating = (rating: string): CAPAEffectivenessRating => {
   switch (rating) {
@@ -151,4 +164,8 @@ export const effectivenessRatingToString = (rating: CAPAEffectivenessRating): st
     default:
       return 'Pending';
   }
+};
+
+export const effectivenessRatingToDbString = (rating: CAPAEffectivenessRating): string => {
+  return effectivenessRatingToString(rating);
 };
