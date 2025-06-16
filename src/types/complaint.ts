@@ -1,3 +1,4 @@
+
 import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
 export interface Complaint {
@@ -6,7 +7,7 @@ export interface Complaint {
   description: string;
   category: ComplaintCategory;
   status: ComplaintStatus;
-  priority?: ComplaintPriority;
+  priority: ComplaintPriority; // Frontend-only field for display purposes
   reported_date: string;
   resolution_date?: string;
   assigned_to?: string;
@@ -24,7 +25,7 @@ export interface CreateComplaintRequest {
   title: string;
   description: string;
   category: ComplaintCategory;
-  priority?: ComplaintPriority;
+  priority?: ComplaintPriority; // Optional for creation
   customer_name?: string;
   customer_contact?: string;
   product_involved?: string;

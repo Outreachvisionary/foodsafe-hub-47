@@ -1,23 +1,23 @@
 
 import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
-// Complaint Category conversions
+// Complaint Category conversions - matching database enum values
 export const complaintCategoryToDbString = (category: ComplaintCategory): string => {
   switch (category) {
     case ComplaintCategory.Product_Quality:
-      return 'Product Quality';
+      return 'Product_Quality';
     case ComplaintCategory.Food_Safety:
-      return 'Food Safety';
+      return 'Food_Safety';
     case ComplaintCategory.Foreign_Material:
-      return 'Foreign Material';
+      return 'Foreign_Matter';
     case ComplaintCategory.Packaging:
       return 'Packaging';
     case ComplaintCategory.Delivery:
       return 'Delivery';
     case ComplaintCategory.Service:
-      return 'Customer Service';
+      return 'Customer_Service';
     case ComplaintCategory.Labeling:
-      return 'Labeling';
+      return 'Documentation';
     case ComplaintCategory.Other:
       return 'Other';
     default:
@@ -27,21 +27,22 @@ export const complaintCategoryToDbString = (category: ComplaintCategory): string
 
 export const stringToComplaintCategory = (category: string): ComplaintCategory => {
   switch (category) {
-    case 'Product Quality':
+    case 'Product_Quality':
       return ComplaintCategory.Product_Quality;
-    case 'Food Safety':
+    case 'Food_Safety':
       return ComplaintCategory.Food_Safety;
-    case 'Foreign Material':
+    case 'Foreign_Matter':
       return ComplaintCategory.Foreign_Material;
     case 'Packaging':
       return ComplaintCategory.Packaging;
     case 'Delivery':
       return ComplaintCategory.Delivery;
-    case 'Customer Service':
-    case 'Service':
+    case 'Customer_Service':
       return ComplaintCategory.Service;
-    case 'Labeling':
+    case 'Documentation':
       return ComplaintCategory.Labeling;
+    case 'Allergen':
+      return ComplaintCategory.Food_Safety; // Map allergen to food safety
     case 'Other':
       return ComplaintCategory.Other;
     default:
@@ -49,17 +50,19 @@ export const stringToComplaintCategory = (category: string): ComplaintCategory =
   }
 };
 
-// Complaint Status conversions
+// Complaint Status conversions - matching database enum values
 export const complaintStatusToDbString = (status: ComplaintStatus): string => {
   switch (status) {
     case ComplaintStatus.New:
       return 'New';
     case ComplaintStatus.Under_Investigation:
-      return 'Under Investigation';
+      return 'Under_Investigation';
     case ComplaintStatus.Resolved:
       return 'Resolved';
     case ComplaintStatus.Closed:
       return 'Closed';
+    case ComplaintStatus.Reopened:
+      return 'Reopened';
     default:
       return 'New';
   }
@@ -69,18 +72,20 @@ export const stringToComplaintStatus = (status: string): ComplaintStatus => {
   switch (status) {
     case 'New':
       return ComplaintStatus.New;
-    case 'Under Investigation':
+    case 'Under_Investigation':
       return ComplaintStatus.Under_Investigation;
     case 'Resolved':
       return ComplaintStatus.Resolved;
     case 'Closed':
       return ComplaintStatus.Closed;
+    case 'Reopened':
+      return ComplaintStatus.Reopened;
     default:
       return ComplaintStatus.New;
   }
 };
 
-// Complaint Priority conversions
+// Complaint Priority conversions (frontend only - not in database)
 export const complaintPriorityToDbString = (priority: ComplaintPriority): string => {
   switch (priority) {
     case ComplaintPriority.Low:

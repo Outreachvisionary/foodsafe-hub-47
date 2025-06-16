@@ -7,8 +7,7 @@ import {
   complaintCategoryToDbString, 
   complaintStatusToDbString, 
   stringToComplaintCategory, 
-  stringToComplaintStatus,
-  stringToComplaintPriority
+  stringToComplaintStatus
 } from '@/utils/complaintAdapters';
 
 // Fetch all complaints with optional filtering
@@ -52,7 +51,7 @@ export const fetchComplaints = async (filters?: ComplaintFilter): Promise<Compla
       ...item,
       category: stringToComplaintCategory(item.category),
       status: stringToComplaintStatus(item.status),
-      priority: undefined // Priority field doesn't exist in database
+      priority: ComplaintPriority.Medium // Default since priority doesn't exist in DB
     }));
   } catch (error) {
     console.error('Error fetching complaints:', error);
@@ -76,7 +75,7 @@ export const fetchComplaintById = async (id: string): Promise<Complaint> => {
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: undefined // Priority field doesn't exist in database
+      priority: ComplaintPriority.Medium // Default since priority doesn't exist in DB
     };
   } catch (error) {
     console.error('Error fetching complaint:', error);
@@ -114,7 +113,7 @@ export const createComplaint = async (complaint: CreateComplaintRequest): Promis
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: undefined // Priority field doesn't exist in database
+      priority: ComplaintPriority.Medium // Default since priority doesn't exist in DB
     };
   } catch (error) {
     console.error('Error creating complaint:', error);
@@ -151,7 +150,7 @@ export const updateComplaint = async (id: string, updates: Partial<Complaint>): 
       ...data,
       category: stringToComplaintCategory(data.category),
       status: stringToComplaintStatus(data.status),
-      priority: undefined // Priority field doesn't exist in database
+      priority: ComplaintPriority.Medium // Default since priority doesn't exist in DB
     };
   } catch (error) {
     console.error('Error updating complaint:', error);
@@ -194,7 +193,7 @@ export const createCAPAFromComplaint = async (complaintId: string, userId: strin
       .insert({
         title: `CAPA for Complaint: ${complaint.title}`,
         description: `Corrective and Preventive Action for complaint: ${complaint.description}`,
-        source: 'Customer Complaint',
+        source: 'Complaint',
         source_id: complaintId,
         priority: 'Medium',
         status: 'Open',
@@ -260,7 +259,7 @@ export const getComplaintStatistics = async () => {
       stats.byStatus[complaint.status] = (stats.byStatus[complaint.status] || 0) + 1;
       stats.byCategory[complaint.category] = (stats.byCategory[complaint.category] || 0) + 1;
       
-      if ((complaint.status === 'New' || complaint.status === 'Under Investigation')) {
+      if ((complaint.status === 'New' || complaint.status === 'Under_Investigation')) {
         stats.openHighPriority++;
       }
     });
