@@ -259,7 +259,8 @@ export const getComplaintStatistics = async () => {
       stats.byStatus[complaint.status] = (stats.byStatus[complaint.status] || 0) + 1;
       stats.byCategory[complaint.category] = (stats.byCategory[complaint.category] || 0) + 1;
       
-      if ((complaint.status === 'New' || complaint.status === 'Under_Investigation' || complaint.status === 'Pending_Response')) {
+      // Fix the status comparisons to match actual database values
+      if ((complaint.status === 'New' || complaint.status === 'Under Investigation' || complaint.status === 'Escalated')) {
         stats.openHighPriority++;
       }
     });

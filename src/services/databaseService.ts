@@ -1,3 +1,4 @@
+
 import { Complaint, ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -161,3 +162,30 @@ export const deleteComplaint = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Check auth function for testing
+export const checkAuth = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return !!user;
+  } catch (error) {
+    console.error('Error checking auth:', error);
+    return false;
+  }
+};
+
+// Create a databaseService object that exports all functions
+export const databaseService = {
+  getComplaints,
+  getComplaintById,
+  getComplaintsByStatus,
+  createComplaint,
+  updateComplaint,
+  deleteComplaint,
+  checkAuth,
+  // Add placeholder CAPA functions for testing component
+  getCAPAs: async () => [],
+  createCAPA: async (capa: any) => ({ id: 'test', ...capa }),
+};
+
+export default databaseService;

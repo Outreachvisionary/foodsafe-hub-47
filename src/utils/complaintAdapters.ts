@@ -1,3 +1,4 @@
+
 import { ComplaintCategory, ComplaintStatus, ComplaintPriority } from '@/types/enums';
 
 // Complaint Category conversions - matching database enum values
@@ -55,9 +56,9 @@ export const complaintStatusToDbString = (status: ComplaintStatus): string => {
     case ComplaintStatus.New:
       return 'New';
     case ComplaintStatus.Under_Investigation:
-      return 'Under_Investigation';
+      return 'Under Investigation';
     case ComplaintStatus.Pending_Response:
-      return 'Pending_Response';
+      return 'Pending Response';
     case ComplaintStatus.Resolved:
       return 'Resolved';
     case ComplaintStatus.Closed:
@@ -73,9 +74,9 @@ export const stringToComplaintStatus = (status: string): ComplaintStatus => {
   switch (status) {
     case 'New':
       return ComplaintStatus.New;
-    case 'Under_Investigation':
+    case 'Under Investigation':
       return ComplaintStatus.Under_Investigation;
-    case 'Pending_Response':
+    case 'Pending Response':
       return ComplaintStatus.Pending_Response;
     case 'Resolved':
       return ComplaintStatus.Resolved;
