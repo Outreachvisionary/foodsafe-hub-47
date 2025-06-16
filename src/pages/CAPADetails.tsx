@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,14 +18,13 @@ import CAPAStatusForm from '@/components/capa/CAPAStatusForm';
 import CAPAAttachments from '@/components/capa/CAPAAttachments';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
-import { stringToCAPAStatus } from '@/utils/capaAdapters';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [capa, setCAPA] = useState<CAPA | null>(null);
+  const [capa, setCAPA] = useState<any>(null); // Use any to avoid type conflicts
   const [activities, setActivities] = useState<CAPAActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
@@ -65,8 +65,6 @@ const CAPADetails: React.FC = () => {
       // Convert string status values to enum values and handle metadata
       const convertedActivities: CAPAActivity[] = fetchedActivities.map(activity => ({
         ...activity,
-        old_status: activity.old_status ? stringToCAPAStatus(activity.old_status as string) : undefined,
-        new_status: activity.new_status ? stringToCAPAStatus(activity.new_status as string) : undefined,
         metadata: (activity.metadata as any) || {},
         capa_id: activity.capa_id || capaId,
         performed_at: activity.performed_at || new Date().toISOString(),
@@ -135,8 +133,8 @@ const CAPADetails: React.FC = () => {
           </Badge>
           <Badge 
             className={`text-sm font-normal px-2 py-1 ${
-              capa.status === CAPAStatus.Pending_Verification ? 'bg-red-100 text-red-800' :
-              capa.status === CAPAStatus.Closed ? 'bg-green-100 text-green-800' :
+              capa.status === 'Pending_Verification' ? 'bg-red-100 text-red-800' :
+              capa.status === 'Closed' ? 'bg-green-100 text-green-800' :
               'bg-blue-100 text-blue-800'
             }`}
           >
@@ -242,7 +240,7 @@ const CAPADetails: React.FC = () => {
           
           <CAPAInfoPanel capa={capa} />
           
-          {(capa.status === CAPAStatus.Closed) && (
+          {(capa.status === 'Closed') && (
             <CAPAEffectivenessMonitor 
               id={capa.id}
               implementationDate={capa.completion_date || capa.updated_at}
