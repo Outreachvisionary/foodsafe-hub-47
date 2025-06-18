@@ -190,7 +190,7 @@ const updateCAPAStatusBasedOnWorkflow = async (capaId: string): Promise<void> =>
   // This is a simplified version - real implementation would be more complex
   const completedSteps = activities?.filter(a => a.action_type === 'workflow_step_completed') || [];
   
-  let newStatus = 'In Progress';
+  let newStatus: "Open" | "In Progress" | "Closed" | "Overdue" | "Pending Verification" = 'In Progress';
   if (completedSteps.length >= 4) { // All steps completed
     newStatus = 'Pending Verification';
   }
