@@ -555,9 +555,11 @@ export type Database = {
           expiry_date: string | null
           id: string
           name: string
+          quantity: number | null
           received_date: string
           status: string | null
           supplier_id: string | null
+          units: string | null
           updated_at: string | null
         }
         Insert: {
@@ -570,9 +572,11 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           name: string
+          quantity?: number | null
           received_date: string
           status?: string | null
           supplier_id?: string | null
+          units?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -585,9 +589,11 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           name?: string
+          quantity?: number | null
           received_date?: string
           status?: string | null
           supplier_id?: string | null
+          units?: string | null
           updated_at?: string | null
         }
         Relationships: []
