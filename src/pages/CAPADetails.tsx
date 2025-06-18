@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import CAPAWorkflowManager from '@/components/capa/CAPAWorkflowManager';
 import CAPAWorkflowEngine from '@/components/capa/CAPAWorkflowEngine';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
+import CAPASimpleWorkflow from '@/components/capa/CAPASimpleWorkflow';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -200,8 +200,8 @@ const CAPADetails: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Enhanced Workflow Management */}
-          <CAPAWorkflowManager 
+          {/* Simplified Workflow Management - Replace the complex workflow */}
+          <CAPASimpleWorkflow 
             capa={capa} 
             onWorkflowUpdate={handleWorkflowUpdate}
           />
@@ -209,7 +209,6 @@ const CAPADetails: React.FC = () => {
           <Tabs defaultValue="activity">
             <TabsList>
               <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
-              <TabsTrigger value="workflow">Workflow Engine</TabsTrigger>
               <TabsTrigger value="documents">Related Documents</TabsTrigger>
               <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
@@ -219,19 +218,6 @@ const CAPADetails: React.FC = () => {
                 capaId={capa.id}
                 activities={activities}
                 loading={activitiesLoading}
-              />
-            </TabsContent>
-
-            <TabsContent value="workflow" className="p-1">
-              <CAPAWorkflowEngine 
-                capaId={capa.id}
-                title={capa.title}
-                priority={capa.priority === 'Critical' ? 'critical' : 
-                         capa.priority === 'High' ? 'high' : 
-                         capa.priority === 'Medium' ? 'medium' : 'low'}
-                requiredSignoffs={['Quality Manager', 'Food Safety Director']}
-                initialStatus="draft"
-                onStatusChange={(status) => console.log('Status changed:', status)}
               />
             </TabsContent>
             
