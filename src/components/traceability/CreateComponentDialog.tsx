@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Component } from '@/types/traceability';
 import {
   Dialog,
   DialogContent,
@@ -57,12 +56,18 @@ const CreateComponentDialog: React.FC = () => {
   });
 
   const onSubmit = async (values: ComponentFormValues) => {
+    // Ensure all required fields are present
     const componentData = {
-      ...values,
+      name: values.name,
+      batch_lot_number: values.batch_lot_number,
       received_date: new Date(values.received_date).toISOString(),
-      expiry_date: values.expiry_date ? new Date(values.expiry_date).toISOString() : undefined,
       created_by: 'Current User', // Should be actual user
-      status: 'active'
+      status: 'active',
+      description: values.description || '',
+      category: values.category || '',
+      expiry_date: values.expiry_date ? new Date(values.expiry_date).toISOString() : undefined,
+      quantity: values.quantity,
+      units: values.units || '',
     };
 
     const result = await addComponent(componentData);

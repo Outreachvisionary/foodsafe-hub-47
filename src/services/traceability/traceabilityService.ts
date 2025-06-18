@@ -12,7 +12,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      attributes: item.attributes || {}
+    })) as Product[];
   } catch (error) {
     console.error('Error fetching products:', error);
     toast.error('Failed to fetch products');
@@ -30,7 +33,10 @@ export const createProduct = async (product: Omit<Product, 'id' | 'created_at' |
 
     if (error) throw error;
     toast.success('Product created successfully');
-    return data;
+    return {
+      ...data,
+      attributes: data.attributes || {}
+    } as Product;
   } catch (error) {
     console.error('Error creating product:', error);
     toast.error('Failed to create product');
@@ -49,7 +55,10 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
 
     if (error) throw error;
     toast.success('Product updated successfully');
-    return data;
+    return {
+      ...data,
+      attributes: data.attributes || {}
+    } as Product;
   } catch (error) {
     console.error('Error updating product:', error);
     toast.error('Failed to update product');
@@ -83,7 +92,10 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      attributes: data.attributes || {}
+    } as Product;
   } catch (error) {
     console.error('Error fetching product by ID:', error);
     return null;
@@ -98,7 +110,10 @@ export const fetchProductByBatchLot = async (batchLot: string): Promise<Product[
       .ilike('batch_lot_number', `%${batchLot}%`);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      attributes: item.attributes || {}
+    })) as Product[];
   } catch (error) {
     console.error('Error fetching product by batch/lot:', error);
     return [];
@@ -117,7 +132,10 @@ export const fetchComponents = async (): Promise<Component[]> => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      attributes: item.attributes || {}
+    })) as Component[];
   } catch (error) {
     console.error('Error fetching components:', error);
     toast.error('Failed to fetch components');
@@ -135,7 +153,10 @@ export const createComponent = async (component: Omit<Component, 'id' | 'created
 
     if (error) throw error;
     toast.success('Component created successfully');
-    return data;
+    return {
+      ...data,
+      attributes: data.attributes || {}
+    } as Component;
   } catch (error) {
     console.error('Error creating component:', error);
     toast.error('Failed to create component');
@@ -152,7 +173,10 @@ export const fetchComponentById = async (id: string): Promise<Component | null> 
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      attributes: data.attributes || {}
+    } as Component;
   } catch (error) {
     console.error('Error fetching component by ID:', error);
     return null;
@@ -168,7 +192,10 @@ export const fetchRecalls = async (): Promise<Recall[]> => {
       .order('initiated_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      affected_products: item.affected_products || {}
+    })) as Recall[];
   } catch (error) {
     console.error('Error fetching recalls:', error);
     toast.error('Failed to fetch recalls');
@@ -192,7 +219,10 @@ export const createRecall = async (recall: Omit<Recall, 'id' | 'created_at' | 'u
     }
     
     toast.success('Recall created successfully');
-    return data;
+    return {
+      ...data,
+      affected_products: data.affected_products || {}
+    } as Recall;
   } catch (error) {
     console.error('Error creating recall:', error);
     toast.error('Failed to create recall');
@@ -209,7 +239,10 @@ export const fetchRecallById = async (id: string): Promise<Recall | null> => {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      affected_products: data.affected_products || {}
+    } as Recall;
   } catch (error) {
     console.error('Error fetching recall by ID:', error);
     return null;
@@ -483,16 +516,4 @@ export default {
   fetchRecalls,
   createRecall,
   fetchRecallById,
-  fetchRecallSchedules,
-  createRecallSchedule,
-  fetchRecallSimulations,
-  createRecallSimulation,
-  fetchNotifications,
-  createNotification,
-  sendBulkNotifications,
-  fetchProductGenealogy,
-  createGenealogyLink,
-  fetchProductComponents,
-  fetchAffectedProducts,
-  fetchSupplyChainData
 };

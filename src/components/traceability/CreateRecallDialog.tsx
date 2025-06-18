@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Recall } from '@/types/traceability';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +34,7 @@ import { useTraceability } from '@/hooks/useTraceability';
 const recallSchema = z.object({
   title: z.string().min(1, 'Recall title is required'),
   description: z.string().optional(),
-  recall_type: z.enum(['Mock', 'Actual', 'Test']),
+  recall_type: z.enum(['Mock', 'Actual']), // Remove 'Test' for now to match database
   recall_reason: z.string().min(1, 'Recall reason is required'),
   status: z.enum(['Scheduled', 'In Progress', 'Completed', 'Cancelled']).default('Scheduled'),
 });
@@ -58,9 +57,14 @@ const CreateRecallDialog: React.FC = () => {
   });
 
   const onSubmit = async (values: RecallFormValues) => {
+    // Ensure all required fields are present
     const recallData = {
-      ...values,
+      title: values.title,
+      recall_type: values.recall_type,
+      recall_reason: values.recall_reason,
       initiated_by: 'Current User', // Should be actual user
+      status: values.status,
+      description: values.description || '',
     };
 
     const result = await addRecall(recallData);
@@ -114,7 +118,6 @@ const CreateRecallDialog: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="Mock">Mock Recall</SelectItem>
                         <SelectItem value="Actual">Actual Recall</SelectItem>
-                        <SelectItem value="Test">Test Recall</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

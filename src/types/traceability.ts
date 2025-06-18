@@ -13,7 +13,7 @@ export interface Product {
   batch_lot_number: string;
   manufacturing_date: string;
   expiry_date?: string;
-  attributes?: Record<string, any>;
+  attributes?: any;
   status?: string;
   created_by: string;
   created_at?: string;
@@ -31,7 +31,7 @@ export interface Component {
   supplier_id?: string;
   received_date: string;
   expiry_date?: string;
-  attributes?: Record<string, any>;
+  attributes?: any;
   status?: string;
   created_by: string;
   created_at?: string;
@@ -50,7 +50,7 @@ export interface Recall {
   initiated_by: string;
   initiated_at?: string;
   completed_at?: string;
-  affected_products?: Record<string, any>;
+  affected_products?: any;
   corrective_actions?: string;
   created_at?: string;
   updated_at?: string;

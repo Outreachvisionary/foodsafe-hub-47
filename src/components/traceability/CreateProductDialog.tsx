@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Product } from '@/types/traceability';
 import {
   Dialog,
   DialogContent,
@@ -59,12 +58,19 @@ const CreateProductDialog: React.FC = () => {
   });
 
   const onSubmit = async (values: ProductFormValues) => {
+    // Ensure all required fields are present
     const productData = {
-      ...values,
+      name: values.name,
+      batch_lot_number: values.batch_lot_number,
       manufacturing_date: new Date(values.manufacturing_date).toISOString(),
-      expiry_date: values.expiry_date ? new Date(values.expiry_date).toISOString() : undefined,
       created_by: 'Current User', // Should be actual user
-      status: 'active'
+      status: 'active',
+      description: values.description || '',
+      category: values.category || '',
+      sku: values.sku || '',
+      expiry_date: values.expiry_date ? new Date(values.expiry_date).toISOString() : undefined,
+      quantity: values.quantity,
+      units: values.units || '',
     };
 
     const result = await addProduct(productData);
