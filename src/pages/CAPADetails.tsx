@@ -16,6 +16,8 @@ import CAPAInfoPanel from '@/components/capa/CAPAInfoPanel';
 import CAPAEffectivenessMonitor from '@/components/capa/CAPAEffectivenessMonitor';
 import CAPAStatusForm from '@/components/capa/CAPAStatusForm';
 import CAPAAttachments from '@/components/capa/CAPAAttachments';
+import CAPAWorkflowManager from '@/components/capa/CAPAWorkflowManager';
+import CAPAWorkflowEngine from '@/components/capa/CAPAWorkflowEngine';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
 
@@ -62,7 +64,6 @@ const CAPADetails: React.FC = () => {
     try {
       setActivitiesLoading(true);
       const fetchedActivities = await getCAPAActivities(capaId);
-      // Activities are already properly typed from the service
       setActivities(fetchedActivities as CAPAActivity[]);
     } catch (err) {
       console.error('Error fetching CAPA activities:', err);
@@ -90,6 +91,14 @@ const CAPADetails: React.FC = () => {
         description: 'Failed to update CAPA status',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleWorkflowUpdate = () => {
+    // Refresh CAPA data and activities when workflow is updated
+    if (id) {
+      fetchCAPA(id);
+      fetchActivities(id);
     }
   };
   
@@ -141,6 +150,7 @@ const CAPADetails: React.FC = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* CAPA Details Card */}
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>
@@ -189,10 +199,17 @@ const CAPADetails: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Enhanced Workflow Management */}
+          <CAPAWorkflowManager 
+            capa={capa} 
+            onWorkflowUpdate={handleWorkflowUpdate}
+          />
           
           <Tabs defaultValue="activity">
             <TabsList>
               <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
+              <TabsTrigger value="workflow">Workflow Engine</TabsTrigger>
               <TabsTrigger value="documents">Related Documents</TabsTrigger>
               <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
@@ -202,6 +219,19 @@ const CAPADetails: React.FC = () => {
                 capaId={capa.id}
                 activities={activities}
                 loading={activitiesLoading}
+              />
+            </TabsContent>
+
+            <TabsContent value="workflow" className="p-1">
+              <CAPAWorkflowEngine 
+                capaId={capa.id}
+                title={capa.title}
+                priority={capa.priority === 'Critical' ? 'critical' : 
+                         capa.priority === 'High' ? 'high' : 
+                         capa.priority === 'Medium' ? 'medium' : 'low'}
+                requiredSignoffs={['Quality Manager', 'Food Safety Director']}
+                initialStatus="draft"
+                onStatusChange={(status) => console.log('Status changed:', status)}
               />
             </TabsContent>
             
