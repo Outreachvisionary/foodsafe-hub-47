@@ -83,11 +83,11 @@ export const initiateWorkflow = async (capaId: string): Promise<void> => {
         metadata: { steps: steps, config: config }
       });
 
-    // Update CAPA status to In_Progress if it was Open
+    // Update CAPA status to In Progress if it was Open
     if (capa.status === CAPAStatus.Open) {
       await supabase
         .from('capa_actions')
-        .update({ status: CAPAStatus.In_Progress })
+        .update({ status: 'In Progress' })
         .eq('id', capaId);
     }
 
@@ -190,9 +190,9 @@ const updateCAPAStatusBasedOnWorkflow = async (capaId: string): Promise<void> =>
   // This is a simplified version - real implementation would be more complex
   const completedSteps = activities?.filter(a => a.action_type === 'workflow_step_completed') || [];
   
-  let newStatus: CAPAStatus = CAPAStatus.In_Progress;
+  let newStatus = 'In Progress';
   if (completedSteps.length >= 4) { // All steps completed
-    newStatus = CAPAStatus.Pending_Verification;
+    newStatus = 'Pending Verification';
   }
 
   await supabase
@@ -208,13 +208,13 @@ export const checkOverdueCAPAs = async (): Promise<void> => {
       .from('capa_actions')
       .select('*')
       .lt('due_date', new Date().toISOString())
-      .in('status', [CAPAStatus.Open, CAPAStatus.In_Progress]);
+      .in('status', ['Open', 'In Progress']);
 
     for (const capa of overdueCAPAs || []) {
       // Update status to overdue
       await supabase
         .from('capa_actions')
-        .update({ status: CAPAStatus.Overdue })
+        .update({ status: 'Overdue' })
         .eq('id', capa.id);
 
       // Create notification activity
