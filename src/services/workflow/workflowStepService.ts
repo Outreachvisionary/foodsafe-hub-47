@@ -25,6 +25,23 @@ export const getWorkflowSteps = async (capaId: string): Promise<WorkflowStep[]> 
       .order('step_order', { ascending: true });
 
     if (error) throw error;
+    
+    // If no steps exist, initialize them
+    if (!data || data.length === 0) {
+      console.log('No workflow steps found, initializing...');
+      await initializeWorkflowSteps(capaId, 'current-user');
+      
+      // Fetch the newly created steps
+      const { data: newData, error: newError } = await (supabase as any)
+        .from('capa_workflow_steps')
+        .select('*')
+        .eq('capa_id', capaId)
+        .order('step_order', { ascending: true });
+      
+      if (newError) throw newError;
+      return newData || [];
+    }
+    
     return data || [];
   } catch (error) {
     console.error('Error fetching workflow steps:', error);
@@ -82,6 +99,7 @@ export const initializeWorkflowSteps = async (capaId: string, assignedTo: string
       .insert(stepsToInsert);
 
     if (error) throw error;
+    console.log('Workflow steps initialized successfully');
   } catch (error) {
     console.error('Error initializing workflow steps:', error);
     throw error;

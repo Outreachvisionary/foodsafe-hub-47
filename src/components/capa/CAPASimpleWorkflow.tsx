@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +13,8 @@ import {
   FileText, 
   AlertCircle,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  RefreshCw
 } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
 }) => {
   const { steps, isLoading, updateStep, isUpdating } = useWorkflowSteps(capa.id);
   const [comment, setComment] = useState('');
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const completedSteps = steps.filter(step => 
     step.status === 'completed' || step.status === 'approved'
@@ -39,6 +40,13 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
   const progress = steps.length > 0 ? Math.round((completedSteps / steps.length) * 100) : 0;
 
   const currentStep = steps.find(step => step.status === 'pending');
+
+  // Auto-initialize workflow if no steps exist
+  useEffect(() => {
+    if (!isLoading && steps.length === 0) {
+      console.log('No workflow steps found, they should be auto-initialized');
+    }
+  }, [isLoading, steps.length]);
 
   const handleApprove = async () => {
     if (!currentStep || !comment.trim()) {
@@ -119,7 +127,32 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">Loading workflow...</div>
+          <div className="flex items-center gap-2 justify-center py-8">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>Loading workflow...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message if no workflow steps exist
+  if (steps.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            CAPA Workflow Progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Workflow steps are being initialized for this CAPA. Please refresh the page if they don't appear shortly.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -237,6 +270,54 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
                   Request Changes
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Other step actions (for investigation, action_plan, etc.) */}
+        {currentStep && currentStep.step_name !== 'approval' && (
+          <div className="space-y-4 p-4 bg-amber-50 rounded-lg border">
+            <h4 className="font-medium text-amber-900">
+              {getStepTitle(currentStep.step_name)} - Action Required
+            </h4>
+            <p className="text-sm text-amber-700">
+              This step needs to be completed before proceeding to the next stage.
+            </p>
+            
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="step-comment">Comments</Label>
+                <Textarea
+                  id="step-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Add your comments or notes..."
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+              
+              <Button 
+                onClick={() => {
+                  if (!comment.trim()) {
+                    toast.error('Please add a comment before completing this step');
+                    return;
+                  }
+                  updateStep({
+                    stepId: currentStep.id,
+                    status: 'completed',
+                    comments: comment,
+                    completedBy: 'Current User'
+                  });
+                  setComment('');
+                  if (onWorkflowUpdate) onWorkflowUpdate();
+                }}
+                disabled={isUpdating || !comment.trim()}
+                className="flex items-center gap-2"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Mark as Complete
+              </Button>
             </div>
           </div>
         )}
