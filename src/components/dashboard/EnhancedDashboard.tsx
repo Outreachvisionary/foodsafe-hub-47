@@ -1,99 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { databaseService } from '@/services/databaseService';
 import SystemDiagnostics from '@/components/diagnostics/SystemDiagnostics';
 import DashboardOverview from './DashboardOverview';
+import DashboardMetricsCards from './DashboardMetricsCards';
+import QuickActionsPanel from './QuickActionsPanel';
+import RecentActivityFeed from './RecentActivityFeed';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import { AlertTriangle, Database, Activity, Settings } from 'lucide-react';
-
-interface DashboardStats {
-  complaints: number;
-  nonConformances: number;
-  capas: number;
-  documents: number;
-  loading: boolean;
-  error: string | null;
-}
 
 const EnhancedDashboard: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    complaints: 0,
-    nonConformances: 0,
-    capas: 0,
-    documents: 0,
-    loading: true,
-    error: null
-  });
+  const { stats, metrics, systemHealth, refreshData, isLoading } = useDashboardData();
   const [activeTab, setActiveTab] = useState('overview');
-
-  const loadDashboardData = async () => {
-    if (!isAuthenticated || !user) {
-      setStats(prev => ({ ...prev, loading: false, error: 'User not authenticated' }));
-      return;
-    }
-
-    try {
-      setStats(prev => ({ ...prev, loading: true, error: null }));
-
-      // Test basic connectivity first
-      const isAuth = await databaseService.checkAuth();
-      if (!isAuth) {
-        throw new Error('Database authentication failed');
-      }
-
-      // Load data with error handling for each service
-      const [complaints, capas] = await Promise.allSettled([
-        databaseService.getComplaints(),
-        databaseService.getCAPAs()
-      ]);
-
-      const newStats: Partial<DashboardStats> = {
-        loading: false,
-        error: null
-      };
-
-      // Handle complaints
-      if (complaints.status === 'fulfilled') {
-        newStats.complaints = complaints.value.length;
-      } else {
-        console.error('Failed to load complaints:', complaints.reason);
-        newStats.complaints = 0;
-      }
-
-      // Handle CAPAs
-      if (capas.status === 'fulfilled') {
-        newStats.capas = capas.value.length;
-      } else {
-        console.error('Failed to load CAPAs:', capas.reason);
-        newStats.capas = 0;
-      }
-
-      // Set placeholder values for other data
-      newStats.nonConformances = 0; // TODO: Implement NC service
-      newStats.documents = 0; // TODO: Implement document count
-
-      setStats(prev => ({ ...prev, ...newStats }));
-
-    } catch (error) {
-      console.error('Dashboard data loading failed:', error);
-      setStats(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }));
-    }
-  };
-
-  useEffect(() => {
-    if (!authLoading) {
-      loadDashboardData();
-    }
-  }, [isAuthenticated, user, authLoading]);
 
   if (authLoading) {
     return (
@@ -127,8 +50,8 @@ const EnhancedDashboard: React.FC = () => {
             Welcome back, {user?.email || 'User'}
           </p>
         </div>
-        <Button onClick={loadDashboardData} disabled={stats.loading}>
-          {stats.loading ? 'Loading...' : 'Refresh Data'}
+        <Button onClick={refreshData} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Refresh Data'}
         </Button>
       </div>
 
@@ -165,7 +88,7 @@ const EnhancedDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {stats.loading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <Card key={i}>
@@ -180,6 +103,8 @@ const EnhancedDashboard: React.FC = () => {
             </div>
           ) : (
             <>
+              <DashboardMetricsCards metrics={metrics} systemHealth={systemHealth} />
+              
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card>
                   <CardHeader className="pb-2">
@@ -226,7 +151,15 @@ const EnhancedDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              <DashboardOverview />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <DashboardOverview />
+                </div>
+                <div className="space-y-6">
+                  <QuickActionsPanel onRefreshData={refreshData} />
+                  <RecentActivityFeed />
+                </div>
+              </div>
             </>
           )}
         </TabsContent>
