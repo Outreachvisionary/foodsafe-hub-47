@@ -49,25 +49,87 @@ export const debugSupabaseConnection = async () => {
       console.warn('⚠️ No active session');
     }
 
-    // Test table access
+    // Test table access with explicit table names
     console.log('🗃️ Testing table access...');
-    const tables = ['complaints', 'documents', 'non_conformances', 'profiles'];
     
-    for (const table of tables) {
-      try {
-        const { data, error } = await supabase
-          .from(table)
-          .select('count')
-          .limit(1);
-        
-        if (error) {
-          console.error(`❌ ${table} access failed:`, error.message);
-        } else {
-          console.log(`✅ ${table} accessible`);
-        }
-      } catch (err) {
-        console.error(`❌ ${table} test error:`, err);
+    // Test complaints table
+    try {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ complaints access failed:', error.message);
+      } else {
+        console.log('✅ complaints accessible');
       }
+    } catch (err) {
+      console.error('❌ complaints test error:', err);
+    }
+
+    // Test documents table
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ documents access failed:', error.message);
+      } else {
+        console.log('✅ documents accessible');
+      }
+    } catch (err) {
+      console.error('❌ documents test error:', err);
+    }
+
+    // Test non_conformances table
+    try {
+      const { data, error } = await supabase
+        .from('non_conformances')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ non_conformances access failed:', error.message);
+      } else {
+        console.log('✅ non_conformances accessible');
+      }
+    } catch (err) {
+      console.error('❌ non_conformances test error:', err);
+    }
+
+    // Test capa_actions table
+    try {
+      const { data, error } = await supabase
+        .from('capa_actions')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ capa_actions access failed:', error.message);
+      } else {
+        console.log('✅ capa_actions accessible');
+      }
+    } catch (err) {
+      console.error('❌ capa_actions test error:', err);
+    }
+
+    // Test profiles table
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ profiles access failed:', error.message);
+      } else {
+        console.log('✅ profiles accessible');
+      }
+    } catch (err) {
+      console.error('❌ profiles test error:', err);
     }
 
   } catch (error) {
