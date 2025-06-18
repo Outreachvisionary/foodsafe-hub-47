@@ -14,7 +14,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     if (error) throw error;
     return (data || []).map(item => ({
       ...item,
-      attributes: item.attributes || {}
+      attributes: item.attributes as any || {}
     })) as Product[];
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -35,7 +35,7 @@ export const createProduct = async (product: Omit<Product, 'id' | 'created_at' |
     toast.success('Product created successfully');
     return {
       ...data,
-      attributes: data.attributes || {}
+      attributes: data.attributes as any || {}
     } as Product;
   } catch (error) {
     console.error('Error creating product:', error);
@@ -57,7 +57,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>): Prom
     toast.success('Product updated successfully');
     return {
       ...data,
-      attributes: data.attributes || {}
+      attributes: data.attributes as any || {}
     } as Product;
   } catch (error) {
     console.error('Error updating product:', error);
@@ -94,7 +94,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     if (error) throw error;
     return {
       ...data,
-      attributes: data.attributes || {}
+      attributes: data.attributes as any || {}
     } as Product;
   } catch (error) {
     console.error('Error fetching product by ID:', error);
@@ -112,7 +112,7 @@ export const fetchProductByBatchLot = async (batchLot: string): Promise<Product[
     if (error) throw error;
     return (data || []).map(item => ({
       ...item,
-      attributes: item.attributes || {}
+      attributes: item.attributes as any || {}
     })) as Product[];
   } catch (error) {
     console.error('Error fetching product by batch/lot:', error);
@@ -134,7 +134,7 @@ export const fetchComponents = async (): Promise<Component[]> => {
     if (error) throw error;
     return (data || []).map(item => ({
       ...item,
-      attributes: item.attributes || {}
+      attributes: item.attributes as any || {}
     })) as Component[];
   } catch (error) {
     console.error('Error fetching components:', error);
@@ -155,7 +155,7 @@ export const createComponent = async (component: Omit<Component, 'id' | 'created
     toast.success('Component created successfully');
     return {
       ...data,
-      attributes: data.attributes || {}
+      attributes: data.attributes as any || {}
     } as Component;
   } catch (error) {
     console.error('Error creating component:', error);
@@ -175,7 +175,7 @@ export const fetchComponentById = async (id: string): Promise<Component | null> 
     if (error) throw error;
     return {
       ...data,
-      attributes: data.attributes || {}
+      attributes: data.attributes as any || {}
     } as Component;
   } catch (error) {
     console.error('Error fetching component by ID:', error);
@@ -194,7 +194,7 @@ export const fetchRecalls = async (): Promise<Recall[]> => {
     if (error) throw error;
     return (data || []).map(item => ({
       ...item,
-      affected_products: item.affected_products || {}
+      affected_products: item.affected_products as any || {}
     })) as Recall[];
   } catch (error) {
     console.error('Error fetching recalls:', error);
@@ -205,9 +205,15 @@ export const fetchRecalls = async (): Promise<Recall[]> => {
 
 export const createRecall = async (recall: Omit<Recall, 'id' | 'created_at' | 'updated_at'>): Promise<Recall | null> => {
   try {
+    // Convert recall data to match database schema
+    const recallData = {
+      ...recall,
+      recall_type: recall.recall_type as 'Mock' | 'Actual' // Ensure it matches DB enum
+    };
+
     const { data, error } = await supabase
       .from('recalls')
-      .insert(recall)
+      .insert(recallData)
       .select()
       .single();
 
@@ -221,7 +227,7 @@ export const createRecall = async (recall: Omit<Recall, 'id' | 'created_at' | 'u
     toast.success('Recall created successfully');
     return {
       ...data,
-      affected_products: data.affected_products || {}
+      affected_products: data.affected_products as any || {}
     } as Recall;
   } catch (error) {
     console.error('Error creating recall:', error);
@@ -241,7 +247,7 @@ export const fetchRecallById = async (id: string): Promise<Recall | null> => {
     if (error) throw error;
     return {
       ...data,
-      affected_products: data.affected_products || {}
+      affected_products: data.affected_products as any || {}
     } as Recall;
   } catch (error) {
     console.error('Error fetching recall by ID:', error);
@@ -295,7 +301,23 @@ export const fetchProductComponents = async (productBatchLot: string): Promise<C
     });
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to match Component interface
+    return (data || []).map((item: any) => ({
+      id: item.component_id,
+      name: item.component_name,
+      batch_lot_number: item.component_batch_lot,
+      received_date: item.received_date,
+      expiry_date: item.expiry_date,
+      created_by: 'system',
+      supplier_id: null,
+      description: '',
+      category: '',
+      status: 'active',
+      attributes: {},
+      quantity: null,
+      units: ''
+    })) as Component[];
   } catch (error) {
     console.error('Error fetching product components:', error);
     return [];
@@ -309,7 +331,23 @@ export const fetchAffectedProducts = async (componentBatchLot: string): Promise<
     });
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to match Product interface
+    return (data || []).map((item: any) => ({
+      id: item.product_id,
+      name: item.product_name,
+      batch_lot_number: item.product_batch_lot,
+      manufacturing_date: item.manufacturing_date,
+      expiry_date: item.expiry_date,
+      created_by: 'system',
+      description: '',
+      category: '',
+      sku: '',
+      status: 'active',
+      attributes: {},
+      quantity: null,
+      units: ''
+    })) as Product[];
   } catch (error) {
     console.error('Error fetching affected products:', error);
     return [];
@@ -334,9 +372,15 @@ export const fetchRecallSchedules = async (): Promise<RecallSchedule[]> => {
 
 export const createRecallSchedule = async (schedule: Omit<RecallSchedule, 'id' | 'created_at' | 'updated_at'>): Promise<RecallSchedule | null> => {
   try {
+    // Convert schedule data to match database schema
+    const scheduleData = {
+      ...schedule,
+      recall_type: schedule.recall_type as 'Mock' | 'Actual' // Ensure it matches DB enum
+    };
+
     const { data, error } = await supabase
       .from('recall_schedules')
-      .insert(schedule)
+      .insert(scheduleData)
       .select()
       .single();
 
@@ -359,7 +403,10 @@ export const fetchRecallSimulations = async (): Promise<RecallSimulation[]> => {
       .order('simulation_date', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      results: item.results as any || {}
+    })) as RecallSimulation[];
   } catch (error) {
     console.error('Error fetching recall simulations:', error);
     return [];
@@ -376,7 +423,10 @@ export const createRecallSimulation = async (simulation: Omit<RecallSimulation, 
 
     if (error) throw error;
     toast.success('Recall simulation created successfully');
-    return data;
+    return {
+      ...data,
+      results: data.results as any || {}
+    } as RecallSimulation;
   } catch (error) {
     console.error('Error creating recall simulation:', error);
     toast.error('Failed to create recall simulation');
@@ -516,4 +566,15 @@ export default {
   fetchRecalls,
   createRecall,
   fetchRecallById,
+  fetchProductComponents,
+  fetchAffectedProducts,
+  createGenealogyLink,
+  createRecallSimulation,
+  fetchSupplyChainData,
+  fetchRecallSchedules,
+  createRecallSchedule,
+  fetchRecallSimulations,
+  fetchNotifications,
+  createNotification,
+  sendBulkNotifications
 };
