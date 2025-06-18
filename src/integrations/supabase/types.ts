@@ -384,6 +384,56 @@ export type Database = {
           },
         ]
       }
+      capa_workflow_steps: {
+        Row: {
+          assigned_to: string
+          capa_id: string
+          comments: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          description: string
+          id: string
+          status: string
+          step_name: string
+          step_order: number
+        }
+        Insert: {
+          assigned_to: string
+          capa_id: string
+          comments?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          status?: string
+          step_name: string
+          step_order: number
+        }
+        Update: {
+          assigned_to?: string
+          capa_id?: string
+          comments?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          status?: string
+          step_name?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capa_workflow_steps_capa_id_fkey"
+            columns: ["capa_id"]
+            isOneToOne: false
+            referencedRelation: "capa_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ccps: {
         Row: {
           corrective_actions: string

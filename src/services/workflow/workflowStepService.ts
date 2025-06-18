@@ -18,7 +18,7 @@ export interface WorkflowStep {
 
 export const getWorkflowSteps = async (capaId: string): Promise<WorkflowStep[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('capa_workflow_steps')
       .select('*')
       .eq('capa_id', capaId)
@@ -77,7 +77,7 @@ export const initializeWorkflowSteps = async (capaId: string, assignedTo: string
       ...step
     }));
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('capa_workflow_steps')
       .insert(stepsToInsert);
 
@@ -95,7 +95,7 @@ export const updateWorkflowStep = async (
   completedBy: string
 ): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('capa_workflow_steps')
       .update({
         status,
@@ -108,7 +108,7 @@ export const updateWorkflowStep = async (
     if (error) throw error;
 
     // Log the activity
-    const { data: step } = await supabase
+    const { data: step } = await (supabase as any)
       .from('capa_workflow_steps')
       .select('capa_id, step_name')
       .eq('id', stepId)
