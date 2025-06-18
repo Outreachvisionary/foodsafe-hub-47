@@ -8,6 +8,11 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import AuthErrorBoundary from '@/components/error/AuthErrorBoundary';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import Documents from './pages/Documents';
+import Tasks from './pages/Tasks';
+import Analytics from './pages/Analytics';
+import Performance from './pages/Performance';
 import SupplierManagement from './pages/SupplierManagement';
 import NonConformance from './pages/NonConformance';
 import CAPA from './pages/CAPA';
@@ -43,6 +48,11 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/performance" element={<Performance />} />
               <Route path="/suppliers" element={<SupplierManagement />} />
               <Route path="/non-conformance" element={<NonConformance />} />
               <Route path="/capa" element={<CAPA />} />
