@@ -6,29 +6,53 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://vngmjjvfofoggfqgpizo.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuZ21qanZmb2ZvZ2dmcWdwaXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4Nzk1NjYsImV4cCI6MjA1ODQ1NTU2Nn0.hKuiNWB9g90lklzXollw-O7-8kHCl33wKYmC5EW_sLI";
 
-// Use a global variable to ensure true singleton behavior
+// Use a global variable to ensure true singleton behavior across all environments
 declare global {
-  var __supabase: ReturnType<typeof createClient<Database>> | undefined;
+  var __supabase_client: ReturnType<typeof createClient<Database>> | undefined;
 }
 
 function createSupabaseClient() {
   // Check if we already have a global instance
-  if (globalThis.__supabase) {
-    return globalThis.__supabase;
+  if (globalThis.__supabase_client) {
+    return globalThis.__supabase_client;
   }
 
-  // Create new instance and store it globally
+  // Create new instance with optimized configuration
   const client = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      // Prevent multiple auth state listeners
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'lovable-app'
+      }
+    },
+    // Reduce connection pooling issues
+    db: {
+      schema: 'public'
     }
   });
 
   // Store globally to prevent multiple instances
-  globalThis.__supabase = client;
+  globalThis.__supabase_client = client;
+  
+  // Add cleanup on page unload to prevent memory leaks
+  if (typeof window !== 'undefined') {
+    const cleanup = () => {
+      // Clear the global reference on page unload
+      globalThis.__supabase_client = undefined;
+    };
+    
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('pagehide', cleanup);
+  }
+  
   return client;
 }
 
