@@ -48,6 +48,17 @@ const ComplaintsManagement: React.FC = () => {
     setCurrentFilter(undefined);
   };
 
+  const handleUpdate = () => {
+    refresh();
+    // Update the selected complaint with the refreshed data
+    if (selectedComplaint) {
+      const updated = complaints.find(c => c.id === selectedComplaint.id);
+      if (updated) {
+        setSelectedComplaint(updated);
+      }
+    }
+  };
+
   // Calculate stats
   const stats = {
     total: complaints.length,
@@ -61,14 +72,7 @@ const ComplaintsManagement: React.FC = () => {
       <ComplaintDetail 
         complaint={selectedComplaint}
         onBack={handleGoBack}
-        onUpdate={() => {
-          refresh();
-          // Update the selected complaint with the refreshed data
-          const updated = complaints.find(c => c.id === selectedComplaint.id);
-          if (updated) {
-            setSelectedComplaint(updated);
-          }
-        }}
+        onUpdate={handleUpdate}
       />
     );
   }
@@ -202,6 +206,7 @@ const ComplaintsManagement: React.FC = () => {
                 complaints={complaints} 
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
+                onUpdate={handleUpdate}
               />
             </TabsContent>
             
@@ -210,6 +215,7 @@ const ComplaintsManagement: React.FC = () => {
                 complaints={complaints.filter(c => c.status === ComplaintStatus.New)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
+                onUpdate={handleUpdate}
               />
             </TabsContent>
             
@@ -218,6 +224,7 @@ const ComplaintsManagement: React.FC = () => {
                 complaints={complaints.filter(c => c.status === ComplaintStatus.Under_Investigation)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
+                onUpdate={handleUpdate}
               />
             </TabsContent>
             
@@ -226,6 +233,7 @@ const ComplaintsManagement: React.FC = () => {
                 complaints={complaints.filter(c => c.status === ComplaintStatus.Resolved || c.status === ComplaintStatus.Closed)}
                 isLoading={isLoading}
                 onSelectComplaint={handleComplaintClick}
+                onUpdate={handleUpdate}
               />
             </TabsContent>
           </Tabs>
