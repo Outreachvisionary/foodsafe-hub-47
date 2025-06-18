@@ -18,16 +18,7 @@ import {
 } from 'lucide-react';
 import { CAPA } from '@/types/capa';
 import { toast } from 'sonner';
-
-interface WorkflowStep {
-  id: string;
-  title: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
-  assignedTo: string;
-  description: string;
-  completedAt?: string;
-  comments?: string;
-}
+import { useWorkflowSteps } from '@/hooks/useWorkflowSteps';
 
 interface CAPASimpleWorkflowProps {
   capa: CAPA;
@@ -38,98 +29,49 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
   capa,
   onWorkflowUpdate
 }) => {
+  const { steps, isLoading, updateStep, isUpdating } = useWorkflowSteps(capa.id);
   const [comment, setComment] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Generate simple workflow steps based on CAPA data
-  const workflowSteps: WorkflowStep[] = [
-    {
-      id: 'investigation',
-      title: 'Root Cause Analysis',
-      status: capa.root_cause ? 'completed' : 'pending',
-      assignedTo: capa.assigned_to || 'Quality Team',
-      description: 'Investigate and identify the root cause of the issue',
-      completedAt: capa.root_cause ? capa.updated_at : undefined
-    },
-    {
-      id: 'action_plan',
-      title: 'Corrective Action Plan',
-      status: capa.corrective_action ? 'completed' : 'pending',
-      assignedTo: capa.assigned_to || 'Quality Team',
-      description: 'Define corrective and preventive actions',
-      completedAt: capa.corrective_action ? capa.updated_at : undefined
-    },
-    {
-      id: 'approval',
-      title: 'Management Approval',
-      status: capa.status === 'Closed' ? 'approved' : 'pending',
-      assignedTo: 'Quality Manager',
-      description: 'Review and approve the CAPA plan'
-    },
-    {
-      id: 'implementation',
-      title: 'Implementation',
-      status: capa.completion_date ? 'completed' : 'pending',
-      assignedTo: capa.assigned_to || 'Quality Team',
-      description: 'Execute the approved corrective actions',
-      completedAt: capa.completion_date
-    },
-    {
-      id: 'verification',
-      title: 'Effectiveness Verification',
-      status: capa.effectiveness_verified ? 'completed' : 'pending',
-      assignedTo: 'Quality Manager',
-      description: 'Verify that actions were effective',
-      completedAt: capa.verification_date
-    }
-  ];
-
-  const completedSteps = workflowSteps.filter(step => 
+  const completedSteps = steps.filter(step => 
     step.status === 'completed' || step.status === 'approved'
   ).length;
   
-  const progress = Math.round((completedSteps / workflowSteps.length) * 100);
+  const progress = steps.length > 0 ? Math.round((completedSteps / steps.length) * 100) : 0;
 
-  const currentStep = workflowSteps.find(step => step.status === 'pending');
+  const currentStep = steps.find(step => step.status === 'pending');
 
   const handleApprove = async () => {
-    if (!comment.trim()) {
+    if (!currentStep || !comment.trim()) {
       toast.error('Please add a comment before approving');
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Step approved successfully');
-      setComment('');
-      if (onWorkflowUpdate) onWorkflowUpdate();
-    } catch (error) {
-      toast.error('Failed to approve step');
-    } finally {
-      setIsProcessing(false);
-    }
+    updateStep({
+      stepId: currentStep.id,
+      status: 'approved',
+      comments: comment,
+      completedBy: 'Current User' // Should be actual user
+    });
+    
+    setComment('');
+    if (onWorkflowUpdate) onWorkflowUpdate();
   };
 
   const handleReject = async () => {
-    if (!comment.trim()) {
+    if (!currentStep || !comment.trim()) {
       toast.error('Please provide a reason for rejection');
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Step rejected - CAPA returned for revision');
-      setComment('');
-      if (onWorkflowUpdate) onWorkflowUpdate();
-    } catch (error) {
-      toast.error('Failed to reject step');
-    } finally {
-      setIsProcessing(false);
-    }
+    updateStep({
+      stepId: currentStep.id,
+      status: 'rejected',
+      comments: comment,
+      completedBy: 'Current User' // Should be actual user
+    });
+    
+    setComment('');
+    if (onWorkflowUpdate) onWorkflowUpdate();
   };
 
   const getStepIcon = (status: string) => {
@@ -156,6 +98,33 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
     }
   };
 
+  const getStepTitle = (stepName: string) => {
+    const titles: Record<string, string> = {
+      investigation: 'Root Cause Analysis',
+      action_plan: 'Corrective Action Plan',
+      approval: 'Management Approval',
+      implementation: 'Implementation',
+      verification: 'Effectiveness Verification'
+    };
+    return titles[stepName] || stepName;
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            CAPA Workflow Progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">Loading workflow...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -173,13 +142,13 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
           </div>
           <Progress value={progress} className="h-3" />
           <p className="text-xs text-muted-foreground">
-            {completedSteps} of {workflowSteps.length} steps completed
+            {completedSteps} of {steps.length} steps completed
           </p>
         </div>
 
         {/* Workflow Steps */}
         <div className="space-y-3">
-          {workflowSteps.map((step, index) => (
+          {steps.map((step, index) => (
             <div
               key={step.id}
               className={`p-4 rounded-lg border ${getStepColor(step.status)}`}
@@ -188,9 +157,9 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
                 {getStepIcon(step.status)}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{step.title}</h4>
+                    <h4 className="font-medium">{getStepTitle(step.step_name)}</h4>
                     <Badge variant="outline" className="text-xs">
-                      Step {index + 1}
+                      Step {step.step_order}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -199,11 +168,11 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
                   <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
-                      {step.assignedTo}
+                      {step.assigned_to}
                     </div>
-                    {step.completedAt && (
+                    {step.completed_at && (
                       <div>
-                        Completed: {new Date(step.completedAt).toLocaleDateString()}
+                        Completed: {new Date(step.completed_at).toLocaleDateString()}
                       </div>
                     )}
                   </div>
@@ -223,13 +192,13 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Action Required:</strong> {currentStep.title} is pending approval
+              <strong>Action Required:</strong> {getStepTitle(currentStep.step_name)} is pending approval
             </AlertDescription>
           </Alert>
         )}
 
         {/* Approval Actions */}
-        {currentStep && currentStep.id === 'approval' && (
+        {currentStep && currentStep.step_name === 'approval' && (
           <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
             <h4 className="font-medium text-blue-900">Management Approval Required</h4>
             <p className="text-sm text-blue-700">
@@ -252,7 +221,7 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
               <div className="flex gap-2">
                 <Button 
                   onClick={handleApprove}
-                  disabled={isProcessing || !comment.trim()}
+                  disabled={isUpdating || !comment.trim()}
                   className="flex items-center gap-2"
                 >
                   <ThumbsUp className="h-4 w-4" />
@@ -261,7 +230,7 @@ const CAPASimpleWorkflow: React.FC<CAPASimpleWorkflowProps> = ({
                 <Button 
                   variant="outline"
                   onClick={handleReject}
-                  disabled={isProcessing || !comment.trim()}
+                  disabled={isUpdating || !comment.trim()}
                   className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
                 >
                   <ThumbsDown className="h-4 w-4" />
