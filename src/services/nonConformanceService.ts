@@ -1,5 +1,6 @@
 import { NonConformance, NCActivity, NCAttachment, NCStats } from '@/types/non-conformance';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Mapping functions for enum conversion
 const mapNCStatusToDatabase = (status: string) => {
@@ -39,9 +40,15 @@ const mapReasonCategoryToDatabase = (category: string) => {
   return categoryMap[category] || 'Other';
 };
 
-// Get all non-conformances
+// Get all non-conformances with RLS enforcement
 export const getAllNonConformances = async (): Promise<{ data: NonConformance[] }> => {
   try {
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('non_conformances')
       .select('*')
@@ -51,13 +58,19 @@ export const getAllNonConformances = async (): Promise<{ data: NonConformance[] 
     return { data: data || [] };
   } catch (error) {
     console.error('Error fetching non-conformances:', error);
+    toast.error('Failed to load non-conformances');
     throw error;
   }
 };
 
-// Get non-conformance by ID
+// Get non-conformance by ID with RLS enforcement
 export const getNonConformanceById = async (id: string): Promise<NonConformance> => {
   try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('non_conformances')
       .select('*')
@@ -74,9 +87,21 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
   }
 };
 
-// Create non-conformance
+// Create non-conformance with proper user context
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user profile for proper attribution
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
     const insertData = {
       title: data.title || '',
       description: data.description || '',
@@ -84,7 +109,7 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
       item_category: mapItemCategoryToDatabase(data.item_category || 'Other') as any,
       reason_category: mapReasonCategoryToDatabase(data.reason_category || 'Other') as any,
       status: mapNCStatusToDatabase(data.status || 'On Hold') as any,
-      created_by: data.created_by || 'System',
+      created_by: profile?.full_name || user.email || 'System',
       assigned_to: data.assigned_to,
       department: data.department,
       location: data.location,
@@ -109,9 +134,12 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
       .single();
 
     if (error) throw error;
+    
+    toast.success('Non-conformance created successfully');
     return newNC as NonConformance;
   } catch (error) {
     console.error('Error creating non-conformance:', error);
+    toast.error('Failed to create non-conformance');
     throw error;
   }
 };
@@ -266,9 +294,14 @@ export const getLinkedCAPAs = async (ncId: string): Promise<any[]> => {
   }
 };
 
-// Fetch NC activities
+// Fetch NC activities with RLS enforcement
 export const fetchNCActivities = async (nonConformanceId: string): Promise<NCActivity[]> => {
   try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('nc_activities')
       .select('*')
