@@ -39,7 +39,7 @@ export const ComplaintEditDialog: React.FC<ComplaintEditDialogProps> = ({
     e.preventDefault();
     updateComplaint({
       id: complaint.id,
-      ...formData
+      updates: formData
     });
     onSuccess();
     onOpenChange(false);
@@ -78,9 +78,7 @@ export const ComplaintEditDialog: React.FC<ComplaintEditDialogProps> = ({
                   <SelectItem value={ComplaintCategory.Product_Quality}>Product Quality</SelectItem>
                   <SelectItem value={ComplaintCategory.Food_Safety}>Food Safety</SelectItem>
                   <SelectItem value={ComplaintCategory.Packaging}>Packaging</SelectItem>
-                  <SelectItem value={ComplaintCategory.Foreign_Matter}>Foreign Matter</SelectItem>
-                  <SelectItem value={ComplaintCategory.Allergen}>Allergen</SelectItem>
-                  <SelectItem value={ComplaintCategory.Customer_Service}>Customer Service</SelectItem>
+                  <SelectItem value={ComplaintCategory.Foreign_Material}>Foreign Material</SelectItem>
                   <SelectItem value={ComplaintCategory.Documentation}>Documentation</SelectItem>
                   <SelectItem value={ComplaintCategory.Other}>Other</SelectItem>
                 </SelectContent>
@@ -111,7 +109,6 @@ export const ComplaintEditDialog: React.FC<ComplaintEditDialogProps> = ({
                   <SelectItem value={ComplaintStatus.Under_Investigation}>Under Investigation</SelectItem>
                   <SelectItem value={ComplaintStatus.Resolved}>Resolved</SelectItem>
                   <SelectItem value={ComplaintStatus.Closed}>Closed</SelectItem>
-                  <SelectItem value={ComplaintStatus.Reopened}>Reopened</SelectItem>
                 </SelectContent>
               </Select>
             </div>
