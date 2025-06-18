@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AuthErrorBoundary from '@/components/error/AuthErrorBoundary';
 import Index from './pages/Index';
+import Auth from './pages/Auth';
 import SupplierManagement from './pages/SupplierManagement';
 import NonConformance from './pages/NonConformance';
 import CAPA from './pages/CAPA';
@@ -41,6 +42,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
               <Route path="/suppliers" element={<SupplierManagement />} />
               <Route path="/non-conformance" element={<NonConformance />} />
               <Route path="/capa" element={<CAPA />} />
