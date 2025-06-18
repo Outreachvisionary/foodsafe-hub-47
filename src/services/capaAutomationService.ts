@@ -44,7 +44,7 @@ const checkUpcomingDeadlines = async (): Promise<void> => {
     .select('*')
     .lt('due_date', threeDaysFromNow.toISOString())
     .gt('due_date', new Date().toISOString())
-    .in('status', ['Open', 'In_Progress', 'Under_Review']);
+    .in('status', ['Open', 'In Progress']);
 
   for (const capa of upcomingCAPAs || []) {
     await supabase
@@ -67,7 +67,7 @@ const processEffectivenessReviews = async (): Promise<void> => {
   const { data: completedCAPAs } = await supabase
     .from('capa_actions')
     .select('*')
-    .eq('status', 'Completed')
+    .eq('status', 'Closed')
     .lt('completion_date', thirtyDaysAgo.toISOString())
     .is('effectiveness_verified', false);
 
@@ -97,16 +97,16 @@ const generatePerformanceReports = async (): Promise<void> => {
     const metrics = {
       totalCAPAs: capas.length,
       completedOnTime: capas.filter(c => 
-        c.status === 'Completed' && 
+        c.status === 'Closed' && 
         c.completion_date && 
         new Date(c.completion_date) <= new Date(c.due_date)
       ).length,
       overdue: capas.filter(c => 
         new Date(c.due_date) < new Date() && 
-        !['Completed', 'Closed'].includes(c.status)
+        !['Closed'].includes(c.status)
       ).length,
       avgResolutionTime: calculateAverageResolutionTime(capas),
-      effectivenessRate: capas.filter(c => c.effectiveness_verified).length / capas.filter(c => c.status === 'Completed').length
+      effectivenessRate: capas.filter(c => c.effectiveness_verified).length / capas.filter(c => c.status === 'Closed').length
     };
 
     // Store metrics for dashboard
@@ -119,7 +119,7 @@ const generatePerformanceReports = async (): Promise<void> => {
 
 // Calculate average resolution time
 const calculateAverageResolutionTime = (capas: any[]): number => {
-  const completed = capas.filter(c => c.status === 'Completed' && c.completion_date);
+  const completed = capas.filter(c => c.status === 'Closed' && c.completion_date);
   if (completed.length === 0) return 0;
 
   const totalDays = completed.reduce((sum, capa) => {
@@ -139,7 +139,7 @@ export const autoEscalateStuckCAPAs = async (): Promise<void> => {
   const { data: stuckCAPAs } = await supabase
     .from('capa_actions')
     .select('*')
-    .eq('status', 'In_Progress')
+    .eq('status', 'In Progress')
     .lt('updated_at', sevenDaysAgo.toISOString());
 
   for (const capa of stuckCAPAs || []) {
@@ -201,7 +201,7 @@ const handleCAPACreated = async (capaId: string): Promise<void> => {
 };
 
 const handleStatusChanged = async (capaId: string, oldStatus: string, newStatus: string): Promise<void> => {
-  if (newStatus === 'Completed') {
+  if (newStatus === 'Closed') {
     // Schedule effectiveness review
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
