@@ -1,225 +1,309 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, Calendar, CheckCircle, AlertCircle, Eye } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAudits } from '@/hooks/useAudits';
-import { Audit, AuditStatus } from '@/types/audit';
+import React, { useState } from 'react';
+import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import DashboardHeader from '@/components/DashboardHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, CheckCircle, Clock, AlertCircle, Search, Plus, FileText, TrendingUp } from 'lucide-react';
+import { useInternalAudits } from '@/hooks/useInternalAudits';
+import AuditCalendar from '@/components/audits/AuditCalendar';
+import AuditList from '@/components/audits/AuditList';
 
 const InternalAudits = () => {
-  const navigate = useNavigate();
-  const { audits, loading, error, loadAudits } = useAudits();
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const { audits, loading, error, loadAudits } = useInternalAudits();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  useEffect(() => {
-    loadAudits();
-  }, [loadAudits]);
-
-  const handleCreateAudit = () => {
-    navigate('/audits/new');
-  };
-
-  const handleViewAudit = (auditId: string) => {
-    navigate(`/audits/${auditId}`);
-  };
-
-  const getStatusColor = (status: AuditStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
+      case 'Completed':
+        return <CheckCircle className="h-4 w-4" />;
       case 'In Progress':
-        return 'bg-yellow-100 text-yellow-800';
+        return <Clock className="h-4 w-4" />;
+      case 'Scheduled':
+        return <Calendar className="h-4 w-4" />;
+      default:
+        return <AlertCircle className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
       case 'Completed':
         return 'bg-green-100 text-green-800';
-      case 'Cancelled':
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'Scheduled':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Overdue':
         return 'bg-red-100 text-red-800';
-      case 'On Hold':
-        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'MMM d, yyyy');
-    } catch (e) {
-      return 'Invalid date';
-    }
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const isUpcoming = (audit: Audit) => {
-    const today = new Date();
-    const startDate = new Date(audit.startDate);
-    return startDate > today && audit.status !== 'Completed' && audit.status !== 'Cancelled';
-  };
-
-  const isActive = (audit: Audit) => {
-    return audit.status === 'In Progress' || audit.status === 'On Hold';
-  };
-
-  const isCompleted = (audit: Audit) => {
-    return audit.status === 'Completed';
-  };
-
-  const upcomingAudits = audits.filter(isUpcoming);
-  const activeAudits = audits.filter(isActive);
-  const completedAudits = audits.filter(isCompleted);
-
-  const renderAuditCard = (audit: Audit) => {
+  if (loading) {
     return (
-      <Card key={audit.id} className="mb-4 hover:shadow-md transition-shadow">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-lg">{audit.title}</CardTitle>
-            <Badge className={getStatusColor(audit.status)}>{audit.status}</Badge>
-          </div>
-          <CardDescription>
-            {audit.auditType} Audit • {audit.findings || 0} Findings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-2">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-              <span>Start: {formatDate(audit.startDate)}</span>
-            </div>
-            <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-              <span>Due: {formatDate(audit.dueDate)}</span>
-            </div>
-            {audit.department && (
-              <div className="flex items-center col-span-2">
-                <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                <span>Department: {audit.department}</span>
-              </div>
-            )}
-            {audit.assignedTo && (
-              <div className="flex items-center col-span-2">
-                <CheckCircle className="h-4 w-4 mr-2 text-gray-500" />
-                <span>Assigned to: {audit.assignedTo}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="pt-2">
-          <Button variant="outline" size="sm" onClick={() => handleViewAudit(audit.id)}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  };
-
-  const renderAuditList = (auditList: Audit[]) => {
-    if (loading) {
-      return Array(3).fill(0).map((_, i) => (
-        <Card key={i} className="mb-4">
-          <CardHeader className="pb-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2 mt-2" />
-          </CardHeader>
-          <CardContent className="pb-2">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </CardContent>
-          <CardFooter className="pt-2">
-            <Skeleton className="h-9 w-24" />
-          </CardFooter>
-        </Card>
-      ));
-    }
-
-    if (auditList.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p>No audits found in this category.</p>
-          <Button onClick={handleCreateAudit} className="mt-4">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Schedule Your First Audit
-          </Button>
+      <ProtectedSidebarLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      );
-    }
+      </ProtectedSidebarLayout>
+    );
+  }
 
-    return auditList.map(renderAuditCard);
+  if (error) {
+    return (
+      <ProtectedSidebarLayout>
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">Error loading audits: {error}</p>
+          <Button onClick={loadAudits}>Try Again</Button>
+        </div>
+      </ProtectedSidebarLayout>
+    );
+  }
+
+  const filteredAudits = audits.filter(audit => {
+    const matchesSearch = audit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         audit.audit_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         audit.assigned_to.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || audit.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const scheduledAudits = filteredAudits.filter(audit => audit.status === 'Scheduled');
+  const inProgressAudits = filteredAudits.filter(audit => audit.status === 'In Progress');
+  const completedAudits = filteredAudits.filter(audit => audit.status === 'Completed');
+
+  const auditStats = {
+    total: audits.length,
+    scheduled: scheduledAudits.length,
+    inProgress: inProgressAudits.length,
+    completed: completedAudits.length,
+    overdue: 0 // Calculate based on due dates if needed
   };
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader 
-        title="Internal Audits" 
-        subtitle="Manage and track your internal audit program"
-      />
-
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-muted-foreground">
-            Total Audits: {audits.length}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Upcoming: {upcomingAudits.length}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Active: {activeAudits.length}
+    <ProtectedSidebarLayout>
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Internal Audits</h1>
+              <p className="text-muted-foreground text-lg">
+                Plan, execute, and track internal audit activities
+              </p>
+            </div>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Schedule Audit
+            </Button>
           </div>
         </div>
-        <Button onClick={handleCreateAudit}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Schedule New Audit
-        </Button>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Audits</p>
+                  <p className="text-2xl font-bold">{auditStats.total}</p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
+                  <p className="text-2xl font-bold">{auditStats.scheduled}</p>
+                </div>
+                <Calendar className="h-8 w-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                  <p className="text-2xl font-bold">{auditStats.inProgress}</p>
+                </div>
+                <Clock className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold">{auditStats.completed}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="list" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="list">Audit List</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="list" className="space-y-6">
+            {/* Search and Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search audits..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={selectedStatus === 'all' ? 'default' : 'outline'}
+                      onClick={() => setSelectedStatus('all')}
+                    >
+                      All ({audits.length})
+                    </Button>
+                    <Button 
+                      variant={selectedStatus === 'Scheduled' ? 'default' : 'outline'}
+                      onClick={() => setSelectedStatus('Scheduled')}
+                    >
+                      Scheduled ({auditStats.scheduled})
+                    </Button>
+                    <Button 
+                      variant={selectedStatus === 'In Progress' ? 'default' : 'outline'}
+                      onClick={() => setSelectedStatus('In Progress')}
+                    >
+                      In Progress ({auditStats.inProgress})
+                    </Button>
+                    <Button 
+                      variant={selectedStatus === 'Completed' ? 'default' : 'outline'}
+                      onClick={() => setSelectedStatus('Completed')}
+                    >
+                      Completed ({auditStats.completed})
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Audit List */}
+            <div className="space-y-4">
+              {filteredAudits.map((audit) => (
+                <Card key={audit.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg">{audit.title}</h3>
+                          <Badge className={getStatusColor(audit.status)}>
+                            <div className="flex items-center gap-1">
+                              {getStatusIcon(audit.status)}
+                              {audit.status}
+                            </div>
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
+                          <div>
+                            <strong>Type:</strong> {audit.audit_type}
+                          </div>
+                          <div>
+                            <strong>Assigned to:</strong> {audit.assigned_to}
+                          </div>
+                          <div>
+                            <strong>Findings:</strong> {audit.findings_count}
+                          </div>
+                          <div>
+                            <strong>Start Date:</strong> {formatDate(audit.start_date)}
+                          </div>
+                          <div>
+                            <strong>Due Date:</strong> {formatDate(audit.due_date)}
+                          </div>
+                          {audit.completion_date && (
+                            <div>
+                              <strong>Completed:</strong> {formatDate(audit.completion_date)}
+                            </div>
+                          )}
+                        </div>
+
+                        {audit.description && (
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            {audit.description}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2 ml-4">
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Generate Report
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {filteredAudits.length === 0 && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500">No audits found matching your criteria</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <AuditCalendar audits={scheduledAudits} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Audit Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">Advanced analytics and reporting coming soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          Error loading audits. Please try again.
-        </div>
-      )}
-
-      <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="upcoming">
-            Upcoming ({upcomingAudits.length})
-          </TabsTrigger>
-          <TabsTrigger value="active">
-            Active ({activeAudits.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed ({completedAudits.length})
-          </TabsTrigger>
-          <TabsTrigger value="all">
-            All Audits ({audits.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="upcoming">
-          {renderAuditList(upcomingAudits)}
-        </TabsContent>
-
-        <TabsContent value="active">
-          {renderAuditList(activeAudits)}
-        </TabsContent>
-
-        <TabsContent value="completed">
-          {renderAuditList(completedAudits)}
-        </TabsContent>
-
-        <TabsContent value="all">
-          {renderAuditList(audits)}
-        </TabsContent>
-      </Tabs>
-    </div>
+    </ProtectedSidebarLayout>
   );
 };
 

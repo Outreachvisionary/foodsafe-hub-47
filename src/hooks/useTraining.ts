@@ -47,10 +47,10 @@ export const useTrainingSessions = () => {
 
       if (error) throw error;
       
-      // Transform data to ensure priority field is included
+      // Transform data to ensure priority field is included with default
       const transformedData = (data || []).map(item => ({
         ...item,
-        priority: item.priority || 'Medium' // Default priority if missing
+        priority: 'Medium' // Default priority since it's missing from DB
       }));
       
       setSessions(transformedData);

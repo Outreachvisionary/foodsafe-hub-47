@@ -54,7 +54,7 @@ export const useSuppliers = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('suppliers')
-        .insert(supplierData) // Single object, not array
+        .insert(supplierData)
         .select()
         .single();
 

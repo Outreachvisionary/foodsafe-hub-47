@@ -8,11 +8,16 @@ export interface Product {
   batch_lot_number: string;
   manufacturing_date: string;
   expiry_date?: string;
-  quantity: number;
+  quantity?: number;
   location?: string;
   status: string;
   created_by: string;
   created_at?: string;
+  category?: string;
+  description?: string;
+  sku?: string;
+  attributes?: any;
+  updated_at?: string;
 }
 
 export interface Component {
@@ -26,21 +31,36 @@ export interface Component {
   category?: string;
   created_by: string;
   created_at?: string;
+  description?: string;
+  supplier_id?: string;
+  attributes?: any;
+  units?: string;
+  updated_at?: string;
 }
 
 export interface Recall {
   id: string;
   title: string;
-  product_name: string;
-  batch_numbers: string[];
-  reason: string;
+  product_name?: string;
+  batch_numbers?: string[];
+  reason?: string;
   status: string;
-  initiated_date: string;
-  affected_quantity: number;
-  customer_notifications: number;
-  retailer_notifications: number;
-  created_by: string;
+  initiated_date?: string;
+  affected_quantity?: number;
+  customer_notifications?: number;
+  retailer_notifications?: number;
+  created_by?: string;
   created_at?: string;
+  // Database fields
+  description?: string;
+  recall_type: 'Mock' | 'Actual';
+  recall_reason: string;
+  initiated_by: string;
+  initiated_at?: string;
+  completed_at?: string;
+  affected_products?: any;
+  corrective_actions?: string;
+  updated_at?: string;
 }
 
 export const useProducts = () => {
@@ -58,18 +78,23 @@ export const useProducts = () => {
 
       if (error) throw error;
       
-      // Transform data to match our interface
+      // Transform data to match our interface, providing defaults for missing fields
       const transformedData = (data || []).map(item => ({
         id: item.id,
         name: item.name,
         batch_lot_number: item.batch_lot_number,
         manufacturing_date: item.manufacturing_date,
         expiry_date: item.expiry_date,
-        quantity: item.quantity || 0,
-        location: item.location || '',
+        quantity: 0, // Default since not in DB
+        location: '', // Default since not in DB
         status: item.status,
         created_by: item.created_by,
-        created_at: item.created_at
+        created_at: item.created_at,
+        category: item.category,
+        description: item.description,
+        sku: item.sku,
+        attributes: item.attributes,
+        updated_at: item.updated_at
       }));
       
       setProducts(transformedData);
@@ -85,12 +110,26 @@ export const useProducts = () => {
     fetchProducts();
   }, []);
 
-  const addProduct = async (productData: Omit<Product, 'id' | 'created_at'>) => {
+  const addProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setLoading(true);
+      // Only send fields that exist in the database
+      const dbData = {
+        name: productData.name,
+        batch_lot_number: productData.batch_lot_number,
+        manufacturing_date: productData.manufacturing_date,
+        expiry_date: productData.expiry_date,
+        status: productData.status,
+        created_by: productData.created_by,
+        category: productData.category,
+        description: productData.description,
+        sku: productData.sku,
+        attributes: productData.attributes
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .insert(productData)
+        .insert(dbData)
         .select()
         .single();
 
@@ -142,12 +181,28 @@ export const useComponents = () => {
     fetchComponents();
   }, []);
 
-  const addComponent = async (componentData: Omit<Component, 'id' | 'created_at'>) => {
+  const addComponent = async (componentData: Omit<Component, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setLoading(true);
+      // Only send fields that exist in the database
+      const dbData = {
+        name: componentData.name,
+        batch_lot_number: componentData.batch_lot_number,
+        received_date: componentData.received_date,
+        expiry_date: componentData.expiry_date,
+        status: componentData.status,
+        created_by: componentData.created_by,
+        category: componentData.category,
+        description: componentData.description,
+        supplier_id: componentData.supplier_id,
+        quantity: componentData.quantity,
+        attributes: componentData.attributes,
+        units: componentData.units
+      };
+      
       const { data, error } = await supabase
         .from('components')
-        .insert(componentData)
+        .insert(dbData)
         .select()
         .single();
 
@@ -191,16 +246,26 @@ export const useRecalls = () => {
       const transformedData = (data || []).map(item => ({
         id: item.id,
         title: item.title,
-        product_name: item.product_name || 'Unknown Product',
-        batch_numbers: item.batch_numbers || [],
-        reason: item.reason || '',
+        product_name: 'Unknown Product', // Default since not in DB
+        batch_numbers: [], // Default since not in DB
+        reason: item.recall_reason || '',
         status: item.status,
-        initiated_date: item.initiated_date || item.created_at,
-        affected_quantity: item.affected_quantity || 0,
-        customer_notifications: item.customer_notifications || 0,
-        retailer_notifications: item.retailer_notifications || 0,
-        created_by: item.created_by,
-        created_at: item.created_at
+        initiated_date: item.initiated_at || item.created_at,
+        affected_quantity: 0, // Default since not in DB
+        customer_notifications: 0, // Default since not in DB
+        retailer_notifications: 0, // Default since not in DB
+        created_by: item.initiated_by,
+        created_at: item.created_at,
+        // Include actual DB fields
+        description: item.description,
+        recall_type: item.recall_type,
+        recall_reason: item.recall_reason,
+        initiated_by: item.initiated_by,
+        initiated_at: item.initiated_at,
+        completed_at: item.completed_at,
+        affected_products: item.affected_products,
+        corrective_actions: item.corrective_actions,
+        updated_at: item.updated_at
       }));
       
       setRecalls(transformedData);
@@ -216,19 +281,21 @@ export const useRecalls = () => {
     fetchRecalls();
   }, []);
 
-  const addRecall = async (recallData: Omit<Recall, 'id' | 'created_at' | 'initiated_date' | 'affected_quantity' | 'customer_notifications' | 'retailer_notifications'>) => {
+  const addRecall = async (recallData: { title: string; product_name?: string; batch_numbers?: string[]; reason: string; status: string; created_by: string }) => {
     try {
       setLoading(true);
+      // Map to database fields
+      const dbData = {
+        title: recallData.title,
+        recall_reason: recallData.reason,
+        status: recallData.status as 'In Progress' | 'Scheduled' | 'Completed' | 'Cancelled',
+        recall_type: 'Actual' as const,
+        initiated_by: recallData.created_by
+      };
+      
       const { data, error } = await supabase
         .from('recalls')
-        .insert({
-          title: recallData.title,
-          product_name: recallData.product_name,
-          batch_numbers: recallData.batch_numbers,
-          reason: recallData.reason,
-          status: recallData.status,
-          created_by: recallData.created_by
-        })
+        .insert(dbData)
         .select()
         .single();
 
