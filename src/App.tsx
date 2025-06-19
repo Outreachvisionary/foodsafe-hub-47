@@ -22,6 +22,10 @@ import Traceability from './pages/Traceability';
 import Reports from './pages/Reports';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
+import Audits from './pages/Audits';
+import Training from './pages/Training';
+import Standards from './pages/Standards';
+import Facilities from './pages/Facilities';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +55,10 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/tasks" element={<Tasks />} />
+              <Route path="/audits" element={<Audits />} />
+              <Route path="/training" element={<Training />} />
+              <Route path="/standards" element={<Standards />} />
+              <Route path="/facilities" element={<Facilities />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/performance" element={<Performance />} />
               <Route path="/suppliers" element={<SupplierManagement />} />

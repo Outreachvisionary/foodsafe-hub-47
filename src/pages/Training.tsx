@@ -7,21 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { 
   Plus,
   Search,
   Filter,
-  Building,
-  MapPin,
-  Phone,
-  Mail,
+  GraduationCap,
+  Clock,
   Users,
-  Activity,
-  AlertTriangle,
-  CheckCircle
+  Calendar,
+  BookOpen,
+  Award,
+  AlertCircle
 } from 'lucide-react';
 
-const Facilities = () => {
+const Training = () => {
   const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -42,79 +42,68 @@ const Facilities = () => {
   }
 
   // Mock data - replace with actual data fetching
-  const facilities = [
+  const trainingSessions = [
     {
       id: '1',
-      name: 'Main Production Facility',
-      description: 'Primary manufacturing and processing facility',
-      address: '123 Industrial Blvd, Manufacturing City, MC 12345',
-      city: 'Manufacturing City',
-      state: 'MC',
-      country: 'United States',
-      contactEmail: 'facility1@company.com',
-      contactPhone: '+1 (555) 123-4567',
+      title: 'HACCP Principles Training',
+      description: 'Comprehensive training on Hazard Analysis Critical Control Points',
+      category: 'Food Safety',
       status: 'active',
-      employeeCount: 85,
-      activeStandards: 3,
-      complianceScore: 92,
-      lastAudit: '2024-05-15'
+      assignedCount: 15,
+      completedCount: 12,
+      dueDate: '2024-07-15',
+      duration: '4 hours',
+      instructor: 'Dr. Sarah Wilson',
+      department: 'All Departments'
     },
     {
       id: '2',
-      name: 'Distribution Center',
-      description: 'Warehousing and distribution operations',
-      address: '456 Logistics Ave, Distribution City, DC 67890',
-      city: 'Distribution City',
-      state: 'DC',
-      country: 'United States',
-      contactEmail: 'warehouse@company.com',
-      contactPhone: '+1 (555) 234-5678',
-      status: 'active',
-      employeeCount: 42,
-      activeStandards: 2,
-      complianceScore: 88,
-      lastAudit: '2024-04-20'
+      title: 'GMP Refresher Course',
+      description: 'Good Manufacturing Practices annual refresher training',
+      category: 'Quality',
+      status: 'completed',
+      assignedCount: 8,
+      completedCount: 8,
+      dueDate: '2024-06-30',
+      duration: '2 hours',
+      instructor: 'Mike Johnson',
+      department: 'Production'
     },
     {
       id: '3',
-      name: 'R&D Laboratory',
-      description: 'Research and development testing facility',
-      address: '789 Innovation Dr, Tech City, TC 54321',
-      city: 'Tech City',
-      state: 'TC',
-      country: 'United States',
-      contactEmail: 'lab@company.com',
-      contactPhone: '+1 (555) 345-6789',
-      status: 'maintenance',
-      employeeCount: 15,
-      activeStandards: 1,
-      complianceScore: 76,
-      lastAudit: '2024-03-10'
+      title: 'Allergen Management Training',
+      description: 'Training on allergen identification, control, and management',
+      category: 'Food Safety',
+      status: 'overdue',
+      assignedCount: 10,
+      completedCount: 6,
+      dueDate: '2024-06-01',
+      duration: '3 hours',
+      instructor: 'Jennifer Smith',
+      department: 'QA & Production'
     }
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'active': return 'bg-blue-100 text-blue-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
+      case 'draft': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle className="h-4 w-4" />;
-      case 'maintenance': return <AlertTriangle className="h-4 w-4" />;
-      default: return <Activity className="h-4 w-4" />;
+      case 'completed': return <Award className="h-4 w-4" />;
+      case 'overdue': return <AlertCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
-  const getComplianceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+  const getCompletionPercentage = (completed: number, total: number) => {
+    return Math.round((completed / total) * 100);
   };
 
   return (
@@ -123,28 +112,50 @@ const Facilities = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Facilities</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Training</h1>
               <p className="text-muted-foreground text-lg">
-                Manage facility information and compliance status
+                Manage training programs and track employee progress
               </p>
             </div>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Facility
+              Create Training
             </Button>
           </div>
         </div>
 
-        {/* Facilities Overview Cards */}
+        {/* Training Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Facilities</p>
+                  <p className="text-sm font-medium text-muted-foreground">Active Training</p>
+                  <p className="text-2xl font-bold">8</p>
+                </div>
+                <GraduationCap className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                  <p className="text-2xl font-bold">87%</p>
+                </div>
+                <Award className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-bold">3</p>
                 </div>
-                <Building className="h-8 w-8 text-blue-600" />
+                <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -152,32 +163,10 @@ const Facilities = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold">2</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-                  <p className="text-2xl font-bold">142</p>
+                  <p className="text-sm font-medium text-muted-foreground">Employees Trained</p>
+                  <p className="text-2xl font-bold">145</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg Compliance</p>
-                  <p className="text-2xl font-bold">85%</p>
-                </div>
-                <Activity className="h-8 w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
@@ -191,7 +180,7 @@ const Facilities = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search facilities..."
+                    placeholder="Search training sessions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -206,8 +195,9 @@ const Facilities = () => {
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="completed">Completed</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="draft">Draft</option>
                 </select>
                 <Button variant="outline">
                   <Filter className="h-4 w-4 mr-2" />
@@ -218,56 +208,65 @@ const Facilities = () => {
           </CardContent>
         </Card>
 
-        {/* Facilities Grid */}
+        {/* Training Sessions Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {facilities.map((facility) => (
-            <Card key={facility.id} className="hover:shadow-lg transition-shadow">
+          {trainingSessions.map((training) => (
+            <Card key={training.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">{facility.name}</CardTitle>
+                    <CardTitle className="text-lg mb-1">{training.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {facility.description}
+                      {training.description}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1 ml-2">
-                    {getStatusIcon(facility.status)}
+                    {getStatusIcon(training.status)}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    <Badge className={getStatusColor(facility.status)}>
-                      {facility.status}
+                    <Badge className={getStatusColor(training.status)}>
+                      {training.status}
                     </Badge>
                     <Badge variant="outline">
-                      {facility.activeStandards} standards
+                      {training.category}
                     </Badge>
-                    <Badge variant="secondary" className={getComplianceColor(facility.complianceScore)}>
-                      {facility.complianceScore}% compliance
+                    <Badge variant="secondary">
+                      {training.department}
                     </Badge>
                   </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{training.completedCount}/{training.assignedCount} completed</span>
+                    </div>
+                    <Progress 
+                      value={getCompletionPercentage(training.completedCount, training.assignedCount)} 
+                      className="h-2"
+                    />
+                  </div>
                   
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{facility.address}</span>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>Due: {training.dueDate}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span>{facility.contactEmail}</span>
+                      <Clock className="h-4 w-4" />
+                      <span>{training.duration}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      <span>{facility.contactPhone}</span>
+                      <BookOpen className="h-4 w-4" />
+                      <span>{training.instructor}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{facility.employeeCount} employees</span>
-                      </div>
-                      <span>Last audit: {facility.lastAudit}</span>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{training.assignedCount} assigned</span>
                     </div>
                   </div>
                   
@@ -289,4 +288,4 @@ const Facilities = () => {
   );
 };
 
-export default Facilities;
+export default Training;

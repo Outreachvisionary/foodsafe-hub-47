@@ -11,17 +11,16 @@ import {
   Plus,
   Search,
   Filter,
-  FileText,
-  Eye,
-  Download,
-  Edit,
+  Calendar,
+  User,
+  MapPin,
   Clock,
   CheckCircle,
   AlertTriangle,
-  Calendar
+  FileCheck
 } from 'lucide-react';
 
-const Documents = () => {
+const Audits = () => {
   const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -42,61 +41,66 @@ const Documents = () => {
   }
 
   // Mock data - replace with actual data fetching
-  const documents = [
+  const audits = [
     {
       id: '1',
-      title: 'HACCP Plan - Production Line A',
-      description: 'Critical Control Points and monitoring procedures',
-      category: 'SOP',
-      status: 'approved',
-      version: '2.1',
-      author: 'John Smith',
-      lastModified: '2024-06-15',
-      expiryDate: '2025-06-15',
-      fileSize: '2.3 MB'
+      title: 'ISO 22000 Internal Audit',
+      description: 'Annual internal audit for food safety management system',
+      status: 'completed',
+      auditType: 'Internal',
+      auditor: 'Sarah Johnson',
+      startDate: '2024-06-10',
+      dueDate: '2024-06-15',
+      completionDate: '2024-06-14',
+      location: 'Production Facility A',
+      findingsCount: 3,
+      department: 'Quality Assurance'
     },
     {
       id: '2',
-      title: 'Supplier Approval Procedure',
-      description: 'Standard operating procedure for supplier qualification',
-      category: 'Policy',
-      status: 'pending',
-      version: '1.4',
-      author: 'Sarah Johnson',
-      lastModified: '2024-06-18',
-      expiryDate: '2025-12-31',
-      fileSize: '1.8 MB'
+      title: 'HACCP Verification Audit',
+      description: 'Quarterly verification of HACCP plan implementation',
+      status: 'in-progress',
+      auditType: 'Internal',
+      auditor: 'Mike Wilson',
+      startDate: '2024-06-18',
+      dueDate: '2024-06-25',
+      completionDate: null,
+      location: 'Kitchen & Processing Area',
+      findingsCount: 1,
+      department: 'Production'
     },
     {
       id: '3',
-      title: 'Internal Audit Checklist - ISO 22000',
-      description: 'Comprehensive audit checklist for food safety management',
-      category: 'Form',
-      status: 'draft',
-      version: '3.0',
-      author: 'Mike Wilson',
-      lastModified: '2024-06-19',
-      expiryDate: '2024-12-31',
-      fileSize: '956 KB'
+      title: 'Supplier Audit - ABC Ingredients',
+      description: 'On-site audit of key ingredient supplier',
+      status: 'scheduled',
+      auditType: 'External',
+      auditor: 'John Smith',
+      startDate: '2024-07-01',
+      dueDate: '2024-07-03',
+      completionDate: null,
+      location: 'Supplier Facility',
+      findingsCount: 0,
+      department: 'Procurement'
     }
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'draft': return 'bg-blue-100 text-blue-800';
-      case 'expired': return 'bg-red-100 text-red-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'scheduled': return 'bg-yellow-100 text-yellow-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="h-4 w-4" />;
-      case 'pending': return <Clock className="h-4 w-4" />;
-      case 'expired': return <AlertTriangle className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
+      case 'completed': return <CheckCircle className="h-4 w-4" />;
+      case 'overdue': return <AlertTriangle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
@@ -106,14 +110,14 @@ const Documents = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Documents</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Audits</h1>
               <p className="text-muted-foreground text-lg">
-                Manage quality documents and control procedures
+                Manage internal and external audits
               </p>
             </div>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              New Document
+              Schedule Audit
             </Button>
           </div>
         </div>
@@ -126,7 +130,7 @@ const Documents = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search documents..."
+                    placeholder="Search audits..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -140,10 +144,10 @@ const Documents = () => {
                   onChange={(e) => setFilterStatus(e.target.value)}
                 >
                   <option value="all">All Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="draft">Draft</option>
-                  <option value="expired">Expired</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="overdue">Overdue</option>
                 </select>
                 <Button variant="outline">
                   <Filter className="h-4 w-4 mr-2" />
@@ -154,62 +158,64 @@ const Documents = () => {
           </CardContent>
         </Card>
 
-        {/* Documents Grid */}
+        {/* Audits Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {documents.map((doc) => (
-            <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+          {audits.map((audit) => (
+            <Card key={audit.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">{doc.title}</CardTitle>
+                    <CardTitle className="text-lg mb-1">{audit.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {doc.description}
+                      {audit.description}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1 ml-2">
-                    {getStatusIcon(doc.status)}
+                    {getStatusIcon(audit.status)}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    <Badge className={getStatusColor(doc.status)}>
-                      {doc.status}
+                    <Badge className={getStatusColor(audit.status)}>
+                      {audit.status.replace('-', ' ')}
                     </Badge>
                     <Badge variant="outline">
-                      {doc.category}
+                      {audit.auditType}
                     </Badge>
                     <Badge variant="secondary">
-                      v{doc.version}
+                      {audit.department}
                     </Badge>
                   </div>
                   
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <span>Author: {doc.author}</span>
-                      <span>{doc.fileSize}</span>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>{audit.auditor}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>Modified: {doc.lastModified}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{audit.location}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>Expires: {doc.expiryDate}</span>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{audit.startDate} - {audit.dueDate}</span>
                     </div>
+                    {audit.findingsCount > 0 && (
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="h-4 w-4" />
+                        <span>{audit.findingsCount} findings</span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex gap-2 pt-2">
                     <Button variant="outline" size="sm" className="flex-1">
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
+                      View Details
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-3 w-3" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-3 w-3" />
+                    <Button size="sm" className="flex-1">
+                      {audit.status === 'scheduled' ? 'Start' : 'Continue'}
                     </Button>
                   </div>
                 </div>
@@ -222,4 +228,4 @@ const Documents = () => {
   );
 };
 
-export default Documents;
+export default Audits;
