@@ -21,11 +21,13 @@ export interface Supplier {
 export const useSuppliers = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Add alias for compatibility
   const [error, setError] = useState<string | null>(null);
 
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
@@ -38,6 +40,7 @@ export const useSuppliers = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch suppliers');
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -45,12 +48,13 @@ export const useSuppliers = () => {
     fetchSuppliers();
   }, []);
 
-  const addSupplier = async (supplierData: Partial<Supplier>) => {
+  const addSupplier = async (supplierData: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setLoading(true);
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('suppliers')
-        .insert([supplierData])
+        .insert(supplierData) // Single object, not array
         .select()
         .single();
 
@@ -63,12 +67,14 @@ export const useSuppliers = () => {
       return null;
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const editSupplier = async (id: string, updates: Partial<Supplier>) => {
     try {
       setLoading(true);
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('suppliers')
         .update(updates)
@@ -85,13 +91,14 @@ export const useSuppliers = () => {
       return null;
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
     suppliers,
     loading,
-    isLoading: loading, // Alias for compatibility
+    isLoading,
     error,
     refetch: fetchSuppliers,
     addSupplier,

@@ -11,6 +11,7 @@ import { Supplier } from '@/types/supplier';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
+
 const SuppliersList: React.FC = () => {
   const {
     suppliers,
@@ -34,6 +35,7 @@ const SuppliersList: React.FC = () => {
     contactEmail: '',
     contactPhone: ''
   });
+
   const filteredSuppliers = suppliers.filter(supplier => supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) || supplier.category.toLowerCase().includes(searchQuery.toLowerCase()) || supplier.country.toLowerCase().includes(searchQuery.toLowerCase()));
   const getRiskBadgeStyle = (riskScore: number) => {
     const riskLevel = riskScore >= 85 ? 'Low' : riskScore >= 70 ? 'Medium' : 'High';
@@ -154,11 +156,12 @@ const SuppliersList: React.FC = () => {
     setSelectedSupplier(supplier);
     setIsEditDialogOpen(true);
   };
+
   if (error) {
     return <Card className="animate-fade-in">
         <CardContent className="p-6">
           <div className="text-center text-red-500">
-            <p>Error loading suppliers: {error.message}</p>
+            <p>Error loading suppliers: {error}</p>
             <Button onClick={() => window.location.reload()} className="mt-4">
               Retry
             </Button>
@@ -166,6 +169,7 @@ const SuppliersList: React.FC = () => {
         </CardContent>
       </Card>;
   }
+
   return <Card className="animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-bold flex items-center">

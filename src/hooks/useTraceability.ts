@@ -66,7 +66,7 @@ export const useProducts = () => {
         manufacturing_date: item.manufacturing_date,
         expiry_date: item.expiry_date,
         quantity: item.quantity || 0,
-        location: item.location,
+        location: item.location || '',
         status: item.status,
         created_by: item.created_by,
         created_at: item.created_at
@@ -85,12 +85,12 @@ export const useProducts = () => {
     fetchProducts();
   }, []);
 
-  const addProduct = async (productData: Partial<Product>) => {
+  const addProduct = async (productData: Omit<Product, 'id' | 'created_at'>) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .insert([productData])
+        .insert(productData)
         .select()
         .single();
 
@@ -142,12 +142,12 @@ export const useComponents = () => {
     fetchComponents();
   }, []);
 
-  const addComponent = async (componentData: Partial<Component>) => {
+  const addComponent = async (componentData: Omit<Component, 'id' | 'created_at'>) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('components')
-        .insert([componentData])
+        .insert(componentData)
         .select()
         .single();
 
@@ -191,9 +191,9 @@ export const useRecalls = () => {
       const transformedData = (data || []).map(item => ({
         id: item.id,
         title: item.title,
-        product_name: item.product_name,
+        product_name: item.product_name || 'Unknown Product',
         batch_numbers: item.batch_numbers || [],
-        reason: item.reason,
+        reason: item.reason || '',
         status: item.status,
         initiated_date: item.initiated_date || item.created_at,
         affected_quantity: item.affected_quantity || 0,
@@ -216,19 +216,19 @@ export const useRecalls = () => {
     fetchRecalls();
   }, []);
 
-  const addRecall = async (recallData: Partial<Recall>) => {
+  const addRecall = async (recallData: Omit<Recall, 'id' | 'created_at' | 'initiated_date' | 'affected_quantity' | 'customer_notifications' | 'retailer_notifications'>) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('recalls')
-        .insert([{
+        .insert({
           title: recallData.title,
           product_name: recallData.product_name,
           batch_numbers: recallData.batch_numbers,
           reason: recallData.reason,
           status: recallData.status,
           created_by: recallData.created_by
-        }])
+        })
         .select()
         .single();
 
