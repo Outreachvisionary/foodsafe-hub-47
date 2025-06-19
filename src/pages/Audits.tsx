@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAudits } from '@/hooks/useAudits';
 import { 
   Plus,
   Search,
@@ -20,16 +21,18 @@ import {
   AlertTriangle,
   FileCheck,
   BarChart3,
-  ClipboardList
+  ClipboardList,
+  RefreshCcw
 } from 'lucide-react';
 
 const Audits = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { audits, loading: auditsLoading, error, refetch } = useAudits();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('audits');
 
-  if (loading) {
+  if (authLoading || auditsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -44,113 +47,52 @@ const Audits = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Enhanced mock data
-  const audits = [
-    {
-      id: '1',
-      title: 'ISO 22000 Internal Audit',
-      description: 'Annual internal audit for food safety management system compliance',
-      status: 'completed',
-      auditType: 'Internal',
-      auditor: 'Sarah Johnson',
-      startDate: '2024-06-10',
-      dueDate: '2024-06-15',
-      completionDate: '2024-06-14',
-      location: 'Production Facility A',
-      findingsCount: 3,
-      department: 'Quality Assurance',
-      priority: 'High',
-      progress: 100
-    },
-    {
-      id: '2',
-      title: 'HACCP Verification Audit',
-      description: 'Quarterly verification of HACCP plan implementation and effectiveness',
-      status: 'in-progress',
-      auditType: 'Internal',
-      auditor: 'Mike Wilson',
-      startDate: '2024-06-18',
-      dueDate: '2024-06-25',
-      completionDate: null,
-      location: 'Kitchen & Processing Area',
-      findingsCount: 1,
-      department: 'Production',
-      priority: 'Medium',
-      progress: 65
-    },
-    {
-      id: '3',
-      title: 'Supplier Audit - ABC Ingredients',
-      description: 'On-site audit of key ingredient supplier for annual qualification',
-      status: 'scheduled',
-      auditType: 'External',
-      auditor: 'John Smith',
-      startDate: '2024-07-01',
-      dueDate: '2024-07-03',
-      completionDate: null,
-      location: 'Supplier Facility - ABC Ingredients',
-      findingsCount: 0,
-      department: 'Procurement',
-      priority: 'High',
-      progress: 0
-    },
-    {
-      id: '4',
-      title: 'BRC Global Standard Audit',
-      description: 'Third-party certification audit for BRC Global Standard compliance',
-      status: 'overdue',
-      auditType: 'External',
-      auditor: 'External Auditor',
-      startDate: '2024-05-20',
-      dueDate: '2024-05-25',
-      completionDate: null,
-      location: 'All Facilities',
-      findingsCount: 5,
-      department: 'Quality Assurance',
-      priority: 'Critical',
-      progress: 30
-    }
-  ];
+  if (error) {
+    return (
+      <ProtectedSidebarLayout>
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-4">Error loading audits: {error}</p>
+            <Button onClick={refetch}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </ProtectedSidebarLayout>
+    );
+  }
 
   const auditStats = {
     totalAudits: audits.length,
-    completed: audits.filter(a => a.status === 'completed').length,
-    inProgress: audits.filter(a => a.status === 'in-progress').length,
-    overdue: audits.filter(a => a.status === 'overdue').length,
-    scheduled: audits.filter(a => a.status === 'scheduled').length
+    completed: audits.filter(a => a.status === 'Completed').length,
+    inProgress: audits.filter(a => a.status === 'In Progress').length,
+    overdue: audits.filter(a => a.status === 'Overdue').length,
+    scheduled: audits.filter(a => a.status === 'Scheduled').length
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'scheduled': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Critical': return 'bg-red-100 text-red-800';
-      case 'High': return 'bg-orange-100 text-orange-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Low': return 'bg-green-100 text-green-800';
+      case 'Completed': return 'bg-green-100 text-green-800';
+      case 'In Progress': return 'bg-blue-100 text-blue-800';
+      case 'Scheduled': return 'bg-yellow-100 text-yellow-800';
+      case 'Overdue': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'overdue': return <AlertTriangle className="h-4 w-4" />;
+      case 'Completed': return <CheckCircle className="h-4 w-4" />;
+      case 'Overdue': return <AlertTriangle className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
 
   const filteredAudits = audits.filter(audit => {
     const matchesSearch = audit.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         audit.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         (audit.description && audit.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus = filterStatus === 'all' || audit.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -166,10 +108,16 @@ const Audits = () => {
                 Manage internal and external audits, track compliance, and monitor findings
               </p>
             </div>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Schedule New Audit
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={refetch}>
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule New Audit
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -262,10 +210,10 @@ const Audits = () => {
                       onChange={(e) => setFilterStatus(e.target.value)}
                     >
                       <option value="all">All Status</option>
-                      <option value="scheduled">Scheduled</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="overdue">Overdue</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Overdue">Overdue</option>
                     </select>
                     <Button variant="outline">
                       <Filter className="h-4 w-4 mr-2" />
@@ -297,58 +245,42 @@ const Audits = () => {
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
                         <Badge className={getStatusColor(audit.status)}>
-                          {audit.status.replace('-', ' ')}
+                          {audit.status}
                         </Badge>
                         <Badge variant="outline">
-                          {audit.auditType}
-                        </Badge>
-                        <Badge className={getPriorityColor(audit.priority)}>
-                          {audit.priority}
+                          {audit.audit_type}
                         </Badge>
                       </div>
                       
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          <span>{audit.auditor}</span>
+                          <span>{audit.assigned_to}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{audit.location}</span>
-                        </div>
+                        {audit.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{audit.location}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          <span>{audit.startDate} - {audit.dueDate}</span>
+                          <span>{audit.start_date} - {audit.due_date}</span>
                         </div>
-                        {audit.findingsCount > 0 && (
+                        {audit.findings_count > 0 && (
                           <div className="flex items-center gap-2">
                             <FileCheck className="h-4 w-4 text-orange-500" />
-                            <span>{audit.findingsCount} findings</span>
+                            <span>{audit.findings_count} findings</span>
                           </div>
                         )}
                       </div>
-
-                      {audit.status === 'in-progress' && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>Progress</span>
-                            <span>{audit.progress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${audit.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
                       
                       <div className="flex gap-2 pt-2">
                         <Button variant="outline" size="sm" className="flex-1">
                           View Details
                         </Button>
                         <Button size="sm" className="flex-1">
-                          {audit.status === 'scheduled' ? 'Start' : 'Continue'}
+                          {audit.status === 'Scheduled' ? 'Start' : 'Continue'}
                         </Button>
                       </div>
                     </div>
@@ -356,6 +288,17 @@ const Audits = () => {
                 </Card>
               ))}
             </div>
+
+            {filteredAudits.length === 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No audits found matching your criteria</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="findings">

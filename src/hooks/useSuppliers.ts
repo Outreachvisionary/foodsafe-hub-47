@@ -1,0 +1,54 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Supplier {
+  id: string;
+  name: string;
+  category: string;
+  country: string;
+  compliance_status: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  products: string[];
+  status: string;
+  risk_score: number;
+  last_audit_date?: string;
+  created_at?: string;
+}
+
+export const useSuppliers = () => {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (err) {
+      console.error('Error fetching suppliers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch suppliers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  return {
+    suppliers,
+    loading,
+    error,
+    refetch: fetchSuppliers
+  };
+};

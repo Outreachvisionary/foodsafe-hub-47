@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { 
   Plus,
   RefreshCcw,
@@ -28,12 +29,13 @@ import {
 } from 'lucide-react';
 
 const SupplierManagement = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { suppliers, loading: suppliersLoading, error, refetch } = useSuppliers();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('suppliers');
 
-  if (loading) {
+  if (authLoading || suppliersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -48,85 +50,22 @@ const SupplierManagement = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Enhanced mock data
-  const suppliers = [
-    {
-      id: '1',
-      name: 'Fresh Produce Co.',
-      category: 'Raw Materials',
-      status: 'Approved',
-      riskLevel: 'Low',
-      riskScore: 85,
-      country: 'United States',
-      contactName: 'John Smith',
-      contactEmail: 'john@freshproduce.com',
-      contactPhone: '+1 (555) 123-4567',
-      productsSupplied: ['Organic Vegetables', 'Fresh Fruits', 'Herbs'],
-      lastAuditDate: '2024-03-15',
-      nextAuditDate: '2024-09-15',
-      complianceScore: 92,
-      certifications: ['USDA Organic', 'GAP Certified'],
-      yearEstablished: 1995,
-      annualVolume: '$2.5M'
-    },
-    {
-      id: '2',
-      name: 'Pacific Seafood Ltd.',
-      category: 'Proteins',
-      status: 'Under Review',
-      riskLevel: 'Medium',
-      riskScore: 72,
-      country: 'Canada',
-      contactName: 'Sarah Johnson',
-      contactEmail: 'sarah@pacificseafood.ca',
-      contactPhone: '+1 (604) 987-6543',
-      productsSupplied: ['Wild Salmon', 'Sustainable Tuna', 'Shellfish'],
-      lastAuditDate: '2024-01-20',
-      nextAuditDate: '2024-07-20',
-      complianceScore: 78,
-      certifications: ['MSC Certified', 'ASC Certified'],
-      yearEstablished: 2001,
-      annualVolume: '$1.8M'
-    },
-    {
-      id: '3',
-      name: 'Global Spices Inc.',
-      category: 'Ingredients',
-      status: 'Pending Approval',
-      riskLevel: 'High',
-      riskScore: 45,
-      country: 'India',
-      contactName: 'Raj Patel',
-      contactEmail: 'raj@globalspices.in',
-      contactPhone: '+91 98765 43210',
-      productsSupplied: ['Turmeric', 'Black Pepper', 'Cardamom'],
-      lastAuditDate: null,
-      nextAuditDate: '2024-08-01',
-      complianceScore: 65,
-      certifications: ['ISO 22000'],
-      yearEstablished: 1987,
-      annualVolume: '$850K'
-    },
-    {
-      id: '4',
-      name: 'Premium Packaging Solutions',
-      category: 'Packaging',
-      status: 'Approved',
-      riskLevel: 'Low',
-      riskScore: 88,
-      country: 'Germany',
-      contactName: 'Klaus Mueller',
-      contactEmail: 'klaus@premiumpack.de',
-      contactPhone: '+49 30 12345678',
-      productsSupplied: ['Food Grade Containers', 'Labels', 'Protective Packaging'],
-      lastAuditDate: '2024-02-10',
-      nextAuditDate: '2024-08-10',
-      complianceScore: 95,
-      certifications: ['BRC Packaging', 'ISO 9001'],
-      yearEstablished: 1975,
-      annualVolume: '$3.2M'
-    }
-  ];
+  if (error) {
+    return (
+      <ProtectedSidebarLayout>
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-4">Error loading suppliers: {error}</p>
+            <Button onClick={refetch}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </ProtectedSidebarLayout>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -139,13 +78,16 @@ const SupplierManagement = () => {
     }
   };
 
-  const getRiskColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'Low': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'High': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getRiskColor = (riskScore: number) => {
+    if (riskScore >= 80) return 'bg-green-100 text-green-800';
+    if (riskScore >= 60) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getRiskLevel = (riskScore: number) => {
+    if (riskScore >= 80) return 'Low';
+    if (riskScore >= 60) return 'Medium';
+    return 'High';
   };
 
   const getStatusIcon = (status: string) => {
@@ -169,8 +111,8 @@ const SupplierManagement = () => {
     approvedSuppliers: suppliers.filter(s => s.status === 'Approved').length,
     underReview: suppliers.filter(s => s.status === 'Under Review').length,
     pendingApproval: suppliers.filter(s => s.status === 'Pending Approval').length,
-    highRisk: suppliers.filter(s => s.riskLevel === 'High').length,
-    averageScore: Math.round(suppliers.reduce((acc, s) => acc + s.riskScore, 0) / suppliers.length)
+    highRisk: suppliers.filter(s => s.risk_score < 60).length,
+    averageScore: suppliers.length > 0 ? Math.round(suppliers.reduce((acc, s) => acc + s.risk_score, 0) / suppliers.length) : 0
   };
 
   return (
@@ -185,7 +127,7 @@ const SupplierManagement = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={refetch}>
                 <RefreshCcw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -321,7 +263,7 @@ const SupplierManagement = () => {
                       <div className="flex-1">
                         <CardTitle className="text-lg mb-1">{supplier.name}</CardTitle>
                         <CardDescription>
-                          {supplier.category} • Est. {supplier.yearEstablished}
+                          {supplier.category} • {supplier.country}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
@@ -335,8 +277,8 @@ const SupplierManagement = () => {
                         <Badge className={getStatusColor(supplier.status)}>
                           {supplier.status}
                         </Badge>
-                        <Badge className={getRiskColor(supplier.riskLevel)}>
-                          {supplier.riskLevel} Risk
+                        <Badge className={getRiskColor(supplier.risk_score)}>
+                          {getRiskLevel(supplier.risk_score)} Risk
                         </Badge>
                         <Badge variant="outline">
                           {supplier.country}
@@ -347,13 +289,13 @@ const SupplierManagement = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Risk Score</span>
-                          <span className={supplier.riskScore >= 80 ? 'text-green-600' : 
-                                         supplier.riskScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                            {supplier.riskScore}/100
+                          <span className={supplier.risk_score >= 80 ? 'text-green-600' : 
+                                         supplier.risk_score >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                            {supplier.risk_score}/100
                           </span>
                         </div>
                         <Progress 
-                          value={supplier.riskScore} 
+                          value={supplier.risk_score} 
                           className="h-2"
                         />
                       </div>
@@ -361,33 +303,29 @@ const SupplierManagement = () => {
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          <span>{supplier.contactName}</span>
+                          <span>{supplier.contact_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4" />
-                          <span className="truncate">{supplier.contactEmail}</span>
+                          <span className="truncate">{supplier.contact_email}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
-                          <span>{supplier.contactPhone}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>{supplier.annualVolume} annual volume</span>
+                          <span>{supplier.contact_phone}</span>
                         </div>
                       </div>
 
                       <div className="pt-2">
                         <p className="text-xs text-muted-foreground mb-2">Products Supplied:</p>
                         <div className="flex flex-wrap gap-1">
-                          {supplier.productsSupplied.slice(0, 2).map((product, index) => (
+                          {supplier.products.slice(0, 2).map((product, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {product}
                             </Badge>
                           ))}
-                          {supplier.productsSupplied.length > 2 && (
+                          {supplier.products.length > 2 && (
                             <Badge variant="secondary" className="text-xs">
-                              +{supplier.productsSupplied.length - 2} more
+                              +{supplier.products.length - 2} more
                             </Badge>
                           )}
                         </div>
@@ -406,6 +344,17 @@ const SupplierManagement = () => {
                 </Card>
               ))}
             </div>
+
+            {filteredSuppliers.length === 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No suppliers found matching your criteria</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="approval">

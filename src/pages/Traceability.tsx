@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useProducts, useComponents, useRecalls } from '@/hooks/useTraceability';
 import { 
   RefreshCcw, 
   TrendingUp, 
@@ -25,11 +26,14 @@ import {
 } from 'lucide-react';
 
 const Traceability = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { products, loading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts();
+  const { components, loading: componentsLoading, error: componentsError, refetch: refetchComponents } = useComponents();
+  const { recalls, loading: recallsLoading, error: recallsError, refetch: refetchRecalls } = useRecalls();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
 
-  if (loading) {
+  if (authLoading || productsLoading || componentsLoading || recallsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -44,112 +48,30 @@ const Traceability = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Enhanced mock data
-  const products = [
-    {
-      id: '1',
-      name: 'Organic Apple Juice',
-      batchNumber: 'APJ-2024-0615-001',
-      manufacturingDate: '2024-06-15',
-      expiryDate: '2024-12-15',
-      quantity: 500,
-      location: 'Warehouse A',
-      status: 'In Stock',
-      supplier: 'Fresh Orchards Co.',
-      components: ['Organic Apples', 'Citric Acid', 'Natural Flavoring']
-    },
-    {
-      id: '2',
-      name: 'Premium Beef Patties',
-      batchNumber: 'BP-2024-0618-002',
-      manufacturingDate: '2024-06-18',
-      expiryDate: '2024-07-18',
-      quantity: 200,
-      location: 'Cold Storage B',
-      status: 'Distributed',
-      supplier: 'Prime Cattle Ranch',
-      components: ['Ground Beef', 'Seasoning Mix', 'Natural Preservatives']
-    },
-    {
-      id: '3',
-      name: 'Artisan Bread',
-      batchNumber: 'AB-2024-0620-003',
-      manufacturingDate: '2024-06-20',
-      expiryDate: '2024-06-25',
-      quantity: 150,
-      location: 'Distribution Center',
-      status: 'Recalled',
-      supplier: 'Golden Fields Bakery',
-      components: ['Wheat Flour', 'Yeast', 'Salt', 'Water']
-    }
-  ];
-
-  const components = [
-    {
-      id: '1',
-      name: 'Organic Apples',
-      batchNumber: 'OA-2024-0610-001',
-      supplier: 'Fresh Orchards Co.',
-      receivedDate: '2024-06-10',
-      expiryDate: '2024-07-10',
-      quantity: 1000,
-      status: 'Active'
-    },
-    {
-      id: '2',
-      name: 'Ground Beef',
-      batchNumber: 'GB-2024-0617-001',
-      supplier: 'Prime Cattle Ranch',
-      receivedDate: '2024-06-17',
-      expiryDate: '2024-06-27',
-      quantity: 300,
-      status: 'Active'
-    },
-    {
-      id: '3',
-      name: 'Wheat Flour',
-      batchNumber: 'WF-2024-0615-002',
-      supplier: 'Golden Fields Mill',
-      receivedDate: '2024-06-15',
-      expiryDate: '2024-12-15',
-      quantity: 800,
-      status: 'Recalled'
-    }
-  ];
-
-  const recalls = [
-    {
-      id: '1',
-      title: 'Artisan Bread Recall - Allergen Alert',
-      productName: 'Artisan Bread',
-      batchNumbers: ['AB-2024-0620-003', 'AB-2024-0621-004'],
-      reason: 'Undeclared nuts allergen',
-      status: 'In Progress',
-      initiatedDate: '2024-06-22',
-      affectedQuantity: 300,
-      customerNotifications: 45,
-      retailerNotifications: 12
-    },
-    {
-      id: '2',
-      title: 'Organic Apple Juice - Quality Issue',
-      productName: 'Organic Apple Juice',
-      batchNumbers: ['APJ-2024-0610-001'],
-      reason: 'Off-taste complaints',
-      status: 'Completed',
-      initiatedDate: '2024-06-12',
-      affectedQuantity: 150,
-      customerNotifications: 23,
-      retailerNotifications: 8
-    }
-  ];
+  if (productsError || componentsError || recallsError) {
+    return (
+      <ProtectedSidebarLayout>
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-4">Error loading data: {productsError || componentsError || recallsError}</p>
+            <Button onClick={() => { refetchProducts(); refetchComponents(); refetchRecalls(); }}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </ProtectedSidebarLayout>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'In Stock': return 'bg-green-100 text-green-800';
       case 'Distributed': return 'bg-blue-100 text-blue-800';
       case 'Recalled': return 'bg-red-100 text-red-800';
-      case 'Active': return 'bg-green-100 text-green-800';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'recalled': return 'bg-red-100 text-red-800';
       case 'In Progress': return 'bg-yellow-100 text-yellow-800';
       case 'Completed': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -158,12 +80,12 @@ const Traceability = () => {
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    product.batch_lot_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredComponents = components.filter(component =>
     component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    component.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    component.batch_lot_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -178,7 +100,7 @@ const Traceability = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => { refetchProducts(); refetchComponents(); refetchRecalls(); }}>
                 <RefreshCcw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -260,13 +182,19 @@ const Traceability = () => {
                       <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">{product.batchNumber}</p>
+                          <p className="text-sm text-muted-foreground">{product.batch_lot_number}</p>
                         </div>
                         <Badge className={getStatusColor(product.status)}>
                           {product.status}
                         </Badge>
                       </div>
                     ))}
+                    {products.length === 0 && (
+                      <div className="text-center py-4">
+                        <Package className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-gray-500 text-sm">No products found</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -288,6 +216,12 @@ const Traceability = () => {
                         </Badge>
                       </div>
                     ))}
+                    {recalls.length === 0 && (
+                      <div className="text-center py-4">
+                        <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-gray-500 text-sm">No recalls found</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -326,7 +260,7 @@ const Traceability = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{product.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{product.batchNumber}</p>
+                        <p className="text-sm text-muted-foreground">{product.batch_lot_number}</p>
                       </div>
                       <Badge className={getStatusColor(product.status)}>
                         {product.status}
@@ -338,38 +272,24 @@ const Traceability = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <p className="text-muted-foreground">Manufactured</p>
-                          <p className="font-medium">{product.manufacturingDate}</p>
+                          <p className="font-medium">{new Date(product.manufacturing_date).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Expires</p>
-                          <p className="font-medium">{product.expiryDate}</p>
+                          <p className="font-medium">{product.expiry_date ? new Date(product.expiry_date).toLocaleDateString() : 'N/A'}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{product.location}</span>
-                      </div>
+                      {product.location && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{product.location}</span>
+                        </div>
+                      )}
                       
                       <div className="flex items-center gap-2 text-sm">
                         <Archive className="h-4 w-4 text-muted-foreground" />
                         <span>{product.quantity} units</span>
-                      </div>
-
-                      <div className="pt-2">
-                        <p className="text-xs text-muted-foreground mb-2">Components:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {product.components.slice(0, 2).map((component, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {component}
-                            </Badge>
-                          ))}
-                          {product.components.length > 2 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{product.components.length - 2} more
-                            </Badge>
-                          )}
-                        </div>
                       </div>
                       
                       <div className="flex gap-2 pt-2">
@@ -386,6 +306,17 @@ const Traceability = () => {
                 </Card>
               ))}
             </div>
+
+            {filteredProducts.length === 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No products found matching your criteria</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="components" className="space-y-6">
@@ -397,7 +328,7 @@ const Traceability = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{component.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{component.batchNumber}</p>
+                        <p className="text-sm text-muted-foreground">{component.batch_lot_number}</p>
                       </div>
                       <Badge className={getStatusColor(component.status)}>
                         {component.status}
@@ -406,26 +337,23 @@ const Traceability = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Truck className="h-4 w-4 text-muted-foreground" />
-                        <span>{component.supplier}</span>
-                      </div>
-                      
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <p className="text-muted-foreground">Received</p>
-                          <p className="font-medium">{component.receivedDate}</p>
+                          <p className="font-medium">{new Date(component.received_date).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Expires</p>
-                          <p className="font-medium">{component.expiryDate}</p>
+                          <p className="font-medium">{component.expiry_date ? new Date(component.expiry_date).toLocaleDateString() : 'N/A'}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm">
-                        <Archive className="h-4 w-4 text-muted-foreground" />
-                        <span>{component.quantity} units available</span>
-                      </div>
+                      {component.quantity && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Archive className="h-4 w-4 text-muted-foreground" />
+                          <span>{component.quantity} units available</span>
+                        </div>
+                      )}
                       
                       <div className="flex gap-2 pt-2">
                         <Button variant="outline" size="sm" className="flex-1">
@@ -441,6 +369,17 @@ const Traceability = () => {
                 </Card>
               ))}
             </div>
+
+            {filteredComponents.length === 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <Factory className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No components found matching your criteria</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="recalls" className="space-y-6">
@@ -452,7 +391,7 @@ const Traceability = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{recall.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{recall.productName}</p>
+                        <p className="text-sm text-muted-foreground">{recall.product_name}</p>
                       </div>
                       <Badge className={getStatusColor(recall.status)}>
                         {recall.status}
@@ -468,19 +407,19 @@ const Traceability = () => {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Initiated Date</p>
-                          <p className="font-medium">{recall.initiatedDate}</p>
+                          <p className="font-medium">{new Date(recall.initiated_date).toLocaleDateString()}</p>
                         </div>
                       </div>
                       
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Affected Quantity</p>
-                          <p className="font-medium">{recall.affectedQuantity} units</p>
+                          <p className="font-medium">{recall.affected_quantity} units</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Batch Numbers</p>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {recall.batchNumbers.map((batch, index) => (
+                            {recall.batch_numbers.map((batch, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {batch}
                               </Badge>
@@ -492,11 +431,11 @@ const Traceability = () => {
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Customer Notifications</p>
-                          <p className="font-medium">{recall.customerNotifications} sent</p>
+                          <p className="font-medium">{recall.customer_notifications} sent</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Retailer Notifications</p>
-                          <p className="font-medium">{recall.retailerNotifications} sent</p>
+                          <p className="font-medium">{recall.retailer_notifications} sent</p>
                         </div>
                       </div>
                     </div>
@@ -516,6 +455,17 @@ const Traceability = () => {
                 </Card>
               ))}
             </div>
+
+            {recalls.length === 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">No recalls found</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="reports">
