@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Product {
@@ -57,7 +57,22 @@ export const useProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Transform data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        batch_lot_number: item.batch_lot_number,
+        manufacturing_date: item.manufacturing_date,
+        expiry_date: item.expiry_date,
+        quantity: item.quantity || 0,
+        location: item.location,
+        status: item.status,
+        created_by: item.created_by,
+        created_at: item.created_at
+      }));
+      
+      setProducts(transformedData);
     } catch (err) {
       console.error('Error fetching products:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch products');
@@ -70,11 +85,33 @@ export const useProducts = () => {
     fetchProducts();
   }, []);
 
+  const addProduct = async (productData: Partial<Product>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      await fetchProducts();
+      return data;
+    } catch (err) {
+      console.error('Error adding product:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add product');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     products,
     loading,
     error,
-    refetch: fetchProducts
+    refetch: fetchProducts,
+    addProduct
   };
 };
 
@@ -105,11 +142,33 @@ export const useComponents = () => {
     fetchComponents();
   }, []);
 
+  const addComponent = async (componentData: Partial<Component>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('components')
+        .insert([componentData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      await fetchComponents();
+      return data;
+    } catch (err) {
+      console.error('Error adding component:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add component');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     components,
     loading,
     error,
-    refetch: fetchComponents
+    refetch: fetchComponents,
+    addComponent
   };
 };
 
@@ -127,7 +186,24 @@ export const useRecalls = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRecalls(data || []);
+      
+      // Transform database data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        product_name: item.product_name,
+        batch_numbers: item.batch_numbers || [],
+        reason: item.reason,
+        status: item.status,
+        initiated_date: item.initiated_date || item.created_at,
+        affected_quantity: item.affected_quantity || 0,
+        customer_notifications: item.customer_notifications || 0,
+        retailer_notifications: item.retailer_notifications || 0,
+        created_by: item.created_by,
+        created_at: item.created_at
+      }));
+      
+      setRecalls(transformedData);
     } catch (err) {
       console.error('Error fetching recalls:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch recalls');
@@ -140,10 +216,56 @@ export const useRecalls = () => {
     fetchRecalls();
   }, []);
 
+  const addRecall = async (recallData: Partial<Recall>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('recalls')
+        .insert([{
+          title: recallData.title,
+          product_name: recallData.product_name,
+          batch_numbers: recallData.batch_numbers,
+          reason: recallData.reason,
+          status: recallData.status,
+          created_by: recallData.created_by
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      await fetchRecalls();
+      return data;
+    } catch (err) {
+      console.error('Error adding recall:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add recall');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     recalls,
     loading,
     error,
-    refetch: fetchRecalls
+    refetch: fetchRecalls,
+    addRecall
+  };
+};
+
+// Main hook that combines all functionality
+export const useTraceability = () => {
+  const products = useProducts();
+  const components = useComponents();
+  const recalls = useRecalls();
+
+  return {
+    ...products,
+    ...components,
+    ...recalls,
+    // Provide separate namespaced access if needed
+    loadProducts: products.refetch,
+    loadComponents: components.refetch,
+    loadRecalls: recalls.refetch
   };
 };

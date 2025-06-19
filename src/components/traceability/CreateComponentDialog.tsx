@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
-import { useTraceability } from '@/hooks/useTraceability';
+import { useComponents } from '@/hooks/useTraceability';
 
 const componentSchema = z.object({
   name: z.string().min(1, 'Component name is required'),
@@ -39,7 +39,7 @@ type ComponentFormValues = z.infer<typeof componentSchema>;
 
 const CreateComponentDialog: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { addComponent, loading } = useTraceability();
+  const { loading, addComponent } = useComponents();
 
   const form = useForm<ComponentFormValues>({
     resolver: zodResolver(componentSchema),

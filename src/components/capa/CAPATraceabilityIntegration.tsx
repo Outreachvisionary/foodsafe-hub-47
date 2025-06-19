@@ -1,30 +1,27 @@
 
 import React, { useState, useEffect } from 'react';
-import { useTraceability } from '@/hooks/useTraceability';
+import { useRecalls, useProducts } from '@/hooks/useTraceability';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Link as LinkIcon, AlertTriangle, Package } from 'lucide-react';
-import { Recall } from '@/types/traceability';
 
 interface CAPATraceabilityIntegrationProps {
   capaId: string;
 }
 
 const CAPATraceabilityIntegration: React.FC<CAPATraceabilityIntegrationProps> = ({ capaId }) => {
-  const { recalls, products, loadRecalls, loadProducts, addRecall, loading } = useTraceability();
-  const [linkedRecalls, setLinkedRecalls] = useState<Recall[]>([]);
+  const { recalls, loading: recallsLoading, refetch: refetchRecalls, addRecall } = useRecalls();
+  const { products, loading: productsLoading } = useProducts();
+  const [linkedRecalls, setLinkedRecalls] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadRecalls();
-    loadProducts();
-  }, [loadRecalls, loadProducts]);
+  const loading = recallsLoading || productsLoading;
 
   useEffect(() => {
     if (recalls.length > 0) {
       // Filter recalls that are linked to this CAPA
       const linked = recalls.filter(
-        recall => recall.description?.includes(capaId) || 
+        recall => recall.title?.includes(capaId) || 
                  recall.title?.toLowerCase().includes('capa')
       );
       setLinkedRecalls(linked);
@@ -34,15 +31,15 @@ const CAPATraceabilityIntegration: React.FC<CAPATraceabilityIntegrationProps> = 
   const handleCreateRecall = async () => {
     const newRecall = {
       title: `CAPA-Initiated Recall ${capaId.substring(0, 8)}`,
-      description: `This recall was initiated from CAPA ${capaId} to address potential product safety concerns.`,
-      recall_type: 'Actual' as const,
-      status: 'Scheduled' as const,
-      initiated_by: 'CAPA System',
-      recall_reason: `Product quality issue identified through CAPA process. Immediate recall required to ensure consumer safety.`
+      product_name: 'Associated Product',
+      batch_numbers: ['BATCH-001'],
+      reason: `Product quality issue identified through CAPA process. Immediate recall required to ensure consumer safety.`,
+      status: 'In Progress',
+      created_by: 'CAPA System'
     };
 
     await addRecall(newRecall);
-    loadRecalls();
+    refetchRecalls();
   };
 
   const getStatusColor = (status: string) => {
@@ -88,7 +85,7 @@ const CAPATraceabilityIntegration: React.FC<CAPATraceabilityIntegrationProps> = 
                           <LinkIcon className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium">{recall.title}</p>
-                            <p className="text-sm text-muted-foreground">{recall.recall_type} Recall</p>
+                            <p className="text-sm text-muted-foreground">Product: {recall.product_name}</p>
                           </div>
                         </div>
                         <Badge className={getStatusColor(recall.status)}>

@@ -17,6 +17,13 @@ export interface Audit {
   department?: string;
   created_by: string;
   created_at?: string;
+  // Legacy field mappings for compatibility
+  startDate: string;
+  dueDate: string;
+  auditType: string;
+  assignedTo: string;
+  createdBy: string;
+  findings?: number;
 }
 
 export const useAudits = () => {
@@ -33,7 +40,20 @@ export const useAudits = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAudits(data || []);
+      
+      // Transform data to include legacy field mappings
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        // Legacy field mappings for backward compatibility
+        startDate: item.start_date,
+        dueDate: item.due_date,
+        auditType: item.audit_type,
+        assignedTo: item.assigned_to,
+        createdBy: item.created_by,
+        findings: item.findings_count
+      }));
+      
+      setAudits(transformedData);
     } catch (err) {
       console.error('Error fetching audits:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch audits');
@@ -50,6 +70,7 @@ export const useAudits = () => {
     audits,
     loading,
     error,
-    refetch: fetchAudits
+    refetch: fetchAudits,
+    loadAudits: fetchAudits // Alias for compatibility
   };
 };

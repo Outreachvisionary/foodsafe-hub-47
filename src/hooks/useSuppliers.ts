@@ -45,10 +45,56 @@ export const useSuppliers = () => {
     fetchSuppliers();
   }, []);
 
+  const addSupplier = async (supplierData: Partial<Supplier>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('suppliers')
+        .insert([supplierData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      await fetchSuppliers();
+      return data;
+    } catch (err) {
+      console.error('Error adding supplier:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add supplier');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editSupplier = async (id: string, updates: Partial<Supplier>) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('suppliers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      await fetchSuppliers();
+      return data;
+    } catch (err) {
+      console.error('Error updating supplier:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update supplier');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     suppliers,
     loading,
+    isLoading: loading, // Alias for compatibility
     error,
-    refetch: fetchSuppliers
+    refetch: fetchSuppliers,
+    addSupplier,
+    editSupplier
   };
 };

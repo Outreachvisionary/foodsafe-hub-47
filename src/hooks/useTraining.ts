@@ -46,7 +46,14 @@ export const useTrainingSessions = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      // Transform data to ensure priority field is included
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        priority: item.priority || 'Medium' // Default priority if missing
+      }));
+      
+      setSessions(transformedData);
     } catch (err) {
       console.error('Error fetching training sessions:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch training sessions');
