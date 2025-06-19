@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, CheckCircle, Clock, AlertCircle, Search, Plus, FileText, TrendingUp } from 'lucide-react';
 import { useInternalAudits } from '@/hooks/useInternalAudits';
-import AuditCalendar from '@/components/audits/AuditCalendar';
-import AuditList from '@/components/audits/AuditList';
 
 const InternalAudits = () => {
   const { audits, loading, error, loadAudits } = useInternalAudits();
