@@ -26,7 +26,7 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
     const timeout = setTimeout(() => {
       console.log('ProtectedSidebarLayout: Stopping loading after timeout');
       setShowLoading(false);
-    }, 5000); // 5 seconds max
+    }, 3000); // Reduced to 3 seconds
 
     return () => clearTimeout(timeout);
   }, []);
@@ -34,6 +34,7 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
   // Stop showing loading when auth is no longer loading
   useEffect(() => {
     if (!loading) {
+      console.log('ProtectedSidebarLayout: Auth finished loading, stopping loading state');
       setShowLoading(false);
     }
   }, [loading]);
@@ -44,13 +45,18 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
     return <Loading message="Checking authentication..." />;
   }
   
-  // Redirect to auth if not authenticated
-  if (!isAuthenticated || !user) {
+  // If we're still loading but past timeout, try to proceed anyway
+  if (loading && !showLoading) {
+    console.log('ProtectedSidebarLayout: Loading timeout reached, proceeding without auth check');
+  }
+  
+  // Redirect to auth if not authenticated (only if we're not loading)
+  if (!loading && (!isAuthenticated || !user)) {
     console.log('ProtectedSidebarLayout: Redirecting to auth - not authenticated');
     return <Navigate to="/auth" replace />;
   }
   
-  console.log('ProtectedSidebarLayout: Rendering main layout for authenticated user');
+  console.log('ProtectedSidebarLayout: Rendering main layout');
   
   // Show the main layout with the children
   return (

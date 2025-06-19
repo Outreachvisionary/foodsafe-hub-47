@@ -26,20 +26,28 @@ const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  console.log('Documents page render:', { loading, hasUser: !!user });
+
+  // Simple loading check with timeout fallback
   if (loading) {
+    console.log('Documents: showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+          <p className="mt-2 text-sm text-muted-foreground">Loading documents...</p>
         </div>
       </div>
     );
   }
 
+  // If no user after loading, redirect to auth
   if (!user) {
+    console.log('Documents: no user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
+
+  console.log('Documents: rendering main content');
 
   // Mock data - replace with actual data fetching
   const documents = [
