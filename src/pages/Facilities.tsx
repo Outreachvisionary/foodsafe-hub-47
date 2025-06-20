@@ -1,39 +1,111 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { 
-  Plus,
-  Search,
-  Filter,
-  Building,
-  MapPin,
-  Phone,
-  Mail,
-  Users,
-  Activity,
-  AlertTriangle,
-  CheckCircle
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { LoadingState } from '@/components/ui/enhanced-loading';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import FacilityStatsCards from '@/components/facilities/FacilityStatsCards';
+import FacilityFiltersCard from '@/components/facilities/FacilityFiltersCard';
+import FacilityCard from '@/components/facilities/FacilityCard';
 
 const Facilities = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [facilities, setFacilities] = useState<any[]>([]);
 
-  if (loading) {
+  useEffect(() => {
+    // Simulate loading facilities data
+    const loadFacilities = async () => {
+      try {
+        setLoading(true);
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock data
+        const mockFacilities = [
+          {
+            id: '1',
+            name: 'Main Production Facility',
+            description: 'Primary manufacturing and processing facility',
+            address: '123 Industrial Blvd, Manufacturing City, MC 12345',
+            city: 'Manufacturing City',
+            state: 'MC',
+            country: 'United States',
+            contactEmail: 'facility1@company.com',
+            contactPhone: '+1 (555) 123-4567',
+            status: 'active',
+            employeeCount: 85,
+            activeStandards: 3,
+            complianceScore: 92,
+            lastAudit: '2024-05-15'
+          },
+          {
+            id: '2',
+            name: 'Distribution Center',
+            description: 'Warehousing and distribution operations',
+            address: '456 Logistics Ave, Distribution City, DC 67890',
+            city: 'Distribution City',
+            state: 'DC',
+            country: 'United States',
+            contactEmail: 'warehouse@company.com',
+            contactPhone: '+1 (555) 234-5678',
+            status: 'active',
+            employeeCount: 42,
+            activeStandards: 2,
+            complianceScore: 88,
+            lastAudit: '2024-04-20'
+          },
+          {
+            id: '3',
+            name: 'R&D Laboratory',
+            description: 'Research and development testing facility',
+            address: '789 Innovation Dr, Tech City, TC 54321',
+            city: 'Tech City',
+            state: 'TC',
+            country: 'United States',
+            contactEmail: 'lab@company.com',
+            contactPhone: '+1 (555) 345-6789',
+            status: 'maintenance',
+            employeeCount: 15,
+            activeStandards: 1,
+            complianceScore: 76,
+            lastAudit: '2024-03-10'
+          }
+        ];
+        
+        setFacilities(mockFacilities);
+      } catch (error) {
+        console.error('Error loading facilities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      loadFacilities();
+    }
+  }, [user]);
+
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <LoadingState 
+        isLoading={true} 
+        loadingComponent={
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        }
+      >
+        <div />
+      </LoadingState>
     );
   }
 
@@ -41,80 +113,20 @@ const Facilities = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Mock data - replace with actual data fetching
-  const facilities = [
-    {
-      id: '1',
-      name: 'Main Production Facility',
-      description: 'Primary manufacturing and processing facility',
-      address: '123 Industrial Blvd, Manufacturing City, MC 12345',
-      city: 'Manufacturing City',
-      state: 'MC',
-      country: 'United States',
-      contactEmail: 'facility1@company.com',
-      contactPhone: '+1 (555) 123-4567',
-      status: 'active',
-      employeeCount: 85,
-      activeStandards: 3,
-      complianceScore: 92,
-      lastAudit: '2024-05-15'
-    },
-    {
-      id: '2',
-      name: 'Distribution Center',
-      description: 'Warehousing and distribution operations',
-      address: '456 Logistics Ave, Distribution City, DC 67890',
-      city: 'Distribution City',
-      state: 'DC',
-      country: 'United States',
-      contactEmail: 'warehouse@company.com',
-      contactPhone: '+1 (555) 234-5678',
-      status: 'active',
-      employeeCount: 42,
-      activeStandards: 2,
-      complianceScore: 88,
-      lastAudit: '2024-04-20'
-    },
-    {
-      id: '3',
-      name: 'R&D Laboratory',
-      description: 'Research and development testing facility',
-      address: '789 Innovation Dr, Tech City, TC 54321',
-      city: 'Tech City',
-      state: 'TC',
-      country: 'United States',
-      contactEmail: 'lab@company.com',
-      contactPhone: '+1 (555) 345-6789',
-      status: 'maintenance',
-      employeeCount: 15,
-      activeStandards: 1,
-      complianceScore: 76,
-      lastAudit: '2024-03-10'
-    }
-  ];
+  // Filter facilities based on search and status
+  const filteredFacilities = facilities.filter(facility => {
+    const matchesSearch = facility.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         facility.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         facility.city.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || facility.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <CheckCircle className="h-4 w-4" />;
-      case 'maintenance': return <AlertTriangle className="h-4 w-4" />;
-      default: return <Activity className="h-4 w-4" />;
-    }
-  };
-
-  const getComplianceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+  const facilityStats = {
+    total: facilities.length,
+    active: facilities.filter(f => f.status === 'active').length,
+    totalEmployees: facilities.reduce((sum, f) => sum + f.employeeCount, 0),
+    avgCompliance: Math.round(facilities.reduce((sum, f) => sum + f.complianceScore, 0) / facilities.length) || 0
   };
 
   return (
@@ -135,155 +147,37 @@ const Facilities = () => {
           </div>
         </div>
 
-        {/* Facilities Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Facilities</p>
-                  <p className="text-2xl font-bold">3</p>
-                </div>
-                <Building className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold">2</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-                  <p className="text-2xl font-bold">142</p>
-                </div>
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg Compliance</p>
-                  <p className="text-2xl font-bold">85%</p>
-                </div>
-                <Activity className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search facilities..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <select 
-                  className="px-3 py-2 border rounded-md"
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  More Filters
-                </Button>
-              </div>
+        <LoadingState
+          isLoading={loading}
+          error={null}
+          loadingComponent={
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Loading facilities...</p>
             </div>
-          </CardContent>
-        </Card>
+          }
+        >
+          <ErrorBoundary>
+            <FacilityStatsCards stats={facilityStats} />
+          </ErrorBoundary>
 
-        {/* Facilities Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {facilities.map((facility) => (
-            <Card key={facility.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">{facility.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {facility.description}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    {getStatusIcon(facility.status)}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={getStatusColor(facility.status)}>
-                      {facility.status}
-                    </Badge>
-                    <Badge variant="outline">
-                      {facility.activeStandards} standards
-                    </Badge>
-                    <Badge variant="secondary" className={getComplianceColor(facility.complianceScore)}>
-                      {facility.complianceScore}% compliance
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{facility.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span>{facility.contactEmail}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      <span>{facility.contactPhone}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{facility.employeeCount} employees</span>
-                      </div>
-                      <span>Last audit: {facility.lastAudit}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      View Details
-                    </Button>
-                    <Button size="sm" className="flex-1">
-                      Manage
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          <ErrorBoundary>
+            <FacilityFiltersCard
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              filterStatus={filterStatus}
+              onFilterStatusChange={setFilterStatus}
+            />
+          </ErrorBoundary>
+
+          <ErrorBoundary>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredFacilities.map((facility) => (
+                <FacilityCard key={facility.id} facility={facility} />
+              ))}
+            </div>
+          </ErrorBoundary>
+        </LoadingState>
       </div>
     </ProtectedSidebarLayout>
   );
