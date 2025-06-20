@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import { useInternalAudits } from '@/hooks/useInternalAudits';
+import { LoadingState } from '@/components/ui/enhanced-loading';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import AuditStatsCards from '@/components/audits/AuditStatsCards';
 import AuditFilters from '@/components/audits/AuditFilters';
 import AuditListView from '@/components/audits/AuditListView';
@@ -15,27 +17,6 @@ const InternalAudits = () => {
   const { audits, loading, error, loadAudits } = useInternalAudits();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-
-  if (loading) {
-    return (
-      <ProtectedSidebarLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </ProtectedSidebarLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <ProtectedSidebarLayout>
-        <div className="text-center py-8">
-          <p className="text-red-600 mb-4">Error loading audits: {error}</p>
-          <Button onClick={loadAudits}>Try Again</Button>
-        </div>
-      </ProtectedSidebarLayout>
-    );
-  }
 
   const filteredAudits = audits.filter(audit => {
     const matchesSearch = audit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,34 +51,53 @@ const InternalAudits = () => {
           </div>
         </div>
 
-        <AuditStatsCards stats={auditStats} />
+        <LoadingState
+          isLoading={loading}
+          error={error}
+          errorComponent={
+            <div className="text-center py-8">
+              <p className="text-red-600 mb-4">Error loading audits: {error}</p>
+              <Button onClick={loadAudits}>Try Again</Button>
+            </div>
+          }
+        >
+          <ErrorBoundary>
+            <AuditStatsCards stats={auditStats} />
+          </ErrorBoundary>
 
-        <Tabs defaultValue="list" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="list">Audit List</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="list" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="list">Audit List</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="list" className="space-y-6">
-            <AuditFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedStatus={selectedStatus}
-              onStatusChange={setSelectedStatus}
-              stats={auditStats}
-            />
-            <AuditListView audits={filteredAudits} />
-          </TabsContent>
+            <TabsContent value="list" className="space-y-6">
+              <ErrorBoundary>
+                <AuditFilters
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  selectedStatus={selectedStatus}
+                  onStatusChange={setSelectedStatus}
+                  stats={auditStats}
+                />
+                <AuditListView audits={filteredAudits} />
+              </ErrorBoundary>
+            </TabsContent>
 
-          <TabsContent value="calendar">
-            <AuditCalendarView />
-          </TabsContent>
+            <TabsContent value="calendar">
+              <ErrorBoundary>
+                <AuditCalendarView audits={audits} />
+              </ErrorBoundary>
+            </TabsContent>
 
-          <TabsContent value="analytics">
-            <AuditAnalyticsView />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="analytics">
+              <ErrorBoundary>
+                <AuditAnalyticsView audits={audits} />
+              </ErrorBoundary>
+            </TabsContent>
+          </Tabs>
+        </LoadingState>
       </div>
     </ProtectedSidebarLayout>
   );
