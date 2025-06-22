@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import ModuleIntegrationService from './moduleIntegrationService';
 import { toast } from 'sonner';
@@ -127,6 +128,7 @@ export class WorkflowOrchestrationService {
     const { data: ncData, error } = await supabase
       .from('non_conformances')
       .insert({
+        title: data.title || 'NC from Audit Finding',
         item_name: data.title || 'NC from Audit Finding',
         description: data.description,
         item_category: 'Other',

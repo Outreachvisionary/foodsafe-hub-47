@@ -93,6 +93,7 @@ export class ModuleIntegrationService {
           const { data: ncData, error } = await supabase
             .from('non_conformances')
             .insert({
+              title: data.findingTitle || 'Audit Finding Item',
               item_name: data.findingTitle || 'Audit Finding Item',
               description: data.findingDescription,
               item_category: 'Other',
