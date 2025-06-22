@@ -18,6 +18,7 @@ import {
   BoxesIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Loading from '@/components/Loading';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -25,14 +26,7 @@ const Index = () => {
 
   // Show loading while auth is being checked
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="Loading dashboard..." />;
   }
 
   // Redirect to auth if not authenticated
@@ -91,6 +85,13 @@ const Index = () => {
       color: 'bg-pink-500'
     },
     {
+      title: 'Facilities',
+      description: 'Manage facility information',
+      icon: Building,
+      href: '/facilities',
+      color: 'bg-cyan-500'
+    },
+    {
       title: 'Reports',
       description: 'Analytics and reporting',
       icon: BarChart3,
@@ -102,7 +103,7 @@ const Index = () => {
       description: 'User management and roles',
       icon: Users,
       href: '/users',
-      color: 'bg-cyan-500'
+      color: 'bg-gray-500'
     }
   ];
 

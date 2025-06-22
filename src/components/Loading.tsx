@@ -29,21 +29,9 @@ const Loading: React.FC<LoadingProps> = ({
       <div className="text-center">
         <div className={`animate-spin rounded-full border-b-2 border-primary mx-auto mb-4 ${sizeClasses[size]}`}></div>
         <p className="text-muted-foreground text-lg">{message}</p>
-        {message.includes('authentication') && (
-          <>
-            <div className="mt-4 text-sm text-muted-foreground/70">
-              Verifying your session...
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground/50">
-              This should only take a moment
-            </div>
-          </>
-        )}
-        {message.includes('Loading dashboard') && (
-          <div className="mt-2 text-xs text-muted-foreground/50">
-            Preparing your dashboard
-          </div>
-        )}
+        <div className="mt-2 text-xs text-muted-foreground/50">
+          Please wait while we load your content
+        </div>
       </div>
     </div>
   );

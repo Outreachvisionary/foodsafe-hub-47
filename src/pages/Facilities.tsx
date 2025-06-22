@@ -17,12 +17,16 @@ const Facilities = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [facilities, setFacilities] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading facilities data
     const loadFacilities = async () => {
+      if (!user) return;
+      
       try {
         setLoading(true);
+        setError(null);
+        
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -79,16 +83,15 @@ const Facilities = () => {
         ];
         
         setFacilities(mockFacilities);
-      } catch (error) {
-        console.error('Error loading facilities:', error);
+      } catch (err) {
+        console.error('Error loading facilities:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load facilities');
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      loadFacilities();
-    }
+    loadFacilities();
   }, [user]);
 
   if (authLoading) {
@@ -149,11 +152,17 @@ const Facilities = () => {
 
         <LoadingState
           isLoading={loading}
-          error={null}
+          error={error}
           loadingComponent={
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               <p className="mt-2 text-sm text-muted-foreground">Loading facilities...</p>
+            </div>
+          }
+          errorComponent={
+            <div className="text-center py-8">
+              <p className="text-red-600 mb-4">Error: {error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
             </div>
           }
         >
