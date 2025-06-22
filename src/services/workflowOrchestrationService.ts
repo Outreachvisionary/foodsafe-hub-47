@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import ModuleIntegrationService from './moduleIntegrationService';
 import { toast } from 'sonner';
@@ -40,7 +39,7 @@ export class WorkflowOrchestrationService {
           name: 'Create Non-Conformance',
           moduleType: 'non-conformance',
           actionType: 'create',
-          requiredData: ['title', 'description', 'severity'],
+          requiredData: ['item_name', 'description', 'severity'],
           autoExecute: true,
           approvalRequired: false
         },
@@ -127,10 +126,9 @@ export class WorkflowOrchestrationService {
     const { data: ncData, error } = await supabase
       .from('non_conformances')
       .insert({
-        title: data.title || 'NC from Audit Finding',
+        item_name: data.title || 'NC from Audit Finding',
         description: data.description,
-        item_category: 'Process',
-        item_name: data.title || 'Audit Finding Item',
+        item_category: 'Other',
         reason_category: 'Quality Issue',
         status: 'On Hold',
         created_by: data.userId,

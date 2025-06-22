@@ -89,14 +89,13 @@ export class ModuleIntegrationService {
     try {
       const workflows = {
         'audit-finding-to-nc': async () => {
-          // Create non-conformance from audit finding
+          // Create non-conformance from audit finding - using correct field names
           const { data: ncData, error } = await supabase
             .from('non_conformances')
             .insert({
-              title: `NC from Audit Finding - ${data.findingTitle}`,
-              description: data.findingDescription,
-              item_category: 'Process',
               item_name: data.findingTitle || 'Audit Finding Item',
+              description: data.findingDescription,
+              item_category: 'Other',
               reason_category: 'Quality Issue',
               status: 'On Hold',
               created_by: data.userId,
@@ -157,7 +156,7 @@ export class ModuleIntegrationService {
           return capaData.id;
         },
         'capa-to-training': async () => {
-          // Create training assignment from CAPA
+          // Create training assignment from CAPA - using correct field names
           const { data: trainingData, error } = await supabase
             .from('training_sessions')
             .insert({
