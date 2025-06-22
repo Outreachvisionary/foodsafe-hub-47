@@ -126,15 +126,16 @@ export class WorkflowOrchestrationService {
   private static async createNonConformance(auditFindingId: string, data: any): Promise<any> {
     const { data: ncData, error } = await supabase
       .from('non_conformances')
-      .insert([{
+      .insert({
         title: data.title || 'NC from Audit Finding',
         description: data.description,
         item_category: 'Process',
+        item_name: data.title || 'Audit Finding Item',
         reason_category: 'Quality Issue',
         status: 'On Hold',
         created_by: data.userId,
         priority: data.severity === 'critical' ? 'High' : 'Medium'
-      }])
+      })
       .select('id')
       .single();
 
@@ -156,7 +157,7 @@ export class WorkflowOrchestrationService {
   private static async createCAPA(sourceId: string, data: any): Promise<any> {
     const { data: capaData, error } = await supabase
       .from('capa_actions')
-      .insert([{
+      .insert({
         title: data.capaTitle || 'CAPA from Workflow',
         description: data.description,
         source: data.source || 'Workflow',
@@ -164,7 +165,7 @@ export class WorkflowOrchestrationService {
         assigned_to: data.assignedTo || 'Quality Manager',
         created_by: data.userId,
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      }])
+      })
       .select('id')
       .single();
 

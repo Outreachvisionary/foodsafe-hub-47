@@ -75,7 +75,6 @@ export class ModuleIntegrationService {
         targetType: item.target_type,
         targetId: item.target_id,
         relationshipType: item.relationship_type,
-        metadata: item.metadata,
         createdAt: item.created_at,
         createdBy: item.created_by
       }));
@@ -93,16 +92,17 @@ export class ModuleIntegrationService {
           // Create non-conformance from audit finding
           const { data: ncData, error } = await supabase
             .from('non_conformances')
-            .insert([{
+            .insert({
               title: `NC from Audit Finding - ${data.findingTitle}`,
               description: data.findingDescription,
               item_category: 'Process',
+              item_name: data.findingTitle || 'Audit Finding Item',
               reason_category: 'Quality Issue',
               status: 'On Hold',
               created_by: data.userId,
               assigned_to: data.assignedTo,
               priority: data.severity === 'critical' ? 'High' : 'Medium'
-            }])
+            })
             .select('id')
             .single();
 
@@ -124,7 +124,7 @@ export class ModuleIntegrationService {
           // Create CAPA from non-conformance
           const { data: capaData, error } = await supabase
             .from('capa_actions')
-            .insert([{
+            .insert({
               title: `CAPA for NC - ${data.ncTitle}`,
               description: data.ncDescription,
               source: 'Non-Conformance',
@@ -132,7 +132,7 @@ export class ModuleIntegrationService {
               assigned_to: data.assignedTo,
               created_by: data.userId,
               due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            }])
+            })
             .select('id')
             .single();
 
@@ -160,15 +160,14 @@ export class ModuleIntegrationService {
           // Create training assignment from CAPA
           const { data: trainingData, error } = await supabase
             .from('training_sessions')
-            .insert([{
+            .insert({
               title: `Training for CAPA - ${data.capaTitle}`,
               description: `Remedial training based on CAPA requirements`,
-              category: 'Quality Management',
-              type: 'Remedial',
-              status: 'Planned',
+              training_type: 'Mandatory',
+              assigned_to: data.assignedUsers || [],
               created_by: data.userId,
-              assigned_users: data.assignedUsers || []
-            }])
+              due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            })
             .select('id')
             .single();
 

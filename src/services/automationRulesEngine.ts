@@ -181,12 +181,37 @@ export class AutomationRulesEngine {
   }
 
   private static async updateRecord(module: string, parameters: any, data: any): Promise<void> {
-    const tableName = this.getTableName(module);
-    if (tableName) {
-      await supabase
-        .from(tableName)
-        .update(parameters)
-        .eq('id', data.id);
+    try {
+      switch (module) {
+        case 'capa':
+          await supabase
+            .from('capa_actions')
+            .update(parameters)
+            .eq('id', data.id);
+          break;
+        case 'non-conformance':
+          await supabase
+            .from('non_conformances')
+            .update(parameters)
+            .eq('id', data.id);
+          break;
+        case 'audit':
+          await supabase
+            .from('audits')
+            .update(parameters)
+            .eq('id', data.id);
+          break;
+        case 'complaint':
+          await supabase
+            .from('complaints')
+            .update(parameters)
+            .eq('id', data.id);
+          break;
+        default:
+          console.warn(`Unknown module for update: ${module}`);
+      }
+    } catch (error) {
+      console.error(`Failed to update record in ${module}:`, error);
     }
   }
 
@@ -196,27 +221,42 @@ export class AutomationRulesEngine {
   }
 
   private static async assignUser(module: string, parameters: any, data: any): Promise<void> {
-    const tableName = this.getTableName(module);
-    if (tableName) {
-      await supabase
-        .from(tableName)
-        .update({ assigned_to: parameters.userId })
-        .eq('id', data.id);
+    try {
+      switch (module) {
+        case 'capa':
+          await supabase
+            .from('capa_actions')
+            .update({ assigned_to: parameters.userId })
+            .eq('id', data.id);
+          break;
+        case 'non-conformance':
+          await supabase
+            .from('non_conformances')
+            .update({ assigned_to: parameters.userId })
+            .eq('id', data.id);
+          break;
+        case 'audit':
+          await supabase
+            .from('audits')
+            .update({ assigned_to: parameters.userId })
+            .eq('id', data.id);
+          break;
+        case 'complaint':
+          await supabase
+            .from('complaints')
+            .update({ assigned_to: parameters.userId })
+            .eq('id', data.id);
+          break;
+        default:
+          console.warn(`Unknown module for user assignment: ${module}`);
+      }
+    } catch (error) {
+      console.error(`Failed to assign user in ${module}:`, error);
     }
   }
 
   private static getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((current, key) => current?.[key], obj);
-  }
-
-  private static getTableName(module: string): string | null {
-    const mapping: Record<string, string> = {
-      'capa': 'capa_actions',
-      'non-conformance': 'non_conformances',
-      'audit': 'audits',
-      'complaint': 'complaints'
-    };
-    return mapping[module] || null;
   }
 
   static getRules(): AutomationRule[] {
