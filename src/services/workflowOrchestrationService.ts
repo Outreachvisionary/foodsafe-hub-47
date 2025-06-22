@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import ModuleIntegrationService from './moduleIntegrationService';
 import { toast } from 'sonner';
@@ -129,7 +130,7 @@ export class WorkflowOrchestrationService {
         item_name: data.title || 'NC from Audit Finding',
         description: data.description,
         item_category: 'Other',
-        reason_category: 'Quality Issue',
+        reason_category: 'Quality Issues',
         status: 'On Hold',
         created_by: data.userId,
         priority: data.severity === 'critical' ? 'High' : 'Medium'

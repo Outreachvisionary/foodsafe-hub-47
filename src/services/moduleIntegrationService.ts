@@ -96,7 +96,7 @@ export class ModuleIntegrationService {
               item_name: data.findingTitle || 'Audit Finding Item',
               description: data.findingDescription,
               item_category: 'Other',
-              reason_category: 'Quality Issue',
+              reason_category: 'Quality Issues',
               status: 'On Hold',
               created_by: data.userId,
               assigned_to: data.assignedTo,
