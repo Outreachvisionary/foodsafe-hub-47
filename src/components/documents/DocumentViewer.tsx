@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
-import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
+import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
+import { DocumentStatus, CheckoutStatus } from '@/types/enums';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -59,6 +61,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         id: '1',
         document_id: document.id,
         version: 2,
+        version_type: 'minor',
         file_name: document.file_name,
         file_path: document.file_path || '',
         file_size: document.file_size,
@@ -70,6 +73,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         id: '2',
         document_id: document.id,
         version: 1,
+        version_type: 'major',
         file_name: document.file_name,
         file_path: document.file_path || '',
         file_size: document.file_size,
@@ -164,7 +168,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
-  const getStatusColor = (status: DocumentStatus | string): string => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'Draft':
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -183,6 +187,11 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  // Convert document checkout_status to CheckoutStatus enum
+  const documentCheckoutStatus = (document.checkout_status === 'Checked_Out' || document.checkout_status === 'Checked Out') 
+    ? CheckoutStatus.Checked_Out 
+    : CheckoutStatus.Available;
 
   return (
     <div className="space-y-6">
@@ -260,7 +269,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={document.checkout_status}
+                  status={documentCheckoutStatus}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
