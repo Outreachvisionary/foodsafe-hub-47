@@ -85,6 +85,7 @@ export interface DocumentVersion {
   change_notes?: string;
   change_summary?: string;
   version_type?: string;
+  file_path?: string;
 }
 
 export interface DocumentActivity {
@@ -133,7 +134,8 @@ export interface DocumentAccess {
   id: string;
   document_id: string;
   user_id: string;
-  permission: 'read' | 'write' | 'admin';
+  permission_level: 'read' | 'write' | 'admin';
   granted_by: string;
   granted_at: string;
+  user_role?: string;
 }

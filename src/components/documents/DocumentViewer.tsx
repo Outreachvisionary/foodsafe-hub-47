@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,8 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Download, AlertCircle, UserCog, Clock, Calendar, Tag, Eye, ArrowDownToLine, Edit, RotateCw } from 'lucide-react';
-import { Document, DocumentVersion, DocumentActivity } from '@/types/document';
-import { DocumentStatus, CheckoutStatus } from '@/types/enums';
+import { Document, DocumentVersion, DocumentActivity, DocumentStatus, CheckoutStatus } from '@/types/document';
 import DocumentComments from './DocumentComments';
 import DocumentCheckoutActions from './DocumentCheckoutActions';
 import DocumentVersionHistory from './DocumentVersionHistory';
@@ -54,38 +52,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [newStatus, setNewStatus] = useState<DocumentStatus | null>(null);
   const [statusNote, setStatusNote] = useState('');
 
-  // Helper function to convert document checkout status to enum
-  const getCheckoutStatusEnum = (status: string | undefined): CheckoutStatus => {
-    if (status === 'Checked_Out' || status === 'Checked Out') {
-      return CheckoutStatus.Checked_Out;
-    }
-    return CheckoutStatus.Available;
-  };
-
-  // Helper function to convert document status to enum  
-  const getDocumentStatusEnum = (status: string): DocumentStatus => {
-    switch (status) {
-      case 'Pending_Approval':
-      case 'Pending Approval':
-        return DocumentStatus.Pending_Approval;
-      case 'Pending_Review':
-      case 'Pending Review':
-        return DocumentStatus.Pending_Review;
-      case 'Approved':
-        return DocumentStatus.Approved;
-      case 'Published':
-        return DocumentStatus.Published;
-      case 'Rejected':
-        return DocumentStatus.Rejected;
-      case 'Archived':
-        return DocumentStatus.Archived;
-      case 'Expired':
-        return DocumentStatus.Expired;
-      default:
-        return DocumentStatus.Draft;
-    }
-  };
-
   useEffect(() => {
     // In a real application, would fetch all versions and initial active version
     const mockVersions: DocumentVersion[] = [
@@ -93,29 +59,23 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         id: '1',
         document_id: document.id,
         version: 2,
-        version_number: 2,
-        version_type: "major",
         file_name: document.file_name,
         file_path: document.file_path || '',
         file_size: document.file_size,
         created_at: document.updated_at,
         created_by: document.created_by,
         change_summary: 'Updated with new regulatory requirements',
-        is_binary_file: false
       },
       {
         id: '2',
         document_id: document.id,
         version: 1,
-        version_number: 1,
-        version_type: "major",
         file_name: document.file_name,
         file_path: document.file_path || '',
         file_size: document.file_size,
         created_at: document.created_at,
         created_by: document.created_by,
         change_summary: 'Initial version',
-        is_binary_file: false
       }
     ];
     
@@ -204,33 +164,29 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
-  const getStatusColor = (status: DocumentStatus): string => {
+  const getStatusColor = (status: DocumentStatus | string): string => {
     switch (status) {
-      case DocumentStatus.Draft:
+      case 'Draft':
         return 'bg-gray-100 text-gray-800 border-gray-200';
-      case DocumentStatus.Pending_Approval:
+      case 'Pending_Approval':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case DocumentStatus.Approved:
-      case DocumentStatus.Published:
+      case 'Approved':
+      case 'Published':
         return 'bg-green-100 text-green-800 border-green-200';
-      case DocumentStatus.Rejected:
+      case 'Rejected':
         return 'bg-red-100 text-red-800 border-red-200';
-      case DocumentStatus.Archived:
+      case 'Archived':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case DocumentStatus.Expired:
+      case 'Expired':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  // Convert document status to enum for display
-  const displayStatus = getDocumentStatusEnum(document.status);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row items-start gap-4">
-        {/* Document Preview */}
         <Card className="w-full lg:w-2/3">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
@@ -240,14 +196,13 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   {document.file_name} • Version {activeVersion?.version || document.version}
                 </CardDescription>
               </div>
-              <Badge className={`${getStatusColor(displayStatus)} font-normal`}>
-                {displayStatus.replace('_', ' ')}
+              <Badge className={`${getStatusColor(document.status)} font-normal`}>
+                {document.status.replace('_', ' ')}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-gray-50 rounded-md p-4 min-h-[300px]">
-              {/* This would be the actual document preview in a real app */}
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="p-6 border rounded bg-white mb-4 w-full text-center">
                   <p className="text-muted-foreground">Document Preview</p>
@@ -305,7 +260,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               {canEdit && (
                 <DocumentCheckoutActions
-                  status={getCheckoutStatusEnum(document.checkout_status)}
+                  status={document.checkout_status}
                   checkedOutBy={document.checkout_user_name}
                   isCurrentUser={document.checkout_user_id === currentUserId}
                   onCheckout={handleCheckout}
@@ -327,7 +282,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </CardFooter>
         </Card>
 
-        {/* Document Info */}
         <Card className="w-full lg:w-1/3">
           <CardHeader>
             <CardTitle>Document Information</CardTitle>
@@ -437,7 +391,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </TabsContent>
       </Tabs>
       
-      {/* Status Update Dialog */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>
           <DialogHeader>
@@ -451,8 +404,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <div className="space-y-2">
               <Label>Current Status</Label>
               <div>
-                <Badge className={`${getStatusColor(displayStatus)} font-normal`}>
-                  {displayStatus.replace('_', ' ')}
+                <Badge className={`${getStatusColor(document.status)} font-normal`}>
+                  {document.status.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
@@ -466,14 +419,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 onChange={(e) => setNewStatus(e.target.value as DocumentStatus)}
               >
                 <option value="">Select status</option>
-                <option value={DocumentStatus.Draft}>Draft</option>
-                <option value={DocumentStatus.Pending_Review}>Pending Review</option>
-                <option value={DocumentStatus.Pending_Approval}>Pending Approval</option>
-                <option value={DocumentStatus.Approved}>Approved</option>
-                <option value={DocumentStatus.Published}>Published</option>
-                <option value={DocumentStatus.Rejected}>Rejected</option>
-                <option value={DocumentStatus.Archived}>Archived</option>
-                <option value={DocumentStatus.Expired}>Expired</option>
+                <option value="Draft">Draft</option>
+                <option value="Pending_Review">Pending Review</option>
+                <option value="Pending_Approval">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="Published">Published</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Archived">Archived</option>
+                <option value="Expired">Expired</option>
               </select>
             </div>
             

@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Upload } from 'lucide-react';
 import { useDocuments } from '@/hooks/useDocuments';
 import { toast } from 'sonner';
-import { DocumentCategory, DocumentStatus } from '@/types/enums';
+import { DocumentCategory, DocumentStatus } from '@/types/document';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -25,7 +25,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<DocumentCategory>(DocumentCategory.Other);
+  const [category, setCategory] = useState<DocumentCategory>('Other');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
@@ -50,7 +50,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
     
     try {
       // Determine initial status based on approval requirement
-      const initialStatus: DocumentStatus = requiresApproval ? DocumentStatus.Pending_Review : DocumentStatus.Draft;
+      const initialStatus: DocumentStatus = requiresApproval ? 'Pending_Review' : 'Draft';
       
       // Create document with proper integration
       const newDoc = {
@@ -62,6 +62,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         file_path: folderPath,
         category: category,
         status: initialStatus,
+        checkout_status: 'Available' as const,
         version: 1,
         created_by: 'current_user', // TODO: Get from auth context
         expiry_date: expiryDate || undefined,
@@ -90,7 +91,7 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCategory(DocumentCategory.Other);
+    setCategory('Other');
     setSelectedFile(null);
     setRequiresApproval(false);
     setExpiryDate('');
@@ -135,11 +136,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(DocumentCategory).map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat.replace('_', ' ')}
-                  </SelectItem>
-                ))}
+                <SelectItem value="SOP">SOP</SelectItem>
+                <SelectItem value="Policy">Policy</SelectItem>
+                <SelectItem value="Form">Form</SelectItem>
+                <SelectItem value="Certificate">Certificate</SelectItem>
+                <SelectItem value="Audit_Report">Audit Report</SelectItem>
+                <SelectItem value="HACCP_Plan">HACCP Plan</SelectItem>
+                <SelectItem value="Training_Material">Training Material</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>

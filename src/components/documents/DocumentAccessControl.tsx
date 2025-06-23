@@ -24,7 +24,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
   const { toast } = useToast();
   const [accessList, setAccessList] = useState<DocumentAccess[]>([]);
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newPermissionLevel, setNewPermissionLevel] = useState('read');
+  const [newPermissionLevel, setNewPermissionLevel] = useState<'read' | 'write' | 'admin'>('read');
   const [isAdding, setIsAdding] = useState(false);
 
   // Mock access data for demo
@@ -145,7 +145,7 @@ const DocumentAccessControl: React.FC<DocumentAccessControlProps> = ({
             </div>
             <div className="space-y-1">
               <Label htmlFor="permission" className="text-xs">Permission</Label>
-              <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
+              <Select value={newPermissionLevel} onValueChange={(value: 'read' | 'write' | 'admin') => setNewPermissionLevel(value)}>
                 <SelectTrigger className="h-8">
                   <SelectValue />
                 </SelectTrigger>

@@ -1,23 +1,12 @@
 
-import { Document } from '@/types/document';
-import { DocumentStatus } from '@/types/enums';
-
-// Define a DocumentType enum that's used in this file
-enum DocumentType {
-  Procedure = 'Procedure',
-  Policy = 'Policy',
-  Form = 'Form',
-  Record = 'Record',
-  Manual = 'Manual',
-  Other = 'Other'
-}
+import { Document, DocumentStatus, CheckoutStatus } from '@/types/document';
 
 // Function to adapt a document to the format expected by the database
 export const adaptDocumentToDatabase = (document: Partial<Document>) => {
   return {
     ...document,
-    status: document.status || DocumentStatus.Draft,
-    // Remove the document_type property as it's not part of the Document type
+    status: document.status || 'Draft',
+    checkout_status: document.checkout_status || 'Available',
   };
 };
 
@@ -32,6 +21,7 @@ export const adaptDocumentFromDatabase = (dbDocument: any): Document => {
     file_type: dbDocument.file_type,
     category: dbDocument.category,
     status: dbDocument.status,
+    checkout_status: dbDocument.checkout_status || 'Available',
     created_at: dbDocument.created_at,
     updated_at: dbDocument.updated_at,
     created_by: dbDocument.created_by,
@@ -48,7 +38,6 @@ export const adaptDocumentForUI = (document: Document) => {
   return {
     ...document,
     statusDisplay: formatDocumentStatus(document.status),
-    // Remove typeDisplay as document_type is not part of the Document interface
   };
 };
 
@@ -58,14 +47,6 @@ export const formatDocumentStatus = (status: DocumentStatus | string) => {
     return status.replace(/_/g, ' ');
   }
   return String(status).replace(/_/g, ' ');
-};
-
-// Helper function to format document type for display
-export const formatDocumentType = (type: DocumentType | string) => {
-  if (typeof type === 'string') {
-    return type.replace(/_/g, ' ');
-  }
-  return String(type).replace(/_/g, ' ');
 };
 
 // Function to generate a document number based on type, department, and date
