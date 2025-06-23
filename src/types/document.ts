@@ -83,6 +83,8 @@ export interface DocumentVersion {
   created_by: string;
   created_at: string;
   change_notes?: string;
+  change_summary?: string;
+  version_type?: string;
 }
 
 export interface DocumentActivity {
@@ -125,4 +127,13 @@ export interface DocumentWorkflow {
   created_by: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface DocumentAccess {
+  id: string;
+  document_id: string;
+  user_id: string;
+  permission: 'read' | 'write' | 'admin';
+  granted_by: string;
+  granted_at: string;
 }
