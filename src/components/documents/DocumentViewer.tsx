@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -189,7 +188,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   // Convert document checkout_status to CheckoutStatus enum
-  const documentCheckoutStatus = (document.checkout_status === 'Checked_Out' || document.checkout_status === 'Checked Out') 
+  const documentCheckoutStatus = document.checkout_status === 'Checked_Out' 
     ? CheckoutStatus.Checked_Out 
     : CheckoutStatus.Available;
 
