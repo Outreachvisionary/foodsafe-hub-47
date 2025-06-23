@@ -2,21 +2,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { TrainingStatus } from '@/types/enums';
 
 export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
   training_type: string;
-  status?: string;
+  training_category: string;
+  assigned_to: string[];
+  start_date: string;
+  due_date: string;
   created_by: string;
+  required_roles: string[];
+  is_recurring: boolean;
   created_at: string;
   updated_at: string;
-  due_date: string;
-  assigned_to?: string[];
-  content?: string;
-  duration_minutes?: number;
-  pass_threshold?: number;
+  // Additional properties for compatibility
+  completion_status: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
+  department: string;
+  priority: 'Low' | 'Medium' | 'High';
 }
 
 export interface TrainingRecord {
@@ -55,15 +60,18 @@ export const useTraining = () => {
         title: item.title,
         description: item.description,
         training_type: item.training_type,
-        status: item.status,
+        training_category: item.training_category,
+        assigned_to: item.assigned_to || [],
+        start_date: item.start_date,
+        due_date: item.due_date,
         created_by: item.created_by,
+        required_roles: item.required_roles || [],
+        is_recurring: item.is_recurring || false,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        due_date: item.due_date,
-        assigned_to: item.assigned_to,
-        content: item.content,
-        duration_minutes: item.duration_minutes,
-        pass_threshold: item.pass_threshold
+        completion_status: 'Not Started',
+        department: 'All',
+        priority: 'Medium'
       }));
 
       setSessions(mappedSessions);
@@ -87,7 +95,9 @@ export const useTraining = () => {
         session_id: item.session_id,
         employee_id: item.employee_id,
         employee_name: item.employee_name,
-        status: item.status,
+        status: item.status === 'Not_Started' ? 'Not Started' : 
+                item.status === 'In_Progress' ? 'In Progress' : 
+                item.status || 'Not Started',
         assigned_date: item.assigned_date,
         due_date: item.due_date,
         completion_date: item.completion_date,
@@ -113,13 +123,13 @@ export const useTraining = () => {
           title: sessionData.title,
           description: sessionData.description,
           training_type: sessionData.training_type,
-          status: sessionData.status || 'Draft',
-          created_by: sessionData.created_by,
-          due_date: sessionData.due_date,
+          training_category: sessionData.training_category || 'Other',
           assigned_to: sessionData.assigned_to || [],
-          content: sessionData.content,
-          duration_minutes: sessionData.duration_minutes,
-          pass_threshold: sessionData.pass_threshold || 80
+          start_date: sessionData.start_date || new Date().toISOString(),
+          due_date: sessionData.due_date,
+          created_by: sessionData.created_by,
+          required_roles: sessionData.required_roles || [],
+          is_recurring: sessionData.is_recurring || false
         }])
         .select()
         .single();
@@ -144,10 +154,11 @@ export const useTraining = () => {
       const assignments = employeeIds.map(employeeId => ({
         session_id: sessionId,
         employee_id: employeeId,
-        employee_name: `Employee ${employeeId}`, // TODO: Get actual employee name
-        status: 'Assigned' as const,
+        employee_name: `Employee ${employeeId}`,
+        status: 'Not_Started' as const,
         due_date: dueDate,
-        pass_threshold: session.pass_threshold || 80
+        assigned_date: new Date().toISOString(),
+        pass_threshold: 80
       }));
 
       const { error } = await supabase
@@ -167,9 +178,17 @@ export const useTraining = () => {
 
   const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
     try {
+      // Convert status back to database format
+      const dbUpdates = {
+        ...updates,
+        status: updates.status === 'Not Started' ? 'Not_Started' : 
+                updates.status === 'In Progress' ? 'In_Progress' : 
+                updates.status
+      };
+
       const { error } = await supabase
         .from('training_records')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', recordId);
 
       if (error) throw error;
@@ -206,4 +225,15 @@ export const useTraining = () => {
     updateTrainingRecord,
     refreshData: () => Promise.all([fetchTrainingSessions(), fetchTrainingRecords()])
   };
+};
+
+// Export individual hooks for compatibility
+export const useTrainingSessions = () => {
+  const { sessions, loading, error } = useTraining();
+  return { sessions, loading, error };
+};
+
+export const useTrainingRecords = () => {
+  const { records, loading, error } = useTraining();
+  return { records, loading, error };
 };

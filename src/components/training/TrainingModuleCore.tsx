@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { GraduationCap, Users, BookOpen, Award, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { useTrainingSessions, useTrainingRecords } from '@/hooks/useTraining';
+import { useTraining } from '@/hooks/useTraining';
 
 const TrainingModuleCore: React.FC = () => {
-  const { sessions, loading: sessionsLoading } = useTrainingSessions();
-  const { records, loading: recordsLoading } = useTrainingRecords();
+  const { sessions, records, loading, createTrainingSession } = useTraining();
   const { toast } = useToast();
   
   const [newSession, setNewSession] = useState({
@@ -38,7 +36,7 @@ const TrainingModuleCore: React.FC = () => {
       : 0
   };
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
     if (!newSession.title || !newSession.training_type || !newSession.due_date) {
       toast({
         title: "Missing Information",
@@ -48,23 +46,34 @@ const TrainingModuleCore: React.FC = () => {
       return;
     }
 
-    // Mock session creation
-    toast({
-      title: "Training Session Created",
-      description: `${newSession.title} has been created and assigned`
-    });
+    try {
+      await createTrainingSession({
+        ...newSession,
+        created_by: 'current_user',
+        start_date: new Date().toISOString(),
+        required_roles: [],
+        is_recurring: false
+      });
 
-    // Reset form
-    setNewSession({
-      title: '',
-      description: '',
-      training_type: '',
-      training_category: '',
-      department: '',
-      assigned_to: [],
-      due_date: '',
-      priority: 'Medium'
-    });
+      // Reset form
+      setNewSession({
+        title: '',
+        description: '',
+        training_type: '',
+        training_category: '',
+        department: '',
+        assigned_to: [],
+        due_date: '',
+        priority: 'Medium'
+      });
+
+      toast({
+        title: "Training Session Created",
+        description: `${newSession.title} has been created and assigned`
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -93,7 +102,7 @@ const TrainingModuleCore: React.FC = () => {
     }
   };
 
-  if (sessionsLoading || recordsLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -186,7 +195,7 @@ const TrainingModuleCore: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{session.title}</h4>
-                          <Badge className={getPriorityColor(session.priority)}>
+                          <Badge className="bg-yellow-100 text-yellow-800">
                             {session.priority}
                           </Badge>
                           <Badge variant="outline">
@@ -208,7 +217,7 @@ const TrainingModuleCore: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {getStatusIcon(session.completion_status)}
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                         <span className="text-sm">{session.completion_status}</span>
                       </div>
                     </div>
@@ -239,7 +248,7 @@ const TrainingModuleCore: React.FC = () => {
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{record.employee_name}</h4>
                           <Badge variant="outline">
-                            Session #{record.session_id}
+                            Session #{record.session_id.slice(0, 8)}
                           </Badge>
                         </div>
                         
@@ -255,7 +264,7 @@ const TrainingModuleCore: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {getStatusIcon(record.status)}
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                         <span className="text-sm">{record.status}</span>
                       </div>
                     </div>
@@ -309,9 +318,9 @@ const TrainingModuleCore: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Mandatory">Mandatory</SelectItem>
-                        <SelectItem value="Remedial">Remedial</SelectItem>
+                        <SelectItem value="Optional">Optional</SelectItem>
                         <SelectItem value="Refresher">Refresher</SelectItem>
-                        <SelectItem value="New Hire">New Hire</SelectItem>
+                        <SelectItem value="Certification">Certification</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -326,11 +335,11 @@ const TrainingModuleCore: React.FC = () => {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Food Safety">Food Safety</SelectItem>
-                        <SelectItem value="Quality">Quality</SelectItem>
+                        <SelectItem value="Food_Safety">Food Safety</SelectItem>
+                        <SelectItem value="Quality_Management">Quality</SelectItem>
                         <SelectItem value="HACCP">HACCP</SelectItem>
                         <SelectItem value="GMP">GMP</SelectItem>
-                        <SelectItem value="Allergen Control">Allergen Control</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
