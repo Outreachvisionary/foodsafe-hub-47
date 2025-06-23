@@ -10,10 +10,12 @@ import {
   ClipboardList, 
   GraduationCap,
   Search,
-  Link
+  Link,
+  Plus
 } from 'lucide-react';
 import { useModuleRelationships } from '@/hooks/useModuleRelationships';
 import ModuleIntegrationService from '@/services/moduleIntegrationService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RelationshipViewerProps {
   sourceId: string;
@@ -28,6 +30,7 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
   sourceTitle,
   onCreateRelationship
 }) => {
+  const { user } = useAuth();
   const { relationships, isLoading, triggerWorkflow, isTriggeringWorkflow } = useModuleRelationships(
     sourceId, 
     sourceType
@@ -67,12 +70,34 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
   };
 
   const handleWorkflowTrigger = (workflowType: string, data: any) => {
-    triggerWorkflow({ workflowType, data });
+    if (!user) return;
+    
+    const workflowData = {
+      ...data,
+      userId: user.id,
+      sourceTitle: sourceTitle
+    };
+    
+    triggerWorkflow({ workflowType, data: workflowData });
   };
 
   const getWorkflowSuggestions = () => {
-    // This would typically come from the current item's data
-    return ModuleIntegrationService.getWorkflowSuggestions(sourceType, 'active', {});
+    // Get suggestions based on the source type and current state
+    const suggestions = ModuleIntegrationService.getWorkflowSuggestions(sourceType, 'active', {
+      severity: 'major' // This would come from the actual item data
+    });
+    
+    return suggestions;
+  };
+
+  const getWorkflowTypeFromSuggestion = (suggestion: string): string => {
+    const mappings = {
+      'Create Non-Conformance': 'audit-finding-to-nc',
+      'Generate CAPA': 'nc-to-capa',
+      'Assign Training': 'capa-to-training'
+    };
+    
+    return mappings[suggestion as keyof typeof mappings] || suggestion.toLowerCase().replace(/\s+/g, '-');
   };
 
   if (isLoading) {
@@ -101,6 +126,7 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
           </div>
           {onCreateRelationship && (
             <Button size="sm" variant="outline" onClick={onCreateRelationship}>
+              <Plus className="h-4 w-4 mr-1" />
               Link Item
             </Button>
           )}
@@ -118,7 +144,9 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
                 <div className="flex items-center gap-3">
                   {getModuleIcon(relationship.targetType)}
                   <div className="flex-1">
-                    <div className="font-medium">{relationship.targetType} #{relationship.targetId.slice(0, 8)}</div>
+                    <div className="font-medium">
+                      {relationship.targetType.replace('-', ' ')} #{relationship.targetId.slice(0, 8)}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       Created {new Date(relationship.createdAt).toLocaleDateString()}
                     </div>
@@ -144,12 +172,14 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
                   size="sm"
                   variant="outline"
                   className="w-full justify-start"
-                  disabled={isTriggeringWorkflow}
+                  disabled={isTriggeringWorkflow || !user}
                   onClick={() => {
-                    const workflowType = suggestion.toLowerCase().replace(' ', '-');
+                    const workflowType = getWorkflowTypeFromSuggestion(suggestion);
                     handleWorkflowTrigger(workflowType, {
-                      userId: 'current-user',
-                      sourceTitle: sourceTitle
+                      findingTitle: sourceTitle,
+                      findingDescription: `Generated from ${sourceType}`,
+                      assignedTo: user?.email || 'system',
+                      severity: 'major'
                     });
                   }}
                 >

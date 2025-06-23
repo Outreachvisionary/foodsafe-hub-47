@@ -1,101 +1,62 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Folder, FolderOpen, Plus } from 'lucide-react';
-import { useDocument } from '@/contexts/DocumentContext';
+import { Folder, FolderOpen, Home } from 'lucide-react';
 
 interface FolderNavigationProps {
   selectedFolder: string | null;
   onFolderSelect: (folderId: string | null) => void;
 }
 
-const FolderNavigation: React.FC<FolderNavigationProps> = ({
-  selectedFolder,
-  onFolderSelect
+const FolderNavigation: React.FC<FolderNavigationProps> = ({ 
+  selectedFolder, 
+  onFolderSelect 
 }) => {
-  const { folders, documents } = useDocument();
-
-  const getFolderDocumentCount = (folderId: string | null) => {
-    if (!documents) return 0;
-    if (folderId === null) {
-      return documents.filter(doc => !doc.folder_id || doc.folder_id === 'root').length;
-    }
-    return documents.filter(doc => doc.folder_id === folderId).length;
-  };
+  // Mock folders - in real implementation, this would come from the DocumentContext
+  const folders = [
+    { id: '1', name: 'Quality Documents', document_count: 15 },
+    { id: '2', name: 'Training Materials', document_count: 8 },
+    { id: '3', name: 'Policies', document_count: 12 },
+    { id: '4', name: 'Procedures', document_count: 20 },
+  ];
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Folders</CardTitle>
-          <Button variant="ghost" size="sm">
-            <Plus className="h-4 w-4" />
-          </Button>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Folder className="h-4 w-4" />
+          <span className="font-medium">Folders</span>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {/* All Documents */}
-          <div
-            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-              selectedFolder === null 
-                ? 'bg-primary/10 text-primary border border-primary/20' 
-                : 'hover:bg-muted/50'
-            }`}
+        <div className="space-y-1">
+          <Button
+            variant={selectedFolder === null ? "secondary" : "ghost"}
+            className="w-full justify-start"
             onClick={() => onFolderSelect(null)}
           >
-            <div className="flex items-center space-x-3">
-              {selectedFolder === null ? (
-                <FolderOpen className="h-5 w-5" />
-              ) : (
-                <Folder className="h-5 w-5" />
-              )}
-              <span className="font-medium">All Documents</span>
-            </div>
-            <Badge variant="secondary">
-              {getFolderDocumentCount(null)}
-            </Badge>
-          </div>
-
-          {/* Folder List */}
-          {folders && folders.length > 0 ? (
-            folders.map((folder) => (
-              <div
-                key={folder.id}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                  selectedFolder === folder.id 
-                    ? 'bg-primary/10 text-primary border border-primary/20' 
-                    : 'hover:bg-muted/50'
-                }`}
-                onClick={() => onFolderSelect(folder.id)}
-              >
-                <div className="flex items-center space-x-3">
-                  {selectedFolder === folder.id ? (
-                    <FolderOpen className="h-5 w-5" />
-                  ) : (
-                    <Folder className="h-5 w-5" />
-                  )}
-                  <span className="font-medium truncate" title={folder.name}>
-                    {folder.name}
-                  </span>
-                </div>
-                <Badge variant="secondary">
-                  {getFolderDocumentCount(folder.id)}
-                </Badge>
+            <Home className="h-4 w-4 mr-2" />
+            All Documents
+          </Button>
+          {folders.map((folder) => (
+            <Button
+              key={folder.id}
+              variant={selectedFolder === folder.id ? "secondary" : "ghost"}
+              className="w-full justify-between"
+              onClick={() => onFolderSelect(folder.id)}
+            >
+              <div className="flex items-center">
+                {selectedFolder === folder.id ? (
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                ) : (
+                  <Folder className="h-4 w-4 mr-2" />
+                )}
+                {folder.name}
               </div>
-            ))
-          ) : (
-            <div className="text-center py-6">
-              <Folder className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No folders found</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                <Plus className="h-3 w-3 mr-1" />
-                Create Folder
-              </Button>
-            </div>
-          )}
+              <span className="text-xs text-muted-foreground">
+                {folder.document_count}
+              </span>
+            </Button>
+          ))}
         </div>
       </CardContent>
     </Card>

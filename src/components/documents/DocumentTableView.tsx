@@ -1,33 +1,24 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { 
-  FileText, 
   Download, 
   Edit, 
-  Trash2, 
   Eye, 
-  Lock, 
-  Unlock,
-  MoreVertical
+  Trash2,
+  FileText
 } from 'lucide-react';
 import { Document } from '@/types/document';
-import { formatDistanceToNow } from 'date-fns';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { format } from 'date-fns';
 
 interface DocumentTableViewProps {
   documents: Document[];
@@ -37,20 +28,18 @@ interface DocumentTableViewProps {
 const DocumentTableView: React.FC<DocumentTableViewProps> = ({ documents, onAction }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'Pending_Approval':
-      case 'Pending Approval':
-        return 'bg-blue-100 text-blue-800';
-      case 'Approved':
       case 'Published':
+      case 'Approved':
         return 'bg-green-100 text-green-800';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800';
-      case 'Archived':
-        return 'bg-purple-100 text-purple-800';
-      case 'Expired':
+      case 'Draft':
+        return 'bg-blue-100 text-blue-800';
+      case 'Pending_Approval':
+      case 'Pending_Review':
         return 'bg-yellow-100 text-yellow-800';
+      case 'Archived':
+        return 'bg-gray-100 text-gray-800';
+      case 'Expired':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -74,100 +63,75 @@ const DocumentTableView: React.FC<DocumentTableViewProps> = ({ documents, onActi
             <TableHead>Status</TableHead>
             <TableHead>Version</TableHead>
             <TableHead>Size</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Modified</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {documents.map((document) => {
-            const isCheckedOut = document.checkout_status === 'Checked_Out' || document.is_locked;
-            
-            return (
-              <TableRow key={document.id} className="hover:bg-muted/50">
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-1">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                      {isCheckedOut && <Lock className="h-3 w-3 text-red-500" />}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium truncate" title={document.title}>
-                        {document.title}
+          {documents.map((document) => (
+            <TableRow key={document.id} className="hover:bg-muted/50">
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <div className="font-medium">{document.title}</div>
+                    {document.description && (
+                      <div className="text-sm text-muted-foreground truncate max-w-xs">
+                        {document.description}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate" title={document.file_name}>
-                        {document.file_name}
-                      </div>
-                    </div>
+                    )}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {document.category}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={`text-xs ${getStatusColor(document.status)}`}>
-                    {document.status.replace('_', ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm font-mono">v{document.version}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-muted-foreground">
-                    {formatFileSize(document.file_size)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div>{formatDistanceToNow(new Date(document.created_at), { addSuffix: true })}</div>
-                    <div className="text-xs text-muted-foreground">by {document.created_by}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onAction('view', document.id)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAction('download', document.id)}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAction('edit', document.id)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      {isCheckedOut ? (
-                        <DropdownMenuItem onClick={() => onAction('checkin', document.id)}>
-                          <Unlock className="h-4 w-4 mr-2" />
-                          Check In
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem onClick={() => onAction('checkout', document.id)}>
-                          <Lock className="h-4 w-4 mr-2" />
-                          Check Out
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
-                        onClick={() => onAction('delete', document.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">{document.category}</Badge>
+              </TableCell>
+              <TableCell>
+                <Badge className={getStatusColor(document.status)}>
+                  {document.status.replace('_', ' ')}
+                </Badge>
+              </TableCell>
+              <TableCell>v{document.version}</TableCell>
+              <TableCell>{formatFileSize(document.file_size)}</TableCell>
+              <TableCell>
+                {format(new Date(document.updated_at), 'MMM dd, yyyy')}
+              </TableCell>
+              <TableCell>{document.created_by}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onAction('view', document.id)}
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onAction('download', document.id)}
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onAction('edit', document.id)}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onAction('delete', document.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
