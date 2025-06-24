@@ -97,9 +97,7 @@ export const useTraining = () => {
         session_id: item.session_id,
         employee_id: item.employee_id,
         employee_name: item.employee_name,
-        status: item.status === 'Not_Started' ? 'Not Started' : 
-                item.status === 'In_Progress' ? 'In Progress' : 
-                item.status === 'Completed' ? 'Completed' : 'Assigned',
+        status: mapDatabaseStatusToDisplay(item.status),
         assigned_date: item.assigned_date,
         due_date: item.due_date,
         completion_date: item.completion_date,
@@ -114,6 +112,34 @@ export const useTraining = () => {
     } catch (error) {
       console.error('Error fetching training records:', error);
       setError('Failed to load training records');
+    }
+  };
+
+  // Helper function to map database status to display status
+  const mapDatabaseStatusToDisplay = (dbStatus: string): 'Not Started' | 'In Progress' | 'Completed' | 'Assigned' => {
+    switch (dbStatus) {
+      case 'Not_Started':
+        return 'Not Started';
+      case 'In_Progress':
+        return 'In Progress';
+      case 'Completed':
+        return 'Completed';
+      default:
+        return 'Assigned';
+    }
+  };
+
+  // Helper function to map display status to database status
+  const mapDisplayStatusToDatabase = (displayStatus: string): string => {
+    switch (displayStatus) {
+      case 'Not Started':
+        return 'Not_Started';
+      case 'In Progress':
+        return 'In_Progress';
+      case 'Completed':
+        return 'Completed';
+      default:
+        return 'Not_Started';
     }
   };
 
@@ -157,7 +183,7 @@ export const useTraining = () => {
         session_id: sessionId,
         employee_id: employeeId,
         employee_name: `Employee ${employeeId}`,
-        status: 'Not_Started' as const,
+        status: 'Not_Started', // Use database format
         due_date: dueDate,
         assigned_date: new Date().toISOString(),
         pass_threshold: 80
@@ -180,12 +206,10 @@ export const useTraining = () => {
 
   const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
     try {
-      // Convert status back to database format
+      // Convert status to database format if provided
       const dbUpdates = {
         ...updates,
-        status: updates.status === 'Not Started' ? 'Not_Started' : 
-                updates.status === 'In Progress' ? 'In_Progress' : 
-                updates.status
+        status: updates.status ? mapDisplayStatusToDatabase(updates.status) : undefined
       };
 
       const { error } = await supabase

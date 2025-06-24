@@ -23,7 +23,7 @@ const TrainingModuleCore: React.FC = () => {
     department: '',
     assigned_to: [] as string[],
     due_date: '',
-    priority: 'Medium'
+    priority: 'Medium' as 'Low' | 'Medium' | 'High'
   });
 
   const trainingStats = {
