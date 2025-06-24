@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,7 +29,7 @@ export interface TrainingRecord {
   session_id: string;
   employee_id: string;
   employee_name: string;
-  status: 'Not Started' | 'In Progress' | 'Completed' | 'Assigned';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
   assigned_date: string;
   due_date: string;
   completion_date?: string;
@@ -97,7 +96,7 @@ export const useTraining = () => {
         session_id: item.session_id,
         employee_id: item.employee_id,
         employee_name: item.employee_name,
-        status: item.status as 'Not Started' | 'In Progress' | 'Completed' | 'Assigned',
+        status: item.status as 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue',
         assigned_date: item.assigned_date,
         due_date: item.due_date,
         completion_date: item.completion_date,
@@ -155,7 +154,7 @@ export const useTraining = () => {
         session_id: sessionId,
         employee_id: employeeId,
         employee_name: `Employee ${employeeId}`,
-        status: 'Not Started' as const, // Use display format that matches database schema
+        status: 'Not Started' as const,
         due_date: dueDate,
         assigned_date: new Date().toISOString(),
         pass_threshold: 80
