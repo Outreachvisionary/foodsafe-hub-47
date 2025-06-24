@@ -37,7 +37,7 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
       activeSessions: sessions.filter(s => s.status === 'Active').length,
       completedRecords: records.filter(r => r.status === 'Completed').length,
       overdueSessions: records.filter(r => 
-        r.status === 'Assigned' && new Date(r.due_date) < new Date()
+        r.status === 'Not Started' && new Date(r.due_date) < new Date()
       ).length,
       averageScore: records
         .filter(r => r.score !== null)
@@ -205,7 +205,7 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
               <CardContent>
                 <div className="space-y-3">
                   {records
-                    .filter(r => r.status === 'Assigned')
+                    .filter(r => r.status === 'Not Started')
                     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
                     .slice(0, 5)
                     .map((record) => (
@@ -221,7 +221,7 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
                           <Badge className={
                             new Date(record.due_date) < new Date() 
                               ? getStatusColor('Overdue')
-                              : getStatusColor('Assigned')
+                              : getStatusColor('Not Started')
                           }>
                             {new Date(record.due_date) < new Date() ? 'Overdue' : 'Due Soon'}
                           </Badge>
@@ -337,6 +337,29 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
       </Tabs>
     </div>
   );
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Completed':
+      return 'bg-green-100 text-green-800';
+    case 'In Progress':
+      return 'bg-blue-100 text-blue-800';
+    case 'Not Started':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Overdue':
+      return 'bg-red-100 text-red-800';
+    case 'Active':
+      return 'bg-blue-100 text-blue-800';
+    case 'Draft':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
 };
 
 export default TrainingDashboard;
