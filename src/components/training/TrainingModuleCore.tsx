@@ -64,7 +64,7 @@ const TrainingModuleCore: React.FC = () => {
         department: '',
         assigned_to: [],
         due_date: '',
-        priority: 'Medium'
+        priority: 'Medium' as 'Low' | 'Medium' | 'High'
       });
 
       toast({
@@ -367,7 +367,7 @@ const TrainingModuleCore: React.FC = () => {
                     <label className="text-sm font-medium">Priority</label>
                     <Select
                       value={newSession.priority}
-                      onValueChange={(value) => setNewSession({...newSession, priority: value})}
+                      onValueChange={(value: 'Low' | 'Medium' | 'High') => setNewSession({...newSession, priority: value})}
                     >
                       <SelectTrigger>
                         <SelectValue />

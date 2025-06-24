@@ -130,7 +130,7 @@ export const useTraining = () => {
   };
 
   // Helper function to map display status to database status
-  const mapDisplayStatusToDatabase = (displayStatus: string): string => {
+  const mapDisplayStatusToDatabase = (displayStatus: string): 'Not_Started' | 'In_Progress' | 'Completed' => {
     switch (displayStatus) {
       case 'Not Started':
         return 'Not_Started';
@@ -183,7 +183,7 @@ export const useTraining = () => {
         session_id: sessionId,
         employee_id: employeeId,
         employee_name: `Employee ${employeeId}`,
-        status: 'Not_Started', // Use database format
+        status: 'Not_Started' as const, // Use database format with proper typing
         due_date: dueDate,
         assigned_date: new Date().toISOString(),
         pass_threshold: 80
@@ -207,10 +207,14 @@ export const useTraining = () => {
   const updateTrainingRecord = async (recordId: string, updates: Partial<TrainingRecord>) => {
     try {
       // Convert status to database format if provided
-      const dbUpdates = {
+      const dbUpdates: any = {
         ...updates,
-        status: updates.status ? mapDisplayStatusToDatabase(updates.status) : undefined
       };
+
+      // Only convert status if it's provided
+      if (updates.status) {
+        dbUpdates.status = mapDisplayStatusToDatabase(updates.status);
+      }
 
       const { error } = await supabase
         .from('training_records')
