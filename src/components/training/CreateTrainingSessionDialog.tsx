@@ -42,7 +42,7 @@ const CreateTrainingSessionDialog: React.FC<CreateTrainingSessionDialogProps> = 
       await createTrainingSession({
         ...formData,
         created_by: 'current_user', // TODO: Get from auth context
-        status: 'Active'
+        training_category: 'Other'
       });
       
       // Reset form

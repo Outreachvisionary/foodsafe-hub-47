@@ -19,6 +19,7 @@ export interface TrainingSession {
   created_at: string;
   updated_at: string;
   // Additional properties for compatibility
+  status: 'Draft' | 'Active' | 'Completed' | 'Cancelled';
   completion_status: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
   department: string;
   priority: 'Low' | 'Medium' | 'High';
@@ -69,6 +70,7 @@ export const useTraining = () => {
         is_recurring: item.is_recurring || false,
         created_at: item.created_at,
         updated_at: item.updated_at,
+        status: 'Active',
         completion_status: 'Not Started',
         department: 'All',
         priority: 'Medium'
@@ -97,7 +99,7 @@ export const useTraining = () => {
         employee_name: item.employee_name,
         status: item.status === 'Not_Started' ? 'Not Started' : 
                 item.status === 'In_Progress' ? 'In Progress' : 
-                item.status || 'Not Started',
+                item.status === 'Completed' ? 'Completed' : 'Assigned',
         assigned_date: item.assigned_date,
         due_date: item.due_date,
         completion_date: item.completion_date,

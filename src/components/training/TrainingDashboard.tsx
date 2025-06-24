@@ -57,6 +57,10 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
         return 'bg-yellow-100 text-yellow-800';
       case 'Overdue':
         return 'bg-red-100 text-red-800';
+      case 'Active':
+        return 'bg-blue-100 text-blue-800';
+      case 'Draft':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -185,8 +189,8 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
                         <p className="font-medium">{session.title}</p>
                         <p className="text-sm text-muted-foreground">{session.training_type}</p>
                       </div>
-                      <Badge className={getStatusColor(session.status || 'Draft')}>
-                        {session.status || 'Draft'}
+                      <Badge className={getStatusColor(session.status)}>
+                        {session.status}
                       </Badge>
                     </div>
                   ))}
@@ -276,8 +280,8 @@ const TrainingDashboard: React.FC<TrainingDashboardProps> = ({
                         </div>
                       </div>
                       <div className="ml-4 flex flex-col items-end gap-2">
-                        <Badge className={getStatusColor(session.status || 'Draft')}>
-                          {session.status || 'Draft'}
+                        <Badge className={getStatusColor(session.status)}>
+                          {session.status}
                         </Badge>
                         {onViewSession && (
                           <Button
