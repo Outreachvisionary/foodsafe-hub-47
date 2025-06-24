@@ -4,7 +4,7 @@ import './App.css';
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import { Toaster as Sonner } from '@/components/ui/sonner';
+import { Sonner } from '@/components/ui/sonner';
 import Index from './pages/Index';
 import DashboardPage from './pages/DashboardPage';
 import TestingDashboard from './pages/TestingDashboard';
