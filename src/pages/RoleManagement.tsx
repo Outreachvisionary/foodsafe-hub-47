@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { fetchRoles, createRole, updateRole, deleteRole } from '@/services/roleService';
 import { Role } from '@/types/role';
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { RoleSelector } from '@/components/role/RoleSelector';
+import RoleSelector from '@/components/role/RoleSelector';
 import { usePermission } from '@/contexts/PermissionContext';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 

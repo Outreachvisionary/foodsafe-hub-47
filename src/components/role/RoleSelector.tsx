@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 
 interface RoleSelectorProps {
   selectedRoleId?: string;
-  onRoleChange: (roleId: string) => void;
+  value?: string;
+  onRoleChange?: (roleId: string) => void;
+  onChange?: (roleId: string) => void;
   label?: string;
   placeholder?: string;
   disabled?: boolean;
@@ -16,7 +18,9 @@ interface RoleSelectorProps {
 
 const RoleSelector: React.FC<RoleSelectorProps> = ({
   selectedRoleId,
+  value,
   onRoleChange,
+  onChange,
   label = "Role",
   placeholder = "Select a role",
   disabled = false
@@ -41,13 +45,20 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
     loadRoles();
   }, []);
 
+  const handleValueChange = (roleId: string) => {
+    if (onRoleChange) onRoleChange(roleId);
+    if (onChange) onChange(roleId);
+  };
+
+  const currentValue = selectedRoleId || value;
+
   return (
     <div className="space-y-2">
       <Label htmlFor="role-selector">{label}</Label>
       <Select
         disabled={disabled || loading}
-        value={selectedRoleId}
-        onValueChange={onRoleChange}
+        value={currentValue}
+        onValueChange={handleValueChange}
       >
         <SelectTrigger id="role-selector">
           <SelectValue placeholder={loading ? "Loading roles..." : placeholder} />

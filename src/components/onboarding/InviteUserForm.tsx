@@ -114,8 +114,8 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                   <FormLabel>Role</FormLabel>
                   <FormControl>
                     <RoleSelector
-                      value={field.value}
-                      onChange={field.onChange}
+                      selectedRoleId={field.value}
+                      onRoleChange={field.onChange}
                       placeholder="Select a role"
                     />
                   </FormControl>
