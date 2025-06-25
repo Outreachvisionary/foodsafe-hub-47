@@ -1,40 +1,38 @@
 
-import React, { useEffect, useState } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Role } from '@/types/role';
+import React, { useState, useEffect } from 'react';
 import { fetchRoles } from '@/services/roleService';
-import { cn } from '@/lib/utils';
+import { Role } from '@/types/role';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 interface RoleSelectorProps {
-  value?: string;
-  onChange: (value: string) => void;
-  organizationId?: string;
+  selectedRoleId?: string;
+  onRoleChange: (roleId: string) => void;
+  label?: string;
   placeholder?: string;
-  className?: string;
+  disabled?: boolean;
 }
 
-export const RoleSelector: React.FC<RoleSelectorProps> = ({
-  value,
-  onChange,
-  organizationId,
-  placeholder = "Select role...",
-  className,
+const RoleSelector: React.FC<RoleSelectorProps> = ({
+  selectedRoleId,
+  onRoleChange,
+  label = "Role",
+  placeholder = "Select a role",
+  disabled = false
 }) => {
-  const [open, setOpen] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadRoles = async () => {
-      setLoading(true);
       try {
-        const data = await fetchRoles();
-        setRoles(data);
+        setLoading(true);
+        const rolesData = await fetchRoles();
+        setRoles(rolesData);
       } catch (error) {
-        console.error('Failed to load roles:', error);
+        console.error('Error loading roles:', error);
+        toast.error('Failed to load roles');
       } finally {
         setLoading(false);
       }
@@ -43,60 +41,32 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
     loadRoles();
   }, []);
 
-  const selectedRole = roles.find(role => role.id === value);
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between", className)}
-          disabled={loading}
-        >
-          {loading ? (
-            "Loading roles..."
-          ) : value && selectedRole ? (
-            selectedRole.name
-          ) : (
-            placeholder
-          )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder="Search roles..." />
-          <CommandEmpty>No roles found.</CommandEmpty>
-          <CommandGroup>
-            {roles.map((role) => (
-              <CommandItem
-                key={role.id}
-                value={role.id}
-                onSelect={() => {
-                  onChange(role.id === value ? "" : role.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === role.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {role.name}
+    <div className="space-y-2">
+      <Label htmlFor="role-selector">{label}</Label>
+      <Select
+        disabled={disabled || loading}
+        value={selectedRoleId}
+        onValueChange={onRoleChange}
+      >
+        <SelectTrigger id="role-selector">
+          <SelectValue placeholder={loading ? "Loading roles..." : placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {roles.map((role) => (
+            <SelectItem key={role.id} value={role.id}>
+              <div className="flex flex-col">
+                <span className="font-medium">{role.name}</span>
                 {role.description && (
-                  <span className="ml-2 text-xs text-muted-foreground">{role.description}</span>
+                  <span className="text-xs text-muted-foreground">{role.description}</span>
                 )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 
-// Also export as default for backward compatibility
 export default RoleSelector;

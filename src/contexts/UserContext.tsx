@@ -1,19 +1,48 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, ProfileData } from '@/types/user';
-import { supabase } from '@/integrations/supabase/client';
+
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { User } from '@/types/user';
 
 interface UserContextType {
   user: User | null;
-  profile?: ProfileData | null;
   loading: boolean;
-  error: string | null;
-  fetchUserProfile: (userId: string) => Promise<User | null>;
-  updateUserProfile: (userId: string, updates: Partial<User>) => Promise<boolean>;
   refreshUser: () => Promise<void>;
-  signOut: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  const refreshUser = async () => {
+    // This would trigger a refresh of user data
+    // For now, we'll use the auth context's user
+  };
+
+  const contextValue: UserContextType = {
+    user: user ? {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.email || '',
+      name: user.user_metadata?.full_name || user.email || '',
+      avatar_url: user.user_metadata?.avatar_url,
+      role: user.user_metadata?.role || 'User',
+      department: user.user_metadata?.department || '',
+      organization_id: user.user_metadata?.organization_id,
+      facility_ids: user.user_metadata?.facility_ids || [],
+      preferences: user.user_metadata?.preferences || {},
+      status: 'active'
+    } : null,
+    loading,
+    refreshUser
+  };
+
+  return (
+    <UserContext.Provider value={contextValue}>
+      {children}
+    </UserContext.Provider>
+  );
+};
 
 export const useUser = () => {
   const context = useContext(UserContext);
@@ -21,184 +50,4 @@ export const useUser = () => {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-};
-
-interface UserProviderProps {
-  children: ReactNode;
-}
-
-export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUserProfile = async (userId: string): Promise<User | null> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // First, get the user data from auth
-      const { data: authUser, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-
-      // Then get the profile data from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      if (profile && authUser.user) {
-        // Safely handle preferences field
-        const preferences = profile.preferences && typeof profile.preferences === 'object' 
-          ? profile.preferences as Record<string, any>
-          : {};
-
-        const userData: User = {
-          id: profile.id,
-          email: authUser.user.email || '', // Get email from auth user
-          full_name: profile.full_name || '',
-          name: profile.full_name || '', // Add name field for compatibility
-          avatar_url: profile.avatar_url,
-          role: profile.role || '',
-          department: profile.department || '',
-          organization_id: profile.organization_id || '',
-          preferences,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-          status: (profile.status as 'active' | 'inactive' | 'pending') || 'active',
-          preferred_language: profile.preferred_language || '',
-          department_id: profile.department_id || '',
-          assigned_facility_ids: profile.assigned_facility_ids || [],
-        };
-
-        const profileData: ProfileData = {
-          ...profile,
-          email: authUser.user.email || '',
-          preferences,
-          status: (profile.status as 'active' | 'inactive' | 'pending') || 'active'
-        };
-
-        setUser(userData);
-        setProfile(profileData);
-        return userData;
-      }
-
-      return null;
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch user profile');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: updates.full_name,
-          avatar_url: updates.avatar_url,
-          role: updates.role,
-          department: updates.department,
-          organization_id: updates.organization_id,
-          preferences: updates.preferences,
-          status: updates.status as 'active' | 'inactive' | 'pending',
-          preferred_language: updates.preferred_language,
-          department_id: updates.department_id,
-          assigned_facility_ids: updates.assigned_facility_ids,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      // Update local user state
-      if (user) {
-        setUser({ ...user, ...updates });
-      }
-
-      return true;
-    } catch (err) {
-      console.error('Error updating user profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update user profile');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshUser = async (): Promise<void> => {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      await fetchUserProfile(authUser.id);
-    }
-  };
-
-  const signOut = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      setProfile(null);
-    } catch (err) {
-      console.error('Error signing out:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sign out');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initialize user on mount
-  useEffect(() => {
-    const initializeUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        await fetchUserProfile(authUser.id);
-      } else {
-        setLoading(false);
-      }
-    };
-
-    initializeUser();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const value: UserContextType = {
-    user,
-    profile,
-    loading,
-    error,
-    fetchUserProfile,
-    updateUserProfile,
-    refreshUser,
-    signOut,
-  };
-
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
 };
