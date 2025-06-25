@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { RefreshCcw } from 'lucide-react';
 import ModuleLayout from '@/components/shared/ModuleLayout';
 import DataTable from '@/components/shared/DataTable';
 import { NonConformance } from '@/types/non-conformance';
-import { getNonConformances, createNonConformance } from '@/services/nonConformanceService';
+import { getAllNonConformances, createNonConformance } from '@/services/nonConformanceService';
 import { toast } from 'sonner';
 
 const NonConformancePage: React.FC = () => {
@@ -27,8 +26,8 @@ const NonConformancePage: React.FC = () => {
   const fetchNonConformances = async () => {
     setLoading(true);
     try {
-      const data = await getNonConformances();
-      setNonConformances(data);
+      const result = await getAllNonConformances();
+      setNonConformances(result.data);
     } catch (error) {
       console.error('Error fetching non-conformances:', error);
       toast.error('Failed to load non-conformances');
