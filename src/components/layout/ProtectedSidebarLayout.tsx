@@ -26,7 +26,7 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
   }
   
   // Redirect to auth if not authenticated
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     console.log('ProtectedSidebarLayout: Redirecting to auth - not authenticated');
     return <Navigate to="/auth" replace />;
   }

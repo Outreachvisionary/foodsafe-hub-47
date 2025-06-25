@@ -1,23 +1,25 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Database, RefreshCw, TestTube, Activity } from 'lucide-react';
+import { AlertTriangle, Database, RefreshCw, TestTube, Activity, Settings } from 'lucide-react';
 import { useDashboardPerformance } from '@/hooks/useDashboardPerformance';
 import DashboardMetrics from './DashboardMetrics';
+import ModuleStatusDashboard from '@/components/system/ModuleStatusDashboard';
 import Loading from '@/components/Loading';
 
 const OptimizedDashboard: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { data, stats, refreshData } = useDashboardPerformance();
 
   if (authLoading) {
     return <Loading message="Loading dashboard..." />;
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -26,7 +28,7 @@ const OptimizedDashboard: React.FC = () => {
       {/* Header with Performance Info */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold">SAAS Platform Dashboard</h1>
           <p className="text-muted-foreground">
             Welcome back, {user?.email || 'User'}
           </p>
@@ -53,9 +55,19 @@ const OptimizedDashboard: React.FC = () => {
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <strong>Error loading dashboard data:</strong> {stats.error}
+            <div className="mt-2">
+              <Link to="/diagnostics">
+                <Button variant="link" className="p-0 text-red-600">
+                  Run system diagnostics
+                </Button>
+              </Link>
+            </div>
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Module Status Dashboard */}
+      <ModuleStatusDashboard />
 
       {/* Metrics Cards */}
       <DashboardMetrics
