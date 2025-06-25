@@ -28,7 +28,8 @@ import {
   Warehouse,
   FileCheck,
   Award,
-  Gauge
+  Gauge,
+  BookOpen
 } from 'lucide-react';
 
 const AppSidebar: React.FC = () => {
@@ -65,6 +66,7 @@ const AppSidebar: React.FC = () => {
     { icon: AlertTriangle, label: 'Non-Conformance', path: '/non-conformance' },
     { icon: FileCheck, label: 'Audits', path: '/audits' },
     { icon: MessageSquare, label: 'Complaints', path: '/complaints' },
+    { icon: BookOpen, label: 'Standards', path: '/standards' },
   ];
 
   const trainingMenuItems = [
