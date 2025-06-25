@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import {
   Sidebar,
   SidebarContent,
@@ -33,7 +34,8 @@ import {
 const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user, profile } = useAuth();
+  const { user } = useAuth();
+  const { profile, signOut } = useUser();
 
   console.log('AppSidebar render:', { 
     hasUser: !!user, 

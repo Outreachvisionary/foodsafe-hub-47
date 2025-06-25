@@ -31,7 +31,7 @@ const AuthPage: React.FC = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signUp(email, password, { full_name: fullName });
+      await signUp(email, password);
     } catch (error) {
       // Error is handled in the context
     }

@@ -27,6 +27,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -49,7 +50,8 @@ const navItems = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { profile } = useUser();
   
   return (
     <aside className="w-64 bg-gradient-to-b from-background to-secondary/20 border-r border-border/60 flex flex-col h-screen overflow-y-auto">

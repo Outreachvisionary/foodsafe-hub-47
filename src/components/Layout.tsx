@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -28,7 +29,8 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, profile, signOut } = useAuth();
+  const { user } = useAuth();
+  const { profile, signOut } = useUser();
   const location = useLocation();
 
   const navigation = [
