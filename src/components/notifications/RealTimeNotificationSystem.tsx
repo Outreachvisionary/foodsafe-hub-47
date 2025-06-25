@@ -1,51 +1,41 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Global state to track active subscriptions per user
+const activeSubscriptions = new Map<string, boolean>();
 
 const RealTimeNotificationSystem: React.FC = () => {
   const { user } = useAuth();
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const isInitializedRef = useRef(false);
 
   useEffect(() => {
-    // If no user, clean up and exit
+    // Early return if no user
     if (!user?.id) {
-      if (channelRef.current) {
-        console.log('Cleaning up channel due to no user');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      isInitializedRef.current = false;
+      console.log('No user available for notifications');
       return;
     }
 
-    // Prevent multiple initializations for the same user
-    if (isInitializedRef.current && channelRef.current) {
-      console.log('Notification system already initialized for user, skipping');
+    const userId = user.id;
+    const subscriptionKey = `notifications_${userId}`;
+
+    // Check if we already have an active subscription for this user
+    if (activeSubscriptions.get(subscriptionKey)) {
+      console.log('Notification subscription already active for user:', userId);
       return;
     }
 
-    console.log('Initializing notification system for user:', user.id);
+    console.log('Setting up notification subscription for user:', userId);
 
-    // Clean up any existing channel first
-    if (channelRef.current) {
-      console.log('Removing existing channel before creating new one');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    // Mark subscription as active immediately
+    activeSubscriptions.set(subscriptionKey, true);
 
-    // Mark as initialized immediately to prevent race conditions
-    isInitializedRef.current = true;
-
-    // Create a unique channel name with timestamp to avoid conflicts
-    const channelName = `notifications_${user.id}_${Date.now()}`;
-    console.log('Creating new channel:', channelName);
+    // Create a unique channel name
+    const channelName = `${subscriptionKey}_${Date.now()}`;
     
     const channel = supabase.channel(channelName);
 
-    // Configure the channel with listeners but don't subscribe yet
+    // Configure the channel with all listeners
     channel
       .on(
         'postgres_changes',
@@ -55,7 +45,7 @@ const RealTimeNotificationSystem: React.FC = () => {
           table: 'documents'
         },
         (payload) => {
-          console.log('Document change:', payload);
+          console.log('Document change notification:', payload);
           // Handle document changes for notifications
         }
       )
@@ -67,39 +57,36 @@ const RealTimeNotificationSystem: React.FC = () => {
           table: 'non_conformances'
         },
         (payload) => {
-          console.log('Non-conformance change:', payload);
+          console.log('Non-conformance change notification:', payload);
           // Handle non-conformance changes for notifications
         }
-      );
-
-    // Store the channel reference
-    channelRef.current = channel;
-
-    // Subscribe to the channel
-    channel.subscribe((status) => {
-      console.log('Subscription status:', status);
-      if (status === 'SUBSCRIBED') {
-        console.log('Successfully subscribed to notifications channel');
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('Failed to subscribe to notifications channel');
-        // Reset initialization flag on error to allow retry
-        isInitializedRef.current = false;
-      } else if (status === 'CLOSED') {
-        console.log('Channel subscription closed');
-        isInitializedRef.current = false;
-      }
-    });
+      )
+      .subscribe((status) => {
+        console.log(`Notification subscription status for ${userId}:`, status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to notifications channel');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Failed to subscribe to notifications channel');
+          // Clear the active subscription flag on error
+          activeSubscriptions.delete(subscriptionKey);
+        } else if (status === 'CLOSED') {
+          console.log('Notification channel subscription closed');
+          activeSubscriptions.delete(subscriptionKey);
+        }
+      });
 
     // Cleanup function
     return () => {
-      console.log('Cleaning up notifications channel in useEffect cleanup');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      isInitializedRef.current = false;
+      console.log('Cleaning up notification subscription for user:', userId);
+      
+      // Remove the channel
+      supabase.removeChannel(channel);
+      
+      // Clear the active subscription flag
+      activeSubscriptions.delete(subscriptionKey);
     };
-  }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
+  }, [user?.id]);
 
   // This component doesn't render anything visible
   return null;

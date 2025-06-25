@@ -1,41 +1,29 @@
 
-import React, { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import MainLayout from './MainLayout';
+import { Navigate } from 'react-router-dom';
 import Loading from '@/components/Loading';
+import MainLayout from './MainLayout';
+import RealTimeNotificationSystem from '@/components/notifications/RealTimeNotificationSystem';
 
 interface ProtectedSidebarLayoutProps {
-  children?: ReactNode;
+  children: React.ReactNode;
 }
 
 const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ children }) => {
-  const { user, loading, isAuthenticated } = useAuth();
-  
-  console.log('ProtectedSidebarLayout render:', { 
-    loading, 
-    isAuthenticated, 
-    hasUser: !!user, 
-    userId: user?.id
-  });
-  
-  // Show loading indicator while checking authentication
+  const { isAuthenticated, loading } = useAuth();
+
   if (loading) {
-    console.log('ProtectedSidebarLayout: Showing loading state');
     return <Loading message="Checking authentication..." />;
   }
-  
-  // Redirect to auth if not authenticated
+
   if (!isAuthenticated) {
-    console.log('ProtectedSidebarLayout: Redirecting to auth - not authenticated');
     return <Navigate to="/auth" replace />;
   }
-  
-  console.log('ProtectedSidebarLayout: Rendering main layout');
-  
-  // Show the main layout with the children
+
   return (
     <MainLayout>
+      <RealTimeNotificationSystem />
       {children}
     </MainLayout>
   );

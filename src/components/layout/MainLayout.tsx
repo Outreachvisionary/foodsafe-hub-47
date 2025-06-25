@@ -2,7 +2,6 @@
 import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
-import RealTimeNotificationSystem from '@/components/notifications/RealTimeNotificationSystem';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -18,9 +17,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <div className="flex h-14 items-center px-4">
               <div className="flex items-center gap-2">
                 <h1 className="font-semibold">Quality Management System</h1>
-              </div>
-              <div className="ml-auto">
-                <RealTimeNotificationSystem />
               </div>
             </div>
           </header>
