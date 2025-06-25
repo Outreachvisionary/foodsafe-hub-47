@@ -33,7 +33,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       organization_id: user.user_metadata?.organization_id,
       assigned_facility_ids: user.user_metadata?.facility_ids || [],
       preferences: user.user_metadata?.preferences || {},
-      status: 'active'
+      status: 'active',
+      created_at: user.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      preferred_language: user.user_metadata?.preferred_language || 'en',
+      department_id: user.user_metadata?.department_id || ''
     } : null,
     profile: user ? {
       id: user.id,
@@ -46,7 +50,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       organization_id: user.user_metadata?.organization_id,
       assigned_facility_ids: user.user_metadata?.facility_ids || [],
       preferences: user.user_metadata?.preferences || {},
-      status: 'active'
+      status: 'active',
+      created_at: user.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      preferred_language: user.user_metadata?.preferred_language || 'en',
+      department_id: user.user_metadata?.department_id || ''
     } : null,
     loading,
     refreshUser,
