@@ -7,43 +7,45 @@ import { useAuth } from '@/contexts/AuthContext';
 const RealTimeNotificationSystem: React.FC = () => {
   const { user } = useAuth();
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const isSetupRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) {
-      // Clean up if user is not available
+    // If no user, clean up and exit
+    if (!user?.id) {
       if (channelRef.current) {
         console.log('Cleaning up channel due to no user');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      isSetupRef.current = false;
+      isInitializedRef.current = false;
       return;
     }
 
-    // Prevent multiple setups
-    if (isSetupRef.current) {
-      console.log('Notification system already set up, skipping');
+    // Prevent multiple initializations for the same user
+    if (isInitializedRef.current && channelRef.current) {
+      console.log('Notification system already initialized for user, skipping');
       return;
     }
 
-    // Mark as setting up to prevent concurrent setups
-    isSetupRef.current = true;
+    console.log('Initializing notification system for user:', user.id);
 
-    // Clean up any existing channel before creating a new one
+    // Clean up any existing channel first
     if (channelRef.current) {
       console.log('Removing existing channel before creating new one');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // Create a new channel with a unique name
+    // Mark as initialized immediately to prevent race conditions
+    isInitializedRef.current = true;
+
+    // Create a unique channel name with timestamp to avoid conflicts
     const channelName = `notifications_${user.id}_${Date.now()}`;
     console.log('Creating new channel:', channelName);
     
     const channel = supabase.channel(channelName);
 
-    // Set up the channel listeners before subscribing
+    // Configure the channel with listeners but don't subscribe yet
     channel
       .on(
         'postgres_changes',
@@ -68,22 +70,25 @@ const RealTimeNotificationSystem: React.FC = () => {
           console.log('Non-conformance change:', payload);
           // Handle non-conformance changes for notifications
         }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to notifications channel');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Failed to subscribe to notifications channel');
-          isSetupRef.current = false; // Allow retry on error
-        } else if (status === 'CLOSED') {
-          console.log('Channel subscription closed');
-          isSetupRef.current = false;
-        }
-      });
+      );
 
     // Store the channel reference
     channelRef.current = channel;
+
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      console.log('Subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to notifications channel');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Failed to subscribe to notifications channel');
+        // Reset initialization flag on error to allow retry
+        isInitializedRef.current = false;
+      } else if (status === 'CLOSED') {
+        console.log('Channel subscription closed');
+        isInitializedRef.current = false;
+      }
+    });
 
     // Cleanup function
     return () => {
@@ -92,7 +97,7 @@ const RealTimeNotificationSystem: React.FC = () => {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      isSetupRef.current = false;
+      isInitializedRef.current = false;
     };
   }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
 
