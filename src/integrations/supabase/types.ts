@@ -487,6 +487,48 @@ export type Database = {
           },
         ]
       }
+      certifications: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_required: boolean | null
+          issuing_body: string
+          name: string
+          required_score: number | null
+          updated_at: string | null
+          validity_period_months: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          issuing_body: string
+          name: string
+          required_score?: number | null
+          updated_at?: string | null
+          validity_period_months?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          issuing_body?: string
+          name?: string
+          required_score?: number | null
+          updated_at?: string | null
+          validity_period_months?: number
+        }
+        Relationships: []
+      }
       complaints: {
         Row: {
           assigned_to: string | null
@@ -1279,6 +1321,65 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_certifications: {
+        Row: {
+          certificate_number: string | null
+          certification_id: string | null
+          certification_name: string
+          created_at: string | null
+          department: string | null
+          employee_id: string
+          employee_name: string
+          expiry_date: string
+          id: string
+          issued_date: string
+          issuing_body: string
+          notes: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          certificate_number?: string | null
+          certification_id?: string | null
+          certification_name: string
+          created_at?: string | null
+          department?: string | null
+          employee_id: string
+          employee_name: string
+          expiry_date: string
+          id?: string
+          issued_date: string
+          issuing_body: string
+          notes?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          certificate_number?: string | null
+          certification_id?: string | null
+          certification_name?: string
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string
+          employee_name?: string
+          expiry_date?: string
+          id?: string
+          issued_date?: string
+          issuing_body?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_certifications_certification_id_fkey"
+            columns: ["certification_id"]
+            isOneToOne: false
+            referencedRelation: "certifications"
             referencedColumns: ["id"]
           },
         ]
@@ -3169,6 +3270,15 @@ export type Database = {
           expiry_date: string
         }[]
       }
+      get_certification_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_certifications: number
+          active_certifications: number
+          expiring_soon: number
+          expired_certifications: number
+        }[]
+      }
       get_current_user_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3176,6 +3286,15 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_employee_certification_status: {
+        Args: { emp_id: string }
+        Returns: {
+          certification_name: string
+          status: string
+          expiry_date: string
+          days_until_expiry: number
+        }[]
       }
       get_facilities: {
         Args: { p_organization_id?: string; p_only_assigned?: boolean }
