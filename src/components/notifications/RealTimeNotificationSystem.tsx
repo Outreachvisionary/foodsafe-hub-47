@@ -7,18 +7,38 @@ import { useAuth } from '@/contexts/AuthContext';
 const RealTimeNotificationSystem: React.FC = () => {
   const { user } = useAuth();
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const isSubscribedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Clean up if user is not available
+      if (channelRef.current) {
+        console.log('Cleaning up channel due to no user');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
+      return;
+    }
+
+    // Prevent multiple subscriptions
+    if (isSubscribedRef.current) {
+      console.log('Already subscribed, skipping subscription');
+      return;
+    }
 
     // Clean up any existing channel before creating a new one
     if (channelRef.current) {
+      console.log('Removing existing channel before creating new one');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
+      isSubscribedRef.current = false;
     }
 
     // Create a new channel with a unique name
     const channelName = `notifications_${user.id}_${Date.now()}`;
+    console.log('Creating new channel:', channelName);
+    
     const channel = supabase.channel(channelName);
 
     // Set up the channel listeners before subscribing
@@ -48,12 +68,18 @@ const RealTimeNotificationSystem: React.FC = () => {
         }
       );
 
-    // Subscribe to the channel
+    // Subscribe to the channel only once
     channel.subscribe((status) => {
+      console.log('Subscription status:', status);
       if (status === 'SUBSCRIBED') {
         console.log('Successfully subscribed to notifications channel');
+        isSubscribedRef.current = true;
       } else if (status === 'CHANNEL_ERROR') {
         console.error('Failed to subscribe to notifications channel');
+        isSubscribedRef.current = false;
+      } else if (status === 'CLOSED') {
+        console.log('Channel subscription closed');
+        isSubscribedRef.current = false;
       }
     });
 
@@ -62,11 +88,12 @@ const RealTimeNotificationSystem: React.FC = () => {
 
     // Cleanup function
     return () => {
+      console.log('Cleaning up notifications channel in useEffect cleanup');
       if (channelRef.current) {
-        console.log('Cleaning up notifications channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      isSubscribedRef.current = false;
     };
   }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
 
