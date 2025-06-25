@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader, CheckCircle2, XCircle, AlertTriangle, Database, Server, Link2, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  testDatabase,
   testDatabaseTable,
   testSupabaseAuth,
   testSupabaseDatabase,
@@ -19,6 +19,7 @@ import {
 } from '@/utils/databaseTestUtils';
 
 const TestingVerification: React.FC = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('database');
   const [databaseStatus, setDatabaseStatus] = useState<TestResult>({
     status: 'warning',
@@ -27,7 +28,7 @@ const TestingVerification: React.FC = () => {
   
   const [databaseTableResults, setDatabaseTableResults] = useState<TestResult[]>([]);
   const [authResults, setAuthResults] = useState<TestResult>({
-    status: 'error',
+    status: 'warning',
     details: 'Test not run yet'
   });
   
@@ -59,13 +60,21 @@ const TestingVerification: React.FC = () => {
   const handleTestDatabase = async () => {
     try {
       setLoading(prev => ({ ...prev, database: true }));
+      
+      // Test database connection
       const result = await testSupabaseDatabase();
       setDatabaseStatus(result);
       
-      // If database test passes, also test auth
-      if (result.status === 'success') {
+      // Test auth regardless of auth loading state
+      try {
         const authResult = await testSupabaseAuth();
         setAuthResults(authResult);
+      } catch (error) {
+        setAuthResults({
+          status: 'error',
+          details: 'Auth test failed',
+          error: error instanceof Error ? error.message : 'Unknown auth error'
+        });
       }
       
       toast({
@@ -75,6 +84,12 @@ const TestingVerification: React.FC = () => {
       });
     } catch (error) {
       console.error('Error testing database:', error);
+      setDatabaseStatus({
+        status: 'error',
+        details: 'Database test failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while testing the database connection',
@@ -102,16 +117,31 @@ const TestingVerification: React.FC = () => {
         testDatabaseTable('profiles')
       ];
       
-      const results = await Promise.all(tablesPromises);
-      setDatabaseTableResults(results);
+      const results = await Promise.allSettled(tablesPromises);
+      const processedResults = results.map((result, index) => {
+        const tableName = ['documents', 'training_records', 'suppliers', 'capa_actions', 'complaints', 'audits', 'non_conformances', 'profiles'][index];
+        
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            status: 'error' as const,
+            tableName,
+            details: `Failed to test table: ${tableName}`,
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+          };
+        }
+      });
       
-      const failedTables = results.filter(r => r.status === 'error').length;
+      setDatabaseTableResults(processedResults);
+      
+      const failedTables = processedResults.filter(r => r.status === 'error').length;
       
       toast({
         title: failedTables > 0 ? `${failedTables} Table Tests Failed` : 'All Table Tests Passed',
         description: failedTables > 0 
-          ? `${results.length - failedTables} of ${results.length} tables are accessible`
-          : `Successfully tested ${results.length} database tables`,
+          ? `${processedResults.length - failedTables} of ${processedResults.length} tables are accessible`
+          : `Successfully tested ${processedResults.length} database tables`,
         variant: failedTables > 0 ? 'destructive' : 'default'
       });
     } catch (error) {
@@ -137,16 +167,31 @@ const TestingVerification: React.FC = () => {
         testCrossModuleIntegration()
       ];
       
-      const results = await Promise.all(integrationsPromises);
-      setIntegrationResults(results);
+      const results = await Promise.allSettled(integrationsPromises);
+      const processedResults = results.map((result, index) => {
+        const functionName = ['Service Integration', 'Cross-Module Integration'][index];
+        
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            status: 'error' as const,
+            functionName,
+            details: `Failed to test ${functionName}`,
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+          };
+        }
+      });
       
-      const failedIntegrations = results.filter(r => r.status === 'error').length;
+      setIntegrationResults(processedResults);
+      
+      const failedIntegrations = processedResults.filter(r => r.status === 'error').length;
       
       toast({
         title: failedIntegrations > 0 ? `${failedIntegrations} Integration Tests Failed` : 'All Integration Tests Passed',
         description: failedIntegrations > 0 
-          ? `${results.length - failedIntegrations} of ${results.length} integrations are working`
-          : `Successfully tested ${results.length} service integrations`,
+          ? `${processedResults.length - failedIntegrations} of ${processedResults.length} integrations are working`
+          : `Successfully tested ${processedResults.length} service integrations`,
         variant: failedIntegrations > 0 ? 'destructive' : 'default'
       });
     } catch (error) {
@@ -175,16 +220,31 @@ const TestingVerification: React.FC = () => {
         testRouterNavigation('/suppliers')
       ];
       
-      const results = await Promise.all(navigationPromises);
-      setNavigationResults(results);
+      const results = await Promise.allSettled(navigationPromises);
+      const processedResults = results.map((result, index) => {
+        const routeName = ['/dashboard', '/documents', '/training', '/capa', '/suppliers'][index];
+        
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            status: 'error' as const,
+            functionName: `Route: ${routeName}`,
+            details: `Failed to test route ${routeName}`,
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+          };
+        }
+      });
       
-      const failedRoutes = results.filter(r => r.status === 'error').length;
+      setNavigationResults(processedResults);
+      
+      const failedRoutes = processedResults.filter(r => r.status === 'error').length;
       
       toast({
         title: failedRoutes > 0 ? `${failedRoutes} Route Tests Failed` : 'All Route Tests Passed',
         description: failedRoutes > 0 
-          ? `${results.length - failedRoutes} of ${results.length} routes are working`
-          : `Successfully tested ${results.length} application routes`,
+          ? `${processedResults.length - failedRoutes} of ${processedResults.length} routes are working`
+          : `Successfully tested ${processedResults.length} application routes`,
         variant: failedRoutes > 0 ? 'destructive' : 'default'
       });
     } catch (error) {
@@ -262,6 +322,9 @@ const TestingVerification: React.FC = () => {
                           <div>
                             <div className="font-medium">Database Connection</div>
                             <div className="text-sm text-gray-500">{databaseStatus.details}</div>
+                            {databaseStatus.error && (
+                              <div className="text-xs text-red-600 mt-1">{databaseStatus.error}</div>
+                            )}
                           </div>
                         </div>
                         <div className="capitalize font-medium text-sm">
@@ -277,6 +340,9 @@ const TestingVerification: React.FC = () => {
                           <div>
                             <div className="font-medium">Auth System</div>
                             <div className="text-sm text-gray-500">{authResults.details}</div>
+                            {authResults.error && (
+                              <div className="text-xs text-red-600 mt-1">{authResults.error}</div>
+                            )}
                           </div>
                         </div>
                         <div className="capitalize font-medium text-sm">
@@ -308,6 +374,9 @@ const TestingVerification: React.FC = () => {
                                     : result.details
                                   }
                                 </div>
+                                {result.error && (
+                                  <div className="text-xs text-red-600 mt-1">{result.error}</div>
+                                )}
                               </div>
                             </div>
                             <div className="capitalize font-medium text-sm">
@@ -350,7 +419,7 @@ const TestingVerification: React.FC = () => {
                                 <div className="font-medium">{result.functionName}</div>
                                 <div className="text-sm text-gray-500">{result.details}</div>
                                 {result.error && (
-                                  <div className="text-xs text-gray-400">{result.error}</div>
+                                  <div className="text-xs text-red-600 mt-1">{result.error}</div>
                                 )}
                               </div>
                             </div>
@@ -394,7 +463,7 @@ const TestingVerification: React.FC = () => {
                                 <div className="font-medium">{result.functionName}</div>
                                 <div className="text-sm text-gray-500">{result.details}</div>
                                 {result.error && (
-                                  <div className="text-xs text-gray-400">{result.error}</div>
+                                  <div className="text-xs text-red-600 mt-1">{result.error}</div>
                                 )}
                               </div>
                             </div>
