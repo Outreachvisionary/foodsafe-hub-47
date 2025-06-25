@@ -1,7 +1,5 @@
-
-
 import { supabase } from '@/integrations/supabase/client';
-import ModuleIntegrationService from './moduleIntegrationService';
+import { moduleIntegrationService } from './moduleIntegrationService';
 import { toast } from 'sonner';
 
 export interface WorkflowTemplate {
@@ -143,13 +141,13 @@ export class WorkflowOrchestrationService {
     if (error) throw error;
 
     // Create relationship
-    await ModuleIntegrationService.createRelationship({
-      sourceType: 'audit-finding',
-      sourceId: auditFindingId,
-      targetType: 'non-conformance',
-      targetId: ncData.id,
-      relationshipType: 'generated-from',
-      createdBy: data.userId
+    await moduleIntegrationService.createRelationship({
+      source_type: 'audit-finding',
+      source_id: auditFindingId,
+      target_type: 'non-conformance',
+      target_id: ncData.id,
+      relationship_type: 'generated-from',
+      created_by: data.userId
     });
 
     return { nonConformanceId: ncData.id };

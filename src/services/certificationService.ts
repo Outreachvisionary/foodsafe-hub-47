@@ -91,7 +91,12 @@ export const certificationService = {
       .order('expiry_date');
 
     if (error) throw error;
-    return data || [];
+    
+    // Cast the status to the correct type
+    return (data || []).map(cert => ({
+      ...cert,
+      status: cert.status as 'Active' | 'Expired' | 'Revoked' | 'Pending'
+    }));
   },
 
   async createEmployeeCertification(certification: Omit<EmployeeCertification, 'id'>): Promise<EmployeeCertification> {
@@ -102,7 +107,10 @@ export const certificationService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Expired' | 'Revoked' | 'Pending'
+    };
   },
 
   async updateEmployeeCertification(id: string, updates: Partial<EmployeeCertification>): Promise<EmployeeCertification> {
@@ -114,7 +122,10 @@ export const certificationService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      status: data.status as 'Active' | 'Expired' | 'Revoked' | 'Pending'
+    };
   },
 
   async deleteEmployeeCertification(id: string): Promise<void> {

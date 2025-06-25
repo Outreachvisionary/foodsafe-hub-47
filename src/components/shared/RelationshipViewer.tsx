@@ -14,7 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useModuleRelationships } from '@/hooks/useModuleRelationships';
-import ModuleIntegrationService from '@/services/moduleIntegrationService';
+import { moduleIntegrationService } from '@/services/moduleIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RelationshipViewerProps {
@@ -83,7 +83,7 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
 
   const getWorkflowSuggestions = () => {
     // Get suggestions based on the source type and current state
-    const suggestions = ModuleIntegrationService.getWorkflowSuggestions(sourceType, 'active', {
+    const suggestions = moduleIntegrationService.getWorkflowSuggestions(sourceType, 'active', {
       severity: 'major' // This would come from the actual item data
     });
     
@@ -142,19 +142,19 @@ const RelationshipViewer: React.FC<RelationshipViewerProps> = ({
             {relationships.map((relationship) => (
               <div key={relationship.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  {getModuleIcon(relationship.targetType)}
+                  {getModuleIcon(relationship.target_type)}
                   <div className="flex-1">
                     <div className="font-medium">
-                      {relationship.targetType.replace('-', ' ')} #{relationship.targetId.slice(0, 8)}
+                      {relationship.target_type.replace('-', ' ')} #{relationship.target_id.slice(0, 8)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Created {new Date(relationship.createdAt).toLocaleDateString()}
+                      Created {relationship.created_at ? new Date(relationship.created_at).toLocaleDateString() : 'Unknown'}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  {getRelationshipBadge(relationship.relationshipType)}
+                  {getRelationshipBadge(relationship.relationship_type)}
                 </div>
               </div>
             ))}

@@ -43,30 +43,54 @@ export const trainingPlanService = {
       .order('name');
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform database fields to match interface
+    return (data || []).map(plan => ({
+      ...plan,
+      courses_included: plan.courses_included || plan.courses || [],
+      priority: plan.priority as 'Low' | 'Medium' | 'High' | 'Critical',
+      status: plan.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
+    }));
   },
 
   async createTrainingPlan(plan: Omit<TrainingPlan, 'id'>): Promise<TrainingPlan> {
     const { data, error } = await supabase
       .from('training_plans')
-      .insert(plan)
+      .insert({
+        ...plan,
+        courses_included: plan.courses_included || []
+      })
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      courses_included: data.courses_included || data.courses || [],
+      priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
+      status: data.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
+    };
   },
 
   async updateTrainingPlan(id: string, updates: Partial<TrainingPlan>): Promise<TrainingPlan> {
     const { data, error } = await supabase
       .from('training_plans')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ 
+        ...updates, 
+        updated_at: new Date().toISOString(),
+        courses_included: updates.courses_included || []
+      })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      courses_included: data.courses_included || data.courses || [],
+      priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
+      status: data.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
+    };
   },
 
   async deleteTrainingPlan(id: string): Promise<void> {
@@ -86,7 +110,14 @@ export const trainingPlanService = {
       .order('start_date');
 
     if (error) throw error;
-    return data || [];
+    
+    // Cast types to match interface
+    return (data || []).map(session => ({
+      ...session,
+      training_type: session.training_type as 'Internal' | 'External' | 'Online' | 'Certification',
+      training_category: session.training_category as 'Safety' | 'Quality' | 'Compliance' | 'Technical' | 'General',
+      completion_status: session.completion_status as 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled'
+    }));
   },
 
   async createTrainingSession(session: Omit<TrainingSession, 'id'>): Promise<TrainingSession> {
@@ -97,7 +128,12 @@ export const trainingPlanService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      training_type: data.training_type as 'Internal' | 'External' | 'Online' | 'Certification',
+      training_category: data.training_category as 'Safety' | 'Quality' | 'Compliance' | 'Technical' | 'General',
+      completion_status: data.completion_status as 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled'
+    };
   },
 
   async updateTrainingSession(id: string, updates: Partial<TrainingSession>): Promise<TrainingSession> {
@@ -109,7 +145,12 @@ export const trainingPlanService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      training_type: data.training_type as 'Internal' | 'External' | 'Online' | 'Certification',
+      training_category: data.training_category as 'Safety' | 'Quality' | 'Compliance' | 'Technical' | 'General',
+      completion_status: data.completion_status as 'Not Started' | 'In Progress' | 'Completed' | 'Overdue' | 'Cancelled'
+    };
   },
 
   async deleteTrainingSession(id: string): Promise<void> {

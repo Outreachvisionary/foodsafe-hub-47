@@ -37,6 +37,23 @@ export const moduleIntegrationService = {
     return data || [];
   },
 
+  // Get related items with target type filtering
+  async getRelatedItems(sourceId: string, sourceType: string, targetType?: string): Promise<ModuleRelationship[]> {
+    let query = supabase
+      .from('module_relationships')
+      .select('*')
+      .eq('source_id', sourceId)
+      .eq('source_type', sourceType);
+
+    if (targetType) {
+      query = query.eq('target_type', targetType);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
   // Link certification to training
   async linkCertificationToTraining(certificationId: string, trainingId: string, userId: string): Promise<void> {
     await this.createRelationship({
@@ -113,5 +130,33 @@ export const moduleIntegrationService = {
       .eq('id', relationshipId);
 
     if (error) throw error;
+  },
+
+  // Trigger workflow
+  async triggerWorkflow(sourceType: string, sourceId: string, workflowType: string, data: any): Promise<void> {
+    console.log(`Triggering workflow: ${workflowType} for ${sourceType}:${sourceId}`, data);
+    // Implementation would go here
+  },
+
+  // Get workflow suggestions
+  getWorkflowSuggestions(sourceType: string, status: string, metadata: any): string[] {
+    const suggestions: string[] = [];
+    
+    if (sourceType === 'audit-finding' && metadata.severity === 'major') {
+      suggestions.push('Create Non-Conformance');
+    }
+    
+    if (sourceType === 'non_conformance' && status === 'active') {
+      suggestions.push('Generate CAPA');
+    }
+    
+    if (sourceType === 'capa' && status === 'active') {
+      suggestions.push('Assign Training');
+    }
+    
+    return suggestions;
   }
 };
+
+// Export as default for backward compatibility
+export default moduleIntegrationService;
