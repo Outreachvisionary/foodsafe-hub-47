@@ -47,7 +47,7 @@ export const trainingPlanService = {
     // Transform database fields to match interface
     return (data || []).map(plan => ({
       ...plan,
-      courses_included: plan.courses_included || plan.courses || [],
+      courses_included: plan.courses || [],
       priority: plan.priority as 'Low' | 'Medium' | 'High' | 'Critical',
       status: plan.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
     }));
@@ -58,7 +58,7 @@ export const trainingPlanService = {
       .from('training_plans')
       .insert({
         ...plan,
-        courses_included: plan.courses_included || []
+        courses: plan.courses_included || []
       })
       .select()
       .single();
@@ -66,7 +66,7 @@ export const trainingPlanService = {
     if (error) throw error;
     return {
       ...data,
-      courses_included: data.courses_included || data.courses || [],
+      courses_included: data.courses || [],
       priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
       status: data.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
     };
@@ -78,7 +78,7 @@ export const trainingPlanService = {
       .update({ 
         ...updates, 
         updated_at: new Date().toISOString(),
-        courses_included: updates.courses_included || []
+        courses: updates.courses_included || []
       })
       .eq('id', id)
       .select()
@@ -87,7 +87,7 @@ export const trainingPlanService = {
     if (error) throw error;
     return {
       ...data,
-      courses_included: data.courses_included || data.courses || [],
+      courses_included: data.courses || [],
       priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
       status: data.status as 'Draft' | 'Active' | 'Inactive' | 'Archived'
     };

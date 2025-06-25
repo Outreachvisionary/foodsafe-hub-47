@@ -14,7 +14,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <main className="flex-1">
+          <main className="flex-1 p-6">
             {children || <Outlet />}
           </main>
         </SidebarInset>

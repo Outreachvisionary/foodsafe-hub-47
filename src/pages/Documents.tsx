@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 import DocumentRepositoryView from '@/components/documents/DocumentRepositoryView';
 import { DocumentProvider } from '@/contexts/DocumentContext';
 
@@ -33,13 +32,11 @@ const Documents = () => {
   console.log('Documents: rendering main content');
 
   return (
-    <ProtectedSidebarLayout>
-      <DocumentProvider>
-        <div className="container mx-auto p-6 max-w-7xl">
-          <DocumentRepositoryView />
-        </div>
-      </DocumentProvider>
-    </ProtectedSidebarLayout>
+    <DocumentProvider>
+      <div className="container mx-auto p-6 max-w-7xl">
+        <DocumentRepositoryView />
+      </div>
+    </DocumentProvider>
   );
 };
 

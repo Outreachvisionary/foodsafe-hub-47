@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Loading from '@/components/Loading';
-import MainLayout from './MainLayout';
+import SidebarLayout from './SidebarLayout';
 import RealTimeNotificationSystem from '@/components/notifications/RealTimeNotificationSystem';
 
 interface ProtectedSidebarLayoutProps {
@@ -22,10 +22,10 @@ const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ childre
   }
 
   return (
-    <MainLayout>
+    <SidebarLayout>
       <RealTimeNotificationSystem />
       {children}
-    </MainLayout>
+    </SidebarLayout>
   );
 };
 
