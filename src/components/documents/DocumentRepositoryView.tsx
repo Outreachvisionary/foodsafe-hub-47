@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
+import { getComplianceInfo } from '@/utils/documentTypeAdapter';
 
 const DocumentRepositoryView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,12 +260,15 @@ const DocumentRepositoryView: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                <p className="text-sm font-medium text-muted-foreground">Review Due/Overdue</p>
                 <p className="text-2xl font-bold">
-                  {documents?.filter(doc => doc.status.includes('Pending')).length || 0}
+                  {documents?.filter(doc => {
+                    const compliance = getComplianceInfo(doc);
+                    return compliance.reviewStatus.status === 'due' || compliance.reviewStatus.status === 'overdue';
+                  }).length || 0}
                 </p>
               </div>
-              <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+              <Badge className="bg-orange-100 text-orange-800">Review</Badge>
             </div>
           </CardContent>
         </Card>

@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { useDocument } from '@/contexts/DocumentContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getComplianceInfo } from '@/utils/documentTypeAdapter';
 
 interface DocumentViewModalProps {
   open: boolean;
@@ -253,6 +254,11 @@ const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
                             <FileText className="h-4 w-4" />
+                            <span className="font-medium">Document Number:</span>
+                            <span className="font-mono">{getComplianceInfo(document).documentNumber}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <FileText className="h-4 w-4" />
                             <span className="font-medium">Filename:</span>
                             <span>{document.file_name}</span>
                           </div>
@@ -266,11 +272,16 @@ const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
                             <span className="font-medium">File Size:</span>
                             <span>{formatFileSize(document.file_size)}</span>
                           </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Info className="h-4 w-4" />
+                            <span className="font-medium">Created By:</span>
+                            <span>{document.created_by}</span>
+                          </div>
                         </div>
                       </div>
                       
                       <div className="space-y-1">
-                        <h3 className="text-sm font-medium text-muted-foreground">Dates</h3>
+                        <h3 className="text-sm font-medium text-muted-foreground">Dates & Review</h3>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4" />
@@ -282,6 +293,22 @@ const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
                             <span className="font-medium">Modified:</span>
                             <span>{format(new Date(document.updated_at), 'MMM dd, yyyy HH:mm')}</span>
                           </div>
+                          {document.last_review_date && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className="h-4 w-4" />
+                              <span className="font-medium">Last Review:</span>
+                              <span>{format(new Date(document.last_review_date), 'MMM dd, yyyy')}</span>
+                            </div>
+                          )}
+                          {document.next_review_date && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className={`h-4 w-4 ${getComplianceInfo(document).reviewStatus.status === 'overdue' ? 'text-red-500' : getComplianceInfo(document).reviewStatus.status === 'due' ? 'text-yellow-500' : ''}`} />
+                              <span className="font-medium">Next Review:</span>
+                              <span className={getComplianceInfo(document).reviewStatus.status === 'overdue' ? 'text-red-600 font-medium' : getComplianceInfo(document).reviewStatus.status === 'due' ? 'text-yellow-600 font-medium' : ''}>
+                                {format(new Date(document.next_review_date), 'MMM dd, yyyy')}
+                              </span>
+                            </div>
+                          )}
                           {document.expiry_date && (
                             <div className="flex items-center gap-2 text-sm">
                               <Clock className="h-4 w-4" />
@@ -293,8 +320,49 @@ const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
                       </div>
                     </div>
                     
-                    {/* Additional metadata could be added here */}
-                    
+                    {/* Compliance & Approval Information */}
+                    <div className="mt-6 space-y-4">
+                      <h3 className="text-sm font-medium text-muted-foreground">Compliance Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Document Type:</span>
+                            <Badge variant={getComplianceInfo(document).isControlled ? "default" : "secondary"}>
+                              {getComplianceInfo(document).isControlled ? "Controlled Document" : "Standard Document"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Review Status:</span>
+                            <Badge variant={
+                              getComplianceInfo(document).reviewStatus.status === 'overdue' ? "destructive" :
+                              getComplianceInfo(document).reviewStatus.status === 'due' ? "secondary" : "outline"
+                            }>
+                              {getComplianceInfo(document).reviewStatus.message}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {document.approvers && document.approvers.length > 0 && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Approvers:</span>
+                              <span>{document.approvers.join(', ')}</span>
+                            </div>
+                          )}
+                          {document.tags && document.tags.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-sm font-medium">Tags:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {document.tags.map((tag, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>

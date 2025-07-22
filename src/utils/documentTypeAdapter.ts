@@ -29,7 +29,23 @@ export const adaptDocumentFromDatabase = (dbDocument: any): Document => {
     folder_id: dbDocument.folder_id,
     file_path: dbDocument.file_path,
     expiry_date: dbDocument.expiry_date,
-    // Include other fields from the Document interface as needed
+    linked_module: dbDocument.linked_module,
+    linked_item_id: dbDocument.linked_item_id,
+    tags: dbDocument.tags,
+    approvers: dbDocument.approvers,
+    is_locked: dbDocument.is_locked,
+    checkout_user_id: dbDocument.checkout_user_id,
+    checkout_user_name: dbDocument.checkout_user_name,
+    checkout_timestamp: dbDocument.checkout_timestamp,
+    workflow_status: dbDocument.workflow_status,
+    rejection_reason: dbDocument.rejection_reason,
+    last_action: dbDocument.last_action,
+    is_template: dbDocument.is_template,
+    pending_since: dbDocument.pending_since,
+    custom_notification_days: dbDocument.custom_notification_days,
+    current_version_id: dbDocument.current_version_id,
+    last_review_date: dbDocument.last_review_date,
+    next_review_date: dbDocument.next_review_date,
   };
 };
 
@@ -61,4 +77,73 @@ export const generateDocumentNumber = (type: string, department: string): string
   const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
   
   return `${typeCode}-${deptCode}-${year}${month}-${randomNum}`;
+};
+
+// Function to get document number for display (compliance requirement)
+export const getDocumentNumber = (document: Document): string => {
+  // If we have a custom document number field, use it
+  // Otherwise generate one based on category and creation date
+  const date = new Date(document.created_at);
+  const year = date.getFullYear().toString().substr(2, 2);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const typeCode = document.category.toString().substr(0, 3).toUpperCase();
+  const sequenceNum = document.version.toString().padStart(3, '0');
+  
+  return `${typeCode}-${year}${month}-${sequenceNum}`;
+};
+
+// Function to check if document needs review (compliance requirement)
+export const getReviewStatus = (document: Document): {
+  status: 'current' | 'due' | 'overdue';
+  daysUntilReview?: number;
+  message: string;
+} => {
+  if (!document.next_review_date) {
+    return {
+      status: 'current',
+      message: 'No review date set'
+    };
+  }
+  
+  const today = new Date();
+  const reviewDate = new Date(document.next_review_date);
+  const diffTime = reviewDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return {
+      status: 'overdue',
+      daysUntilReview: Math.abs(diffDays),
+      message: `Review overdue by ${Math.abs(diffDays)} days`
+    };
+  } else if (diffDays <= 30) {
+    return {
+      status: 'due',
+      daysUntilReview: diffDays,
+      message: `Review due in ${diffDays} days`
+    };
+  }
+  
+  return {
+    status: 'current',
+    daysUntilReview: diffDays,
+    message: `Next review in ${diffDays} days`
+  };
+};
+
+// Function to check document compliance status
+export const getComplianceInfo = (document: Document) => {
+  const reviewStatus = getReviewStatus(document);
+  const hasApprovers = document.approvers && document.approvers.length > 0;
+  const isControlled = ['SOP', 'Policy', 'HACCP_Plan'].includes(document.category);
+  
+  return {
+    documentNumber: getDocumentNumber(document),
+    reviewStatus,
+    isControlled,
+    hasApprovers,
+    requiresApproval: isControlled && !hasApprovers,
+    complianceLevel: isControlled && hasApprovers && reviewStatus.status === 'current' ? 'high' : 
+                    isControlled ? 'medium' : 'basic'
+  };
 };
