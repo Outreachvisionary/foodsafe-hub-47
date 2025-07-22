@@ -67,13 +67,13 @@ export const createAudit = async (audit: Partial<Audit>): Promise<Audit> => {
       .single();
 
     const auditData = {
-      title: audit.title || '',
+      title: audit.title || 'Audit',
       description: audit.description,
-      status: audit.status || 'Scheduled',
+      audit_type: audit.audit_type || 'Internal',
+      status: (audit.status as any) || 'Scheduled',
+      assigned_to: audit.assigned_to || profile?.full_name || user.email || 'System',
       start_date: audit.start_date || new Date().toISOString(),
       due_date: audit.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      audit_type: audit.audit_type || 'Internal',
-      assigned_to: audit.assigned_to || profile?.full_name || user.email || 'System',
       department: audit.department,
       location: audit.location,
       related_standard: audit.related_standard,

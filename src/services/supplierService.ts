@@ -4,22 +4,12 @@ import { toast } from 'sonner';
 export interface Supplier {
   id: string;
   name: string;
-  contact_person?: string;
-  email?: string;
-  phone?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
   address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  country?: string;
-  website?: string;
-  status: 'Active' | 'Inactive' | 'Pending' | 'Suspended';
-  supplier_type: 'Raw Material' | 'Packaging' | 'Equipment' | 'Service' | 'Other';
-  certification_status?: 'Certified' | 'Pending' | 'Expired' | 'Not Required';
-  last_audit_date?: string;
-  next_audit_date?: string;
-  risk_level?: 'Low' | 'Medium' | 'High' | 'Critical';
-  notes?: string;
+  status?: string;
+  partner_type: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -27,14 +17,8 @@ export interface Supplier {
 
 export interface SupplierStats {
   total: number;
-  active: number;
-  inactive: number;
-  pending: number;
-  suspended: number;
   byType: Record<string, number>;
-  byRiskLevel: Record<string, number>;
-  auditsDue: number;
-  certificationsExpiring: number;
+  byStatus: Record<string, number>;
 }
 
 // Get all suppliers
@@ -88,22 +72,12 @@ export const createSupplier = async (supplier: Partial<Supplier>): Promise<Suppl
 
     const supplierData = {
       name: supplier.name || '',
-      contact_person: supplier.contact_person,
-      email: supplier.email,
-      phone: supplier.phone,
+      contact_name: supplier.contact_name,
+      contact_email: supplier.contact_email,
+      contact_phone: supplier.contact_phone,
       address: supplier.address,
-      city: supplier.city,
-      state: supplier.state,
-      zip_code: supplier.zip_code,
-      country: supplier.country,
-      website: supplier.website,
       status: supplier.status || 'Pending',
-      supplier_type: supplier.supplier_type || 'Other',
-      certification_status: supplier.certification_status,
-      last_audit_date: supplier.last_audit_date,
-      next_audit_date: supplier.next_audit_date,
-      risk_level: supplier.risk_level,
-      notes: supplier.notes,
+      partner_type: supplier.partner_type || 'Other',
       created_by: profile?.full_name || user.email || 'System',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -178,49 +152,18 @@ export const getSupplierStats = async (): Promise<SupplierStats> => {
 
     const stats: SupplierStats = {
       total: suppliers.length,
-      active: 0,
-      inactive: 0,
-      pending: 0,
-      suspended: 0,
       byType: {},
-      byRiskLevel: {},
-      auditsDue: 0,
-      certificationsExpiring: 0
+      byStatus: {}
     };
-
-    const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
 
     suppliers.forEach(supplier => {
       // Count by status
-      switch (supplier.status) {
-        case 'Active':
-          stats.active++;
-          break;
-        case 'Inactive':
-          stats.inactive++;
-          break;
-        case 'Pending':
-          stats.pending++;
-          break;
-        case 'Suspended':
-          stats.suspended++;
-          break;
-      }
+      const status = supplier.status || 'Unknown';
+      stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
 
       // Count by type
-      const type = supplier.supplier_type || 'Other';
+      const type = supplier.partner_type || 'Other';
       stats.byType[type] = (stats.byType[type] || 0) + 1;
-
-      // Count by risk level
-      const riskLevel = supplier.risk_level || 'Low';
-      stats.byRiskLevel[riskLevel] = (stats.byRiskLevel[riskLevel] || 0) + 1;
-
-      // Check for due audits
-      if (supplier.next_audit_date && new Date(supplier.next_audit_date) <= thirtyDaysFromNow) {
-        stats.auditsDue++;
-      }
     });
 
     return stats;
@@ -228,14 +171,8 @@ export const getSupplierStats = async (): Promise<SupplierStats> => {
     console.error('Error fetching supplier stats:', error);
     return {
       total: 0,
-      active: 0,
-      inactive: 0,
-      pending: 0,
-      suspended: 0,
       byType: {},
-      byRiskLevel: {},
-      auditsDue: 0,
-      certificationsExpiring: 0
+      byStatus: {}
     };
   }
 };

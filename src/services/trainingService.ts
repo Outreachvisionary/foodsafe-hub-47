@@ -5,45 +5,36 @@ export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
-  training_type: 'Mandatory' | 'Optional' | 'Refresher' | 'Certification';
-  category: 'Food Safety' | 'HACCP' | 'GMP' | 'Quality Management' | 'Regulatory Compliance' | 'Equipment Operation' | 'Safety Procedures' | 'Documentation' | 'Other';
-  status: 'Draft' | 'Active' | 'Completed' | 'Cancelled' | 'Archived';
-  instructor?: string;
-  duration_hours: number;
-  max_participants?: number;
-  current_participants: number;
-  start_date: string;
-  end_date?: string;
-  location?: string;
-  is_online: boolean;
-  meeting_link?: string;
-  materials?: string[];
-  prerequisites?: string[];
-  learning_objectives?: string[];
-  assessment_required: boolean;
-  passing_score?: number;
-  certificate_template?: string;
+  training_type: string;
+  training_category?: string;
+  completion_status?: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
+  assigned_to: string[];
+  department?: string;
+  start_date?: string;
+  due_date?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
+  materials_id?: string[];
+  required_roles?: string[];
+  is_recurring?: boolean;
+  recurring_interval?: number;
 }
 
 export interface TrainingRecord {
   id: string;
-  training_session_id: string;
+  session_id: string;
   employee_id: string;
   employee_name: string;
-  status: 'Enrolled' | 'In Progress' | 'Completed' | 'Failed' | 'Cancelled';
-  enrollment_date: string;
-  start_date?: string;
+  status?: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
+  assigned_date?: string;
+  due_date: string;
   completion_date?: string;
   score?: number;
-  passed: boolean;
-  certificate_issued: boolean;
-  certificate_url?: string;
+  pass_threshold?: number;
   notes?: string;
-  created_at: string;
-  updated_at: string;
+  last_recurrence?: string;
+  next_recurrence?: string;
 }
 
 export interface TrainingStats {
@@ -111,23 +102,16 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
       title: session.title || '',
       description: session.description,
       training_type: session.training_type || 'Optional',
-      category: session.category || 'Other',
-      status: session.status || 'Draft',
-      instructor: session.instructor,
-      duration_hours: session.duration_hours || 1,
-      max_participants: session.max_participants,
-      current_participants: 0,
+      training_category: session.training_category || 'Other',
+      completion_status: session.completion_status || 'Not Started',
+      assigned_to: session.assigned_to || [],
+      department: session.department,
       start_date: session.start_date || new Date().toISOString(),
-      end_date: session.end_date,
-      location: session.location,
-      is_online: session.is_online || false,
-      meeting_link: session.meeting_link,
-      materials: session.materials || [],
-      prerequisites: session.prerequisites || [],
-      learning_objectives: session.learning_objectives || [],
-      assessment_required: session.assessment_required || false,
-      passing_score: session.passing_score,
-      certificate_template: session.certificate_template,
+      due_date: session.due_date,
+      materials_id: session.materials_id || [],
+      required_roles: session.required_roles || [],
+      is_recurring: session.is_recurring || false,
+      recurring_interval: session.recurring_interval,
       created_by: profile?.full_name || user.email || 'System',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -200,7 +184,7 @@ export const getTrainingRecords = async (sessionId?: string): Promise<TrainingRe
       .order('created_at', { ascending: false });
 
     if (sessionId) {
-      query = query.eq('training_session_id', sessionId);
+      query = query.eq('session_id', sessionId);
     }
 
     const { data, error } = await query;
@@ -217,15 +201,12 @@ export const getTrainingRecords = async (sessionId?: string): Promise<TrainingRe
 export const enrollInTraining = async (sessionId: string, employeeId: string, employeeName: string): Promise<TrainingRecord> => {
   try {
     const recordData = {
-      training_session_id: sessionId,
+      session_id: sessionId,
       employee_id: employeeId,
       employee_name: employeeName,
-      status: 'Enrolled' as const,
-      enrollment_date: new Date().toISOString(),
-      passed: false,
-      certificate_issued: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: 'Not Started' as const,
+      assigned_date: new Date().toISOString(),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
     };
 
     const { data, error } = await supabase
@@ -235,17 +216,6 @@ export const enrollInTraining = async (sessionId: string, employeeId: string, em
       .single();
 
     if (error) throw error;
-
-    // Update participant count
-    const { error: updateError } = await supabase
-      .from('training_sessions')
-      .update({ 
-        current_participants: supabase.sql`current_participants + 1`
-      })
-      .eq('id', sessionId);
-
-    if (updateError) console.error('Error updating participant count:', updateError);
-
     toast.success('Successfully enrolled in training');
     return data;
   } catch (error) {
@@ -296,8 +266,8 @@ export const getTrainingStats = async (): Promise<TrainingStats> => {
 
     const stats: TrainingStats = {
       totalSessions: sessions.length,
-      activeSessions: sessions.filter(s => s.status === 'Active').length,
-      completedSessions: sessions.filter(s => s.status === 'Completed').length,
+      activeSessions: sessions.filter(s => s.completion_status === 'In Progress').length,
+      completedSessions: sessions.filter(s => s.completion_status === 'Completed').length,
       totalEnrollments: records.length,
       completedEnrollments: records.filter(r => r.status === 'Completed').length,
       averageCompletionRate: 0,
@@ -313,7 +283,7 @@ export const getTrainingStats = async (): Promise<TrainingStats> => {
 
     // Count by category and type
     sessions.forEach(session => {
-      const category = session.category || 'Other';
+      const category = session.training_category || 'Other';
       const type = session.training_type || 'Other';
       
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
@@ -327,8 +297,8 @@ export const getTrainingStats = async (): Promise<TrainingStats> => {
 
     stats.upcomingSessions = sessions
       .filter(session => {
-        const startDate = new Date(session.start_date);
-        return startDate >= now && startDate <= thirtyDaysFromNow && session.status === 'Active';
+        const startDate = session.start_date ? new Date(session.start_date) : null;
+        return startDate && startDate >= now && startDate <= thirtyDaysFromNow && session.completion_status === 'Not Started';
       })
       .slice(0, 5);
 

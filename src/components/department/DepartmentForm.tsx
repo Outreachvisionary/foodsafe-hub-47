@@ -8,7 +8,7 @@ import FacilitySelector from '@/components/facilities/FacilitySelector';
 import { createDepartment, updateDepartment } from '@/services/departmentService';
 import { Department } from '@/types/department';
 import { toast } from 'sonner';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface DepartmentFormProps {
   department?: Department;
