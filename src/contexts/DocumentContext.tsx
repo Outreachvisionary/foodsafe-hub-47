@@ -214,6 +214,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     mutationFn: async (data: Partial<Document>) => {
       if (!user) throw new Error('User not authenticated');
       
+      // Prepare document data excluding any fields that don't exist in the database
       const documentData = {
         title: data.title || '',
         file_name: data.file_name || '',
@@ -223,26 +224,36 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
         status: convertStatusForDatabase(data.status || 'Draft'),
         checkout_status: convertCheckoutStatusForDatabase(data.checkout_status || 'Available'),
         version: data.version || 1,
-        created_by: user.id,
+        created_by: data.created_by || user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        description: data.description,
-        file_path: data.file_path,
+        description: data.description || '',
+        file_path: data.file_path || '',
         folder_id: data.folder_id,
-        tags: data.tags,
-        approvers: data.approvers,
-        expiry_date: data.expiry_date,
+        // Only include properties that exist in the database schema
         workflow_status: data.workflow_status || 'draft',
       };
 
-      const { data: result, error } = await supabase
-        .from('documents')
-        .insert(documentData)
-        .select()
-        .single();
+      // Explicitly log what we're sending to debug any issues
+      console.log('Creating document with data:', documentData);
 
-      if (error) throw error;
-      return result as Document;
+      try {
+        const { data: result, error } = await supabase
+          .from('documents')
+          .insert(documentData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error creating document:', error);
+          throw error;
+        }
+        
+        return result as Document;
+      } catch (error) {
+        console.error('Error in createDocumentMutation:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });

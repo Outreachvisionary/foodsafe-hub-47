@@ -22,6 +22,7 @@ import {
 import { Upload, FileText } from 'lucide-react';
 import { useDocument } from '@/contexts/DocumentContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentUploadModalProps {
   open: boolean;
@@ -65,16 +66,40 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
     setIsUploading(true);
     
     try {
+      // Get the current user ID from auth context
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+      
+      // First upload the file to Supabase storage
+      const fileName = formData.file.name;
+      const filePath = `${userId}/${crypto.randomUUID()}/${fileName}`;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, formData.file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Now create the document record
       await createDocument({
         title: formData.title,
         description: formData.description,
-        file_name: formData.file.name,
+        file_name: fileName,
         file_type: formData.file.type,
         file_size: formData.file.size,
+        file_path: filePath,
         category: formData.category as any,
         status: 'Draft',
-        folder_id: selectedFolder || undefined,
-        created_by: 'current-user', // This should come from auth context
+        folder_id: selectedFolder || null,
+        created_by: userId,
       });
 
       // Reset form
@@ -87,9 +112,9 @@ const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       
       onOpenChange(false);
       toast.success('Document uploaded successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload document');
+      toast.error(`Failed to upload document: ${error.message || 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
