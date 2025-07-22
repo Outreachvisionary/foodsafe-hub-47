@@ -2838,42 +2838,84 @@ export type Database = {
       supply_chain_partners: {
         Row: {
           address: string | null
+          certification_status: string | null
+          city: string | null
           contact_email: string | null
           contact_name: string | null
+          contact_person: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string | null
           created_by: string
+          email: string | null
           id: string
+          last_audit_date: string | null
           name: string
+          next_audit_date: string | null
+          notes: string | null
           partner_type: string
+          phone: string | null
+          risk_level: string | null
+          state: string | null
           status: string | null
+          supplier_type: string | null
           updated_at: string | null
+          website: string | null
+          zip_code: string | null
         }
         Insert: {
           address?: string | null
+          certification_status?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_name?: string | null
+          contact_person?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           created_by: string
+          email?: string | null
           id?: string
+          last_audit_date?: string | null
           name: string
+          next_audit_date?: string | null
+          notes?: string | null
           partner_type: string
+          phone?: string | null
+          risk_level?: string | null
+          state?: string | null
           status?: string | null
+          supplier_type?: string | null
           updated_at?: string | null
+          website?: string | null
+          zip_code?: string | null
         }
         Update: {
           address?: string | null
+          certification_status?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_name?: string | null
+          contact_person?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string | null
           created_by?: string
+          email?: string | null
           id?: string
+          last_audit_date?: string | null
           name?: string
+          next_audit_date?: string | null
+          notes?: string | null
           partner_type?: string
+          phone?: string | null
+          risk_level?: string | null
+          state?: string | null
           status?: string | null
+          supplier_type?: string | null
           updated_at?: string | null
+          website?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -3068,48 +3110,72 @@ export type Database = {
       training_records: {
         Row: {
           assigned_date: string | null
+          certificate_issued: boolean | null
+          certificate_url: string | null
           completion_date: string | null
+          created_at: string | null
           due_date: string
           employee_id: string
           employee_name: string
+          enrollment_date: string | null
           id: string
           last_recurrence: string | null
           next_recurrence: string | null
           notes: string | null
           pass_threshold: number | null
+          passed: boolean | null
           score: number | null
           session_id: string
+          start_date: string | null
           status: Database["public"]["Enums"]["training_status"] | null
+          training_session_id: string | null
+          updated_at: string | null
         }
         Insert: {
           assigned_date?: string | null
+          certificate_issued?: boolean | null
+          certificate_url?: string | null
           completion_date?: string | null
+          created_at?: string | null
           due_date: string
           employee_id: string
           employee_name: string
+          enrollment_date?: string | null
           id?: string
           last_recurrence?: string | null
           next_recurrence?: string | null
           notes?: string | null
           pass_threshold?: number | null
+          passed?: boolean | null
           score?: number | null
           session_id: string
+          start_date?: string | null
           status?: Database["public"]["Enums"]["training_status"] | null
+          training_session_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           assigned_date?: string | null
+          certificate_issued?: boolean | null
+          certificate_url?: string | null
           completion_date?: string | null
+          created_at?: string | null
           due_date?: string
           employee_id?: string
           employee_name?: string
+          enrollment_date?: string | null
           id?: string
           last_recurrence?: string | null
           next_recurrence?: string | null
           notes?: string | null
           pass_threshold?: number | null
+          passed?: boolean | null
           score?: number | null
           session_id?: string
+          start_date?: string | null
           status?: Database["public"]["Enums"]["training_status"] | null
+          training_session_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -3123,63 +3189,111 @@ export type Database = {
       }
       training_sessions: {
         Row: {
+          assessment_required: boolean | null
           assigned_to: string[]
+          category: string | null
+          certificate_template: string | null
           completion_status:
             | Database["public"]["Enums"]["training_status"]
             | null
           created_at: string | null
           created_by: string
+          current_participants: number | null
           department: string | null
           description: string | null
           due_date: string | null
+          duration_hours: number | null
+          end_date: string | null
           id: string
+          instructor: string | null
+          is_online: boolean | null
           is_recurring: boolean | null
+          learning_objectives: string[] | null
+          location: string | null
+          materials: string[] | null
           materials_id: string[] | null
+          max_participants: number | null
+          meeting_link: string | null
+          passing_score: number | null
+          prerequisites: string[] | null
           recurring_interval: number | null
           required_roles: string[] | null
           start_date: string | null
+          status: string | null
           title: string
           training_category: string | null
           training_type: string
           updated_at: string | null
         }
         Insert: {
+          assessment_required?: boolean | null
           assigned_to: string[]
+          category?: string | null
+          certificate_template?: string | null
           completion_status?:
             | Database["public"]["Enums"]["training_status"]
             | null
           created_at?: string | null
           created_by: string
+          current_participants?: number | null
           department?: string | null
           description?: string | null
           due_date?: string | null
+          duration_hours?: number | null
+          end_date?: string | null
           id?: string
+          instructor?: string | null
+          is_online?: boolean | null
           is_recurring?: boolean | null
+          learning_objectives?: string[] | null
+          location?: string | null
+          materials?: string[] | null
           materials_id?: string[] | null
+          max_participants?: number | null
+          meeting_link?: string | null
+          passing_score?: number | null
+          prerequisites?: string[] | null
           recurring_interval?: number | null
           required_roles?: string[] | null
           start_date?: string | null
+          status?: string | null
           title: string
           training_category?: string | null
           training_type: string
           updated_at?: string | null
         }
         Update: {
+          assessment_required?: boolean | null
           assigned_to?: string[]
+          category?: string | null
+          certificate_template?: string | null
           completion_status?:
             | Database["public"]["Enums"]["training_status"]
             | null
           created_at?: string | null
           created_by?: string
+          current_participants?: number | null
           department?: string | null
           description?: string | null
           due_date?: string | null
+          duration_hours?: number | null
+          end_date?: string | null
           id?: string
+          instructor?: string | null
+          is_online?: boolean | null
           is_recurring?: boolean | null
+          learning_objectives?: string[] | null
+          location?: string | null
+          materials?: string[] | null
           materials_id?: string[] | null
+          max_participants?: number | null
+          meeting_link?: string | null
+          passing_score?: number | null
+          prerequisites?: string[] | null
           recurring_interval?: number | null
           required_roles?: string[] | null
           start_date?: string | null
+          status?: string | null
           title?: string
           training_category?: string | null
           training_type?: string
