@@ -905,6 +905,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string
+          document_count: number | null
           id: string
           is_system_folder: boolean | null
           name: string
@@ -916,6 +917,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by: string
+          document_count?: number | null
           id?: string
           is_system_folder?: boolean | null
           name: string
@@ -927,6 +929,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string
+          document_count?: number | null
           id?: string
           is_system_folder?: boolean | null
           name?: string
