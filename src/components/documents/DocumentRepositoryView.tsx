@@ -18,6 +18,8 @@ import {
 import { Document } from '@/types/document';
 import { toast } from 'sonner';
 import DocumentUploadModal from './DocumentUploadModal';
+import DocumentViewModal from './DocumentViewModal';
+import DocumentEditModal from './DocumentEditModal';
 import DocumentCard from './DocumentCard';
 import DocumentTableView from './DocumentTableView';
 import FolderNavigation from './FolderNavigation';
@@ -29,12 +31,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { supabase } from '@/integrations/supabase/client';
 
 const DocumentRepositoryView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -86,6 +92,17 @@ const DocumentRepositoryView: React.FC = () => {
   const handleDocumentAction = async (action: string, documentId: string) => {
     try {
       switch (action) {
+        case 'view':
+          setSelectedDocumentId(documentId);
+          setShowViewModal(true);
+          break;
+        case 'edit':
+          setSelectedDocumentId(documentId);
+          setShowEditModal(true);
+          break;
+        case 'download':
+          await handleDownload(documentId);
+          break;
         case 'checkout':
           await checkoutDocument(documentId);
           toast.success('Document checked out successfully');
@@ -104,6 +121,41 @@ const DocumentRepositoryView: React.FC = () => {
     } catch (error) {
       toast.error(`Failed to ${action} document`);
       console.error(`${action} error:`, error);
+    }
+  };
+
+  const handleDownload = async (documentId: string) => {
+    const document = documents.find(d => d.id === documentId);
+    if (!document) {
+      toast.error('Document not found');
+      return;
+    }
+
+    try {
+      // Get download URL
+      const { data, error } = await supabase
+        .storage
+        .from('documents')
+        .createSignedUrl(document.file_path, 60); // 1 minute expiry
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.signedUrl) {
+        // Create an anchor element and trigger download
+        const a = window.document.createElement('a');
+        a.href = data.signedUrl;
+        a.download = document.file_name;
+        window.document.body.appendChild(a);
+        a.click();
+        window.document.body.removeChild(a);
+        
+        toast.success('Document download started');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
     }
   };
 
@@ -371,6 +423,27 @@ const DocumentRepositoryView: React.FC = () => {
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
         selectedFolder={selectedFolder}
+      />
+      
+      {/* View Modal */}
+      <DocumentViewModal
+        open={showViewModal}
+        onOpenChange={(open) => {
+          setShowViewModal(open);
+          if (!open) setSelectedDocumentId(null);
+        }}
+        documentId={selectedDocumentId}
+        onAction={handleDocumentAction}
+      />
+      
+      {/* Edit Modal */}
+      <DocumentEditModal
+        open={showEditModal}
+        onOpenChange={(open) => {
+          setShowEditModal(open);
+          if (!open) setSelectedDocumentId(null);
+        }}
+        documentId={selectedDocumentId}
       />
     </div>
   );
