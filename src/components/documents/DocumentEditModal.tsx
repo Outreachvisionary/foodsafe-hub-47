@@ -92,15 +92,7 @@ const DocumentEditModal: React.FC<DocumentEditModalProps> = ({
         throw new Error('User not authenticated');
       }
 
-      // Prepare the document update data
-      const updateData: any = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        updated_at: new Date().toISOString()
-      };
-      
-      // If a new file is uploaded, handle file upload first
+      // If a new file is uploaded, handle file upload and version creation
       if (formData.file) {
         // Generate a new file path
         const fileName = formData.file.name;
@@ -116,22 +108,54 @@ const DocumentEditModal: React.FC<DocumentEditModalProps> = ({
         
         if (uploadError) throw uploadError;
         
-        // Update the document metadata with the new file information
-        updateData.file_name = fileName;
-        updateData.file_type = formData.file.type;
-        updateData.file_size = formData.file.size;
-        updateData.file_path = filePath;
-        updateData.version = document.version + 1;
+        // Create a new version entry first
+        const { error: versionError } = await supabase
+          .from('document_versions')
+          .insert({
+            document_id: document.id,
+            file_name: document.file_name,
+            file_size: document.file_size,
+            version: document.version,
+            created_by: userId,
+            change_notes: formData.changeNotes || 'Document updated'
+          });
         
-        // Store the previous version in document_versions table
-        // Note: This would typically be handled by the backend
-        // Here we'll use the updateDocument to trigger a version creation
-        updateData.create_version = true;
-        updateData.change_notes = formData.changeNotes;
+        if (versionError) throw versionError;
+        
+        // Update the document with new file information
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            category: formData.category as any,
+            file_name: fileName,
+            file_type: formData.file.type,
+            file_size: formData.file.size,
+            file_path: filePath,
+            version: document.version + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', document.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // Just update metadata without file change
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            category: formData.category as any,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', document.id);
+        
+        if (updateError) throw updateError;
       }
       
-      // Update the document
-      await updateDocument(document.id, updateData);
+      // Refresh the document context
+      window.location.reload();
       
       onOpenChange(false);
       toast.success('Document updated successfully');
