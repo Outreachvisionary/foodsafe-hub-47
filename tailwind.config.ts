@@ -50,14 +50,17 @@ const config: Config = {
         success: {
           DEFAULT: 'hsl(var(--success))',
           foreground: 'hsl(var(--success-foreground))',
+          muted: 'hsl(var(--success-muted))',
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
+          muted: 'hsl(var(--warning-muted))',
         },
         info: {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
+          muted: 'hsl(var(--info-muted))',
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',

@@ -210,19 +210,19 @@
 
   /* Status badges */
   .status-success {
-    @apply text-success bg-success-muted border-success/20 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply text-success bg-success/10 border border-success/20 rounded-full px-2 py-0.5 text-xs font-medium;
   }
 
   .status-warning {
-    @apply text-warning-foreground bg-warning-muted border-warning/20 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply text-warning-foreground bg-warning/10 border border-warning/20 rounded-full px-2 py-0.5 text-xs font-medium;
   }
 
   .status-error {
-    @apply text-destructive bg-destructive/10 border-destructive/20 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-2 py-0.5 text-xs font-medium;
   }
 
   .status-info {
-    @apply text-info bg-info-muted border-info/20 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply text-info bg-info/10 border border-info/20 rounded-full px-2 py-0.5 text-xs font-medium;
   }
 
   /* Glassmorphism effects */
