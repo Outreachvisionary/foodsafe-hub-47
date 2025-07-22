@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Folder, FolderOpen, Home } from 'lucide-react';
+import { useDocument } from '@/contexts/DocumentContext';
 
 interface FolderNavigationProps {
   selectedFolder: string | null;
@@ -13,13 +14,15 @@ const FolderNavigation: React.FC<FolderNavigationProps> = ({
   selectedFolder, 
   onFolderSelect 
 }) => {
-  // Mock folders - in real implementation, this would come from the DocumentContext
-  const folders = [
-    { id: '1', name: 'Quality Documents', document_count: 15 },
-    { id: '2', name: 'Training Materials', document_count: 8 },
-    { id: '3', name: 'Policies', document_count: 12 },
-    { id: '4', name: 'Procedures', document_count: 20 },
-  ];
+  // Use folders and documents from DocumentContext
+  const { folders, documents } = useDocument();
+  
+  // Calculate document count for each folder
+  const folderDocumentCounts = folders.reduce((acc, folder) => {
+    const count = documents.filter(doc => doc.folder_id === folder.id).length;
+    acc[folder.id] = count;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <Card>
@@ -53,7 +56,7 @@ const FolderNavigation: React.FC<FolderNavigationProps> = ({
                 {folder.name}
               </div>
               <span className="text-xs text-muted-foreground">
-                {folder.document_count}
+                {folderDocumentCounts[folder.id] || 0}
               </span>
             </Button>
           ))}
