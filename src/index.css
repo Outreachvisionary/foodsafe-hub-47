@@ -36,6 +36,7 @@
     --primary-foreground: 0 0% 100%; /* White text on primary */
     --primary-hover: 210 80% 50%;
     --primary-active: 210 80% 45%;
+    --primary-light: 210 80% 65%;
     
     --secondary: 225 25% 95%; /* Light gray-blue */
     --secondary-foreground: 225 25% 20%; /* Same as foreground */
@@ -46,6 +47,7 @@
     --accent-hover: 270 76% 48%;
     --accent-active: 270 76% 43%;
     --accent-muted: 270 76% 93%;
+    --accent-light: 270 76% 65%;
 
     --muted: 220 14% 94%;
     --muted-foreground: 220 10% 50%;
@@ -114,6 +116,7 @@
     --primary-foreground: 0 0% 100%;
     --primary-hover: 210 80% 65%;
     --primary-active: 210 80% 70%;
+    --primary-light: 210 80% 75%;
     
     --secondary: 225 25% 26%; /* Darker gray-blue */
     --secondary-foreground: 220 20% 98%;
@@ -124,6 +127,7 @@
     --accent-hover: 270 76% 65%;
     --accent-active: 270 76% 70%;
     --accent-muted: 270 76% 25%;
+    --accent-light: 270 76% 75%;
 
     --muted: 220 14% 18%;
     --muted-foreground: 220 10% 65%;

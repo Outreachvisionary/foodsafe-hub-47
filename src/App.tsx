@@ -26,6 +26,7 @@ import Audits from './pages/Audits';
 import Standards from './pages/Standards';
 import Complaints from './pages/Complaints';
 import Traceability from './pages/Traceability';
+import Suppliers from './pages/Suppliers';
 import Facilities from './pages/Facilities';
 import Analytics from './pages/Analytics';
 import Performance from './pages/Performance';
@@ -63,7 +64,7 @@ function AppContent() {
         <Route path="/training" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/certifications" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/traceability" element={<ProtectedSidebarLayout><Traceability /></ProtectedSidebarLayout>} />
-        <Route path="/suppliers" element={<ProtectedSidebarLayout><Facilities /></ProtectedSidebarLayout>} />
+        <Route path="/suppliers" element={<ProtectedSidebarLayout><Suppliers /></ProtectedSidebarLayout>} />
         <Route path="/facilities" element={<ProtectedSidebarLayout><Facilities /></ProtectedSidebarLayout>} />
         <Route path="/analytics" element={<ProtectedSidebarLayout><Analytics /></ProtectedSidebarLayout>} />
         <Route path="/performance" element={<ProtectedSidebarLayout><Performance /></ProtectedSidebarLayout>} />

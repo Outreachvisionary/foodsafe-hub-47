@@ -103,11 +103,11 @@ const Standards = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'certified': return 'bg-green-100 text-green-800';
-      case 'compliant': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'certified': return 'status-success';
+      case 'compliant': return 'status-info';
+      case 'in-progress': return 'status-warning';
+      case 'expired': return 'status-error';
+      default: return 'status-info';
     }
   };
 
@@ -121,10 +121,10 @@ const Standards = () => {
   };
 
   const getComplianceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-success';
+    if (score >= 80) return 'text-info';
+    if (score >= 70) return 'text-warning';
+    return 'text-destructive';
   };
 
   return (
@@ -154,7 +154,7 @@ const Standards = () => {
                   <p className="text-sm font-medium text-muted-foreground">Active Standards</p>
                   <p className="text-2xl font-bold">4</p>
                 </div>
-                <Shield className="h-8 w-8 text-blue-600" />
+                <Shield className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -165,7 +165,7 @@ const Standards = () => {
                   <p className="text-sm font-medium text-muted-foreground">Certified</p>
                   <p className="text-2xl font-bold">2</p>
                 </div>
-                <Award className="h-8 w-8 text-green-600" />
+                <Award className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -176,7 +176,7 @@ const Standards = () => {
                   <p className="text-sm font-medium text-muted-foreground">Avg Compliance</p>
                   <p className="text-2xl font-bold">81%</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-blue-600" />
+                <CheckCircle className="h-8 w-8 text-info" />
               </div>
             </CardContent>
           </Card>
@@ -187,7 +187,7 @@ const Standards = () => {
                   <p className="text-sm font-medium text-muted-foreground">Expiring Soon</p>
                   <p className="text-2xl font-bold">1</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-orange-600" />
+                <AlertTriangle className="h-8 w-8 text-warning" />
               </div>
             </CardContent>
           </Card>
@@ -210,7 +210,7 @@ const Standards = () => {
               </div>
               <div className="flex gap-2">
                 <select 
-                  className="px-3 py-2 border rounded-md"
+                  className="px-3 py-2 border rounded-md bg-background"
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                 >
