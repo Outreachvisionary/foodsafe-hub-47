@@ -5,13 +5,29 @@ export interface TrainingSession {
   id: string;
   title: string;
   description?: string;
-  training_type: string;
+  training_type?: string;
+  category?: string;
   training_category?: string;
-  completion_status?: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
-  assigned_to: string[];
-  department?: string;
+  status?: string;
+  completion_status?: string;
+  instructor?: string;
+  duration_hours?: number;
+  max_participants?: number;
+  current_participants?: number;
   start_date?: string;
   due_date?: string;
+  end_date?: string;
+  location?: string;
+  is_online?: boolean;
+  meeting_link?: string;
+  materials?: string[];
+  prerequisites?: string[];
+  learning_objectives?: string[];
+  assessment_required?: boolean;
+  passing_score?: number;
+  certificate_template?: string;
+  assigned_to?: string[];
+  department?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -23,16 +39,24 @@ export interface TrainingSession {
 
 export interface TrainingRecord {
   id: string;
-  session_id: string;
+  training_session_id?: string;
+  session_id?: string;
   employee_id: string;
   employee_name: string;
-  status?: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled' | 'Overdue';
+  status?: string;
+  enrollment_date?: string;
   assigned_date?: string;
-  due_date: string;
+  start_date?: string;
   completion_date?: string;
+  due_date?: string;
   score?: number;
-  pass_threshold?: number;
+  passed?: boolean;
+  certificate_issued?: boolean;
+  certificate_url?: string;
   notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  pass_threshold?: number;
   last_recurrence?: string;
   next_recurrence?: string;
 }
@@ -98,16 +122,31 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
       .eq('id', user.id)
       .single();
 
-    const sessionData = {
+    const sessionData: any = {
       title: session.title || '',
       description: session.description,
       training_type: session.training_type || 'Optional',
-      training_category: session.training_category || 'Other',
+      category: session.category || session.training_category || 'Other',
+      training_category: session.training_category || session.category || 'Other',
+      status: session.status || 'Draft',
       completion_status: session.completion_status || 'Not Started',
+      instructor: session.instructor,
+      duration_hours: session.duration_hours || 1,
+      max_participants: session.max_participants,
+      current_participants: session.current_participants || 0,
+      start_date: session.start_date || new Date().toISOString(),
+      end_date: session.end_date,
+      location: session.location,
+      is_online: session.is_online || false,
+      meeting_link: session.meeting_link,
+      materials: session.materials || [],
+      prerequisites: session.prerequisites || [],
+      learning_objectives: session.learning_objectives || [],
+      assessment_required: session.assessment_required || false,
+      passing_score: session.passing_score,
+      certificate_template: session.certificate_template,
       assigned_to: session.assigned_to || [],
       department: session.department,
-      start_date: session.start_date || new Date().toISOString(),
-      due_date: session.due_date,
       materials_id: session.materials_id || [],
       required_roles: session.required_roles || [],
       is_recurring: session.is_recurring || false,
@@ -136,7 +175,7 @@ export const createTrainingSession = async (session: Partial<TrainingSession>): 
 // Update training session
 export const updateTrainingSession = async (id: string, updates: Partial<TrainingSession>): Promise<TrainingSession> => {
   try {
-    const updateData = {
+    const updateData: any = {
       ...updates,
       updated_at: new Date().toISOString()
     };
@@ -184,7 +223,7 @@ export const getTrainingRecords = async (sessionId?: string): Promise<TrainingRe
       .order('created_at', { ascending: false });
 
     if (sessionId) {
-      query = query.eq('session_id', sessionId);
+      query = query.eq('training_session_id', sessionId).or(`session_id.eq.${sessionId}`);
     }
 
     const { data, error } = await query;
@@ -200,13 +239,19 @@ export const getTrainingRecords = async (sessionId?: string): Promise<TrainingRe
 // Enroll employee in training
 export const enrollInTraining = async (sessionId: string, employeeId: string, employeeName: string): Promise<TrainingRecord> => {
   try {
-    const recordData = {
+    const recordData: any = {
+      training_session_id: sessionId,
       session_id: sessionId,
       employee_id: employeeId,
       employee_name: employeeName,
-      status: 'Not Started' as const,
+      status: 'In Progress', // Use compatible status
+      enrollment_date: new Date().toISOString(),
       assigned_date: new Date().toISOString(),
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      passed: false,
+      certificate_issued: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase
@@ -228,7 +273,7 @@ export const enrollInTraining = async (sessionId: string, employeeId: string, em
 // Update training record
 export const updateTrainingRecord = async (id: string, updates: Partial<TrainingRecord>): Promise<TrainingRecord> => {
   try {
-    const updateData = {
+    const updateData: any = {
       ...updates,
       updated_at: new Date().toISOString()
     };
