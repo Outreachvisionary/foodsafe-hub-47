@@ -44,11 +44,12 @@ export interface DocumentVersion {
   file_size: number;
   created_at: string;
   created_by: string;
+  modified_by?: string;
+  modified_by_name?: string;
   change_summary?: string;
   change_notes?: string;
   is_binary_file?: boolean;
   original_file_name?: string;
-  modified_by_name?: string;
 }
 
 export interface DocumentApproval {

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, DocumentFolder, DocumentStats } from '@/types/document';
+import { Document, DocumentFolder, DocumentStats, DocumentVersion } from '@/types/document';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 
@@ -32,6 +32,8 @@ interface DocumentContextType {
   refreshDocuments: () => Promise<void>;
   searchDocuments: (query: string) => Document[];
   getDocumentsByFolder: (folderId: string) => Document[];
+  getDocumentVersions: (documentId: string) => Promise<DocumentVersion[]>;
+  restoreVersion: (documentId: string, versionId: string) => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -532,6 +534,58 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     },
     getDocumentsByFolder: (folderId: string) => {
       return documents.filter(doc => doc.folder_id === folderId);
+    },
+    
+    getDocumentVersions: async (documentId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('document_versions')
+          .select('*')
+          .eq('document_id', documentId)
+          .order('version', { ascending: false });
+        
+        if (error) throw error;
+        return data as DocumentVersion[] || [];
+      } catch (error) {
+        console.error('Error fetching document versions:', error);
+        toast.error('Failed to fetch document versions');
+        throw error;
+      }
+    },
+    
+    restoreVersion: async (documentId: string, versionId: string) => {
+      try {
+        // Get the version data
+        const { data: versionData, error: versionError } = await supabase
+          .from('document_versions')
+          .select('*')
+          .eq('id', versionId)
+          .single();
+        
+        if (versionError) throw versionError;
+        
+        // Update the document with the version data
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({
+            file_name: versionData.file_name,
+            version: versionData.version,
+            current_version_id: versionId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', documentId);
+        
+        if (updateError) throw updateError;
+        
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        
+        toast.success('Document version restored successfully');
+      } catch (error) {
+        console.error('Error restoring document version:', error);
+        toast.error('Failed to restore document version');
+        throw error;
+      }
     },
   };
 
