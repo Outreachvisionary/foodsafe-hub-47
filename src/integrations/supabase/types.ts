@@ -3368,6 +3368,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_upload_document: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       find_affected_products_by_component: {
         Args: { component_batch_lot: string }
         Returns: {
