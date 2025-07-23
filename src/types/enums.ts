@@ -138,16 +138,11 @@ export enum ComplaintStatus {
 export enum ComplaintCategory {
   Product_Quality = 'Product_Quality',
   Food_Safety = 'Food_Safety',
-  Service_Issue = 'Service_Issue',
-  Service = 'Service',
-  Delivery_Problem = 'Delivery_Problem',
-  Delivery = 'Delivery',
-  Packaging_Issue = 'Packaging_Issue',
-  Packaging = 'Packaging',
-  Labeling = 'Labeling',
-  Safety_Concern = 'Safety_Concern',
-  Documentation = 'Documentation',
   Foreign_Material = 'Foreign_Material',
+  Packaging = 'Packaging',
+  Delivery = 'Delivery',
+  Service = 'Service',
+  Labeling = 'Labeling',
   Other = 'Other'
 }
 

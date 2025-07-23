@@ -102,9 +102,12 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={ComplaintCategory.Product_Quality}>Product Quality</SelectItem>
-                        <SelectItem value={ComplaintCategory.Service_Issue}>Service Issue</SelectItem>
-                        <SelectItem value={ComplaintCategory.Delivery_Problem}>Delivery Problem</SelectItem>
-                        <SelectItem value={ComplaintCategory.Safety_Concern}>Safety Concern</SelectItem>
+                        <SelectItem value={ComplaintCategory.Food_Safety}>Food Safety</SelectItem>
+                        <SelectItem value={ComplaintCategory.Foreign_Material}>Foreign Material</SelectItem>
+                        <SelectItem value={ComplaintCategory.Packaging}>Packaging</SelectItem>
+                        <SelectItem value={ComplaintCategory.Delivery}>Delivery</SelectItem>
+                        <SelectItem value={ComplaintCategory.Service}>Service</SelectItem>
+                        <SelectItem value={ComplaintCategory.Labeling}>Labeling</SelectItem>
                         <SelectItem value={ComplaintCategory.Other}>Other</SelectItem>
                       </SelectContent>
                     </Select>

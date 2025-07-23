@@ -65,7 +65,7 @@ const ComplaintDetailsPage: React.FC = () => {
     switch (status) {
       case 'New':
         return 'bg-blue-100 text-blue-800';
-      case 'Under Investigation':
+      case 'Under_Investigation':
         return 'bg-yellow-100 text-yellow-800';
       case 'Resolved':
         return 'bg-green-100 text-green-800';
@@ -82,12 +82,18 @@ const ComplaintDetailsPage: React.FC = () => {
     switch (category) {
       case 'Product_Quality':
         return 'bg-orange-100 text-orange-800';
-      case 'Service_Issue':
-        return 'bg-purple-100 text-purple-800';
-      case 'Delivery_Problem':
-        return 'bg-blue-100 text-blue-800';
-      case 'Safety_Concern':
+      case 'Food_Safety':
         return 'bg-red-100 text-red-800';
+      case 'Foreign_Material':
+        return 'bg-orange-100 text-orange-800';
+      case 'Service':
+        return 'bg-purple-100 text-purple-800';
+      case 'Delivery':
+        return 'bg-blue-100 text-blue-800';
+      case 'Packaging':
+        return 'bg-green-100 text-green-800';
+      case 'Labeling':
+        return 'bg-yellow-100 text-yellow-800';
       case 'Other':
         return 'bg-gray-100 text-gray-800';
       default:
