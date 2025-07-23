@@ -60,6 +60,7 @@ const NonConformancePage: React.FC = () => {
   };
 
   const handleCreateNew = () => {
+    console.log('Navigating to create new NC');
     navigate('/non-conformance/create');
   };
 
@@ -267,7 +268,7 @@ const NonConformancePage: React.FC = () => {
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCreateNew}>
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-primary/10 rounded-full">

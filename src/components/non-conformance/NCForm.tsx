@@ -73,21 +73,26 @@ const NCForm: React.FC<NCFormProps> = ({ id, onClose, onSave }) => {
       
       if (id) {
         // Update existing non-conformance
-        updateNonConformance({ id, updates: data });
+        await updateNonConformance({ id, updates: data });
+        toast.success('Non-conformance updated successfully');
       } else {
         // Create new non-conformance
-        createNonConformance({
+        await createNonConformance({
           ...data,
           created_by: 'Current User', // In real app, get from auth context
-          status: data.status || 'On Hold'
+          status: data.status || 'On Hold',
+          reported_date: new Date().toISOString()
         });
+        toast.success('Non-conformance created successfully');
       }
       
-      // Close the form
-      if (onClose) onClose();
+      // Close the form and navigate back
+      if (onClose) {
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving non-conformance:', error);
-      toast.error('Failed to save non-conformance');
+      toast.error(id ? 'Failed to update non-conformance' : 'Failed to create non-conformance');
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import NCForm from '@/components/non-conformance/NCForm';
+import NCCreateForm from '@/components/non-conformance/NCCreateForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -45,10 +45,7 @@ const NonConformanceFormPage: React.FC = () => {
       </div>
       
       <div className="bg-gradient-to-br from-white to-accent/5 border border-accent/20 rounded-lg shadow-lg p-6">
-        <NCForm 
-          id={id} 
-          onClose={handleBackToList}
-        />
+        <NCCreateForm />
       </div>
     </motion.div>
   );
