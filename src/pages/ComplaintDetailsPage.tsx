@@ -103,38 +103,32 @@ const ComplaintDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <>
-        <DashboardHeader title="Complaint Details" subtitle="Loading complaint information..." />
+      <div className="container max-w-6xl mx-auto py-6">
         <LoadingState isLoading={true}>
-          <div></div>
+          <div className="text-center py-8">Loading complaint details...</div>
         </LoadingState>
-      </>
+      </div>
     );
   }
 
   if (error || !complaint) {
     return (
-      <>
-        <DashboardHeader title="Complaint Details" subtitle="Error loading complaint" />
-        <div className="container max-w-6xl mx-auto py-6">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-              <p className="text-red-600 mb-4">{error || 'Complaint not found'}</p>
-              <Button onClick={() => navigate('/complaints')}>
-                Back to Complaints
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </>
+      <div className="container max-w-6xl mx-auto py-6">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-4">{error || 'Complaint not found'}</p>
+            <Button onClick={() => navigate('/complaints')}>
+              Back to Complaints
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <>
-      <DashboardHeader title="Complaint Details" subtitle={complaint.title} />
-      <div className="container max-w-6xl mx-auto py-6 space-y-6">
+    <div className="container max-w-6xl mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => navigate('/complaints')}>
@@ -407,8 +401,7 @@ const ComplaintDetailsPage: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </>
+    </div>
   );
 };
 
