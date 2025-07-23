@@ -10,9 +10,12 @@ import { format } from 'date-fns';
 interface ComplaintsListProps {
   complaints: Complaint[];
   onRefresh?: () => void;
+  isLoading?: boolean;
+  onSelectComplaint?: (complaint: Complaint) => void;
+  onUpdate?: () => void;
 }
 
-const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints }) => {
+const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints, isLoading, onSelectComplaint }) => {
   const navigate = useNavigate();
 
   if (complaints.length === 0) {
@@ -37,7 +40,7 @@ const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints }) => {
               <div className="flex-1">
                 <h3 
                   className="font-semibold text-lg cursor-pointer hover:text-primary mb-2"
-                  onClick={() => navigate(`/complaints/${complaint.id}`)}
+                  onClick={() => onSelectComplaint ? onSelectComplaint(complaint) : navigate(`/complaints/${complaint.id}`)}
                 >
                   {complaint.title}
                 </h3>
@@ -64,7 +67,7 @@ const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints }) => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/complaints/${complaint.id}`)}
+                onClick={() => onSelectComplaint ? onSelectComplaint(complaint) : navigate(`/complaints/${complaint.id}`)}
               >
                 View Details
               </Button>

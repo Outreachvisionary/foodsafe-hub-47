@@ -5,27 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
 interface ComplaintFiltersProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  selectedStatus: string;
-  onStatusChange: (status: string) => void;
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
-  stats: {
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+  selectedStatus?: string;
+  onStatusChange?: (status: string) => void;
+  selectedCategory?: string;
+  onCategoryChange?: (category: string) => void;
+  stats?: {
     total: number;
     new: number;
     investigating: number;
     resolved: number;
     escalated?: number;
   };
+  onFilterChange?: (filters: any) => void;
+  onFilterClear?: () => void;
 }
 
 const ComplaintFilters: React.FC<ComplaintFiltersProps> = ({
-  searchTerm,
+  searchTerm = '',
   onSearchChange,
-  selectedStatus,
+  selectedStatus = 'all',
   onStatusChange,
-  stats
+  stats = { total: 0, new: 0, investigating: 0, resolved: 0 },
+  onFilterChange,
+  onFilterClear
 }) => {
   return (
     <Card>
@@ -37,7 +41,7 @@ const ComplaintFilters: React.FC<ComplaintFiltersProps> = ({
               <Input
                 placeholder="Search complaints..."
                 value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -45,14 +49,14 @@ const ComplaintFilters: React.FC<ComplaintFiltersProps> = ({
           <div className="flex gap-2">
             <Button 
               variant={selectedStatus === 'all' ? 'default' : 'outline'}
-              onClick={() => onStatusChange('all')}
+              onClick={() => onStatusChange?.('all')}
               size="sm"
             >
               All ({stats.total})
             </Button>
             <Button 
               variant={selectedStatus === 'New' ? 'default' : 'outline'}
-              onClick={() => onStatusChange('New')}
+              onClick={() => onStatusChange?.('New')}
               size="sm"
             >
               New ({stats.new})

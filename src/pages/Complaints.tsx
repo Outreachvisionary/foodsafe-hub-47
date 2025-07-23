@@ -58,7 +58,7 @@ const Complaints: React.FC = () => {
       setStats({
         total: statistics.total,
         new: statistics.byStatus['New'] || 0,
-        investigating: statistics.byStatus['Under Investigation'] || 0,
+        investigating: statistics.byStatus['Under_Investigation'] || 0,
         resolved: statistics.byStatus['Resolved'] || 0,
         escalated: statistics.byStatus['Escalated'] || 0,
       });
@@ -165,7 +165,7 @@ const Complaints: React.FC = () => {
 
             <TabsContent value="investigating">
               <ComplaintsList 
-                complaints={filteredComplaints.filter(c => c.status === 'Under Investigation')} 
+                complaints={filteredComplaints.filter(c => c.status === 'Under_Investigation')} 
                 onRefresh={handleRefresh}
               />
             </TabsContent>
