@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -233,7 +234,7 @@ const CAPA: React.FC = () => {
       averageResolutionTime: 0,
       upcomingDueDates: [],
       recentActivities: [],
-      // Enhanced stats required by the dashboard
+      // Add missing properties required by EnhancedCAPAStats
       riskLevels: { critical: 5, high: 12, medium: 18, low: 8 },
       riskTrends: [
         { month: 'Jan', critical: 2, high: 5, medium: 8, low: 3 },
@@ -324,7 +325,7 @@ const CAPA: React.FC = () => {
     { 
       key: 'due_date', 
       label: 'Due Date',
-      render: (value: string) => new Date(value).toLocaleDateString()
+      render: (value: string) => value ? new Date(value).toLocaleDateString() : 'N/A'
     },
     { 
       key: 'created_at', 
@@ -365,47 +366,7 @@ const CAPA: React.FC = () => {
             {enhancedActions}
           </div>
           <CAPAEnhancedDashboard 
-            stats={{
-              total: capas.length,
-              open: capas.filter(c => c.status === CAPAStatus.Open).length,
-              openCount: capas.filter(c => c.status === CAPAStatus.Open).length,
-              closed: capas.filter(c => c.status === CAPAStatus.Closed).length,
-              closedCount: capas.filter(c => c.status === CAPAStatus.Closed).length,
-              completed: capas.filter(c => c.status === CAPAStatus.Completed).length,
-              inProgress: capas.filter(c => c.status === CAPAStatus.In_Progress).length,
-              overdue: capas.filter(c => {
-                const dueDate = new Date(c.due_date);
-                const now = new Date();
-                return dueDate < now && c.status !== CAPAStatus.Closed;
-              }).length,
-              overdueCount: capas.filter(c => {
-                const dueDate = new Date(c.due_date);
-                const now = new Date();
-                return dueDate < now && c.status !== CAPAStatus.Closed;
-              }).length,
-              pendingVerificationCount: capas.filter(c => c.status === CAPAStatus.Pending_Verification).length,
-              byPriority: capas.reduce((acc, capa) => {
-                acc[capa.priority] = (acc[capa.priority] || 0) + 1;
-                return acc;
-              }, {} as Record<CAPAPriority, number>),
-              bySource: capas.reduce((acc, capa) => {
-                acc[capa.source] = (acc[capa.source] || 0) + 1;
-                return acc;
-              }, {} as Record<CAPASource, number>),
-              byStatus: capas.reduce((acc, capa) => {
-                acc[capa.status] = (acc[capa.status] || 0) + 1;
-                return acc;
-              }, {} as Record<CAPAStatus, number>),
-              byDepartment: capas.reduce((acc, capa) => {
-                const dept = capa.department || 'Unassigned';
-                acc[dept] = (acc[dept] || 0) + 1;
-                return acc;
-              }, {} as Record<string, number>),
-              completedThisMonth: 0,
-              averageResolutionTime: 0,
-              upcomingDueDates: [],
-              recentActivities: []
-            }}
+            stats={dashboardStats}
             timeRange={timeRange}
             onTimeRangeChange={setTimeRange}
           />
