@@ -1,179 +1,78 @@
-
-import React, { useState } from 'react';
-import { Complaint } from '@/types/complaint';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ListActions } from '@/components/ui/list-actions';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { formatDistanceToNow } from 'date-fns';
-import { getComplaintStatusColor } from '@/utils/complaintUtils';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { useComplaints } from '@/hooks/useComplaints';
-import ComplaintEditDialog from './ComplaintEditDialog';
+import { MessageSquare, User, Calendar, Zap } from 'lucide-react';
+import { Complaint } from '@/types/complaint';
+import { format } from 'date-fns';
 
 interface ComplaintsListProps {
   complaints: Complaint[];
-  isLoading?: boolean;
-  onSelectComplaint: (complaint: Complaint) => void;
-  onUpdate?: () => void;
+  onRefresh?: () => void;
 }
 
-export const ComplaintsList: React.FC<ComplaintsListProps> = ({ 
-  complaints, 
-  isLoading = false,
-  onSelectComplaint,
-  onUpdate 
-}) => {
-  const { deleteComplaint, isDeleting } = useComplaints();
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [complaintToDelete, setComplaintToDelete] = useState<Complaint | null>(null);
+const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints }) => {
+  const navigate = useNavigate();
 
-  if (isLoading) {
+  if (complaints.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-500">No complaints found</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
-
-  if (!complaints || complaints.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
-        <h3 className="text-lg font-medium">No complaints found</h3>
-        <p className="text-muted-foreground">No complaints match your current filters.</p>
-      </div>
-    );
-  }
-
-  const handleEdit = (complaint: Complaint) => {
-    setSelectedComplaint(complaint);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDelete = (complaint: Complaint) => {
-    setComplaintToDelete(complaint);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (complaintToDelete) {
-      deleteComplaint(complaintToDelete.id);
-      setIsDeleteDialogOpen(false);
-      setComplaintToDelete(null);
-      if (onUpdate) onUpdate();
-    }
-  };
-
-  const handleEditSuccess = () => {
-    if (onUpdate) onUpdate();
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'Critical':
-        return <Badge variant="destructive" className="mr-2">Critical</Badge>;
-      case 'High':
-        return <Badge variant="destructive" className="mr-2">High</Badge>;
-      case 'Medium':
-        return <Badge variant="default" className="mr-2">Medium</Badge>;
-      case 'Low':
-        return <Badge variant="outline" className="mr-2">Low</Badge>;
-      default:
-        return null;
-    }
-  };
 
   return (
-    <>
-      <div className="space-y-4">
-        {complaints.map((complaint) => {
-          const statusColors = getComplaintStatusColor(complaint.status);
-          return (
-            <Card key={complaint.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-0">
-                <div className="flex flex-col">
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold truncate flex-1">{complaint.title}</h3>
-                      <div className="flex items-center space-x-2 ml-4">
-                        {getPriorityIcon(complaint.priority)}
-                        <ListActions
-                          onView={() => onSelectComplaint(complaint)}
-                          onEdit={() => handleEdit(complaint)}
-                          onDelete={() => handleDelete(complaint)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-3">
-                      <Badge className={`${statusColors.bg} ${statusColors.text} border ${statusColors.border}`}>
-                        {complaint.status.replace(/_/g, ' ')}
-                      </Badge>
-                      <span className="text-sm text-gray-500 flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {formatDistanceToNow(new Date(complaint.reported_date), { addSuffix: true })}
-                      </span>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{complaint.description}</p>
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <Badge variant="outline" className="mr-2">{complaint.category.replace(/_/g, ' ')}</Badge>
-                        {complaint.capa_id && (
-                          <Badge variant="secondary">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            CAPA Linked
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+    <div className="space-y-4">
+      {complaints.map((complaint) => (
+        <Card key={complaint.id} className="hover:shadow-lg transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 
+                  className="font-semibold text-lg cursor-pointer hover:text-primary mb-2"
+                  onClick={() => navigate(`/complaints/${complaint.id}`)}
+                >
+                  {complaint.title}
+                </h3>
+                <p className="text-muted-foreground mb-4">{complaint.description}</p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{format(new Date(complaint.reported_date), 'MMM d, yyyy')}</span>
                   </div>
-
-                  <div className="bg-muted px-4 py-2 flex justify-between items-center">
-                    <div className="text-sm">
-                      <span className="font-medium">Customer: </span>
-                      {complaint.customer_name || 'N/A'}
+                  {complaint.customer_name && (
+                    <div className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      <span>{complaint.customer_name}</span>
                     </div>
-                    {complaint.assigned_to && (
-                      <div className="text-sm">
-                        <span className="font-medium">Assigned: </span>
-                        {complaint.assigned_to}
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {complaint.capa_id && (
+                    <Badge variant="secondary">
+                      <Zap className="h-3 w-3 mr-1" />
+                      CAPA Linked
+                    </Badge>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Edit Dialog */}
-      {selectedComplaint && (
-        <ComplaintEditDialog
-          complaint={selectedComplaint}
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onSuccess={handleEditSuccess}
-        />
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="Delete Complaint"
-        description={`Are you sure you want to delete "${complaintToDelete?.title}"? This action cannot be undone.`}
-        onConfirm={confirmDelete}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-      />
-    </>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/complaints/${complaint.id}`)}
+              >
+                View Details
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 

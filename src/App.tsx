@@ -31,6 +31,8 @@ import AuditEditPage from './pages/AuditEditPage';
 import ScheduleAuditPage from './pages/ScheduleAuditPage';
 import Standards from './pages/Standards';
 import Complaints from './pages/Complaints';
+import ComplaintDetailsPage from './pages/ComplaintDetailsPage';
+import ComplaintFormPage from './pages/ComplaintFormPage';
 import Traceability from './pages/Traceability';
 import Suppliers from './pages/Suppliers';
 import Facilities from './pages/Facilities';
@@ -88,6 +90,9 @@ function AppContent() {
         <Route path="/audits/edit/:id" element={<ProtectedSidebarLayout><AuditEditPage /></ProtectedSidebarLayout>} />
         <Route path="/audits/:id" element={<ProtectedSidebarLayout><AuditDetailsPage /></ProtectedSidebarLayout>} />
         <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />
+        <Route path="/complaints/create" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/complaints/edit/:id" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/complaints/:id" element={<ProtectedSidebarLayout><ComplaintDetailsPage /></ProtectedSidebarLayout>} />
         <Route path="/training" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/certifications" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/traceability" element={<ProtectedSidebarLayout><Traceability /></ProtectedSidebarLayout>} />
