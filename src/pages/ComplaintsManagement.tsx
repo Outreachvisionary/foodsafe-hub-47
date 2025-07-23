@@ -12,6 +12,7 @@ import ComplaintDetail from '@/components/complaints/ComplaintDetail';
 import NewComplaintForm from '@/components/complaints/NewComplaintForm';
 import { useComplaints } from '@/hooks/useComplaints';
 import { ComplaintStatus } from '@/types/enums';
+import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 
 const ComplaintsManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -63,7 +64,8 @@ const ComplaintsManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <ProtectedSidebarLayout>
+      <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
         {/* Header */}
         <div className="space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -234,9 +236,10 @@ const ComplaintsManagement: React.FC = () => {
                 <p className="text-sm">{error.message}</p>
               </div>
             )}
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedSidebarLayout>
   );
 };
 

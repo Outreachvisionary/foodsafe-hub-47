@@ -30,7 +30,7 @@ import AuditDetailsPage from './pages/AuditDetailsPage';
 import AuditEditPage from './pages/AuditEditPage';
 import ScheduleAuditPage from './pages/ScheduleAuditPage';
 import Standards from './pages/Standards';
-import ComplaintsManagement from './pages/ComplaintsManagement';
+import Complaints from './pages/Complaints';
 import ComplaintDetailsPage from './pages/ComplaintDetailsPage';
 import ComplaintFormPage from './pages/ComplaintFormPage';
 import Traceability from './pages/Traceability';
@@ -89,7 +89,7 @@ function AppContent() {
         <Route path="/audits/create" element={<ProtectedSidebarLayout><ScheduleAuditPage /></ProtectedSidebarLayout>} />
         <Route path="/audits/edit/:id" element={<ProtectedSidebarLayout><AuditEditPage /></ProtectedSidebarLayout>} />
         <Route path="/audits/:id" element={<ProtectedSidebarLayout><AuditDetailsPage /></ProtectedSidebarLayout>} />
-        <Route path="/complaints" element={<ProtectedSidebarLayout><ComplaintsManagement /></ProtectedSidebarLayout>} />
+        <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />
         <Route path="/complaints/create" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
         <Route path="/complaints/edit/:id" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
         <Route path="/complaints/:id" element={<ProtectedSidebarLayout><ComplaintDetailsPage /></ProtectedSidebarLayout>} />

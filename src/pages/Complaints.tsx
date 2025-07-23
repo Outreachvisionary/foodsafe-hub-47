@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, RefreshCcw } from 'lucide-react';
+import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 import { LoadingState } from '@/components/ui/enhanced-loading';
 import { fetchComplaints, getComplaintStatistics } from '@/services/complaintService';
 import { Complaint } from '@/types/complaint';
@@ -98,7 +99,8 @@ const Complaints: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <ProtectedSidebarLayout>
+      <div className="container mx-auto p-6 max-w-7xl">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -186,7 +188,8 @@ const Complaints: React.FC = () => {
           </Tabs>
         </LoadingState>
       </div>
-    );
-  };
+    </ProtectedSidebarLayout>
+  );
+};
 
 export default Complaints;
