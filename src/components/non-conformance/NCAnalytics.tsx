@@ -20,27 +20,11 @@ interface NCAnalyticsProps {
 }
 
 const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
-  // Calculate metrics based on the non-conformance data
-  const getMetrics = () => {
-    const reportedDate = new Date(nonConformance.reported_date || '');
-    const currentDate = new Date();
-    const daysOpen = Math.floor((currentDate.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const isOverdue = daysOpen > 30; // Assuming 30 days is the target resolution time
-    const urgencyScore = calculateUrgencyScore();
-    const riskScore = calculateRiskScore();
-    const complianceScore = calculateComplianceScore();
-
-    return {
-      daysOpen,
-      isOverdue,
-      urgencyScore,
-      riskScore,
-      complianceScore,
-      targetResolutionDays: 30,
-      estimatedResolutionDate: new Date(reportedDate.getTime() + (30 * 24 * 60 * 60 * 1000))
-    };
-  };
+  // Calculate basic metrics first (without dependencies)
+  const reportedDate = new Date(nonConformance.reported_date || '');
+  const currentDate = new Date();
+  const daysOpen = Math.floor((currentDate.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24));
+  const isOverdue = daysOpen > 30; // Assuming 30 days is the target resolution time
 
   const calculateUrgencyScore = () => {
     let score = 0;
@@ -83,17 +67,30 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
     
     // Base risk from risk level
     switch (nonConformance.risk_level?.toLowerCase()) {
-      case 'critical': score = 90; break;
-      case 'high': score = 70; break;
-      case 'medium': score = 50; break;
-      case 'low': score = 30; break;
-      default: score = 40; break;
+      case 'critical': score += 40; break;
+      case 'high': score += 30; break;
+      case 'medium': score += 20; break;
+      case 'low': score += 10; break;
+      default: score += 15; break;
     }
     
-    // Adjust based on category
-    if (nonConformance.reason_category?.includes('Contamination')) score += 10;
-    if (nonConformance.reason_category?.includes('Safety')) score += 10;
-    if (nonConformance.reason_category?.includes('Regulatory')) score += 5;
+    // Add risk based on category
+    if (nonConformance.reason_category?.includes('Safety') || 
+        nonConformance.reason_category?.includes('Contamination')) {
+      score += 25;
+    }
+    
+    // Add risk based on quantity affected
+    if (nonConformance.quantity_on_hold && nonConformance.quantity_on_hold > 1000) {
+      score += 20;
+    } else if (nonConformance.quantity_on_hold && nonConformance.quantity_on_hold > 100) {
+      score += 10;
+    }
+    
+    // Add risk based on time open
+    if (daysOpen > 60) score += 15;
+    else if (daysOpen > 30) score += 10;
+    else if (daysOpen > 14) score += 5;
     
     return Math.min(score, 100);
   };
@@ -108,13 +105,29 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
     if (!nonConformance.location) score -= 5;
     if (!nonConformance.capa_id) score -= 20;
     
-    // Deduct points based on how long it's been open
-    const daysOpen = getMetrics().daysOpen;
+    // Deduct points based on how long it's been open (use daysOpen directly)
     if (daysOpen > 60) score -= 30;
     else if (daysOpen > 30) score -= 15;
     else if (daysOpen > 14) score -= 5;
     
     return Math.max(score, 0);
+  };
+
+  // Now calculate all metrics (no circular dependencies)
+  const urgencyScore = calculateUrgencyScore();
+  const riskScore = calculateRiskScore();
+  const complianceScore = calculateComplianceScore();
+
+  const getMetrics = () => {
+    return {
+      daysOpen,
+      isOverdue,
+      urgencyScore,
+      riskScore,
+      complianceScore,
+      targetResolutionDays: 30,
+      estimatedResolutionDate: new Date(reportedDate.getTime() + (30 * 24 * 60 * 60 * 1000))
+    };
   };
 
   const getScoreColor = (score: number) => {
@@ -131,21 +144,9 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
 
   const metrics = getMetrics();
 
-  // Simulated historical data for trends
-  const getTrendData = () => {
-    return {
-      similarIssues: Math.floor(Math.random() * 10) + 1,
-      resolutionTrend: Math.random() > 0.5 ? 'improving' : 'declining',
-      departmentPerformance: Math.floor(Math.random() * 100),
-      categoryFrequency: Math.floor(Math.random() * 20) + 1
-    };
-  };
-
-  const trendData = getTrendData();
-
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -153,21 +154,25 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
           transition={{ delay: 0.1 }}
         >
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Days Open</p>
-                  <p className="text-2xl font-bold">
-                    {metrics.daysOpen}
-                    {metrics.isOverdue && (
-                      <Badge variant="destructive" className="ml-2 text-xs">
-                        Overdue
-                      </Badge>
-                    )}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Days Open</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.daysOpen}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.isOverdue ? (
+                  <span className="text-destructive flex items-center">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Overdue
+                  </span>
+                ) : (
+                  <span className="text-success flex items-center">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    On Track
+                  </span>
+                )}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -178,15 +183,17 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
           transition={{ delay: 0.2 }}
         >
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Urgency Score</p>
-                  <p className={`text-2xl font-bold ${getScoreColor(metrics.urgencyScore)}`}>
-                    {metrics.urgencyScore}%
-                  </p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Urgency Score</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.urgencyScore}</div>
+              <div className="flex items-center space-x-2 mt-2">
+                <Progress value={metrics.urgencyScore} className="flex-1" />
+                <Badge variant={getScoreBadgeVariant(metrics.urgencyScore)}>
+                  {metrics.urgencyScore >= 80 ? 'High' : metrics.urgencyScore >= 60 ? 'Medium' : 'Low'}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -198,15 +205,17 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
           transition={{ delay: 0.3 }}
         >
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Risk Score</p>
-                  <p className={`text-2xl font-bold ${getScoreColor(metrics.riskScore)}`}>
-                    {metrics.riskScore}%
-                  </p>
-                </div>
-                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Risk Score</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.riskScore}</div>
+              <div className="flex items-center space-x-2 mt-2">
+                <Progress value={metrics.riskScore} className="flex-1" />
+                <Badge variant={getScoreBadgeVariant(metrics.riskScore)}>
+                  {metrics.riskScore >= 80 ? 'Critical' : metrics.riskScore >= 60 ? 'High' : 'Low'}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -218,15 +227,17 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
           transition={{ delay: 0.4 }}
         >
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Compliance</p>
-                  <p className={`text-2xl font-bold ${getScoreColor(metrics.complianceScore)}`}>
-                    {metrics.complianceScore}%
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Compliance Score</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.complianceScore}</div>
+              <div className="flex items-center space-x-2 mt-2">
+                <Progress value={metrics.complianceScore} className="flex-1" />
+                <Badge variant={getScoreBadgeVariant(metrics.complianceScore)}>
+                  {metrics.complianceScore >= 80 ? 'Good' : metrics.complianceScore >= 60 ? 'Fair' : 'Poor'}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -235,184 +246,126 @@ const NCAnalytics: React.FC<NCAnalyticsProps> = ({ nonConformance }) => {
 
       {/* Detailed Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Resolution Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
-              <span>Resolution Progress</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Progress to Target</span>
-                <span>{Math.round((metrics.daysOpen / metrics.targetResolutionDays) * 100)}%</span>
-              </div>
-              <Progress 
-                value={Math.min((metrics.daysOpen / metrics.targetResolutionDays) * 100, 100)}
-                className="h-2"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Target Resolution</p>
-                <p className="text-sm font-bold">
-                  {metrics.estimatedResolutionDate.toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Status</p>
-                <Badge variant={metrics.isOverdue ? 'destructive' : 'default'}>
-                  {metrics.isOverdue ? 'Overdue' : 'On Track'}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Impact Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <PieChart className="h-5 w-5" />
-              <span>Impact Analysis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Quantity Impact</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">
-                    {nonConformance.quantity_on_hold || 0} units on hold
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Resolution Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Target Resolution</span>
+                  <span className="font-medium">{metrics.targetResolutionDays} days</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Estimated Resolution</span>
+                  <span className="font-medium">
+                    {metrics.estimatedResolutionDate.toLocaleDateString()}
                   </span>
-                  <Badge variant="outline">
-                    {nonConformance.units || 'units'}
+                </div>
+                <div className="mt-4">
+                  <Progress 
+                    value={Math.min((metrics.daysOpen / metrics.targetResolutionDays) * 100, 100)} 
+                    className="h-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {metrics.daysOpen} of {metrics.targetResolutionDays} days used
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PieChart className="h-5 w-5 mr-2" />
+                Impact Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Risk Level</span>
+                  <Badge variant={nonConformance.risk_level === 'Critical' ? 'destructive' : 'default'}>
+                    {nonConformance.risk_level || 'Not Set'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Quantity Affected</span>
+                  <span className="font-medium">
+                    {nonConformance.quantity_on_hold || 0} {nonConformance.units || 'units'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Department</span>
+                  <span className="font-medium">{nonConformance.department || 'Not Set'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">CAPA Status</span>
+                  <Badge variant={nonConformance.capa_id ? 'default' : 'secondary'}>
+                    {nonConformance.capa_id ? 'Linked' : 'No CAPA'}
                   </Badge>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Department</span>
-                <Badge variant="secondary">
-                  {nonConformance.department || 'Not Specified'}
-                </Badge>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Location</span>
-                <Badge variant="secondary">
-                  {nonConformance.location || 'Not Specified'}
-                </Badge>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Category Risk</span>
-                <Badge variant={getScoreBadgeVariant(metrics.riskScore)}>
-                  {nonConformance.reason_category}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Trend Analysis */}
+      {/* Recommendations */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+      >
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5" />
-              <span>Trend Analysis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">{trendData.similarIssues}</p>
-                <p className="text-xs text-muted-foreground">Similar Issues (30 days)</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-secondary">{trendData.categoryFrequency}</p>
-                <p className="text-xs text-muted-foreground">Category Frequency</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Resolution Trend</span>
-                <div className="flex items-center space-x-1">
-                  {trendData.resolutionTrend === 'improving' ? (
-                    <TrendingUp className="h-4 w-4 text-success" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-destructive" />
-                  )}
-                  <span className={`text-sm capitalize ${
-                    trendData.resolutionTrend === 'improving' ? 'text-success' : 'text-destructive'
-                  }`}>
-                    {trendData.resolutionTrend}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Department Performance</span>
-                <span className={`text-sm font-medium ${getScoreColor(trendData.departmentPerformance)}`}>
-                  {trendData.departmentPerformance}%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5" />
-              <span>Recommendations</span>
-            </CardTitle>
+            <CardTitle>Recommendations</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {metrics.urgencyScore > 70 && (
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
-                  <p className="text-sm">High urgency - prioritize immediate attention</p>
-                </div>
-              )}
-              
-              {!nonConformance.capa_id && (
-                <div className="flex items-start space-x-2">
-                  <Target className="h-4 w-4 text-warning mt-0.5" />
-                  <p className="text-sm">Consider generating a CAPA for systematic resolution</p>
-                </div>
-              )}
-              
+            <div className="space-y-2">
               {metrics.isOverdue && (
-                <div className="flex items-start space-x-2">
-                  <Calendar className="h-4 w-4 text-destructive mt-0.5" />
-                  <p className="text-sm">Overdue - escalate to management for review</p>
+                <div className="flex items-center text-destructive">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <span className="text-sm">This non-conformance is overdue and requires immediate attention.</span>
                 </div>
               )}
-              
-              {metrics.complianceScore < 70 && (
-                <div className="flex items-start space-x-2">
-                  <CheckCircle className="h-4 w-4 text-warning mt-0.5" />
-                  <p className="text-sm">Improve documentation completeness for better compliance</p>
+              {!nonConformance.capa_id && (
+                <div className="flex items-center text-warning">
+                  <TrendingDown className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Consider creating a CAPA for this non-conformance.</span>
                 </div>
               )}
-
-              {metrics.riskScore > 80 && (
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
-                  <p className="text-sm">High risk - consider immediate containment actions</p>
+              {!nonConformance.assigned_to && (
+                <div className="flex items-center text-warning">
+                  <TrendingDown className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Assign an owner to expedite resolution.</span>
+                </div>
+              )}
+              {metrics.complianceScore >= 80 && (
+                <div className="flex items-center text-success">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Good compliance score. Continue monitoring progress.</span>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 };

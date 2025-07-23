@@ -251,20 +251,40 @@ export const linkCAPAToNC = async (ncId: string, capaId: string): Promise<void> 
 // Get linked CAPAs for a non-conformance
 export const getLinkedCAPAs = async (ncId: string): Promise<any[]> => {
   try {
-    const { data, error } = await supabase
+    // First get the relationships
+    const { data: relationships, error: relError } = await supabase
       .from('module_relationships')
-      .select(`
-        target_id,
-        relationship_type,
-        created_at,
-        capa_actions!inner(*)
-      `)
+      .select('target_id, relationship_type, created_at')
       .eq('source_id', ncId)
       .eq('source_type', 'non_conformance')
       .eq('target_type', 'capa');
 
-    if (error) throw error;
-    return data || [];
+    if (relError) {
+      console.error('Error fetching relationships:', relError);
+      return [];
+    }
+
+    if (!relationships || relationships.length === 0) {
+      return [];
+    }
+
+    // Then get the CAPA details for each target_id
+    const capaIds = relationships.map(rel => rel.target_id);
+    const { data: capas, error: capaError } = await supabase
+      .from('capa_actions')
+      .select('*')
+      .in('id', capaIds);
+
+    if (capaError) {
+      console.error('Error fetching CAPAs:', capaError);
+      return [];
+    }
+
+    // Combine the data
+    return relationships.map(rel => ({
+      ...rel,
+      capa_actions: capas?.find(capa => capa.id === rel.target_id) || null
+    }));
   } catch (error) {
     console.error('Error fetching linked CAPAs:', error);
     return [];
