@@ -31,6 +31,8 @@ import AuditEditPage from './pages/AuditEditPage';
 import ScheduleAuditPage from './pages/ScheduleAuditPage';
 import Standards from './pages/Standards';
 import Complaints from './pages/Complaints';
+import StandardFormPage from './pages/StandardFormPage';
+import StandardDetailPage from './pages/StandardDetailPage';
 import ComplaintDetailsPage from './pages/ComplaintDetailsPage';
 import ComplaintFormPage from './pages/ComplaintFormPage';
 import Traceability from './pages/Traceability';
@@ -93,6 +95,10 @@ function AppContent() {
         <Route path="/complaints/create" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
         <Route path="/complaints/edit/:id" element={<ProtectedSidebarLayout><ComplaintFormPage /></ProtectedSidebarLayout>} />
         <Route path="/complaints/:id" element={<ProtectedSidebarLayout><ComplaintDetailsPage /></ProtectedSidebarLayout>} />
+        <Route path="/standards" element={<ProtectedSidebarLayout><Standards /></ProtectedSidebarLayout>} />
+        <Route path="/standards/create" element={<ProtectedSidebarLayout><StandardFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/standards/edit/:id" element={<ProtectedSidebarLayout><StandardFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/standards/:id" element={<ProtectedSidebarLayout><StandardDetailPage /></ProtectedSidebarLayout>} />
         <Route path="/training" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/certifications" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
         <Route path="/traceability" element={<ProtectedSidebarLayout><Traceability /></ProtectedSidebarLayout>} />
@@ -102,7 +108,6 @@ function AppContent() {
         <Route path="/performance" element={<ProtectedSidebarLayout><Performance /></ProtectedSidebarLayout>} />
         <Route path="/users" element={<ProtectedSidebarLayout><Users /></ProtectedSidebarLayout>} />
         <Route path="/settings" element={<ProtectedSidebarLayout><Settings /></ProtectedSidebarLayout>} />
-        <Route path="/standards" element={<ProtectedSidebarLayout><Standards /></ProtectedSidebarLayout>} />
         
         {/* Testing and diagnostics routes */}
         <Route path="/testing" element={<TestingDashboard />} />
