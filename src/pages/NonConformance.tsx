@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCcw, Filter, Download, Plus, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { RefreshCcw, Filter, Download, Plus, TrendingUp, AlertTriangle, CheckCircle, Eye, Edit } from 'lucide-react';
+import NCQuickActions from '@/components/non-conformance/NCQuickActions';
 import ModuleLayout from '@/components/shared/ModuleLayout';
 import DataTable from '@/components/shared/DataTable';
 import { NonConformance } from '@/types/non-conformance';
@@ -116,6 +117,18 @@ const NonConformancePage: React.FC = () => {
     ];
   };
 
+  const handleEdit = (nc: NonConformance) => {
+    navigate(`/non-conformance/edit/${nc.id}`);
+  };
+
+  const handleView = (nc: NonConformance) => {
+    navigate(`/non-conformance/${nc.id}`);
+  };
+
+  const handleDeleteSuccess = () => {
+    refresh();
+  };
+
   const columns = [
     {
       key: 'title',
@@ -189,6 +202,39 @@ const NonConformancePage: React.FC = () => {
         if (!value) return '—';
         return new Date(value).toLocaleDateString();
       }
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (value: any, item: NonConformance) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView(item);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(item);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <NCQuickActions
+            id={item.id!}
+            onEditClick={() => handleEdit(item)}
+            onDeleteSuccess={handleDeleteSuccess}
+          />
+        </div>
+      )
     }
   ];
 
