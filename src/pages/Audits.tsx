@@ -41,24 +41,28 @@ const Audits: React.FC = () => {
   const fetchAudits = async () => {
     setLoading(true);
     try {
-      // Mock data for now - replace with actual API call
-      const mockAudits: Audit[] = [
-        {
-          id: '1',
-          title: 'Annual Food Safety Audit',
-          audit_type: 'Internal',
-          status: 'Scheduled',
-          assigned_to: 'Sarah Johnson',
-          start_date: '2024-02-15',
-          due_date: '2024-02-20',
-          location: 'Main Facility',
-          department: 'Production',
-          findings_count: 0,
-          related_standard: 'ISO 22000',
-          created_at: '2024-01-01'
-        }
-      ];
-      setAudits(mockAudits);
+      // Use the real audit service
+      const { fetchAudits: loadAudits } = await import('@/services/realAuditService');
+      const auditsData = await loadAudits();
+      
+      // Transform data to match the expected interface
+      const transformedAudits = auditsData.map(audit => ({
+        id: audit.id,
+        title: audit.title,
+        audit_type: audit.audit_type,
+        status: audit.status,
+        assigned_to: audit.assigned_to,
+        start_date: audit.start_date,
+        due_date: audit.due_date,
+        completion_date: audit.completion_date,
+        location: audit.location,
+        department: audit.department,
+        findings_count: audit.findings_count,
+        related_standard: audit.related_standard,
+        created_at: audit.created_at
+      }));
+      
+      setAudits(transformedAudits);
     } catch (error) {
       console.error('Error fetching audits:', error);
       toast.error('Failed to load audits');

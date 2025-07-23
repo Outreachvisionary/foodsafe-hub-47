@@ -1,16 +1,34 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, CheckCircle, Clock, AlertCircle, FileText } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Calendar, CheckCircle, Clock, AlertCircle, FileText, MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { DatabaseAudit } from '@/hooks/useInternalAudits';
+import { deleteAudit } from '@/services/realAuditService';
+import { toast } from 'sonner';
 
 interface AuditListViewProps {
   audits: DatabaseAudit[];
+  onRefresh?: () => void;
 }
 
-const AuditListView: React.FC<AuditListViewProps> = ({ audits }) => {
+const AuditListView: React.FC<AuditListViewProps> = ({ audits, onRefresh }) => {
+  const navigate = useNavigate();
+
+  const handleDelete = async (audit: DatabaseAudit) => {
+    if (window.confirm(`Are you sure you want to delete "${audit.title}"? This action cannot be undone.`)) {
+      try {
+        await deleteAudit(audit.id);
+        toast.success('Audit deleted successfully');
+        if (onRefresh) onRefresh();
+      } catch (error) {
+        toast.error('Failed to delete audit');
+      }
+    }
+  };
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Completed':
@@ -104,12 +122,38 @@ const AuditListView: React.FC<AuditListViewProps> = ({ audits }) => {
               </div>
               
               <div className="flex gap-2 ml-4">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/audits/${audit.id}`)}
+                >
                   View Details
                 </Button>
-                <Button variant="outline" size="sm">
-                  Generate Report
-                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/audits/edit/${audit.id}`)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Audit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => alert('Report generation feature coming soon!')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Report
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDelete(audit)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete Audit
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardContent>

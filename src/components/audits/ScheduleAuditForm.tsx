@@ -124,10 +124,21 @@ const ScheduleAuditForm: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create audit using the real service
+      const { createAudit } = await import('@/services/realAuditService');
       
-      console.log("Form values:", values);
+      await createAudit({
+        title: values.name,
+        description: values.description,
+        audit_type: values.auditType,
+        assigned_to: values.auditor,
+        start_date: values.auditDate.toISOString(),
+        due_date: new Date(values.auditDate.getTime() + values.duration * 24 * 60 * 60 * 1000).toISOString(),
+        location: values.location,
+        department: values.departments.join(', '),
+        related_standard: values.standard,
+        status: 'Scheduled'
+      });
       
       // Show success toast
       toast({

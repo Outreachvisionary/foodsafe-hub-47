@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProtectedSidebarLayout from '@/components/layout/ProtectedSidebarLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +15,7 @@ import AuditCalendarView from '@/components/audits/AuditCalendarView';
 import AuditAnalyticsView from '@/components/audits/AuditAnalyticsView';
 
 const InternalAudits = () => {
+  const navigate = useNavigate();
   const { audits, loading, error, loadAudits } = useInternalAudits();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -44,7 +46,7 @@ const InternalAudits = () => {
                 Plan, execute, and track internal audit activities
               </p>
             </div>
-            <Button>
+            <Button onClick={() => navigate('/audits/create')}>
               <Plus className="h-4 w-4 mr-2" />
               Schedule Audit
             </Button>
@@ -81,7 +83,7 @@ const InternalAudits = () => {
                   onStatusChange={setSelectedStatus}
                   stats={auditStats}
                 />
-                <AuditListView audits={filteredAudits} />
+                <AuditListView audits={filteredAudits} onRefresh={loadAudits} />
               </ErrorBoundary>
             </TabsContent>
 
