@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, BarChart3, Edit, Trash2, Eye } from 'lucide-react';
+import { RefreshCcw, BarChart3, Edit, Trash2, Eye, Plus } from 'lucide-react';
 import { CAPA as CAPAType, CAPAStats, CAPAFilter } from '@/types/capa';
 import { CAPAStatus, CAPAPriority, CAPASource } from '@/types/enums';
 import ModuleLayout from '@/components/shared/ModuleLayout';
@@ -119,10 +118,12 @@ const CAPA: React.FC = () => {
   };
 
   const handleViewCAPA = (capa: CAPAType) => {
+    console.log('Viewing CAPA:', capa);
     navigate(`/capa/${capa.id}`);
   };
 
   const handleEditCAPA = (capa: CAPAType) => {
+    console.log('Editing CAPA:', capa);
     navigate(`/capa/${capa.id}?mode=edit`);
   };
 
@@ -137,8 +138,10 @@ const CAPA: React.FC = () => {
         await deleteCAPA(selectedCAPA.id);
         setDeleteDialogOpen(false);
         setSelectedCAPA(null);
+        toast.success('CAPA deleted successfully');
       } catch (error) {
         console.error('Failed to delete CAPA:', error);
+        toast.error('Failed to delete CAPA');
       }
     }
   };
@@ -327,44 +330,6 @@ const CAPA: React.FC = () => {
       key: 'created_at', 
       label: 'Created',
       render: (value: string) => new Date(value).toLocaleDateString()
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (value: any, item: CAPAType) => (
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewCAPA(item);
-            }}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditCAPA(item);
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteClick(item);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
     }
   ];
 
@@ -400,7 +365,47 @@ const CAPA: React.FC = () => {
             {enhancedActions}
           </div>
           <CAPAEnhancedDashboard 
-            stats={dashboardStats}
+            stats={{
+              total: capas.length,
+              open: capas.filter(c => c.status === CAPAStatus.Open).length,
+              openCount: capas.filter(c => c.status === CAPAStatus.Open).length,
+              closed: capas.filter(c => c.status === CAPAStatus.Closed).length,
+              closedCount: capas.filter(c => c.status === CAPAStatus.Closed).length,
+              completed: capas.filter(c => c.status === CAPAStatus.Completed).length,
+              inProgress: capas.filter(c => c.status === CAPAStatus.In_Progress).length,
+              overdue: capas.filter(c => {
+                const dueDate = new Date(c.due_date);
+                const now = new Date();
+                return dueDate < now && c.status !== CAPAStatus.Closed;
+              }).length,
+              overdueCount: capas.filter(c => {
+                const dueDate = new Date(c.due_date);
+                const now = new Date();
+                return dueDate < now && c.status !== CAPAStatus.Closed;
+              }).length,
+              pendingVerificationCount: capas.filter(c => c.status === CAPAStatus.Pending_Verification).length,
+              byPriority: capas.reduce((acc, capa) => {
+                acc[capa.priority] = (acc[capa.priority] || 0) + 1;
+                return acc;
+              }, {} as Record<CAPAPriority, number>),
+              bySource: capas.reduce((acc, capa) => {
+                acc[capa.source] = (acc[capa.source] || 0) + 1;
+                return acc;
+              }, {} as Record<CAPASource, number>),
+              byStatus: capas.reduce((acc, capa) => {
+                acc[capa.status] = (acc[capa.status] || 0) + 1;
+                return acc;
+              }, {} as Record<CAPAStatus, number>),
+              byDepartment: capas.reduce((acc, capa) => {
+                const dept = capa.department || 'Unassigned';
+                acc[dept] = (acc[dept] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>),
+              completedThisMonth: 0,
+              averageResolutionTime: 0,
+              upcomingDueDates: [],
+              recentActivities: []
+            }}
             timeRange={timeRange}
             onTimeRangeChange={setTimeRange}
           />
@@ -422,6 +427,8 @@ const CAPA: React.FC = () => {
             data={filteredCAPAs}
             loading={isLoading}
             onView={handleViewCAPA}
+            onEdit={handleEditCAPA}
+            onDelete={handleDeleteClick}
             emptyMessage="No CAPAs found"
           />
         </ModuleLayout>
