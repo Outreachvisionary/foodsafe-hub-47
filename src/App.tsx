@@ -20,6 +20,7 @@ import DatabaseConnectionTest from './pages/DatabaseConnectionTest';
 import AuthPage from './pages/AuthPage';
 import Documents from './pages/Documents';
 import CAPA from './pages/CAPA';
+import CAPADetails from './pages/CAPADetails';
 import NonConformance from './pages/NonConformance';
 import Training from './pages/Training';
 import Audits from './pages/Audits';
@@ -58,6 +59,7 @@ function AppContent() {
         <Route path="/create" element={<ProtectedSidebarLayout><Create /></ProtectedSidebarLayout>} />
         <Route path="/documents" element={<ProtectedSidebarLayout><Documents /></ProtectedSidebarLayout>} />
         <Route path="/capa" element={<ProtectedSidebarLayout><CAPA /></ProtectedSidebarLayout>} />
+        <Route path="/capa/:id" element={<ProtectedSidebarLayout><CAPADetails /></ProtectedSidebarLayout>} />
         <Route path="/non-conformance" element={<ProtectedSidebarLayout><NonConformance /></ProtectedSidebarLayout>} />
         <Route path="/audits" element={<ProtectedSidebarLayout><Audits /></ProtectedSidebarLayout>} />
         <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />

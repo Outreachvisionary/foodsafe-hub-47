@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,17 +23,24 @@ import CAPASimpleWorkflow from '@/components/capa/CAPASimpleWorkflow';
 import CAPARiskAssessment from '@/components/capa/CAPARiskAssessment';
 import CAPARootCauseAnalysis from '@/components/capa/CAPARootCauseAnalysis';
 import CAPAComplianceTracker from '@/components/capa/CAPAComplianceTracker';
+import CAPAEditForm from '@/components/capa/CAPAEditForm';
+import { UpdateCAPARequest } from '@/types/capa';
+import { ArrowLeft, Edit, Save } from 'lucide-react';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('mode') === 'edit';
   
   const [capa, setCAPA] = useState<CAPA | null>(null);
   const [activities, setActivities] = useState<CAPAActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(isEditMode);
   
   useEffect(() => {
     if (id) {
@@ -104,6 +111,46 @@ const CAPADetails: React.FC = () => {
       fetchActivities(id);
     }
   };
+
+  const handleUpdateCAPA = async (updates: UpdateCAPARequest) => {
+    if (!id) return;
+    
+    try {
+      setUpdating(true);
+      const updatedCAPA = await updateCAPA(id, updates);
+      setCAPA(updatedCAPA);
+      setEditMode(false);
+      
+      // Update URL to remove edit mode
+      navigate(`/capa/${id}`, { replace: true });
+      
+      toast({
+        title: 'Success',
+        description: 'CAPA updated successfully',
+      });
+    } catch (err) {
+      console.error('Error updating CAPA:', err);
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to update CAPA',
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleEditToggle = () => {
+    if (editMode) {
+      setEditMode(false);
+      navigate(`/capa/${id}`, { replace: true });
+    } else {
+      setEditMode(true);
+      navigate(`/capa/${id}?mode=edit`, { replace: true });
+    }
+  };
   
   if (loading) {
     return <div>Loading CAPA details...</div>;
@@ -123,14 +170,36 @@ const CAPADetails: React.FC = () => {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{capa.title}</h1>
-          <p className="text-muted-foreground">
-            ID: {capa.id} • Created: {new Date(capa.created_at).toLocaleDateString()}
-          </p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/capa')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to CAPAs
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{capa.title}</h1>
+            <p className="text-muted-foreground">
+              ID: {capa.id} • Created: {new Date(capa.created_at).toLocaleDateString()}
+            </p>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant={editMode ? "default" : "outline"} 
+            size="sm"
+            onClick={handleEditToggle}
+            className="flex items-center gap-2"
+            disabled={updating}
+          >
+            {editMode ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+            {editMode ? 'View Mode' : 'Edit Mode'}
+          </Button>
+          
           <Badge variant="outline" className="text-sm font-normal px-2 py-1">
             {capa.priority}
           </Badge>
@@ -151,7 +220,15 @@ const CAPADetails: React.FC = () => {
       
       <Separator />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {editMode ? (
+        <CAPAEditForm 
+          capa={capa}
+          onSave={handleUpdateCAPA}
+          onCancel={() => setEditMode(false)}
+          loading={updating}
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* CAPA Details Card */}
           <Card>
@@ -293,6 +370,7 @@ const CAPADetails: React.FC = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };
