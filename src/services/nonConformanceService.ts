@@ -40,15 +40,9 @@ const mapReasonCategoryToDatabase = (category: string) => {
   return categoryMap[category] || 'Other';
 };
 
-// Get all non-conformances with RLS enforcement
+// Get all non-conformances
 export const getAllNonConformances = async (): Promise<{ data: NonConformance[] }> => {
   try {
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error('User not authenticated');
-    }
-
     const { data, error } = await supabase
       .from('non_conformances')
       .select('*')
@@ -63,14 +57,9 @@ export const getAllNonConformances = async (): Promise<{ data: NonConformance[] 
   }
 };
 
-// Get non-conformance by ID with RLS enforcement
+// Get non-conformance by ID
 export const getNonConformanceById = async (id: string): Promise<NonConformance> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error('User not authenticated');
-    }
-
     const { data, error } = await supabase
       .from('non_conformances')
       .select('*')
@@ -87,21 +76,9 @@ export const getNonConformanceById = async (id: string): Promise<NonConformance>
   }
 };
 
-// Create non-conformance with proper user context
+// Create non-conformance
 export const createNonConformance = async (data: Partial<NonConformance>): Promise<NonConformance> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user profile for proper attribution
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single();
-
     const insertData = {
       title: data.title || '',
       description: data.description || '',
@@ -109,7 +86,7 @@ export const createNonConformance = async (data: Partial<NonConformance>): Promi
       item_category: mapItemCategoryToDatabase(data.item_category || 'Other') as any,
       reason_category: mapReasonCategoryToDatabase(data.reason_category || 'Other') as any,
       status: mapNCStatusToDatabase(data.status || 'On Hold') as any,
-      created_by: profile?.full_name || user.email || 'System',
+      created_by: data.created_by || 'System User',
       assigned_to: data.assigned_to,
       department: data.department,
       location: data.location,
@@ -294,14 +271,9 @@ export const getLinkedCAPAs = async (ncId: string): Promise<any[]> => {
   }
 };
 
-// Fetch NC activities with RLS enforcement
+// Fetch NC activities
 export const fetchNCActivities = async (nonConformanceId: string): Promise<NCActivity[]> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error('User not authenticated');
-    }
-
     const { data, error } = await supabase
       .from('nc_activities')
       .select('*')

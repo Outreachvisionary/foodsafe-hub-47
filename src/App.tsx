@@ -4,8 +4,8 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { UserProvider } from '@/contexts/UserContext';
+import { SimpleAuthProvider, useAuth } from '@/components/auth/SimpleAuthProvider';
+import { LoginForm } from '@/components/auth/LoginForm';
 import { moduleConnector } from '@/services/moduleConnector';
 import Index from './pages/Index';
 import DashboardPage from './pages/DashboardPage';
@@ -22,6 +22,8 @@ import Documents from './pages/Documents';
 import CAPA from './pages/CAPA';
 import CAPADetails from './pages/CAPADetails';
 import NonConformance from './pages/NonConformance';
+import NonConformanceFormPage from './pages/NonConformanceFormPage';
+import NonConformanceDetails from './pages/NonConformanceDetails';
 import Training from './pages/Training';
 import Audits from './pages/Audits';
 import Standards from './pages/Standards';
@@ -37,6 +39,8 @@ import Create from './pages/Create';
 import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
 
 function AppContent() {
+  const { user, isLoading } = useAuth();
+  
   useEffect(() => {
     // Initialize modules when app starts
     const initializeSystem = async () => {
@@ -46,6 +50,18 @@ function AppContent() {
 
     initializeSystem();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginForm />;
+  }
 
   return (
     <Router>
@@ -61,6 +77,9 @@ function AppContent() {
         <Route path="/capa" element={<ProtectedSidebarLayout><CAPA /></ProtectedSidebarLayout>} />
         <Route path="/capa/:id" element={<ProtectedSidebarLayout><CAPADetails /></ProtectedSidebarLayout>} />
         <Route path="/non-conformance" element={<ProtectedSidebarLayout><NonConformance /></ProtectedSidebarLayout>} />
+        <Route path="/non-conformance/create" element={<ProtectedSidebarLayout><NonConformanceFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/non-conformance/edit/:id" element={<ProtectedSidebarLayout><NonConformanceFormPage /></ProtectedSidebarLayout>} />
+        <Route path="/non-conformance/:id" element={<ProtectedSidebarLayout><NonConformanceDetails /></ProtectedSidebarLayout>} />
         <Route path="/audits" element={<ProtectedSidebarLayout><Audits /></ProtectedSidebarLayout>} />
         <Route path="/complaints" element={<ProtectedSidebarLayout><Complaints /></ProtectedSidebarLayout>} />
         <Route path="/training" element={<ProtectedSidebarLayout><Training /></ProtectedSidebarLayout>} />
@@ -90,11 +109,9 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <UserProvider>
-        <AppContent />
-      </UserProvider>
-    </AuthProvider>
+    <SimpleAuthProvider>
+      <AppContent />
+    </SimpleAuthProvider>
   );
 }
 
