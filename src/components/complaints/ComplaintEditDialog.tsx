@@ -79,7 +79,7 @@ export const ComplaintEditDialog: React.FC<ComplaintEditDialogProps> = ({
                   <SelectItem value={ComplaintCategory.Food_Safety}>Food Safety</SelectItem>
                   <SelectItem value={ComplaintCategory.Packaging}>Packaging</SelectItem>
                   <SelectItem value={ComplaintCategory.Foreign_Material}>Foreign Material</SelectItem>
-                  <SelectItem value={ComplaintCategory.Documentation}>Documentation</SelectItem>
+                  <SelectItem value={ComplaintCategory.Labeling}>Labeling</SelectItem>
                   <SelectItem value={ComplaintCategory.Other}>Other</SelectItem>
                 </SelectContent>
               </Select>
