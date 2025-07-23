@@ -2,8 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/components/auth/SimpleAuthProvider';
 import {
   Sidebar,
   SidebarContent,
@@ -35,12 +34,10 @@ import {
 const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const { profile, signOut } = useUser();
+  const { user, signOut } = useAuth();
 
   console.log('AppSidebar render:', { 
     hasUser: !!user, 
-    hasProfile: !!profile,
     userEmail: user?.email,
     currentPath: location.pathname 
   });
@@ -48,8 +45,8 @@ const AppSidebar: React.FC = () => {
   const handleSignOut = async () => {
     try {
       console.log('AppSidebar: Initiating sign out');
-      await signOut();
-      navigate('/auth');
+      signOut();
+      navigate('/');
     } catch (error) {
       console.error('AppSidebar: Sign out error:', error);
     }
@@ -92,7 +89,7 @@ const AppSidebar: React.FC = () => {
 
   // Safely get display name
   const getDisplayName = () => {
-    if (profile?.full_name) return profile.full_name;
+    if (user?.name) return user.name;
     if (user?.email) return user.email.split('@')[0];
     return 'User';
   };
