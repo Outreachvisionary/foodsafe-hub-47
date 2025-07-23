@@ -20,6 +20,9 @@ import CAPAWorkflowEngine from '@/components/capa/CAPAWorkflowEngine';
 import DocumentList from '@/components/documents/DocumentList';
 import { CAPAActivity } from '@/components/capa/CAPAActivityList';
 import CAPASimpleWorkflow from '@/components/capa/CAPASimpleWorkflow';
+import CAPARiskAssessment from '@/components/capa/CAPARiskAssessment';
+import CAPARootCauseAnalysis from '@/components/capa/CAPARootCauseAnalysis';
+import CAPAComplianceTracker from '@/components/capa/CAPAComplianceTracker';
 
 const CAPADetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -206,11 +209,28 @@ const CAPADetails: React.FC = () => {
             onWorkflowUpdate={handleWorkflowUpdate}
           />
           
+          {/* Enhanced Analysis Section */}
+          <CAPARiskAssessment 
+            capaId={capa.id}
+            onSave={(assessment) => console.log('Risk assessment saved:', assessment)}
+          />
+          
+          <CAPARootCauseAnalysis 
+            capaId={capa.id}
+            onSave={(analysis) => console.log('Root cause analysis saved:', analysis)}
+          />
+          
+          <CAPAComplianceTracker 
+            capaId={capa.id}
+            onUpdate={(compliance) => console.log('Compliance updated:', compliance)}
+          />
+          
           <Tabs defaultValue="activity">
             <TabsList>
               <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
               <TabsTrigger value="documents">Related Documents</TabsTrigger>
               <TabsTrigger value="attachments">Attachments</TabsTrigger>
+              <TabsTrigger value="effectiveness">Effectiveness Review</TabsTrigger>
             </TabsList>
             
             <TabsContent value="activity" className="p-1">
@@ -237,6 +257,21 @@ const CAPADetails: React.FC = () => {
             
             <TabsContent value="attachments" className="p-1">
               <CAPAAttachments capaId={capa.id} />
+            </TabsContent>
+            
+            <TabsContent value="effectiveness" className="p-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Effectiveness Review</CardTitle>
+                  <CardDescription>Comprehensive effectiveness assessment</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CAPAEffectivenessMonitor 
+                    id={capa.id}
+                    implementationDate={capa.completion_date || capa.updated_at}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
