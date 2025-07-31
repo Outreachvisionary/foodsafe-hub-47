@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { GraduationCap, Users, BookOpen, Award, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { GraduationCap, Users, BookOpen, Award, Clock, CheckCircle, AlertCircle, Upload, Shield } from 'lucide-react';
 import { useTraining } from '@/hooks/useTraining';
+import TrainingMaterialUpload from './TrainingMaterialUpload';
+import TrainingComplianceTracker from './TrainingComplianceTracker';
 
 const TrainingModuleCore: React.FC = () => {
   const { sessions, records, loading, createTrainingSession } = useTraining();
@@ -176,10 +178,13 @@ const TrainingModuleCore: React.FC = () => {
       </div>
 
       <Tabs defaultValue="sessions" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="sessions">Training Sessions</TabsTrigger>
-          <TabsTrigger value="records">Training Records</TabsTrigger>
-          <TabsTrigger value="create">Create Session</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="records">Records</TabsTrigger>
+          <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="create">Create</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sessions">
@@ -285,6 +290,31 @@ const TrainingModuleCore: React.FC = () => {
                     No training records found.
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="materials">
+          <TrainingMaterialUpload onUploadComplete={() => toast({ title: "Success", description: "Material uploaded successfully" })} />
+        </TabsContent>
+
+        <TabsContent value="compliance">
+          <TrainingComplianceTracker />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Training Analytics & Reports
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <Shield className="h-12 w-12 mx-auto mb-4" />
+                <p>Advanced analytics and GFSI compliance reporting coming soon.</p>
               </div>
             </CardContent>
           </Card>

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Enhanced Training Session Interface with GFSI compliance
 export interface TrainingSession {
   id: string;
   title: string;
@@ -61,6 +62,81 @@ export interface TrainingRecord {
   next_recurrence?: string;
 }
 
+// Training Materials Interface
+export interface TrainingMaterial {
+  id: string;
+  session_id?: string;
+  course_id?: string;
+  name: string;
+  description?: string;
+  file_path: string;
+  file_type: string;
+  file_size?: number;
+  upload_date: string;
+  uploaded_by: string;
+  is_active: boolean;
+  content_type: string; // PowerPoint, PDF, Video, etc.
+  duration_minutes?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Training Competency Interface for GFSI compliance
+export interface TrainingCompetency {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  required_for_roles: string[];
+  assessment_criteria: string[];
+  validity_period_months: number;
+  is_mandatory: boolean;
+  gfsi_requirement?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Training Compliance Interface
+export interface TrainingCompliance {
+  id: string;
+  employee_id: string;
+  competency_id: string;
+  status: 'pending' | 'compliant' | 'overdue' | 'expired';
+  last_training_date?: string;
+  next_required_date?: string;
+  compliance_score?: number;
+  notes?: string;
+  assessed_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Training Notification Interface
+export interface TrainingNotification {
+  id: string;
+  user_id: string;
+  session_id: string;
+  notification_type: 'reminder' | 'overdue' | 'completion' | 'assignment';
+  message: string;
+  is_read: boolean;
+  scheduled_for?: string;
+  sent_at?: string;
+  created_at: string;
+}
+
+// Training Analytics Interface
+export interface TrainingAnalytics {
+  id: string;
+  session_id: string;
+  employee_id: string;
+  event_type: 'start' | 'progress' | 'complete' | 'fail' | 'pause' | 'resume';
+  event_data?: Record<string, any>;
+  timestamp: string;
+  completion_percentage?: number;
+  time_spent_minutes?: number;
+}
+
 export interface TrainingStats {
   totalSessions: number;
   activeSessions: number;
@@ -71,6 +147,12 @@ export interface TrainingStats {
   byCategory: Record<string, number>;
   byType: Record<string, number>;
   upcomingSessions: TrainingSession[];
+  gfsiCompliance?: {
+    compliant: number;
+    total: number;
+    percentage: number;
+  };
+  expiringCertifications?: number;
 }
 
 // Get all training sessions
