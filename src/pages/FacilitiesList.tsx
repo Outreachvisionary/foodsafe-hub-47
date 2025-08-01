@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -74,58 +73,62 @@ const FacilitiesList = () => {
   };
 
   return (
-    <AppLayout
-      title="Facilities"
-      subtitle="Manage all your organization facilities"
-      actions={
-        <Button onClick={() => navigate('/facilities/new')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Facility
-        </Button>
-      }
-    >
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Facilities Management</CardTitle>
-          <CardDescription>
-            View and manage all facilities across your organization
-          </CardDescription>
+    <div className="space-y-6">
+      <div className="flex flex-col">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground mb-1">Facilities</h1>
+            <p className="text-muted-foreground">Manage all your organization facilities</p>
+          </div>
+          <Button onClick={() => navigate('/facilities/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Facility
+          </Button>
+        </div>
+      </div>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">All Facilities</CardTitle>
+              <CardDescription>
+                {facilities.length} facilities found
+              </CardDescription>
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Search facilities..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="pl-10"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col space-y-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search facilities by name, location, or type..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={handleSearch}
-              />
-            </div>
-            
+          <div className="space-y-4">
             {loading ? (
-              <div className="flex justify-center items-center h-48">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <div className="flex justify-center py-8">
+                <div className="text-muted-foreground">Loading facilities...</div>
               </div>
             ) : filteredFacilities.length === 0 ? (
-              <div className="text-center py-12">
-                <Building className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-medium">No facilities found</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {searchTerm ? 'Try adjusting your search term' : 'Add your first facility to get started'}
+              <div className="text-center py-8">
+                <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No facilities found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by adding your first facility.'}
                 </p>
                 {!searchTerm && (
-                  <Button 
-                    onClick={() => navigate('/facilities/new')}
-                    className="mt-4"
-                  >
+                  <Button onClick={() => navigate('/facilities/new')}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Facility
+                    Add Your First Facility
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="border rounded-md">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -133,37 +136,37 @@ const FacilitiesList = () => {
                       <TableHead>Type</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Contact</TableHead>
+                      <TableHead>Capacity</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredFacilities.map((facility) => (
                       <TableRow 
-                        key={facility.id}
+                        key={facility.id} 
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => handleFacilityClick(facility.id)}
                       >
                         <TableCell className="font-medium">{facility.name}</TableCell>
-                        <TableCell>{facility.facility_type || 'Not specified'}</TableCell>
+                        <TableCell className="capitalize">{facility.facility_type || 'N/A'}</TableCell>
                         <TableCell>
-                          {[
-                            facility.city, 
-                            facility.state, 
-                            facility.country
-                          ].filter(Boolean).join(', ') || 'Not specified'}
+                          {facility.city && facility.state ? (
+                            <span>{facility.city}, {facility.state}</span>
+                          ) : (
+                            facility.address || 'No location'
+                          )}
                         </TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            facility.status === 'active' ? 'bg-green-100 text-green-800' : 
-                            facility.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            facility.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : facility.status === 'inactive'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
                           }`}>
                             {facility.status}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          {facility.contact_email || facility.contact_phone || 'Not specified'}
-                        </TableCell>
+                        <TableCell>N/A</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -173,7 +176,7 @@ const FacilitiesList = () => {
           </div>
         </CardContent>
       </Card>
-    </AppLayout>
+    </div>
   );
 };
 

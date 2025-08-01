@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import AppLayout from '@/components/layout/AppLayout';
+
 import { Facility } from '@/types/facility';
 import { getFacilityById, createFacility, updateFacility } from '@/services/facilityService';
 import LocationForm, { LocationData } from '@/components/location/LocationForm';
@@ -212,77 +212,86 @@ const FacilityManagement = () => {
 
   if (loading) {
     return (
-      <AppLayout title="Facility Management" showBackButton>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" onClick={() => navigate('/facilities')} className="flex items-center">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Facility Management</h1>
+          </div>
+        </div>
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout
-      title={isNewFacility ? "Add New Facility" : "Edit Facility"}
-      subtitle={isNewFacility ? "Create a new facility in your organization" : "Update facility details"}
-      showBackButton
-      onBack={() => navigate('/facilities')}
-    >
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" onClick={() => navigate('/facilities')} className="flex items-center">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground mb-1">
+            {isNewFacility ? "Add New Facility" : "Edit Facility"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isNewFacility ? "Create a new facility in your organization" : "Update facility details"}
+          </p>
+        </div>
+      </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="details">Basic Information</TabsTrigger>
           <TabsTrigger value="location">Location & Contact</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <TabsContent value="details">
+            <TabsContent value="details" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Facility Details</CardTitle>
+                  <CardTitle>Basic Information</CardTitle>
                   <CardDescription>
-                    Enter basic information about the facility
+                    Enter the basic details for this facility.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="organization_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization*</FormLabel>
-                        <FormControl>
-                          <OrganizationSelector
-                            value={field.value}
-                            onChange={field.onChange}
-                            disabled={!isNewFacility || saving}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          The organization this facility belongs to
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
+                <CardContent className="space-y-6">
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Facility Name*</FormLabel>
+                        <FormLabel>Facility Name</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter facility name" {...field} />
                         </FormControl>
                         <FormDescription>
-                          The name of your facility as it will appear in the system
+                          The official name of this facility.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Facility Type
+                    </label>
+                    <Input 
+                      placeholder="e.g., Manufacturing, Warehouse, Office" 
+                      defaultValue=""
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      The type or category of this facility.
+                    </p>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="description"
@@ -292,121 +301,85 @@ const FacilityManagement = () => {
                         <FormControl>
                           <Input placeholder="Brief description of the facility" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          A brief description of the facility and its purpose.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="status"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <div className="flex space-x-4">
-                          {["active", "inactive", "pending"].map((status) => (
-                            <div key={status} className="flex items-center space-x-2">
-                              <input 
-                                type="radio" 
-                                id={status} 
-                                checked={field.value === status}
-                                onChange={() => field.onChange(status)}
-                                className="h-4 w-4 text-primary focus:ring-primary"
-                              />
-                              <span className="text-sm font-medium text-gray-700 capitalize">
-                                {status}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <FormControl>
+                          <Input placeholder="e.g., Active, Inactive, Under Construction" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Current operational status of the facility.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="location">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Location Information</CardTitle>
-                  <CardDescription>
-                    Address and location details for this facility
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <LocationForm
-                    initialData={locationData}
-                    onChange={handleLocationChange}
-                    showValidationErrors={true}
-                    disabled={saving}
-                  />
-                  
-                  <Separator className="my-6" />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="contact_email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="facility@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Capacity
+                    </label>
+                    <Input 
+                      placeholder="e.g., 1000 units/day, 50 employees"
+                      defaultValue=""
                     />
-                    
-                    <FormField
-                      control={form.control}
-                      name="contact_phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <p className="text-sm text-muted-foreground">
+                      Maximum capacity or operational limit of the facility.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Organization</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Organization selection will be configured during implementation.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
-            
-            <TabsContent value="settings">
+
+            <TabsContent value="location" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Facility Settings</CardTitle>
+                  <CardTitle>Location & Contact Information</CardTitle>
                   <CardDescription>
-                    Additional configuration options for this facility
+                    Provide the physical address and contact details for this facility.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-500 italic">
-                    Additional settings will be available in future updates.
-                  </p>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Location form will be configured during implementation.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <Separator />
             
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => navigate('/facilities')}
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
                 Cancel
               </Button>
-              
               <Button 
-                type="submit"
-                disabled={saving || !zipcodeValid}
+                type="submit" 
+                disabled={saving}
               >
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {!saving && <Save className="mr-2 h-4 w-4" />}
@@ -416,7 +389,7 @@ const FacilityManagement = () => {
           </form>
         </Form>
       </Tabs>
-    </AppLayout>
+    </div>
   );
 };
 
