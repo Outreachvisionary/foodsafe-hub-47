@@ -201,7 +201,7 @@
 
   /* Card styles */
   .card-hover {
-    @apply hover:shadow-md hover:bg-card-hover transition-all duration-200;
+    @apply hover:shadow-md hover:bg-muted/30 transition-all duration-200;
   }
 
   .card-active {
@@ -328,12 +328,9 @@
   @apply bg-gradient-to-r from-warning to-warning-foreground;
 }
 
+/* Enhanced background gradients */
 .bg-gradient-card {
   @apply bg-gradient-to-br from-white to-accent/5;
-}
-
-.bg-card-hover {
-  @apply bg-gradient-to-br from-white to-primary/10;
 }
 
 .bg-sidebar {
@@ -472,17 +469,9 @@
   50% { opacity: 0.8; }
 }
 
-/* Card enhancements */
-.card-hover {
-  @apply transition-all duration-300 hover:shadow-lg hover:border-accent/30 hover:scale-[1.01];
-}
-
-.card-active {
-  @apply border-accent;
-}
-
 /* Apply the glow effect directly */
 .card-active {
+  @apply border-accent;
   box-shadow: 0 0 15px rgba(22, 186, 197, 0.3);
 }
 
