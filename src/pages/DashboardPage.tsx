@@ -6,9 +6,7 @@ import OptimizedDashboard from '@/components/dashboard/OptimizedDashboard';
 const DashboardPage: React.FC = () => {
   return (
     <ProtectedSidebarLayout>
-      <div className="container mx-auto p-6 max-w-7xl">
-        <OptimizedDashboard />
-      </div>
+      <OptimizedDashboard />
     </ProtectedSidebarLayout>
   );
 };

@@ -11,11 +11,13 @@ interface SidebarLayoutProps {
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <main className="flex-1 p-6">
-            {children || <Outlet />}
+          <main className="flex-1 p-8">
+            <div className="max-w-7xl mx-auto">
+              {children || <Outlet />}
+            </div>
           </main>
         </SidebarInset>
       </div>

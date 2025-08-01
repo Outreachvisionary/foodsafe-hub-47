@@ -8,14 +8,14 @@
 
 @layer base {
   :root {
-    /* Base colors */
-    --background: 210 40% 98%; /* Light blue-gray background */
-    --background-secondary: 220 30% 96%;
-    --background-tertiary: 220 20% 94%;
+    /* Base colors - Enhanced professional palette */
+    --background: 220 15% 98%; /* Pure, clean background */
+    --background-secondary: 220 10% 96%;
+    --background-tertiary: 220 8% 94%;
     
-    --foreground: 225 25% 20%; /* Deep blue-gray text */
-    --foreground-secondary: 225 20% 30%;
-    --foreground-muted: 220 15% 40%;
+    --foreground: 220 35% 15%; /* Rich, professional text */
+    --foreground-secondary: 220 25% 35%;
+    --foreground-muted: 220 15% 50%;
 
     /* Card and containers */
     --card: 0 0% 100%; /* Pure white cards */
@@ -31,23 +31,23 @@
     --input: 220 13% 90%;
     --ring: 210 80% 56%; /* Bright blue for focus rings */
 
-    /* Core theme colors */
-    --primary: 210 80% 56%; /* Bright blue */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
-    --primary-hover: 210 80% 50%;
-    --primary-active: 210 80% 45%;
-    --primary-light: 210 80% 65%;
+    /* Core theme colors - Professional blue palette */
+    --primary: 215 85% 52%; /* Professional blue */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 215 85% 48%;
+    --primary-active: 215 85% 44%;
+    --primary-light: 215 85% 88%;
     
     --secondary: 225 25% 95%; /* Light gray-blue */
     --secondary-foreground: 225 25% 20%; /* Same as foreground */
     --secondary-hover: 225 30% 92%;
 
-    --accent: 270 76% 53%; /* Vibrant purple */
-    --accent-foreground: 0 0% 100%; /* White text on accent */
-    --accent-hover: 270 76% 48%;
-    --accent-active: 270 76% 43%;
-    --accent-muted: 270 76% 93%;
-    --accent-light: 270 76% 65%;
+    --accent: 250 85% 58%; /* Sophisticated purple */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 250 85% 54%;
+    --accent-active: 250 85% 50%;
+    --accent-muted: 250 85% 95%;
+    --accent-light: 250 85% 90%;
 
     --muted: 220 14% 94%;
     --muted-foreground: 220 10% 50%;
