@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useAuth } from '@/components/auth/SimpleAuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Loading from '@/components/Loading';
 import SidebarLayout from './SidebarLayout';
@@ -11,9 +11,9 @@ interface ProtectedSidebarLayoutProps {
 }
 
 const ProtectedSidebarLayout: React.FC<ProtectedSidebarLayoutProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return <Loading message="Checking authentication..." />;
   }
 

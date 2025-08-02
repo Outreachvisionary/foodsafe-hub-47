@@ -4,9 +4,10 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
-import { SimpleAuthProvider, useAuth } from '@/components/auth/SimpleAuthProvider';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { moduleConnector } from '@/services/moduleConnector';
+import { integrationService } from '@/services/integrationService';
 import Index from './pages/Index';
 import DashboardPage from './pages/DashboardPage';
 import TestingDashboard from './pages/TestingDashboard';
@@ -46,19 +47,21 @@ import Create from './pages/Create';
 import ProtectedSidebarLayout from './components/layout/ProtectedSidebarLayout';
 
 function AppContent() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   
   useEffect(() => {
     // Initialize modules when app starts
     const initializeSystem = async () => {
       console.log('Initializing SAAS platform modules...');
       await moduleConnector.initializeModules();
+      // Sync all modules to ensure data connectivity
+      await integrationService.syncAllModules();
     };
 
     initializeSystem();
   }, []);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -125,9 +128,9 @@ function AppContent() {
 
 function App() {
   return (
-    <SimpleAuthProvider>
+    <AuthProvider>
       <AppContent />
-    </SimpleAuthProvider>
+    </AuthProvider>
   );
 }
 

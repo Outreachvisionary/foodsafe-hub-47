@@ -1,107 +1,99 @@
-
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-export interface Supplier {
-  id: string;
-  name: string;
-  category: string;
-  country: string;
-  compliance_status: string;
-  contact_name: string;
-  contact_email: string;
-  contact_phone: string;
-  products: string[];
-  status: string;
-  risk_score: number;
-  last_audit_date?: string;
-  created_at?: string;
-}
+import { Supplier } from '@/types/supplier';
 
 export const useSuppliers = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(true); // Add alias for compatibility
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchSuppliers = async () => {
-    try {
-      setLoading(true);
-      setIsLoading(true);
+  const {
+    data: suppliers = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from('suppliers')
+        .from('supply_chain_partners')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSuppliers(data || []);
-    } catch (err) {
-      console.error('Error fetching suppliers:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch suppliers');
-    } finally {
-      setLoading(false);
-      setIsLoading(false);
-    }
-  };
+      return data || [];
+    },
+  });
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
-  const addSupplier = async (supplierData: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      setLoading(true);
-      setIsLoading(true);
+  const createMutation = useMutation({
+    mutationFn: async (newSupplier: any) => {
       const { data, error } = await supabase
-        .from('suppliers')
-        .insert(supplierData)
+        .from('supply_chain_partners')
+        .insert(newSupplier)
         .select()
         .single();
 
       if (error) throw error;
-      await fetchSuppliers();
       return data;
-    } catch (err) {
-      console.error('Error adding supplier:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add supplier');
-      return null;
-    } finally {
-      setLoading(false);
-      setIsLoading(false);
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create supplier: ${error.message}`);
+    },
+  });
 
-  const editSupplier = async (id: string, updates: Partial<Supplier>) => {
-    try {
-      setLoading(true);
-      setIsLoading(true);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { data, error } = await supabase
-        .from('suppliers')
+        .from('supply_chain_partners')
         .update(updates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      await fetchSuppliers();
       return data;
-    } catch (err) {
-      console.error('Error updating supplier:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update supplier');
-      return null;
-    } finally {
-      setLoading(false);
-      setIsLoading(false);
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update supplier: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('supply_chain_partners')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete supplier: ${error.message}`);
+    },
+  });
 
   return {
     suppliers,
-    loading,
     isLoading,
-    error,
-    refetch: fetchSuppliers,
-    addSupplier,
-    editSupplier
+    error: error?.message || null,
+    addSupplier: createMutation.mutate,
+    editSupplier: updateMutation.mutate,
+    createSupplier: createMutation.mutate,
+    updateSupplier: updateMutation.mutate,
+    deleteSupplier: deleteMutation.mutate,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

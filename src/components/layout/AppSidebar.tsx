@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/components/auth/SimpleAuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -89,7 +89,6 @@ const AppSidebar: React.FC = () => {
 
   // Safely get display name
   const getDisplayName = () => {
-    if (user?.name) return user.name;
     if (user?.email) return user.email.split('@')[0];
     return 'User';
   };
