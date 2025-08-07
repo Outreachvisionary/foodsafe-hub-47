@@ -3255,6 +3255,53 @@ export type Database = {
           },
         ]
       }
+      training_modules: {
+        Row: {
+          content_type: string
+          content_url: string | null
+          course_id: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_type: string
+          content_url?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_type?: string
+          content_url?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_notifications: {
         Row: {
           created_at: string | null
