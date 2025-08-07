@@ -1,26 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface TrainingSession {
-  id: string;
-  title: string;
-  description?: string;
-  instructor?: string;
-  location?: string;
-  start_date?: string;
-  end_date?: string;
-  max_participants?: number;
-  current_participants?: number;
-  status?: string;
-  category?: string;
-  difficulty_level?: string;
-  prerequisites?: string;
-  materials?: string[];
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+export type TrainingSession = Database['public']['Tables']['training_sessions']['Row'];
+type TrainingSessionInsert = Database['public']['Tables']['training_sessions']['Insert'];
 
 export const useTraining = () => {
   const queryClient = useQueryClient();
@@ -53,9 +37,24 @@ export const useTraining = () => {
 
   const createMutation = useMutation({
     mutationFn: async (newSession: any) => {
+      const user = await supabase.auth.getUser();
+      const sessionData: TrainingSessionInsert = {
+        title: newSession.title,
+        description: newSession.description,
+        training_type: newSession.training_type,
+        training_category: newSession.training_category,
+        start_date: newSession.start_date || new Date().toISOString(),
+        due_date: newSession.due_date,
+        created_by: user.data.user?.id || 'anonymous',
+        assigned_to: newSession.assigned_to || [],
+        required_roles: newSession.required_roles || [],
+        is_recurring: newSession.is_recurring || false,
+        department: newSession.department
+      };
+      
       const { data, error } = await supabase
         .from('training_sessions')
-        .insert(newSession)
+        .insert(sessionData)
         .select()
         .single();
 

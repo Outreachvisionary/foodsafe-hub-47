@@ -51,7 +51,6 @@ const TrainingModuleCore: React.FC = () => {
     try {
       await createTrainingSession({
         ...newSession,
-        created_by: 'current_user',
         start_date: new Date().toISOString(),
         required_roles: [],
         is_recurring: false
