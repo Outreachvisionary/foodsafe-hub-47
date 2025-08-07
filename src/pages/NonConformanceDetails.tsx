@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useNonConformance } from '@/hooks/useNonConformances';
+import { useNonConformance } from '@/hooks/useNonConformance';
 import { useNCCAPAIntegration } from '@/hooks/useNCCAPAIntegration';
 import { toast } from 'sonner';
 import NCEditForm from '@/components/non-conformance/NCEditForm';

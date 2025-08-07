@@ -102,7 +102,7 @@ const NonConformancePage: React.FC = () => {
   const getStats = () => {
     const total = nonConformances.length;
     const onHold = nonConformances.filter(nc => nc.status === 'On Hold').length;
-    const inProgress = nonConformances.filter(nc => nc.status === 'Under Investigation').length;
+    const inProgress = nonConformances.filter(nc => nc.status === 'Under Review').length;
     const resolved = nonConformances.filter(nc => nc.status === 'Resolved' || nc.status === 'Closed').length;
     const critical = nonConformances.filter(nc => nc.risk_level === 'Critical').length;
     const withCAPA = nonConformances.filter(nc => nc.capa_id).length;

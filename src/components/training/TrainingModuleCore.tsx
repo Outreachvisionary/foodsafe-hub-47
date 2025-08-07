@@ -30,11 +30,11 @@ const TrainingModuleCore: React.FC = () => {
 
   const trainingStats = {
     totalSessions: sessions.length,
-    activeSessions: sessions.filter(s => s.completion_status === 'In Progress').length,
+    activeSessions: sessions.filter(s => s.completion_status === 'In Progress' || s.status === 'Active').length,
     completedSessions: sessions.filter(s => s.completion_status === 'Completed').length,
-    overdueRecords: records.filter(r => new Date(r.due_date || '') < new Date() && r.status !== 'Completed').length,
-    complianceRate: records.length > 0 
-      ? Math.round((records.filter(r => r.status === 'Completed').length / records.length) * 100)
+    overdueRecords: sessions.filter(s => s.due_date && new Date(s.due_date) < new Date() && s.completion_status !== 'Completed').length,
+    complianceRate: sessions.length > 0 
+      ? Math.round((sessions.filter(s => s.completion_status === 'Completed').length / sessions.length) * 100)
       : 0
   };
 
@@ -201,10 +201,10 @@ const TrainingModuleCore: React.FC = () => {
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{session.title}</h4>
                           <Badge className="bg-yellow-100 text-yellow-800">
-                            {session.priority}
+                            {session.category || 'General'}
                           </Badge>
                           <Badge variant="outline">
-                            {session.training_type}
+                            {session.category || 'General'}
                           </Badge>
                         </div>
                         
@@ -217,13 +217,13 @@ const TrainingModuleCore: React.FC = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>Due: {session.due_date ? new Date(session.due_date).toLocaleDateString() : 'Not set'}</span>
                           <span>Department: {session.department || 'All'}</span>
-                          <span>Assigned to: {session.assigned_to.length} people</span>
+                          <span>Assigned to: {session.assigned_to?.length || 0} people</span>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">{session.completion_status}</span>
+                        <span className="text-sm">{session.completion_status || session.status || 'Draft'}</span>
                       </div>
                     </div>
                   </div>
@@ -246,38 +246,34 @@ const TrainingModuleCore: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {records.map((record) => (
-                  <div key={record.id} className="border rounded-lg p-4">
+                {sessions.map((session) => (
+                  <div key={session.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium">{record.employee_name}</h4>
+                          <h4 className="font-medium">{session.title || 'Untitled Session'}</h4>
                           <Badge variant="outline">
-                            Session #{record.session_id.slice(0, 8)}
+                            {session.category || 'General'}
                           </Badge>
                         </div>
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Due: {record.due_date ? new Date(record.due_date).toLocaleDateString() : 'Not set'}</span>
-                          {record.completion_date && (
-                            <span>Completed: {new Date(record.completion_date).toLocaleDateString()}</span>
-                          )}
-                          {record.score && (
-                            <span>Score: {record.score}%</span>
-                          )}
+                          <span>Due: {session.due_date ? new Date(session.due_date).toLocaleDateString() : 'Not set'}</span>
+                          <span>Created: {session.created_at ? new Date(session.created_at).toLocaleDateString() : 'Unknown'}</span>
+                          <span>Assigned to: {session.assigned_to?.length || 0} people</span>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">{record.status}</span>
+                        <span className="text-sm">{session.completion_status || session.status || 'Draft'}</span>
                       </div>
                     </div>
                     
-                    {record.status !== 'Not Started' && (
+                    {session.completion_status && session.completion_status !== 'Not Started' && (
                       <div className="mt-3">
                         <Progress 
-                          value={record.status === 'Completed' ? 100 : 50} 
+                          value={session.completion_status === 'Completed' ? 100 : 50} 
                           className="w-full"
                         />
                       </div>
@@ -285,7 +281,7 @@ const TrainingModuleCore: React.FC = () => {
                   </div>
                 ))}
                 
-                {records.length === 0 && (
+                {sessions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No training records found.
                   </div>

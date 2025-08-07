@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import NCCreateForm from '@/components/non-conformance/NCCreateForm';
 import NCEditForm from '@/components/non-conformance/NCEditForm';
-import { useNonConformance } from '@/hooks/useNonConformances';
+import { useNonConformance } from '@/hooks/useNonConformance';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

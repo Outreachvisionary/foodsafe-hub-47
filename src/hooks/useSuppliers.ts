@@ -86,6 +86,7 @@ export const useSuppliers = () => {
   return {
     suppliers,
     isLoading,
+    loading: isLoading,
     error: error?.message || null,
     addSupplier: createMutation.mutate,
     editSupplier: updateMutation.mutate,
@@ -95,5 +96,6 @@ export const useSuppliers = () => {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
   };
 };

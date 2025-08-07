@@ -2,20 +2,29 @@
 export interface Supplier {
   id: string;
   name: string;
-  contact_name: string;
+  contact_name?: string;
+  contact_person?: string;
   contact_email: string;
   contact_phone: string;
   country: string;
-  category: string;
-  compliance_status: string;
+  category?: string;
+  business_type?: string;
+  compliance_status?: string;
+  certification_status?: string;
   status: string;
-  risk_score: number;
+  risk_score?: number;
+  risk_level?: string;
   last_audit_date?: string;
   products?: string[];
   created_at?: string;
   updated_at?: string;
   fsmsStandards?: FsmsStandard[];
-  documents?: SupplierDocument[]; // Add documents property
+  documents?: SupplierDocument[];
+  // Additional properties from database
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
 }
 
 export type StandardName = 'SQF' | 'BRC GS2' | 'ISO 22000' | 'FSSC 22000' | 'HACCP' | 'all';

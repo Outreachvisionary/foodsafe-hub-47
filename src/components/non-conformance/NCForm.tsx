@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { NonConformance } from '@/types/non-conformance';
-import { useNonConformances, useNonConformance } from '@/hooks/useNonConformances';
+import { useNonConformances } from '@/hooks/useNonConformances';
+import { useNonConformance } from '@/hooks/useNonConformance';
 
 interface NCFormProps {
   id?: string;
