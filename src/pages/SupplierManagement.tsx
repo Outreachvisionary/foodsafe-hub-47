@@ -35,6 +35,18 @@ const SupplierManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('suppliers');
 
+  const getCategory = (s: any) => s?.business_type || s?.category || '';
+  const getRiskScore = (s: any) => {
+    const rs = (s as any)?.risk_score;
+    if (typeof rs === 'number') return rs;
+    const rl = ((s as any)?.risk_level || '').toLowerCase();
+    if (rl === 'low') return 85;
+    if (rl === 'medium') return 70;
+    if (rl === 'high') return 40;
+    return 70;
+  };
+  const getProducts = (s: any): string[] => (Array.isArray((s as any)?.products) ? (s as any).products : []);
+
   if (authLoading || suppliersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -99,9 +111,9 @@ const SupplierManagement = () => {
     }
   };
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         supplier.category.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredSuppliers = suppliers.filter((supplier: any) => {
+    const matchesSearch = supplier.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         getCategory(supplier).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'all' || supplier.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -111,8 +123,8 @@ const SupplierManagement = () => {
     approvedSuppliers: suppliers.filter(s => s.status === 'Approved').length,
     underReview: suppliers.filter(s => s.status === 'Under Review').length,
     pendingApproval: suppliers.filter(s => s.status === 'Pending Approval').length,
-    highRisk: suppliers.filter(s => s.risk_score < 60).length,
-    averageScore: suppliers.length > 0 ? Math.round(suppliers.reduce((acc, s) => acc + s.risk_score, 0) / suppliers.length) : 0
+    highRisk: suppliers.filter(s => getRiskScore(s) < 60).length,
+    averageScore: suppliers.length > 0 ? Math.round(suppliers.reduce((acc, s) => acc + getRiskScore(s), 0) / suppliers.length) : 0
   };
 
   return (
@@ -263,7 +275,7 @@ const SupplierManagement = () => {
                       <div className="flex-1">
                         <CardTitle className="text-lg mb-1">{supplier.name}</CardTitle>
                         <CardDescription>
-                          {supplier.category} • {supplier.country}
+                          {getCategory(supplier) || 'N/A'} • {supplier.country}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
@@ -277,8 +289,8 @@ const SupplierManagement = () => {
                         <Badge className={getStatusColor(supplier.status)}>
                           {supplier.status}
                         </Badge>
-                        <Badge className={getRiskColor(supplier.risk_score)}>
-                          {getRiskLevel(supplier.risk_score)} Risk
+                        <Badge className={getRiskColor(getRiskScore(supplier))}>
+                          {getRiskLevel(getRiskScore(supplier))} Risk
                         </Badge>
                         <Badge variant="outline">
                           {supplier.country}
@@ -289,13 +301,13 @@ const SupplierManagement = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Risk Score</span>
-                          <span className={supplier.risk_score >= 80 ? 'text-green-600' : 
-                                         supplier.risk_score >= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                            {supplier.risk_score}/100
+                          <span className={getRiskScore(supplier) >= 80 ? 'text-green-600' : 
+                                         getRiskScore(supplier) >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                            {getRiskScore(supplier)}/100
                           </span>
                         </div>
                         <Progress 
-                          value={supplier.risk_score} 
+                          value={getRiskScore(supplier)} 
                           className="h-2"
                         />
                       </div>
@@ -318,14 +330,14 @@ const SupplierManagement = () => {
                       <div className="pt-2">
                         <p className="text-xs text-muted-foreground mb-2">Products Supplied:</p>
                         <div className="flex flex-wrap gap-1">
-                          {supplier.products.slice(0, 2).map((product, index) => (
+                          {getProducts(supplier).slice(0, 2).map((product, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {product}
                             </Badge>
                           ))}
-                          {supplier.products.length > 2 && (
+                          {getProducts(supplier).length > 2 && (
                             <Badge variant="secondary" className="text-xs">
-                              +{supplier.products.length - 2} more
+                              +{getProducts(supplier).length - 2} more
                             </Badge>
                           )}
                         </div>

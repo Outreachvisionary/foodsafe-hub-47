@@ -11,6 +11,7 @@ export const useNonConformances = () => {
     data: nonConformances = [],
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['non-conformances'],
     queryFn: async () => {
@@ -93,5 +94,7 @@ export const useNonConformances = () => {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    refetch,
+    refresh: refetch,
   };
 };

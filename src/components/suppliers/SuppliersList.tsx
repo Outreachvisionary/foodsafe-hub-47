@@ -34,11 +34,12 @@ const SuppliersList: React.FC = () => {
     contactEmail: '',
     contactPhone: ''
   });
+  const getCategory = (s: any) => s?.business_type || s?.category || '';
 
-  const filteredSuppliers = suppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (supplier.business_type || supplier.category || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-    supplier.country.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSuppliers = suppliers.filter((supplier: any) => 
+    supplier.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    getCategory(supplier).toLowerCase().includes(searchQuery.toLowerCase()) || 
+    supplier.country?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getRiskBadgeStyle = (riskLevel?: string) => {
@@ -284,7 +285,7 @@ const SuppliersList: React.FC = () => {
                 filteredSuppliers.map((supplier: any) => (
                   <TableRow key={supplier.id}>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.business_type || supplier.category || 'N/A'}</TableCell>
+                    <TableCell>{getCategory(supplier) || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge className={getRiskBadgeStyle(supplier.risk_level)} variant="outline">
                         {supplier.risk_level || 'Medium'}
@@ -349,7 +350,7 @@ const SuppliersList: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Category:</span>
-                      <span className="col-span-2">{selectedSupplier.business_type || selectedSupplier.category || 'N/A'}</span>
+                      <span className="col-span-2">{getCategory(selectedSupplier) || 'N/A'}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="text-gray-500">Country:</span>
