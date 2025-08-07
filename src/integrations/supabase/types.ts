@@ -3188,6 +3188,7 @@ export type Database = {
           content_type: string | null
           course_id: string | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           duration_minutes: number | null
           file_path: string
@@ -3205,6 +3206,7 @@ export type Database = {
           content_type?: string | null
           course_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           duration_minutes?: number | null
           file_path: string
@@ -3222,6 +3224,7 @@ export type Database = {
           content_type?: string | null
           course_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           duration_minutes?: number | null
           file_path?: string
